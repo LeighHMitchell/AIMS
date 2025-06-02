@@ -93,6 +93,9 @@ export interface ProjectTransaction {
   status: typeof CONTRIBUTION_STATUS[keyof typeof CONTRIBUTION_STATUS];
   createdBy: string;
   createdByName: string;
+  lastEditedBy?: string;
+  lastEditedByName?: string;
+  submittedAt?: string;
   createdAt: string;
   updatedAt: string;
 } 
