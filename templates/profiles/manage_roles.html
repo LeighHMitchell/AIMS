@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Roles - AIMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .roles-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .role-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e5e7eb;
+        margin-bottom: 1.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .role-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .role-card.primary {
+        border-left: 4px solid #3b82f6;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    }
+    
+    .role-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .role-badge.primary {
+        background-color: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #3b82f6;
+    }
+    
+    .role-badge.secondary {
+        background-color: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+    
+    .role-badge.active {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #22c55e;
+    }
+    
+    .role-badge.inactive {
+        background-color: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #ef4444;
+    }
+    
+    .permission-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .permission-item {
+        background-color: #f3f4f6;
+        color: #374151;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        border: 1px solid #d1d5db;
+    }
+    
+    .permission-item.granted {
+        background-color: #dcfce7;
+        color: #166534;
+        border-color: #22c55e;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        background: white;
+        border-radius: 12px;
+        border: 2px dashed #d1d5db;
+    }
+    
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .org-info {
+        background-color: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    @media (max-width: 768px) {
+        .roles-container {
+            padding: 0 1rem;
+        }
+        
+        .role-card {
+            padding: 1rem;
+        }
+        
+        .permission-list {
+            flex-direction: column;
+        }
+        
+        .btn-action {
+            width: 100%;
+            margin-right: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="roles-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-2">
+                    <i class="fas fa-users-cog me-2"></i>Manage Roles
+                </h1>
+                <p class="mb-0">Manage your organizational roles and permissions</p>
+            </div>
+            <div>
+                <a href="{% url 'add_role' %}" class="btn btn-light">
+                    <i class="fas fa-plus me-1"></i>Add New Role
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if user_roles %}
+        <!-- Current Roles -->
+        <div class="row">
+            {% for user_role in user_roles %}
+                <div class="col-lg-6">
+                    <div class="role-card {% if user_role.is_primary %}primary{% endif %}">
+                        <!-- Role Header -->
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-1">{{ user_role.role.name }}</h5>
+                                <div class="mb-2">
+                                    {% if user_role.is_primary %}
+                                        <span class="role-badge primary">Primary Role</span>
+                                    {% else %}
+                                        <span class="role-badge secondary">Secondary Role</span>
+                                    {% endif %}
+                                    
+                                    {% if user_role.is_current %}
+                                        <span class="role-badge active">Active</span>
+                                    {% else %}
+                                        <span class="role-badge inactive">Inactive</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'edit_role' role_id=user_role.id %}">
+                                            <i class="fas fa-edit me-2"></i>Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'remove_role' role_id=user_role.id %}">
+                                            <i class="fas fa-trash me-2"></i>Remove
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Organization Info -->
+                        <div class="org-info">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-building me-2 text-primary"></i>
+                                <strong>{{ user_role.organization.name }}</strong>
+                            </div>
+                            <div class="small text-muted">
+                                <div><i class="fas fa-tag me-1"></i>{{ user_role.organization.get_organization_type_display }}</div>
+                                {% if user_role.organization.country %}
+                                    <div><i class="fas fa-map-marker-alt me-1"></i>{{ user_role.organization.country.name }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Role Details -->
+                        <div class="mb-3">
+                            <div class="small text-muted mb-2">
+                                <i class="fas fa-calendar me-1"></i>
+                                Started: {{ user_role.start_date|date:"M d, Y" }}
+                                {% if user_role.end_date %}
+                                    | Ends: {{ user_role.end_date|date:"M d, Y" }}
+                                {% endif %}
+                            </div>
+                            
+                            {% if user_role.role.description %}
+                                <p class="small text-muted mb-2">{{ user_role.role.description }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Permissions -->
+                        <div>
+                            <h6 class="mb-2">Permissions</h6>
+                            <div class="permission-list">
+                                {% if user_role.role.can_create_projects %}
+                                    <span class="permission-item granted">Create Projects</span>
+                                {% endif %}
+                                {% if user_role.role.can_edit_own_projects %}
+                                    <span class="permission-item granted">Edit Own Projects</span>
+                                {% endif %}
+                                {% if user_role.role.can_edit_org_projects %}
+                                    <span class="permission-item granted">Edit Org Projects</span>
+                                {% endif %}
+                                {% if user_role.role.can_approve_projects %}
+                                    <span class="permission-item granted">Approve Projects</span>
+                                {% endif %}
+                                {% if user_role.role.can_view_analytics %}
+                                    <span class="permission-item granted">View Analytics</span>
+                                {% endif %}
+                                {% if user_role.role.can_export_data %}
+                                    <span class="permission-item granted">Export Data</span>
+                                {% endif %}
+                                {% if user_role.role.can_manage_users %}
+                                    <span class="permission-item granted">Manage Users</span>
+                                {% endif %}
+                                {% if user_role.role.can_manage_organization %}
+                                    <span class="permission-item granted">Manage Organization</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if user_role.notes %}
+                            <div class="mt-3 pt-3 border-top">
+                                <h6 class="mb-1">Notes</h6>
+                                <p class="small text-muted mb-0">{{ user_role.notes }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="text-center mt-4">
+            <a href="{% url 'add_role' %}" class="btn btn-primary btn-action">
+                <i class="fas fa-plus me-1"></i>Add Another Role
+            </a>
+            <a href="{% url 'organization_directory' %}" class="btn btn-outline-primary btn-action">
+                <i class="fas fa-search me-1"></i>Browse Organizations
+            </a>
+            <a href="{% url 'user_profile' %}" class="btn btn-outline-secondary btn-action">
+                <i class="fas fa-arrow-left me-1"></i>Back to Profile
+            </a>
+        </div>
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-user-plus fa-4x text-muted mb-3"></i>
+            <h3 class="text-muted mb-3">No Roles Assigned</h3>
+            <p class="text-muted mb-4">
+                You haven't been assigned any organizational roles yet. 
+                Add your first role to start collaborating with organizations in the AIMS ecosystem.
+            </p>
+            <div>
+                <a href="{% url 'add_role' %}" class="btn btn-primary btn-lg me-3">
+                    <i class="fas fa-plus me-1"></i>Add First Role
+                </a>
+                <a href="{% url 'organization_directory' %}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-search me-1"></i>Browse Organizations
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Help Section -->
+    <div class="mt-5 p-4 bg-light rounded">
+        <h5 class="mb-3">
+            <i class="fas fa-question-circle me-2 text-primary"></i>About Roles
+        </h5>
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Primary vs Secondary Roles</h6>
+                <p class="small text-muted">
+                    Your primary role determines your default organization and permissions. 
+                    You can have multiple secondary roles for collaboration across organizations.
+                </p>
+            </div>
+            <div class="col-md-6">
+                <h6>Role Permissions</h6>
+                <p class="small text-muted">
+                    Each role comes with specific permissions that control what you can do within 
+                    the organization, from creating projects to managing users.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth animations to role cards
+    const roleCards = document.querySelectorAll('.role-card');
+    roleCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+    
+    // Confirm role removal
+    const removeLinks = document.querySelectorAll('a[href*="remove"]');
+    removeLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (!confirm('Are you sure you want to remove this role? This action cannot be undone.')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

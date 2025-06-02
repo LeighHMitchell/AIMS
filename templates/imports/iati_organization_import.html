@@ -1,0 +1,518 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Import IATI Organization Data - MOHINGA{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-blue: #1e40af;
+        --blue-50: #eff6ff;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --green-50: #f0fdf4;
+        --green-500: #22c55e;
+        --red-50: #fef2f2;
+        --red-500: #ef4444;
+        --yellow-50: #fffbeb;
+        --yellow-500: #f59e0b;
+    }
+
+    .import-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .import-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, var(--primary-blue) 0%, #1d4ed8 100%);
+        color: white;
+        border-radius: 12px;
+    }
+
+    .import-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 1rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .import-header .icon {
+        font-size: 2.5rem;
+        opacity: 0.9;
+    }
+
+    .import-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 2rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+    }
+
+    .form-text {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+        margin-top: 0.25rem;
+    }
+
+    .btn {
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, #1d4ed8 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(30, 64, 175, 0.3);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--green-500) 0%, #16a34a 100%);
+        color: white;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-secondary {
+        background: var(--gray-100);
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+    }
+
+    .btn-secondary:hover {
+        background: var(--gray-200);
+    }
+
+    .organization-preview {
+        background: var(--green-50);
+        border: 1px solid var(--green-500);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+
+    .organization-preview h3 {
+        color: var(--green-500);
+        margin: 0 0 1.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .org-detail {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .org-detail:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .org-detail-label {
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+
+    .org-detail-value {
+        color: var(--gray-600);
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .info-section {
+        background: var(--blue-50);
+        border: 1px solid var(--primary-blue);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-section h3 {
+        color: var(--primary-blue);
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0 0 1rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .error-message {
+        background: var(--red-50);
+        border: 1px solid var(--red-500);
+        color: var(--red-500);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+
+    .warning-message {
+        background: var(--yellow-50);
+        border: 1px solid var(--yellow-500);
+        color: #92400e;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+
+    .alert {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+    }
+
+    .alert-success {
+        background: var(--green-50);
+        border: 1px solid var(--green-500);
+        color: #166534;
+    }
+
+    .alert-warning {
+        background: var(--yellow-50);
+        border: 1px solid var(--yellow-500);
+        color: #92400e;
+    }
+
+    .alert-error {
+        background: var(--red-50);
+        border: 1px solid var(--red-500);
+        color: #dc2626;
+    }
+
+    @media (max-width: 768px) {
+        .org-detail {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <!-- Header -->
+    <div class="import-header">
+        <h1>
+            <i class="fas fa-building icon"></i>
+            Import IATI Organization Data
+        </h1>
+        <p>Enter an IATI organization identifier to fetch and import organization metadata from the IATI Registry.</p>
+    </div>
+
+    <!-- Information Section -->
+    <div class="info-section">
+        <h3>
+            <i class="fas fa-info-circle"></i>
+            How it works
+        </h3>
+        <ul>
+            <li>Enter a valid IATI organization identifier (e.g., GB-GOV-1, US-GOV-1, NL-KVK-41198677)</li>
+            <li>The system will query the IATI Registry API to fetch organization metadata</li>
+            <li>Review the organization information before importing</li>
+            <li>Once imported, the organization will be available in development partner dropdowns</li>
+        </ul>
+    </div>
+
+    <!-- Import Form -->
+    <div class="import-card">
+        <form method="post" id="iati-import-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label" for="{{ form.iati_identifier.id_for_label }}">
+                    {{ form.iati_identifier.label }}
+                </label>
+                {{ form.iati_identifier }}
+                {% if form.iati_identifier.help_text %}
+                    <div class="form-text">{{ form.iati_identifier.help_text }}</div>
+                {% endif %}
+                {% if form.iati_identifier.errors %}
+                    <div class="error-message">
+                        {% for error in form.iati_identifier.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" name="action" value="fetch" class="btn btn-primary" id="fetch-btn">
+                    <i class="fas fa-search"></i>
+                    <span class="btn-text">Fetch Organization Data</span>
+                    <span class="loading-spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Success/Error Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} mt-3" style="padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                    {% if message.tags == 'success' %}
+                        <i class="fas fa-check-circle"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i class="fas fa-exclamation-triangle"></i>
+                    {% elif message.tags == 'error' %}
+                        <i class="fas fa-times-circle"></i>
+                    {% endif %}
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Organization Preview -->
+        {% if organization_data %}
+        <div class="organization-preview">
+            <h3>
+                <i class="fas fa-eye"></i>
+                Organization Preview
+            </h3>
+            
+            <div class="org-detail">
+                <div class="org-detail-label">IATI Identifier:</div>
+                <div class="org-detail-value">{{ organization_data.iati_identifier|default:"Not available" }}</div>
+            </div>
+            
+            <div class="org-detail">
+                <div class="org-detail-label">Organization Name:</div>
+                <div class="org-detail-value">{{ organization_data.name|default:"Not available" }}</div>
+            </div>
+            
+            <div class="org-detail">
+                <div class="org-detail-label">Organization Type:</div>
+                <div class="org-detail-value">{{ organization_data.organization_type|capfirst|default:"Not available" }}</div>
+            </div>
+            
+            <div class="org-detail">
+                <div class="org-detail-label">Website:</div>
+                <div class="org-detail-value">
+                    {% if organization_data.website %}
+                        <a href="{{ organization_data.website }}" target="_blank" rel="noopener">{{ organization_data.website }}</a>
+                    {% else %}
+                        Not available
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="org-detail">
+                <div class="org-detail-label">Contact Email:</div>
+                <div class="org-detail-value">{{ organization_data.contact_email|default:"Not available" }}</div>
+            </div>
+            
+            <div class="org-detail">
+                <div class="org-detail-label">Contact Phone:</div>
+                <div class="org-detail-value">{{ organization_data.contact_phone|default:"Not available" }}</div>
+            </div>
+            
+            <div class="org-detail">
+                <div class="org-detail-label">Address:</div>
+                <div class="org-detail-value">{{ organization_data.address|default:"Not available"|linebreaks }}</div>
+            </div>
+            
+            <div class="org-detail">
+                <div class="org-detail-label">Country:</div>
+                <div class="org-detail-value">{{ organization_data.country|default:"Not available" }}</div>
+            </div>
+            
+            {% if organization_data.description %}
+            <div class="org-detail">
+                <div class="org-detail-label">Description:</div>
+                <div class="org-detail-value">{{ organization_data.description|linebreaks }}</div>
+            </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="iati_identifier" value="{{ organization_data.iati_identifier }}">
+                    <input type="hidden" name="organization_data" value="{{ organization_data_json }}">
+                    <button type="submit" name="action" value="import" class="btn btn-success">
+                        <i class="fas fa-download"></i>
+                        Import Organization
+                    </button>
+                </form>
+                <a href="{% url 'import_organizations' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if error_message %}
+        <div class="error-message">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ error_message }}
+        </div>
+        {% endif %}
+
+        {% if warning_message %}
+        <div class="warning-message">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ warning_message }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('iati-import-form');
+    const fetchBtn = document.getElementById('fetch-btn');
+    const btnText = fetchBtn.querySelector('.btn-text');
+    const spinner = fetchBtn.querySelector('.loading-spinner');
+    const identifierInput = document.querySelector('input[name="iati_identifier"]');
+
+    console.log('IATI form initialized');
+    console.log('Form element:', form);
+    console.log('Fetch button:', fetchBtn);
+
+    form.addEventListener('submit', function(e) {
+        console.log('Form submit event triggered');
+        console.log('Submitter:', e.submitter);
+        console.log('Submitter value:', e.submitter ? e.submitter.value : 'none');
+        
+        if (e.submitter && e.submitter.value === 'fetch') {
+            // Validate input before submitting
+            const identifier = identifierInput.value.trim();
+            console.log('IATI identifier:', identifier);
+            
+            if (!identifier) {
+                e.preventDefault();
+                alert('Please enter an IATI organization identifier.');
+                return;
+            }
+
+            // Show loading state
+            fetchBtn.disabled = true;
+            btnText.textContent = 'Fetching Data...';
+            spinner.style.display = 'inline-block';
+            
+            console.log('Form submission proceeding...');
+            
+            // Add a timeout to re-enable the button if something goes wrong
+            setTimeout(function() {
+                if (fetchBtn.disabled) {
+                    console.log('Timeout reached, re-enabling button');
+                    fetchBtn.disabled = false;
+                    btnText.textContent = 'Fetch Organization Data';
+                    spinner.style.display = 'none';
+                }
+            }, 30000); // 30 second timeout
+        }
+    });
+
+    // Add some helpful examples
+    const helpText = document.querySelector('.form-text');
+    if (helpText) {
+        helpText.innerHTML += '<br><strong>Popular examples:</strong> 44000 (World Bank), GB-GOV-1 (UK DFID), US-GOV-1 (USAID)';
+    }
+
+    // Add input validation feedback
+    identifierInput.addEventListener('input', function() {
+        const value = this.value.trim();
+        const isValid = value.length >= 2 && /^[A-Za-z0-9\-_]+$/.test(value);
+        
+        if (value && !isValid) {
+            this.style.borderColor = '#ef4444';
+        } else {
+            this.style.borderColor = '';
+        }
+    });
+
+    // Add click handler for debugging
+    fetchBtn.addEventListener('click', function(e) {
+        console.log('Fetch button clicked');
+        console.log('Button type:', this.type);
+        console.log('Button name:', this.name);
+        console.log('Button value:', this.value);
+    });
+});
+</script>
+{% endblock %} 

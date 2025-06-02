@@ -1,0 +1,129 @@
+{% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Submit a New Activity</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- jQuery (needed for Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+</head>
+<body class="container mt-5">
+
+  <h2 class="mb-4">Submit a New Activity</h2>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <ul class="nav nav-tabs mb-3" id="activityTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">General</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="org-tab" data-bs-toggle="tab" data-bs-target="#org" type="button" role="tab">Organisations</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="finance-tab" data-bs-toggle="tab" data-bs-target="#finance" type="button" role="tab">Finances</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" type="button" role="tab">Results</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs" type="button" role="tab">Documents & Images</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="sector-tab" data-bs-toggle="tab" data-bs-target="#sector" type="button" role="tab">Sector</button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="activityTabsContent">
+      <div class="tab-pane fade show active" id="general" role="tabpanel">
+        <div class="row">
+          <div class="col-md-6">
+            {{ form.iati_identifier|as_crispy_field }}
+          </div>
+          <div class="col-md-6">
+            {{ form.partner_activity_id|as_crispy_field }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+            {{ form.reporting_org|as_crispy_field }}
+          </div>
+        </div>
+        {{ form.title|as_crispy_field }}
+        {{ form.description|as_crispy_field }}
+        {{ form.activity_status|as_crispy_field }}
+        {{ form.start_date|as_crispy_field }}
+        {{ form.start_date_actual|as_crispy_field }}
+        {{ form.end_date|as_crispy_field }}
+        {{ form.end_date_actual|as_crispy_field }}
+        {{ form.recipient_country|as_crispy_field }}
+      </div>
+
+      <div class="tab-pane fade" id="org" role="tabpanel">
+        {{ form.collaboration_type|as_crispy_field }}
+        {{ form.implementing_org|as_crispy_field }}
+        {{ form.contact_info|as_crispy_field }}
+      </div>
+
+      <div class="tab-pane fade" id="finance" role="tabpanel">
+        {{ form.default_flow_type|as_crispy_field }}
+        {{ form.default_finance_type|as_crispy_field }}
+        {{ form.default_aid_type|as_crispy_field }}
+        {{ form.default_tied_status|as_crispy_field }}
+        {{ form.funding_amount|as_crispy_field }}
+        {{ form.currency|as_crispy_field }}
+      </div>
+
+      <div class="tab-pane fade" id="results" role="tabpanel">
+        <p class="text-muted">Coming soon: Results tracking (outputs, outcomes).</p>
+      </div>
+
+      <div class="tab-pane fade" id="docs" role="tabpanel">
+        {{ form.document_link|as_crispy_field }}
+      </div>
+
+      <div class="tab-pane fade" id="sector" role="tabpanel">
+        {{ form.sector|as_crispy_field }}
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button type="submit" class="btn btn-primary">Submit Activity</button>
+      <a href="{% url 'project_dashboard' %}" class="btn btn-link">Go to Dashboard</a>
+    </div>
+  </form>
+
+ <datalist id="reporting-org-list">
+  {% for option in reporting_org_options %}
+    <option value="{{ option }}"></option>
+  {% endfor %}
+</datalist>
+
+<script>
+  $(document).ready(function() {
+    $('.select2').select2({
+      placeholder: "Select or type to search...",
+      width: '100%'
+    });
+  });
+</script>
+
+</body>
+</html>

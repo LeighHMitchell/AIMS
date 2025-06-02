@@ -1,0 +1,616 @@
+{% extends 'base.html' %}
+
+{% block title %}Projects Dashboard - AIMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #3b82f6;
+        --primary-dark: #2563eb;
+        --secondary: #64748b;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --gray-900: #0f172a;
+    }
+
+    body {
+        background-color: var(--gray-50);
+        font-family: 'Inter', 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: var(--gray-900);
+    }
+
+    /* Utility Classes */
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .gap-4 { gap: 1rem; }
+    .gap-6 { gap: 1.5rem; }
+    .gap-8 { gap: 2rem; }
+    .grid { display: grid; }
+    .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .col-span-2 { grid-column: span 2 / span 2; }
+    .w-full { width: 100%; }
+    .h-full { height: 100%; }
+    .rounded-lg { border-radius: 0.5rem; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .shadow-sm { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+    .shadow { box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+    .shadow-lg { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+    .bg-white { background-color: white; }
+    .bg-gray-50 { background-color: var(--gray-50); }
+    .bg-gray-100 { background-color: var(--gray-100); }
+    .text-gray-500 { color: var(--gray-500); }
+    .text-gray-600 { color: var(--gray-600); }
+    .text-gray-700 { color: var(--gray-700); }
+    .text-gray-800 { color: var(--gray-800); }
+    .text-gray-900 { color: var(--gray-900); }
+    .text-primary { color: var(--primary); }
+    .text-success { color: var(--success); }
+    .text-warning { color: var(--warning); }
+    .text-danger { color: var(--danger); }
+    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    .text-base { font-size: 1rem; line-height: 1.5rem; }
+    .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+    .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+    .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+    .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .p-4 { padding: 1rem; }
+    .p-6 { padding: 1.5rem; }
+    .p-8 { padding: 2rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+    .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+    .py-12 { padding-top: 3rem; padding-bottom: 3rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .mb-8 { margin-bottom: 2rem; }
+    .mt-1 { margin-top: 0.25rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .border { border-width: 1px; }
+    .border-gray-200 { border-color: var(--gray-200); }
+    .border-gray-300 { border-color: var(--gray-300); }
+    .transition { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+    .hover\\:shadow-lg:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+    .hover\\:bg-gray-50:hover { background-color: var(--gray-50); }
+    .focus\\:outline-none:focus { outline: 2px solid transparent; outline-offset: 2px; }
+    .focus\\:ring-2:focus { --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color); --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color); box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000); }
+    .focus\\:ring-primary:focus { --tw-ring-color: var(--primary); }
+
+    /* Custom Components */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        transition: all 0.15s ease;
+        border: 1px solid transparent;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background-color: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-secondary {
+        background-color: white;
+        color: var(--gray-700);
+        border-color: var(--gray-300);
+    }
+
+    .btn-secondary:hover {
+        background-color: var(--gray-50);
+        border-color: var(--gray-400);
+    }
+
+    .btn-success {
+        background-color: var(--success);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background-color: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        transition: all 0.2s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    .stat-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-icon.blue { background-color: #dbeafe; color: var(--primary); }
+    .stat-icon.green { background-color: #d1fae5; color: var(--success); }
+    .stat-icon.yellow { background-color: #fef3c7; color: var(--warning); }
+    .stat-icon.purple { background-color: #e9d5ff; color: #8b5cf6; }
+
+    .filter-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 2rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.15s ease;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        background-color: white;
+        transition: all 0.15s ease;
+    }
+
+    .form-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        border: 1px solid var(--gray-200);
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table th {
+        background-color: var(--gray-50);
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-size: 0.875rem;
+        color: var(--gray-900);
+    }
+
+    .table tbody tr:hover {
+        background-color: var(--gray-50);
+    }
+
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .badge-success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-warning {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-danger {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+
+    .badge-gray {
+        background-color: var(--gray-100);
+        color: var(--gray-700);
+    }
+
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.375rem;
+        border: 1px solid var(--gray-300);
+        background-color: white;
+        color: var(--gray-500);
+        transition: all 0.15s ease;
+        text-decoration: none;
+        margin-right: 0.5rem;
+    }
+
+    .action-btn:hover {
+        background-color: var(--gray-50);
+        color: var(--gray-700);
+        border-color: var(--gray-400);
+    }
+
+    .action-btn.primary:hover {
+        background-color: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .container { padding: 0 0.5rem; }
+        .table-container { overflow-x: auto; }
+        .table { min-width: 600px; }
+    }
+
+    @media (max-width: 640px) {
+        .grid-cols-4 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .py-12 { padding-top: 2rem; padding-bottom: 2rem; }
+        .text-3xl { font-size: 1.5rem; line-height: 2rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="container">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Projects Dashboard</h1>
+                <p class="text-gray-600">Manage and monitor all aid projects</p>
+            </div>
+            <a href="{% url 'submit_project' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Add New Project
+            </a>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-4 gap-6 mb-8">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="text-2xl font-bold text-gray-900 mb-1">{{ total_projects }}</div>
+                <div class="text-sm text-gray-600">Total Projects</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="text-2xl font-bold text-gray-900 mb-1">${{ total_funding|floatformat:0 }}</div>
+                <div class="text-sm text-gray-600">Total Funding</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="text-2xl font-bold text-gray-900 mb-1">${{ average_funding|floatformat:0 }}</div>
+                <div class="text-sm text-gray-600">Average Funding</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fas fa-filter"></i>
+                </div>
+                <div class="text-2xl font-bold text-gray-900 mb-1">{{ filtered_count }}</div>
+                <div class="text-sm text-gray-600">Filtered Results</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-card">
+            <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                    <input type="text" name="search" value="{{ request.GET.search }}" 
+                           placeholder="Search projects..." class="form-input">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="planning" {% if request.GET.status == 'planning' %}selected{% endif %}>Planning</option>
+                        <option value="implementation" {% if request.GET.status == 'implementation' %}selected{% endif %}>Implementation</option>
+                        <option value="completion" {% if request.GET.status == 'completion' %}selected{% endif %}>Completion</option>
+                        <option value="post-completion" {% if request.GET.status == 'post-completion' %}selected{% endif %}>Post-completion</option>
+                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        <option value="suspended" {% if request.GET.status == 'suspended' %}selected{% endif %}>Suspended</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Donor</label>
+                    <select name="donor" class="form-select">
+                        <option value="">All Donors</option>
+                        {% for donor in donors %}
+                            <option value="{{ donor.id }}" {% if request.GET.donor == donor.id|stringformat:"s" %}selected{% endif %}>
+                                {{ donor.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                    <select name="country" class="form-select">
+                        <option value="">All Countries</option>
+                        {% for country in countries %}
+                            <option value="{{ country.id }}" {% if request.GET.country == country.id|stringformat:"s" %}selected{% endif %}>
+                                {{ country.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <button type="submit" class="btn btn-primary w-full">
+                        <i class="fas fa-search"></i>
+                        Search
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Projects Table -->
+        <div class="table-container">
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-table text-gray-500"></i>
+                    <h2 class="text-lg font-semibold text-gray-900">Projects ({{ projects|length }} total)</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="{% url 'export_projects' %}" class="btn btn-success">
+                        <i class="fas fa-download"></i>
+                        Export CSV
+                    </a>
+                    <button class="btn btn-secondary">
+                        <i class="fas fa-sort"></i>
+                        Sort
+                    </button>
+                </div>
+            </div>
+            
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Project Title</th>
+                        <th>Donor</th>
+                        <th>Country</th>
+                        <th>Sector</th>
+                        <th>Funding</th>
+                        <th>Status</th>
+                        <th>Start Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                    <tr>
+                        <td>
+                            <div class="font-medium text-gray-900">
+                                {% if project.title %}
+                                    {{ project.title|truncatechars:50 }}
+                                {% else %}
+                                    <span class="text-gray-500 italic">Untitled Project</span>
+                                {% endif %}
+                            </div>
+                            {% if project.prism_id %}
+                                <div class="text-xs text-gray-500 mt-1">{{ project.prism_id }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if project.donor %}
+                                <span class="text-gray-900">{{ project.donor.name }}</span>
+                            {% else %}
+                                <span class="text-gray-500">Not assigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if project.recipient_country %}
+                                <span class="text-gray-900">{{ project.recipient_country.name }}</span>
+                            {% else %}
+                                <span class="text-gray-500">Not specified</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if project.sector %}
+                                <span class="text-gray-900">{{ project.sector.name }}</span>
+                            {% else %}
+                                <span class="text-gray-500">Not specified</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if project.total_budget %}
+                                <span class="font-medium text-gray-900">${{ project.total_budget|floatformat:0 }}</span>
+                            {% else %}
+                                <span class="text-gray-500">Not specified</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if project.activity_status %}
+                                {% if project.activity_status == 'implementation' %}
+                                    <span class="badge badge-success">{{ project.get_activity_status_display }}</span>
+                                {% elif project.activity_status == 'planning' %}
+                                    <span class="badge badge-warning">{{ project.get_activity_status_display }}</span>
+                                {% elif project.activity_status == 'completion' %}
+                                    <span class="badge badge-success">{{ project.get_activity_status_display }}</span>
+                                {% elif project.activity_status == 'cancelled' or project.activity_status == 'suspended' %}
+                                    <span class="badge badge-danger">{{ project.get_activity_status_display }}</span>
+                                {% else %}
+                                    <span class="badge badge-gray">{{ project.get_activity_status_display }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-gray">None</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if project.start_date_planned %}
+                                <span class="text-gray-900">{{ project.start_date_planned|date:"M d, Y" }}</span>
+                            {% else %}
+                                <span class="text-gray-500">Not set</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="flex items-center">
+                                <a href="{% url 'project_detail' project_id=project.id %}" 
+                                   class="action-btn" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'edit_project' project_id=project.id %}" 
+                                   class="action-btn primary" title="Edit Project">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-12">
+                            <div class="text-gray-500">
+                                <i class="fas fa-inbox text-4xl mb-4"></i>
+                                <p class="text-lg font-medium">No projects found</p>
+                                <p class="text-sm">Try adjusting your search criteria or add a new project.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth transitions to stat cards
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Auto-submit form on select change
+    const selects = document.querySelectorAll('.form-select');
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            // Optional: Auto-submit form when filters change
+            // this.closest('form').submit();
+        });
+    });
+
+    // Add loading state to buttons
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.type === 'submit') {
+                const icon = this.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-spinner fa-spin';
+                }
+                this.disabled = true;
+                setTimeout(() => {
+                    this.disabled = false;
+                    if (icon) {
+                        icon.className = 'fas fa-search';
+                    }
+                }, 2000);
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

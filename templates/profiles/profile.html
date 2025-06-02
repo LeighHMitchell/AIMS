@@ -1,0 +1,424 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - AIMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        object-fit: cover;
+    }
+    
+    .profile-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .role-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .role-badge.primary {
+        background-color: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #3b82f6;
+    }
+    
+    .role-badge.secondary {
+        background-color: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+        border-right: 1px solid #e5e7eb;
+    }
+    
+    .stat-item:last-child {
+        border-right: none;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e40af;
+        display: block;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+    }
+    
+    .project-item {
+        padding: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+    
+    .project-item:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    }
+    
+    .btn-group-profile {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    @media (max-width: 768px) {
+        .profile-header {
+            text-align: center;
+        }
+        
+        .btn-group-profile {
+            justify-content: center;
+        }
+        
+        .stat-item {
+            border-right: none;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0.75rem;
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center text-md-start">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture }}" alt="Profile Picture" class="profile-avatar">
+                {% else %}
+                    <div class="profile-avatar bg-light d-flex align-items-center justify-content-center">
+                        <i class="fas fa-user fa-3x text-muted"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <h1 class="mb-2">{{ profile.get_display_name }}</h1>
+                {% if profile.position %}
+                    <p class="mb-2 fs-5">{{ profile.position }}</p>
+                {% endif %}
+                {% if profile.organizational_affiliation %}
+                    <p class="mb-0">
+                        <i class="fas fa-building me-2"></i>{{ profile.organizational_affiliation.name }}
+                    </p>
+                {% elif primary_organization %}
+                    <p class="mb-0">
+                        <i class="fas fa-building me-2"></i>{{ primary_organization.name }}
+                    </p>
+                {% endif %}
+                {% if primary_role %}
+                    <p class="mb-0">
+                        <i class="fas fa-user-tag me-2"></i>{{ primary_role.name }}
+                    </p>
+                {% endif %}
+                {% if profile.permission_level %}
+                    <p class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        {% if profile.permission_level == 'partner_government' %}
+                            Partner Government (Super User)
+                        {% else %}
+                            Organization Level Access
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
+            <div class="col-md-3 text-center text-md-end">
+                <div class="btn-group-profile">
+                    <a href="{% url 'profile_management' %}" class="btn btn-light">
+                        <i class="fas fa-user-cog me-1"></i>Manage Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-4">
+            <!-- Personal Information -->
+            <div class="profile-card">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-user me-2 text-primary"></i>Personal Information
+                </h5>
+                
+                {% if profile.get_full_name_without_title %}
+                <div class="mb-3">
+                    <strong>Full Name:</strong><br>
+                    <span class="text-muted">{{ profile.get_full_name_without_title }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <strong>Email:</strong><br>
+                    <span class="text-muted">{{ user.email }}</span>
+                </div>
+                
+                {% if profile.phone %}
+                <div class="mb-3">
+                    <strong>Phone:</strong><br>
+                    <span class="text-muted">{{ profile.phone }}</span>
+                </div>
+                {% endif %}
+                
+                {% if profile.organizational_affiliation %}
+                <div class="mb-3">
+                    <strong>Organization:</strong><br>
+                    <span class="text-muted">{{ profile.organizational_affiliation.name }}</span>
+                    {% if profile.organizational_affiliation.organization_type %}
+                        <small class="d-block text-muted">{{ profile.organizational_affiliation.get_organization_type_display }}</small>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if profile.permission_level %}
+                <div class="mb-3">
+                    <strong>Access Level:</strong><br>
+                    <span class="text-muted">
+                        {% if profile.permission_level == 'partner_government' %}
+                            Partner Government (Super User)
+                        {% else %}
+                            Organization Level Access
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                
+                {% if profile.years_experience %}
+                <div class="mb-3">
+                    <strong>Experience:</strong><br>
+                    <span class="text-muted">{{ profile.years_experience }} years</span>
+                </div>
+                {% endif %}
+                
+                {% if profile.languages %}
+                <div class="mb-3">
+                    <strong>Languages:</strong><br>
+                    <span class="text-muted">{{ profile.languages }}</span>
+                </div>
+                {% endif %}
+                
+                {% if profile.specializations %}
+                <div class="mb-0">
+                    <strong>Specializations:</strong><br>
+                    <span class="text-muted">{{ profile.specializations }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Current Roles -->
+            <div class="profile-card">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-user-tag me-2 text-primary"></i>Current Roles
+                </h5>
+                
+                {% if user_roles %}
+                    {% for user_role in user_roles %}
+                        <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <strong>{{ user_role.role.name }}</strong>
+                                {% if user_role.is_primary %}
+                                    <span class="role-badge primary">Primary</span>
+                                {% else %}
+                                    <span class="role-badge secondary">Secondary</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-building me-1"></i>{{ user_role.organization.name }}
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-calendar me-1"></i>Since {{ user_role.start_date|date:"M Y" }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    <div class="text-center">
+                        <a href="{% url 'profile_management' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-cog me-1"></i>Manage Profile & Roles
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No roles assigned yet.</p>
+                    <a href="{% url 'profile_management' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add First Role
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-8">
+            <!-- Statistics -->
+            <div class="profile-card">
+                <div class="row text-center">
+                    <div class="col-md-3 stat-item">
+                        <span class="stat-number">{{ user_projects|length }}</span>
+                        <div class="stat-label">My Projects</div>
+                    </div>
+                    <div class="col-md-3 stat-item">
+                        <span class="stat-number">{{ org_projects|length }}</span>
+                        <div class="stat-label">Org Projects</div>
+                    </div>
+                    <div class="col-md-3 stat-item">
+                        <span class="stat-number">{{ user_roles|length }}</span>
+                        <div class="stat-label">Active Roles</div>
+                    </div>
+                    <div class="col-md-3 stat-item">
+                        <span class="stat-number">{{ profile.created_at|timesince|truncatewords:1 }}</span>
+                        <div class="stat-label">Member Since</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professional Background -->
+            {% if profile.bio %}
+            <div class="profile-card">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-user-graduate me-2 text-primary"></i>Professional Background
+                </h5>
+                <p class="text-muted">{{ profile.bio|linebreaks }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Recent Projects -->
+            <div class="profile-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-project-diagram me-2 text-primary"></i>My Recent Projects
+                    </h5>
+                    <a href="{% url 'project_dashboard' %}" class="btn btn-outline-primary btn-sm">View All</a>
+                </div>
+                
+                {% if user_projects %}
+                    {% for project in user_projects %}
+                        <div class="project-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">
+                                        <a href="{% url 'project_detail' project_id=project.id %}" class="text-decoration-none">
+                                            {{ project.title|default:"Untitled Project" }}
+                                        </a>
+                                    </h6>
+                                    <p class="text-muted small mb-1">{{ project.description|truncatewords:15 }}</p>
+                                    <div class="small text-muted">
+                                        {% if project.donor %}
+                                            <i class="fas fa-hand-holding-usd me-1"></i>{{ project.donor.name }}
+                                        {% endif %}
+                                        {% if project.recipient_country %}
+                                            <i class="fas fa-map-marker-alt me-1 ms-2"></i>{{ project.recipient_country.name }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    {% if project.activity_status %}
+                                        <span class="badge bg-primary">{{ project.get_activity_status_display }}</span>
+                                    {% endif %}
+                                    <div class="small text-muted mt-1">{{ project.submitted_at|date:"M d, Y" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No projects created yet.</p>
+                        <a href="{% url 'submit_project' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Create First Project
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Organization Projects (if applicable) -->
+            {% if org_projects %}
+            <div class="profile-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-building me-2 text-primary"></i>Organization Projects
+                    </h5>
+                    <span class="badge bg-info">{{ primary_organization.name }}</span>
+                </div>
+                
+                {% for project in org_projects %}
+                    <div class="project-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="{% url 'project_detail' project_id=project.id %}" class="text-decoration-none">
+                                        {{ project.title|default:"Untitled Project" }}
+                                    </a>
+                                </h6>
+                                <p class="text-muted small mb-1">{{ project.description|truncatewords:15 }}</p>
+                                <div class="small text-muted">
+                                    <i class="fas fa-user me-1"></i>{{ project.created_by.get_full_name|default:project.created_by.username }}
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                {% if project.activity_status %}
+                                    <span class="badge bg-secondary">{{ project.get_activity_status_display }}</span>
+                                {% endif %}
+                                <div class="small text-muted mt-1">{{ project.submitted_at|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth hover effects to project items
+    const projectItems = document.querySelectorAll('.project-item');
+    projectItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %} 

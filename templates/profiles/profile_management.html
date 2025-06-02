@@ -1,0 +1,599 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Profile Management - AIMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --sidebar-width: 250px;
+        --primary-blue: #2563eb;
+        --light-blue: #60a5fa;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --green-500: #10b981;
+        --red-500: #ef4444;
+        --blue-50: #eff6ff;
+    }
+
+    body {
+        background-color: var(--gray-50);
+        font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .profile-container {
+        display: flex;
+        min-height: calc(100vh - 76px);
+        margin-top: 0;
+    }
+
+    .profile-sidebar {
+        width: var(--sidebar-width);
+        background: white;
+        border-right: 1px solid var(--gray-200);
+        padding: 1.5rem 0;
+        position: fixed;
+        height: calc(100vh - 76px);
+        overflow-y: auto;
+        top: 76px;
+        left: 0;
+        z-index: 100;
+    }
+
+    .profile-title {
+        padding: 0 1.5rem 1rem;
+        border-bottom: 1px solid var(--gray-200);
+        margin-bottom: 1rem;
+    }
+
+    .profile-title h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0 0 0.25rem 0;
+        line-height: 1.3;
+    }
+
+    .profile-meta {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin: 0.125rem 0;
+    }
+
+    .sidebar-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-nav li {
+        margin: 0;
+    }
+
+    .sidebar-nav a {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+
+    .sidebar-nav a i {
+        width: 16px;
+        margin-right: 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .sidebar-nav a:hover {
+        background: var(--gray-50);
+        color: var(--gray-800);
+    }
+
+    .sidebar-nav a.active {
+        background: var(--blue-50);
+        color: var(--primary-blue);
+        border-right: 3px solid var(--primary-blue);
+    }
+
+    .profile-content {
+        margin-left: var(--sidebar-width);
+        flex: 1;
+        padding: 2rem;
+        max-width: calc(100vw - var(--sidebar-width));
+    }
+
+    .content-section {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        max-width: none;
+    }
+
+    .section-header {
+        margin-bottom: 2rem;
+    }
+
+    .section-header h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .section-header p {
+        color: var(--gray-600);
+        margin: 0;
+        font-size: 0.875rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 500;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid var(--gray-300);
+        border-radius: 6px;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        transition: all 0.2s ease;
+        background-color: white;
+        width: 100%;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+
+    .form-control:hover, .form-select:hover {
+        border-color: var(--gray-400);
+    }
+
+    .form-control[readonly] {
+        background-color: var(--gray-50);
+        color: var(--gray-600);
+    }
+
+    .form-control::placeholder {
+        color: var(--gray-400);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-row .form-group {
+        margin-bottom: 0;
+    }
+
+    .form-row.single {
+        grid-template-columns: 1fr;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-blue);
+        color: white;
+        border-color: var(--primary-blue);
+    }
+
+    .btn-primary:hover {
+        background-color: #1d4ed8;
+        border-color: #1d4ed8;
+    }
+
+    .btn-secondary {
+        background-color: white;
+        color: var(--gray-700);
+        border-color: var(--gray-300);
+    }
+
+    .btn-secondary:hover {
+        background-color: var(--gray-50);
+        border-color: var(--gray-400);
+    }
+
+    .form-actions {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+    }
+
+    .form-text {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin-top: 0.25rem;
+        line-height: 1.4;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .profile-sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .profile-sidebar.show {
+            transform: translateX(0);
+        }
+        
+        .profile-content {
+            margin-left: 0;
+            max-width: 100vw;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <!-- Sidebar Navigation -->
+    <div class="profile-sidebar">
+        <div class="profile-title">
+            <h2>{{ profile.get_display_name }}</h2>
+            <div class="profile-meta">
+                {% if profile.position %}{{ profile.position }}{% endif %}
+                {% if primary_organization %} • {{ primary_organization.name }}{% endif %}
+            </div>
+            <div class="profile-meta">
+                Member since {{ user.date_joined|date:"M Y" }}
+            </div>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li><a href="#personal-info" class="nav-link active" data-section="personal-info">
+                <i class="fas fa-user"></i> Personal Information
+            </a></li>
+            <li><a href="#professional-details" class="nav-link" data-section="professional-details">
+                <i class="fas fa-briefcase"></i> Professional Details
+            </a></li>
+            <li><a href="#roles-organizations" class="nav-link" data-section="roles-organizations">
+                <i class="fas fa-users-cog"></i> Roles & Organizations
+            </a></li>
+            <li><a href="#preferences" class="nav-link" data-section="preferences">
+                <i class="fas fa-cog"></i> Preferences
+            </a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="profile-content">
+        <!-- Personal Information Section -->
+        <div id="personal-info" class="content-section active-section">
+            <div class="section-header">
+                <h3>Personal Information</h3>
+                <p>Update your basic personal details and contact information</p>
+            </div>
+
+            <form id="personal-info-form" method="post" action="{% url 'edit_profile' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Name Fields -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="id_title">Title</label>
+                        {{ profile_form.title }}
+                        <small class="form-text">Your professional title (e.g., Mr., Ms., Dr.)</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="id_first_name">First Name</label>
+                        {{ profile_form.first_name }}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="id_middle_name">Middle Name</label>
+                        {{ profile_form.middle_name }}
+                        <small class="form-text">Optional</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="id_last_name">Last Name</label>
+                        {{ profile_form.last_name }}
+                    </div>
+                </div>
+
+                <!-- Position -->
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="form-label" for="id_position">Position</label>
+                        {{ profile_form.position }}
+                        <small class="form-text">Your current job title or role</small>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="id_phone">Phone Number</label>
+                        {{ profile_form.phone }}
+                        <small class="form-text">Include country code (e.g., +1 555 123 4567)</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Permission Level</label>
+                        {{ profile_form.permission_level }}
+                        <small class="form-text">Determines your editing rights within the system</small>
+                    </div>
+                </div>
+
+                <!-- Organization -->
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="form-label" for="id_organizational_affiliation">Organizational Affiliation</label>
+                        {{ profile_form.organizational_affiliation }}
+                        <small class="form-text">Your primary organizational affiliation</small>
+                    </div>
+                </div>
+
+                <!-- Professional Background -->
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="form-label" for="id_professional_background">Professional Background</label>
+                        {{ profile_form.professional_background }}
+                        <small class="form-text">Brief description of your professional experience and expertise</small>
+                    </div>
+                </div>
+
+                <!-- Profile Picture URL -->
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="form-label" for="id_profile_picture_url">Profile Picture URL</label>
+                        {{ profile_form.profile_picture_url }}
+                        <small class="form-text">Link to your professional profile photo (optional)</small>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Update Profile
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url 'user_profile' %}'">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Professional Details Section -->
+        <div id="professional-details" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h3>Professional Details</h3>
+                <p>Share your experience, expertise, and professional background</p>
+            </div>
+
+            <form id="professional-form" method="post" action="{% url 'edit_profile' %}">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="id_years_experience">Years of Experience</label>
+                        {{ profile_form.years_experience }}
+                        <small class="form-text">Total years of professional experience</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="id_languages">Languages Spoken</label>
+                        {{ profile_form.languages }}
+                        <small class="form-text">Languages you can communicate in (e.g., English, French, Spanish)</small>
+                    </div>
+                </div>
+
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="form-label" for="id_specializations">Areas of Expertise</label>
+                        {{ profile_form.specializations }}
+                        <small class="form-text">Your professional specializations and areas of expertise (e.g., Health, Education, Water & Sanitation)</small>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Update Professional Details
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Roles & Organizations Section -->
+        <div id="roles-organizations" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h3>Roles & Organizations</h3>
+                <p>Manage your organizational affiliations and role assignments</p>
+            </div>
+
+            {% if user_roles %}
+                {% for user_role in user_roles %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="mb-1">{{ user_role.role.name }}</h5>
+                                    <div class="mb-2">
+                                        {% if user_role.is_primary %}
+                                            <span class="badge bg-primary">Primary Role</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Secondary Role</span>
+                                        {% endif %}
+                                        
+                                        {% if user_role.is_current %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-building me-2 text-primary"></i>
+                                    <strong>{{ user_role.organization.name }}</strong>
+                                </div>
+                                <div class="small text-muted">
+                                    <div><i class="fas fa-tag me-1"></i>{{ user_role.organization.get_organization_type_display }}</div>
+                                    {% if user_role.organization.country %}
+                                        <div><i class="fas fa-map-marker-alt me-1"></i>{{ user_role.organization.country.name }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="small text-muted mb-2">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Started: {{ user_role.start_date|date:"M d, Y" }}
+                                    {% if user_role.end_date %}
+                                        | Ends: {{ user_role.end_date|date:"M d, Y" }}
+                                    {% endif %}
+                                </div>
+                                
+                                {% if user_role.role.description %}
+                                    <p class="small text-muted mb-2">{{ user_role.role.description }}</p>
+                                {% endif %}
+                            </div>
+
+                            {% if user_role.notes %}
+                                <div class="mt-3 pt-3 border-top">
+                                    <h6 class="mb-1">Notes</h6>
+                                    <p class="small text-muted mb-0">{{ user_role.notes }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'add_role' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add New Role
+                    </a>
+                    <a href="{% url 'organization_directory' %}" class="btn btn-secondary">
+                        <i class="fas fa-search"></i> Browse Organizations
+                    </a>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-user-plus fa-3x text-muted mb-3"></i>
+                    <h4>No Roles Assigned</h4>
+                    <p class="text-muted">You haven't been assigned any organizational roles yet. Add your first role to start collaborating with organizations in the AIMS ecosystem.</p>
+                    <div>
+                        <a href="{% url 'add_role' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add First Role
+                        </a>
+                        <a href="{% url 'organization_directory' %}" class="btn btn-secondary">
+                            <i class="fas fa-search"></i> Browse Organizations
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Preferences Section -->
+        <div id="preferences" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h3>System Preferences</h3>
+                <p>Customize your AIMS experience and notification settings</p>
+            </div>
+
+            <form id="preferences-form" method="post" action="{% url 'edit_profile' %}">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="id_email_notifications">Email Notifications</label>
+                        <div class="form-check">
+                            {{ profile_form.email_notifications }}
+                            <label class="form-check-label" for="id_email_notifications">
+                                Receive email notifications for project updates and system announcements
+                            </label>
+                        </div>
+                        <small class="form-text">You can unsubscribe from specific notification types in your email preferences</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="id_dashboard_layout">Dashboard Layout</label>
+                        {{ profile_form.dashboard_layout }}
+                        <small class="form-text">Choose your preferred dashboard layout and information density</small>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Update Preferences
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sidebar navigation
+    const sidebarLinks = document.querySelectorAll('.nav-link');
+    const contentSections = document.querySelectorAll('.content-section');
+
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-section');
+            
+            // Update active sidebar item
+            sidebarLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Update active content section
+            contentSections.forEach(section => {
+                section.classList.remove('active-section');
+                section.style.display = 'none';
+            });
+            
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.classList.add('active-section');
+                targetSection.style.display = 'block';
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

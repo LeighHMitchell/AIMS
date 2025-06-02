@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics Dashboard - AIMS{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-2">
+                <i class="fas fa-chart-line me-3"></i>
+                Analytics Dashboard
+            </h1>
+            <p class="text-muted mb-0">Comprehensive analysis and reporting</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'export_projects' %}" class="btn btn-success">
+                <i class="fas fa-download me-2"></i>Export Data
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Projects by Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Funding by Sector
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="sectorChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Monthly Trends
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="trendsChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">
+                    <i class="fas fa-globe me-2"></i>
+                    Geographic Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if geographic_data %}
+                    {% for item in geographic_data %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <strong>{{ item.recipient_country__name|truncatechars:20 }}</strong>
+                            <br>
+                            <small class="text-muted">{{ item.recipient_country__region }}</small>
+                        </div>
+                        <div class="text-end">
+                            <strong>${{ item.total_funding|floatformat:0 }}</strong>
+                            <br>
+                            <small class="text-muted">{{ item.count }} project{{ item.count|pluralize }}</small>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}<hr class="my-2">{% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-globe fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No geographic data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Donor Analysis -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">
+                    <i class="fas fa-handshake me-2"></i>
+                    Donor Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if donor_analysis %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Donor</th>
+                                    <th>Type</th>
+                                    <th>Projects</th>
+                                    <th>Total Funding</th>
+                                    <th>Average Funding</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for donor in donor_analysis %}
+                                <tr>
+                                    <td><strong>{{ donor.donor__name }}</strong></td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ donor.donor__donor_type|title }}
+                                        </span>
+                                    </td>
+                                    <td>{{ donor.project_count }}</td>
+                                    <td>${{ donor.total_funding|floatformat:0 }}</td>
+                                    <td>${{ donor.avg_funding|floatformat:0 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No donor data available</h5>
+                        <p class="text-muted">Add some projects to see donor analysis</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Status Chart
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+const statusData = {{ projects_by_status|safe }};
+const statusChart = new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: statusData.map(item => {
+            const statusMap = {
+                'pipeline': 'Pipeline',
+                'implementation': 'Implementation',
+                'completion': 'Completed',
+                'cancelled': 'Cancelled',
+                'suspended': 'Suspended'
+            };
+            return statusMap[item.activity_status] || item.activity_status;
+        }),
+        datasets: [{
+            data: statusData.map(item => item.count),
+            backgroundColor: [
+                '#3b82f6',
+                '#f59e0b',
+                '#10b981',
+                '#ef4444',
+                '#6b7280'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true
+                }
+            }
+        }
+    }
+});
+
+// Sector Chart
+const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+const sectorData = {{ funding_by_sector|safe }};
+const sectorChart = new Chart(sectorCtx, {
+    type: 'bar',
+    data: {
+        labels: sectorData.map(item => item.sector__name ? 
+            (item.sector__name.length > 20 ? item.sector__name.substring(0, 20) + '...' : item.sector__name) : 'Unspecified'),
+        datasets: [{
+            label: 'Total Funding ($)',
+            data: sectorData.map(item => item.total_funding || 0),
+            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+            borderColor: 'rgba(16, 185, 129, 1)',
+            borderWidth: 1,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            },
+            x: {
+                ticks: {
+                    maxRotation: 45
+                }
+            }
+        }
+    }
+});
+
+// Trends Chart
+const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+const trendsData = {{ monthly_trends|safe }};
+const trendsChart = new Chart(trendsCtx, {
+    type: 'line',
+    data: {
+        labels: trendsData.map(item => item.month),
+        datasets: [{
+            label: 'Projects',
+            data: trendsData.map(item => item.count),
+            borderColor: 'rgba(59, 130, 246, 1)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            yAxisID: 'y'
+        }, {
+            label: 'Funding ($)',
+            data: trendsData.map(item => item.total_funding || 0),
+            borderColor: 'rgba(245, 158, 11, 1)',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            tension: 0.4,
+            yAxisID: 'y1'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        scales: {
+            x: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Month'
+                }
+            },
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Number of Projects'
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: 'Funding ($)'
+                },
+                grid: {
+                    drawOnChartArea: false,
+                },
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 

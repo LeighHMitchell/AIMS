@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@radix-ui/react-label": "^2.1.7",
+    "date-fns": "^4.1.0",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0",
+    "react-select": "^5.10.1"
+  }
+}

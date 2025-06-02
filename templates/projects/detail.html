@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ project.title }} - AIMS{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-2">{{ project.title }}</h1>
+            <p class="text-muted mb-0">{{ project.iati_identifier }}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'project_dashboard' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-2"></i>Back to Projects
+            </a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'edit_project' project.id %}" class="btn btn-primary">
+                    <i class="fas fa-edit me-2"></i>Edit Project
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- Project Overview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Project Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Description:</strong></p>
+                        <p class="text-muted">{{ project.description }}</p>
+                        
+                        <p><strong>Implementing Organization:</strong></p>
+                        <p class="text-muted">{{ project.implementing_organization.name }}</p>
+                        
+                        <p><strong>Sector:</strong></p>
+                        <p class="text-muted">{{ project.sector.name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Country:</strong></p>
+                        <p class="text-muted">{{ project.country.name }}</p>
+                        
+                        <p><strong>Start Date:</strong></p>
+                        <p class="text-muted">{{ project.start_date|date:"F d, Y" }}</p>
+                        
+                        <p><strong>End Date:</strong></p>
+                        <p class="text-muted">{{ project.end_date|date:"F d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Financial Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h3 class="text-primary">${{ project.total_budget|floatformat:0 }}</h3>
+                            <p class="text-muted mb-0">Total Budget</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h3 class="text-success">${{ project.disbursed_amount|floatformat:0 }}</h3>
+                            <p class="text-muted mb-0">Disbursed</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h3 class="text-warning">${{ project.committed_amount|floatformat:0 }}</h3>
+                            <p class="text-muted mb-0">Committed</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Budget Utilization</span>
+                        <span>{{ project.progress_percentage|floatformat:1 }}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ project.progress_percentage }}%"
+                             aria-valuenow="{{ project.progress_percentage }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Breakdown -->
+        {% if budget_items %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Budget Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Planned Amount</th>
+                                <th>Actual Amount</th>
+                                <th>Variance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in budget_items %}
+                            <tr>
+                                <td>{{ item.category }}</td>
+                                <td>${{ item.planned_amount|floatformat:0 }}</td>
+                                <td>${{ item.actual_amount|floatformat:0 }}</td>
+                                <td>
+                                    {% if item.actual_amount > item.planned_amount %}
+                                        <span class="text-danger">
+                                            +${{ item.actual_amount|add:item.planned_amount|floatformat:0 }}
+                                        </span>
+                                    {% elif item.actual_amount < item.planned_amount %}
+                                        <span class="text-success">
+                                            -${{ item.planned_amount|add:item.actual_amount|floatformat:0 }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">$0</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Milestones -->
+        {% if milestones %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Project Milestones</h5>
+            </div>
+            <div class="card-body">
+                {% for milestone in milestones %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="me-3">
+                        {% if milestone.is_completed %}
+                            <i class="fas fa-check-circle text-success fa-lg"></i>
+                        {% else %}
+                            <i class="far fa-circle text-muted fa-lg"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">{{ milestone.title }}</h6>
+                        <p class="text-muted mb-1">{{ milestone.description }}</p>
+                        <small class="text-muted">Due: {{ milestone.due_date|date:"F d, Y" }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Project Status -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-flag me-2"></i>Project Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    {% if project.status == 'active' %}
+                        <span class="badge bg-success fs-6 mb-3">Active</span>
+                    {% elif project.status == 'completed' %}
+                        <span class="badge bg-primary fs-6 mb-3">Completed</span>
+                    {% elif project.status == 'suspended' %}
+                        <span class="badge bg-warning fs-6 mb-3">Suspended</span>
+                    {% else %}
+                        <span class="badge bg-secondary fs-6 mb-3">{{ project.get_status_display }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h6 class="text-muted">Progress</h6>
+                        <h4 class="text-primary">{{ project.progress_percentage|floatformat:0 }}%</h4>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-muted">Beneficiaries</h6>
+                        <h4 class="text-success">{{ project.beneficiaries|default:"N/A" }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Donor Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-handshake me-2"></i>Donor</h5>
+            </div>
+            <div class="card-body">
+                <h6>{{ project.donor.name }}</h6>
+                <p class="text-muted mb-2">{{ project.donor.country }}</p>
+                <p class="text-muted small">{{ project.donor.description }}</p>
+                
+                {% if project.donor.website %}
+                <a href="{{ project.donor.website }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-external-link-alt me-1"></i>Visit Website
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Documents -->
+        {% if documents %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Documents</h5>
+            </div>
+            <div class="card-body">
+                {% for doc in documents %}
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-file-pdf text-danger me-2"></i>
+                    <div>
+                        <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
+                            {{ doc.title }}
+                        </a>
+                        <br>
+                        <small class="text-muted">{{ doc.uploaded_at|date:"M d, Y" }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions -->
+        {% if user.is_authenticated %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'edit_project' project.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>Edit Project
+                    </a>
+                    <button class="btn btn-outline-success" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>Print Report
+                    </button>
+                    <a href="{% url 'project_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list me-2"></i>All Projects
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 
