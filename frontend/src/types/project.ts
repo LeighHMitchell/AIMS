@@ -53,6 +53,13 @@ export interface Project {
   updatedAt: string;
 }
 
+// Project Match type for similarity detection
+export interface ProjectMatch {
+  project: Project;
+  score: number;
+  matchReasons: string[];
+}
+
 // Project Contributor type
 export interface ProjectContributor {
   id: string;
