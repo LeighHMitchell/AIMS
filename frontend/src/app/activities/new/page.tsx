@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, Suspense } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useRouter, useSearchParams } from "next/navigation";
 import FinancesSection from "@/components/FinancesSection";
@@ -313,7 +313,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
   }
 }
 
-export default function NewActivityPage() {
+function NewActivityPageContent() {
   const { user } = useUser();
   
   // Debug logging for user role
@@ -1074,5 +1074,13 @@ export default function NewActivityPage() {
         </DialogContent>
       </Dialog>
     </MainLayout>
+  );
+}
+
+export default function NewActivityPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <NewActivityPageContent />
+    </Suspense>
   );
 }

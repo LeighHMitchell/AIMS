@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -46,7 +46,7 @@ interface OrganizationGroup {
   updatedByName?: string;
 }
 
-export default function OrganizationGroupsPage() {
+function OrganizationGroupsPageContent() {
   const { user } = useUser();
   const { partners } = usePartners();
   const searchParams = useSearchParams();
@@ -738,5 +738,13 @@ export default function OrganizationGroupsPage() {
         </DialogContent>
       </Dialog>
     </MainLayout>
+  );
+}
+
+export default function OrganizationGroupsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <OrganizationGroupsPageContent />
+    </Suspense>
   );
 } 
