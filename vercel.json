@@ -1,9 +1,7 @@
 {
-  "framework": null,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/next"
-    }
-  ]
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/.next",
+  "framework": "nextjs",
+  "installCommand": "echo 'Skipping install'",
+  "rootDirectory": "."
 } 
