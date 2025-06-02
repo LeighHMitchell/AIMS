@@ -1,4 +1,13 @@
 {
+  "name": "aims-project",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm run start",
+    "lint": "cd frontend && npm run lint"
+  },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.7",
     "date-fns": "^4.1.0",
