@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering to ensure environment variables are always loaded
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   return NextResponse.json({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing',

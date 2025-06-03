@@ -2,6 +2,9 @@ import { NextResponse, NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { ActivityLogger } from '@/lib/activity-logger';
 
+// Force dynamic rendering to ensure environment variables are always loaded
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

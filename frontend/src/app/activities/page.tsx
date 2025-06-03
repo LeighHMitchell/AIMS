@@ -298,12 +298,12 @@ export default function ActivitiesPage() {
                   Export All Activities
                 </Button>
               )}
-              {user && (
+              {/* {user && ( */}
                 <Button onClick={() => router.push("/activities/new")}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Activity
                 </Button>
-              )}
+              {/* )} */}
             </div>
           </div>
 

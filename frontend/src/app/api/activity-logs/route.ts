@@ -17,6 +17,9 @@ export interface ActivityLog {
   metadata?: any;
 }
 
+// Force dynamic rendering to ensure environment variables are always loaded
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

@@ -23,6 +23,9 @@ export interface Partner {
   updatedAt?: string;
 }
 
+// Force dynamic rendering to ensure environment variables are always loaded
+export const dynamic = 'force-dynamic';
+
 // GET /api/partners
 export async function GET() {
   try {

@@ -3,6 +3,9 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { findSimilarProjects } from '@/lib/project-matching';
 import { PROJECT_STATUS } from '@/types/project';
 
+// Force dynamic rendering to ensure environment variables are always loaded
+export const dynamic = 'force-dynamic';
+
 // GET /api/projects - Get all projects or search for similar projects
 export async function GET(request: NextRequest) {
   try {
