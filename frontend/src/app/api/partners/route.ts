@@ -1,116 +1,43 @@
 import { NextResponse, NextRequest } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
+import { supabaseAdmin } from '@/lib/supabase';
 import { ActivityLogger } from '@/lib/activity-logger';
-
-// Define Partner type
-export interface Partner {
-  id: string;
-  name: string;
-  code?: string; // Partner code (e.g., MM-FERD-1)
-  type: 'development_partner' | 'partner_government' | 'bilateral' | 'other';
-  iatiOrgId?: string; // IATI Organisation Identifier
-  fullName?: string; // Official full name
-  acronym?: string; // Short name/abbreviation
-  organisationType?: string; // IATI organisation type code
-  description?: string;
-  website?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  logo?: string; // Base64 encoded image
-  banner?: string; // Base64 encoded image
-  countryRepresented?: string; // Required for bilateral partners
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Path to the data file
-const DATA_FILE_PATH = path.join(process.cwd(), 'data', 'partners.json');
-
-// Ensure data directory exists
-async function ensureDataDirectory() {
-  const dataDir = path.join(process.cwd(), 'data');
-  try {
-    await fs.access(dataDir);
-  } catch {
-    await fs.mkdir(dataDir, { recursive: true });
-  }
-}
-
-// Load partners from file
-async function loadPartners(): Promise<Partner[]> {
-  try {
-    await ensureDataDirectory();
-    const data = await fs.readFile(DATA_FILE_PATH, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.log('[AIMS] No existing partners file found, starting with default partners');
-    // Initialize with some default partners
-    const defaultPartners: Partner[] = [
-      {
-        id: '1',
-        name: 'World Bank',
-        code: 'WB',
-        type: 'development_partner',
-        description: 'International financial institution',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        name: 'UNDP',
-        code: 'UNDP',
-        type: 'development_partner',
-        description: 'United Nations Development Programme',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '3',
-        name: 'Ministry of Agriculture, Livestock and Irrigation',
-        code: 'MM-FERD-1',
-        type: 'partner_government',
-        description: 'Government ministry responsible for agriculture, livestock and irrigation',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '4',
-        name: 'Ministry of Planning and Finance',
-        code: 'MM-MPF-1',
-        type: 'partner_government',
-        description: 'Government ministry responsible for planning and finance',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '5',
-        name: 'Ministry of Education',
-        code: 'MM-MOE-1',
-        type: 'partner_government',
-        description: 'Government ministry responsible for education',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ];
-    await savePartners(defaultPartners);
-    return defaultPartners;
-  }
-}
-
-// Save partners to file
-async function savePartners(partners: Partner[]): Promise<void> {
-  await ensureDataDirectory();
-  await fs.writeFile(DATA_FILE_PATH, JSON.stringify(partners, null, 2));
-  console.log('[AIMS] Partners saved to file');
-}
 
 // GET /api/partners
 export async function GET() {
   try {
-    const partners = await loadPartners();
-    return NextResponse.json(partners);
+    const { data: partners, error } = await supabaseAdmin
+      .from('partners')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[AIMS] Error loading partners:', error);
+      return NextResponse.json({ error: 'Failed to load partners' }, { status: 500 });
+    }
+
+    // Transform data to match expected format
+    const transformedPartners = partners.map(partner => ({
+      id: partner.id,
+      name: partner.name,
+      code: partner.code,
+      type: partner.type || 'development_partner',
+      iatiOrgId: partner.iati_org_id,
+      fullName: partner.full_name,
+      acronym: partner.acronym,
+      organisationType: partner.organisation_type,
+      description: partner.description,
+      website: partner.website,
+      email: partner.email,
+      phone: partner.phone,
+      address: partner.address,
+      logo: partner.logo,
+      banner: partner.banner,
+      countryRepresented: partner.country_represented,
+      createdAt: partner.created_at,
+      updatedAt: partner.updated_at,
+    }));
+
+    return NextResponse.json(transformedPartners);
   } catch (error) {
     console.error('[AIMS] Error loading partners:', error);
     return NextResponse.json({ error: 'Failed to load partners' }, { status: 500 });
@@ -121,14 +48,26 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const partners = await loadPartners();
+    
+    // Check if partner with same name already exists
+    const { data: existingPartners } = await supabaseAdmin
+      .from('partners')
+      .select('id')
+      .ilike('name', body.name);
+    
+    if (existingPartners && existingPartners.length > 0) {
+      return NextResponse.json({ error: 'Partner with this name already exists' }, { status: 400 });
+    }
     
     // Create new partner
-    const newPartner: Partner = {
-      id: body.id || Math.random().toString(36).substring(7),
+    const partnerData = {
       name: body.name,
       code: body.code,
       type: body.type || 'development_partner',
+      iati_org_id: body.iatiOrgId,
+      full_name: body.fullName,
+      acronym: body.acronym,
+      organisation_type: body.organisationType,
       description: body.description,
       website: body.website,
       email: body.email,
@@ -136,19 +75,20 @@ export async function POST(request: Request) {
       address: body.address,
       logo: body.logo,
       banner: body.banner,
-      countryRepresented: body.countryRepresented,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      country_represented: body.countryRepresented,
+      country: body.country,
     };
     
-    // Check if partner with same name already exists
-    const existingPartner = partners.find(p => p.name.toLowerCase() === newPartner.name.toLowerCase());
-    if (existingPartner) {
-      return NextResponse.json({ error: 'Partner with this name already exists' }, { status: 400 });
-    }
+    const { data: newPartner, error } = await supabaseAdmin
+      .from('partners')
+      .insert([partnerData])
+      .select()
+      .single();
     
-    partners.push(newPartner);
-    await savePartners(partners);
+    if (error) {
+      console.error('[AIMS] Error creating partner:', error);
+      return NextResponse.json({ error: 'Failed to create partner' }, { status: 500 });
+    }
     
     // Log the activity if user information is provided
     if (body.user) {
@@ -156,7 +96,30 @@ export async function POST(request: Request) {
     }
     
     console.log('[AIMS] Created new partner:', newPartner);
-    return NextResponse.json(newPartner, { status: 201 });
+    
+    // Transform the response to match expected format
+    const transformedPartner = {
+      id: newPartner.id,
+      name: newPartner.name,
+      code: newPartner.code,
+      type: newPartner.type,
+      iatiOrgId: newPartner.iati_org_id,
+      fullName: newPartner.full_name,
+      acronym: newPartner.acronym,
+      organisationType: newPartner.organisation_type,
+      description: newPartner.description,
+      website: newPartner.website,
+      email: newPartner.email,
+      phone: newPartner.phone,
+      address: newPartner.address,
+      logo: newPartner.logo,
+      banner: newPartner.banner,
+      countryRepresented: newPartner.country_represented,
+      createdAt: newPartner.created_at,
+      updatedAt: newPartner.updated_at,
+    };
+    
+    return NextResponse.json(transformedPartner, { status: 201 });
   } catch (error) {
     console.error('[AIMS] Error creating partner:', error);
     return NextResponse.json({ error: 'Failed to create partner' }, { status: 500 });
@@ -167,82 +130,131 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const partners = await loadPartners();
     
-    const index = partners.findIndex(p => p.id === body.id);
-    if (index === -1) {
+    // Get the existing partner
+    const { data: existingPartner, error: fetchError } = await supabaseAdmin
+      .from('partners')
+      .select('*')
+      .eq('id', body.id)
+      .single();
+    
+    if (fetchError || !existingPartner) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
-    
-    const originalPartner = partners[index];
     
     // Track what changed for detailed logging
     const changes: string[] = [];
     
     // Check specific field changes
-    if (body.logo !== undefined && body.logo !== originalPartner.logo) {
+    if (body.logo !== undefined && body.logo !== existingPartner.logo) {
       changes.push(body.logo ? 'uploaded new logo' : 'removed logo');
     }
     
-    if (body.banner !== undefined && body.banner !== originalPartner.banner) {
+    if (body.banner !== undefined && body.banner !== existingPartner.banner) {
       changes.push(body.banner ? 'uploaded new banner' : 'removed banner');
     }
     
-    if (body.name !== originalPartner.name) {
-      changes.push(`changed name from "${originalPartner.name}" to "${body.name}"`);
+    if (body.name !== existingPartner.name) {
+      changes.push(`changed name from "${existingPartner.name}" to "${body.name}"`);
     }
     
-    if (body.description !== originalPartner.description) {
+    if (body.description !== existingPartner.description) {
       changes.push('updated description');
     }
     
-    if (body.website !== originalPartner.website) {
+    if (body.website !== existingPartner.website) {
       changes.push('updated website');
     }
     
-    if (body.email !== originalPartner.email) {
+    if (body.email !== existingPartner.email) {
       changes.push('updated email');
     }
     
-    if (body.phone !== originalPartner.phone) {
+    if (body.phone !== existingPartner.phone) {
       changes.push('updated phone');
     }
     
-    if (body.address !== originalPartner.address) {
+    if (body.address !== existingPartner.address) {
       changes.push('updated address');
     }
     
-    if (body.type !== originalPartner.type) {
-      changes.push(`changed type from "${originalPartner.type}" to "${body.type}"`);
+    if (body.type !== existingPartner.type) {
+      changes.push(`changed type from "${existingPartner.type}" to "${body.type}"`);
     }
     
-    if (body.countryRepresented !== originalPartner.countryRepresented) {
+    if (body.countryRepresented !== existingPartner.country_represented) {
       changes.push(`updated country represented to "${body.countryRepresented}"`);
     }
     
     // Update partner
-    partners[index] = {
-      ...partners[index],
-      ...body,
-      updatedAt: new Date().toISOString(),
+    const updateData = {
+      name: body.name,
+      code: body.code,
+      type: body.type,
+      iati_org_id: body.iatiOrgId,
+      full_name: body.fullName,
+      acronym: body.acronym,
+      organisation_type: body.organisationType,
+      description: body.description,
+      website: body.website,
+      email: body.email,
+      phone: body.phone,
+      address: body.address,
+      logo: body.logo,
+      banner: body.banner,
+      country_represented: body.countryRepresented,
+      country: body.country,
     };
     
-    await savePartners(partners);
+    const { data: updatedPartner, error: updateError } = await supabaseAdmin
+      .from('partners')
+      .update(updateData)
+      .eq('id', body.id)
+      .select()
+      .single();
+    
+    if (updateError) {
+      console.error('[AIMS] Error updating partner:', updateError);
+      return NextResponse.json({ error: 'Failed to update partner' }, { status: 500 });
+    }
     
     // Log the activity if user information is provided
     if (body.user && changes.length > 0) {
       await ActivityLogger.partnerUpdated(
-        partners[index], 
+        updatedPartner, 
         body.user,
         {
           changes: changes.join(', '),
-          details: `Updated ${partners[index].name}: ${changes.join(', ')}`
+          details: `Updated ${updatedPartner.name}: ${changes.join(', ')}`
         }
       );
     }
     
-    console.log('[AIMS] Updated partner:', partners[index]);
-    return NextResponse.json(partners[index]);
+    console.log('[AIMS] Updated partner:', updatedPartner);
+    
+    // Transform the response to match expected format
+    const transformedPartner = {
+      id: updatedPartner.id,
+      name: updatedPartner.name,
+      code: updatedPartner.code,
+      type: updatedPartner.type,
+      iatiOrgId: updatedPartner.iati_org_id,
+      fullName: updatedPartner.full_name,
+      acronym: updatedPartner.acronym,
+      organisationType: updatedPartner.organisation_type,
+      description: updatedPartner.description,
+      website: updatedPartner.website,
+      email: updatedPartner.email,
+      phone: updatedPartner.phone,
+      address: updatedPartner.address,
+      logo: updatedPartner.logo,
+      banner: updatedPartner.banner,
+      countryRepresented: updatedPartner.country_represented,
+      createdAt: updatedPartner.created_at,
+      updatedAt: updatedPartner.updated_at,
+    };
+    
+    return NextResponse.json(transformedPartner);
   } catch (error) {
     console.error('[AIMS] Error updating partner:', error);
     return NextResponse.json({ error: 'Failed to update partner' }, { status: 500 });
@@ -259,19 +271,30 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Partner ID required' }, { status: 400 });
     }
     
-    const partners = await loadPartners();
-    const index = partners.findIndex(p => p.id === id);
+    // Get the partner before deletion
+    const { data: partner, error: fetchError } = await supabaseAdmin
+      .from('partners')
+      .select('*')
+      .eq('id', id)
+      .single();
     
-    if (index === -1) {
+    if (fetchError || !partner) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
     
-    const deletedPartner = partners[index];
-    partners.splice(index, 1);
-    await savePartners(partners);
+    // Delete the partner
+    const { error: deleteError } = await supabaseAdmin
+      .from('partners')
+      .delete()
+      .eq('id', id);
     
-    console.log('[AIMS] Deleted partner:', deletedPartner);
-    return NextResponse.json({ message: 'Partner deleted successfully', partner: deletedPartner });
+    if (deleteError) {
+      console.error('[AIMS] Error deleting partner:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete partner' }, { status: 500 });
+    }
+    
+    console.log('[AIMS] Deleted partner:', partner);
+    return NextResponse.json({ message: 'Partner deleted successfully', partner });
   } catch (error) {
     console.error('[AIMS] Error deleting partner:', error);
     return NextResponse.json({ error: 'Failed to delete partner' }, { status: 500 });
