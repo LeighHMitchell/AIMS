@@ -2,19 +2,16 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  skipTrailingSlashRedirect: true,
   
-  // Increase the default timeout for API routes
-  api: {
-    responseLimit: false,
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
+  // Disable static exports for error pages
+  generateBuildId: async () => {
+    // Use a timestamp as build ID for consistency
+    return Date.now().toString()
   },
   
   // Experimental features to improve stability
   experimental: {
-    // Improves hot reload performance
-    optimizeCss: true,
     // Better error handling in development
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
