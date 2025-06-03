@@ -1,33 +1,74 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-// Log configuration status
-if (typeof window === 'undefined') {
+// Log configuration status only once
+let hasLoggedConfig = false
+if (typeof window === 'undefined' && !hasLoggedConfig) {
   console.log('[Supabase] Configuration status:')
   console.log('- NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing')
   console.log('- NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓ Set' : '✗ Missing')
   console.log('- SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceRoleKey ? '✓ Set' : '✗ Missing')
+  hasLoggedConfig = true
+}
+
+// Create a singleton instance for the admin client
+let _supabaseAdmin: any = null
+
+// Helper function to create admin client with proper error handling
+function createAdminClient() {
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    console.error('[Supabase] Missing required environment variables for admin client')
+    return null
+  }
+
+  try {
+    return createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      db: {
+        schema: 'public'
+      },
+      global: {
+        headers: {
+          'x-supabase-request-source': 'server'
+        }
+      }
+    })
+  } catch (error) {
+    console.error('[Supabase] Error creating admin client:', error)
+    return null
+  }
 }
 
 // Client-side Supabase client (uses anon key)
 export const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null as any
-
-// Server-side Supabase client (uses service role key)
-// Only use this in server-side code (API routes, server components)
-export const supabaseAdmin = (supabaseUrl && supabaseServiceRoleKey)
-  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+  ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
-        autoRefreshToken: false,
-        persistSession: false
+        persistSession: true,
+        autoRefreshToken: true,
       }
     })
   : null as any
+
+// Server-side Supabase client with singleton pattern
+export const supabaseAdmin = (() => {
+  if (typeof window !== 'undefined') {
+    // Don't create admin client on client-side
+    return null as any
+  }
+  
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createAdminClient()
+  }
+  
+  return _supabaseAdmin
+})()
 
 // Database types (you can generate these from Supabase later)
 export type Database = {
