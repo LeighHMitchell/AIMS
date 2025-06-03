@@ -6,9 +6,27 @@ import { PROJECT_STATUS } from '@/types/project';
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
 
+// Handle OPTIONS requests for CORS
+export async function OPTIONS() {
+  const response = new NextResponse(null, { status: 200 });
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return response;
+}
+
 // GET /api/projects - Get all projects or search for similar projects
 export async function GET(request: NextRequest) {
   try {
+    // Check if supabaseAdmin is properly initialized
+    if (!supabaseAdmin) {
+      console.error('[AIMS] supabaseAdmin is not initialized');
+      return NextResponse.json(
+        { error: 'Database connection not initialized' },
+        { status: 500 }
+      );
+    }
+    
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
     const similarTo = searchParams.get('similarTo');

@@ -26,9 +26,27 @@ export interface Partner {
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
 
+// Handle OPTIONS requests for CORS
+export async function OPTIONS() {
+  const response = new NextResponse(null, { status: 200 });
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return response;
+}
+
 // GET /api/partners
 export async function GET() {
   try {
+    // Check if supabaseAdmin is properly initialized
+    if (!supabaseAdmin) {
+      console.error('[AIMS] supabaseAdmin is not initialized');
+      return NextResponse.json(
+        { error: 'Database connection not initialized' },
+        { status: 500 }
+      );
+    }
+    
     const { data: partners, error } = await supabaseAdmin
       .from('partners')
       .select('*')
@@ -61,7 +79,14 @@ export async function GET() {
       updatedAt: partner.updated_at,
     }));
 
-    return NextResponse.json(transformedPartners);
+    const response = NextResponse.json(transformedPartners);
+    
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    return response;
   } catch (error) {
     console.error('[AIMS] Error loading partners:', error);
     return NextResponse.json({ error: 'Failed to load partners' }, { status: 500 });
@@ -71,13 +96,30 @@ export async function GET() {
 // POST /api/partners
 export async function POST(request: Request) {
   try {
+    console.log('[AIMS] POST /api/partners - Starting request');
+    
+    // Check if supabaseAdmin is properly initialized
+    if (!supabaseAdmin) {
+      console.error('[AIMS] supabaseAdmin is not initialized');
+      return NextResponse.json(
+        { error: 'Database connection not initialized' },
+        { status: 500 }
+      );
+    }
+    
     const body = await request.json();
+    console.log('[AIMS] Creating partner with name:', body.name);
     
     // Check if partner with same name already exists
-    const { data: existingPartners } = await supabaseAdmin
+    const { data: existingPartners, error: checkError } = await supabaseAdmin
       .from('partners')
       .select('id')
       .ilike('name', body.name);
+    
+    if (checkError) {
+      console.error('[AIMS] Error checking existing partners:', checkError);
+      return NextResponse.json({ error: 'Failed to check existing partners' }, { status: 500 });
+    }
     
     if (existingPartners && existingPartners.length > 0) {
       return NextResponse.json({ error: 'Partner with this name already exists' }, { status: 400 });
@@ -143,7 +185,14 @@ export async function POST(request: Request) {
       updatedAt: newPartner.updated_at,
     };
     
-    return NextResponse.json(transformedPartner, { status: 201 });
+    const response = NextResponse.json(transformedPartner, { status: 201 });
+    
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    return response;
   } catch (error) {
     console.error('[AIMS] Error creating partner:', error);
     return NextResponse.json({ error: 'Failed to create partner' }, { status: 500 });
