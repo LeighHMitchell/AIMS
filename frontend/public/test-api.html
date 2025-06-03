@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test API Endpoints</h1>
+    
+    <div>
+        <h2>Test Activities API</h2>
+        <button onclick="testCreateActivity()">Create Test Activity</button>
+        <button onclick="testGetActivities()">Get All Activities</button>
+        <button onclick="testApiHealth()">Test API Health</button>
+    </div>
+    
+    <div id="result"></div>
+    
+    <script>
+        const resultDiv = document.getElementById('result');
+        
+        function showResult(data, isError = false) {
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+            resultDiv.className = isError ? 'error' : 'success';
+        }
+        
+        async function testCreateActivity() {
+            try {
+                const response = await fetch('/api/activities', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: 'Test Activity ' + new Date().toISOString(),
+                        description: 'Created from test page',
+                        activityStatus: 'planning',
+                        publicationStatus: 'draft'
+                    })
+                });
+                
+                const data = await response.json();
+                showResult({
+                    status: response.status,
+                    ok: response.ok,
+                    data: data
+                }, !response.ok);
+            } catch (error) {
+                showResult({
+                    error: error.message,
+                    type: error.name
+                }, true);
+            }
+        }
+        
+        async function testGetActivities() {
+            try {
+                const response = await fetch('/api/activities');
+                const data = await response.json();
+                showResult({
+                    status: response.status,
+                    ok: response.ok,
+                    count: Array.isArray(data) ? data.length : 'Not an array',
+                    data: data
+                }, !response.ok);
+            } catch (error) {
+                showResult({
+                    error: error.message,
+                    type: error.name
+                }, true);
+            }
+        }
+        
+        async function testApiHealth() {
+            try {
+                const response = await fetch('/api/test');
+                const data = await response.json();
+                showResult({
+                    status: response.status,
+                    ok: response.ok,
+                    data: data
+                }, !response.ok);
+            } catch (error) {
+                showResult({
+                    error: error.message,
+                    type: error.name
+                }, true);
+            }
+        }
+    </script>
+</body>
+</html> 
