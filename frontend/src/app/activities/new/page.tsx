@@ -26,7 +26,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { findSimilarActivities, ActivityMatch } from "@/lib/activity-matching";
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions";
-import { Partner } from "@/app/api/partners/route";
+import { Partner } from "@/hooks/usePartners";
 
 function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, permissions }: any) {
   switch (section) {

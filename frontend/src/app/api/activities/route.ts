@@ -281,7 +281,7 @@ export async function GET() {
     }
 
     // Transform the data to match the expected format
-    const transformedActivities = activities.map(activity => ({
+    const transformedActivities = activities.map((activity: any) => ({
       ...activity,
       sectors: activity.activity_sectors,
       transactions: activity.transactions,

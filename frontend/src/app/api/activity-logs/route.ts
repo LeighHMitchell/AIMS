@@ -1,6 +1,22 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+export interface ActivityLog {
+  id: string;
+  actionType: string;
+  entityType: string;
+  entityId: string;
+  activityId?: string;
+  activityTitle?: string;
+  user: {
+    id: string;
+    name: string;
+    role: string;
+  };
+  timestamp: string;
+  metadata?: any;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -105,7 +121,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Transform logs to match expected format
-    const transformedLogs = logs.map(log => ({
+    const transformedLogs = logs.map((log: any) => ({
       id: log.id,
       actionType: log.action,
       entityType: log.details?.entityType || 'activity',

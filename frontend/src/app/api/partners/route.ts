@@ -2,6 +2,27 @@ import { NextResponse, NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { ActivityLogger } from '@/lib/activity-logger';
 
+export interface Partner {
+  id: string;
+  name: string;
+  code?: string;
+  type?: string;
+  iatiOrgId?: string;
+  fullName?: string;
+  acronym?: string;
+  organisationType?: string;
+  description?: string;
+  website?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  logo?: string;
+  banner?: string;
+  countryRepresented?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // GET /api/partners
 export async function GET() {
   try {
@@ -16,7 +37,7 @@ export async function GET() {
     }
 
     // Transform data to match expected format
-    const transformedPartners = partners.map(partner => ({
+    const transformedPartners = partners.map((partner: any) => ({
       id: partner.id,
       name: partner.name,
       code: partner.code,

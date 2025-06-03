@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to match expected format
-    const transformedProjects = projects.map(project => ({
+    const transformedProjects = projects.map((project: any) => ({
       id: project.id,
       title: project.name, // map name to title
       description: project.description,
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       .select('*');
     
     if (existingProjects) {
-      const transformedExisting = existingProjects.map(p => ({
+      const transformedExisting = existingProjects.map((p: any) => ({
         id: p.id,
         title: p.name,
         description: p.description,
