@@ -5,6 +5,15 @@ import { ActivityLogger } from '@/lib/activity-logger';
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
 
+// Handle OPTIONS requests for CORS
+export async function OPTIONS() {
+  const response = new NextResponse(null, { status: 200 });
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return response;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -251,6 +260,23 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
+    // Debug logging
+    console.log('[AIMS] GET /api/activities - Starting request');
+    console.log('[AIMS] Environment check:', {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing',
+      anon: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
+      service: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Set' : 'Missing',
+    });
+    
+    // Check if supabaseAdmin is properly initialized
+    if (!supabaseAdmin) {
+      console.error('[AIMS] supabaseAdmin is not initialized');
+      return NextResponse.json(
+        { error: 'Database connection not initialized' },
+        { status: 500 }
+      );
+    }
+    
     // Fetch activities with related data
     const { data: activities, error } = await supabaseAdmin
       .from('activities')
@@ -305,7 +331,14 @@ export async function GET() {
       updatedAt: activity.updated_at,
     }));
 
-    return NextResponse.json(transformedActivities);
+    const response = NextResponse.json(transformedActivities);
+    
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    return response;
   } catch (error) {
     console.error('[AIMS] Error fetching activities:', error);
     return NextResponse.json(

@@ -5,23 +5,18 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-// Create a dummy client if environment variables are missing
-const createDummyClient = () => {
-  console.error('[Supabase] Missing environment variables. Using dummy client.')
-  return {
-    from: () => ({
-      select: () => Promise.resolve({ data: [], error: { message: 'Supabase not configured' } }),
-      insert: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-      update: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-      delete: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-    }),
-  } as any
+// Log configuration status
+if (typeof window === 'undefined') {
+  console.log('[Supabase] Configuration status:')
+  console.log('- NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing')
+  console.log('- NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓ Set' : '✗ Missing')
+  console.log('- SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceRoleKey ? '✓ Set' : '✗ Missing')
 }
 
 // Client-side Supabase client (uses anon key)
 export const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey)
-  : createDummyClient()
+  : null as any
 
 // Server-side Supabase client (uses service role key)
 // Only use this in server-side code (API routes, server components)
@@ -32,15 +27,7 @@ export const supabaseAdmin = (supabaseUrl && supabaseServiceRoleKey)
         persistSession: false
       }
     })
-  : createDummyClient()
-
-// Log configuration status
-if (typeof window === 'undefined') {
-  console.log('[Supabase] Configuration status:')
-  console.log('- NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing')
-  console.log('- NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓ Set' : '✗ Missing')
-  console.log('- SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceRoleKey ? '✓ Set' : '✗ Missing')
-}
+  : null as any
 
 // Database types (you can generate these from Supabase later)
 export type Database = {
