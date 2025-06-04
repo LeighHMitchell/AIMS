@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,25 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { mockUsers } from "@/hooks/useUser";
 import { ROLE_LABELS, USER_ROLES } from "@/types/user";
 import { Building2, Lock, User, AlertCircle, LogIn, Shield } from "lucide-react";
 import { toast } from "sonner";
+
+interface DBUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  organization_id: string | null;
+  organization: {
+    id: string;
+    name: string;
+    type: string;
+    country: string;
+  } | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,9 +36,29 @@ export default function LoginPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [users, setUsers] = useState<DBUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
 
-  // Filter out inactive users
-  const activeUsers = mockUsers.filter(u => u.isActive);
+  // Fetch users from API for development mode
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(data);
+        } else {
+          console.error('Failed to fetch users');
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    
+    fetchUsers();
+  }, []);
 
   const handleProductionLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,22 +66,45 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // In production, this would make an API call to authenticate
-      // For now, we'll simulate login with mock data
-      const user = mockUsers.find(u => u.email === email && u.isActive);
+      // Fetch user by email
+      const response = await fetch(`/api/users?email=${encodeURIComponent(email)}`);
       
-      if (!user) {
-        throw new Error("Invalid email or password");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Invalid email or password");
+        }
+        throw new Error("Login failed");
       }
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const user = await response.json();
       
-      // Set the user in localStorage directly
-      localStorage.setItem('aims_user', JSON.stringify(user));
+      // For now, we're not checking passwords since the DB doesn't have them
+      // In production, you'd implement proper authentication
       
-      // Update last login
-      user.lastLogin = new Date().toISOString();
+      // Transform DB user to app user format
+      const appUser = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        title: user.role.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+        role: user.role,
+        organizationId: user.organization_id,
+        organization: user.organization ? {
+          id: user.organization.id,
+          name: user.organization.name,
+          type: user.organization.type,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } : undefined,
+        phone: "",
+        isActive: true,
+        lastLogin: new Date().toISOString(),
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+      };
+      
+      // Set the user in localStorage
+      localStorage.setItem('aims_user', JSON.stringify(appUser));
       
       toast.success(`Welcome back, ${user.name}!`);
       // Force a hard navigation to ensure the app reloads with the new user
@@ -64,12 +122,33 @@ export default function LoginPage() {
       return;
     }
 
-    const user = mockUsers.find(u => u.id === selectedUserId);
+    const user = users.find(u => u.id === selectedUserId);
     if (user) {
-      // Set the user in localStorage directly
-      localStorage.setItem('aims_user', JSON.stringify(user));
-      user.lastLogin = new Date().toISOString();
-      toast.success(`Logged in as ${user.name} (${ROLE_LABELS[user.role]})`);
+      // Transform DB user to app user format
+      const appUser = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        title: user.role.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+        role: user.role,
+        organizationId: user.organization_id,
+        organization: user.organization ? {
+          id: user.organization.id,
+          name: user.organization.name,
+          type: user.organization.type,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } : undefined,
+        phone: "",
+        isActive: true,
+        lastLogin: new Date().toISOString(),
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+      };
+      
+      // Set the user in localStorage
+      localStorage.setItem('aims_user', JSON.stringify(appUser));
+      toast.success(`Logged in as ${user.name} (${ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]})`);
       // Force a hard navigation to ensure the app reloads with the new user
       window.location.href = "/dashboard";
     }
@@ -170,15 +249,15 @@ export default function LoginPage() {
                 <div className="space-y-2 text-sm">
                   <div className="p-3 bg-muted rounded-lg">
                     <p className="font-medium">Super User</p>
-                    <p className="text-muted-foreground">john@example.com / password</p>
+                    <p className="text-muted-foreground">john@example.com / any password</p>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
-                    <p className="font-medium">Dev Partner Tier 1</p>
-                    <p className="text-muted-foreground">jane@worldbank.org / password</p>
+                    <p className="font-medium">Admin (World Bank)</p>
+                    <p className="text-muted-foreground">jane@worldbank.org / any password</p>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
-                    <p className="font-medium">Orphan User</p>
-                    <p className="text-muted-foreground">emily@example.com / password</p>
+                    <p className="font-medium">Viewer (No Org)</p>
+                    <p className="text-muted-foreground">emily@example.com / any password</p>
                   </div>
                 </div>
               </TabsContent>
@@ -200,33 +279,39 @@ export default function LoginPage() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Select User</label>
-                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a user to log in as" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeUsers.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          <div className="flex items-center justify-between w-full">
-                            <div>
-                              <p className="font-medium">{user.name}</p>
-                              <p className="text-sm text-muted-foreground">{user.email}</p>
+                  {loadingUsers ? (
+                    <div className="text-center py-4 text-muted-foreground">
+                      Loading users...
+                    </div>
+                  ) : (
+                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a user to log in as" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <div>
+                                <p className="font-medium">{user.name}</p>
+                                <p className="text-sm text-muted-foreground">{user.email}</p>
+                              </div>
+                              <Badge variant={user.role === "super_user" ? "destructive" : "secondary"}>
+                                {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
+                              </Badge>
                             </div>
-                            <Badge variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"}>
-                              {ROLE_LABELS[user.role]}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 {selectedUserId && (
                   <Card className="bg-muted">
                     <CardContent className="pt-6">
                       {(() => {
-                        const selectedUser = activeUsers.find(u => u.id === selectedUserId);
+                        const selectedUser = users.find(u => u.id === selectedUserId);
                         if (!selectedUser) return null;
                         
                         return (
@@ -235,14 +320,16 @@ export default function LoginPage() {
                               <User className="h-10 w-10 text-muted-foreground" />
                               <div>
                                 <p className="font-medium">{selectedUser.name}</p>
-                                <p className="text-sm text-muted-foreground">{selectedUser.title}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {selectedUser.role.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                                </p>
                               </div>
                             </div>
                             <div className="space-y-2 text-sm">
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">Role:</span>
-                                <Badge variant={selectedUser.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"}>
-                                  {ROLE_LABELS[selectedUser.role]}
+                                <Badge variant={selectedUser.role === "super_user" ? "destructive" : "secondary"}>
+                                  {ROLE_LABELS[selectedUser.role as keyof typeof ROLE_LABELS] || selectedUser.role}
                                 </Badge>
                               </div>
                               <div className="flex justify-between">
@@ -262,7 +349,7 @@ export default function LoginPage() {
                 <Button 
                   onClick={handleDevelopmentLogin} 
                   className="w-full"
-                  disabled={!selectedUserId}
+                  disabled={!selectedUserId || loadingUsers}
                 >
                   <LogIn className="h-4 w-4 mr-2" />
                   Log In as Selected User
