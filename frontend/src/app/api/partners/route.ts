@@ -1,5 +1,5 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { ActivityLogger } from '@/lib/activity-logger';
 
 export interface Partner {
@@ -26,6 +26,24 @@ export interface Partner {
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
 
+// Create Supabase admin client
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    console.error('[AIMS] Missing Supabase environment variables');
+    throw new Error('Missing required environment variables');
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
+
 // Handle OPTIONS requests for CORS
 export async function OPTIONS() {
   const response = new NextResponse(null, { status: 200 });
@@ -36,340 +54,239 @@ export async function OPTIONS() {
 }
 
 // GET /api/partners
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Check if supabaseAdmin is properly initialized
-    if (!supabaseAdmin) {
-      console.error('[AIMS] supabaseAdmin is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
+    console.log('[AIMS] GET /api/partners (using organizations table)');
     
-    const { data: partners, error } = await supabaseAdmin
-      .from('partners')
+    // Create Supabase client
+    const supabaseAdmin = getSupabaseAdmin();
+    
+    // Query organizations table instead of partners
+    const { data, error } = await supabaseAdmin
+      .from('organizations')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('name');
 
     if (error) {
-      console.error('[AIMS] Error loading partners:', error);
-      return NextResponse.json({ error: 'Failed to load partners' }, { status: 500 });
+      console.error('[AIMS] Error fetching organizations:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform data to match expected format
-    const transformedPartners = partners.map((partner: any) => ({
-      id: partner.id,
-      name: partner.name,
-      code: partner.code,
-      type: partner.type || 'development_partner',
-      iatiOrgId: partner.iati_org_id,
-      fullName: partner.full_name,
-      acronym: partner.acronym,
-      organisationType: partner.organisation_type,
-      description: partner.description,
-      website: partner.website,
-      email: partner.email,
-      phone: partner.phone,
-      address: partner.address,
-      logo: partner.logo,
-      banner: partner.banner,
-      countryRepresented: partner.country_represented,
-      createdAt: partner.created_at,
-      updatedAt: partner.updated_at,
-    }));
+    console.log('[AIMS] Found organizations:', data?.length || 0);
 
-    const response = NextResponse.json(transformedPartners);
-    
-    // Add CORS headers
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    
-    return response;
+    // Transform to match partner interface if needed
+    const partners = data?.map((org: any) => ({
+      ...org,
+      // Map any missing fields that exist in Partner interface
+      code: org.code || null,
+      iatiOrgId: org.iati_org_id || null,
+      fullName: org.full_name || org.name,
+      acronym: org.acronym || null,
+      organisationType: org.organisation_type || null,
+      countryRepresented: org.country_represented || null,
+    })) || [];
+
+    return NextResponse.json(partners);
   } catch (error) {
-    console.error('[AIMS] Error loading partners:', error);
-    return NextResponse.json({ error: 'Failed to load partners' }, { status: 500 });
+    console.error('[AIMS] Unexpected error in GET /api/partners:', error);
+    console.error('[AIMS] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    return NextResponse.json(
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }
 
 // POST /api/partners
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    console.log('[AIMS] POST /api/partners - Starting request');
-    
-    // Check if supabaseAdmin is properly initialized
-    if (!supabaseAdmin) {
-      console.error('[AIMS] supabaseAdmin is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
-    
     const body = await request.json();
-    console.log('[AIMS] Creating partner with name:', body.name);
-    
-    // Check if partner with same name already exists
-    const { data: existingPartners, error: checkError } = await supabaseAdmin
-      .from('partners')
-      .select('id')
-      .ilike('name', body.name);
-    
-    if (checkError) {
-      console.error('[AIMS] Error checking existing partners:', checkError);
-      return NextResponse.json({ error: 'Failed to check existing partners' }, { status: 500 });
-    }
-    
-    if (existingPartners && existingPartners.length > 0) {
-      return NextResponse.json({ error: 'Partner with this name already exists' }, { status: 400 });
-    }
-    
-    // Create new partner
-    const partnerData = {
+    console.log('[AIMS] POST /api/partners (using organizations table) - Starting request');
+    console.log('[AIMS] Request body:', JSON.stringify(body, null, 2));
+
+    // Create Supabase client
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Prepare data for organizations table
+    const organizationData = {
       name: body.name,
-      code: body.code,
       type: body.type || 'development_partner',
-      iati_org_id: body.iatiOrgId,
-      full_name: body.fullName,
-      acronym: body.acronym,
-      organisation_type: body.organisationType,
-      description: body.description,
-      website: body.website,
-      email: body.email,
-      phone: body.phone,
-      address: body.address,
-      logo: body.logo,
-      banner: body.banner,
-      country_represented: body.countryRepresented,
-      country: body.country,
+      country: body.country || null,
+      email: body.email || null,
+      phone: body.phone || null,
+      address: body.address || null,
+      website: body.website || null,
+      // Additional partner fields
+      code: body.code || null,
+      iati_org_id: body.iatiOrgId || null,
+      full_name: body.fullName || null,
+      acronym: body.acronym || null,
+      organisation_type: body.organisationType || null,
+      description: body.description || null,
+      logo: body.logo || null,
+      banner: body.banner || null,
+      country_represented: body.countryRepresented || null,
     };
-    
-    const { data: newPartner, error } = await supabaseAdmin
-      .from('partners')
-      .insert([partnerData])
+
+    console.log('[AIMS] Creating organization with data:', JSON.stringify(organizationData, null, 2));
+
+    const { data, error } = await supabaseAdmin
+      .from('organizations')
+      .insert([organizationData])
       .select()
       .single();
-    
+
     if (error) {
-      console.error('[AIMS] Error creating partner:', error);
-      return NextResponse.json({ error: 'Failed to create partner' }, { status: 500 });
+      console.error('[AIMS] Error creating organization:', error);
+      return NextResponse.json(
+        { error: error.message, details: error },
+        { status: 400 }
+      );
     }
+
+    console.log('[AIMS] Created new organization:', data);
     
     // Log the activity if user information is provided
     if (body.user) {
-      await ActivityLogger.partnerAdded(newPartner, body.user);
+      await ActivityLogger.partnerAdded(data, body.user);
     }
     
-    console.log('[AIMS] Created new partner:', newPartner);
-    
-    // Transform the response to match expected format
-    const transformedPartner = {
-      id: newPartner.id,
-      name: newPartner.name,
-      code: newPartner.code,
-      type: newPartner.type,
-      iatiOrgId: newPartner.iati_org_id,
-      fullName: newPartner.full_name,
-      acronym: newPartner.acronym,
-      organisationType: newPartner.organisation_type,
-      description: newPartner.description,
-      website: newPartner.website,
-      email: newPartner.email,
-      phone: newPartner.phone,
-      address: newPartner.address,
-      logo: newPartner.logo,
-      banner: newPartner.banner,
-      countryRepresented: newPartner.country_represented,
-      createdAt: newPartner.created_at,
-      updatedAt: newPartner.updated_at,
+    // Transform back to partner format for frontend compatibility
+    const partner = {
+      ...data,
+      iatiOrgId: data.iati_org_id,
+      fullName: data.full_name,
+      organisationType: data.organisation_type,
+      countryRepresented: data.country_represented,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
     };
-    
-    const response = NextResponse.json(transformedPartner, { status: 201 });
-    
-    // Add CORS headers
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    
-    return response;
+
+    return NextResponse.json(partner, { status: 201 });
   } catch (error) {
-    console.error('[AIMS] Error creating partner:', error);
-    return NextResponse.json({ error: 'Failed to create partner' }, { status: 500 });
+    console.error('[AIMS] Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 // PUT /api/partners
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    // Get the existing partner
-    const { data: existingPartner, error: fetchError } = await supabaseAdmin
-      .from('partners')
-      .select('*')
-      .eq('id', body.id)
-      .single();
-    
-    if (fetchError || !existingPartner) {
-      return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
+    const { id, ...updates } = body;
+
+    console.log('[AIMS] PUT /api/partners (using organizations table) - Updating:', id);
+
+    if (!id) {
+      return NextResponse.json({ error: 'Partner ID is required' }, { status: 400 });
     }
-    
-    // Track what changed for detailed logging
-    const changes: string[] = [];
-    
-    // Check specific field changes
-    if (body.logo !== undefined && body.logo !== existingPartner.logo) {
-      changes.push(body.logo ? 'uploaded new logo' : 'removed logo');
-    }
-    
-    if (body.banner !== undefined && body.banner !== existingPartner.banner) {
-      changes.push(body.banner ? 'uploaded new banner' : 'removed banner');
-    }
-    
-    if (body.name !== existingPartner.name) {
-      changes.push(`changed name from "${existingPartner.name}" to "${body.name}"`);
-    }
-    
-    if (body.description !== existingPartner.description) {
-      changes.push('updated description');
-    }
-    
-    if (body.website !== existingPartner.website) {
-      changes.push('updated website');
-    }
-    
-    if (body.email !== existingPartner.email) {
-      changes.push('updated email');
-    }
-    
-    if (body.phone !== existingPartner.phone) {
-      changes.push('updated phone');
-    }
-    
-    if (body.address !== existingPartner.address) {
-      changes.push('updated address');
-    }
-    
-    if (body.type !== existingPartner.type) {
-      changes.push(`changed type from "${existingPartner.type}" to "${body.type}"`);
-    }
-    
-    if (body.countryRepresented !== existingPartner.country_represented) {
-      changes.push(`updated country represented to "${body.countryRepresented}"`);
-    }
-    
-    // Update partner
-    const updateData = {
-      name: body.name,
-      code: body.code,
-      type: body.type,
-      iati_org_id: body.iatiOrgId,
-      full_name: body.fullName,
-      acronym: body.acronym,
-      organisation_type: body.organisationType,
-      description: body.description,
-      website: body.website,
-      email: body.email,
-      phone: body.phone,
-      address: body.address,
-      logo: body.logo,
-      banner: body.banner,
-      country_represented: body.countryRepresented,
-      country: body.country,
+
+    // Create Supabase client
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Map partner fields to organization fields
+    const organizationUpdates = {
+      ...updates,
+      iati_org_id: updates.iatiOrgId || updates.iati_org_id,
+      full_name: updates.fullName || updates.full_name,
+      organisation_type: updates.organisationType || updates.organisation_type,
+      country_represented: updates.countryRepresented || updates.country_represented,
     };
-    
-    const { data: updatedPartner, error: updateError } = await supabaseAdmin
-      .from('partners')
-      .update(updateData)
-      .eq('id', body.id)
+
+    // Remove camelCase fields
+    delete organizationUpdates.iatiOrgId;
+    delete organizationUpdates.fullName;
+    delete organizationUpdates.organisationType;
+    delete organizationUpdates.countryRepresented;
+
+    const { data, error } = await supabaseAdmin
+      .from('organizations')
+      .update(organizationUpdates)
+      .eq('id', id)
       .select()
       .single();
-    
-    if (updateError) {
-      console.error('[AIMS] Error updating partner:', updateError);
-      return NextResponse.json({ error: 'Failed to update partner' }, { status: 500 });
+
+    if (error) {
+      console.error('[AIMS] Error updating organization:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    console.log('[AIMS] Updated organization:', data);
     
     // Log the activity if user information is provided
-    if (body.user && changes.length > 0) {
-      await ActivityLogger.partnerUpdated(
-        updatedPartner, 
-        body.user,
-        {
-          changes: changes.join(', '),
-          details: `Updated ${updatedPartner.name}: ${changes.join(', ')}`
-        }
-      );
+    if (body.user) {
+      await ActivityLogger.partnerUpdated(data, body.user);
     }
     
-    console.log('[AIMS] Updated partner:', updatedPartner);
-    
-    // Transform the response to match expected format
-    const transformedPartner = {
-      id: updatedPartner.id,
-      name: updatedPartner.name,
-      code: updatedPartner.code,
-      type: updatedPartner.type,
-      iatiOrgId: updatedPartner.iati_org_id,
-      fullName: updatedPartner.full_name,
-      acronym: updatedPartner.acronym,
-      organisationType: updatedPartner.organisation_type,
-      description: updatedPartner.description,
-      website: updatedPartner.website,
-      email: updatedPartner.email,
-      phone: updatedPartner.phone,
-      address: updatedPartner.address,
-      logo: updatedPartner.logo,
-      banner: updatedPartner.banner,
-      countryRepresented: updatedPartner.country_represented,
-      createdAt: updatedPartner.created_at,
-      updatedAt: updatedPartner.updated_at,
+    // Transform back to partner format
+    const partner = {
+      ...data,
+      iatiOrgId: data.iati_org_id,
+      fullName: data.full_name,
+      organisationType: data.organisation_type,
+      countryRepresented: data.country_represented,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
     };
-    
-    return NextResponse.json(transformedPartner);
+
+    return NextResponse.json(partner);
   } catch (error) {
-    console.error('[AIMS] Error updating partner:', error);
-    return NextResponse.json({ error: 'Failed to update partner' }, { status: 500 });
+    console.error('[AIMS] Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 // DELETE /api/partners/[id]
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const url = new URL(request.url);
     const id = url.pathname.split('/').pop();
-    
+
+    console.log('[AIMS] DELETE /api/partners (using organizations table) - Deleting:', id);
+
     if (!id) {
-      return NextResponse.json({ error: 'Partner ID required' }, { status: 400 });
+      return NextResponse.json({ error: 'Partner ID is required' }, { status: 400 });
     }
-    
-    // Get the partner before deletion
-    const { data: partner, error: fetchError } = await supabaseAdmin
-      .from('partners')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (fetchError || !partner) {
-      return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
+
+    // Create Supabase client
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Check if organization has users
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('organization_id', id)
+      .limit(1);
+
+    if (usersError) {
+      console.error('[AIMS] Error checking users:', usersError);
+      return NextResponse.json({ error: 'Failed to check organization dependencies' }, { status: 500 });
     }
-    
-    // Delete the partner
-    const { error: deleteError } = await supabaseAdmin
-      .from('partners')
+
+    if (users && users.length > 0) {
+      return NextResponse.json(
+        { error: 'Cannot delete organization with assigned users' },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabaseAdmin
+      .from('organizations')
       .delete()
       .eq('id', id);
-    
-    if (deleteError) {
-      console.error('[AIMS] Error deleting partner:', deleteError);
-      return NextResponse.json({ error: 'Failed to delete partner' }, { status: 500 });
+
+    if (error) {
+      console.error('[AIMS] Error deleting organization:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
-    console.log('[AIMS] Deleted partner:', partner);
-    return NextResponse.json({ message: 'Partner deleted successfully', partner });
+
+    console.log('[AIMS] Deleted organization:', id);
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[AIMS] Error deleting partner:', error);
-    return NextResponse.json({ error: 'Failed to delete partner' }, { status: 500 });
+    console.error('[AIMS] Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

@@ -154,7 +154,9 @@ export default function UserManagement() {
         toast.success("User updated successfully");
         setEditingUser(null);
       } else {
-        toast.error("Failed to update user");
+        const error = await response.json();
+        console.error('[AIMS] User update error:', error);
+        toast.error(error.error || "Failed to update user");
       }
     } catch (error) {
       console.error('Error updating user:', error);
@@ -187,6 +189,8 @@ export default function UserManagement() {
 
   const handleUserCreate = async (newUser: User) => {
     try {
+      console.log('[AIMS Frontend] Creating user with organizationId:', newUser.organizationId);
+      
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -200,6 +204,13 @@ export default function UserManagement() {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Check for warnings
+        if (data.warning) {
+          console.warn('[AIMS Frontend] User creation warning:', data.warning);
+          toast.warning(data.warning);
+        }
+        
         // Transform and add the user to state
         const transformedUser = {
           id: data.id,
@@ -226,10 +237,11 @@ export default function UserManagement() {
         setEditingUser(null);
       } else {
         const error = await response.json();
+        console.error('[AIMS Frontend] User creation error:', error);
         toast.error(error.error || "Failed to create user");
       }
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error('[AIMS Frontend] Error creating user:', error);
       toast.error("Failed to create user");
     }
   };
@@ -520,6 +532,7 @@ function UserEditor({
     const updatedUser: User = {
       ...user,
       ...formData,
+      organizationId: formData.organizationId === "" ? undefined : formData.organizationId,
       id: user.id || Math.random().toString(36).substring(7),
       createdAt: user.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),

@@ -5,6 +5,36 @@ import { ActivityLogger } from '@/lib/activity-logger';
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
 
+// Helper function to clean date values (convert empty strings to null)
+function cleanDateValue(value: any): string | null {
+  if (!value || value === '' || value === 'null') {
+    return null;
+  }
+  return value;
+}
+
+// Helper function to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+// Helper function to clean UUID values (convert invalid UUIDs to null)
+function cleanUUIDValue(value: any): string | null {
+  if (!value || value === '' || value === 'null') {
+    return null;
+  }
+  
+  // Check if it's a valid UUID
+  if (typeof value === 'string' && isValidUUID(value)) {
+    return value;
+  }
+  
+  // If it's a simple string ID like "1", "2", etc., convert to null
+  console.warn(`[AIMS] Invalid UUID value: ${value}, converting to null`);
+  return null;
+}
+
 // Handle OPTIONS requests for CORS
 export async function OPTIONS() {
   const response = new NextResponse(null, { status: 200 });
@@ -59,7 +89,7 @@ export async function POST(request: Request) {
 
       // Prepare update data
       const updateData = {
-        partner_id: body.partnerId,
+        partner_id: cleanUUIDValue(body.partnerId),
         iati_id: body.iatiId,
         title: body.title,
         description: body.description,
@@ -70,12 +100,12 @@ export async function POST(request: Request) {
         publication_status: body.publicationStatus || existingActivity.publication_status,
         submission_status: body.submissionStatus || existingActivity.submission_status,
         banner: body.banner !== undefined ? body.banner : existingActivity.banner,
-        created_by_org: body.createdByOrg !== undefined ? body.createdByOrg : existingActivity.created_by_org,
-        planned_start_date: body.plannedStartDate,
-        planned_end_date: body.plannedEndDate,
-        actual_start_date: body.actualStartDate,
-        actual_end_date: body.actualEndDate,
-        last_edited_by: body.user?.id,
+        created_by_org: body.createdByOrg !== undefined ? cleanUUIDValue(body.createdByOrg) : existingActivity.created_by_org,
+        planned_start_date: cleanDateValue(body.plannedStartDate),
+        planned_end_date: cleanDateValue(body.plannedEndDate),
+        actual_start_date: cleanDateValue(body.actualStartDate),
+        actual_end_date: cleanDateValue(body.actualEndDate),
+        last_edited_by: cleanUUIDValue(body.user?.id),
       };
 
       // Update activity
@@ -88,8 +118,24 @@ export async function POST(request: Request) {
 
       if (updateError) {
         console.error('[AIMS] Error updating activity:', updateError);
+        
+        // Check for specific database errors
+        if (updateError.code === '22007') {
+          return NextResponse.json(
+            { error: 'Invalid date format. Please check your date fields.' },
+            { status: 400 }
+          );
+        }
+        
+        if (updateError.code === '22P02') {
+          return NextResponse.json(
+            { error: 'Invalid ID format. Please ensure you are logged in with a valid user account from the database.' },
+            { status: 400 }
+          );
+        }
+        
         return NextResponse.json(
-          { error: 'Failed to update activity' },
+          { error: updateError.message || 'Failed to update activity' },
           { status: 500 }
         );
       }
@@ -129,13 +175,13 @@ export async function POST(request: Request) {
         if (body.transactions.length > 0) {
           const transactionsData = body.transactions.map((transaction: any) => ({
             activity_id: body.id,
-            organization_id: body.createdByOrg,
+            organization_id: cleanUUIDValue(body.createdByOrg),
             transaction_type: transaction.type,
             provider_org: transaction.providerOrg,
             receiver_org: transaction.receiverOrg,
             value: transaction.value,
             currency: transaction.currency || 'USD',
-            transaction_date: transaction.transactionDate,
+            transaction_date: cleanDateValue(transaction.transactionDate),
             description: transaction.description
           }));
 
@@ -174,7 +220,7 @@ export async function POST(request: Request) {
 
     // Otherwise, create new activity
     const insertData = {
-      partner_id: body.partnerId,
+      partner_id: cleanUUIDValue(body.partnerId),
       iati_id: body.iatiId,
       title: body.title,
       description: body.description,
@@ -185,13 +231,13 @@ export async function POST(request: Request) {
       publication_status: body.publicationStatus || 'draft',
       submission_status: body.submissionStatus || 'draft',
       banner: body.banner,
-      created_by_org: body.createdByOrg,
-      planned_start_date: body.plannedStartDate,
-      planned_end_date: body.plannedEndDate,
-      actual_start_date: body.actualStartDate,
-      actual_end_date: body.actualEndDate,
-      created_by: body.user?.id,
-      last_edited_by: body.user?.id,
+      created_by_org: cleanUUIDValue(body.createdByOrg),
+      planned_start_date: cleanDateValue(body.plannedStartDate),
+      planned_end_date: cleanDateValue(body.plannedEndDate),
+      actual_start_date: cleanDateValue(body.actualStartDate),
+      actual_end_date: cleanDateValue(body.actualEndDate),
+      created_by: cleanUUIDValue(body.user?.id),
+      last_edited_by: cleanUUIDValue(body.user?.id),
     };
 
     const { data: newActivity, error: insertError } = await supabaseAdmin
@@ -202,8 +248,24 @@ export async function POST(request: Request) {
 
     if (insertError) {
       console.error('[AIMS] Error creating activity:', insertError);
+      
+      // Check for specific database errors
+      if (insertError.code === '22007') {
+        return NextResponse.json(
+          { error: 'Invalid date format. Please check your date fields.' },
+          { status: 400 }
+        );
+      }
+      
+      if (insertError.code === '22P02') {
+        return NextResponse.json(
+          { error: 'Invalid ID format. Please ensure you are logged in with a valid user account from the database.' },
+          { status: 400 }
+        );
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to create activity' },
+        { error: insertError.message || 'Failed to create activity' },
         { status: 500 }
       );
     }
@@ -226,13 +288,13 @@ export async function POST(request: Request) {
     if (body.transactions && body.transactions.length > 0) {
       const transactionsData = body.transactions.map((transaction: any) => ({
         activity_id: newActivity.id,
-        organization_id: body.createdByOrg,
+        organization_id: cleanUUIDValue(body.createdByOrg),
         transaction_type: transaction.type,
         provider_org: transaction.providerOrg,
         receiver_org: transaction.receiverOrg,
         value: transaction.value,
         currency: transaction.currency || 'USD',
-        transaction_date: transaction.transactionDate,
+        transaction_date: cleanDateValue(transaction.transactionDate),
         description: transaction.description
       }));
 

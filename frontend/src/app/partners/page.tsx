@@ -55,6 +55,22 @@ import {
 type SortField = 'name' | 'type' | 'countryRepresented' | 'createdAt' | 'updatedAt';
 type SortOrder = 'asc' | 'desc';
 
+// Safe date formatting helper
+const formatDate = (date: any, formatString: string = "dd MMM yyyy"): string => {
+  if (!date) return "Unknown date";
+  
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return "Invalid date";
+    }
+    return format(dateObj, formatString);
+  } catch (error) {
+    console.error("Date formatting error:", error);
+    return "Invalid date";
+  }
+};
+
 const getPartnerTypeIcon = (type: string) => {
   switch (type) {
     case 'development_partner':
@@ -84,7 +100,7 @@ const getPartnerTypeLabel = (type: string) => {
 export default function PartnersPage() {
   const router = useRouter();
   const { user, permissions } = useUser();
-  const { partners, loading, createPartner, getDevelopmentPartners } = usePartners();
+  const { partners, loading, error, createPartner, getDevelopmentPartners } = usePartners();
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [partnerType, setPartnerType] = useState<'development_partner' | 'partner_government' | 'bilateral' | 'other'>('development_partner');
@@ -111,6 +127,13 @@ export default function PartnersPage() {
   const [activeTab, setActiveTab] = useState("development");
   const [organizationGroupsCount, setOrganizationGroupsCount] = useState(0);
   const [organizationGroups, setOrganizationGroups] = useState<any[]>([]);
+
+  // Add debugging
+  useEffect(() => {
+    console.log('[Partners Page] Loading state:', loading);
+    console.log('[Partners Page] Error state:', error);
+    console.log('[Partners Page] Partners data:', partners);
+  }, [loading, error, partners]);
 
   // Fetch activities to calculate metrics
   useEffect(() => {
@@ -367,8 +390,8 @@ export default function PartnersPage() {
       "Registration Status": "Active",
       "Total Committed": 0, // These would need to be calculated from activities
       "Total Disbursed": 0, // These would need to be calculated from activities
-      "Created Date": format(new Date(partner.createdAt), "yyyy-MM-dd"),
-      "Updated Date": format(new Date(partner.updatedAt), "yyyy-MM-dd"),
+      "Created Date": formatDate(partner.createdAt),
+      "Updated Date": formatDate(partner.updatedAt),
     }));
 
     const headers = Object.keys(dataToExport[0] || {});
@@ -630,7 +653,7 @@ export default function PartnersPage() {
 
                             {/* Footer */}
                             <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {format(new Date(partner.updatedAt), "dd MMM yyyy")}</span>
+                              <span>Updated {formatDate(partner.updatedAt)}</span>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -752,7 +775,7 @@ export default function PartnersPage() {
 
                             {/* Footer */}
                             <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {format(new Date(partner.updatedAt), "dd MMM yyyy")}</span>
+                              <span>Updated {formatDate(partner.updatedAt)}</span>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -883,21 +906,21 @@ export default function PartnersPage() {
                                         <TooltipTrigger asChild>
                                           <div className="flex items-center gap-2 text-xs text-gray-500">
                                             <Calendar className="h-3 w-3" />
-                                            <span>Created {format(new Date(group.createdAt), "dd MMM yyyy")}</span>
+                                            <span>Created {formatDate(group.createdAt)}</span>
                                             {group.createdByName && (
                                               <span>by {group.createdByName}</span>
                                             )}
                                           </div>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                          Created by {group.createdByName || 'Unknown'} on {format(new Date(group.createdAt), "dd MMM yyyy 'at' HH:mm")}
+                                          Created by {group.createdByName || 'Unknown'} on {formatDate(group.createdAt, "dd MMM yyyy 'at' HH:mm")}
                                         </TooltipContent>
                                       </Tooltip>
                                       
                                       {group.updatedAt !== group.createdAt && (
                                         <div className="flex items-center gap-2 text-xs text-gray-500">
                                           <Clock className="h-3 w-3" />
-                                          <span>Last Updated: {format(new Date(group.updatedAt), "dd MMM yyyy")}</span>
+                                          <span>Last Updated: {formatDate(group.updatedAt)}</span>
                                           {group.updatedByName && (
                                             <span>by {group.updatedByName}</span>
                                           )}
