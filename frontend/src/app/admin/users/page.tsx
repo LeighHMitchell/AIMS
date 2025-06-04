@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useUser, mockUsers } from "@/hooks/useUser";
+import { useUser } from "@/hooks/useUser";
 import { usePartners } from "@/hooks/usePartners";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { User, UserRole, USER_ROLES, ROLE_LABELS } from "@/types/user";
@@ -41,14 +41,58 @@ const getRoleBadgeVariant = (role: UserRole): "default" | "secondary" | "destruc
 export default function UserManagement() {
   const { user: currentUser, permissions } = useUser();
   const { partners, getDevelopmentPartners, loading: partnersLoading } = usePartners();
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState<UserRole | "all">("all");
   const [filterOrg, setFilterOrg] = useState<string | "all">("all");
   const [activeTab, setActiveTab] = useState("users");
+  const [loading, setLoading] = useState(true);
 
   const developmentPartners = getDevelopmentPartners();
+
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        if (response.ok) {
+          const data = await response.json();
+          // Transform API users to match User type
+          const transformedUsers = data.map((user: any) => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            title: user.role.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+            role: user.role,
+            organizationId: user.organization_id,
+            organization: user.organization ? {
+              id: user.organization.id,
+              name: user.organization.name,
+              type: user.organization.type,
+              createdAt: user.organization.created_at,
+              updatedAt: user.organization.updated_at,
+            } : undefined,
+            phone: "",
+            isActive: true,
+            lastLogin: user.updated_at,
+            createdAt: user.created_at,
+            updatedAt: user.updated_at,
+          }));
+          setUsers(transformedUsers);
+        } else {
+          toast.error("Failed to fetch users");
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast.error("Failed to fetch users");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // Update users with partner information
   const usersWithPartners = users.map(user => {
@@ -76,22 +120,121 @@ export default function UserManagement() {
     return matchesSearch && matchesRole && matchesOrg;
   });
 
-  const handleUserUpdate = (updatedUser: User) => {
-    setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
-    toast.success("User updated successfully");
-    setEditingUser(null);
+  const handleUserUpdate = async (updatedUser: User) => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          organization_id: updatedUser.organizationId || null
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Transform and update the user in state
+        const transformedUser = {
+          ...updatedUser,
+          id: data.id,
+          organizationId: data.organization_id,
+          organization: data.organization ? {
+            id: data.organization.id,
+            name: data.organization.name,
+            type: data.organization.type,
+            createdAt: data.organization.created_at,
+            updatedAt: data.organization.updated_at,
+          } : undefined,
+          updatedAt: data.updated_at,
+        };
+        setUsers(users.map(u => u.id === transformedUser.id ? transformedUser : u));
+        toast.success("User updated successfully");
+        setEditingUser(null);
+      } else {
+        toast.error("Failed to update user");
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast.error("Failed to update user");
+    }
   };
 
-  const handleUserDelete = (userId: string) => {
+  const handleUserDelete = async (userId: string) => {
     if (userId === currentUser?.id) {
       toast.error("You cannot delete your own account");
       return;
     }
-    setUsers(users.filter(u => u.id !== userId));
-    toast.success("User deleted successfully");
+
+    try {
+      const response = await fetch(`/api/users?id=${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setUsers(users.filter(u => u.id !== userId));
+        toast.success("User deleted successfully");
+      } else {
+        toast.error("Failed to delete user");
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error("Failed to delete user");
+    }
   };
 
-  if (partnersLoading) {
+  const handleUserCreate = async (newUser: User) => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+          organization_id: newUser.organizationId || null
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Transform and add the user to state
+        const transformedUser = {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          title: data.role.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+          role: data.role,
+          organizationId: data.organization_id,
+          organization: data.organization ? {
+            id: data.organization.id,
+            name: data.organization.name,
+            type: data.organization.type,
+            createdAt: data.organization.created_at,
+            updatedAt: data.organization.updated_at,
+          } : undefined,
+          phone: "",
+          isActive: true,
+          lastLogin: data.updated_at,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+        setUsers([...users, transformedUser]);
+        toast.success("User created successfully");
+        setEditingUser(null);
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to create user");
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error("Failed to create user");
+    }
+  };
+
+  if (loading || partnersLoading) {
     return (
       <ProtectedRoute allowedRoles={[USER_ROLES.SUPER_USER]}>
         <MainLayout>
@@ -338,7 +481,7 @@ export default function UserManagement() {
                   <UserEditor 
                     user={editingUser} 
                     partners={developmentPartners}
-                    onSave={handleUserUpdate}
+                    onSave={editingUser.id ? handleUserUpdate : handleUserCreate}
                     onClose={() => setEditingUser(null)} 
                   />
                 )}
