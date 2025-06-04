@@ -1,21 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+// Force dynamic rendering to ensure environment variables are always loaded
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/users - Starting request');
   
   try {
+    // Check if supabaseAdmin is properly initialized
+    if (!supabaseAdmin) {
+      console.error('[AIMS] supabaseAdmin is not initialized');
+      return NextResponse.json(
+        { error: 'Database connection not initialized' },
+        { status: 500 }
+      );
+    }
+    
     const searchParams = request.nextUrl.searchParams;
     const email = searchParams.get('email');
     
     if (email) {
       // Get specific user by email
-      const { data: user, error } = await supabase
+      const { data: user, error } = await supabaseAdmin
         .from('users')
         .select(`
           *,
@@ -36,7 +43,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(user);
     } else {
       // Get all users
-      const { data: users, error } = await supabase
+      const { data: users, error } = await supabaseAdmin
         .from('users')
         .select(`
           *,
@@ -65,8 +72,19 @@ export async function POST(request: NextRequest) {
   console.log('[AIMS] POST /api/users - Starting request');
   
   try {
+    // Check if supabaseAdmin is properly initialized
+    if (!supabaseAdmin) {
+      console.error('[AIMS] supabaseAdmin is not initialized');
+      return NextResponse.json(
+        { error: 'Database connection not initialized' },
+        { status: 500 }
+      );
+    }
+    
     const body = await request.json();
     const { name, email, role, organization_id } = body;
+    
+    console.log('[AIMS] Creating user with data:', { name, email, role, organization_id });
     
     if (!name || !email || !role) {
       return NextResponse.json(
@@ -75,7 +93,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .insert([{ name, email, role, organization_id }])
       .select(`
@@ -92,7 +110,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    console.log('[AIMS] Created user:', data.email);
+    console.log('[AIMS] Created user:', data);
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
@@ -107,6 +125,15 @@ export async function PUT(request: NextRequest) {
   console.log('[AIMS] PUT /api/users - Starting request');
   
   try {
+    // Check if supabaseAdmin is properly initialized
+    if (!supabaseAdmin) {
+      console.error('[AIMS] supabaseAdmin is not initialized');
+      return NextResponse.json(
+        { error: 'Database connection not initialized' },
+        { status: 500 }
+      );
+    }
+    
     const body = await request.json();
     const { id, ...updates } = body;
     
@@ -117,7 +144,7 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .update(updates)
       .eq('id', id)
@@ -147,6 +174,15 @@ export async function DELETE(request: NextRequest) {
   console.log('[AIMS] DELETE /api/users - Starting request');
   
   try {
+    // Check if supabaseAdmin is properly initialized
+    if (!supabaseAdmin) {
+      console.error('[AIMS] supabaseAdmin is not initialized');
+      return NextResponse.json(
+        { error: 'Database connection not initialized' },
+        { status: 500 }
+      );
+    }
+    
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
     
@@ -157,7 +193,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('users')
       .delete()
       .eq('id', id);
