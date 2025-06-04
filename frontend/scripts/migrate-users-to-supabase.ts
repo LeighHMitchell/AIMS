@@ -85,37 +85,37 @@ async function migrateData() {
       {
         name: "Jane Smith",
         email: "jane@worldbank.org",
-        role: "admin",
+        role: "dev_partner_tier_1",
         organization_id: orgMapping["World Bank"],
       },
       {
         name: "Mike Johnson",
         email: "mike@undp.org",
-        role: "member",
+        role: "dev_partner_tier_2",
         organization_id: orgMapping["UNDP"],
       },
       {
         name: "Sarah Williams",
         email: "sarah@mof.gov",
-        role: "admin",
+        role: "gov_partner_tier_1",
         organization_id: orgMapping["Ministry of Finance"],
       },
       {
         name: "Tom Brown",
         email: "tom@moe.gov",
-        role: "member",
+        role: "gov_partner_tier_2",
         organization_id: orgMapping["Ministry of Education"],
       },
       {
         name: "Emily Davis",
         email: "emily@example.com",
-        role: "viewer",
+        role: "orphan",
         organization_id: null,
       },
       {
         name: "David Wilson",
         email: "david@inactive.com",
-        role: "member",
+        role: "dev_partner_tier_2",
         organization_id: orgMapping["UNDP"],
       },
     ];

@@ -252,12 +252,12 @@ export default function LoginPage() {
                     <p className="text-muted-foreground">john@example.com / any password</p>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
-                    <p className="font-medium">Admin (World Bank)</p>
+                    <p className="font-medium">Dev Partner Tier 1</p>
                     <p className="text-muted-foreground">jane@worldbank.org / any password</p>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
-                    <p className="font-medium">Viewer (No Org)</p>
-                    <p className="text-muted-foreground">emily@example.com / any password</p>
+                    <p className="font-medium">Gov Partner Tier 1</p>
+                    <p className="text-muted-foreground">sarah@mof.gov / any password</p>
                   </div>
                 </div>
               </TabsContent>
