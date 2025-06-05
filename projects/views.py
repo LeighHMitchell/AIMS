@@ -30,140 +30,169 @@ from .models import (
 )
 from .iati_service import IATIRegistryService
 
+logger = logging.getLogger(__name__)
+
 def home(request):
     """Enhanced home page with key statistics"""
-    # Key statistics
-    total_projects = AidProject.objects.count()
-    total_funding = AidProject.objects.aggregate(Sum('funding_amount'))['funding_amount__sum'] or 0
-    active_projects = AidProject.objects.filter(activity_status='implementation').count()
-    total_donors = Donor.objects.count()
-    total_countries = Country.objects.filter(projects__isnull=False).distinct().count()
-    
-    # Recent projects
-    recent_projects = AidProject.objects.select_related('donor', 'recipient_country').order_by('-submitted_at')[:5]
-    
-    # Projects by status
-    status_data = AidProject.objects.values('activity_status').annotate(count=Count('id'))
-    
-    # Top donors by funding
-    top_donors = (AidProject.objects
-                  .values('donor__name')
-                  .annotate(total_funding=Sum('funding_amount'))
-                  .order_by('-total_funding')[:5])
-    
-    # Projects by country
-    country_data = (AidProject.objects
-                    .values('recipient_country__name')
-                    .annotate(count=Count('id'), total_funding=Sum('funding_amount'))
-                    .order_by('-total_funding')[:10])
-    
-    context = {
-        'total_projects': total_projects,
-        'total_funding': total_funding,
-        'active_projects': active_projects,
-        'total_donors': total_donors,
-        'total_countries': total_countries,
-        'recent_projects': recent_projects,
-        'status_data': list(status_data),
-        'top_donors': list(top_donors),
-        'country_data': list(country_data),
-    }
+    try:
+        # Key statistics
+        total_projects = AidProject.objects.count()
+        total_funding = AidProject.objects.aggregate(Sum('funding_amount'))['funding_amount__sum'] or 0
+        active_projects = AidProject.objects.filter(activity_status='implementation').count()
+        total_donors = Donor.objects.count()
+        total_countries = Country.objects.filter(projects__isnull=False).distinct().count()
+        
+        # Recent projects
+        recent_projects = AidProject.objects.select_related('donor', 'recipient_country').order_by('-submitted_at')[:5]
+        
+        # Projects by status
+        status_data = AidProject.objects.values('activity_status').annotate(count=Count('id'))
+        
+        # Top donors by funding
+        top_donors = (AidProject.objects
+                      .values('donor__name')
+                      .annotate(total_funding=Sum('funding_amount'))
+                      .order_by('-total_funding')[:5])
+        
+        # Projects by country
+        country_data = (AidProject.objects
+                        .values('recipient_country__name')
+                        .annotate(count=Count('id'), total_funding=Sum('funding_amount'))
+                        .order_by('-total_funding')[:10])
+        
+        context = {
+            'total_projects': total_projects,
+            'total_funding': total_funding,
+            'active_projects': active_projects,
+            'total_donors': total_donors,
+            'total_countries': total_countries,
+            'recent_projects': recent_projects,
+            'status_data': list(status_data),
+            'top_donors': list(top_donors),
+            'country_data': list(country_data),
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in home view: {str(e)}")
+        messages.error(request, "An error occurred while loading the dashboard. Please try again later.")
+        context = {
+            'total_projects': 0,
+            'total_funding': 0,
+            'active_projects': 0,
+            'total_donors': 0,
+            'total_countries': 0,
+            'recent_projects': [],
+            'status_data': [],
+            'top_donors': [],
+            'country_data': [],
+        }
     
     return render(request, 'home.html', context)
 
 def submit_project(request):
     """Enhanced project submission with better form handling"""
-    if request.method == 'POST':
-        # Get the project ID from the form if it exists (for updates)
-        project_id = request.POST.get('project_id')
-        if project_id:
-            project = get_object_or_404(AidProject, id=project_id)
-        else:
-            project = None
-        
-        # Determine the action based on which button was clicked
-        action = request.POST.get('action', 'save_draft')
-        
-        # Set validation mode based on action
-        if action == 'save_and_publish':
-            validation_mode = 'full'
-        else:
-            validation_mode = 'draft'
-        
-        form = AidProjectForm(request.POST, instance=project, validation_mode=validation_mode)
-        
-        if form.is_valid():
-            project = form.save(commit=False)
-            if request.user.is_authenticated:
-                project.created_by = request.user
+    try:
+        if request.method == 'POST':
+            # Get the project ID from the form if it exists (for updates)
+            project_id = request.POST.get('project_id')
+            if project_id:
+                project = get_object_or_404(AidProject, id=project_id)
+            else:
+                project = None
             
-            # Set project status based on action
+            # Determine the action based on which button was clicked
+            action = request.POST.get('action', 'save_draft')
+            
+            # Set validation mode based on action
             if action == 'save_and_publish':
-                # Add a published status field or flag if needed
-                # For now, we'll just save normally
-                pass
+                validation_mode = 'full'
+            else:
+                validation_mode = 'draft'
             
+            form = AidProjectForm(request.POST, instance=project, validation_mode=validation_mode)
+            
+            if form.is_valid():
+                project = form.save(commit=False)
+                if request.user.is_authenticated:
+                    project.created_by = request.user
+                
+                # Set project status based on action
+                if action == 'save_and_publish':
+                    # Add a published status field or flag if needed
+                    # For now, we'll just save normally
+                    pass
+                
+                project.save()
+                
+                # Customize success message based on action
+                if action == 'save_and_publish':
+                    messages.success(request, f"Project '{project.title}' published successfully.")
+                    # For published projects, go to detail page
+                    return redirect('project_detail', project_id=project.id)
+                elif action == 'save_and_next':
+                    messages.success(request, f"Project '{project.title}' saved as draft. Continue to next section.")
+                else:
+                    messages.success(request, f"Project '{project.title}' saved as draft.")
+                
+                # For draft saves, redirect back to edit form to continue editing
+                return redirect('edit_project', project_id=project.id)
+            else:
+                if validation_mode == 'full':
+                    messages.error(request, "Please complete all required fields before publishing.")
+                else:
+                    messages.error(request, "Please correct the errors below.")
+        else:
+            # For GET requests, create a new project instance with PRISM ID immediately
+            project = AidProject()
+            # Generate PRISM ID immediately
+            random_numbers = ''.join([str(random.randint(0, 9)) for _ in range(8)])
+            project.prism_id = f'PRISM-{random_numbers}'
+            # Save the project so it has an ID and the PRISM ID is persisted
             project.save()
             
-            # Customize success message based on action
-            if action == 'save_and_publish':
-                messages.success(request, f"Project '{project.title}' published successfully.")
-                # For published projects, go to detail page
-                return redirect('project_detail', project_id=project.id)
-            elif action == 'save_and_next':
-                messages.success(request, f"Project '{project.title}' saved as draft. Continue to next section.")
-            else:
-                messages.success(request, f"Project '{project.title}' saved as draft.")
-            
-            # For draft saves, redirect back to edit form to continue editing
-            return redirect('edit_project', project_id=project.id)
-        else:
-            if validation_mode == 'full':
-                messages.error(request, "Please complete all required fields before publishing.")
-            else:
-                messages.error(request, "Please correct the errors below.")
-    else:
-        # For GET requests, create a new project instance with PRISM ID immediately
-        project = AidProject()
-        # Generate PRISM ID immediately
-        random_numbers = ''.join([str(random.randint(0, 9)) for _ in range(8)])
-        project.prism_id = f'PRISM-{random_numbers}'
-        # Save the project so it has an ID and the PRISM ID is persisted
-        project.save()
+            form = AidProjectForm(instance=project, validation_mode='draft')
+
+        # Get data for dropdowns
+        donors = Donor.objects.all().order_by('name')
+        countries = Country.objects.all().order_by('name')
+        sectors = Sector.objects.all().order_by('name')
+        implementing_orgs = ImplementingOrganization.objects.all().order_by('name')
+        organizations = Organization.objects.all().order_by('name')
         
-        form = AidProjectForm(instance=project, validation_mode='draft')
+        # Get existing financial data if editing
+        transactions = []
+        commitments = []
+        if project and project.id:
+            transactions = project.transactions.all().order_by('-transaction_date')
+            commitments = project.commitments.all().order_by('-commitment_date')
 
-    # Get data for dropdowns
-    donors = Donor.objects.all().order_by('name')
-    countries = Country.objects.all().order_by('name')
-    sectors = Sector.objects.all().order_by('name')
-    implementing_orgs = ImplementingOrganization.objects.all().order_by('name')
-    organizations = Organization.objects.all().order_by('name')
-    
-    # Get existing financial data if editing
-    transactions = []
-    commitments = []
-    if project and project.id:
-        transactions = project.transactions.all().order_by('-transaction_date')
-        commitments = project.commitments.all().order_by('-commitment_date')
-
-    context = {
-        'form': form,
-        'project': project,
-        'donors': donors,
-        'countries': countries,
-        'sectors': sectors,
-        'implementing_orgs': implementing_orgs,
-        'organizations': organizations,
-        'transactions': transactions,
-        'commitments': commitments,
-    }
+        context = {
+            'form': form,
+            'project': project,
+            'donors': donors,
+            'countries': countries,
+            'sectors': sectors,
+            'implementing_orgs': implementing_orgs,
+            'organizations': organizations,
+            'transactions': transactions,
+            'commitments': commitments,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in submit_project view: {str(e)}")
+        messages.error(request, "An error occurred while processing your request. Please try again.")
+        return redirect('home')
     
     return render(request, 'projects/submit_project.html', context)
 
 def project_dashboard(request):
     """Enhanced dashboard with filtering and search"""
-    projects = AidProject.objects.select_related('donor', 'recipient_country', 'sector').all()
+    # Optimize query with select_related and prefetch_related
+    projects = AidProject.objects.select_related(
+        'donor', 'recipient_country', 'sector', 'implementing_org', 'created_by'
+    ).prefetch_related(
+        'budget_items', 'milestones', 'documents', 'transactions', 'commitments'
+    ).all()
     
     # Search functionality
     search_query = request.GET.get('search', '')
@@ -231,8 +260,13 @@ def project_dashboard(request):
 
 def project_detail(request, project_id):
     """Detailed project view"""
+    # Optimize query with select_related
     project = get_object_or_404(
-        AidProject.objects.select_related('donor', 'recipient_country', 'sector', 'implementing_org'),
+        AidProject.objects.select_related(
+            'donor', 'recipient_country', 'sector', 'implementing_org', 'created_by'
+        ).prefetch_related(
+            'budget_items', 'milestones', 'documents', 'transactions', 'commitments'
+        ),
         id=project_id
     )
     

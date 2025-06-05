@@ -2,13 +2,15 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from decimal import Decimal
 import json
 
 class Donor(models.Model):
     """Donor organization model"""
     name = models.CharField(max_length=200, unique=True)
-    code = models.CharField(max_length=20, unique=True)
+    code = models.CharField(max_length=20, unique=True, db_index=True)
     donor_type = models.CharField(max_length=50, choices=[
         ('bilateral', 'Bilateral'),
         ('multilateral', 'Multilateral'),
@@ -16,7 +18,7 @@ class Donor(models.Model):
         ('ngo', 'NGO'),
         ('other', 'Other')
     ])
-    country = models.CharField(max_length=100)
+    country = models.CharField(max_length=100, db_index=True)
     website = models.URLField(blank=True, null=True)
     contact_email = models.EmailField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
@@ -28,8 +30,8 @@ class Donor(models.Model):
 class Country(models.Model):
     """Country model for recipient countries"""
     name = models.CharField(max_length=100, unique=True)
-    iso_code = models.CharField(max_length=3, unique=True)
-    region = models.CharField(max_length=100)
+    iso_code = models.CharField(max_length=3, unique=True, db_index=True)
+    region = models.CharField(max_length=100, db_index=True)
     income_level = models.CharField(max_length=50, choices=[
         ('low', 'Low Income'),
         ('lower_middle', 'Lower Middle Income'),
@@ -41,15 +43,18 @@ class Country(models.Model):
     
     class Meta:
         verbose_name_plural = "Countries"
+        indexes = [
+            models.Index(fields=['region', 'income_level']),
+        ]
     
     def __str__(self):
         return self.name
 
 class Sector(models.Model):
     """Sector classification model"""
-    code = models.CharField(max_length=10, unique=True)
+    code = models.CharField(max_length=10, unique=True, db_index=True)
     name = models.CharField(max_length=200)
-    category = models.CharField(max_length=100)
+    category = models.CharField(max_length=100, db_index=True)
     description = models.TextField(blank=True, null=True)
     
     def __str__(self):
@@ -76,13 +81,13 @@ class ImplementingOrganization(models.Model):
 class AidProject(models.Model):
     """Enhanced Aid Project model"""
     # Basic Information
-    prism_id = models.CharField(max_length=20, unique=True, null=True, blank=True)
-    iati_identifier = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    prism_id = models.CharField(max_length=20, unique=True, null=True, blank=True, db_index=True)
+    iati_identifier = models.CharField(max_length=100, unique=True, null=True, blank=True, db_index=True)
     title = models.CharField(max_length=300)
     description = models.TextField(null=True, blank=True)
     
-    # Organizations
-    donor = models.ForeignKey(Donor, on_delete=models.CASCADE, related_name='projects', null=True, blank=True)
+    # Organizations - Using PROTECT to prevent accidental data loss
+    donor = models.ForeignKey(Donor, on_delete=models.PROTECT, related_name='projects', null=True, blank=True)
     implementing_org = models.ForeignKey(ImplementingOrganization, on_delete=models.SET_NULL, null=True, blank=True)
     
     # Status and Dates
@@ -92,14 +97,14 @@ class AidProject(models.Model):
         ('completion', 'Completion'),
         ('cancelled', 'Cancelled'),
         ('suspended', 'Suspended')
-    ], null=True, blank=True)
-    start_date_planned = models.DateField(null=True, blank=True)
-    end_date_planned = models.DateField(null=True, blank=True)
+    ], null=True, blank=True, db_index=True)
+    start_date_planned = models.DateField(null=True, blank=True, db_index=True)
+    end_date_planned = models.DateField(null=True, blank=True, db_index=True)
     start_date_actual = models.DateField(blank=True, null=True)
     end_date_actual = models.DateField(blank=True, null=True)
     
-    # Location
-    recipient_country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='projects', null=True, blank=True)
+    # Location - Using PROTECT to prevent accidental data loss
+    recipient_country = models.ForeignKey(Country, on_delete=models.PROTECT, related_name='projects', null=True, blank=True)
     sub_national_location = models.CharField(max_length=200, blank=True, null=True)
     
     # Classification
@@ -169,6 +174,11 @@ class AidProject(models.Model):
         ordering = ['-submitted_at']
         verbose_name = "Aid Project"
         verbose_name_plural = "Aid Projects"
+        indexes = [
+            models.Index(fields=['activity_status', 'start_date_planned']),
+            models.Index(fields=['donor', 'recipient_country']),
+            models.Index(fields=['submitted_at']),
+        ]
     
     def __str__(self):
         return self.title
@@ -614,9 +624,6 @@ class UserRole(models.Model):
 
 
 # Signal to create user profile automatically
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:

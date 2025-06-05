@@ -1,0 +1,32 @@
+# Django and core dependencies
+Django==5.2.1
+python-dotenv==1.0.0
+
+# Database
+# psycopg2-binary==2.9.9  # Uncomment for PostgreSQL
+
+# Authentication
+social-auth-app-django==5.4.0
+
+# Forms and UI
+django-crispy-forms==2.1
+crispy-bootstrap5==2023.10
+
+# Data processing
+pandas==2.2.0
+
+# HTTP requests
+requests==2.31.0
+
+# Production server
+gunicorn==21.2.0
+
+# Development tools
+# flake8==7.0.0
+# black==23.12.1
+# isort==5.13.2
+
+# Testing
+# pytest==7.4.4
+# pytest-django==4.7.0
+# coverage==7.4.0

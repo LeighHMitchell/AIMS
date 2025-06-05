@@ -41,9 +41,9 @@
 
 2. Add these variables:
    ```
-   NEXT_PUBLIC_SUPABASE_URL=https://lhiayyjwkjkjkxvhcenw.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoaWF5eWp3a2pramt4dmhjZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NTQzMTcsImV4cCI6MjA2NDUzMDMxN30.E3vOd6YxfoiKAJN2NlCsxRHiLDItFQV2OycbGD2h4iY
-   SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoaWF5eWp3a2pramt4dmhjZW53Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODk1NDMxNywiZXhwIjoyMDY0NTMwMzE3fQ.riXiTQyFF6m1egj6lDzmxC6AHrrg9D57B_aWwnsnlac
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
    ```
 
 3. Click "Save" for each variable
@@ -108,4 +108,14 @@ Once deployed, you can share your app URL with anyone! They can:
 
 - Your `SUPABASE_SERVICE_ROLE_KEY` is kept secret on Vercel's servers
 - Never commit `.env.local` to GitHub
-- Consider adding authentication before going to production 
+- Consider adding authentication before going to production
+
+### Environment Variables
+
+Create a `.env.local` file in the `frontend` directory with your Supabase credentials:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+```
