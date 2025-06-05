@@ -106,7 +106,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
             </Link>
             <Link href="/import" passHref legacyBehavior>
               <Button asChild variant="ghost" className="w-full justify-start">
-                <a><FileSpreadsheet className="h-4 w-4 mr-2" />Smart Import Tool</a>
+                <a><FileSpreadsheet className="h-4 w-4 mr-2" />Smart Import Tool 🚀</a>
               </Button>
             </Link>
             <Link href="/activities" passHref legacyBehavior>
