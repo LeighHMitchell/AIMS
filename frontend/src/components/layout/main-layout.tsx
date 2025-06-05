@@ -26,6 +26,10 @@ interface MainLayoutProps {
 export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
   const { user, permissions, logout } = useUser();
 
+  // Debug log
+  console.log('[MainLayout] Rendering with user:', user);
+  console.log('[MainLayout] User authenticated:', !!user);
+
   const content = (
     <div className="min-h-screen bg-background">
       {/* Persistent Navigation Bar */}
@@ -92,7 +96,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
       </nav>
 
       <div className="flex">
-        {/* Site-wide Sidebar */}
+        {/* Site-wide Sidebar - Updated: 2024-12-20 */}
         <aside className="w-64 border-r min-h-[calc(100vh-4rem)] p-4">
           <nav className="space-y-2">
             <Link href="/dashboard" passHref legacyBehavior>
