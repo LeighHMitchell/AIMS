@@ -66,6 +66,7 @@ export function ImportWizard({ entityType, onImport, requiredPermission }: Impor
   // Check permissions
   const hasPermission = React.useMemo(() => {
     if (!requiredPermission) return true;
+    if (!user) return true; // Allow if no user context (demo mode)
     if (user?.role === 'super_user') return true;
     if (requiredPermission === 'admin' && (user?.role === 'gov_partner_tier_1' || user?.role === 'dev_partner_tier_1')) return true;
     return false;
