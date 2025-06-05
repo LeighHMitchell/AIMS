@@ -3,7 +3,7 @@
 import React from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Building2, Home, Settings, FolderPlus, Users, LogOut, User, FileText, Shield, CheckSquare } from "lucide-react"
+import { Building2, Home, Settings, FolderPlus, Users, LogOut, User, FileText, Shield, CheckSquare, FileSpreadsheet } from "lucide-react"
 import Link from "next/link"
 import { AuthGuard } from "@/components/AuthGuard"
 import { useUser } from "@/hooks/useUser"
@@ -25,6 +25,10 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
   const { user, permissions, logout } = useUser();
+
+  // Debug log
+  console.log('[MainLayout] Rendering with user:', user);
+  console.log('[MainLayout] User authenticated:', !!user);
 
   const content = (
     <div className="min-h-screen bg-background">
@@ -92,12 +96,17 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
       </nav>
 
       <div className="flex">
-        {/* Site-wide Sidebar */}
+        {/* Site-wide Sidebar - Updated: 2024-12-20 */}
         <aside className="w-64 border-r min-h-[calc(100vh-4rem)] p-4">
           <nav className="space-y-2">
             <Link href="/dashboard" passHref legacyBehavior>
               <Button asChild variant="ghost" className="w-full justify-start">
                 <a><Home className="h-4 w-4 mr-2" />Dashboard</a>
+              </Button>
+            </Link>
+            <Link href="/import" passHref legacyBehavior>
+              <Button asChild variant="ghost" className="w-full justify-start">
+                <a><FileSpreadsheet className="h-4 w-4 mr-2" />Smart Import Tool 🚀</a>
               </Button>
             </Link>
             <Link href="/activities" passHref legacyBehavior>

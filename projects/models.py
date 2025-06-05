@@ -780,3 +780,29 @@ class ProjectLocation(models.Model):
             feature["geometry"] = None
             
         return feature
+
+class ImportLog(models.Model):
+    """Log of all bulk import activities"""
+    entity_type = models.CharField(max_length=50, choices=[
+        ('activities', 'Activities'),
+        ('organizations', 'Organizations'),
+        ('transactions', 'Transactions'),
+    ])
+    file_name = models.CharField(max_length=255)
+    total_rows = models.PositiveIntegerField()
+    successful_rows = models.PositiveIntegerField()
+    failed_rows = models.PositiveIntegerField()
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    import_date = models.DateTimeField(auto_now_add=True)
+    
+    # Store mapping configuration for rollback
+    field_mappings = models.JSONField(null=True, blank=True)
+    
+    # Store error details
+    error_log = models.JSONField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-import_date']
+    
+    def __str__(self):
+        return f"{self.entity_type} import by {self.user} on {self.import_date}"
