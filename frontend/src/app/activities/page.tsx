@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
   Card,
@@ -14,12 +14,38 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Plus, Download, Edit2, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Users } from "lucide-react";
+import { 
+  Plus, 
+  Download, 
+  Upload, 
+  Edit2, 
+  Trash2, 
+  AlertCircle, 
+  ChevronUp, 
+  ChevronDown, 
+  ChevronsUpDown, 
+  Users, 
+  Info, 
+  Filter, 
+  Search, 
+  Copy, 
+  HelpCircle, 
+  Calendar,
+  ArrowUp,
+  ArrowDown,
+  MoreHorizontal,
+  Loader2
+} from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { Transaction, LEGACY_TRANSACTION_TYPE_MAP } from "@/types/transaction";
+import { cn } from "@/lib/utils";
+import { BulkImportDialog } from "@/components/BulkImportDialog";
+import ActivitySummaryCards from "@/components/ActivitySummaryCards";
+import { SearchParamsHandler } from "@/components/SearchParamsHandler";
 
 type Activity = {
   id: string;
@@ -45,34 +71,48 @@ type Activity = {
   sectors?: any[];
   transactions?: Transaction[];
   createdByOrg?: string; // Organization that created the activity
+  organization?: { id: string; name: string; acronym: string | null }; // Organization details
+  createdBy?: { id: string; name: string; role: string };
   contributors?: any[]; // Added for contributors
 };
 
-type SortField = 'title' | 'partnerId' | 'activityStatus' | 'publicationStatus' | 'commitment' | 'disbursement' | 'createdAt' | 'updatedAt';
+type SortField = 'title' | 'createdBy' | 'activityStatus' | 'publicationStatus' | 'commitment' | 'disbursement' | 'createdAt' | 'updatedAt' | 'startDate';
 type SortOrder = 'asc' | 'desc';
 
-const getActivityStatusColor = (status: string): "secondary" | "success" | "default" | "destructive" => {
-  const colors: Record<string, "secondary" | "success" | "default" | "destructive"> = {
-    draft: "secondary",
-    published: "success",
-    planning: "default",
-    implementation: "default",
-    completed: "success",
-    cancelled: "destructive",
-    "": "secondary",
+const PAGE_SIZES = [10, 20, 50, 100];
+const DEFAULT_PAGE_SIZE = 20;
+
+const getActivityStatusColor = (status: string): "default" | "secondary" | "success" | "destructive" => {
+  const colors: Record<string, "default" | "secondary" | "success" | "destructive"> = {
+    planning: "default",      // Blue
+    implementation: "secondary",  // Yellow/Orange
+    completed: "success",     // Green
+    cancelled: "destructive", // Red
+    "": "default",
   };
-  return colors[status] || "default";
+  return colors[status?.toLowerCase()] || "default";
+};
+
+const getPublicationStatusColor = (status: string): "secondary" | "success" => {
+  return status?.toLowerCase() === "published" ? "success" : "secondary";
 };
 
 export default function ActivitiesPage() {
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [allActivities, setAllActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [publicationFilter, setPublicationFilter] = useState<string>("all");
+  const [activityStatusFilter, setActivityStatusFilter] = useState<string>("all");
+  const [publicationStatusFilter, setPublicationStatusFilter] = useState<string>("all");
   const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('updatedAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  
+  // Pagination state
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const router = useRouter();
   const { user } = useUser();
 
@@ -82,9 +122,7 @@ export default function ActivitiesPage() {
       if (!res.ok) throw new Error("Failed to fetch activities");
       const data = await res.json();
       console.log("[AIMS Debug] Activities fetched:", data.length);
-      console.log("[AIMS Debug] First activity status:", data[0]?.status);
-      console.log("[AIMS Debug] Activities with status:", data.map((a: Activity) => ({ id: a.id, title: a.title, status: a.status })));
-      setActivities(data);
+      setAllActivities(data);
     } catch (error) {
       console.error("[AIMS] Error fetching activities:", error);
       toast.error("Failed to load activities");
@@ -97,6 +135,15 @@ export default function ActivitiesPage() {
   useEffect(() => {
     fetchActivities();
   }, []);
+
+  // Handle import parameter
+  const handleImportParam = (shouldShow: boolean) => {
+    if (shouldShow) {
+      setShowBulkImport(true);
+      // Clean up the URL by removing the query parameter
+      router.replace('/activities');
+    }
+  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -142,6 +189,22 @@ export default function ActivitiesPage() {
     return { commitment, disbursement };
   };
 
+  const getStartDate = (activity: Activity): string | null => {
+    const status = activity.activityStatus?.toLowerCase() || "planning";
+    
+    // For pipeline/planning activities, show planned start date
+    if (status === "planning" || status === "pipeline") {
+      return activity.plannedStartDate || null;
+    }
+    
+    // For implementing, completed, or cancelled activities, show actual start date
+    if (["implementation", "implementing", "completed", "cancelled"].includes(status)) {
+      return activity.actualStartDate || activity.plannedStartDate || null;
+    }
+    
+    return activity.plannedStartDate || null;
+  };
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -149,19 +212,20 @@ export default function ActivitiesPage() {
       setSortField(field);
       setSortOrder('asc');
     }
+    setCurrentPage(1); // Reset to first page when sorting
   };
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
+      return <ChevronsUpDown className="h-4 w-4 text-gray-400 ml-1" />;
     }
     return sortOrder === 'asc' 
-      ? <ChevronUp className="h-4 w-4 text-gray-700" />
-      : <ChevronDown className="h-4 w-4 text-gray-700" />;
+      ? <ArrowUp className="h-4 w-4 text-gray-700 ml-1" />
+      : <ArrowDown className="h-4 w-4 text-gray-700 ml-1" />;
   };
 
   const exportActivities = () => {
-    const dataToExport = activities.map(activity => {
+    const dataToExport = filteredAndSortedActivities.map(activity => {
       const { commitment, disbursement } = calculateTotals(activity.transactions);
       const sectors = activity.sectors?.map(s => `${s.name} (${s.percentage}%)`).join("; ") || "";
       
@@ -171,13 +235,16 @@ export default function ActivitiesPage() {
         "Partner ID": activity.partnerId || "",
         "Title": activity.title,
         "Description": activity.description || "",
-        "Status": activity.status,
+        "Activity Status": activity.activityStatus || "planning",
+        "Submission Status": activity.submissionStatus || "draft",
+        "Publication Status": activity.publicationStatus || "draft",
         "Objectives": activity.objectives || "",
         "Target Groups": activity.targetGroups || "",
         "Collaboration Type": activity.collaborationType || "",
         "Sectors": sectors,
         "Total Commitment": commitment,
         "Total Disbursement": disbursement,
+        "Created By Organization": activity.organization?.acronym || activity.organization?.name || "",
         "Created Date": format(new Date(activity.createdAt), "yyyy-MM-dd"),
         "Updated Date": format(new Date(activity.updatedAt), "yyyy-MM-dd"),
       };
@@ -206,72 +273,95 @@ export default function ActivitiesPage() {
     toast.success("Activities exported successfully");
   };
 
-  const filteredActivities = activities.filter(activity => {
-    const matchesSearch = activity.title.toLowerCase().includes(search.toLowerCase()) ||
-                         activity.partnerId?.toLowerCase().includes(search.toLowerCase()) ||
-                         activity.iatiId?.toLowerCase().includes(search.toLowerCase()) ||
-                         activity.description?.toLowerCase().includes(search.toLowerCase());
-    
-    // Handle both legacy and new status fields
-    const activityStatus = activity.activityStatus || 
-      (activity.status && !["published", "draft"].includes(activity.status) ? activity.status : "planning");
-    const publicationStatus = activity.publicationStatus || 
-      (activity.status === "published" ? "published" : "draft");
-    
-    // Filter by activity status
-    const matchesActivityStatus = statusFilter === "all" || activityStatus === statusFilter;
-    
-    // Filter by publication status  
-    const matchesPublicationStatus = publicationFilter === "all" || publicationStatus === publicationFilter;
-    
-    return matchesSearch && matchesActivityStatus && matchesPublicationStatus;
-  });
+  // Enhanced filtering with search across multiple fields including UUID
+  const filteredAndSortedActivities = useMemo(() => {
+    let filtered = allActivities.filter(activity => {
+      // Enhanced search that includes UUID and multiple fields
+      const searchLower = search.toLowerCase();
+      const matchesSearch = !search || 
+        activity.title.toLowerCase().includes(searchLower) ||
+        activity.partnerId?.toLowerCase().includes(searchLower) ||
+        activity.iatiId?.toLowerCase().includes(searchLower) ||
+        activity.id.toLowerCase().includes(searchLower) ||
+        activity.description?.toLowerCase().includes(searchLower) ||
+        activity.organization?.name?.toLowerCase().includes(searchLower) ||
+        activity.organization?.acronym?.toLowerCase().includes(searchLower);
+      
+      // Handle both legacy and new status fields
+      const activityStatus = activity.activityStatus || 
+        (activity.status && !["published", "draft"].includes(activity.status) ? activity.status : "planning");
+      const publicationStatus = activity.publicationStatus || 
+        (activity.status === "published" ? "published" : "draft");
+      
+      // Filter by activity status
+      const matchesActivityStatus = activityStatusFilter === "all" || activityStatus === activityStatusFilter;
+      
+      // Filter by publication status  
+      const matchesPublicationStatus = publicationStatusFilter === "all" || publicationStatus === publicationStatusFilter;
+      
+      return matchesSearch && matchesActivityStatus && matchesPublicationStatus;
+    });
 
-  // Sort activities
-  const sortedActivities = [...filteredActivities].sort((a, b) => {
-    let aValue: any, bValue: any;
-    
-    switch (sortField) {
-      case 'title':
-        aValue = a.title.toLowerCase();
-        bValue = b.title.toLowerCase();
-        break;
-      case 'partnerId':
-        aValue = a.partnerId?.toLowerCase() || '';
-        bValue = b.partnerId?.toLowerCase() || '';
-        break;
-      case 'activityStatus':
-        aValue = a.activityStatus || (a.status && !["published", "draft"].includes(a.status) ? a.status : "planning");
-        bValue = b.activityStatus || (b.status && !["published", "draft"].includes(b.status) ? b.status : "planning");
-        break;
-      case 'publicationStatus':
-        aValue = a.publicationStatus || (a.status === "published" ? "published" : "draft");
-        bValue = b.publicationStatus || (b.status === "published" ? "published" : "draft");
-        break;
-      case 'commitment':
-        aValue = calculateTotals(a.transactions).commitment;
-        bValue = calculateTotals(b.transactions).commitment;
-        break;
-      case 'disbursement':
-        aValue = calculateTotals(a.transactions).disbursement;
-        bValue = calculateTotals(b.transactions).disbursement;
-        break;
-      case 'createdAt':
-        aValue = new Date(a.createdAt).getTime();
-        bValue = new Date(b.createdAt).getTime();
-        break;
-      case 'updatedAt':
-        aValue = new Date(a.updatedAt).getTime();
-        bValue = new Date(b.updatedAt).getTime();
-        break;
-      default:
-        return 0;
-    }
-    
-    if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
-    return 0;
-  });
+    // Sort activities
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortField) {
+        case 'title':
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case 'createdBy':
+          aValue = a.organization?.name || '';
+          bValue = b.organization?.name || '';
+          break;
+        case 'activityStatus':
+          aValue = a.activityStatus || (a.status && !["published", "draft"].includes(a.status) ? a.status : "planning");
+          bValue = b.activityStatus || (b.status && !["published", "draft"].includes(b.status) ? b.status : "planning");
+          break;
+        case 'publicationStatus':
+          aValue = a.publicationStatus || (a.status === "published" ? "published" : "draft");
+          bValue = b.publicationStatus || (b.status === "published" ? "published" : "draft");
+          break;
+        case 'commitment':
+          aValue = calculateTotals(a.transactions).commitment;
+          bValue = calculateTotals(b.transactions).commitment;
+          break;
+        case 'disbursement':
+          aValue = calculateTotals(a.transactions).disbursement;
+          bValue = calculateTotals(b.transactions).disbursement;
+          break;
+        case 'startDate':
+          aValue = getStartDate(a) ? new Date(getStartDate(a)!).getTime() : 0;
+          bValue = getStartDate(b) ? new Date(getStartDate(b)!).getTime() : 0;
+          break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        case 'updatedAt':
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [allActivities, search, activityStatusFilter, publicationStatusFilter, sortField, sortOrder]);
+
+  // Pagination logic
+  const totalItems = filteredAndSortedActivities.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const currentActivities = filteredAndSortedActivities.slice(startIndex, endIndex);
+  const hasMore = endIndex < totalItems;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -282,309 +372,501 @@ export default function ActivitiesPage() {
     }).format(value);
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard");
+  };
+
+  const handleLoadMore = () => {
+    setCurrentPage(prev => prev + 1);
+  };
+
+  const handlePageSizeChange = (newSize: string) => {
+    setPageSize(parseInt(newSize));
+    setCurrentPage(1); // Reset to first page
+  };
+
+  const handleBulkImport = async (data: any[]) => {
+    try {
+      // Transform CSV data to match activity format
+      const activities = data.map((row, index) => {
+        const sectorNames = row["Sectors (semicolon separated)"]?.split(";").map((s: string) => s.trim()).filter(Boolean) || [];
+        const tagNames = row["Tags (semicolon separated)"]?.split(";").map((t: string) => t.trim()).filter(Boolean) || [];
+        
+        return {
+          partnerId: row["Partner ID"] || "",
+          iatiId: row["IATI ID"] || "",
+          title: row["Title"],
+          description: row["Description"] || "",
+          activityStatus: row["Activity Status"] || "planning",
+          plannedStartDate: row["Start Date (YYYY-MM-DD)"] || null,
+          plannedEndDate: row["End Date (YYYY-MM-DD)"] || null,
+          objectives: row["Objectives"] || "",
+          targetGroups: row["Target Groups"] || "",
+          collaborationType: row["Collaboration Type"] || "",
+          sectors: sectorNames.map((name: string, i: number) => ({
+            id: `temp-sector-${index}-${i}`,
+            name,
+            percentage: Math.floor(100 / sectorNames.length)
+          })),
+          tags: tagNames,
+          user: user ? {
+            id: user.id,
+            name: user.name,
+            role: user.role,
+          } : undefined,
+        };
+      });
+
+      // Send to API
+      const res = await fetch("/api/activities/bulk-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ activities }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to import activities");
+      }
+
+      const result = await res.json();
+      toast.success(`Successfully imported ${result.success} activities`);
+      fetchActivities(); // Refresh the list
+      return result;
+    } catch (error: any) {
+      console.error("[AIMS] Bulk import error:", error);
+      throw error;
+    }
+  };
+
   return (
-    <MainLayout>
-      <div className="min-h-screen bg-slate-50">
-        <div className="p-8 max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold">Activities</h1>
-              <p className="text-muted-foreground mt-1">Manage and track all development activities</p>
-            </div>
-            <div className="flex gap-2">
-              {activities.length > 0 && (
-                <Button variant="outline" onClick={exportActivities}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export All Activities
+    <TooltipProvider>
+      <Suspense fallback={null}>
+        <SearchParamsHandler onImportParam={handleImportParam} />
+      </Suspense>
+      <MainLayout>
+        <div className="min-h-screen bg-slate-50">
+          <div className="p-8 max-w-full mx-auto">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h1 className="text-3xl font-bold">Activities</h1>
+                <p className="text-muted-foreground mt-1">Manage and track all development activities</p>
+              </div>
+              <div className="flex gap-2">
+                {allActivities.length > 0 && (
+                  <Button variant="outline" onClick={exportActivities}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export All Activities
+                  </Button>
+                )}
+                <Button variant="outline" onClick={() => setShowBulkImport(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import Activities
                 </Button>
-              )}
-              {/* {user && ( */}
                 <Button onClick={() => router.push("/activities/new")}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Activity
                 </Button>
-              {/* )} */}
-            </div>
-          </div>
-
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder="Search activities..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Activity Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Activity Status</SelectItem>
-                <SelectItem value="planning">Planning</SelectItem>
-                <SelectItem value="implementation">Implementation</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={publicationFilter} onValueChange={setPublicationFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Publication Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Publication Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            {/* Activity Table */}
-            {loading ? (
-              <div className="p-8 text-center text-gray-500">Loading activities...</div>
-            ) : sortedActivities.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                {search || statusFilter !== "all" || publicationFilter !== "all" ? "No matching activities found" : "No activities yet"}
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th 
-                        className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('title')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Activity
-                          {getSortIcon('title')}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('activityStatus')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Activity Status
-                          {getSortIcon('activityStatus')}
-                        </div>
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Submission Status
-                      </th>
-                      <th 
-                        className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('publicationStatus')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Publication Status
-                          {getSortIcon('publicationStatus')}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('commitment')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Total Commitment
-                          {getSortIcon('commitment')}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('disbursement')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Total Disbursement
-                          {getSortIcon('disbursement')}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('createdAt')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Created
-                          {getSortIcon('createdAt')}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('updatedAt')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Last Edited
-                          {getSortIcon('updatedAt')}
-                        </div>
-                      </th>
-                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {sortedActivities.map(activity => {
-                      const { commitment, disbursement } = calculateTotals(activity.transactions);
-                      return (
-                        <tr
-                          key={activity.id}
-                          className="hover:bg-gray-50 transition-colors"
+            </div>
+
+            {/* Summary Cards */}
+            <ActivitySummaryCards
+              allActivities={allActivities}
+              filteredActivities={filteredAndSortedActivities}
+              currentPageActivities={currentActivities}
+              hasFiltersApplied={search !== "" || activityStatusFilter !== "all" || publicationStatusFilter !== "all"}
+            />
+
+            {/* Enhanced Filter Bar */}
+            <Card className="mb-4 shadow-sm border border-gray-200">
+              <CardContent className="px-4 py-3">
+                <div className="flex flex-col lg:flex-row gap-3 items-center">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by title, ID, UUID, organization..."
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setCurrentPage(1); // Reset to first page when searching
+                      }}
+                      className="pl-10 h-9 text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-muted-foreground" />
+                      <Select value={activityStatusFilter} onValueChange={(value) => {
+                        setActivityStatusFilter(value);
+                        setCurrentPage(1);
+                      }}>
+                        <SelectTrigger className="w-[160px] h-9 text-sm">
+                          <SelectValue placeholder="Activity Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Activities</SelectItem>
+                          <SelectItem value="planning">Planning</SelectItem>
+                          <SelectItem value="implementation">Implementation</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Select value={publicationStatusFilter} onValueChange={(value) => {
+                      setPublicationStatusFilter(value);
+                      setCurrentPage(1);
+                    }}>
+                      <SelectTrigger className="w-[140px] h-9 text-sm">
+                        <SelectValue placeholder="Publication" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pagination Controls & Stats */}
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-muted-foreground">
+                  Showing {Math.min(startIndex + 1, totalItems)} to {Math.min(endIndex, totalItems)} of {totalItems} activities
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-muted-foreground">Show:</label>
+                  <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                    <SelectTrigger className="w-[70px] h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZES.map(size => (
+                        <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-muted-foreground">per page</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              {/* Activity Table */}
+              {loading ? (
+                <div className="p-6 text-center text-muted-foreground flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading activities...
+                </div>
+              ) : currentActivities.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground">
+                  {search || activityStatusFilter !== "all" || publicationStatusFilter !== "all" ? "No matching activities found" : "No activities yet"}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50/50 border-b border-gray-200 sticky top-0 z-10">
+                      <tr>
+                        <th 
+                          className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer hover:bg-gray-100/50 min-w-[280px]"
+                          onClick={() => handleSort('title')}
                         >
-                          <td className="px-4 py-2">
-                            <div 
-                              className="cursor-pointer"
-                              onClick={() => router.push(`/activities/${activity.id}`)}
-                            >
-                              <div className="flex justify-between items-start mb-2">
-                                <h3 className="text-lg font-semibold">{activity.title}</h3>
-                                <div className="flex gap-2">
-                                  {activity.contributors && activity.contributors.length > 0 && (
-                                    <Badge variant="secondary" className="flex items-center gap-1">
-                                      <Users className="h-3 w-3" />
-                                      {activity.contributors.filter((c: any) => c.status === 'accepted').length} Contributors
-                                    </Badge>
-                                  )}
-                                  <Badge 
-                                    variant={activity.publicationStatus === "published" ? "success" : "secondary"}
-                                  >
-                                    {activity.publicationStatus === "published" ? "Published" : "Draft"}
-                                  </Badge>
+                          <div className="flex items-center">
+                            Activity
+                            {getSortIcon('title')}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer hover:bg-gray-100/50"
+                          onClick={() => handleSort('activityStatus')}
+                        >
+                          <div className="flex items-center">
+                            Activity Status
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <HelpCircle className="h-3 w-3 text-muted-foreground/60 ml-1" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Indicates the current implementation stage of the activity</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {getSortIcon('activityStatus')}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer hover:bg-gray-100/50"
+                          onClick={() => handleSort('publicationStatus')}
+                        >
+                          <div className="flex items-center">
+                            Publication Status
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <HelpCircle className="h-3 w-3 text-muted-foreground/60 ml-1" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Indicates whether the activity is published for reporting or internal use</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {getSortIcon('publicationStatus')}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer hover:bg-gray-100/50"
+                          onClick={() => handleSort('commitment')}
+                        >
+                          <div className="flex items-center justify-end">
+                            Total Commitment
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <HelpCircle className="h-3 w-3 text-muted-foreground/60 ml-1" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Total funding pledged for the activity</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {getSortIcon('commitment')}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer hover:bg-gray-100/50"
+                          onClick={() => handleSort('disbursement')}
+                        >
+                          <div className="flex items-center justify-end">
+                            Total Disbursement
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <HelpCircle className="h-3 w-3 text-muted-foreground/60 ml-1" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Funds transferred to date for the activity</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {getSortIcon('disbursement')}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer hover:bg-gray-100/50"
+                          onClick={() => handleSort('startDate')}
+                        >
+                          <div className="flex items-center">
+                            Start Date
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <HelpCircle className="h-3 w-3 text-muted-foreground/60 ml-1" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Planned or actual start date, depending on status</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {getSortIcon('startDate')}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer hover:bg-gray-100/50"
+                          onClick={() => handleSort('createdAt')}
+                        >
+                          <div className="flex items-center">
+                            Date Created
+                            {getSortIcon('createdAt')}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer hover:bg-gray-100/50"
+                          onClick={() => handleSort('updatedAt')}
+                        >
+                          <div className="flex items-center">
+                            Date Last Updated
+                            {getSortIcon('updatedAt')}
+                          </div>
+                        </th>
+                        <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 bg-white">
+                      {currentActivities.map((activity, index) => {
+                        const { commitment, disbursement } = calculateTotals(activity.transactions);
+                        const activityStatus = activity.activityStatus || 
+                          (activity.status && !["published", "draft"].includes(activity.status) ? activity.status : "planning");
+                        const publicationStatus = activity.publicationStatus || 
+                          (activity.status === "published" ? "published" : "draft");
+                        const startDate = getStartDate(activity);
+
+                        return (
+                          <tr
+                            key={activity.id}
+                            className={cn(
+                              "hover:bg-gray-50/50 transition-colors",
+                              index % 2 === 0 ? "bg-white" : "bg-gray-50/30"
+                            )}
+                          >
+                            <td className="px-4 py-3">
+                              <div 
+                                className="cursor-pointer"
+                                onClick={() => router.push(`/activities/${activity.id}`)}
+                              >
+                                <h3 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                                  {activity.title}
+                                </h3>
+                                <div className="mt-1">
+                                  <p className="text-xs text-muted-foreground">
+                                    {activity.organization?.acronym ? (
+                                      <>
+                                        <span className="font-medium">{activity.organization.acronym}</span>
+                                        <span className="text-muted-foreground/70"> • {activity.organization.name}</span>
+                                      </>
+                                    ) : (
+                                      activity.organization?.name || 'No Organization'
+                                    )}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground/60 mt-0.5">
+                                    {activity.partnerId || activity.iatiId || 'No Partner ID'} • ID: {activity.id.substring(0, 8)}...
+                                  </p>
                                 </div>
                               </div>
-                              <div className="text-xs text-gray-500 mt-1 space-y-0.5">
-                                {activity.partnerId && (
-                                  <div>
-                                    <span className="font-medium">Partner ID:</span> {activity.partnerId}
-                                  </div>
-                                )}
-                                {activity.iatiId && (
-                                  <div>
-                                    <span className="font-medium">IATI ID:</span> {activity.iatiId}
-                                  </div>
-                                )}
-                                {activity.createdByOrg && (
-                                  <div className="text-gray-600">
-                                    Created by: {activity.createdByOrg}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2">
-                            <Badge 
-                              variant={getActivityStatusColor(activity.activityStatus || 
-                                (activity.status && !["published", "draft"].includes(activity.status) ? activity.status : "planning"))}
-                              className="rounded-md"
-                            >
-                              {(activity.activityStatus || 
-                                (activity.status && !["published", "draft"].includes(activity.status) ? activity.status : "planning")
-                              ).charAt(0).toUpperCase() + 
-                              (activity.activityStatus || 
-                                (activity.status && !["published", "draft"].includes(activity.status) ? activity.status : "planning")
-                              ).slice(1)}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-2">
-                            <Badge 
-                              variant={
-                                activity.submissionStatus === 'submitted' ? 'default' :
-                                activity.submissionStatus === 'validated' ? 'success' :
-                                activity.submissionStatus === 'rejected' ? 'destructive' : 'secondary'
-                              }
-                              className="rounded-md"
-                            >
-                              {activity.submissionStatus ? 
-                                activity.submissionStatus.charAt(0).toUpperCase() + activity.submissionStatus.slice(1) 
-                                : 'Draft'}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-2">
-                            <Badge 
-                              variant={
-                                (activity.publicationStatus === "published" || 
-                                 (activity.status === "published" && !activity.publicationStatus)) 
-                                  ? "success" : "secondary"
-                              }
-                              className="rounded-md"
-                            >
-                              {activity.publicationStatus === "published" || 
-                               (activity.status === "published" && !activity.publicationStatus)
-                                ? "Published" : "Draft"}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-2">
-                            <span className="text-sm font-medium text-gray-900">
+                            </td>
+                            <td className="px-3 py-3">
+                              <Badge 
+                                variant={getActivityStatusColor(activityStatus)}
+                                className="capitalize text-xs rounded-md px-2 py-1"
+                              >
+                                {activityStatus}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-3">
+                              <Badge 
+                                variant={getPublicationStatusColor(publicationStatus)}
+                                className="capitalize text-xs rounded-md px-2 py-1"
+                              >
+                                {publicationStatus}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-3 text-right text-sm font-medium text-gray-900">
                               {formatCurrency(commitment)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2">
-                            <span className="text-sm font-medium text-gray-900">
+                            </td>
+                            <td className="px-3 py-3 text-right text-sm font-medium text-gray-900">
                               {formatCurrency(disbursement)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 text-sm text-gray-600">
-                            {format(new Date(activity.createdAt), "dd MMM yyyy")}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-gray-600">
-                            {format(new Date(activity.updatedAt), "dd MMM yyyy")}
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => router.push(`/activities/${activity.id}?edit=true`)}
-                                title="Edit activity"
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setDeleteActivityId(activity.id)}
-                                title="Delete activity"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                {startDate ? format(new Date(startDate), "dd MMM yyyy") : "Not set"}
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 text-sm text-muted-foreground">
+                              {format(new Date(activity.createdAt), "dd MMM yyyy")}
+                            </td>
+                            <td className="px-3 py-3 text-sm text-muted-foreground">
+                              {format(new Date(activity.updatedAt), "dd MMM yyyy")}
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="flex justify-center gap-1">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => router.push(`/activities/new?id=${activity.id}`)}
+                                      className="h-7 w-7 p-0 hover:bg-gray-100"
+                                    >
+                                      <Edit2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Edit activity</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setDeleteActivityId(activity.id)}
+                                      className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Delete activity</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Load More Button and Pagination Info */}
+            {currentActivities.length > 0 && (
+              <div className="mt-4 flex flex-col items-center gap-3">
+                {hasMore && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="min-w-[120px] h-9 text-sm border-gray-200 hover:bg-gray-50"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load More'
+                    )}
+                  </Button>
+                )}
+                
+                <div className="text-sm text-muted-foreground text-center">
+                  Page {currentPage} of {totalPages} • {totalItems} total activities
+                </div>
               </div>
             )}
-          </div>
 
-          {/* Delete Confirmation Dialog */}
-          <Dialog open={!!deleteActivityId} onOpenChange={() => setDeleteActivityId(null)}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete Activity</DialogTitle>
-                <DialogDesc>
-                  Are you sure you want to delete this activity? This action cannot be undone.
-                </DialogDesc>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDeleteActivityId(null)}>
-                  Cancel
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => deleteActivityId && handleDelete(deleteActivityId)}
-                >
-                  Delete Activity
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deleteActivityId} onOpenChange={() => setDeleteActivityId(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete Activity</DialogTitle>
+                  <DialogDesc>
+                    Are you sure you want to delete this activity? This action cannot be undone.
+                  </DialogDesc>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDeleteActivityId(null)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => deleteActivityId && handleDelete(deleteActivityId)}
+                  >
+                    Delete Activity
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Bulk Import Dialog */}
+            <BulkImportDialog
+              open={showBulkImport}
+              onOpenChange={setShowBulkImport}
+              onImport={handleBulkImport}
+              entityType="activities"
+            />
+          </div>
         </div>
-      </div>
-    </MainLayout>
+      </MainLayout>
+    </TooltipProvider>
   );
 } 
