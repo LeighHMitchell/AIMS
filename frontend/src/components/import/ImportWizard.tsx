@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import { 
   Upload, 
   GitBranch, 
@@ -11,7 +12,9 @@ import {
   ArrowRight,
   ArrowLeft,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  FileDown,
+  Shield
 } from 'lucide-react';
 import { 
   ImportEntityType, 
@@ -22,14 +25,17 @@ import {
   getFieldsForEntityType 
 } from '@/types/import';
 import { parseFile } from '@/lib/file-parser';
+import { downloadTemplate, ImportLogger } from '@/lib/import-utils';
 import { FileUpload } from './FileUpload';
 import { FieldMapper } from './FieldMapper';
 import { ImportResults } from './ImportResults';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@/hooks/useUser';
 
 interface ImportWizardProps {
   entityType: ImportEntityType;
-  onImport: (data: any[], mappings: FieldMapping[]) => Promise<ImportResultsType>;
+  onImport: (data: any[], mappings: FieldMapping[], fileName?: string) => Promise<ImportResultsType>;
+  requiredPermission?: string;
 }
 
 const STEPS = [
@@ -38,11 +44,13 @@ const STEPS = [
   { id: 'results', title: 'Import Results', icon: CheckCircle },
 ];
 
-export function ImportWizard({ entityType, onImport }: ImportWizardProps) {
+export function ImportWizard({ entityType, onImport, requiredPermission }: ImportWizardProps) {
   const router = useRouter();
+  const { user, permissions } = useUser();
   const [currentStep, setCurrentStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [importProgress, setImportProgress] = useState(0);
   
   const [importState, setImportState] = useState<ImportState>({
     file: null,
@@ -55,6 +63,14 @@ export function ImportWizard({ entityType, onImport }: ImportWizardProps) {
 
   const systemFields = getFieldsForEntityType(entityType);
 
+  // Check permissions
+  const hasPermission = React.useMemo(() => {
+    if (!requiredPermission) return true;
+    if (user?.role === 'super_user') return true;
+    if (requiredPermission === 'admin' && (user?.role === 'gov_partner_tier_1' || user?.role === 'dev_partner_tier_1')) return true;
+    return false;
+  }, [user, requiredPermission]);
+
   // Initialize mappings when fields are loaded
   React.useEffect(() => {
     setImportState(prev => ({
@@ -65,6 +81,10 @@ export function ImportWizard({ entityType, onImport }: ImportWizardProps) {
       })),
     }));
   }, [systemFields]);
+
+  const handleDownloadTemplate = useCallback(() => {
+    downloadTemplate(entityType, systemFields);
+  }, [entityType, systemFields]);
 
   const handleFileSelect = useCallback(async (file: File) => {
     setIsProcessing(true);
@@ -115,8 +135,30 @@ export function ImportWizard({ entityType, onImport }: ImportWizardProps) {
     }
 
     setIsProcessing(true);
+    setImportProgress(0);
+    
     try {
-      const results = await onImport(importState.fileData, importState.mappings);
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setImportProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      const results = await onImport(importState.fileData, importState.mappings, importState.file?.name);
+      
+      clearInterval(progressInterval);
+      setImportProgress(100);
+      
+      // Log the import
+      if (user && importState.file) {
+        await ImportLogger.logImport(
+          entityType,
+          importState.fileData.length,
+          results.successful,
+          results.failed,
+          user.id,
+          importState.file.name
+        );
+      }
       
       setImportState(prev => ({
         ...prev,
@@ -128,8 +170,9 @@ export function ImportWizard({ entityType, onImport }: ImportWizardProps) {
       setError(error instanceof Error ? error.message : "An error occurred during import");
     } finally {
       setIsProcessing(false);
+      setImportProgress(0);
     }
-  }, [importState.fileData, importState.mappings, onImport, systemFields]);
+  }, [importState.fileData, importState.mappings, importState.file, onImport, systemFields, entityType, user]);
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
@@ -150,11 +193,27 @@ export function ImportWizard({ entityType, onImport }: ImportWizardProps) {
       importResults: undefined,
     });
     setCurrentStep(0);
+    setError(null);
+    setImportProgress(0);
   }, [systemFields]);
 
   const handleViewImported = useCallback(() => {
     router.push(`/${entityType}`);
   }, [entityType, router]);
+
+  // Show permission denied if user doesn't have access
+  if (!hasPermission) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <Shield className="h-4 w-4" />
+          <AlertDescription>
+            You don't have permission to perform bulk imports. Please contact your administrator.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -215,11 +274,20 @@ export function ImportWizard({ entityType, onImport }: ImportWizardProps) {
         
         {currentStep === 0 && (
           <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-semibold">Upload {entityType} Data</h2>
-              <p className="text-muted-foreground mt-1">
-                Select a CSV or Excel file containing your {entityType} data
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Upload {entityType} Data</h2>
+                <p className="text-muted-foreground mt-1">
+                  Select a CSV or Excel file containing your {entityType} data
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={handleDownloadTemplate}
+              >
+                <FileDown className="h-4 w-4 mr-2" />
+                Download Template
+              </Button>
             </div>
             <FileUpload 
               onFileSelect={handleFileSelect}
@@ -251,6 +319,7 @@ export function ImportWizard({ entityType, onImport }: ImportWizardProps) {
               fileColumns={importState.columns}
               mappings={importState.mappings}
               onMappingsChange={handleMappingsChange}
+              entityType={entityType}
             />
 
             <div className="flex items-center justify-between pt-4">
@@ -279,6 +348,17 @@ export function ImportWizard({ entityType, onImport }: ImportWizardProps) {
                 )}
               </Button>
             </div>
+
+            {/* Progress Bar */}
+            {isProcessing && importProgress > 0 && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Importing...</span>
+                  <span>{importProgress}%</span>
+                </div>
+                <Progress value={importProgress} className="h-2" />
+              </div>
+            )}
           </div>
         )}
 

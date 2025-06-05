@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 export default function ImportOrganizationsPage() {
-  const handleImport = async (data: any[], mappings: FieldMapping[]): Promise<ImportResults> => {
+  const handleImport = async (data: any[], mappings: FieldMapping[], fileName?: string): Promise<ImportResults> => {
     const response = await fetch('/api/import/organizations/', {
       method: 'POST',
       headers: {
@@ -18,6 +18,7 @@ export default function ImportOrganizationsPage() {
       body: JSON.stringify({
         data,
         mappings,
+        fileName: fileName || 'unknown_file.csv',
       }),
     });
     
@@ -51,6 +52,7 @@ export default function ImportOrganizationsPage() {
         <ImportWizard
           entityType="organizations"
           onImport={handleImport}
+          requiredPermission="admin"
         />
       </div>
     </MainLayout>

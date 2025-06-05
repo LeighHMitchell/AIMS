@@ -1,21 +1,51 @@
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from .models import AidProject, Organization, FinancialTransaction, Donor, Country, Sector, ImplementingOrganization
+from .models import AidProject, Organization, FinancialTransaction, Donor, Country, Sector, ImplementingOrganization, ImportLog
 
 logger = logging.getLogger(__name__)
+
+def check_import_permission(user):
+    """Check if user has permission to perform bulk imports"""
+    if not user.is_authenticated:
+        return False
+    
+    # Super users can always import
+    if user.is_superuser:
+        return True
+    
+    # Check user profile permissions
+    if hasattr(user, 'profile'):
+        # Partner government users can import
+        if user.profile.permission_level == 'partner_government':
+            return True
+        
+        # Check role permissions if user has roles
+        primary_role = user.user_roles.filter(is_primary=True).first()
+        if primary_role and primary_role.role.can_create_projects:
+            return True
+    
+    return False
 
 @csrf_exempt
 @login_required
 @require_POST
 def import_activities(request):
     """Bulk import activities from frontend"""
+    
+    # Check permissions
+    if not check_import_permission(request.user):
+        return JsonResponse(
+            {'error': 'You do not have permission to perform bulk imports'},
+            status=403
+        )
+    
     try:
         data = json.loads(request.body)
         activities_data = data.get('data', [])
@@ -116,6 +146,18 @@ def import_activities(request):
                     })
                     logger.error(f"Error importing activity row {idx}: {str(e)}")
         
+        # Log the import
+        ImportLog.objects.create(
+            entity_type='activities',
+            file_name=data.get('fileName', 'Unknown'),
+            total_rows=len(activities_data),
+            successful_rows=results['successful'],
+            failed_rows=results['failed'],
+            user=request.user,
+            field_mappings=mappings,
+            error_log=results['errors'][:100]  # Store first 100 errors
+        )
+        
         return JsonResponse(results)
         
     except Exception as e:
@@ -128,6 +170,14 @@ def import_activities(request):
 @require_POST
 def import_organizations(request):
     """Bulk import organizations from frontend"""
+    
+    # Check permissions
+    if not check_import_permission(request.user):
+        return JsonResponse(
+            {'error': 'You do not have permission to perform bulk imports'},
+            status=403
+        )
+    
     try:
         data = json.loads(request.body)
         organizations_data = data.get('data', [])
@@ -199,6 +249,18 @@ def import_organizations(request):
                     })
                     logger.error(f"Error importing organization row {idx}: {str(e)}")
         
+        # Log the import
+        ImportLog.objects.create(
+            entity_type='organizations',
+            file_name=data.get('fileName', 'Unknown'),
+            total_rows=len(organizations_data),
+            successful_rows=results['successful'],
+            failed_rows=results['failed'],
+            user=request.user,
+            field_mappings=mappings,
+            error_log=results['errors'][:100]
+        )
+        
         return JsonResponse(results)
         
     except Exception as e:
@@ -211,6 +273,14 @@ def import_organizations(request):
 @require_POST
 def import_transactions(request):
     """Bulk import transactions from frontend"""
+    
+    # Check permissions
+    if not check_import_permission(request.user):
+        return JsonResponse(
+            {'error': 'You do not have permission to perform bulk imports'},
+            status=403
+        )
+    
     try:
         data = json.loads(request.body)
         transactions_data = data.get('data', [])
@@ -298,8 +368,56 @@ def import_transactions(request):
                     })
                     logger.error(f"Error importing transaction row {idx}: {str(e)}")
         
+        # Log the import
+        ImportLog.objects.create(
+            entity_type='transactions',
+            file_name=data.get('fileName', 'Unknown'),
+            total_rows=len(transactions_data),
+            successful_rows=results['successful'],
+            failed_rows=results['failed'],
+            user=request.user,
+            field_mappings=mappings,
+            error_log=results['errors'][:100]
+        )
+        
         return JsonResponse(results)
         
     except Exception as e:
         logger.error(f"Import transactions error: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=400)
+
+@csrf_exempt
+@login_required
+@require_POST
+def import_logs(request):
+    """Log import activity from frontend"""
+    try:
+        data = json.loads(request.body)
+        
+        # The ImportLogger on frontend already sends the data in the right format
+        # We're just creating the log here since the actual import already happened
+        # This is a backup in case the import view didn't log it
+        
+        # Check if a log for this import already exists (within 5 seconds)
+        recent_log = ImportLog.objects.filter(
+            user=request.user,
+            entity_type=data.get('entityType'),
+            file_name=data.get('fileName'),
+            import_date__gte=datetime.now() - timedelta(seconds=5)
+        ).first()
+        
+        if not recent_log:
+            ImportLog.objects.create(
+                entity_type=data.get('entityType'),
+                file_name=data.get('fileName'),
+                total_rows=data.get('totalRows', 0),
+                successful_rows=data.get('successCount', 0),
+                failed_rows=data.get('failureCount', 0),
+                user=request.user
+            )
+        
+        return JsonResponse({'status': 'success'})
+        
+    except Exception as e:
+        logger.error(f"Import log error: {str(e)}")
         return JsonResponse({'error': str(e)}, status=400)

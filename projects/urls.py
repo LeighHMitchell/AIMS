@@ -49,4 +49,5 @@ urlpatterns = [
     path('api/import/activities/', import_views.import_activities, name='import_activities'),
     path('api/import/organizations/', import_views.import_organizations, name='import_organizations'),
     path('api/import/transactions/', import_views.import_transactions, name='import_transactions'),
+    path('api/import-logs/', import_views.import_logs, name='import_logs'),
 ]

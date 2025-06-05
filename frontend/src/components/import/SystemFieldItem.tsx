@@ -2,10 +2,12 @@
 
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { X, ArrowRight } from 'lucide-react';
+import { X, ArrowRight, GripVertical } from 'lucide-react';
 import { SystemField, FileColumn } from '@/types/import';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +16,7 @@ interface SystemFieldItemProps {
   mappedColumn: FileColumn | null;
   onRemoveMapping: (fieldId: string) => void;
   isDropTarget?: boolean;
+  isDraggable?: boolean;
 }
 
 export function SystemFieldItem({
@@ -21,30 +24,50 @@ export function SystemFieldItem({
   mappedColumn,
   onRemoveMapping,
   isDropTarget = false,
+  isDraggable = false,
 }: SystemFieldItemProps) {
-  const { setNodeRef, isOver } = useDroppable({
+  const droppable = useDroppable({
     id: field.id,
     disabled: !isDropTarget,
   });
+
+  const sortable = useSortable({
+    id: `field-${field.id}`,
+    disabled: !isDraggable,
+  });
+
+  const style = isDraggable ? {
+    transform: CSS.Transform.toString(sortable.transform),
+    transition: sortable.transition,
+  } : {};
 
   const isMapped = mappedColumn !== null;
 
   return (
     <div
-      ref={setNodeRef}
+      ref={isDraggable ? sortable.setNodeRef : droppable.setNodeRef}
+      style={style}
       className={cn(
         "relative transition-all",
-        isOver && "scale-105"
+        droppable.isOver && "scale-105",
+        sortable.isDragging && "opacity-50"
       )}
+      {...(isDraggable ? sortable.attributes : {})}
+      {...(isDraggable ? sortable.listeners : {})}
     >
       <Card
         className={cn(
           "p-3 transition-all",
           isMapped ? "bg-green-50 border-green-300" : field.required ? "border-red-200" : "border-gray-200",
-          isOver && "ring-2 ring-primary shadow-lg"
+          droppable.isOver && "ring-2 ring-primary shadow-lg"
         )}
       >
         <div className="flex items-center gap-3">
+          {/* Drag Handle */}
+          {isDraggable && (
+            <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+          )}
+          
           {/* Field Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">

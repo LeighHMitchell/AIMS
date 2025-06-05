@@ -14,6 +14,7 @@ interface FileColumnItemProps {
   isMapped: boolean;
   isDraggable: boolean;
   isDragging?: boolean;
+  id?: string;
 }
 
 export function FileColumnItem({
@@ -21,6 +22,7 @@ export function FileColumnItem({
   isMapped,
   isDraggable,
   isDragging = false,
+  id,
 }: FileColumnItemProps) {
   const {
     attributes,
@@ -29,7 +31,7 @@ export function FileColumnItem({
     transform,
     isDragging: isActiveDrag,
   } = useDraggable({
-    id: column.index.toString(),
+    id: id || column.index.toString(),
     disabled: !isDraggable,
   });
 

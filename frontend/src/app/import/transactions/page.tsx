@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 export default function ImportTransactionsPage() {
-  const handleImport = async (data: any[], mappings: FieldMapping[]): Promise<ImportResults> => {
+  const handleImport = async (data: any[], mappings: FieldMapping[], fileName?: string): Promise<ImportResults> => {
     const response = await fetch('/api/import/transactions/', {
       method: 'POST',
       headers: {
@@ -18,6 +18,7 @@ export default function ImportTransactionsPage() {
       body: JSON.stringify({
         data,
         mappings,
+        fileName: fileName || 'unknown_file.csv',
       }),
     });
     
@@ -51,6 +52,7 @@ export default function ImportTransactionsPage() {
         <ImportWizard
           entityType="transactions"
           onImport={handleImport}
+          requiredPermission="create_projects"
         />
       </div>
     </MainLayout>
