@@ -10,6 +10,7 @@ import { useUser } from "@/hooks/useUser"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { format } from "date-fns"
 import { ActivityFeed } from "@/components/ActivityFeed"
+import { ContributionHeatmap } from "@/components/ContributionHeatmap"
 import { 
   Activity, 
   FileText, 
@@ -268,6 +269,9 @@ export default function Dashboard() {
                 </Card>
               )}
             </div>
+
+            {/* Contribution Heatmap */}
+            <ContributionHeatmap />
 
             {/* Role-specific quick actions */}
             <Card className="bg-white">

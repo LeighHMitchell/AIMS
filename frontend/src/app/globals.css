@@ -91,4 +91,62 @@
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
+}
+
+/* Contribution Heatmap Styles */
+.react-calendar-heatmap {
+  @apply w-full;
+}
+
+.react-calendar-heatmap text {
+  @apply text-xs fill-gray-500;
+  font-family: inherit;
+}
+
+.react-calendar-heatmap .react-calendar-heatmap-month-label {
+  @apply text-xs fill-gray-600 font-medium;
+}
+
+.react-calendar-heatmap rect {
+  @apply cursor-pointer;
+}
+
+.react-calendar-heatmap rect:hover {
+  @apply stroke-gray-600;
+  stroke-width: 1px;
+}
+
+/* GitHub-like color levels */
+.color-github-0 {
+  @apply fill-gray-100;
+}
+
+.color-github-1 {
+  @apply fill-green-200;
+}
+
+.color-github-2 {
+  @apply fill-green-300;
+}
+
+.color-github-3 {
+  @apply fill-green-400;
+}
+
+.color-github-4 {
+  @apply fill-green-600;
+}
+
+/* Tooltip styles */
+.heatmap-tooltip {
+  @apply absolute z-50 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap;
+  pointer-events: none;
+}
+
+.heatmap-tooltip::before {
+  content: '';
+  @apply absolute bottom-full left-1/2 transform -translate-x-1/2;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 4px solid theme('colors.gray.800');
 } 
