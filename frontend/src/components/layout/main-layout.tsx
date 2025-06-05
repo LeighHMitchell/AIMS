@@ -3,7 +3,7 @@
 import React from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Building2, Home, Settings, FolderPlus, Users, LogOut, User, FileText, Shield, CheckSquare } from "lucide-react"
+import { Building2, Home, Settings, FolderPlus, Users, LogOut, User, FileText, Shield, CheckSquare, FileSpreadsheet } from "lucide-react"
 import Link from "next/link"
 import { AuthGuard } from "@/components/AuthGuard"
 import { useUser } from "@/hooks/useUser"
@@ -98,6 +98,11 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
             <Link href="/dashboard" passHref legacyBehavior>
               <Button asChild variant="ghost" className="w-full justify-start">
                 <a><Home className="h-4 w-4 mr-2" />Dashboard</a>
+              </Button>
+            </Link>
+            <Link href="/import" passHref legacyBehavior>
+              <Button asChild variant="ghost" className="w-full justify-start">
+                <a><FileSpreadsheet className="h-4 w-4 mr-2" />Smart Import Tool</a>
               </Button>
             </Link>
             <Link href="/activities" passHref legacyBehavior>
