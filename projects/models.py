@@ -1,9 +1,12 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from decimal import Decimal
-import json
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+User = get_user_model()
 
 class Donor(models.Model):
     """Donor organization model"""
@@ -188,6 +191,8 @@ class AidProject(models.Model):
             return 100
         else:
             total_days = (self.end_date_planned - self.start_date_actual).days
+            if total_days <= 0:  # Handle edge case where end date is before or same as start date
+                return 100
             elapsed_days = (today - self.start_date_actual).days
             return min(100, max(0, (elapsed_days / total_days) * 100))
     
@@ -614,9 +619,6 @@ class UserRole(models.Model):
 
 
 # Signal to create user profile automatically
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:

@@ -1,13 +1,14 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { Database } from './database.types'
 
 // Environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-// Log configuration status only once
+// Log configuration status only once in development
 let hasLoggedConfig = false
-if (typeof window === 'undefined' && !hasLoggedConfig) {
+if (typeof window === 'undefined' && !hasLoggedConfig && process.env.NODE_ENV === 'development') {
   console.log('[Supabase] Configuration status:')
   console.log('- NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing')
   console.log('- NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓ Set' : '✗ Missing')
@@ -16,17 +17,19 @@ if (typeof window === 'undefined' && !hasLoggedConfig) {
 }
 
 // Create a singleton instance for the admin client
-let _supabaseAdmin: any = null
+let _supabaseAdmin: SupabaseClient<Database> | null = null
 
 // Helper function to create admin client with proper error handling
-function createAdminClient() {
+function createAdminClient(): SupabaseClient<Database> | null {
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    console.error('[Supabase] Missing required environment variables for admin client')
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Supabase] Missing required environment variables for admin client')
+    }
     return null
   }
 
   try {
-    return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    return createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
@@ -41,205 +44,51 @@ function createAdminClient() {
       }
     })
   } catch (error) {
-    console.error('[Supabase] Error creating admin client:', error)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Supabase] Error creating admin client:', error)
+    }
     return null
   }
 }
 
+// Create a null client that throws informative errors
+const createNullClient = (clientType: string): SupabaseClient<Database> => {
+  const errorMessage = `Supabase ${clientType} client is not configured. Please check your environment variables.`
+  
+  return new Proxy({} as SupabaseClient<Database>, {
+    get() {
+      throw new Error(errorMessage)
+    }
+  })
+}
+
 // Client-side Supabase client (uses anon key)
-export const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase: SupabaseClient<Database> = (supabaseUrl && supabaseAnonKey) 
+  ? createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
       }
     })
-  : null as any
+  : createNullClient('client')
 
 // Server-side Supabase client with singleton pattern
-export const supabaseAdmin = (() => {
+export const supabaseAdmin: SupabaseClient<Database> = (() => {
   if (typeof window !== 'undefined') {
     // Don't create admin client on client-side
-    return null as any
+    return createNullClient('admin (not available on client-side)')
   }
   
   if (!_supabaseAdmin) {
-    _supabaseAdmin = createAdminClient()
+    const client = createAdminClient()
+    if (!client) {
+      return createNullClient('admin')
+    }
+    _supabaseAdmin = client
   }
   
   return _supabaseAdmin
 })()
 
-// Database types (you can generate these from Supabase later)
-export type Database = {
-  public: {
-    Tables: {
-      activities: {
-        Row: {
-          id: string
-          partner_id: string | null
-          iati_id: string | null
-          title: string
-          description: string | null
-          objectives: string | null
-          target_groups: string | null
-          collaboration_type: string | null
-          activity_status: string
-          publication_status: string
-          submission_status: string
-          banner: string | null
-          created_by_org: string | null
-          planned_start_date: string | null
-          planned_end_date: string | null
-          actual_start_date: string | null
-          actual_end_date: string | null
-          submitted_by: string | null
-          submitted_at: string | null
-          validated_by: string | null
-          validated_at: string | null
-          published_by: string | null
-          published_at: string | null
-          rejected_by: string | null
-          rejected_at: string | null
-          rejection_reason: string | null
-          created_by: string | null
-          last_edited_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['activities']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['activities']['Insert']>
-      }
-      transactions: {
-        Row: {
-          id: string
-          activity_id: string
-          organization_id: string | null
-          transaction_type: string
-          provider_org: string | null
-          receiver_org: string | null
-          value: number
-          currency: string
-          transaction_date: string | null
-          description: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['transactions']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['transactions']['Insert']>
-      }
-      partners: {
-        Row: {
-          id: string
-          name: string
-          type: string | null
-          country: string | null
-          email: string | null
-          phone: string | null
-          address: string | null
-          website: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['partners']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['partners']['Insert']>
-      }
-      users: {
-        Row: {
-          id: string
-          email: string
-          name: string
-          role: string
-          organization_id: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['users']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['users']['Insert']>
-      }
-      organizations: {
-        Row: {
-          id: string
-          name: string
-          type: string | null
-          country: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['organizations']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['organizations']['Insert']>
-      }
-      activity_logs: {
-        Row: {
-          id: string
-          user_id: string | null
-          activity_id: string | null
-          action: string
-          details: any
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['activity_logs']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['activity_logs']['Insert']>
-      }
-      activity_sectors: {
-        Row: {
-          id: string
-          activity_id: string
-          sector_code: string
-          sector_name: string
-          percentage: number | null
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['activity_sectors']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['activity_sectors']['Insert']>
-      }
-      activity_comments: {
-        Row: {
-          id: string
-          activity_id: string
-          user_id: string | null
-          content: string
-          type: string
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['activity_comments']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['activity_comments']['Insert']>
-      }
-      activity_contributors: {
-        Row: {
-          id: string
-          activity_id: string
-          organization_id: string | null
-          status: string
-          nominated_by: string | null
-          nominated_at: string
-          responded_at: string | null
-          can_edit_own_data: boolean
-          can_view_other_drafts: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['activity_contributors']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['activity_contributors']['Insert']>
-      }
-      projects: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          start_date: string | null
-          end_date: string | null
-          budget: number | null
-          currency: string
-          status: string
-          organization_id: string | null
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['projects']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['projects']['Insert']>
-      }
-    }
-  }
-} 
+// Export database types
+export type { Database } 

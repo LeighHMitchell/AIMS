@@ -348,8 +348,13 @@ def analytics_dashboard(request):
     """Analytics and reporting dashboard"""
     # Time-based analysis
     current_year = timezone.now().year
+    
+    # Use Django ORM annotations instead of .extra() to avoid SQL injection
+    from django.db.models import Count, Sum, Avg
+    from django.db.models.functions import TruncYear, TruncMonth
+    
     projects_by_year = (AidProject.objects
-                       .extra(select={'year': "strftime('%%Y', start_date_planned)"})
+                       .annotate(year=TruncYear('start_date_planned'))
                        .values('year')
                        .annotate(count=Count('id'), total_funding=Sum('funding_amount'))
                        .order_by('year'))
@@ -386,18 +391,38 @@ def analytics_dashboard(request):
     twelve_months_ago = timezone.now() - timedelta(days=365)
     monthly_trends = (AidProject.objects
                      .filter(submitted_at__gte=twelve_months_ago)
-                     .extra(select={'month': "strftime('%%Y-%%m', submitted_at)"})
+                     .annotate(month=TruncMonth('submitted_at'))
                      .values('month')
                      .annotate(count=Count('id'), total_funding=Sum('funding_amount'))
                      .order_by('month'))
     
+    # Convert year values for display
+    projects_by_year_list = []
+    for item in projects_by_year:
+        if item['year']:
+            projects_by_year_list.append({
+                'year': item['year'].year,
+                'count': item['count'],
+                'total_funding': item['total_funding']
+            })
+    
+    # Convert month values for display
+    monthly_trends_list = []
+    for item in monthly_trends:
+        if item['month']:
+            monthly_trends_list.append({
+                'month': item['month'].strftime('%Y-%m'),
+                'count': item['count'],
+                'total_funding': item['total_funding']
+            })
+    
     context = {
-        'projects_by_year': list(projects_by_year),
+        'projects_by_year': projects_by_year_list,
         'funding_by_sector': list(funding_by_sector),
         'projects_by_status': list(projects_by_status),
         'geographic_data': list(geographic_data),
         'donor_analysis': list(donor_analysis),
-        'monthly_trends': list(monthly_trends),
+        'monthly_trends': monthly_trends_list,
     }
     
     return render(request, 'projects/analytics.html', context)
@@ -418,16 +443,16 @@ def export_projects(request):
     
     for project in projects:
         writer.writerow([
-            project.iati_identifier,
+            project.iati_identifier or '',
             project.title,
-            project.donor.name,
-            project.recipient_country.name,
+            project.donor.name if project.donor else '',
+            project.recipient_country.name if project.recipient_country else '',
             project.sector.name if project.sector else '',
-            project.get_activity_status_display(),
-            project.start_date_planned,
-            project.end_date_planned,
-            project.total_budget,
-            project.funding_amount,
+            project.get_activity_status_display() if project.activity_status else '',
+            project.start_date_planned or '',
+            project.end_date_planned or '',
+            project.total_budget or '',
+            project.funding_amount or '',
             project.currency,
             project.implementing_org.name if project.implementing_org else '',
             project.target_beneficiaries or ''
@@ -500,10 +525,11 @@ def api_add_transaction(request):
                     'reference': transaction.reference,
                 }
             })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
-    
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @require_http_methods(["POST"])
 def api_add_commitment(request):
