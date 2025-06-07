@@ -91,4 +91,58 @@
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
+}
+
+/* Contribution Heatmap Styles */
+.contribution-heatmap-wrapper {
+  overflow-x: auto;
+  padding: 1rem 0;
+}
+
+.react-calendar-heatmap text {
+  font-size: 10px;
+  fill: currentColor;
+  @apply text-muted-foreground;
+}
+
+.react-calendar-heatmap .react-calendar-heatmap-small-text {
+  font-size: 8px;
+}
+
+.react-calendar-heatmap rect:hover {
+  stroke: #1a1a1a;
+  stroke-width: 1px;
+  rx: 2;
+  ry: 2;
+}
+
+.react-calendar-heatmap .color-empty {
+  @apply fill-gray-100 dark:fill-gray-800;
+}
+
+.react-calendar-heatmap .color-scale-1 {
+  @apply fill-green-200 dark:fill-green-900;
+}
+
+.react-calendar-heatmap .color-scale-2 {
+  @apply fill-green-400 dark:fill-green-700;
+}
+
+.react-calendar-heatmap .color-scale-3 {
+  @apply fill-green-600 dark:fill-green-500;
+}
+
+.react-calendar-heatmap .color-scale-4 {
+  @apply fill-green-800 dark:fill-green-300;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .react-calendar-heatmap text {
+    font-size: 8px;
+  }
+  
+  .react-calendar-heatmap .react-calendar-heatmap-small-text {
+    font-size: 6px;
+  }
 } 
