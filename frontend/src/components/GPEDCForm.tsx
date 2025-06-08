@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { GPEDCDynamicFeatures } from './GPEDCDynamicFeatures';
 
 interface GPEDCFormProps {
   projectId?: string;
@@ -28,14 +29,25 @@ interface GPEDCFormProps {
   currentUser?: { id: string; name: string; role: string };
 }
 
+// Extended form data with dynamic fields
+interface ExtendedGPEDCFormData extends GPEDCFormData {
+  dynamicFields?: {
+    budgetExecutionReason?: string;
+    financialReportingReason?: string;
+    auditingReason?: string;
+    procurementReason?: string;
+    evaluationDate?: string;
+  };
+}
+
 export function GPEDCForm({
   projectId,
   initialData,
   onSubmit,
   currentUser
 }: GPEDCFormProps) {
-  // Form state
-  const [formData, setFormData] = useState<GPEDCFormData>({
+  // Form state with extended data
+  const [formData, setFormData] = useState<ExtendedGPEDCFormData>({
     developmentEffectiveness: {
       implementingPartner: initialData?.developmentEffectiveness?.implementingPartner,
       linkedToGovFramework: initialData?.developmentEffectiveness?.linkedToGovFramework,
@@ -72,7 +84,8 @@ export function GPEDCForm({
       status: initialData?.metadata?.status || 'draft',
       createdBy: initialData?.metadata?.createdBy || currentUser?.id || '',
       updatedBy: currentUser?.id || '',
-    }
+    },
+    dynamicFields: {}
   });
 
   const [validationErrors, setValidationErrors] = useState<GPEDCValidationErrors>({});
@@ -100,7 +113,7 @@ export function GPEDCForm({
   }, []);
 
   // Auto-save functionality
-  const saveFormData = async (data: GPEDCFormData) => {
+  const saveFormData = async (data: ExtendedGPEDCFormData) => {
     // Here you would implement the actual save logic to your backend
     console.log('Auto-saving form data:', data);
     // For example:
@@ -128,6 +141,15 @@ export function GPEDCForm({
     setFormData(newData);
     updateData(newData);
   }, [formData, updateData]);
+
+  // Handle dynamic field changes
+  const handleDynamicReasonChange = useCallback((field: string, value: string) => {
+    handleFieldChange(`dynamicFields.${field}`, value);
+  }, [handleFieldChange]);
+
+  const handleEvaluationDateChange = useCallback((date: string) => {
+    handleFieldChange('dynamicFields.evaluationDate', date);
+  }, [handleFieldChange]);
 
   // File upload handling
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -392,6 +414,15 @@ export function GPEDCForm({
                     <Label htmlFor="evaluation-no">No</Label>
                   </div>
                 </RadioGroup>
+                
+                {/* Dynamic evaluation date */}
+                <GPEDCDynamicFeatures
+                  governmentSystemUse={{}}
+                  finalEvaluationPlanned={formData.developmentEffectiveness.finalEvaluationPlanned}
+                  onReasonChange={handleDynamicReasonChange}
+                  onEvaluationDateChange={handleEvaluationDateChange}
+                  evaluationDate={formData.dynamicFields?.evaluationDate}
+                />
               </div>
 
               {validationErrors['developmentEffectiveness'] && (
@@ -493,6 +524,14 @@ export function GPEDCForm({
                   </div>
                 </RadioGroup>
               </div>
+
+              {/* Dynamic follow-up questions */}
+              <GPEDCDynamicFeatures
+                governmentSystemUse={formData.governmentSystems}
+                onReasonChange={handleDynamicReasonChange}
+                onEvaluationDateChange={handleEvaluationDateChange}
+                reasons={formData.dynamicFields}
+              />
 
               {validationErrors['governmentSystems'] && (
                 <div className="flex items-center gap-2 text-destructive">

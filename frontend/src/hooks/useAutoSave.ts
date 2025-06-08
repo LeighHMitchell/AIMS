@@ -19,14 +19,14 @@ export function useAutoSave({
   });
 
   const dataRef = useRef<any>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
   // Save function
   const performSave = useCallback(async () => {
     if (!dataRef.current || !autoSaveState.hasChanges) return;
 
-    setAutoSaveState(prev => ({ ...prev, isSaving: true }));
+    setAutoSaveState((prev: AutoSaveState) => ({ ...prev, isSaving: true }));
     
     try {
       await onSave(dataRef.current);
@@ -37,14 +37,14 @@ export function useAutoSave({
       });
     } catch (error) {
       console.error('Auto-save failed:', error);
-      setAutoSaveState(prev => ({ ...prev, isSaving: false }));
+      setAutoSaveState((prev: AutoSaveState) => ({ ...prev, isSaving: false }));
     }
   }, [onSave, autoSaveState.hasChanges]);
 
   // Update data and trigger save
   const updateData = useCallback((newData: any) => {
     dataRef.current = newData;
-    setAutoSaveState(prev => ({ ...prev, hasChanges: true }));
+    setAutoSaveState((prev: AutoSaveState) => ({ ...prev, hasChanges: true }));
 
     // Clear existing timeout
     if (saveTimeoutRef.current) {

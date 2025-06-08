@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,7 +43,7 @@ export function GPEDCDynamicFeatures({
           <Textarea
             id="budget-reason"
             value={reasons.budgetExecutionReason || ''}
-            onChange={(e) => onReasonChange('budgetExecutionReason', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onReasonChange('budgetExecutionReason', e.target.value)}
             placeholder="Please explain..."
             className="min-h-[80px]"
           />
@@ -57,7 +58,7 @@ export function GPEDCDynamicFeatures({
           <Textarea
             id="financial-reason"
             value={reasons.financialReportingReason || ''}
-            onChange={(e) => onReasonChange('financialReportingReason', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onReasonChange('financialReportingReason', e.target.value)}
             placeholder="Please explain..."
             className="min-h-[80px]"
           />
@@ -72,7 +73,7 @@ export function GPEDCDynamicFeatures({
           <Textarea
             id="audit-reason"
             value={reasons.auditingReason || ''}
-            onChange={(e) => onReasonChange('auditingReason', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onReasonChange('auditingReason', e.target.value)}
             placeholder="Please explain..."
             className="min-h-[80px]"
           />
@@ -87,7 +88,7 @@ export function GPEDCDynamicFeatures({
           <Textarea
             id="procurement-reason"
             value={reasons.procurementReason || ''}
-            onChange={(e) => onReasonChange('procurementReason', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onReasonChange('procurementReason', e.target.value)}
             placeholder="Please explain..."
             className="min-h-[80px]"
           />
@@ -104,7 +105,7 @@ export function GPEDCDynamicFeatures({
             id="evaluation-date"
             type="date"
             value={evaluationDate || ''}
-            onChange={(e) => onEvaluationDateChange(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onEvaluationDateChange(e.target.value)}
           />
         </div>
       )}
