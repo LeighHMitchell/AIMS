@@ -1,14 +1,29 @@
 import { createClient } from '@supabase/supabase-js'
 import { subDays, format } from 'date-fns'
+import * as path from 'path'
+import * as fs from 'fs'
 
 // Load environment variables
-require('dotenv').config({ path: '../.env.local' })
+const envPath = path.join(__dirname, '..', '.env.local')
+if (fs.existsSync(envPath)) {
+  require('dotenv').config({ path: envPath })
+} else {
+  console.log('.env.local file not found at:', envPath)
+  console.log('\nPlease create a .env.local file in the frontend directory with:')
+  console.log('NEXT_PUBLIC_SUPABASE_URL=your_supabase_url')
+  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key')
+  console.log('SUPABASE_SERVICE_ROLE_KEY=your_service_role_key')
+  console.log('\nRefer to SUPABASE_SETUP_GUIDE.md for more details.')
+  process.exit(1)
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   console.error('Missing required environment variables')
+  console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✓' : '✗ Missing')
+  console.error('SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceRoleKey ? '✓' : '✗ Missing')
   process.exit(1)
 }
 

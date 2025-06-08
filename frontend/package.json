@@ -10,7 +10,8 @@
     "clean": "rm -rf .next",
     "clean:all": "rm -rf .next node_modules package-lock.json && npm install",
     "dev:clean": "npm run clean && npm run dev",
-    "seed:activity-logs": "tsx scripts/seed-activity-logs.ts"
+    "seed:activity-logs": "tsx scripts/seed-activity-logs.ts",
+    "demo:contributions": "tsx scripts/demo-contribution-data.ts"
   },
   "keywords": [],
   "author": "",
