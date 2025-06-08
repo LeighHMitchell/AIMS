@@ -33,10 +33,14 @@ import {
 } from 'lucide-react';
 
 // Icon mapping for different action types
-const getActionIcon = (actionType: string) => {
+const getActionIcon = (actionType: string, entityType?: string) => {
   const iconMap: Record<string, React.ReactNode> = {
-    create: <Plus className="h-4 w-4 text-green-600" />,
-    edit: <Edit className="h-4 w-4 text-blue-600" />,
+    create: entityType === 'organization' ? <Building2 className="h-4 w-4 text-green-600" /> : 
+            entityType === 'user' ? <UserPlus className="h-4 w-4 text-green-600" /> :
+            <Plus className="h-4 w-4 text-green-600" />,
+    edit: entityType === 'organization' ? <Building2 className="h-4 w-4 text-blue-600" /> :
+          entityType === 'user' ? <Edit className="h-4 w-4 text-blue-600" /> :
+          <Edit className="h-4 w-4 text-blue-600" />,
     delete: <Trash2 className="h-4 w-4 text-red-600" />,
     submit_validation: <Send className="h-4 w-4 text-purple-600" />,
     validate: <CheckCircle className="h-4 w-4 text-green-600" />,
@@ -51,6 +55,8 @@ const getActionIcon = (actionType: string) => {
     add_partner: <Building2 className="h-4 w-4 text-green-600" />,
     update_partner: <Building2 className="h-4 w-4 text-blue-600" />,
     status_change: <RefreshCw className="h-4 w-4 text-purple-600" />,
+    add_tag: <Plus className="h-4 w-4 text-blue-600" />,
+    remove_tag: <XCircle className="h-4 w-4 text-orange-600" />,
   };
   return iconMap[actionType] || <AlertCircle className="h-4 w-4 text-gray-600" />;
 };
@@ -59,15 +65,33 @@ const getActionIcon = (actionType: string) => {
 const getActionDescription = (log: ActivityLog) => {
   const { actionType, entityType, metadata, activityTitle } = log;
 
+  // Use metadata.details if available for more specific descriptions
+  if (metadata?.details && entityType !== 'activity') {
+    return metadata.details;
+  }
+
   switch (actionType) {
     case 'create':
+      if (entityType === 'organization') {
+        return metadata?.details || `created a new organization`;
+      } else if (entityType === 'user') {
+        return metadata?.details || `created a new user`;
+      }
       return `created a new ${entityType}: "${activityTitle || 'Untitled'}"`;
     case 'edit':
+      if (entityType === 'organization') {
+        return metadata?.details || `updated organization`;
+      } else if (entityType === 'user') {
+        return metadata?.details || `updated user`;
+      }
       if (metadata?.fieldChanged) {
         return `updated ${metadata.fieldChanged} in "${activityTitle || entityType}"`;
       }
       return `edited ${entityType}: "${activityTitle || 'Untitled'}"`;
     case 'delete':
+      if (entityType === 'organization' || entityType === 'user') {
+        return metadata?.details || `deleted ${entityType}`;
+      }
       return `deleted ${entityType}: "${activityTitle || 'Untitled'}"`;
     case 'submit_validation':
       return `submitted "${activityTitle}" for validation`;
@@ -95,6 +119,10 @@ const getActionDescription = (log: ActivityLog) => {
       return metadata?.details || 'updated a partner organization';
     case 'status_change':
       return `changed status of "${activityTitle}" from ${metadata?.oldValue} to ${metadata?.newValue}`;
+    case 'add_tag':
+      return metadata?.details || `added a tag to "${activityTitle}"`;
+    case 'remove_tag':
+      return metadata?.details || `removed a tag from "${activityTitle}"`;
     default:
       return `performed ${actionType} on ${entityType}`;
   }
@@ -360,7 +388,7 @@ export default function ActivityLogsPage() {
                     className="flex items-start gap-4 p-4 hover:bg-muted/50 transition-colors"
                   >
                     {/* Action Icon */}
-                    <div className="mt-1">{getActionIcon(log.actionType)}</div>
+                    <div className="mt-1">{getActionIcon(log.actionType, log.entityType)}</div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">

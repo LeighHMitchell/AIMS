@@ -9,9 +9,9 @@ import {
 
 // IATI field help texts based on IATI standard
 export const IATI_FIELD_HELP = {
-  partnerId: "Your organization's internal identifier for this activity",
-  iatiId: "The IATI activity identifier - a globally unique identifier for this activity (format: {reporting-org-ref}-{activity-id})",
-  localId: "System-generated unique identifier for this activity record",
+  partnerId: "A unique identifier used internally by the implementing partner.",
+  iatiId: "The globally recognised identifier for this activity.",
+  localId: "The identifier created and used locally by the system or government entity.",
   title: "A short, human-readable title that contains a meaningful summary of the activity. Max 200 characters recommended.",
   description: "A longer, human-readable description of the activity. May include objectives, implementation, expected outcomes, etc.",
   objectives: "A description of the intended ultimate objectives of the activity. What are the intended impacts?",
@@ -67,7 +67,7 @@ export const FieldHelp: React.FC<FieldHelpProps> = ({ field, className = "" }) =
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className={`h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-help inline-block ml-1 ${className}`} />
+          <HelpCircle className={`h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer inline-block ml-1 ${className}`} />
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <p>{helpText}</p>

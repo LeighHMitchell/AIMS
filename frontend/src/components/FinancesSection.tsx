@@ -7,12 +7,14 @@ import { Transaction } from "@/types/transaction";
 
 interface FinancesSectionProps {
   activityId?: string;
+  activityTitle?: string;
   transactions?: Transaction[];
   onTransactionsChange?: (transactions: Transaction[]) => void;
 }
 
 export default function FinancesSection({ 
   activityId = "new", 
+  activityTitle,
   transactions = [], 
   onTransactionsChange = () => {} 
 }: FinancesSectionProps) {
@@ -40,6 +42,7 @@ export default function FinancesSection({
         <TabsContent value="transactions">
           <TransactionsManager 
             activityId={activityId}
+            activityTitle={activityTitle}
             transactions={transactions}
             onTransactionsChange={onTransactionsChange}
           />

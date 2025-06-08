@@ -1,6 +1,4 @@
 import { ActivityLog } from '@/app/api/activity-logs/route';
-import fs from 'fs/promises';
-import path from 'path';
 
 interface LogActivityParams {
   actionType: ActivityLog['actionType'];
@@ -21,45 +19,6 @@ interface LogActivityParams {
   };
 }
 
-// Server-side function to save logs directly to file
-async function saveLogToFile(log: ActivityLog): Promise<void> {
-  const LOGS_FILE_PATH = path.join(process.cwd(), 'data', 'activity-logs.json');
-  const dataDir = path.join(process.cwd(), 'data');
-  
-  try {
-    // Ensure data directory exists
-    try {
-      await fs.access(dataDir);
-    } catch {
-      await fs.mkdir(dataDir, { recursive: true });
-    }
-    
-    // Load current logs
-    let logs: ActivityLog[] = [];
-    try {
-      const data = await fs.readFile(LOGS_FILE_PATH, 'utf-8');
-      logs = JSON.parse(data);
-    } catch {
-      // File doesn't exist, start with empty array
-      logs = [];
-    }
-    
-    // Add new log (prepend to have newest first)
-    logs.unshift(log);
-    
-    // Keep only last 1000 logs
-    if (logs.length > 1000) {
-      logs.splice(1000);
-    }
-    
-    // Save to file
-    await fs.writeFile(LOGS_FILE_PATH, JSON.stringify(logs, null, 2));
-    console.log('[ActivityLogger] Saved log to file:', log);
-  } catch (error) {
-    console.error('[ActivityLogger] Error saving log to file:', error);
-  }
-}
-
 export async function logActivity(params: LogActivityParams): Promise<void> {
   try {
     // Create the log entry
@@ -75,16 +34,16 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
       metadata: params.metadata,
     };
     
-    // Check if we're running on the server
-    if (typeof window === 'undefined') {
-      // We're on the server - save directly to file
-      console.log('[ActivityLogger] Server-side log:', newLog);
-      await saveLogToFile(newLog);
-      return;
-    }
+    console.log('[ActivityLogger] Logging activity:', newLog);
 
-    // Client-side: make the HTTP request
-    const response = await fetch('/api/activity-logs', {
+    // Always use the API endpoint to save logs to the database
+    // For server-side calls, we need to use the full URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const apiUrl = typeof window === 'undefined' 
+      ? `${baseUrl}/api/activity-logs`
+      : '/api/activity-logs';
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -93,10 +52,25 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
     });
 
     if (!response.ok) {
-      console.error('[ActivityLogger] Failed to log activity:', await response.text());
+      const errorText = await response.text();
+      console.error('[ActivityLogger] Failed to log activity:', errorText);
+      // Use memory logger as fallback
+      const { MemoryActivityLogger } = await import('./activity-logger-memory');
+      await MemoryActivityLogger.logActivity(params);
+      console.log('[ActivityLogger] Logged to memory as fallback');
+    } else {
+      console.log('[ActivityLogger] Activity logged successfully');
     }
   } catch (error) {
     console.error('[ActivityLogger] Error logging activity:', error);
+    // Use memory logger as fallback
+    try {
+      const { MemoryActivityLogger } = await import('./activity-logger-memory');
+      await MemoryActivityLogger.logActivity(params);
+      console.log('[ActivityLogger] Logged to memory as fallback');
+    } catch (memError) {
+      console.error('[ActivityLogger] Memory logging also failed:', memError);
+    }
   }
 }
 
@@ -353,6 +327,135 @@ export const ActivityLogger = {
       metadata: {
         details: `Updated partner organization: ${partner.name}`,
         ...changes,
+      },
+    }),
+
+  // Organization-related logs (for the main organizations endpoint)
+  organizationCreated: (organization: any, user: any) =>
+    logActivity({
+      actionType: 'create',
+      entityType: 'organization',
+      entityId: organization.id,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      },
+      metadata: {
+        details: `Created organization: ${organization.name} (${organization.type})`,
+      },
+    }),
+
+  organizationUpdated: (organization: any, user: any, changes?: any) =>
+    logActivity({
+      actionType: 'edit',
+      entityType: 'organization',
+      entityId: organization.id,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      },
+      metadata: {
+        details: `Updated organization: ${organization.name}`,
+        ...changes,
+      },
+    }),
+
+  organizationDeleted: (organization: any, user: any) =>
+    logActivity({
+      actionType: 'delete',
+      entityType: 'organization',
+      entityId: organization.id,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      },
+      metadata: {
+        details: `Deleted organization: ${organization.name || organization.id}`,
+      },
+    }),
+
+  // User-related logs
+  userCreated: (userData: any, createdBy: any) =>
+    logActivity({
+      actionType: 'create',
+      entityType: 'user',
+      entityId: userData.id,
+      user: {
+        id: createdBy.id,
+        name: createdBy.name,
+        role: createdBy.role,
+      },
+      metadata: {
+        details: `Created user: ${userData.name} (${userData.email}) - Role: ${userData.role}${userData.organization?.name ? `, Organization: ${userData.organization.name}` : ''}`,
+      },
+    }),
+
+  userUpdated: (userData: any, updatedBy: any, changes?: any) =>
+    logActivity({
+      actionType: 'edit',
+      entityType: 'user',
+      entityId: userData.id,
+      user: {
+        id: updatedBy.id,
+        name: updatedBy.name,
+        role: updatedBy.role,
+      },
+      metadata: {
+        details: `Updated user: ${userData.name}`,
+        ...changes,
+      },
+    }),
+
+  userDeleted: (userData: any, deletedBy: any) =>
+    logActivity({
+      actionType: 'delete',
+      entityType: 'user',
+      entityId: userData.id || userData,
+      user: {
+        id: deletedBy.id,
+        name: deletedBy.name,
+        role: deletedBy.role,
+      },
+      metadata: {
+        details: `Deleted user: ${userData.name || userData}`,
+      },
+    }),
+
+  // Tag-related logs
+  tagAdded: (tag: string, activity: any, user: any) =>
+    logActivity({
+      actionType: 'add_tag',
+      entityType: 'tag',
+      entityId: tag,
+      activityId: activity.id,
+      activityTitle: activity.title,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      },
+      metadata: {
+        details: `Added tag "${tag}" to activity`,
+      },
+    }),
+
+  tagRemoved: (tag: string, activity: any, user: any) =>
+    logActivity({
+      actionType: 'remove_tag',
+      entityType: 'tag',
+      entityId: tag,
+      activityId: activity.id,
+      activityTitle: activity.title,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      },
+      metadata: {
+        details: `Removed tag "${tag}" from activity`,
       },
     }),
 }; 

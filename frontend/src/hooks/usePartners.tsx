@@ -6,22 +6,24 @@ import { toast } from 'sonner';
 export interface Partner {
   id: string;
   name: string;
-  code?: string; // Partner code (e.g., MM-FERD-1)
-  type: 'development_partner' | 'partner_government' | 'bilateral' | 'other';
-  iatiOrgId?: string; // IATI Organisation Identifier
-  fullName?: string; // Official full name
-  acronym?: string; // Short name/abbreviation
-  organisationType?: string; // IATI organisation type code
+  iatiOrgId?: string;
+  fullName?: string;
+  acronym?: string;
+  countryRepresented?: string;
+  organisationType?: string;
+  cooperationModality?: "Multilateral" | "Regional" | "External" | "Internal" | "Global" | "Other";
+  orgClassification?: "Development Partner" | "Partner Government" | "Civil Society International" | "Civil Society Domestic" | "Private Sector International" | "Private Sector Domestic" | "Other";
+  orgClassificationOverride?: boolean;
   description?: string;
   website?: string;
   email?: string;
   phone?: string;
   address?: string;
-  logo?: string; // Base64 encoded image
-  banner?: string; // Base64 encoded image
-  countryRepresented?: string; // Required for bilateral partners
-  createdAt: string;
-  updatedAt: string;
+  logo?: string;
+  banner?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  type?: "development_partner" | "bilateral" | "partner_government" | "other";
 }
 
 export function usePartners() {
@@ -74,23 +76,40 @@ export function usePartners() {
 
   const updatePartner = async (id: string, updates: Partial<Partner>, user?: any) => {
     try {
+      console.log('[AIMS DEBUG usePartners] Updating partner:', id);
+      console.log('[AIMS DEBUG usePartners] Updates:', updates);
+      console.log('[AIMS DEBUG usePartners] User:', user);
+      
       const response = await fetch('/api/partners', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...updates, user }),
       });
       
+      console.log('[AIMS DEBUG usePartners] Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to update partner');
+        let errorMessage = 'Failed to update partner';
+        try {
+          const errorData = await response.json();
+          console.log('[AIMS DEBUG usePartners] Error response:', errorData);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (parseError) {
+          console.error('[AIMS DEBUG usePartners] Failed to parse error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
       
       const updatedPartner = await response.json();
+      console.log('[AIMS DEBUG usePartners] Updated partner:', updatedPartner);
+      
       setPartners(prev => prev.map(p => p.id === id ? updatedPartner : p));
       toast.success('Partner updated successfully');
       return updatedPartner;
     } catch (err) {
-      console.error('Error updating partner:', err);
-      toast.error('Failed to update partner');
+      console.error('[AIMS ERROR usePartners] Error updating partner:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update partner';
+      toast.error(errorMessage);
       throw err;
     }
   };
@@ -102,14 +121,16 @@ export function usePartners() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to delete partner');
+        const error = await response.json();
+        throw new Error(error.error || error.details || 'Failed to delete partner');
       }
       
       setPartners(prev => prev.filter(p => p.id !== id));
-      toast.success('Partner deleted successfully');
+      toast.success('Organization deleted successfully');
     } catch (err) {
       console.error('Error deleting partner:', err);
-      toast.error('Failed to delete partner');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete organization';
+      toast.error(errorMessage);
       throw err;
     }
   };

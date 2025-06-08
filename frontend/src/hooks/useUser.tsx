@@ -22,24 +22,33 @@ const mockOrganizations: Organization[] = [
 ];
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    // Initialize user state immediately from localStorage if available
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('aims_user');
-      if (storedUser) {
-        try {
-          console.log("[useUser] Found stored user during initialization");
-          return JSON.parse(storedUser);
-        } catch (error) {
-          console.error('[useUser] Failed to parse stored user during init:', error);
-          localStorage.removeItem('aims_user');
-        }
-      }
-    }
-    return null;
-  });
-  const [isLoading, setIsLoading] = useState(false); // Start with false since we check synchronously
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Start with true
   const router = useRouter();
+
+  // Check localStorage on mount
+  useEffect(() => {
+    const checkStoredUser = () => {
+      try {
+        const storedUser = localStorage.getItem('aims_user');
+        if (storedUser) {
+          console.log("[useUser] Found stored user");
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } else {
+          console.log("[useUser] No stored user found");
+        }
+      } catch (error) {
+        console.error('[useUser] Failed to parse stored user:', error);
+        localStorage.removeItem('aims_user');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Small delay to ensure localStorage is available
+    setTimeout(checkStoredUser, 0);
+  }, []);
 
   // Save user to localStorage when it changes
   const handleSetUser = (newUser: User | null) => {
@@ -58,8 +67,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
+  const value: UserContextType = {
+    user,
+    setUser: handleSetUser,
+    isLoading,
+    permissions,
+    logout
+  };
+
   return (
-    <UserContext.Provider value={{ user, permissions, setUser: handleSetUser, logout, isLoading }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );

@@ -14,7 +14,10 @@ export const ORGANIZATION_FIELD_HELP = {
   acronym: "Enter a commonly used abbreviation, e.g., DFAT, UNDP.",
   countryRepresented: "Choose the country the organisation represents or is registered in.",
   organisationType: "Select the type of organisation from the IATI Organisation Type codelist.",
-  cooperationModality: "This classification is auto-determined based on country and organisation type.",
+  cooperationModality: "Select the cooperation modality that best describes how this organization cooperates with the focus country.",
+  isDevelopmentPartner: "Indicates whether this organization is considered a development partner. Automatically set based on cooperation modality but can be manually adjusted.",
+  orgClassification: "Auto-calculated classification based on country, organization type, and development partner status. Used for grouping and filtering organizations.",
+  uuid: "This is the system-generated unique identifier (UUID) for this organization. It is used internally for database references and cannot be changed.",
 };
 
 // Organization type options with descriptions
@@ -77,6 +80,79 @@ export const calculateCooperationModality = (
   return "Other";
 };
 
+// Calculate organization classification based on country, type, and development partner status
+export const calculateOrgClassification = (
+  country: string,
+  organisationType: string,
+  isDevelopmentPartner: boolean | null
+): string => {
+  // Normalize country representation
+  const normalizedCountry = country === 'AU' ? 'Australia' : 
+                           country === 'MM' ? 'Myanmar' : 
+                           country === 'PH' ? 'Philippines' : 
+                           country;
+  
+  // If Myanmar government entities
+  if ((normalizedCountry === 'Myanmar' || country === 'MM') && ['10', '11'].includes(organisationType)) {
+    return 'Partner Government';
+  }
+  
+  // If explicitly marked as development partner
+  if (isDevelopmentPartner === true) {
+    return 'Development Partner';
+  }
+  
+  // If organisation_type = '20' (International NGO legacy code)
+  if (organisationType === '20') {
+    return 'Civil Society – International';
+  }
+  
+  // For government entities (type 10) from non-Myanmar countries, assume development partners
+  if (organisationType === '10' && normalizedCountry !== 'Myanmar' && country !== 'MM') {
+    return 'Development Partner';
+  }
+  
+  // For multilateral organizations (type 40), assume development partners
+  if (organisationType === '40') {
+    return 'Development Partner';
+  }
+  
+  // Civil society organizations
+  if (['21', '22', '23', '60'].includes(organisationType)) {
+    if (normalizedCountry === 'Myanmar' || country === 'MM') {
+      return 'Civil Society – Domestic';
+    } else {
+      return 'Civil Society – International';
+    }
+  }
+  
+  // Private sector organizations - specific handling per requirements
+  if (organisationType === '71') {
+    if (normalizedCountry === 'Myanmar' || country === 'MM') {
+      return 'Private Sector – Domestic';
+    } else {
+      return 'Private Sector – International';
+    }
+  }
+  
+  // Type '72' is always domestic per requirements
+  if (organisationType === '72') {
+    return 'Private Sector – Domestic';
+  }
+  
+  // Legacy handling for '73' (not in new requirements, but keeping for backward compatibility)
+  if (organisationType === '73') {
+    if (normalizedCountry === 'Myanmar' || country === 'MM') {
+      return 'Private Sector – Domestic';
+    } else {
+      return 'Private Sector – International';
+    }
+  }
+  
+  // Default fallback
+  return 'Other';
+};
+
 interface FieldHelpProps {
   field: string;
   className?: string;
@@ -91,7 +167,7 @@ export const OrganizationFieldHelp: React.FC<FieldHelpProps> = ({ field, classNa
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className={`h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-help inline-block ml-1 ${className}`} />
+          <HelpCircle className={`h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer inline-block ml-1 ${className}`} />
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <p>{helpText}</p>

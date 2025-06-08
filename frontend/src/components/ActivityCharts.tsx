@@ -78,11 +78,34 @@ interface CumulativeFinanceChartProps {
 export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
   transactions,
 }) => {
+  // Safe date parser
+  const parseTransactionDate = (dateString: string | undefined | null): Date | null => {
+    if (!dateString) return null;
+    
+    try {
+      const date = new Date(dateString);
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        console.warn(`Invalid transaction date: ${dateString}`);
+        return null;
+      }
+      return date;
+    } catch (error) {
+      console.error(`Error parsing transaction date: ${dateString}`, error);
+      return null;
+    }
+  };
+
   // Process transactions to create cumulative data
   const processedData = React.useMemo(() => {
     const sortedTransactions = [...transactions]
       .filter(t => t.status === "actual")
-      .sort((a, b) => new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime());
+      .map(t => ({
+        ...t,
+        parsedDate: parseTransactionDate(t.transactionDate)
+      }))
+      .filter(t => t.parsedDate !== null)
+      .sort((a, b) => a.parsedDate!.getTime() - b.parsedDate!.getTime());
 
     const dataMap = new Map<string, { date: string; commitments: number; disbursements: number; expenditures: number }>();
     let cumulativeCommitments = 0;
@@ -90,7 +113,7 @@ export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
     let cumulativeExpenditures = 0;
 
     sortedTransactions.forEach(transaction => {
-      const date = format(new Date(transaction.transactionDate), "yyyy-MM");
+      const date = format(transaction.parsedDate!, "yyyy-MM");
       
       // Normalize transaction type to handle both legacy and new types
       const normalizedType = LEGACY_TRANSACTION_TYPE_MAP[transaction.type] || transaction.type;

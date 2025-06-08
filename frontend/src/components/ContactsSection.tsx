@@ -94,26 +94,76 @@ export default function ContactsSection({ contacts, onChange }: ContactsSectionP
         };
         updatedContacts.push(newContactWithId);
         console.log('[CONTACTS DEBUG] Added new contact:', newContactWithId);
+        
+        // Log contact addition
+        try {
+          import('@/lib/activity-logger').then(({ ActivityLogger }) => {
+            ActivityLogger.contactAdded(
+              newContactWithId,
+              { id: 'current-activity', title: 'Current Activity' },
+              { id: 'current-user', name: 'Current User', role: 'user' }
+            );
+          });
+        } catch (error) {
+          console.error('Failed to log contact addition:', error);
+        }
       } else {
         // Updating existing contact
         updatedContacts[editingIndex] = editingContact;
         console.log('[CONTACTS DEBUG] Updated contact at index:', editingIndex);
+        
+        // Log contact edit (using the contactAdded method for now)
+        try {
+          import('@/lib/activity-logger').then(({ ActivityLogger }) => {
+            ActivityLogger.contactAdded(
+              editingContact,
+              { id: 'current-activity', title: 'Current Activity' },
+              { id: 'current-user', name: 'Current User', role: 'user' }
+            );
+          });
+        } catch (error) {
+          console.error('Failed to log contact edit:', error);
+        }
       }
     }
 
     console.log('[CONTACTS DEBUG] Updated contacts array:', updatedContacts);
     console.log('[CONTACTS DEBUG] Calling onChange with:', updatedContacts);
+    console.log('[CONTACTS DEBUG] onChange function type:', typeof onChange);
+    console.log('[CONTACTS DEBUG] onChange function:', onChange);
     
-    onChange(updatedContacts);
+    if (typeof onChange === 'function') {
+      onChange(updatedContacts);
+      console.log('[CONTACTS DEBUG] onChange called successfully');
+    } else {
+      console.error('[CONTACTS DEBUG] onChange is not a function!');
+    }
+    
     setEditingContact(null);
     setEditingIndex(null);
     toast.success("Contact saved successfully");
   };
 
   const handleRemoveContact = (index: number) => {
+    const contactToRemove = contacts[index];
     const updatedContacts = contacts.filter((_, i) => i !== index);
     onChange(updatedContacts);
     toast.success("Contact removed");
+    
+    // Log contact removal
+    if (contactToRemove) {
+      try {
+        import('@/lib/activity-logger').then(({ ActivityLogger }) => {
+          ActivityLogger.contactRemoved(
+            contactToRemove,
+            { id: 'current-activity', title: 'Current Activity' },
+            { id: 'current-user', name: 'Current User', role: 'user' }
+          );
+        });
+      } catch (error) {
+        console.error('Failed to log contact removal:', error);
+      }
+    }
   };
 
   const handleEditContact = (index: number) => {

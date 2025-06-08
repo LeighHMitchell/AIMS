@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useEffect, Suspense } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import FinancesSection from "@/components/FinancesSection";
 import SectorsSection from "@/components/SectorsSection";
 import OrganisationsSection from "@/components/OrganisationsSection";
@@ -9,6 +10,7 @@ import ContactsSection from "@/components/ContactsSection";
 import GovernmentInputsSection from "@/components/GovernmentInputsSection";
 import ContributorsSection from "@/components/ContributorsSection";
 import { BannerUpload } from "@/components/BannerUpload";
+import { ImageUpload } from "@/components/ImageUpload";
 import { toast } from "sonner";
 import { Transaction } from "@/types/transaction";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,7 +21,7 @@ import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, Loader2, UserPlus } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, Loader2, UserPlus, Copy } from "lucide-react";
 import { FieldHelp, RequiredFieldIndicator, ActivityCompletionRating } from "@/components/ActivityFieldHelpers";
 import { ActivityComments } from "@/components/ActivityComments";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,8 +29,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { findSimilarActivities, ActivityMatch } from "@/lib/activity-matching";
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions";
 import { Partner } from "@/hooks/usePartners";
+import TagsSection from "@/components/TagsSection";
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, permissions }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, updateContributors, permissions, user, tags, setTags }: any) {
+  const copyToClipboard = async (value: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${fieldName} copied to clipboard`);
+    } catch (err) {
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
   switch (section) {
     case "general":
       return (
@@ -43,6 +55,21 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             />
           </div>
 
+          {/* Project Icon Upload */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Project Icon</label>
+            <ImageUpload
+              currentImage={general.projectIcon}
+              onImageChange={(icon) => setGeneral((g: any) => ({ ...g, projectIcon: icon }))}
+              label="Project Icon"
+              aspectRatio="square"
+              previewHeight="h-20"
+              previewWidth="w-20"
+              showHints={true}
+              id="project-icon-upload"
+            />
+          </div>
+
           {/* Row 1: Partner ID, IATI Identifier & Local ID */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
@@ -51,37 +78,77 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
                 <FieldHelp field="partnerId" />
                 <RequiredFieldIndicator field="participatingOrg" value={general.partnerId} />
               </label>
-              <Input
-                id="partnerId"
-                value={general.partnerId}
-                onChange={(e) => setGeneral((g: any) => ({ ...g, partnerId: e.target.value }))}
-                placeholder="Partner ID"
-              />
+              <div className="relative">
+                <Input
+                  id="partnerId"
+                  value={general.partnerId}
+                  onChange={(e) => setGeneral((g: any) => ({ ...g, partnerId: e.target.value }))}
+                  placeholder="Partner ID"
+                  className="pr-10"
+                  disabled={!user}
+                />
+                {general.partnerId && (
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(general.partnerId, 'Activity Partner ID')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                    title="Copy to clipboard"
+                  >
+                    <Copy className="h-4 w-4 text-gray-500" />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <label htmlFor="iatiId" className="text-sm font-medium flex items-center">
                 IATI Identifier
                 <FieldHelp field="iatiId" />
               </label>
-              <Input
-                id="iatiId"
-                value={general.iatiId}
-                onChange={(e) => setGeneral((g: any) => ({ ...g, iatiId: e.target.value }))}
-                placeholder="IATI Identifier"
-              />
+              <div className="relative">
+                <Input
+                  id="iatiId"
+                  value={general.iatiId}
+                  onChange={(e) => setGeneral((g: any) => ({ ...g, iatiId: e.target.value }))}
+                  placeholder="IATI Identifier"
+                  className="pr-10"
+                  disabled={!user}
+                />
+                {general.iatiId && (
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(general.iatiId, 'IATI Identifier')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                    title="Copy to clipboard"
+                  >
+                    <Copy className="h-4 w-4 text-gray-500" />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <label htmlFor="localId" className="text-sm font-medium flex items-center">
                 Local ID
                 <FieldHelp field="localId" />
               </label>
-              <Input
-                id="localId"
-                value={general.id || "Will be generated"}
-                disabled
-                className="bg-gray-100"
-                placeholder="System Generated"
-              />
+              <div className="relative">
+                <Input
+                  id="localId"
+                  value={general.id || "Will be generated"}
+                  disabled
+                  className="bg-gray-100 pr-10"
+                  placeholder="System Generated"
+                />
+                {general.id && (
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(general.id, 'Local ID')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                    title="Copy to clipboard"
+                  >
+                    <Copy className="h-4 w-4 text-gray-500" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -98,6 +165,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
               onChange={(e) => setGeneral((g: any) => ({ ...g, title: e.target.value }))}
               placeholder="Activity Title"
               required
+              disabled={!user}
             />
           </div>
 
@@ -114,6 +182,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
               onChange={(e) => setGeneral((g: any) => ({ ...g, description: e.target.value }))}
               placeholder="Activity Description"
               rows={3}
+              disabled={!user}
             />
           </div>
 
@@ -264,9 +333,16 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "contributors":
       return <ContributorsSection 
         contributors={contributors} 
-        onChange={setContributors} 
+        onChange={updateContributors} 
         permissions={permissions}
         activityId={general.id}
+      />;
+    case "tags":
+      return <TagsSection
+        activityId={general.id}
+        tags={tags}
+        onChange={setTags}
+        sectors={sectors}
       />;
     case "msdp":
       return <div className="bg-white rounded shadow p-8 max-w-3xl">[MSDP Alignment fields go here]</div>;
@@ -314,7 +390,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
 }
 
 function NewActivityPageContent() {
-  const { user } = useUser();
+  const { user, isLoading: userLoading } = useUser();
   
   // Debug logging for user role
   console.log('[AIMS DEBUG] Current user:', user);
@@ -329,6 +405,7 @@ function NewActivityPageContent() {
     { id: "general", label: "General" },
     { id: "sectors", label: "Sectors" },
     { id: "contributors", label: "Contributors" },
+    { id: "tags", label: "Tags" },
     { id: "msdp", label: "MSDP Alignment" },
     { id: "organisations", label: "Organisations" },
     { id: "locations", label: "Locations" },
@@ -369,13 +446,24 @@ function NewActivityPageContent() {
     actualStartDate: "",
     actualEndDate: "",
     banner: "",
-    createdBy: undefined as { id: string; name: string; role: string } | undefined,
-    createdByOrg: "",
+    projectIcon: "",
+    createdBy: user ? { id: user.id, name: user.name, role: user.role } : undefined,
+    createdByOrg: user?.organizationId || "",
     createdAt: "",
     updatedAt: "",
   });
   const [sectors, setSectors] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  
+  // Debug transactions state changes
+  useEffect(() => {
+    console.log('[AIMS DEBUG] Transactions state changed:', transactions);
+    console.log('[AIMS DEBUG] Transactions count:', transactions.length);
+    if (transactions.length > 0) {
+      console.log('[AIMS DEBUG] Transaction details:', JSON.stringify(transactions, null, 2));
+    }
+  }, [transactions]);
+  
   const [extendingPartners, setExtendingPartners] = useState<any[]>([]);
   const [implementingPartners, setImplementingPartners] = useState<any[]>([]);
   const [governmentPartners, setGovernmentPartners] = useState<any[]>([]);
@@ -383,6 +471,26 @@ function NewActivityPageContent() {
   const [governmentInputs, setGovernmentInputs] = useState<any>({});
   const [comments, setComments] = useState<any[]>([]);
   const [contributors, setContributors] = useState<ActivityContributor[]>([]);
+  
+  // Wrapper function to debug contributor updates
+  const updateContributors = useCallback((newContributors: ActivityContributor[]) => {
+    console.log('[AIMS DEBUG] updateContributors called');
+    console.log('[AIMS DEBUG] Current contributors:', contributors);
+    console.log('[AIMS DEBUG] New contributors:', newContributors);
+    console.log('[AIMS DEBUG] New contributors count:', newContributors.length);
+    setContributors(newContributors);
+  }, [contributors]);
+  
+  // Debug contributors state changes
+  useEffect(() => {
+    console.log('[AIMS DEBUG] Contributors state changed:', contributors);
+    console.log('[AIMS DEBUG] Contributors count:', contributors.length);
+    if (contributors.length > 0) {
+      console.log('[AIMS DEBUG] Contributor details:', JSON.stringify(contributors, null, 2));
+    }
+  }, [contributors]);
+  
+  const [tags, setTags] = useState<string[]>([]);
   const [showComments, setShowComments] = useState(false);
   const [similarActivities, setSimilarActivities] = useState<ActivityMatch[]>([]);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
@@ -401,6 +509,23 @@ function NewActivityPageContent() {
     contributors,
     createdBy: general.createdBy 
   } as any : null);
+
+  // Check permissions - use correct property names
+  const canEdit = permissions.canEditActivity && !!user;
+  const canPublish = permissions.canEditActivity && !!user; // Publishing requires edit permission
+  const canSubmit = permissions.canEditActivity && !!user; // Submitting requires edit permission
+  const canValidate = permissions.canValidateActivity && !!user;
+
+  // Update general state when user loads
+  useEffect(() => {
+    if (!userLoading && user && !general.createdBy) {
+      setGeneral(prev => ({
+        ...prev,
+        createdBy: { id: user.id, name: user.name, role: user.role },
+        createdByOrg: user?.organizationId || "",
+      }));
+    }
+  }, [user, userLoading]);
 
   // Check for similar activities when title or description changes
   useEffect(() => {
@@ -441,10 +566,13 @@ function NewActivityPageContent() {
     router.push(`/activities/${activityId}?action=join`);
   };
 
-  // Wrapper for setContacts to debug updates
+  // Update contacts with proper debugging
   const updateContacts = useCallback((newContacts: any[]) => {
     console.log('[AIMS DEBUG] updateContacts called with:', newContacts);
+    console.log('[AIMS DEBUG] newContacts length:', newContacts?.length || 0);
+    console.log('[AIMS DEBUG] newContacts details:', JSON.stringify(newContacts, null, 2));
     setContacts(newContacts);
+    console.log('[AIMS DEBUG] Contacts state updated');
   }, []);
 
   // Debug contacts state changes
@@ -453,23 +581,46 @@ function NewActivityPageContent() {
     console.log('[AIMS DEBUG] Contacts count:', contacts.length);
   }, [contacts]);
 
-  // Load activity data if editing
+  // Handle initial loading
   useEffect(() => {
-    const activityId = searchParams.get("id");
-    if (activityId) {
-      fetchActivity(activityId);
-    } else {
-      setLoading(false);
-    }
-  }, [searchParams]);
+    const loadData = async () => {
+      console.log('[AIMS DEBUG] loadData called, userLoading:', userLoading);
+      // Wait for user to load
+      if (userLoading) return;
+      
+      // Clear any previous errors
+      console.log('[AIMS DEBUG] Clearing errors before loading');
+      setError("");
+      
+      // If editing, fetch the activity
+      const activityId = searchParams.get("id");
+      console.log('[AIMS DEBUG] Activity ID from search params:', activityId);
+      if (activityId) {
+        await fetchActivity(activityId);
+      } else {
+        console.log('[AIMS DEBUG] No activity ID, not editing');
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [searchParams, userLoading]);
 
   const fetchActivity = async (id: string) => {
     try {
+      console.log('[AIMS DEBUG] fetchActivity called for ID:', id);
       const res = await fetch("/api/activities");
+      console.log('[AIMS DEBUG] API response status:', res.status);
       if (res.ok) {
         const activities = await res.json();
+        console.log('[AIMS DEBUG] Total activities loaded:', activities.length);
         const activity = activities.find((a: any) => a.id === id);
         if (activity) {
+          console.log('[AIMS DEBUG] Activity found successfully:', activity.id, activity.title);
+          
+          // Clear any previous errors when activity loads successfully
+          setError("");
+          
           setGeneral({
             id: activity.id,
             partnerId: activity.partnerId || "",
@@ -497,6 +648,7 @@ function NewActivityPageContent() {
             actualStartDate: activity.actualStartDate || "",
             actualEndDate: activity.actualEndDate || "",
             banner: activity.banner || "",
+            projectIcon: activity.projectIcon || "",
             createdBy: activity.createdBy || undefined,
             createdByOrg: activity.createdByOrg || "",
             createdAt: activity.createdAt || "",
@@ -511,6 +663,14 @@ function NewActivityPageContent() {
           setGovernmentInputs(activity.governmentInputs || {});
           setComments(activity.comments || []);
           setContributors(activity.contributors || []);
+          setTags(activity.tags || []);
+          
+          // Log what was loaded
+          console.log('[AIMS DEBUG] Activity loaded with:');
+          console.log('- Transactions:', activity.transactions?.length || 0);
+          console.log('- Contributors:', activity.contributors?.length || 0);
+          console.log('- Contacts:', activity.contacts?.length || 0);
+          console.log('- Sectors:', activity.sectors?.length || 0);
         } else {
           toast.error("Activity not found");
           router.push("/activities/new");
@@ -575,13 +735,6 @@ function NewActivityPageContent() {
     }
   };
 
-  // Check user permissions
-  const canSubmit = user?.role === 'gov_partner_tier_2' || user?.role === 'dev_partner_tier_2';
-  const canValidate = user?.role === 'gov_partner_tier_1' || user?.role === 'super_user';
-  const canPublish = (user?.role === 'gov_partner_tier_1' || user?.role === 'super_user') && 
-                     (general.submissionStatus === 'validated' || user?.role === 'super_user');
-  const canEdit = general.submissionStatus === 'draft' || general.submissionStatus === 'rejected' || user?.role === 'super_user';
-
   // Helper to get next section id
   function getNextSection(currentId: string) {
     const idx = SECTIONS.findIndex(s => s.id === currentId);
@@ -593,18 +746,43 @@ function NewActivityPageContent() {
 
   // Save activity to API
   const saveActivity = useCallback(async ({ publish = false, goToList = false, goToNext = false }) => {
+    console.log('[AIMS DEBUG] saveActivity called', { publish, goToList, goToNext });
+    console.log('[AIMS DEBUG] Current activity ID:', general.id);
+    console.log('[AIMS DEBUG] User:', user?.id, user?.name);
+    
     setError("");
     setSuccess("");
+    
+    // Check if user is logged in
+    if (!user || !user.id) {
+      console.log('[AIMS DEBUG] No user logged in');
+      setError("You must be logged in to create or edit activities. Please log in and try again.");
+      toast.error("Please log in to continue");
+      return;
+    }
+    
     if (!general.title.trim()) {
       setError("Activity Title is required");
       return;
     }
     setSubmitting(true);
     try {
+      // Debug log current state before creating payload
+      console.log('[AIMS DEBUG] Pre-save state check:');
+      console.log('[AIMS DEBUG] - transactions state:', transactions);
+      console.log('[AIMS DEBUG] - transactions count:', transactions.length);
+      console.log('[AIMS DEBUG] - contributors state:', contributors);
+      console.log('[AIMS DEBUG] - contributors count:', contributors.length);
+      console.log('[AIMS DEBUG] - contacts state:', contacts);
+      console.log('[AIMS DEBUG] - contacts count:', contacts.length);
+      console.log('[AIMS DEBUG] - tags state:', tags);
+      console.log('[AIMS DEBUG] - tags count:', tags.length);
+      
       // Always construct a fresh payload for each call
       const payload = {
         ...general,
         sectors,
+        tags,
         transactions,
         extendingPartners,
         implementingPartners,
@@ -622,6 +800,7 @@ function NewActivityPageContent() {
           id: user.id,
           name: user.name,
           role: user.role,
+          organizationId: user.organizationId,
         } : undefined,
       };
 
@@ -634,9 +813,15 @@ function NewActivityPageContent() {
       }
 
       console.log("[AIMS] Submitting activity payload:", payload);
+      console.log("[AIMS] Activity Partner ID being saved:", payload.partnerId);
       console.log("[AIMS] Activity status being saved:", payload.activityStatus);
       console.log("[AIMS] Publication status being saved:", payload.publicationStatus);
       console.log("[AIMS] Transactions count:", payload.transactions.length);
+      console.log("[AIMS] Contributors count:", payload.contributors.length);
+      console.log("[AIMS] Contributors in payload:", payload.contributors);
+      console.log("[AIMS] Transactions in payload:", payload.transactions);
+      console.log("[AIMS] Tags count:", payload.tags.length);
+      console.log("[AIMS] Tags in payload:", payload.tags);
       console.log("[AIMS] Sectors count:", payload.sectors.length);
       console.log("[AIMS] Contacts being saved:", payload.contacts);
       console.log("[AIMS] Contacts details:", JSON.stringify(payload.contacts, null, 2));
@@ -647,15 +832,38 @@ function NewActivityPageContent() {
         body: JSON.stringify(payload),
       });
 
+      console.log('[AIMS DEBUG] Save API response status:', res.status);
       const data = await res.json();
+      console.log('[AIMS DEBUG] Save API response data:', data);
 
       if (!res.ok) {
+        console.log('[AIMS DEBUG] Save API failed:', data.error);
         throw new Error(data.error || "Failed to save activity");
       }
 
       console.log("[AIMS] Activity saved successfully:", data);
       console.log("[AIMS] Response status:", data.status);
       console.log("[AIMS] Response transactions:", data.transactions?.length || 0);
+      
+      // Check for backend warnings
+      if (data._warnings && data._warnings.length > 0) {
+        data._warnings.forEach((warning: any) => {
+          toast.error(warning.message, {
+            description: warning.details,
+            duration: 10000,
+            action: {
+              label: "View Details",
+              onClick: () => console.error('[AIMS] Save warning details:', warning)
+            }
+          });
+        });
+        
+        // Set error state to show persistent warning
+        setError(`Warning: ${data._warnings[0].message}. Check the browser console for details.`);
+      } else {
+        // Clear error if save was successful without warnings
+        setError("");
+      }
       
       // Update local state with the response data to ensure consistency
       setGeneral({
@@ -685,6 +893,7 @@ function NewActivityPageContent() {
         actualStartDate: data.actualStartDate || "",
         actualEndDate: data.actualEndDate || "",
         banner: data.banner || "",
+        projectIcon: data.projectIcon || "",
         createdBy: data.createdBy || undefined,
         createdByOrg: data.createdByOrg || "",
         createdAt: data.createdAt || "",
@@ -698,17 +907,53 @@ function NewActivityPageContent() {
       setContacts(data.contacts || []);
       setGovernmentInputs(data.governmentInputs || {});
       setContributors(data.contributors || []);
+      setTags(data.tags || []);
       
       console.log('[AIMS DEBUG] After save - contacts from response:', data.contacts);
       console.log('[AIMS DEBUG] After save - contacts count:', data.contacts?.length || 0);
       console.log('[AIMS DEBUG] After save - contributors from response:', data.contributors);
       console.log('[AIMS DEBUG] After save - contributors count:', data.contributors?.length || 0);
+      console.log('[AIMS DEBUG] After save - tags from response:', data.tags);
+      console.log('[AIMS DEBUG] After save - tags count:', data.tags?.length || 0);
+      
+      // Create detailed success message
+      let successDetails = [];
+      if (data.sectors?.length > 0) successDetails.push(`${data.sectors.length} sectors`);
+      if (data.transactions?.length > 0) successDetails.push(`${data.transactions.length} transactions`);
+      if (data.contributors?.length > 0) successDetails.push(`${data.contributors.length} contributors`);
+      if (data.contacts?.length > 0) successDetails.push(`${data.contacts.length} contacts`);
+      if (data.tags?.length > 0) successDetails.push(`${data.tags.length} tags`);
+      
+      // Check for potential issues
+      let warnings = [];
+      if (payload.contributors.length > 0 && (!data.contributors || data.contributors.length === 0)) {
+        warnings.push("Contributors may not have saved properly");
+      }
+      if (payload.transactions.length > 0 && (!data.transactions || data.transactions.length === 0)) {
+        warnings.push("Transactions may not have saved properly");
+      }
+      if (payload.tags.length > 0 && (!data.tags || data.tags.length === 0)) {
+        warnings.push("Tags may not have saved properly");
+      }
       
       // Show appropriate success message with details
       const successMsg = publish 
-        ? `Activity published successfully! Activity Status: ${data.activityStatus}, Publication Status: ${data.publicationStatus}`
-        : `Activity saved successfully! Activity Status: ${data.activityStatus}, Publication Status: ${data.publicationStatus}`;
-      toast.success(successMsg);
+        ? `Activity published successfully!`
+        : `Activity saved successfully!`;
+      
+      const detailsMsg = successDetails.length > 0 
+        ? ` Saved: ${successDetails.join(', ')}`
+        : '';
+        
+      toast.success(successMsg + detailsMsg, {
+        duration: 5000,
+        description: `Activity ID: ${data.id}`
+      });
+      
+      // Show warnings if any
+      warnings.forEach(warning => {
+        toast.warning(warning, { duration: 8000 });
+      });
       
       // Navigate after a short delay to allow the toast to be seen
       if (goToList) {
@@ -726,13 +971,13 @@ function NewActivityPageContent() {
     } finally {
       setSubmitting(false);
     }
-  }, [general, sectors, transactions, extendingPartners, implementingPartners, governmentPartners, contacts, activeSection, router, user]);
+  }, [general, sectors, transactions, extendingPartners, implementingPartners, governmentPartners, contacts, contributors, tags, governmentInputs, activeSection, router, user]);
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">Loading activity...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </MainLayout>
     );
@@ -741,13 +986,34 @@ function NewActivityPageContent() {
   return (
     <MainLayout>
       <div className="flex min-h-[80vh]">
+        {/* Show login required alert if user is not logged in */}
+        {!user && (
+          <div className="fixed top-0 left-0 right-0 z-50 p-4 bg-red-50 border-b border-red-200">
+            <Alert className="max-w-4xl mx-auto bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                <strong>Login Required:</strong> You must be logged in to create or edit activities. 
+                Please <a href="/login" className="underline font-medium">log in</a> with a valid user account from the database.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+        
         {/* Left column containing metadata header and sidebar */}
-        <div className="flex flex-col">
+        <div className="flex flex-col" style={{ marginTop: !user ? '80px' : '0' }}>
           {/* Activity Metadata Summary - Only show when editing */}
           {isEditing && general.id && (
             <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 m-4 mb-2 w-64">
               <div className="space-y-2 text-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">{general.title || 'Untitled Activity'}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  {general.id ? (
+                    <Link href={`/activities/${general.id}`} className="hover:text-blue-600 hover:underline">
+                      {general.title || 'Untitled Activity'}
+                    </Link>
+                  ) : (
+                    general.title || 'Untitled Activity'
+                  )}
+                </h3>
                 <div className="space-y-2">
                   <div>
                     <span className="text-gray-500">Activity ID:</span>
@@ -755,7 +1021,10 @@ function NewActivityPageContent() {
                   </div>
                   <div>
                     <span className="text-gray-500">Created by:</span>
-                    <span className="ml-2 font-medium block truncate">{general.createdBy?.name || 'Unknown'}</span>
+                    <span className="ml-2 font-medium block truncate">
+                      {general.createdBy?.name || user?.name || 'Unknown'}
+                      {user?.organization?.name && ` (${user.organization.name})`}
+                    </span>
                   </div>
                   <div>
                     <span className="text-gray-500">Date created:</span>
@@ -924,8 +1193,12 @@ function NewActivityPageContent() {
                 governmentInputs={governmentInputs}
                 setGovernmentInputs={setGovernmentInputs}
                 contributors={contributors}
-                setContributors={setContributors}
+                setContributors={updateContributors}
+                updateContributors={updateContributors}
                 permissions={permissions}
+                user={user}
+                tags={tags}
+                setTags={setTags}
               />
             </section>
           </div>
@@ -938,7 +1211,7 @@ function NewActivityPageContent() {
                   <Button
                     variant="default"
                     onClick={() => validateActivity('approve')}
-                    disabled={submitting}
+                    disabled={submitting || !user}
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Approve
@@ -949,7 +1222,7 @@ function NewActivityPageContent() {
                       const reason = window.prompt("Please provide a reason for rejection:");
                       if (reason) validateActivity('reject', reason);
                     }}
-                    disabled={submitting}
+                    disabled={submitting || !user}
                   >
                     <XCircle className="h-4 w-4 mr-2" />
                     Reject
@@ -962,12 +1235,13 @@ function NewActivityPageContent() {
               {/* Save Button - Always available for editable activities */}
               {canEdit && (
                 <button
-                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300 transition"
+                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   type="button"
-                  onClick={() => saveActivity({ goToList: true })}
-                  disabled={!general.title.trim() || submitting}
+                  onClick={() => saveActivity({})}
+                  disabled={!general.title.trim() || submitting || !user}
                 >
-                  Save
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {submitting ? "Saving..." : "Save"}
                 </button>
               )}
               
@@ -975,34 +1249,45 @@ function NewActivityPageContent() {
               {canSubmit && general.submissionStatus === 'draft' && general.id && (
                 <Button
                   onClick={submitForValidation}
-                  disabled={submitting}
+                  disabled={submitting || !user}
                 >
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit for Validation
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Submit for Validation
+                    </>
+                  )}
                 </Button>
               )}
               
               {/* Save and Next - Only in edit mode */}
               {canEdit && (
                 <button
-                  className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition"
+                  className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   type="button"
                   onClick={() => saveActivity({ goToNext: true })}
-                  disabled={submitting}
+                  disabled={submitting || !user}
                 >
-                  Save and Next
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {submitting ? "Saving..." : "Save and Next"}
                 </button>
               )}
               
               {/* Publish Button - For users with publish permission */}
               {canPublish && (
                 <button
-                  className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+                  className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   type="button"
                   onClick={() => saveActivity({ publish: true, goToList: true })}
-                  disabled={!general.title.trim() || submitting}
+                  disabled={!general.title.trim() || submitting || !user}
                 >
-                  Publish
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {submitting ? "Publishing..." : "Publish"}
                 </button>
               )}
             </div>

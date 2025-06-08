@@ -4,7 +4,10 @@ export interface ActivityContributor {
   id: string;
   organizationId: string;
   organizationName: string;
+  organizationAcronym?: string;
   status: 'nominated' | 'accepted' | 'declined' | 'requested';
+  role: 'funder' | 'implementer' | 'coordinator' | 'contributor' | 'partner';
+  displayOrder?: number;
   nominatedBy: string;
   nominatedByName: string;
   nominatedAt: string;

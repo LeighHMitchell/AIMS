@@ -1,0 +1,61 @@
+[
+  {
+    "id": "group-1",
+    "name": "International Financial Institutions",
+    "description": "Development and multilateral banks providing financial assistance",
+    "createdBy": "system",
+    "createdAt": "2025-01-16T12:00:00.000Z",
+    "updatedAt": "2025-01-16T12:00:00.000Z",
+    "memberCount": 6,
+    "organizationIds": [
+      "689a2f8f-6228-4fc3-8fcb-29a4157d3bff",
+      "a1a4006c-d2fd-4fa8-a9f6-7a8addb71655",
+      "63977161-ea4e-4566-a494-360a25afe9fa",
+      "2c33bf32-df70-483e-a30b-2a1ee55f579f"
+    ]
+  },
+  {
+    "id": "group-2",
+    "name": "Government Development Agencies",
+    "description": "National government agencies responsible for development cooperation",
+    "createdBy": "system",
+    "createdAt": "2025-01-16T12:00:00.000Z",
+    "updatedAt": "2025-01-16T12:00:00.000Z",
+    "memberCount": 6,
+    "organizationIds": [
+      "16e93614-2437-4649-b932-9cc35458c444",
+      "630cb5ac-6997-4319-9132-5a3302512c9d",
+      "3bd2484a-51ef-4b8e-be12-7a23b550c70f",
+      "2de3755a-df4c-4ede-a617-78d5bf1c9b4f",
+      "90946414-81db-475d-809f-e017036faf2a",
+      "e4066369-0f01-4b01-9135-cb86873b241b"
+    ]
+  },
+  {
+    "id": "group-3",
+    "name": "Multilateral Organizations",
+    "description": "Global and regional multilateral organizations",
+    "createdBy": "system",
+    "createdAt": "2025-01-16T12:00:00.000Z",
+    "updatedAt": "2025-01-16T12:00:00.000Z",
+    "memberCount": 3,
+    "organizationIds": [
+      "e1b7b151-c9d0-4912-aa1b-4d8ed597d92e",
+      "bf001286-c051-4ce8-a52c-e9a62a072105",
+      "809151df-3ba0-4c10-ac34-073031fa471c"
+    ]
+  },
+  {
+    "id": "group-4",
+    "name": "Regional Development Partners",
+    "description": "Organizations working at regional level for development",
+    "createdBy": "system",
+    "createdAt": "2025-01-16T12:00:00.000Z",
+    "updatedAt": "2025-01-16T12:00:00.000Z",
+    "memberCount": 2,
+    "organizationIds": [
+      "689a2f8f-6228-4fc3-8fcb-29a4157d3bff",
+      "a1a4006c-d2fd-4fa8-a9f6-7a8addb71655"
+    ]
+  }
+] 

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { 
@@ -28,7 +29,12 @@ import {
   FolderOpen,
   Clock,
   User as UserIcon,
-  Calendar
+  Calendar,
+  Bug,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  RefreshCw
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { usePartners } from "@/hooks/usePartners";
@@ -67,6 +73,109 @@ function OrganizationGroupsPageContent() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Debug state (only visible to admins)
+  const [showDebugConsole, setShowDebugConsole] = useState(false);
+  const [debugLogs, setDebugLogs] = useState<Array<{
+    timestamp: string;
+    level: 'info' | 'warn' | 'error';
+    message: string;
+    details?: any;
+  }>>([]);
+
+  // Debug logging function
+  const addDebugLog = (level: 'info' | 'warn' | 'error', message: string, details?: any) => {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      details
+    };
+    setDebugLogs(prev => [logEntry, ...prev.slice(0, 99)]); // Keep last 100 logs
+    console.log(`[DEBUG-${level.toUpperCase()}]`, message, details);
+  };
+
+  // Function to test organization IDs
+  const testOrganizationIds = async () => {
+    if (!partners || partners.length === 0) {
+      addDebugLog('warn', 'No partners data available for testing');
+      return;
+    }
+
+    addDebugLog('info', 'Testing organization IDs and users', {
+      totalPartners: partners.length,
+      currentUser: { id: user?.id, name: user?.name },
+      sampleIds: partners.slice(0, 5).map(p => ({ id: p.id, name: p.name }))
+    });
+
+    try {
+      // Test with debug endpoint
+      const debugRes = await fetch("/api/organization-groups?debug=true");
+      if (debugRes.ok) {
+        const debugData = await debugRes.json();
+        addDebugLog('info', 'Database organizations check', {
+          organizationsInDb: debugData.rawOrganizations.count,
+          sampleDbIds: debugData.rawOrganizations.sampleIds,
+          error: debugData.rawOrganizations.error
+        });
+      }
+
+      // Test validation of current partner IDs
+      const partnerIds = partners.slice(0, 10).map(p => p.id); // Test first 10
+      const validateRes = await fetch(`/api/organization-groups?validateIds=${partnerIds.join(',')}`);
+      if (validateRes.ok) {
+        const validateData = await validateRes.json();
+        addDebugLog('info', 'Partner IDs validation', {
+          requestedCount: validateData.requestedIds.length,
+          foundCount: validateData.foundOrganizations.length,
+          missingIds: validateData.missingIds,
+          allValid: validateData.allValid,
+          validationError: validateData.validationError
+        });
+
+        if (!validateData.allValid) {
+          addDebugLog('error', 'Invalid partner IDs found!', {
+            missingIds: validateData.missingIds,
+            foundOrgs: validateData.foundOrganizations
+          });
+        }
+      }
+      
+      // Test user validation - THIS IS THE KEY TEST
+      if (user?.id) {
+        const userValidateRes = await fetch(`/api/organization-groups?validateUsers=${user.id}`);
+        if (userValidateRes.ok) {
+          const userValidateData = await userValidateRes.json();
+          addDebugLog('info', 'User validation check', {
+            requestedUserId: user.id,
+            userName: user.name,
+            foundUsers: userValidateData.foundUsers,
+            missingUserIds: userValidateData.missingUserIds,
+            allUsersValid: userValidateData.allUsersValid,
+            userValidationError: userValidateData.userValidationError
+          });
+
+          if (!userValidateData.allUsersValid) {
+            addDebugLog('error', 'USER NOT FOUND IN DATABASE! This is the root cause.', {
+              missingUserId: user.id,
+              userName: user.name,
+              explanation: 'The user exists in the frontend auth system but not in the Supabase users table'
+            });
+          } else {
+            addDebugLog('info', 'User validation passed', {
+              foundUser: userValidateData.foundUsers[0]
+            });
+          }
+        }
+      } else {
+        addDebugLog('warn', 'No current user ID available for testing');
+      }
+    } catch (error) {
+      addDebugLog('error', 'Error testing organization IDs', {
+        message: (error as Error).message
+      });
+    }
+  };
+
   useEffect(() => {
     fetchGroups();
     // Check if we should open the create dialog
@@ -75,16 +184,59 @@ function OrganizationGroupsPageContent() {
     }
   }, [searchParams]);
 
+  // Debug partners data
+  useEffect(() => {
+    if (partners && partners.length > 0) {
+      console.log('[DEBUG] Partners data loaded:', {
+        count: partners.length,
+        sample: partners.slice(0, 3).map(p => ({
+          id: p.id,
+          name: p.name,
+          acronym: p.acronym,
+          type: p.type,
+          isValidUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(p.id)
+        })),
+        allPartners: partners.map(p => ({ id: p.id, name: p.name, isValidUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(p.id) }))
+      });
+      
+      addDebugLog('info', 'Partners data loaded', {
+        count: partners.length,
+        hasInvalidUUIDs: partners.some(p => !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(p.id)),
+        invalidIds: partners.filter(p => !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(p.id)).map(p => ({ id: p.id, name: p.name }))
+      });
+    }
+  }, [partners]);
+
   const fetchGroups = async () => {
     try {
       setLoading(true);
+      addDebugLog('info', 'Fetching organization groups');
+      
       const res = await fetch("/api/organization-groups");
+      const data = await res.json();
+      
+      addDebugLog('info', 'Fetch groups response', {
+        status: res.status,
+        ok: res.ok,
+        groupsCount: data?.length || 0,
+        data
+      });
+      
       if (res.ok) {
-        const data = await res.json();
         setGroups(data);
+      } else {
+        addDebugLog('error', 'Failed to fetch groups', {
+          status: res.status,
+          error: data.error || 'Unknown error'
+        });
+        toast.error("Failed to load organization groups");
       }
     } catch (error) {
       console.error("Error fetching groups:", error);
+      addDebugLog('error', 'Exception fetching groups', {
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      });
       toast.error("Failed to load organization groups");
     } finally {
       setLoading(false);
@@ -103,6 +255,15 @@ function OrganizationGroupsPageContent() {
     e.preventDefault();
     setFormErrors({});
     
+    addDebugLog('info', 'Starting group creation', {
+      name: formData.name,
+      description: formData.description,
+      selectedOrgsCount: formData.selectedOrgs.length,
+      selectedOrgs: formData.selectedOrgs,
+      userId: user?.id,
+      userName: user?.name
+    });
+    
     // Validate
     const errors: Record<string, string> = {};
     if (!formData.name.trim()) {
@@ -114,40 +275,65 @@ function OrganizationGroupsPageContent() {
     
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
+      addDebugLog('warn', 'Validation failed', { errors });
       return;
     }
     
     setSubmitting(true);
     try {
+      const requestData = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        organizationIds: formData.selectedOrgs,
+        createdBy: user?.id,
+        createdByName: user?.name
+      };
+
+      addDebugLog('info', 'Sending request to API', requestData);
+      
       const res = await fetch("/api/organization-groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          organizationIds: formData.selectedOrgs,
-          createdBy: user?.id,
-          createdByName: user?.name
-        })
+        body: JSON.stringify(requestData)
       });
       
       const data = await res.json();
       
+      addDebugLog('info', 'Received API response', {
+        status: res.status,
+        ok: res.ok,
+        responseData: data
+      });
+      
       if (!res.ok) {
         if (res.status === 409) {
+          addDebugLog('warn', 'Conflict error - duplicate name', data);
           toast.error(data.error);
         } else {
+          addDebugLog('error', 'API error response', {
+            status: res.status,
+            error: data.error,
+            details: data.details,
+            code: data.code,
+            hint: data.hint
+          });
           throw new Error(data.error || "Failed to create group");
         }
         return;
       }
       
+      addDebugLog('info', 'Group created successfully', data);
       toast.success("Organization group created successfully");
       setGroups([...groups, data]);
       setShowCreateDialog(false);
       resetForm();
     } catch (error: any) {
       console.error("Error creating group:", error);
+      addDebugLog('error', 'Exception during group creation', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       toast.error(error.message || "Failed to create organization group");
     } finally {
       setSubmitting(false);
@@ -160,6 +346,25 @@ function OrganizationGroupsPageContent() {
     
     setFormErrors({});
     
+    addDebugLog('info', 'Starting group edit', {
+      groupId: selectedGroup.id,
+      name: formData.name,
+      description: formData.description,
+      selectedOrgsCount: formData.selectedOrgs.length,
+      selectedOrgs: formData.selectedOrgs,
+      selectedOrgsDetails: formData.selectedOrgs.map(id => {
+        const partner = partners.find(p => p.id === id);
+        return {
+          id,
+          isValidUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id),
+          partnerFound: !!partner,
+          partnerName: partner?.name || 'NOT FOUND'
+        };
+      }),
+      userId: user?.id,
+      userName: user?.name
+    });
+    
     // Validate
     const errors: Record<string, string> = {};
     if (!formData.name.trim()) {
@@ -171,40 +376,65 @@ function OrganizationGroupsPageContent() {
     
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
+      addDebugLog('warn', 'Edit validation failed', { errors });
       return;
     }
     
     setSubmitting(true);
     try {
+      const requestData = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        organizationIds: formData.selectedOrgs,
+        updatedBy: user?.id,
+        updatedByName: user?.name
+      };
+
+      addDebugLog('info', 'Sending edit request to API', requestData);
+      
       const res = await fetch(`/api/organization-groups?id=${selectedGroup.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          organizationIds: formData.selectedOrgs,
-          updatedBy: user?.id,
-          updatedByName: user?.name
-        })
+        body: JSON.stringify(requestData)
       });
       
       const data = await res.json();
       
+      addDebugLog('info', 'Received edit API response', {
+        status: res.status,
+        ok: res.ok,
+        responseData: data
+      });
+      
       if (!res.ok) {
         if (res.status === 409) {
+          addDebugLog('warn', 'Edit conflict error - duplicate name', data);
           toast.error(data.error);
         } else {
+          addDebugLog('error', 'Edit API error response', {
+            status: res.status,
+            error: data.error,
+            details: data.details,
+            code: data.code,
+            hint: data.hint
+          });
           throw new Error(data.error || "Failed to update group");
         }
         return;
       }
       
+      addDebugLog('info', 'Group updated successfully', data);
       toast.success("Organization group updated successfully");
       setGroups(groups.map(g => g.id === selectedGroup.id ? data : g));
       setShowEditDialog(false);
       resetForm();
     } catch (error: any) {
       console.error("Error updating group:", error);
+      addDebugLog('error', 'Exception during group edit', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       toast.error(error.message || "Failed to update organization group");
     } finally {
       setSubmitting(false);
@@ -259,6 +489,13 @@ function OrganizationGroupsPageContent() {
   };
 
   const toggleOrgSelection = (orgId: string) => {
+    console.log('[DEBUG] toggleOrgSelection called with:', {
+      orgId,
+      isValidUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orgId),
+      currentSelected: formData.selectedOrgs,
+      partnersData: partners.map(p => ({ id: p.id, name: p.name }))
+    });
+    
     setFormData(prev => ({
       ...prev,
       selectedOrgs: prev.selectedOrgs.includes(orgId)
@@ -314,11 +551,123 @@ function OrganizationGroupsPageContent() {
                 className="pl-10"
               />
             </div>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Group
-            </Button>
+            <div className="flex gap-2">
+              {user?.role === 'super_user' && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowDebugConsole(!showDebugConsole)}
+                >
+                  <Bug className="h-4 w-4 mr-2" />
+                  Debug Console
+                </Button>
+              )}
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Group
+              </Button>
+            </div>
           </div>
+
+          {/* Debug Console */}
+          {user?.role === 'super_user' && showDebugConsole && (
+            <Card className="mb-6 border-orange-200 bg-orange-50">
+              <Collapsible open={showDebugConsole} onOpenChange={setShowDebugConsole}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-orange-100 transition-colors py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Bug className="h-5 w-5 text-orange-600" />
+                        <CardTitle className="text-orange-800">Debug Console</CardTitle>
+                        <Badge variant="secondary" className="bg-orange-200 text-orange-800">
+                          Admin Only
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-orange-600">
+                          {debugLogs.length} logs
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            testOrganizationIds();
+                          }}
+                          title="Test organization IDs validation"
+                        >
+                          <Bug className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDebugLogs([]);
+                            addDebugLog('info', 'Debug console cleared');
+                          }}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                        {showDebugConsole ? 
+                          <ChevronDown className="h-4 w-4" /> : 
+                          <ChevronRight className="h-4 w-4" />
+                        }
+                      </div>
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <ScrollArea className="h-64 w-full border rounded p-2 bg-white">
+                      {debugLogs.length === 0 ? (
+                        <p className="text-gray-500 text-center py-4">No debug logs yet</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {debugLogs.map((log, index) => (
+                            <div 
+                              key={index} 
+                              className={`p-2 rounded text-xs font-mono border-l-4 ${
+                                log.level === 'error' ? 'border-red-500 bg-red-50' :
+                                log.level === 'warn' ? 'border-yellow-500 bg-yellow-50' :
+                                'border-blue-500 bg-blue-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className={`font-bold ${
+                                  log.level === 'error' ? 'text-red-700' :
+                                  log.level === 'warn' ? 'text-yellow-700' :
+                                  'text-blue-700'
+                                }`}>
+                                  [{log.level.toUpperCase()}]
+                                </span>
+                                <span className="text-gray-500">
+                                  {format(new Date(log.timestamp), 'HH:mm:ss')}
+                                </span>
+                              </div>
+                              <div className="text-gray-700 mb-1">
+                                {log.message}
+                              </div>
+                              {log.details && (
+                                <details className="mt-1">
+                                  <summary className="cursor-pointer text-gray-600 hover:text-gray-800">
+                                    Details
+                                  </summary>
+                                  <pre className="mt-1 p-2 bg-gray-100 rounded text-xs overflow-x-auto">
+                                    {JSON.stringify(log.details, null, 2)}
+                                  </pre>
+                                </details>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          )}
 
           {/* Groups Grid */}
           {filteredGroups.length === 0 ? (
@@ -537,7 +886,13 @@ function OrganizationGroupsPageContent() {
                         ) : (
                           <Building2 className="h-6 w-6 text-gray-400" />
                         )}
-                        <span className="text-sm">{partner.name}</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{partner.name}</div>
+                          <div className="text-xs text-gray-500">ID: {partner.id.substring(0, 8)}...</div>
+                          {partner.acronym && (
+                            <div className="text-xs text-gray-400">({partner.acronym})</div>
+                          )}
+                        </div>
                         <Badge variant="outline" className="text-xs">
                           {partner.type === 'bilateral' ? 'Bilateral' : 
                            partner.type === 'partner_government' ? 'Government' :
@@ -667,7 +1022,13 @@ function OrganizationGroupsPageContent() {
                         ) : (
                           <Building2 className="h-6 w-6 text-gray-400" />
                         )}
-                        <span className="text-sm">{partner.name}</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{partner.name}</div>
+                          <div className="text-xs text-gray-500">ID: {partner.id.substring(0, 8)}...</div>
+                          {partner.acronym && (
+                            <div className="text-xs text-gray-400">({partner.acronym})</div>
+                          )}
+                        </div>
                         <Badge variant="outline" className="text-xs">
                           {partner.type === 'bilateral' ? 'Bilateral' : 
                            partner.type === 'partner_government' ? 'Government' :

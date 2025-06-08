@@ -3,7 +3,7 @@
 import React from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Building2, Home, Settings, FolderPlus, Users, LogOut, User, FileText, Shield, CheckSquare } from "lucide-react"
+import { Building2, Home, Settings, FolderPlus, Users, LogOut, User, FileText, Shield, CheckSquare, Upload, Table } from "lucide-react"
 import Link from "next/link"
 import { AuthGuard } from "@/components/AuthGuard"
 import { useUser } from "@/hooks/useUser"
@@ -105,9 +105,21 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
                 <a><FileText className="h-4 w-4 mr-2" />Activities</a>
               </Button>
             </Link>
+            {permissions.canCreateActivities && (
+              <Link href="/activities?import=true" passHref legacyBehavior>
+                <Button asChild variant="ghost" className="w-full justify-start">
+                  <a><Upload className="h-4 w-4 mr-2" />Bulk Import</a>
+                </Button>
+              </Link>
+            )}
             <Link href="/partners" passHref legacyBehavior>
               <Button asChild variant="ghost" className="w-full justify-start">
                 <a><Building2 className="h-4 w-4 mr-2" />Organizations</a>
+              </Button>
+            </Link>
+            <Link href="/partner-summary" passHref legacyBehavior>
+              <Button asChild variant="ghost" className="w-full justify-start">
+                <a><Table className="h-4 w-4 mr-2" />Partner Summary</a>
               </Button>
             </Link>
             {(user?.role === 'gov_partner_tier_1' || user?.role === 'super_user') && (

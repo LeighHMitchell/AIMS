@@ -74,9 +74,30 @@ export default function ContributorsSection({
       updatedAt: new Date().toISOString()
     };
 
-    onChange([...contributors, newContributor]);
+    console.log('[CONTRIBUTORS DEBUG] Nominating contributor:', newContributor);
+    console.log('[CONTRIBUTORS DEBUG] Current contributors before:', contributors);
+    
+    const updatedContributors = [...contributors, newContributor];
+    console.log('[CONTRIBUTORS DEBUG] Updated contributors:', updatedContributors);
+    
+    onChange(updatedContributors);
     setSelectedPartnerId("");
     toast.success(`${partner.name} has been nominated as a contributor`);
+    
+    // Log contributor nomination
+    try {
+      import('@/lib/activity-logger').then(({ ActivityLogger }) => {
+        ActivityLogger.contactAdded(
+          newContributor,
+          { id: activityId || 'current-activity', title: 'Current Activity' },
+          { id: user?.id || 'current-user', name: user?.name || 'Current User', role: user?.role || 'user' }
+        );
+      });
+    } catch (error) {
+      console.error('Failed to log contributor nomination:', error);
+    }
+    
+    console.log('[CONTRIBUTORS DEBUG] onChange called with', updatedContributors.length, 'contributors');
   };
 
   const removeContributor = (contributorId: string) => {

@@ -24,7 +24,8 @@ import {
   Upload,
   HelpCircle,
   MessageSquare,
-  UserPlus
+  UserPlus,
+  Copy
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -69,6 +70,7 @@ interface Activity {
   targetGroups: string
   collaborationType: string
   banner?: string
+  projectIcon?: string
   activityStatus: string
   publicationStatus: string
   submissionStatus: 'draft' | 'submitted' | 'validated' | 'rejected' | 'published'
@@ -81,6 +83,7 @@ interface Activity {
   governmentInputs?: any
   comments?: any[]
   contributors?: ActivityContributor[]
+  tags?: string[]
   createdBy?: { id: string; name: string; role: string }
   createdByOrg?: string
   plannedStartDate?: string
@@ -157,10 +160,12 @@ export default function ActivityDetailPage() {
   
   const [partners, setPartners] = useState<Partner[]>([])
   const [allPartners, setAllPartners] = useState<Partner[]>([])
+  const [allTags, setAllTags] = useState<any[]>([])
 
   useEffect(() => {
     fetchActivity(true)
     loadAllPartners();
+    loadTags();
   }, [params.id])
 
   // Refresh activity data when comments tab is selected to ensure we have latest comments count
@@ -242,6 +247,22 @@ export default function ActivityDetailPage() {
       }
     } catch (error) {
       console.error("Error loading all partners:", error);
+    }
+  }
+
+  const loadTags = async () => {
+    try {
+      console.log('[AIMS DEBUG] Loading tags...');
+      const res = await fetch("/api/tags");
+      if (res.ok) {
+        const data = await res.json();
+        console.log('[AIMS DEBUG] Loaded tags:', data);
+        setAllTags(data);
+      } else {
+        console.error('[AIMS DEBUG] Tags API error:', res.status, res.statusText);
+      }
+    } catch (error) {
+      console.error("Error loading tags:", error);
     }
   }
 
@@ -392,6 +413,15 @@ export default function ActivityDetailPage() {
     }
   }
 
+  const copyToClipboard = async (value: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${fieldName} copied to clipboard`);
+    } catch (err) {
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
   const getTransactionTypeName = (type: string) => {
     // Handle legacy numeric types
     if (LEGACY_TRANSACTION_TYPE_MAP[type]) {
@@ -454,6 +484,18 @@ export default function ActivityDetailPage() {
               <div className="relative h-48">
                 <img src={banner} alt="Activity banner" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                {/* Project Icon Overlay */}
+                {activity.projectIcon && (
+                  <div className="absolute bottom-4 left-4">
+                    <div className="bg-white rounded-lg p-1 shadow-lg">
+                      <img
+                        src={activity.projectIcon}
+                        alt="Project icon"
+                        className="h-16 w-16 object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ) : null}
             
@@ -461,40 +503,172 @@ export default function ActivityDetailPage() {
             <div className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-gray-900">{activity.title}</h1>
-                  <p className="text-lg text-gray-600 mt-2">{activity.partnerId && `Partner: ${activity.partnerId}`}</p>
-                  
-                  {/* IDs and Metadata */}
-                  <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-500">
-                    <span>MOHINGA ID: {activity.id}</span>
-                    {activity.iatiId && <span>IATI ID: {activity.iatiId}</span>}
-                    <span>Last Updated: {formatDate(activity.updatedAt)}</span>
-                  </div>
-                  
-                  {/* Status and Dates */}
-                  <div className="flex flex-wrap gap-6 mt-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-600">STATUS:</span>
-                      <Badge variant={activity.activityStatus === "completed" ? "success" : "default"}>
-                        {activity.activityStatus?.toUpperCase() || "PLANNING"}
-                      </Badge>
+                  {/* Project Icon when no banner */}
+                  {!banner && activity.projectIcon && (
+                    <div className="float-left mr-4 mb-4">
+                      <div className="bg-gray-100 rounded-lg p-2">
+                        <img
+                          src={activity.projectIcon}
+                          alt="Project icon"
+                          className="h-20 w-20 object-contain"
+                        />
+                      </div>
                     </div>
-                    {activity.actualStartDate && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">
-                          <span className="font-medium">ACTUAL START DATE:</span> {formatDate(activity.actualStartDate)}
+                  )}
+                  <h1 className="text-3xl font-bold text-gray-900">{activity.title}</h1>
+                  
+                  {/* Unified Metadata Section - Expanded Width */}
+                  <div className="mt-4 p-6 bg-gray-50 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-4 text-sm">
+                      {/* Activity Partner ID */}
+                      <div className="flex flex-col">
+                        <span className="text-gray-500 font-medium">Activity Partner ID</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-900">{activity.partnerId || 'Not specified'}</span>
+                          {activity.partnerId && (
+                            <button
+                              onClick={() => copyToClipboard(activity.partnerId, 'Activity Partner ID')}
+                              className="p-1 hover:bg-gray-200 rounded transition-colors"
+                              title="Copy to clipboard"
+                            >
+                              <Copy className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* IATI Identifier */}
+                      <div className="flex flex-col">
+                        <span className="text-gray-500 font-medium">IATI Identifier</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-900">{activity.iatiId || 'Not specified'}</span>
+                          {activity.iatiId && (
+                            <button
+                              onClick={() => copyToClipboard(activity.iatiId, 'IATI Identifier')}
+                              className="p-1 hover:bg-gray-200 rounded transition-colors"
+                              title="Copy to clipboard"
+                            >
+                              <Copy className="h-3 w-3 text-gray-500" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Local ID */}
+                      <div className="flex flex-col">
+                        <span className="text-gray-500 font-medium">Local ID</span>
+                        <span className="text-gray-900 flex items-center gap-2">
+                          <span className="flex items-center gap-2">
+                            {activity.id}
+                            <button
+                              onClick={() => copyToClipboard(activity.id, 'Local ID')}
+                              className="p-1 hover:bg-gray-200 rounded transition-colors"
+                              title="Copy to clipboard"
+                            >
+                              <Copy className="h-3 w-3 text-gray-500" />
+                            </button>
+                          </span>
+                          <span className="group relative">
+                            <HelpCircle className="h-3 w-3 text-gray-400 cursor-pointer" />
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                              System-generated identifier
+                            </span>
+                          </span>
                         </span>
                       </div>
-                    )}
-                    {activity.plannedEndDate && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">
-                          <span className="font-medium">PLANNED END DATE:</span> {formatDate(activity.plannedEndDate)}
+                      
+                      {/* Status */}
+                      <div className="flex flex-col">
+                        <span className="text-gray-500 font-medium">Status</span>
+                        <Badge variant={activity.activityStatus === "completed" ? "success" : "default"} className="w-fit">
+                          {activity.activityStatus?.toUpperCase() || "PLANNING"}
+                        </Badge>
+                      </div>
+                      
+                      {/* Created by */}
+                      <div className="flex flex-col">
+                        <span className="text-gray-500 font-medium">Created by</span>
+                        <span className="text-gray-900">
+                          {(() => {
+                            // Show creator name
+                            const creatorName = activity.createdBy?.name || 'Unknown';
+                            // Find the organization details from allPartners
+                            const creatorOrg = allPartners.find(p => p.id === activity.createdByOrg);
+                            if (creatorOrg && creatorOrg.fullName && creatorOrg.acronym) {
+                              return `${creatorName} (${creatorOrg.acronym})`;
+                            } else if (creatorOrg && creatorOrg.acronym) {
+                              return `${creatorName} (${creatorOrg.acronym})`;
+                            } else if (creatorOrg) {
+                              return `${creatorName} (${creatorOrg.name})`;
+                            }
+                            return creatorName;
+                          })()}
                         </span>
                       </div>
-                    )}
+                      
+                      {/* Created Date */}
+                      <div className="flex flex-col">
+                        <span className="text-gray-500 font-medium">Created Date</span>
+                        <span className="text-gray-900">{formatDate(activity.createdAt)}</span>
+                      </div>
+                      
+                      {/* Last Updated */}
+                      <div className="flex flex-col">
+                        <span className="text-gray-500 font-medium">Last Updated</span>
+                        <span className="text-gray-900">{formatDate(activity.updatedAt)}</span>
+                      </div>
+                      
+                      {/* Activity Dates - Only show if available */}
+                      {(activity.actualStartDate || activity.plannedEndDate) && (
+                        <>
+                          {activity.actualStartDate && (
+                            <div className="flex flex-col">
+                              <span className="text-gray-500 font-medium">Start Date</span>
+                              <span className="text-gray-900 flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatDate(activity.actualStartDate)}
+                              </span>
+                            </div>
+                          )}
+                          {activity.plannedEndDate && (
+                            <div className="flex flex-col">
+                              <span className="text-gray-500 font-medium">End Date</span>
+                              <span className="text-gray-900 flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatDate(activity.plannedEndDate)}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      
+                      {/* Tags */}
+                      {activity.tags && activity.tags.length > 0 && (
+                        <div className="col-span-full border-t pt-4 mt-4">
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-500 font-medium">Tags:</span>
+                            <div className="flex flex-wrap gap-2">
+                              {activity.tags.map(tagId => {
+                                const tag = allTags.find(t => t.id === tagId);
+                                console.log('[AIMS DEBUG] Looking for tag:', tagId, 'found:', tag, 'allTags count:', allTags.length);
+                                return tag ? (
+                                  <Badge key={tagId} variant="secondary" className="text-xs">
+                                    {tag.vocabulary === '1' && (
+                                      <span className="text-blue-600 mr-1">IATI</span>
+                                    )}
+                                    {tag.name}
+                                  </Badge>
+                                ) : (
+                                  <Badge key={tagId} variant="destructive" className="text-xs">
+                                    Unknown Tag: {tagId}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -513,86 +687,6 @@ export default function ActivityDetailPage() {
                   <Button onClick={handlePrint} variant="outline">
                     <Printer className="h-4 w-4" />
                   </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Activity Metadata Summary */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="space-y-4">
-              {/* Activity Title */}
-              <h2 className="text-2xl font-semibold text-gray-900">{activity.title}</h2>
-              
-              {/* Metadata Grid */}
-              <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
-                <div>
-                  <span className="text-gray-500">Activity ID(s):</span>
-                  <span className="ml-2 font-medium">
-                    {activity.id}
-                    {activity.iatiId && ` | IATI: ${activity.iatiId}`}
-                  </span>
-                </div>
-                
-                <div>
-                  <span className="text-gray-500">Name of creator:</span>
-                  <span className="ml-2 font-medium">{activity.createdBy?.name || 'Unknown'}</span>
-                </div>
-                
-                <div>
-                  <span className="text-gray-500">Date created:</span>
-                  <span className="ml-2 font-medium">{formatDate(activity.createdAt)}</span>
-                </div>
-                
-                <div>
-                  <span className="text-gray-500">Last edited date:</span>
-                  <span className="ml-2 font-medium">{formatDate(activity.updatedAt)}</span>
-                </div>
-                
-                <div className="col-span-2">
-                  <span className="text-gray-500">Organisation that created the activity:</span>
-                  <span className="ml-2 font-medium">
-                    {(() => {
-                      // Find the organization details from partners
-                      const creatorOrg = partners.find(p => p.id === activity.createdByOrg);
-                      if (creatorOrg) {
-                        return `${creatorOrg.name}`;
-                      }
-                      return activity.createdByOrg || 'Unknown Organization';
-                    })()}
-                  </span>
-                </div>
-                
-                <div className="col-span-2">
-                  <div className="text-gray-500 mb-2">List of Activity Contributors:</div>
-                  {activity.contributors && activity.contributors.length > 0 ? (
-                    <div className="space-y-1">
-                      {activity.contributors
-                        .filter(c => c.status === 'accepted')
-                        .map((contributor, idx) => {
-                          // Find the full partner details
-                          const partner = allPartners.find(p => p.id === contributor.organizationId);
-                          if (partner) {
-                            let display = `${partner.acronym || partner.code || partner.id} - ${partner.fullName || partner.name}`;
-                            if (partner.countryRepresented) {
-                              display += ` (${partner.countryRepresented})`;
-                            }
-                            return (
-                              <div key={contributor.id} className="font-medium">
-                                {display}
-                              </div>
-                            );
-                          }
-                          return (
-                            <div key={contributor.id} className="font-medium">
-                              {contributor.organizationName}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  ) : (
-                    <div className="text-gray-400 italic">No contributors yet</div>
-                  )}
                 </div>
               </div>
             </div>
@@ -1054,8 +1148,11 @@ export default function ActivityDetailPage() {
               
               <ContributorsSection
                 contributors={activity.contributors || []}
-                onChange={updateContributors}
-                permissions={permissions}
+                onChange={() => {}}
+                permissions={{
+                  canNominateContributors: false,
+                  canApproveJoinRequests: false
+                }}
                 activityId={activity.id}
               />
             </TabsContent>

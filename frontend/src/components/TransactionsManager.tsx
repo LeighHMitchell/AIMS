@@ -23,18 +23,22 @@ import {
 
 interface TransactionsManagerProps {
   activityId: string;
+  activityTitle?: string;
   transactions: Transaction[];
   onTransactionsChange: (transactions: Transaction[]) => void;
 }
 
 export default function TransactionsManager({ 
   activityId, 
+  activityTitle,
   transactions: initialTransactions = [], 
   onTransactionsChange 
 }: TransactionsManagerProps) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [filters, setFilters] = useState({
     type: "all",
     status: "all",
@@ -57,7 +61,83 @@ export default function TransactionsManager({
     flowType: "10" as keyof typeof FLOW_TYPES
   });
 
-  const { partners } = usePartners();
+  const { partners, loading: partnersLoading } = usePartners();
+
+  // Helper function to validate and convert activity ID (same logic as API)
+  const validateActivityId = (activityId: string): string | null => {
+    if (!activityId) return null;
+    
+    // Check if it's already a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(activityId)) {
+        return activityId;
+    }
+    
+    // If it's a malformed activity ID like "activity_123_abc", create a deterministic UUID from it
+    if (activityId.startsWith('activity_')) {
+        console.log('[TRANSACTION LOAD] Converting malformed activity ID to UUID:', activityId);
+        
+        // Create a deterministic UUID based on the activity ID string
+        // Simple hash function that works in browser
+        let hash = 0;
+        for (let i = 0; i < activityId.length; i++) {
+            const char = activityId.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        
+        // Convert to positive number and create different parts
+        const hashNum = Math.abs(hash);
+        const uuid = [
+            hashNum.toString(16).padStart(8, '0').substring(0, 8),
+            (hashNum >> 4).toString(16).padStart(4, '0').substring(0, 4),
+            (hashNum >> 8).toString(16).padStart(4, '0').substring(0, 4),
+            (hashNum >> 12).toString(16).padStart(4, '0').substring(0, 4),
+            (hashNum * 31).toString(16).padStart(12, '0').substring(0, 12)
+        ].join('-');
+        
+        console.log('[TRANSACTION LOAD] Converted', activityId, 'to UUID:', uuid);
+        return uuid;
+    }
+    
+    // For any other format, create a random UUID (not ideal but maintains consistency)
+    console.log('[TRANSACTION LOAD] Creating new UUID for invalid activity ID:', activityId);
+    return crypto.randomUUID();
+  };
+
+  const loadTransactions = async () => {
+    if (!activityId) return;
+    
+    // Convert activity ID to the same format used when saving
+    const validatedActivityId = validateActivityId(activityId);
+    console.log('[TRANSACTION LOAD] Original activity ID:', activityId);
+    console.log('[TRANSACTION LOAD] Validated activity ID for loading:', validatedActivityId);
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/activities/${validatedActivityId}/transactions`);
+      if (response.ok) {
+        const loadedTransactions = await response.json();
+        console.log('[TRANSACTION LOAD] Loaded transactions:', loadedTransactions.length);
+        const convertedTransactions = loadedTransactions.map(convertLegacyTransaction);
+        setTransactions(convertedTransactions);
+        onTransactionsChange(convertedTransactions);
+      } else {
+        console.warn('[TRANSACTION LOAD] Failed to load transactions:', response.status);
+      }
+    } catch (error) {
+      console.error("Error loading transactions:", error);
+      // Fallback to initial transactions if API fails
+      setTransactions(initialTransactions);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load transactions on mount or when activityId changes
+  useEffect(() => {
+    loadTransactions();
+  }, [activityId]);
 
   // Convert legacy transaction types to new format
   const convertLegacyTransaction = (transaction: Transaction): Transaction => {
@@ -72,8 +152,23 @@ export default function TransactionsManager({
   };
 
   useEffect(() => {
-    // Convert any legacy transactions to new format
-    const convertedTransactions = initialTransactions.map(convertLegacyTransaction);
+    // Convert any legacy transactions to new format and ensure all required fields
+    const convertedTransactions = initialTransactions.map(transaction => {
+      const converted = convertLegacyTransaction(transaction);
+      // Ensure all required fields have default values
+      return {
+        ...converted,
+        status: converted.status || 'actual',
+        currency: converted.currency || 'USD',
+        transactionDate: converted.transactionDate || format(new Date(), "yyyy-MM-dd"),
+        providerOrg: converted.providerOrg || '',
+        receiverOrg: converted.receiverOrg || '',
+        narrative: converted.narrative || '',
+        aidType: converted.aidType,
+        flowType: converted.flowType,
+        tiedStatus: converted.tiedStatus
+      };
+    });
     setTransactions(convertedTransactions);
   }, [initialTransactions]);
 
@@ -94,7 +189,80 @@ export default function TransactionsManager({
     setEditingTransaction(null);
   };
 
+  // Helper function to validate UUID format
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
+  // Helper function to get organization name by ID
+  const getOrgNameById = (orgId: string): string => {
+    if (!orgId) return '-';
+    if (orgId === 'Other') return 'Other';
+    
+    // First try to find in partners list
+    const partner = partners.find(p => p.id === orgId);
+    
+    if (partner) {
+      // Use fullName (full organization name) with acronym in brackets
+      const displayName = partner.fullName || partner.name || 'Unknown Organization';
+      const result = partner.acronym && displayName !== partner.acronym 
+        ? `${displayName} (${partner.acronym})`
+        : displayName;
+      return result;
+    }
+    
+    // If not found and it's a UUID, show a truncated version
+    if (isValidUUID(orgId)) {
+      return `Organization (${orgId.substring(0, 8)}...)`;
+    }
+    
+    // Otherwise return as is (might be a legacy name)
+    return orgId;
+  };
+
+  const saveTransaction = async (transaction: Transaction) => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/transactions', {
+        method: editingTransaction ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transaction),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save transaction');
+      }
+
+      const savedTransaction = await response.json();
+      
+      let updatedTransactions;
+      if (editingTransaction) {
+        updatedTransactions = transactions.map(t => 
+          t.id === editingTransaction.id ? { ...t, ...savedTransaction } : t
+        );
+        toast.success("Transaction updated successfully");
+      } else {
+        updatedTransactions = [...transactions, savedTransaction];
+        toast.success("Transaction added successfully");
+      }
+      setTransactions(updatedTransactions);
+      onTransactionsChange(updatedTransactions);
+      setShowAddDialog(false);
+      resetForm();
+
+    } catch (error) {
+      console.error("Error saving transaction:", error);
+      toast.error(error instanceof Error ? error.message : "An unknown error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = () => {
+    if (isSubmitting) return; // Prevent double-submission
+
     if (!formData.value || formData.value <= 0) {
       toast.error("Transaction value must be greater than 0");
       return;
@@ -108,38 +276,64 @@ export default function TransactionsManager({
       return;
     }
 
+    // Validate organization IDs if not "Other"
+    if (formData.providerOrg !== 'Other' && !isValidUUID(formData.providerOrg)) {
+      toast.error("Invalid provider organization ID. Please select from the dropdown.");
+      console.error('[TRANSACTION] Invalid provider org UUID:', formData.providerOrg);
+      return;
+    }
+    if (formData.receiverOrg !== 'Other' && !isValidUUID(formData.receiverOrg)) {
+      toast.error("Invalid receiver organization ID. Please select from the dropdown.");
+      console.error('[TRANSACTION] Invalid receiver org UUID:', formData.receiverOrg);
+      return;
+    }
+
     const transaction: Transaction = {
-      id: editingTransaction?.id || Math.random().toString(36).substring(7),
+      id: editingTransaction?.id || crypto.randomUUID(),
       ...formData,
       activityId,
       createdAt: editingTransaction?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-
-    let updatedTransactions;
-    if (editingTransaction) {
-      updatedTransactions = transactions.map(t => 
-        t.id === editingTransaction.id ? transaction : t
-      );
-      toast.success("Transaction updated successfully");
-    } else {
-      updatedTransactions = [...transactions, transaction];
-      toast.success("Transaction added successfully");
-    }
-
-    setTransactions(updatedTransactions);
-    onTransactionsChange(updatedTransactions);
-    setShowAddDialog(false);
-    resetForm();
+    
+    saveTransaction(transaction);
   };
 
   const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
+
+    // Robustly parse and format the date for the input field
+    const parseAndFormatDate = (dateStr: string): string => {
+        if (!dateStr) return format(new Date(), 'yyyy-MM-dd');
+
+        // Check for yyyy-MM-dd format
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            return dateStr;
+        }
+
+        // Check for dd/MM/yyyy format
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const [day, month, year] = parts;
+            if (day.length === 2 && month.length === 2 && year.length === 4) {
+                return `${year}-${month}-${day}`;
+            }
+        }
+        
+        // Fallback for other parsable JS date formats
+        try {
+            return format(new Date(dateStr), 'yyyy-MM-dd');
+        } catch {
+            // Final fallback to today's date if all else fails
+            return format(new Date(), 'yyyy-MM-dd');
+        }
+    }
+    
     setFormData({
       type: transaction.type,
       value: transaction.value,
       currency: transaction.currency,
-      transactionDate: transaction.transactionDate,
+      transactionDate: parseAndFormatDate(transaction.transactionDate),
       providerOrg: transaction.providerOrg,
       receiverOrg: transaction.receiverOrg,
       status: transaction.status,
@@ -151,11 +345,31 @@ export default function TransactionsManager({
     setShowAddDialog(true);
   };
 
-  const handleDelete = (id: string) => {
-    const updatedTransactions = transactions.filter(t => t.id !== id);
-    setTransactions(updatedTransactions);
-    onTransactionsChange(updatedTransactions);
-    toast.success("Transaction deleted");
+  const handleDelete = async (transactionId: string) => {
+    if (!confirm("Are you sure you want to delete this transaction?")) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/transactions?id=${transactionId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete transaction');
+      }
+
+      const updatedTransactions = transactions.filter(t => t.id !== transactionId);
+      setTransactions(updatedTransactions);
+      onTransactionsChange(updatedTransactions);
+      toast.success("Transaction deleted successfully");
+
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to delete transaction");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleExport = () => {
@@ -209,6 +423,24 @@ export default function TransactionsManager({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  // Safe date formatter that handles invalid dates
+  const formatTransactionDate = (dateString: string | undefined | null): string => {
+    if (!dateString) return "No date";
+    
+    try {
+      const date = new Date(dateString);
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        console.warn(`Invalid date value: ${dateString}`);
+        return "Invalid date";
+      }
+      return format(date, "PPP");
+    } catch (error) {
+      console.error(`Error formatting date: ${dateString}`, error);
+      return "Invalid date";
+    }
   };
 
   return (
@@ -283,7 +515,13 @@ export default function TransactionsManager({
           )}
 
           {/* Transactions List */}
-          {filteredTransactions.length === 0 ? (
+          {(isLoading || partnersLoading) ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <div className="animate-pulse">
+                {isLoading ? "Loading transactions..." : "Loading organizations..."}
+              </div>
+            </div>
+          ) : filteredTransactions.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               {transactions.length === 0 
                 ? "No transactions have been added yet." 
@@ -293,7 +531,7 @@ export default function TransactionsManager({
             <>
               <div className="space-y-3">
                 {filteredTransactions.map((transaction) => (
-                  <div key={transaction.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                  <div key={`${transaction.id}-${partners.length}`} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-3">
@@ -302,15 +540,15 @@ export default function TransactionsManager({
                             {TRANSACTION_STATUS[transaction.status]}
                           </Badge>
                           <span className="text-sm text-muted-foreground">
-                            {format(new Date(transaction.transactionDate), "PPP")}
+                            {formatTransactionDate(transaction.transactionDate)}
                           </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                           <div>
-                            <span className="text-muted-foreground">From:</span> {transaction.providerOrg}
+                            <span className="text-muted-foreground">From:</span> {partnersLoading ? 'Loading organizations...' : getOrgNameById(transaction.providerOrg)}
                           </div>
                           <div>
-                            <span className="text-muted-foreground">To:</span> {transaction.receiverOrg}
+                            <span className="text-muted-foreground">To:</span> {partnersLoading ? 'Loading organizations...' : getOrgNameById(transaction.receiverOrg)}
                           </div>
                         </div>
                         {transaction.narrative && (
@@ -449,9 +687,18 @@ export default function TransactionsManager({
                     <SelectItem value="other" disabled>No partners available</SelectItem>
                   ) : (
                     <>
-                      {partners.map((partner) => (
-                        <SelectItem key={partner.id} value={partner.name}>{partner.name}</SelectItem>
-                      ))}
+                      {partners.map((partner) => {
+                        // Use fullName (full organization name) with acronym in brackets
+                        const displayName = partner.fullName || partner.name || 'Unknown Organization';
+                        const fullDisplayName = partner.acronym && displayName !== partner.acronym 
+                          ? `${displayName} (${partner.acronym})`
+                          : displayName;
+                        return (
+                          <SelectItem key={partner.id} value={partner.id}>
+                            {fullDisplayName}
+                          </SelectItem>
+                        );
+                      })}
                       <SelectItem value="Other">Other (Not in system)</SelectItem>
                     </>
                   )}
@@ -470,9 +717,18 @@ export default function TransactionsManager({
                     <SelectItem value="other" disabled>No partners available</SelectItem>
                   ) : (
                     <>
-                      {partners.map((partner) => (
-                        <SelectItem key={partner.id} value={partner.name}>{partner.name}</SelectItem>
-                      ))}
+                      {partners.map((partner) => {
+                        // Use fullName (full organization name) with acronym in brackets
+                        const displayName = partner.fullName || partner.name || 'Unknown Organization';
+                        const fullDisplayName = partner.acronym && displayName !== partner.acronym 
+                          ? `${displayName} (${partner.acronym})`
+                          : displayName;
+                        return (
+                          <SelectItem key={partner.id} value={partner.id}>
+                            {fullDisplayName}
+                          </SelectItem>
+                        );
+                      })}
                       <SelectItem value="Other">Other (Not in system)</SelectItem>
                     </>
                   )}

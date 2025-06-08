@@ -32,32 +32,46 @@ import {
   Plus,
   ArrowLeft,
   X,
-  Loader2
+  Loader2,
+  Copy,
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import { LEGACY_TRANSACTION_TYPE_MAP } from "@/types/transaction";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { 
   OrganizationFieldHelp, 
   ORGANIZATION_TYPES, 
   COUNTRIES, 
-  calculateCooperationModality 
+  calculateCooperationModality,
+  calculateOrgClassification
 } from "@/components/OrganizationFieldHelpers";
 import { ImageUpload } from "@/components/ImageUpload";
+import StrategiesTab from "@/components/StrategiesTab";
+
+// Helper function to determine development partner status based on cooperation modality
+const getIsDevelopmentPartnerFromModality = (modality: string) => {
+  return ['Multilateral', 'Regional', 'External', 'Global'].includes(modality);
+};
 
 export default function PartnerProfilePage() {
   const params = useParams();
   const router = useRouter();
   const { user, permissions } = useUser();
-  const { partners, getPartnerById, updatePartner } = usePartners();
+  const { partners, getPartnerById, updatePartner, deletePartner } = usePartners();
   const [activeTab, setActiveTab] = useState("about");
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     iatiOrgId: "",
@@ -65,6 +79,10 @@ export default function PartnerProfilePage() {
     acronym: "",
     countryRepresented: "",
     organisationType: "",
+    cooperationModality: "External" as "Multilateral" | "Regional" | "External" | "Internal" | "Global" | "Other",
+
+    orgClassification: "Other" as "Development Partner" | "Partner Government" | "Civil Society – International" | "Civil Society – Domestic" | "Private Sector – International" | "Private Sector – Domestic" | "Other",
+    orgClassificationOverride: false,
     description: "",
     website: "",
     email: "",
@@ -101,6 +119,14 @@ export default function PartnerProfilePage() {
         acronym: partner.acronym || "",
         countryRepresented: partner.countryRepresented || "",
         organisationType: partner.organisationType || "",
+        cooperationModality: partner.cooperationModality || "External",
+    
+        orgClassification: (partner.orgClassification || calculateOrgClassification(
+          partner.countryRepresented || "",
+          partner.organisationType || "",
+          partner.cooperationModality
+        )) as "Development Partner" | "Partner Government" | "Civil Society – International" | "Civil Society – Domestic" | "Private Sector – International" | "Private Sector – Domestic" | "Other",
+        orgClassificationOverride: false,
         description: partner.description || "",
         website: partner.website || "",
         email: partner.email || "",
@@ -204,6 +230,10 @@ export default function PartnerProfilePage() {
       errors.organisationType = "Organisation type is required";
     }
     
+    if (!formData.cooperationModality) {
+      errors.cooperationModality = "Cooperation modality is required";
+    }
+    
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -220,18 +250,59 @@ export default function PartnerProfilePage() {
 
     setSubmitting(true);
     try {
+      console.log('[AIMS DEBUG] Starting organization update...');
+      console.log('[AIMS DEBUG] Form data:', formData);
+      console.log('[AIMS DEBUG] Partner ID:', partner.id);
+      console.log('[AIMS DEBUG] User:', user);
+      
       // Use acronym as the display name, or fallback to fullName
       const dataToSave = {
         ...formData,
         name: formData.acronym || formData.fullName || formData.name
       };
+      
+      console.log('[AIMS DEBUG] Data to save:', dataToSave);
+      
       await updatePartner(partner.id, dataToSave, user);
       setShowEditDialog(false);
       toast.success("Organization profile updated successfully");
-    } catch (error) {
-      toast.error("Failed to update organization profile");
+    } catch (error: any) {
+      console.error('[AIMS ERROR] Failed to update organization:', error);
+      console.error('[AIMS ERROR] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause
+      });
+      
+      // Show more specific error message if available
+      const errorMessage = error.message || "Failed to update organization profile";
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeletePartner = async () => {
+    if (!partner) return;
+    
+    // Verify confirmation text
+    if (deleteConfirmText !== partner.name) {
+      toast.error("Please type the organization name exactly to confirm deletion");
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deletePartner(partner.id);
+      toast.success(`Organization "${partner.name}" has been deleted successfully`);
+      setShowDeleteDialog(false);
+      setShowEditDialog(false);
+      router.push("/partners"); // Navigate back to partners list
+    } catch (error: any) {
+      console.error("Error deleting organization:", error);
+      toast.error(error.message || "Failed to delete organization");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -289,9 +360,7 @@ export default function PartnerProfilePage() {
                   <h1 className="text-3xl font-bold text-slate-900 mb-2">{partner.name}</h1>
                   <div className="flex items-center gap-4 text-sm text-slate-600">
                     <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                      {partner.type === 'bilateral' ? 'Bilateral Partner' : 
-                       partner.type === 'partner_government' ? 'Partner Government' :
-                       partner.type === 'development_partner' ? 'Development Partner' : 'Other'}
+                      {partner.orgClassification || 'Other'}
                     </Badge>
                     {partner.countryRepresented && (
                       <div className="flex items-center gap-1">
@@ -378,21 +447,63 @@ export default function PartnerProfilePage() {
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="financials">Financials</TabsTrigger>
               <TabsTrigger value="activities">Activities</TabsTrigger>
+              <TabsTrigger value="strategies">Strategies</TabsTrigger>
               <TabsTrigger value="people">People</TabsTrigger>
             </TabsList>
 
             {/* About Tab */}
             <TabsContent value="about" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Background</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-600 leading-relaxed">
-                    {partner.description || "No description available."}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Background</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-slate-600 leading-relaxed">
+                      {partner.description || "No description available."}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Organization Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-slate-500 mb-1">Organization Classification</h4>
+                      <Badge variant="outline" className="text-sm">
+                        {partner.orgClassification || 'Other'}
+                      </Badge>
+                    </div>
+                    
+                    {partner.organisationType && (
+                      <div>
+                        <h4 className="text-sm font-medium text-slate-500 mb-1">Organization Type</h4>
+                        <p className="text-slate-900">
+                          {partner.organisationType} - {ORGANIZATION_TYPES.find(t => t.value === partner.organisationType)?.label || 'Unknown Type'}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {partner.cooperationModality && (
+                      <div>
+                        <h4 className="text-sm font-medium text-slate-500 mb-1">Cooperation Modality</h4>
+                        <p className="text-slate-900">{partner.cooperationModality}</p>
+                      </div>
+                    )}
+                    
+
+                    
+                    {partner.iatiOrgId && (
+                      <div>
+                        <h4 className="text-sm font-medium text-slate-500 mb-1">IATI Organization ID</h4>
+                        <p className="text-slate-900 font-mono text-sm">{partner.iatiOrgId}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Financials Tab */}
@@ -510,6 +621,16 @@ export default function PartnerProfilePage() {
               </Card>
             </TabsContent>
 
+            {/* Strategies Tab */}
+            <TabsContent value="strategies" className="space-y-6">
+              <StrategiesTab
+                organizationId={partner.id}
+                organizationName={partner.name}
+                isPublicView={!user || !permissions.canManageUsers}
+                userCanEdit={permissions.canManageUsers}
+              />
+            </TabsContent>
+
             {/* People Tab */}
             <TabsContent value="people" className="space-y-6">
               <Card>
@@ -577,6 +698,37 @@ export default function PartnerProfilePage() {
               {validationErrors.iatiOrgId && (
                 <p className="text-sm text-red-500 mt-1">{validationErrors.iatiOrgId}</p>
               )}
+            </div>
+
+            {/* UUID (Read-only) */}
+            <div>
+              <label htmlFor="uuid" className="text-sm font-medium flex items-center">
+                Organization UUID
+                <OrganizationFieldHelp field="uuid" />
+              </label>
+              <div className="relative">
+                <Input
+                  id="uuid"
+                  value={partner.id}
+                  disabled
+                  className="bg-gray-100 pr-10 font-mono text-sm"
+                  placeholder="System Generated"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(partner.id);
+                    toast.success('UUID copied to clipboard');
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded transition-colors"
+                  title="Copy UUID to clipboard"
+                >
+                  <Copy className="h-4 w-4 text-gray-500" />
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                This unique identifier is used internally by the system
+              </p>
             </div>
 
             {/* Full Name */}
@@ -703,22 +855,135 @@ export default function PartnerProfilePage() {
               )}
             </div>
 
-            {/* Cooperation Modality (Read-only) */}
+            {/* Cooperation Modality */}
             <div>
               <label htmlFor="cooperationModality" className="text-sm font-medium flex items-center">
-                Cooperation Modality
+                Cooperation Modality *
                 <OrganizationFieldHelp field="cooperationModality" />
               </label>
-              <Input
-                id="cooperationModality"
-                value={calculateCooperationModality(
-                  formData.countryRepresented, 
-                  formData.organisationType
-                )}
-                disabled
-                className="bg-gray-100"
-                placeholder="Auto-calculated based on country and type"
-              />
+              <Select 
+                value={formData.cooperationModality} 
+                onValueChange={(value) => {
+                  const cooperationModality = value as "Multilateral" | "Regional" | "External" | "Internal" | "Global" | "Other";
+                  setFormData({ 
+                    ...formData, 
+                    cooperationModality
+                  });
+                  if (validationErrors.cooperationModality) {
+                    setValidationErrors({ ...validationErrors, cooperationModality: "" });
+                  }
+                }}
+              >
+                <SelectTrigger 
+                  id="cooperationModality"
+                  className={validationErrors.cooperationModality ? "border-red-500" : ""}
+                >
+                  <SelectValue placeholder="Select cooperation modality" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Multilateral">Multilateral</SelectItem>
+                  <SelectItem value="Regional">Regional</SelectItem>
+                  <SelectItem value="External">External</SelectItem>
+                  <SelectItem value="Internal">Internal</SelectItem>
+                  <SelectItem value="Global">Global</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              {validationErrors.cooperationModality && (
+                <p className="text-sm text-red-500 mt-1">{validationErrors.cooperationModality}</p>
+              )}
+            </div>
+
+
+
+            {/* Organization Classification */}
+            <div>
+              <label htmlFor="orgClassification" className="text-sm font-medium flex items-center">
+                Organization Classification
+                <OrganizationFieldHelp field="orgClassification" />
+              </label>
+              
+              {permissions.canManageUsers ? (
+                <>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <input
+                      type="checkbox"
+                      id="orgClassificationOverride"
+                      checked={formData.orgClassificationOverride || false}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        orgClassificationOverride: e.target.checked,
+                        // Reset to auto-calculated if unchecking override
+                        ...(e.target.checked ? {} : {
+                          orgClassification: calculateOrgClassification(
+                            formData.countryRepresented,
+                            formData.organisationType,
+                            formData.cooperationModality
+                          ) as any
+                        })
+                      })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="orgClassificationOverride" className="text-sm font-medium">
+                      Manual Override (Admin)
+                    </label>
+                  </div>
+                  
+                  {formData.orgClassificationOverride ? (
+                    <Select 
+                      value={formData.orgClassification} 
+                      onValueChange={(value) => setFormData({ 
+                        ...formData, 
+                        orgClassification: value as any
+                      })}
+                    >
+                      <SelectTrigger id="orgClassification">
+                        <SelectValue placeholder="Select classification" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Development Partner">Development Partner</SelectItem>
+                        <SelectItem value="Partner Government">Partner Government</SelectItem>
+                        <SelectItem value="Civil Society – International">Civil Society – International</SelectItem>
+                        <SelectItem value="Civil Society – Domestic">Civil Society – Domestic</SelectItem>
+                        <SelectItem value="Private Sector – International">Private Sector – International</SelectItem>
+                        <SelectItem value="Private Sector – Domestic">Private Sector – Domestic</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      id="orgClassification"
+                      value={calculateOrgClassification(
+                        formData.countryRepresented,
+                        formData.organisationType,
+                        formData.cooperationModality
+                      )}
+                      disabled
+                      className="bg-gray-100"
+                      placeholder="Auto-calculated based on country, type, and development partner status"
+                    />
+                  )}
+                </>
+              ) : (
+                <Input
+                  id="orgClassification"
+                  value={formData.orgClassification || calculateOrgClassification(
+                    formData.countryRepresented,
+                    formData.organisationType,
+                    formData.cooperationModality
+                  )}
+                  disabled
+                  className="bg-gray-100"
+                  placeholder="Auto-calculated based on country, type, and development partner status"
+                />
+              )}
+              
+              <p className="text-xs text-gray-500 mt-1">
+                {permissions.canManageUsers 
+                  ? "Automatically calculated unless manually overridden by admin" 
+                  : "This classification is automatically determined based on organization details"
+                }
+              </p>
             </div>
 
             <div>
@@ -808,30 +1073,120 @@ export default function PartnerProfilePage() {
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowEditDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={submitting || !formData.fullName.trim() || !formData.acronym.trim()}
-                className="bg-slate-900 hover:bg-slate-800"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  'Update Organization'
-                )}
-              </Button>
+            <div className="flex justify-between pt-4 border-t">
+              {/* Delete button - only for admins */}
+              {permissions.canManageUsers && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Organization
+                </Button>
+              )}
+              
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowEditDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submitting || !formData.fullName.trim() || !formData.acronym.trim() || !formData.cooperationModality}
+                  className="bg-slate-900 hover:bg-slate-800"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Organization'
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Organization
+            </DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete the organization and remove all associated data.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                <strong>Warning:</strong> Deleting this organization will:
+                <ul className="list-disc pl-4 mt-2 space-y-1">
+                  <li>Remove all organization data permanently</li>
+                  <li>Cannot be undone</li>
+                  <li>May affect related activities and data</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+            
+            <div>
+              <label htmlFor="deleteConfirm" className="text-sm font-medium">
+                Type <strong>{partner?.name}</strong> to confirm deletion:
+              </label>
+              <Input
+                id="deleteConfirm"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder={partner?.name}
+                className="mt-1"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteConfirmText("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeletePartner}
+              disabled={isDeleting || deleteConfirmText !== partner?.name}
+              className="flex items-center gap-2"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Organization
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </MainLayout>

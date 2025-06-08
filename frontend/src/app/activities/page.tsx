@@ -42,8 +42,10 @@ import {
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { Transaction, LEGACY_TRANSACTION_TYPE_MAP } from "@/types/transaction";
+import { ActivityContributor } from "@/lib/activity-permissions";
 import { cn } from "@/lib/utils";
 import { BulkImportDialog } from "@/components/BulkImportDialog";
+import { ContributorDisplay } from "@/components/ContributorDisplay";
 import ActivitySummaryCards from "@/components/ActivitySummaryCards";
 import { SearchParamsHandler } from "@/components/SearchParamsHandler";
 
@@ -73,13 +75,13 @@ type Activity = {
   createdByOrg?: string; // Organization that created the activity
   organization?: { id: string; name: string; acronym: string | null }; // Organization details
   createdBy?: { id: string; name: string; role: string };
-  contributors?: any[]; // Added for contributors
+  contributors?: ActivityContributor[]; // Contributors with roles
 };
 
 type SortField = 'title' | 'createdBy' | 'activityStatus' | 'publicationStatus' | 'commitment' | 'disbursement' | 'createdAt' | 'updatedAt' | 'startDate';
 type SortOrder = 'asc' | 'desc';
 
-const PAGE_SIZES = [10, 20, 50, 100];
+const PAGE_SIZES = [10, 20, 50, 100, 'All'];
 const DEFAULT_PAGE_SIZE = 20;
 
 const getActivityStatusColor = (status: string): "default" | "secondary" | "success" | "destructive" => {
@@ -104,6 +106,8 @@ export default function ActivitiesPage() {
   const [search, setSearch] = useState("");
   const [activityStatusFilter, setActivityStatusFilter] = useState<string>("all");
   const [publicationStatusFilter, setPublicationStatusFilter] = useState<string>("all");
+  const [contributorFilter, setContributorFilter] = useState<string>("all");
+  const [contributorRoleFilter, setContributorRoleFilter] = useState<string>("all");
   const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('updatedAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -276,8 +280,13 @@ export default function ActivitiesPage() {
   // Enhanced filtering with search across multiple fields including UUID
   const filteredAndSortedActivities = useMemo(() => {
     let filtered = allActivities.filter(activity => {
-      // Enhanced search that includes UUID and multiple fields
+      // Enhanced search that includes UUID, multiple fields, and contributors
       const searchLower = search.toLowerCase();
+      const contributorSearchMatch = activity.contributors?.some(c => 
+        c.organizationName.toLowerCase().includes(searchLower) ||
+        c.organizationAcronym?.toLowerCase().includes(searchLower)
+      );
+      
       const matchesSearch = !search || 
         activity.title.toLowerCase().includes(searchLower) ||
         activity.partnerId?.toLowerCase().includes(searchLower) ||
@@ -285,7 +294,8 @@ export default function ActivitiesPage() {
         activity.id.toLowerCase().includes(searchLower) ||
         activity.description?.toLowerCase().includes(searchLower) ||
         activity.organization?.name?.toLowerCase().includes(searchLower) ||
-        activity.organization?.acronym?.toLowerCase().includes(searchLower);
+        activity.organization?.acronym?.toLowerCase().includes(searchLower) ||
+        contributorSearchMatch;
       
       // Handle both legacy and new status fields
       const activityStatus = activity.activityStatus || 
@@ -299,7 +309,15 @@ export default function ActivitiesPage() {
       // Filter by publication status  
       const matchesPublicationStatus = publicationStatusFilter === "all" || publicationStatus === publicationStatusFilter;
       
-      return matchesSearch && matchesActivityStatus && matchesPublicationStatus;
+      // Filter by contributor organization
+      const matchesContributor = contributorFilter === "all" || 
+        activity.contributors?.some(c => c.organizationId === contributorFilter && c.status === 'accepted');
+      
+      // Filter by contributor role
+      const matchesContributorRole = contributorRoleFilter === "all" || 
+        activity.contributors?.some(c => c.role === contributorRoleFilter && c.status === 'accepted');
+      
+      return matchesSearch && matchesActivityStatus && matchesPublicationStatus && matchesContributor && matchesContributorRole;
     });
 
     // Sort activities
@@ -353,7 +371,7 @@ export default function ActivitiesPage() {
     });
 
     return filtered;
-  }, [allActivities, search, activityStatusFilter, publicationStatusFilter, sortField, sortOrder]);
+  }, [allActivities, search, activityStatusFilter, publicationStatusFilter, contributorFilter, contributorRoleFilter, sortField, sortOrder]);
 
   // Pagination logic
   const totalItems = filteredAndSortedActivities.length;
@@ -372,6 +390,27 @@ export default function ActivitiesPage() {
     }).format(value);
   };
 
+  // Get unique contributor organizations for filtering
+  const getUniqueContributors = () => {
+    const contributorMap = new Map<string, { name: string; acronym?: string }>();
+    
+    allActivities.forEach(activity => {
+      activity.contributors?.forEach(contributor => {
+        if (contributor.status === 'accepted') {
+          contributorMap.set(contributor.organizationId, {
+            name: contributor.organizationName,
+            acronym: contributor.organizationAcronym
+          });
+        }
+      });
+    });
+    
+    return Array.from(contributorMap.entries()).map(([id, org]) => ({
+      id,
+      displayName: org.acronym ? `${org.acronym} • ${org.name}` : org.name
+    })).sort((a, b) => a.displayName.localeCompare(b.displayName));
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
@@ -382,7 +421,11 @@ export default function ActivitiesPage() {
   };
 
   const handlePageSizeChange = (newSize: string) => {
-    setPageSize(parseInt(newSize));
+    if (newSize === 'All') {
+      setPageSize(999999); // Set a very large number to show all
+    } else {
+      setPageSize(parseInt(newSize));
+    }
     setCurrentPage(1); // Reset to first page
   };
 
@@ -476,7 +519,7 @@ export default function ActivitiesPage() {
               allActivities={allActivities}
               filteredActivities={filteredAndSortedActivities}
               currentPageActivities={currentActivities}
-              hasFiltersApplied={search !== "" || activityStatusFilter !== "all" || publicationStatusFilter !== "all"}
+              hasFiltersApplied={search !== "" || activityStatusFilter !== "all" || publicationStatusFilter !== "all" || contributorFilter !== "all" || contributorRoleFilter !== "all"}
             />
 
             {/* Enhanced Filter Bar */}
@@ -486,7 +529,7 @@ export default function ActivitiesPage() {
                   <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search by title, ID, UUID, organization..."
+                      placeholder="Search by title, Partner ID, IATI ID, contributors..."
                       value={search}
                       onChange={(e) => {
                         setSearch(e.target.value);
@@ -495,14 +538,14 @@ export default function ActivitiesPage() {
                       className="pl-10 h-9 text-sm"
                     />
                   </div>
-                  <div className="flex gap-2 items-center">
+                  <div className="flex gap-2 items-center flex-wrap">
                     <div className="flex items-center gap-2">
                       <Filter className="h-4 w-4 text-muted-foreground" />
                       <Select value={activityStatusFilter} onValueChange={(value) => {
                         setActivityStatusFilter(value);
                         setCurrentPage(1);
                       }}>
-                        <SelectTrigger className="w-[160px] h-9 text-sm">
+                        <SelectTrigger className="w-[140px] h-9 text-sm">
                           <SelectValue placeholder="Activity Status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -518,13 +561,45 @@ export default function ActivitiesPage() {
                       setPublicationStatusFilter(value);
                       setCurrentPage(1);
                     }}>
-                      <SelectTrigger className="w-[140px] h-9 text-sm">
+                      <SelectTrigger className="w-[120px] h-9 text-sm">
                         <SelectValue placeholder="Publication" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="draft">Draft</SelectItem>
                         <SelectItem value="published">Published</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={contributorFilter} onValueChange={(value) => {
+                      setContributorFilter(value);
+                      setCurrentPage(1);
+                    }}>
+                      <SelectTrigger className="w-[160px] h-9 text-sm">
+                        <SelectValue placeholder="Contributor Org" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Contributors</SelectItem>
+                        {getUniqueContributors().map(org => (
+                          <SelectItem key={org.id} value={org.id}>
+                            {org.displayName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={contributorRoleFilter} onValueChange={(value) => {
+                      setContributorRoleFilter(value);
+                      setCurrentPage(1);
+                    }}>
+                      <SelectTrigger className="w-[120px] h-9 text-sm">
+                        <SelectValue placeholder="Role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="funder">Funder</SelectItem>
+                        <SelectItem value="implementer">Implementer</SelectItem>
+                        <SelectItem value="coordinator">Coordinator</SelectItem>
+                        <SelectItem value="partner">Partner</SelectItem>
+                        <SelectItem value="contributor">Contributor</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -540,7 +615,7 @@ export default function ActivitiesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-muted-foreground">Show:</label>
-                  <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                  <Select value={pageSize >= 999999 ? 'All' : pageSize.toString()} onValueChange={handlePageSizeChange}>
                     <SelectTrigger className="w-[70px] h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
@@ -564,7 +639,7 @@ export default function ActivitiesPage() {
                 </div>
               ) : currentActivities.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground">
-                  {search || activityStatusFilter !== "all" || publicationStatusFilter !== "all" ? "No matching activities found" : "No activities yet"}
+                  {search || activityStatusFilter !== "all" || publicationStatusFilter !== "all" || contributorFilter !== "all" || contributorRoleFilter !== "all" ? "No matching activities found" : "No activities yet"}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -714,19 +789,18 @@ export default function ActivitiesPage() {
                                   {activity.title}
                                 </h3>
                                 <div className="mt-1">
-                                  <p className="text-xs text-muted-foreground">
-                                    {activity.organization?.acronym ? (
-                                      <>
-                                        <span className="font-medium">{activity.organization.acronym}</span>
-                                        <span className="text-muted-foreground/70"> • {activity.organization.name}</span>
-                                      </>
-                                    ) : (
-                                      activity.organization?.name || 'No Organization'
-                                    )}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground/60 mt-0.5">
-                                    {activity.partnerId || activity.iatiId || 'No Partner ID'} • ID: {activity.id.substring(0, 8)}...
-                                  </p>
+                                  <ContributorDisplay 
+                                    contributors={activity.contributors}
+                                    maxDisplay={2}
+                                    showRoles={false}
+                                  />
+                                  {(activity.partnerId || activity.iatiId) && (
+                                    <p className="text-xs text-muted-foreground/60 mt-0.5">
+                                      {activity.partnerId && `Partner ID: ${activity.partnerId}`}
+                                      {activity.partnerId && activity.iatiId && ' • '}
+                                      {activity.iatiId && `IATI ID: ${activity.iatiId}`}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             </td>

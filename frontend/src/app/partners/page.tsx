@@ -38,7 +38,8 @@ import {
   Calendar,
   Clock,
   Edit,
-  Trash2
+  Trash2,
+  RefreshCw
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -55,9 +56,27 @@ import {
 type SortField = 'name' | 'type' | 'countryRepresented' | 'createdAt' | 'updatedAt';
 type SortOrder = 'asc' | 'desc';
 
-// Safe date formatting helper
+// Convert country code to full country name
+const getCountryDisplayName = (countryCode: string): string => {
+  if (!countryCode) return '';
+  
+  // Handle special cases
+  if (countryCode === 'GLOBAL') return '🌐 Global / Not Country-Specific';
+  if (countryCode === 'Regional') return '🌍 Regional';
+  
+  // Find the country in the COUNTRIES array
+  const country = COUNTRIES.find(c => c.value === countryCode || c.label === countryCode);
+  if (country) {
+    return country.label;
+  }
+  
+  // If no match found, return the original value (might already be a full name)
+  return countryCode;
+};
+
+// Safe date formatting helper with better handling
 const formatDate = (date: any, formatString: string = "dd MMM yyyy"): string => {
-  if (!date) return "Unknown date";
+  if (!date) return "Never updated";
   
   try {
     const dateObj = new Date(date);
@@ -84,8 +103,14 @@ const getPartnerTypeIcon = (type: string) => {
   }
 };
 
-const getPartnerTypeLabel = (type: string) => {
-  switch (type) {
+const getPartnerTypeLabel = (partner: Partner) => {
+  // Use orgClassification if available, otherwise fall back to type mapping
+  if (partner.orgClassification) {
+    return partner.orgClassification;
+  }
+  
+  // Legacy fallback for compatibility
+  switch (partner.type) {
     case 'development_partner':
       return 'Development Partner';
     case 'partner_government':
@@ -95,6 +120,19 @@ const getPartnerTypeLabel = (type: string) => {
     default:
       return 'Other';
   }
+};
+
+const formatOrganizationDisplayName = (partner: Partner) => {
+  // If we have both fullName and acronym, show "Full Name (ACRONYM)"
+  if (partner.fullName && partner.acronym && partner.fullName !== partner.acronym) {
+    return `${partner.fullName} (${partner.acronym})`;
+  }
+  // If we only have fullName, show that
+  if (partner.fullName) {
+    return partner.fullName;
+  }
+  // If we only have acronym or name, show that
+  return partner.acronym || partner.name;
 };
 
 export default function PartnersPage() {
@@ -127,6 +165,14 @@ export default function PartnersPage() {
   const [activeTab, setActiveTab] = useState("development");
   const [organizationGroupsCount, setOrganizationGroupsCount] = useState(0);
   const [organizationGroups, setOrganizationGroups] = useState<any[]>([]);
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{
+    isOpen: boolean;
+    partner: Partner | null;
+    confirmText: string;
+  }>({ isOpen: false, partner: null, confirmText: '' });
+  const [deleting, setDeleting] = useState(false);
+  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Add debugging
   useEffect(() => {
@@ -155,14 +201,43 @@ export default function PartnersPage() {
 
   const fetchOrganizationGroupsCount = async () => {
     try {
+      console.log('[PARTNERS] Fetching organization groups...');
+      
+      // First try debug mode to see raw data
+      const debugRes = await fetch("/api/organization-groups?debug=true");
+      if (debugRes.ok) {
+        const debugData = await debugRes.json();
+        console.log('[PARTNERS] Debug data:', debugData);
+      }
+      
+      // Now try regular fetch
       const res = await fetch("/api/organization-groups");
+      console.log('[PARTNERS] Organization groups response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('[PARTNERS] Organization groups data received:', {
+          isArray: Array.isArray(data),
+          length: data?.length || 0,
+          data: data
+        });
+        
         setOrganizationGroups(data);
-        setOrganizationGroupsCount(data.length);
+        setOrganizationGroupsCount(data?.length || 0);
+        
+        console.log('[PARTNERS] Organization groups state updated:', {
+          count: data?.length || 0,
+          groups: data
+        });
+      } else {
+        const errorData = await res.json();
+        console.error('[PARTNERS] Failed to fetch organization groups:', {
+          status: res.status,
+          error: errorData
+        });
       }
     } catch (error) {
-      console.error("Error fetching organization groups:", error);
+      console.error('[PARTNERS] Error fetching organization groups:', error);
     }
   };
 
@@ -202,12 +277,12 @@ export default function PartnersPage() {
           bValue = b.countryRepresented?.toLowerCase() || '';
           break;
         case 'createdAt':
-          aValue = new Date(a.createdAt).getTime();
-          bValue = new Date(b.createdAt).getTime();
+          aValue = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          bValue = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           break;
         case 'updatedAt':
-          aValue = new Date(a.updatedAt).getTime();
-          bValue = new Date(b.updatedAt).getTime();
+          aValue = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          bValue = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
           break;
         default:
           return 0;
@@ -219,18 +294,34 @@ export default function PartnersPage() {
     });
   };
 
-  const developmentPartners = getDevelopmentPartners();
-  const governmentPartners = partners.filter(p => p.type === 'partner_government');
-  const filteredDevelopmentPartners = sortPartners(developmentPartners.filter(partner =>
-    partner.type === 'development_partner' && (
+  // Group partners by organization classification
+  const getPartnersByClassification = (classification: string) => {
+    return partners.filter(p => p.orgClassification === classification);
+  };
+
+  const developmentPartners = getPartnersByClassification('Development Partner');
+  const partnerGovernments = getPartnersByClassification('Partner Government');
+  const civilSocietyIntl = getPartnersByClassification('Civil Society – International');
+  const civilSocietyDomestic = getPartnersByClassification('Civil Society – Domestic');
+  const privateSectorIntl = getPartnersByClassification('Private Sector – International');
+  const privateSectorDomestic = getPartnersByClassification('Private Sector – Domestic');
+  const otherOrganizations = getPartnersByClassification('Other');
+
+  // Filter and sort functions for each category
+  const getFilteredAndSorted = (partnersList: Partner[]) => {
+    return sortPartners(partnersList.filter(partner =>
       partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       partner.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  ));
-  const filteredGovernmentPartners = sortPartners(governmentPartners.filter(partner =>
-    partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    partner.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  ));
+    ));
+  };
+
+  const filteredDevelopmentPartners = getFilteredAndSorted(developmentPartners);
+  const filteredPartnerGovernments = getFilteredAndSorted(partnerGovernments);
+  const filteredCivilSocietyIntl = getFilteredAndSorted(civilSocietyIntl);
+  const filteredCivilSocietyDomestic = getFilteredAndSorted(civilSocietyDomestic);
+  const filteredPrivateSectorIntl = getFilteredAndSorted(privateSectorIntl);
+  const filteredPrivateSectorDomestic = getFilteredAndSorted(privateSectorDomestic);
+  const filteredOtherOrganizations = getFilteredAndSorted(otherOrganizations);
 
   // Calculate metrics
   const calculateMetrics = () => {
@@ -274,42 +365,60 @@ export default function PartnersPage() {
   // Calculate active projects for a specific partner - memoized to update when activities change
   const calculatePartnerActiveProjects = useMemo(() => {
     return (partnerId: string, partnerName: string) => {
-      // Get all users from this organization
+      if (!activities || activities.length === 0) {
+        return 0;
+      }
+
+      console.log(`[DEBUG] Calculating active projects for partner: ${partnerName} (${partnerId})`);
+      
+      // Get all users from this organization (for legacy compatibility)
       const organizationUsers = mockUsers.filter(u => u.organizationId === partnerId);
       const organizationUserIds = organizationUsers.map(u => u.id);
 
       let activeProjectCount = 0;
       
-      activities.forEach(activity => {
-        // Check if this activity was created by a user from this organization
+      activities.forEach((activity, index) => {
+        // Check various ways this activity could be related to this partner
         const isCreatedByOrgUser = activity.createdBy && organizationUserIds.includes(activity.createdBy.id);
+        const isCreatedByThisOrg = activity.createdByOrg === partnerId || activity.createdByOrg === partnerName;
         
-        // Also check if the activity's createdByOrg matches this partner
-        const isCreatedByThisOrg = activity.createdByOrg === partnerName;
-        
-        // Also check if partner is involved in transactions
+        // Check if partner is involved in transactions
         const isInvolvedInTransactions = activity.transactions?.some((t: any) => 
-          t.providerOrg === partnerName || t.receiverOrg === partnerName
+          t.providerOrg === partnerName || 
+          t.receiverOrg === partnerName ||
+          t.providerOrg === partnerId ||
+          t.receiverOrg === partnerId
+        );
+        
+        // Check if partner is a contributor
+        const isContributor = activity.contributors?.some((c: any) => 
+          c.organizationId === partnerId || c.organizationName === partnerName
         );
         
         // Activity is related to this partner if any of the above conditions are true
-        const isRelatedToPartner = isCreatedByOrgUser || isCreatedByThisOrg || isInvolvedInTransactions;
+        const isRelatedToPartner = isCreatedByOrgUser || isCreatedByThisOrg || isInvolvedInTransactions || isContributor;
 
         if (isRelatedToPartner) {
           // Check both new fields first, fallback to old status field for backward compatibility
           const activityStatus = activity.activityStatus || 
             (activity.status && !["published", "draft"].includes(activity.status) ? activity.status : "");
           
-          // Count as active if in implementation status
-          if (activityStatus === "implementation") {
+          // Check publication status
+          const publicationStatus = activity.publicationStatus || 
+            (activity.status === "published" ? "published" : "draft");
+          
+          // Count as active if in implementation status and published
+          if (activityStatus === "implementation" && publicationStatus === "published") {
             activeProjectCount++;
+            console.log(`[DEBUG] Active project found for ${partnerName}: ${activity.title} (status: ${activityStatus}, published: ${publicationStatus})`);
           }
         }
       });
 
+      console.log(`[DEBUG] Total active projects for ${partnerName}: ${activeProjectCount}`);
       return activeProjectCount;
     };
-  }, [activities]); // Recalculate when activities change
+  }, [activities, mockUsers]); // Dependencies include activities and mockUsers
 
   const handleCreatePartner = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -374,13 +483,10 @@ export default function PartnersPage() {
   };
 
   const exportPartners = () => {
-    const dataToExport = developmentPartners.map(partner => ({
+    const dataToExport = partners.map(partner => ({
       "Partner ID": partner.id,
       "Partner Name": partner.name,
-      "Partner Type": partner.type === 'development_partner' ? 'Development Partner' : 
-                     partner.type === 'bilateral' ? 'Bilateral Partner' :
-                     partner.type === 'partner_government' ? 'Partner Government' : 
-                     'Other',
+      "Partner Type": partner.orgClassification || 'Other',
       "Country Represented": partner.countryRepresented || "",
       "Description": partner.description || "",
       "Website": partner.website || "",
@@ -417,6 +523,58 @@ export default function PartnersPage() {
     toast.success("Partners exported successfully");
   };
 
+  const handleDeletePartner = async () => {
+    if (!deleteConfirmDialog.partner) return;
+    
+    const partner = deleteConfirmDialog.partner;
+    
+    // Validate confirmation text
+    if (deleteConfirmDialog.confirmText !== partner.name) {
+      toast.error("Organization name doesn't match. Please type the exact name to confirm deletion.");
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/partners/${partner.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user: user
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete organization');
+      }
+
+      // Close dialog and refresh data
+      setDeleteConfirmDialog({ isOpen: false, partner: null, confirmText: '' });
+      
+      // Refresh partners list (this will trigger a re-fetch)
+      window.location.reload();
+      
+      toast.success(`Successfully deleted ${partner.name}`);
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast.error(error.message || 'Failed to delete organization');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const openDeleteDialog = (partner: Partner, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteConfirmDialog({
+      isOpen: true,
+      partner,
+      confirmText: ''
+    });
+  };
+
   if (loading) {
     return (
       <MainLayout>
@@ -439,9 +597,9 @@ export default function PartnersPage() {
         <div className="p-8 max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-slate-900 mb-3">Organizations</h1>
+            <h1 className="text-4xl font-bold text-slate-900 mb-3">Partner Organizations</h1>
             <p className="text-lg text-slate-600">
-              Manage development partners and government entities
+              Browse and explore our development partner network
             </p>
           </div>
 
@@ -455,7 +613,7 @@ export default function PartnersPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-slate-900">{developmentPartners.length}</div>
+                <div className="text-2xl font-bold text-slate-900">{partners.length}</div>
                 <p className="text-xs text-slate-500 mt-1">Active organizations</p>
               </CardContent>
             </Card>
@@ -495,7 +653,20 @@ export default function PartnersPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium text-slate-600">Organization Groups</CardTitle>
-                  <FolderOpen className="h-4 w-4 text-slate-400" />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fetchOrganizationGroupsCount();
+                      }}
+                      className="h-6 w-6 p-0"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                    </Button>
+                    <FolderOpen className="h-4 w-4 text-slate-400" />
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -552,12 +723,27 @@ export default function PartnersPage() {
 
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-6">
+                <TabsList className="mb-6 flex-wrap">
                   <TabsTrigger value="development">
-                    Development Partners ({developmentPartners.filter(p => p.type === 'development_partner').length})
+                    Development Partner ({developmentPartners.length})
                   </TabsTrigger>
                   <TabsTrigger value="government">
-                    Partner Government Entities ({governmentPartners.length})
+                    Partner Government ({partnerGovernments.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="civil-intl">
+                    Civil Society – International ({civilSocietyIntl.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="civil-domestic">
+                    Civil Society – Domestic ({civilSocietyDomestic.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="private-intl">
+                    Private Sector – International ({privateSectorIntl.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="private-domestic">
+                    Private Sector – Domestic ({privateSectorDomestic.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="other">
+                    Other ({otherOrganizations.length})
                   </TabsTrigger>
                   <TabsTrigger value="groups">
                     <FolderOpen className="h-4 w-4 mr-2" />
@@ -608,10 +794,10 @@ export default function PartnersPage() {
                               )}
                               <div className="flex-1">
                                 <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                  {partner.name}
+                                  {formatOrganizationDisplayName(partner)}
                                 </h3>
                                 <Badge variant="secondary" className="text-xs">
-                                  {getPartnerTypeLabel(partner.type)}
+                                  {getPartnerTypeLabel(partner)}
                                 </Badge>
                               </div>
                             </div>
@@ -628,7 +814,7 @@ export default function PartnersPage() {
                               {partner.countryRepresented && (
                                 <div className="flex items-center gap-2 text-gray-600">
                                   <MapPin className="h-4 w-4" />
-                                  <span>{partner.countryRepresented}</span>
+                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
                                 </div>
                               )}
                               <div className="flex items-center gap-2 text-gray-600">
@@ -653,17 +839,45 @@ export default function PartnersPage() {
 
                             {/* Footer */}
                             <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {formatDate(partner.updatedAt)}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  router.push(`/partners/${partner.id}`);
-                                }}
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                              </Button>
+                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
+                              <div className="flex items-center gap-1">
+                                {/* Show Edit button for super users */}
+                                {user?.role === 'super_user' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setEditingPartner(partner);
+                                      setShowEditDialog(true);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    aria-label="Edit Organization"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {permissions.canManageUsers && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => openDeleteDialog(partner, e)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/partners/${partner.id}`);
+                                  }}
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
@@ -672,17 +886,17 @@ export default function PartnersPage() {
                   )}
                 </TabsContent>
 
-                {/* Partner Governments Tab - Table View */}
+                {/* Partner Governments Tab */}
                 <TabsContent value="government">
                   {loading ? (
                     <div className="text-center text-gray-500 py-8">Loading partner governments...</div>
-                  ) : filteredGovernmentPartners.length === 0 ? (
+                  ) : filteredPartnerGovernments.length === 0 ? (
                     <div className="text-center text-gray-500 py-8">
                       {searchTerm ? 'No partner governments found matching your search' : 'No partner governments yet'}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredGovernmentPartners.map((partner) => (
+                      {filteredPartnerGovernments.map((partner) => (
                         <Card 
                           key={partner.id} 
                           className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
@@ -715,17 +929,12 @@ export default function PartnersPage() {
                               )}
                               <div className="flex-1">
                                 <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                  {partner.name}
+                                  {formatOrganizationDisplayName(partner)}
                                 </h3>
                                 <div className="flex items-center gap-2">
                                   <Badge variant="secondary" className="text-xs">
                                     Partner Government
                                   </Badge>
-                                  {partner.code && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {partner.code}
-                                    </Badge>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -775,7 +984,522 @@ export default function PartnersPage() {
 
                             {/* Footer */}
                             <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {formatDate(partner.updatedAt)}</span>
+                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
+                              <div className="flex items-center gap-1">
+                                {/* Show Edit button for super users */}
+                                {user?.role === 'super_user' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setEditingPartner(partner);
+                                      setShowEditDialog(true);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    aria-label="Edit Organization"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {permissions.canManageUsers && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => openDeleteDialog(partner, e)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/partners/${partner.id}`);
+                                  }}
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Civil Society International Tab */}
+                <TabsContent value="civil-intl">
+                  {loading ? (
+                    <div className="text-center text-gray-500 py-8">Loading civil society organizations...</div>
+                  ) : filteredCivilSocietyIntl.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      {searchTerm ? 'No international civil society organizations found matching your search' : 'No international civil society organizations yet'}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredCivilSocietyIntl.map((partner) => (
+                        <Card 
+                          key={partner.id} 
+                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                          onClick={() => router.push(`/partners/${partner.id}`)}
+                        >
+                          <CardContent className="p-6">
+                            <div className="flex items-start gap-4 mb-4">
+                              {partner.logo ? (
+                                <img 
+                                  src={partner.logo} 
+                                  alt={partner.name} 
+                                  className="h-12 w-12 object-contain rounded"
+                                />
+                              ) : (
+                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
+                                  <Users className="h-6 w-6 text-gray-400" />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                                  {formatOrganizationDisplayName(partner)}
+                                </h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  Civil Society – International
+                                </Badge>
+                              </div>
+                            </div>
+                            {partner.description && (
+                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                {partner.description}
+                              </p>
+                            )}
+                            <div className="space-y-2 text-sm">
+                              {partner.countryRepresented && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Activity className="h-4 w-4" />
+                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
+                              </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
+                              <div className="flex items-center gap-1">
+                                {/* Show Edit button for super users */}
+                                {user?.role === 'super_user' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setEditingPartner(partner);
+                                      setShowEditDialog(true);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    aria-label="Edit Organization"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {permissions.canManageUsers && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => openDeleteDialog(partner, e)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/partners/${partner.id}`);
+                                  }}
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Civil Society Domestic Tab */}
+                <TabsContent value="civil-domestic">
+                  {loading ? (
+                    <div className="text-center text-gray-500 py-8">Loading domestic civil society organizations...</div>
+                  ) : filteredCivilSocietyDomestic.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      {searchTerm ? 'No domestic civil society organizations found matching your search' : 'No domestic civil society organizations yet'}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredCivilSocietyDomestic.map((partner) => (
+                        <Card 
+                          key={partner.id} 
+                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                          onClick={() => router.push(`/partners/${partner.id}`)}
+                        >
+                          <CardContent className="p-6">
+                            <div className="flex items-start gap-4 mb-4">
+                              {partner.logo ? (
+                                <img 
+                                  src={partner.logo} 
+                                  alt={partner.name} 
+                                  className="h-12 w-12 object-contain rounded"
+                                />
+                              ) : (
+                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
+                                  <Users className="h-6 w-6 text-gray-400" />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                                  {formatOrganizationDisplayName(partner)}
+                                </h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  Civil Society – Domestic
+                                </Badge>
+                              </div>
+                            </div>
+                            {partner.description && (
+                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                {partner.description}
+                              </p>
+                            )}
+                            <div className="space-y-2 text-sm">
+                              {partner.countryRepresented && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Activity className="h-4 w-4" />
+                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
+                              </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
+                              <div className="flex items-center gap-1">
+                                {/* Show Edit button for super users */}
+                                {user?.role === 'super_user' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setEditingPartner(partner);
+                                      setShowEditDialog(true);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    aria-label="Edit Organization"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {permissions.canManageUsers && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => openDeleteDialog(partner, e)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/partners/${partner.id}`);
+                                  }}
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Private Sector International Tab */}
+                <TabsContent value="private-intl">
+                  {loading ? (
+                    <div className="text-center text-gray-500 py-8">Loading international private sector organizations...</div>
+                  ) : filteredPrivateSectorIntl.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      {searchTerm ? 'No international private sector organizations found matching your search' : 'No international private sector organizations yet'}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredPrivateSectorIntl.map((partner) => (
+                        <Card 
+                          key={partner.id} 
+                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                          onClick={() => router.push(`/partners/${partner.id}`)}
+                        >
+                          <CardContent className="p-6">
+                            <div className="flex items-start gap-4 mb-4">
+                              {partner.logo ? (
+                                <img 
+                                  src={partner.logo} 
+                                  alt={partner.name} 
+                                  className="h-12 w-12 object-contain rounded"
+                                />
+                              ) : (
+                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
+                                  <Briefcase className="h-6 w-6 text-gray-400" />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                                  {formatOrganizationDisplayName(partner)}
+                                </h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  Private Sector – International
+                                </Badge>
+                              </div>
+                            </div>
+                            {partner.description && (
+                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                {partner.description}
+                              </p>
+                            )}
+                            <div className="space-y-2 text-sm">
+                              {partner.countryRepresented && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Activity className="h-4 w-4" />
+                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
+                              </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
+                              <div className="flex items-center gap-1">
+                                {/* Show Edit button for super users */}
+                                {user?.role === 'super_user' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setEditingPartner(partner);
+                                      setShowEditDialog(true);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    aria-label="Edit Organization"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {permissions.canManageUsers && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => openDeleteDialog(partner, e)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/partners/${partner.id}`);
+                                  }}
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Private Sector Domestic Tab */}
+                <TabsContent value="private-domestic">
+                  {loading ? (
+                    <div className="text-center text-gray-500 py-8">Loading domestic private sector organizations...</div>
+                  ) : filteredPrivateSectorDomestic.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      {searchTerm ? 'No domestic private sector organizations found matching your search' : 'No domestic private sector organizations yet'}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredPrivateSectorDomestic.map((partner) => (
+                        <Card 
+                          key={partner.id} 
+                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                          onClick={() => router.push(`/partners/${partner.id}`)}
+                        >
+                          <CardContent className="p-6">
+                            <div className="flex items-start gap-4 mb-4">
+                              {partner.logo ? (
+                                <img 
+                                  src={partner.logo} 
+                                  alt={partner.name} 
+                                  className="h-12 w-12 object-contain rounded"
+                                />
+                              ) : (
+                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
+                                  <Briefcase className="h-6 w-6 text-gray-400" />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                                  {formatOrganizationDisplayName(partner)}
+                                </h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  Private Sector – Domestic
+                                </Badge>
+                              </div>
+                            </div>
+                            {partner.description && (
+                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                {partner.description}
+                              </p>
+                            )}
+                            <div className="space-y-2 text-sm">
+                              {partner.countryRepresented && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Activity className="h-4 w-4" />
+                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
+                              </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
+                              <div className="flex items-center gap-1">
+                                {/* Show Edit button for super users */}
+                                {user?.role === 'super_user' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setEditingPartner(partner);
+                                      setShowEditDialog(true);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    aria-label="Edit Organization"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {permissions.canManageUsers && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => openDeleteDialog(partner, e)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/partners/${partner.id}`);
+                                  }}
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Other Organizations Tab */}
+                <TabsContent value="other">
+                  {loading ? (
+                    <div className="text-center text-gray-500 py-8">Loading other organizations...</div>
+                  ) : filteredOtherOrganizations.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      {searchTerm ? 'No other organizations found matching your search' : 'No other organizations yet'}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredOtherOrganizations.map((partner) => (
+                        <Card 
+                          key={partner.id} 
+                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                          onClick={() => router.push(`/partners/${partner.id}`)}
+                        >
+                          <CardContent className="p-6">
+                            <div className="flex items-start gap-4 mb-4">
+                              {partner.logo ? (
+                                <img 
+                                  src={partner.logo} 
+                                  alt={partner.name} 
+                                  className="h-12 w-12 object-contain rounded"
+                                />
+                              ) : (
+                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
+                                  <Building2 className="h-6 w-6 text-gray-400" />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                                  {formatOrganizationDisplayName(partner)}
+                                </h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  Other
+                                </Badge>
+                              </div>
+                            </div>
+                            {partner.description && (
+                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                {partner.description}
+                              </p>
+                            )}
+                            <div className="space-y-2 text-sm">
+                              {partner.countryRepresented && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Activity className="h-4 w-4" />
+                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
+                              </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -830,13 +1554,6 @@ export default function PartnersPage() {
                         </p>
                         <div className="flex gap-2">
                           <Button 
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push('/partners/groups')}
-                          >
-                            Manage All Groups
-                          </Button>
-                          <Button 
                             size="sm"
                             onClick={() => router.push('/partners/groups?create=true')}
                             className="bg-slate-900 hover:bg-slate-800"
@@ -889,7 +1606,7 @@ export default function PartnersPage() {
                                             <Building2 className="h-6 w-6 text-gray-400" />
                                           )}
                                           <span className="text-sm text-gray-700 truncate">
-                                            {org.name}
+                                            {formatOrganizationDisplayName(org)}
                                           </span>
                                         </div>
                                       ))}
@@ -1258,6 +1975,90 @@ export default function PartnersPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmDialog.isOpen} onOpenChange={(open) => 
+        setDeleteConfirmDialog({ isOpen: open, partner: null, confirmText: '' })
+      }>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Organization</DialogTitle>
+            <DialogDesc>
+              This action cannot be undone. This will permanently delete the organization.
+            </DialogDesc>
+          </DialogHeader>
+          
+          {deleteConfirmDialog.partner && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900">
+                  {formatOrganizationDisplayName(deleteConfirmDialog.partner)}
+                </h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  {deleteConfirmDialog.partner.orgClassification || 'Other'}
+                </p>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Type the organization name to confirm:
+                </label>
+                <Input
+                  value={deleteConfirmDialog.confirmText}
+                  onChange={(e) => setDeleteConfirmDialog({
+                    ...deleteConfirmDialog,
+                    confirmText: e.target.value
+                  })}
+                  placeholder={deleteConfirmDialog.partner.name}
+                  className="mt-1"
+                  autoComplete="off"
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirmDialog({ isOpen: false, partner: null, confirmText: '' })}
+                  disabled={deleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeletePartner}
+                  disabled={deleting || deleteConfirmDialog.confirmText !== deleteConfirmDialog.partner.name}
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Organization
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Organization Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Organization</DialogTitle>
+            <DialogDesc>Edit the details for this organization.</DialogDesc>
+          </DialogHeader>
+          {/* You can reuse your form fields here, pre-filled with editingPartner data */}
+          {/* ...form fields and save logic... */}
+          <Button onClick={() => setShowEditDialog(false)} variant="outline">Cancel</Button>
+          <Button type="submit">Save Changes</Button>
         </DialogContent>
       </Dialog>
       </div>

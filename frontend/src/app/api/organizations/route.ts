@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { ActivityLogger } from '@/lib/activity-logger';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
     
     const body = await request.json();
-    const { name, type, country } = body;
+    const { name, type, country, user } = body;
     
     console.log('[AIMS] Creating organization with data:', { name, type, country });
     
@@ -108,6 +109,11 @@ export async function POST(request: NextRequest) {
     
     console.log('[AIMS] Created organization:', data);
     
+    // Log the activity if user information is provided
+    if (user) {
+      await ActivityLogger.organizationCreated(data, user);
+    }
+    
     const response = NextResponse.json(data, { status: 201 });
     
     // Add CORS headers
@@ -139,7 +145,7 @@ export async function PUT(request: NextRequest) {
     }
     
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id, user, ...updates } = body;
     
     if (!id) {
       return NextResponse.json(
@@ -161,6 +167,12 @@ export async function PUT(request: NextRequest) {
     }
     
     console.log('[AIMS] Updated organization:', data);
+    
+    // Log the activity if user information is provided
+    if (user) {
+      await ActivityLogger.organizationUpdated(data, user, { updates });
+    }
+    
     return NextResponse.json(data);
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
@@ -186,12 +198,27 @@ export async function DELETE(request: NextRequest) {
     
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
+    const userId = searchParams.get('userId'); // For logging
+    const userName = searchParams.get('userName'); // For logging
+    const userRole = searchParams.get('userRole'); // For logging
     
     if (!id) {
       return NextResponse.json(
         { error: 'Organization ID is required' },
         { status: 400 }
       );
+    }
+    
+    // Get organization details before deleting for logging
+    const { data: orgToDelete, error: fetchError } = await supabaseAdmin
+      .from('organizations')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError || !orgToDelete) {
+      console.error('[AIMS] Error fetching organization to delete:', fetchError);
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
     
     // Check if organization has users before deleting
@@ -224,6 +251,16 @@ export async function DELETE(request: NextRequest) {
     }
     
     console.log('[AIMS] Deleted organization:', id);
+    
+    // Log the activity if user information is provided
+    if (userId && userName && userRole) {
+      await ActivityLogger.organizationDeleted(orgToDelete, {
+        id: userId,
+        name: userName,
+        role: userRole
+      });
+    }
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
