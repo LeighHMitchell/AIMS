@@ -31,5 +31,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Data files (persistent storage)
-data/ 
+# Data files (persistent storage) - only ignore data at root, not src/data
+/data/ 

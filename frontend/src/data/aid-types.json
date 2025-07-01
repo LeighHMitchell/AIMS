@@ -1,0 +1,182 @@
+[
+  {
+    "code": "A",
+    "name": "Budget Support",
+    "description": "The donor relinquishes control of funds to the recipient government.",
+    "children": [
+      {
+        "code": "A01",
+        "name": "General budget support",
+        "description": "Unearmarked contributions to a government's national treasury to support macroeconomic reforms or poverty reduction strategies."
+      },
+      {
+        "code": "A02",
+        "name": "Sector budget support",
+        "description": "Earmarked for sector-specific policy and budget priorities, but managed through the recipient's national systems."
+      }
+    ]
+  },
+  {
+    "code": "B",
+    "name": "Core Contributions and Pooled Programmes and Funds",
+    "description": "The donor shares control of funds with other stakeholders, including NGOs and multilaterals.",
+    "children": [
+      {
+        "code": "B01",
+        "name": "Core support to NGOs, PPPs, and research institutes",
+        "description": "Discretionary funding for programmes developed and implemented by these entities."
+      },
+      {
+        "code": "B02",
+        "name": "Core contributions to multilateral institutions and global funds",
+        "description": "Contributions pooled and managed by multilateral agencies.",
+        "children": [
+          {
+            "code": "B021",
+            "name": "Core contributions to multilateral institutions",
+            "description": "Integrated into the institution's financial assets."
+          },
+          {
+            "code": "B022",
+            "name": "Core contributions to global funds",
+            "description": "Includes GEF, CIFs, CERF, etc., recognised in OECD Annex 2."
+          }
+        ]
+      },
+      {
+        "code": "B03",
+        "name": "Contributions to specific-purpose programmes and funds",
+        "description": "Earmarked contributions for sectoral, thematic, or geographical programmes.",
+        "children": [
+          {
+            "code": "B031",
+            "name": "Multi-donor/multi-entity funding mechanisms",
+            "description": "e.g. UN country pooled funds where multiple orgs implement."
+          },
+          {
+            "code": "B032",
+            "name": "Multi-donor/single-entity funding mechanisms",
+            "description": "e.g. World Bank trust funds managed by a single agency."
+          },
+          {
+            "code": "B033",
+            "name": "Single-donor funding or earmarked windows",
+            "description": "Where the donor retains influence over allocations."
+          }
+        ]
+      },
+      {
+        "code": "B04",
+        "name": "Basket funds / pooled funding",
+        "description": "Jointly managed accounts with specific purposes, shared reporting, and limited duration."
+      }
+    ]
+  },
+  {
+    "code": "C",
+    "name": "Project-Type Interventions",
+    "description": "Specific inputs, activities, and outputs agreed with the partner country.",
+    "children": [
+      {
+        "code": "C01",
+        "name": "Project-type interventions",
+        "description": "Defined activities with a time frame, budget, and outcomes. Includes donor-managed NGO and multilateral projects, feasibility studies, and appraisals."
+      }
+    ]
+  },
+  {
+    "code": "D",
+    "name": "Experts and Other Technical Assistance",
+    "description": "Provision of knowledge and skills, outside a project framework.",
+    "children": [
+      {
+        "code": "D01",
+        "name": "Donor country personnel",
+        "description": "Experts, consultants, and volunteers deployed to developing countries."
+      },
+      {
+        "code": "D02",
+        "name": "Other technical assistance",
+        "description": "Includes research, south-south cooperation, local scholarships, cultural programmes, and conferences."
+      }
+    ]
+  },
+  {
+    "code": "E",
+    "name": "Scholarships and Student Costs in Donor Countries",
+    "description": "",
+    "children": [
+      {
+        "code": "E01",
+        "name": "Scholarships/training in donor country",
+        "description": "Direct support to individual students or trainees."
+      },
+      {
+        "code": "E02",
+        "name": "Imputed student costs",
+        "description": "Estimated tuition costs for students in donor countries."
+      }
+    ]
+  },
+  {
+    "code": "F",
+    "name": "Debt Relief",
+    "description": "Any form of debt forgiveness or restructuring.",
+    "children": [
+      {
+        "code": "F01",
+        "name": "Debt relief",
+        "description": "Includes forgiveness, conversions, buy-backs, rescheduling, and refinancing."
+      }
+    ]
+  },
+  {
+    "code": "G",
+    "name": "Administrative Costs Not Included Elsewhere",
+    "description": "Back-office costs not covered by specific project or TA categories.",
+    "children": [
+      {
+        "code": "G01",
+        "name": "Administrative costs not included elsewhere",
+        "description": "Includes salaries of in-house staff, situation analyses, and audits."
+      }
+    ]
+  },
+  {
+    "code": "H",
+    "name": "Other In-Donor Expenditures",
+    "description": "Expenditures that do not result in a cross-border flow.",
+    "children": [
+      {
+        "code": "H01",
+        "name": "Development awareness",
+        "description": "Activities to build public support for development cooperation."
+      },
+      {
+        "code": "H02",
+        "name": "Refugees/asylum seekers in donor countries",
+        "description": "Basic assistance costs for up to 12 months when costs cannot be disaggregated."
+      },
+      {
+        "code": "H03",
+        "name": "Asylum-seekers ultimately accepted",
+        "description": "Costs incurred before official recognition."
+      },
+      {
+        "code": "H04",
+        "name": "Asylum-seekers ultimately rejected",
+        "description": "Costs incurred before final rejection decision."
+      },
+      {
+        "code": "H05",
+        "name": "Recognised refugees",
+        "description": "Costs incurred after official recognition or resettlement."
+      },
+      {
+        "code": "H06",
+        "name": "Refugees/asylum seekers in other provider countries",
+        "description": "Costs for refugees hosted in non-ODA-eligible countries."
+      }
+    ]
+  }
+]

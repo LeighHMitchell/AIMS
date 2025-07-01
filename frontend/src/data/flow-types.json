@@ -1,0 +1,42 @@
+[
+  {
+    "code": "10",
+    "name": "Official Development Assistance (ODA)",
+    "description": "Grants or concessional loans from official sources aimed primarily at promoting the economic development and welfare of developing countries."
+  },
+  {
+    "code": "21",
+    "name": "Other Official Flows (non-export credit)",
+    "description": "Official government flows that do not meet ODA criteria, often less concessional and may serve commercial or foreign policy objectives."
+  },
+  {
+    "code": "22",
+    "name": "Officially Supported Export Credits",
+    "description": "Export-related loans backed by government guarantees or insurance, typically for tied aid or trade promotion."
+  },
+  {
+    "code": "30",
+    "name": "Private Development Finance",
+    "description": "Financial flows from NGOs, philanthropic foundations, and other civil society actors directed at development objectives."
+  },
+  {
+    "code": "36",
+    "name": "Private Foreign Direct Investment",
+    "description": "Long-term investments made by private firms in developing countries, usually involving ownership or control of enterprises."
+  },
+  {
+    "code": "37",
+    "name": "Other Private Flows at Market Terms",
+    "description": "Long-term capital flows from private investors or banks, including portfolio investments, not classified as foreign direct investment."
+  },
+  {
+    "code": "40",
+    "name": "Non-Flow",
+    "description": "Indicators such as population size, GNI, or ODA as a share of GNI — used for reference but not financial flows."
+  },
+  {
+    "code": "50",
+    "name": "Other Flows",
+    "description": "Residual flows including non-ODA components of peacekeeping or development-related operations not primarily focused on aid."
+  }
+]
