@@ -17,6 +17,24 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
   
+  // Webpack configuration
+  webpack: (config, { isServer }) => {
+    // Ensure TypeScript files are resolved properly
+    config.resolve.extensions = ['.ts', '.tsx', '.js', '.jsx', '.json'];
+    
+    // Add fallback for modules
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+    }
+    
+    return config;
+  },
+  
   // Headers for all routes
   async headers() {
     return [
