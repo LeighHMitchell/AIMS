@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { ActivityLogger } from '@/lib/activity-logger';
-import { calculateOrgClassification } from '@/components/OrganizationFieldHelpers';
+import { calculateCooperationModality } from '@/components/OrganizationFieldHelpers';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -80,10 +80,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         countryRepresented,
         orgClassificationOverride,
         // Calculate classification automatically
-        orgClassification: calculateOrgClassification(
+        orgClassification: calculateCooperationModality(
           countryRepresented || "",
           organisationType || "",
-          data.cooperation_modality || null
+          "Myanmar" // Default focus country
         ),
         createdAt: data.created_at,
         updatedAt: data.updated_at,
@@ -242,10 +242,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         countryRepresented,
         orgClassificationOverride,
         // Calculate classification automatically
-        orgClassification: calculateOrgClassification(
+        orgClassification: calculateCooperationModality(
           countryRepresented || "",
           organisationType || "",
-          data.cooperation_modality || null
+          "Myanmar" // Default focus country
         ),
         createdAt: data.created_at,
         updatedAt: data.updated_at,
@@ -298,10 +298,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           id, // Ensure ID doesn't change
           updatedAt: new Date().toISOString(),
           // Calculate classification automatically
-          orgClassification: calculateOrgClassification(
+          orgClassification: calculateCooperationModality(
             updates.countryRepresented || existingPartner.countryRepresented || "",
             updates.organisationType || existingPartner.organisationType || "",
-            updates.cooperationModality || existingPartner.cooperationModality || null
+            "Myanmar" // Default focus country
           ),
         };
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { ActivityLogger } from '@/lib/activity-logger';
 
 export async function POST(request: NextRequest) {
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         delete activityData.tags;
 
         // Insert the activity
-        const { data: insertedActivity, error } = await supabaseAdmin
+        const { data: insertedActivity, error } = await getSupabaseAdmin()
           .from('activities')
           .insert(activityData)
           .select()
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
             code: sector.code || null
           }));
 
-          const { error: sectorError } = await supabaseAdmin
+                      const { error: sectorError } = await getSupabaseAdmin()
             .from('activity_sectors')
             .insert(sectorData);
 
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         if (tags.length > 0 && insertedActivity) {
           // First, ensure tags exist in the tags table
           for (const tagName of tags) {
-            const { data: existingTag } = await supabaseAdmin
+            const { data: existingTag } = await getSupabaseAdmin()
               .from('tags')
               .select('id')
               .eq('name', tagName)
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
             if (!existingTag) {
               // Create the tag
-              const { data: newTag } = await supabaseAdmin
+              const { data: newTag } = await getSupabaseAdmin()
                 .from('tags')
                 .insert({ name: tagName, vocabulary: '99' }) // 99 for user-defined
                 .select()
@@ -112,13 +112,13 @@ export async function POST(request: NextRequest) {
 
               if (newTag) {
                 // Link tag to activity
-                await supabaseAdmin
+                await getSupabaseAdmin()
                   .from('activity_tags')
                   .insert({ activityId: insertedActivity.id, tagId: newTag.id });
               }
             } else {
               // Link existing tag to activity
-              await supabaseAdmin
+              await getSupabaseAdmin()
                 .from('activity_tags')
                 .insert({ activityId: insertedActivity.id, tagId: existingTag.id });
             }
