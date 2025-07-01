@@ -268,7 +268,7 @@ def breadcrumbs(request):
                         'url': reverse('organization_detail', kwargs={'org_id': org_id}),
                         'icon': 'fa-building'
                     })
-                except:
+                except (Organization.DoesNotExist, ValueError, TypeError):
                     breadcrumbs_list.append({
                         'title': f'Organization {org_id}',
                         'url': reverse('organization_detail', kwargs={'org_id': org_id}),
@@ -309,7 +309,7 @@ def breadcrumbs(request):
                         'url': reverse('edit_organization', kwargs={'org_id': org_id}),
                         'icon': 'fa-edit'
                     })
-                except:
+                except (Organization.DoesNotExist, ValueError, TypeError):
                     breadcrumbs_list.append({
                         'title': 'Edit Organization',
                         'url': '#',

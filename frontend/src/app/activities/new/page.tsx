@@ -300,7 +300,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "results":
       return <div className="bg-white rounded shadow p-8 max-w-3xl">[Results fields go here]</div>;
     case "contacts":
-      console.log('[AIMS DEBUG] Rendering ContactsSection with contacts:', contacts);
+
       return <ContactsSection contacts={contacts} onChange={updateContacts} />;
     case "government":
       return <GovernmentInputsSection governmentInputs={governmentInputs} onChange={setGovernmentInputs} />;
@@ -316,10 +316,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
 function NewActivityPageContent() {
   const { user } = useUser();
   
-  // Debug logging for user role
-  console.log('[AIMS DEBUG] Current user:', user);
-  console.log('[AIMS DEBUG] User role:', user?.role);
-  console.log('[AIMS DEBUG] Role includes gov_partner:', user?.role?.includes('gov_partner'));
+
   
   // Build sections array based on user role
   // Also allow super_user to see government inputs
@@ -441,17 +438,10 @@ function NewActivityPageContent() {
     router.push(`/activities/${activityId}?action=join`);
   };
 
-  // Wrapper for setContacts to debug updates
+  // Wrapper for setContacts
   const updateContacts = useCallback((newContacts: any[]) => {
-    console.log('[AIMS DEBUG] updateContacts called with:', newContacts);
     setContacts(newContacts);
   }, []);
-
-  // Debug contacts state changes
-  useEffect(() => {
-    console.log('[AIMS DEBUG] Contacts state changed:', contacts);
-    console.log('[AIMS DEBUG] Contacts count:', contacts.length);
-  }, [contacts]);
 
   // Load activity data if editing
   useEffect(() => {
@@ -633,13 +623,7 @@ function NewActivityPageContent() {
         payload.id = general.id;
       }
 
-      console.log("[AIMS] Submitting activity payload:", payload);
-      console.log("[AIMS] Activity status being saved:", payload.activityStatus);
-      console.log("[AIMS] Publication status being saved:", payload.publicationStatus);
-      console.log("[AIMS] Transactions count:", payload.transactions.length);
-      console.log("[AIMS] Sectors count:", payload.sectors.length);
-      console.log("[AIMS] Contacts being saved:", payload.contacts);
-      console.log("[AIMS] Contacts details:", JSON.stringify(payload.contacts, null, 2));
+
       
       const res = await fetch("/api/activities", {
         method: "POST",
@@ -653,9 +637,7 @@ function NewActivityPageContent() {
         throw new Error(data.error || "Failed to save activity");
       }
 
-      console.log("[AIMS] Activity saved successfully:", data);
-      console.log("[AIMS] Response status:", data.status);
-      console.log("[AIMS] Response transactions:", data.transactions?.length || 0);
+
       
       // Update local state with the response data to ensure consistency
       setGeneral({
@@ -699,10 +681,7 @@ function NewActivityPageContent() {
       setGovernmentInputs(data.governmentInputs || {});
       setContributors(data.contributors || []);
       
-      console.log('[AIMS DEBUG] After save - contacts from response:', data.contacts);
-      console.log('[AIMS DEBUG] After save - contacts count:', data.contacts?.length || 0);
-      console.log('[AIMS DEBUG] After save - contributors from response:', data.contributors);
-      console.log('[AIMS DEBUG] After save - contributors count:', data.contributors?.length || 0);
+
       
       // Show appropriate success message with details
       const successMsg = publish 

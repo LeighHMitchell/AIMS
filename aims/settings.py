@@ -21,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-#s@ui6zb!@n(9acxf0w)dtj80p1r4dnw!4_^jjxi!mk9-zm$1j'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-#s@ui6zb!@n(9acxf0w)dtj80p1r4dnw!4_^jjxi!mk9-zm$1j')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes', 'on')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
 
 
 # Application definition
@@ -143,8 +143,8 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '1058804644800-4o46dga0lktlm00utarprgveippofvck.apps.googleusercontent.com'
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get('GOOGLE_OAUTH2_KEY', '1058804644800-4o46dga0lktlm00utarprgveippofvck.apps.googleusercontent.com')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get('GOOGLE_OAUTH2_SECRET', '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')
 
 LOGIN_URL = '/auth/login/google-oauth2/'
 LOGOUT_URL = 'logout'
