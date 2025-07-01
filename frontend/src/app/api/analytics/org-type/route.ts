@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +20,12 @@ export async function GET(request: NextRequest) {
     const flowType = searchParams.get('flowType') || 'all';
     const topN = searchParams.get('topN') || '10';
 
+    const supabaseAdmin = getSupabaseAdmin();
+
+
+    
+
+
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
@@ -27,27 +33,36 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get activities with transactions and organization info
+    // First, get all organizations to map their types
+    const { data: organizations, error: orgError } = await supabaseAdmin
+      .from('organizations')
+      .select('id, name, type, organisation_type');
+
+    if (orgError) {
+      console.error('Error fetching organizations:', orgError);
+    }
+
+    // Create a map of org id to type
+    const orgIdToTypeMap = new Map();
+    organizations?.forEach((org: any) => {
+      orgIdToTypeMap.set(org.id, org.organisation_type || org.type || 'Unknown');
+    });
+
+    // Get activities with transactions
     const { data: activities, error: activitiesError } = await supabaseAdmin
       .from('activities')
       .select(`
         id,
-        title,
-        created_by_org,
+        title_narrative,
+        reporting_org_id,
+        created_by_org_name,
         transactions (
-          id,
           transaction_type,
           value,
           currency
-        ),
-        organizations!activities_created_by_org_fkey (
-          id,
-          name,
-          type
         )
       `)
-      .eq('publication_status', 'published')
-      .not('created_by_org', 'is', null);
+      .eq('publication_status', 'published');
 
     if (activitiesError) {
       console.error('Error fetching activities:', activitiesError);
@@ -62,7 +77,7 @@ export async function GET(request: NextRequest) {
     const defaultCurrency = 'USD';
 
     activities?.forEach((activity: any) => {
-      const orgType = activity.organizations?.type || 'Unknown';
+      const orgType = activity.reporting_org_id ? orgIdToTypeMap.get(activity.reporting_org_id) || 'Unknown' : 'Unknown';
       
       // Initialize org type data if not exists
       if (!orgTypeMap.has(orgType)) {
@@ -82,17 +97,17 @@ export async function GET(request: NextRequest) {
         const value = transaction.currency === defaultCurrency ? transaction.value : transaction.value;
 
         switch (transaction.transaction_type) {
-          case 'C':
-          case 'commitment':
+          case '2': // Commitment
+          case 2:
             orgTypeData.budget += value;
             break;
-          case 'D':
-          case 'disbursement':
+          case '3': // Disbursement
+          case 3:
             orgTypeData.disbursements += value;
             orgTypeData.totalSpending += value;
             break;
-          case 'E':
-          case 'expenditure':
+          case '4': // Expenditure
+          case 4:
             orgTypeData.expenditures += value;
             orgTypeData.totalSpending += value;
             break;

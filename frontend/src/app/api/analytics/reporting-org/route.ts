@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +20,12 @@ export async function GET(request: NextRequest) {
     const flowType = searchParams.get('flowType') || 'all';
     const topN = searchParams.get('topN') || '10';
 
+    const supabaseAdmin = getSupabaseAdmin();
+
+
+    
+
+
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
@@ -27,27 +33,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get activities with transactions and organization info
+    // Get activities with transactions
     const { data: activities, error: activitiesError } = await supabaseAdmin
       .from('activities')
       .select(`
         id,
-        title,
-        created_by_org,
+        title_narrative,
+        reporting_org_id,
+        created_by_org_name,
+        created_by_org_acronym,
         transactions (
-          id,
           transaction_type,
           value,
           currency
-        ),
-        organizations!activities_created_by_org_fkey (
-          id,
-          name,
-          type
         )
       `)
-      .eq('publication_status', 'published')
-      .not('created_by_org', 'is', null);
+      .eq('publication_status', 'published');
 
     if (activitiesError) {
       console.error('Error fetching activities:', activitiesError);
@@ -61,8 +62,8 @@ export async function GET(request: NextRequest) {
     const orgMap = new Map<string, ChartDataPoint>();
     const defaultCurrency = 'USD';
 
-    activities?.forEach(activity => {
-      const orgName = activity.organizations?.name || 'Unknown Organization';
+    activities?.forEach((activity: any) => {
+      const orgName = activity.created_by_org_name || activity.created_by_org_acronym || 'Unknown Organization';
       
       // Initialize organization data if not exists
       if (!orgMap.has(orgName)) {
@@ -78,21 +79,21 @@ export async function GET(request: NextRequest) {
       const orgData = orgMap.get(orgName)!;
 
       // Process transactions
-      activity.transactions?.forEach(transaction => {
+      activity.transactions?.forEach((transaction: any) => {
         const value = transaction.currency === defaultCurrency ? transaction.value : transaction.value;
 
         switch (transaction.transaction_type) {
-          case 'C':
-          case 'commitment':
+          case '2': // Commitment
+          case 2:
             orgData.budget += value;
             break;
-          case 'D':
-          case 'disbursement':
+          case '3': // Disbursement
+          case 3:
             orgData.disbursements += value;
             orgData.totalSpending += value;
             break;
-          case 'E':
-          case 'expenditure':
+          case '4': // Expenditure
+          case 4:
             orgData.expenditures += value;
             orgData.totalSpending += value;
             break;

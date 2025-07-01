@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
     const timePeriod = searchParams.get('timePeriod') || 'year';
     const isExport = searchParams.get('export') === 'true';
 
+    const supabaseAdmin = getSupabaseAdmin();
+    
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
@@ -33,13 +35,12 @@ export async function GET(request: NextRequest) {
       .from('activities')
       .select(`
         id,
-        title,
+        title_narrative,
         planned_start_date,
         planned_end_date,
         activity_status,
         publication_status,
         transactions (
-          id,
           transaction_type,
           value,
           currency,
@@ -58,16 +59,48 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // For now, we'll use commitment transactions as budget data
-    // since there's no separate budgets table in the current schema
-    const budgetData: any[] = [];
+    // Get budget data from activity_budgets table
+    const { data: budgetData, error: budgetError } = await supabaseAdmin
+      .from('activity_budgets')
+      .select('*')
+      .order('period_start');
+
+    if (budgetError) {
+      console.error('Error fetching budgets:', budgetError);
+    }
 
     // Process the data to create chart data points
     const dataMap = new Map<string, ChartDataPoint>();
     const defaultCurrency = 'USD';
 
+    // Process budget data first
+    budgetData?.forEach((budget: any) => {
+      const startDate = new Date(budget.period_start);
+      
+      let periodKey: string;
+      if (timePeriod === 'quarter') {
+        const quarter = Math.floor(startDate.getMonth() / 3) + 1;
+        periodKey = `${startDate.getFullYear()}-Q${quarter}`;
+      } else {
+        periodKey = startDate.getFullYear().toString();
+      }
+
+      if (!dataMap.has(periodKey)) {
+        dataMap.set(periodKey, {
+          period: periodKey,
+          budget: 0,
+          disbursements: 0,
+          expenditures: 0,
+          totalSpending: 0,
+        });
+      }
+
+      const periodData = dataMap.get(periodKey)!;
+      periodData.budget += budget.value || 0;
+    });
+
     // Process activities and their transactions
-    activities?.forEach(activity => {
+    activities?.forEach((activity: any) => {
       // Determine the time period for this activity
       const startDate = activity.planned_start_date ? new Date(activity.planned_start_date) : new Date();
       
@@ -93,32 +126,31 @@ export async function GET(request: NextRequest) {
       const periodData = dataMap.get(periodKey)!;
 
       // Process transactions
-      activity.transactions?.forEach(transaction => {
+      activity.transactions?.forEach((transaction: any) => {
         // Convert to USD if needed (simplified - in real app you'd use exchange rates)
         const value = transaction.currency === defaultCurrency ? transaction.value : transaction.value;
 
         switch (transaction.transaction_type) {
-          case 'C': // Commitment (use as budget if no budget table)
-          case 'commitment':
+          case '2': // Commitment
+          case 2:
+            // Only use commitments as budget if no actual budget data exists
             if (!budgetData || budgetData.length === 0) {
               periodData.budget += value;
             }
             break;
-          case 'D': // Disbursement
-          case 'disbursement':
+          case '3': // Disbursement
+          case 3:
             periodData.disbursements += value;
             periodData.totalSpending += value;
             break;
-          case 'E': // Expenditure
-          case 'expenditure':
+          case '4': // Expenditure
+          case 4:
             periodData.expenditures += value;
             periodData.totalSpending += value;
             break;
         }
       });
     });
-
-    // No separate budget data for now - using commitments as budget
 
     // Convert to array and sort by period
     const chartData = Array.from(dataMap.values()).sort((a, b) => {

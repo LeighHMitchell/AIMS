@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +16,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const topN = parseInt(searchParams.get('topN') || '10');
 
+    const supabaseAdmin = getSupabaseAdmin();
+
+
+    
+
+
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
@@ -26,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Get all activity sectors
     const { data: activitySectors, error } = await supabaseAdmin
       .from('activity_sectors')
-      .select('sector_code, sector_name, percentage, activity_id');
+      .select('sector_code, sector_name, sector_percentage, activity_id');
 
     if (error) {
       console.error('Error fetching activity sectors:', error);
@@ -53,7 +59,7 @@ export async function GET(request: NextRequest) {
     activitySectors.forEach((sector: any) => {
       const sectorCode = sector.sector_code || 'Unknown';
       const sectorName = sector.sector_name || sectorCode;
-      const percentage = sector.percentage || 0;
+      const percentage = sector.sector_percentage || 0;
       const activityId = sector.activity_id;
 
       if (!sectorMap.has(sectorCode)) {

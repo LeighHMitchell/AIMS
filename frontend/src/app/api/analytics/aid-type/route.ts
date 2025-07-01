@@ -1,8 +1,26 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
-import { AID_TYPES } from '@/types/transaction';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
+
+// Define AID_TYPES locally
+const AID_TYPES: Record<string, string> = {
+  'A01': 'General budget support',
+  'A02': 'Sector budget support',
+  'B01': 'Core support to NGOs',
+  'B02': 'Core contributions to multilateral institutions',
+  'B03': 'Pooled funds/basket funds',
+  'B04': 'Donor country personnel',
+  'C01': 'Project-type interventions',
+  'D01': 'Donor country personnel',
+  'D02': 'Other technical assistance',
+  'E01': 'Scholarships/training in donor country',
+  'E02': 'Imputed student costs',
+  'F01': 'Debt relief',
+  'G01': 'Administrative costs not included elsewhere',
+  'H01': 'Development awareness',
+  'H02': 'Refugees in donor countries'
+};
 
 interface ChartDataPoint {
   aidType: string;
@@ -21,6 +39,8 @@ export async function GET(request: NextRequest) {
     const flowType = searchParams.get('flowType') || 'all';
     const topN = searchParams.get('topN') || '10';
 
+    const supabaseAdmin = getSupabaseAdmin();
+    
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
@@ -33,9 +53,8 @@ export async function GET(request: NextRequest) {
       .from('activities')
       .select(`
         id,
-        title,
+        title_narrative,
         transactions (
-          id,
           transaction_type,
           value,
           currency
@@ -59,7 +78,7 @@ export async function GET(request: NextRequest) {
     // In production, this would use actual aid_type field from activities
     const aidTypeCodes = Object.keys(AID_TYPES);
     
-    activities?.forEach((activity, index) => {
+    activities?.forEach((activity: any, index: number) => {
       // Simulate aid type assignment (in production, use activity.aid_type)
       const aidTypeCode = aidTypeCodes[index % aidTypeCodes.length];
       const aidTypeName = AID_TYPES[aidTypeCode as keyof typeof AID_TYPES];
@@ -79,21 +98,21 @@ export async function GET(request: NextRequest) {
       const aidTypeData = aidTypeMap.get(aidTypeCode)!;
 
       // Process transactions
-      activity.transactions?.forEach(transaction => {
+      activity.transactions?.forEach((transaction: any) => {
         const value = transaction.currency === defaultCurrency ? transaction.value : transaction.value;
 
         switch (transaction.transaction_type) {
-          case 'C':
-          case 'commitment':
+          case '2': // Commitment
+          case 2:
             aidTypeData.budget += value;
             break;
-          case 'D':
-          case 'disbursement':
+          case '3': // Disbursement
+          case 3:
             aidTypeData.disbursements += value;
             aidTypeData.totalSpending += value;
             break;
-          case 'E':
-          case 'expenditure':
+          case '4': // Expenditure
+          case 4:
             aidTypeData.expenditures += value;
             aidTypeData.totalSpending += value;
             break;

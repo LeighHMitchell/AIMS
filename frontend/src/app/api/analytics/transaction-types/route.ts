@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
-import { TRANSACTION_TYPES } from '@/types/transaction';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import { TRANSACTION_TYPE_LABELS } from '@/types/transaction';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +15,10 @@ interface TransactionTypeData {
 
 export async function GET() {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+
+    
+
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
@@ -76,7 +80,7 @@ export async function GET() {
     const result: TransactionTypeData[] = Array.from(typeMap.entries())
       .map(([transactionType, data]) => ({
         transactionType,
-        typeName: TRANSACTION_TYPES[transactionType as keyof typeof TRANSACTION_TYPES] || transactionType,
+        typeName: TRANSACTION_TYPE_LABELS[transactionType as keyof typeof TRANSACTION_TYPE_LABELS] || transactionType,
         count: data.count,
         totalValue: data.totalValue,
         percentage: (data.count / totalTransactions) * 100,

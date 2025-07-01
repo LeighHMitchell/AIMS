@@ -32,6 +32,8 @@ import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { AnalyticsDashboardSkeleton } from '@/components/skeletons'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { toast } from 'sonner'
 
 // Chart components
 import { CommitmentsChart } from '@/components/analytics/CommitmentsChart'
@@ -45,6 +47,16 @@ import { ProjectPipeline } from '@/components/analytics/ProjectPipeline'
 import { DataHeatmap } from '@/components/analytics/DataHeatmap'
 import { TimelinessChart } from '@/components/analytics/TimelinessChart'
 import { BudgetVsActualChart } from '@/components/analytics/BudgetVsActualChart'
+
+// Charts from analytics page
+import { BudgetVsSpendingChart } from '@/components/charts/BudgetVsSpendingChart'
+import { ReportingOrgChart } from '@/components/charts/ReportingOrgChart'
+import { AidTypeChart } from '@/components/charts/AidTypeChart'
+import { FinanceTypeChart } from '@/components/charts/FinanceTypeChart'
+import { OrgTypeChart } from '@/components/charts/OrgTypeChart'
+import { ActivityStatusChart } from '@/components/charts/ActivityStatusChart'
+import { TransactionTypeChart } from '@/components/charts/TransactionTypeChart'
+import { SectorAnalysisChart } from '@/components/charts/SectorAnalysisChart'
 
 interface KPIData {
   totalDisbursed: number
@@ -60,6 +72,17 @@ interface KPIData {
 interface DateRange {
   from: Date
   to: Date
+}
+
+type TimePeriodType = 'year' | 'quarter'
+
+interface AnalyticsFilters {
+  donor: string
+  aidType: string
+  financeType: string
+  flowType: string
+  timePeriod: TimePeriodType
+  topN: string
 }
 
 export default function AnalyticsDashboardPage() {
@@ -89,10 +112,23 @@ export default function AnalyticsDashboardPage() {
   const [selectedSector, setSelectedSector] = useState<string>('all')
   const [refreshKey, setRefreshKey] = useState(0)
 
+  // Additional filters for analytics charts
+  const [filters, setFilters] = useState<AnalyticsFilters>({
+    donor: 'all',
+    aidType: 'all',
+    financeType: 'all',
+    flowType: 'all',
+    timePeriod: 'year',
+    topN: '10'
+  })
+
   // Dropdown options from real data
   const [countries, setCountries] = useState<Array<{code: string, name: string}>>([])
   const [donors, setDonors] = useState<Array<{id: string, name: string}>>([])
   const [sectors, setSectors] = useState<Array<{code: string, name: string}>>([])
+  const [aidTypes, setAidTypes] = useState<Array<{code: string, name: string}>>([])
+  const [financeTypes, setFinanceTypes] = useState<Array<{code: string, name: string}>>([])
+  const [flowTypes, setFlowTypes] = useState<Array<{code: string, name: string}>>([])
   const [loadingFilters, setLoadingFilters] = useState(true)
 
   // Fetch filter options
@@ -142,6 +178,32 @@ export default function AnalyticsDashboardPage() {
       })
       
       setSectors(Array.from(uniqueSectors.entries()).map(([code, name]) => ({ code, name })))
+      
+      // Fetch aid types, finance types, and flow types
+      try {
+        const [aidTypesRes, financeTypesRes, flowTypesRes] = await Promise.all([
+          fetch('/api/analytics/aid-types'),
+          fetch('/api/analytics/finance-types'),
+          fetch('/api/analytics/flow-types')
+        ])
+
+        if (aidTypesRes.ok) {
+          const aidTypesData = await aidTypesRes.json()
+          setAidTypes(aidTypesData)
+        }
+
+        if (financeTypesRes.ok) {
+          const financeTypesData = await financeTypesRes.json()
+          setFinanceTypes(financeTypesData)
+        }
+
+        if (flowTypesRes.ok) {
+          const flowTypesData = await flowTypesRes.json()
+          setFlowTypes(flowTypesData)
+        }
+      } catch (err) {
+        console.error('Error fetching type options:', err)
+      }
       
     } catch (error) {
       console.error('Error fetching filter options:', error)
@@ -384,6 +446,16 @@ export default function AnalyticsDashboardPage() {
   }
 
 
+
+  // Handle filter changes for analytics charts
+  const handleFilterChange = (key: keyof AnalyticsFilters, value: string | TimePeriodType) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  // Sync donor filter between both filter systems
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, donor: selectedDonor }))
+  }, [selectedDonor])
 
   // Fetch filter options on mount
   useEffect(() => {
@@ -672,10 +744,14 @@ export default function AnalyticsDashboardPage() {
         {/* Main Dashboard Content with Tabs */}
         <div className="max-w-7xl mx-auto p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5 max-w-3xl">
+            <TabsList className="grid w-full grid-cols-6 max-w-4xl">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Overview
+              </TabsTrigger>
+              <TabsTrigger value="comprehensive" className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Comprehensive
               </TabsTrigger>
               <TabsTrigger value="trends" className="flex items-center gap-2">
                 <LineChart className="h-4 w-4" />
@@ -833,6 +909,243 @@ export default function AnalyticsDashboardPage() {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            {/* Comprehensive Analysis Tab */}
+            <TabsContent value="comprehensive" className="space-y-6">
+              {/* Additional Filters for this tab */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Filter className="h-5 w-5" />
+                    Additional Filters
+                  </CardTitle>
+                  <CardDescription>
+                    Filter by aid type, finance type, flow type, and more
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {/* Aid Type Filter */}
+                    <Select value={filters.aidType} onValueChange={(value) => handleFilterChange('aidType', value)}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Select aid type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Aid Types</SelectItem>
+                        {aidTypes.map((type) => (
+                          <SelectItem key={type.code} value={type.code}>
+                            {type.code} - {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Finance Type Filter */}
+                    <Select value={filters.financeType} onValueChange={(value) => handleFilterChange('financeType', value)}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Select finance type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Finance Types</SelectItem>
+                        {financeTypes.map((type) => (
+                          <SelectItem key={type.code} value={type.code}>
+                            {type.code} - {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Flow Type Filter */}
+                    <Select value={filters.flowType} onValueChange={(value) => handleFilterChange('flowType', value)}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Select flow type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Flow Types</SelectItem>
+                        {flowTypes.map((type) => (
+                          <SelectItem key={type.code} value={type.code}>
+                            {type.code} - {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Time Period Filter */}
+                    <Select value={filters.timePeriod} onValueChange={(value) => handleFilterChange('timePeriod', value as TimePeriodType)}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="year">Calendar Year</SelectItem>
+                        <SelectItem value="quarter">Financial Quarter</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Top N Filter */}
+                    <Select value={filters.topN} onValueChange={(value) => handleFilterChange('topN', value)}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">Top 10</SelectItem>
+                        <SelectItem value="20">Top 20</SelectItem>
+                        <SelectItem value="50">Top 50</SelectItem>
+                        <SelectItem value="all">Show All</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Active Filters Display */}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {Object.entries(filters).map(([key, value]) => {
+                      if (value !== 'all' && value !== 'year' && value !== '10') {
+                        return (
+                          <Badge key={key} variant="secondary" className="flex items-center gap-1">
+                            {key}: {value}
+                            <button
+                              onClick={() => handleFilterChange(key as keyof AnalyticsFilters, 
+                                key === 'timePeriod' ? 'year' : key === 'topN' ? '10' : 'all')}
+                              className="ml-1 hover:bg-slate-200 rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        )
+                      }
+                      return null
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Time Series Chart */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Budget vs. Spending Over Time
+                  </CardTitle>
+                  <CardDescription>
+                    Compare total budget allocations with actual spending (disbursements + expenditures) over time
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <BudgetVsSpendingChart filters={filters} />
+                </CardContent>
+              </Card>
+
+              {/* Reporting Organization Chart */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Budget vs. Spending by Reporting Organization
+                  </CardTitle>
+                  <CardDescription>
+                    Compare budget and spending across different reporting organizations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ReportingOrgChart filters={filters} />
+                </CardContent>
+              </Card>
+
+              {/* Aid Type Chart */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Info className="h-5 w-5" />
+                    Budget vs. Spending by Aid Type
+                  </CardTitle>
+                  <CardDescription>
+                    Analyze budget and spending patterns across different aid types
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AidTypeChart filters={filters} />
+                </CardContent>
+              </Card>
+
+              {/* Finance Type Chart */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Budget vs. Spending by Finance Type
+                  </CardTitle>
+                  <CardDescription>
+                    Compare budget and spending across different finance types
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FinanceTypeChart filters={filters} />
+                </CardContent>
+              </Card>
+
+              {/* Organization Type Chart */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Budget vs. Spending by Organization Type
+                  </CardTitle>
+                  <CardDescription>
+                    Analyze budget and spending patterns by organization type (Government, NGO, Multilateral, etc.)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <OrgTypeChart filters={filters} />
+                </CardContent>
+              </Card>
+
+              {/* Activity Status Chart */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Activity Status Distribution
+                  </CardTitle>
+                  <CardDescription>
+                    Analyze the distribution of activities by their status (activity, publication, and submission status)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ActivityStatusChart filters={filters} />
+                </CardContent>
+              </Card>
+
+              {/* Transaction Type Chart */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Transaction Type Analysis
+                  </CardTitle>
+                  <CardDescription>
+                    Compare transaction types by count and total value (Commitments, Disbursements, Expenditures, etc.)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TransactionTypeChart filters={filters} />
+                </CardContent>
+              </Card>
+
+              {/* Sector Analysis Chart */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Sector Analysis
+                  </CardTitle>
+                  <CardDescription>
+                    Analyze activity distribution across different sectors with percentage allocations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SectorAnalysisChart filters={filters} />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Trends Tab */}

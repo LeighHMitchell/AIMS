@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +32,12 @@ export async function GET(request: NextRequest) {
     const flowType = searchParams.get('flowType') || 'all';
     const topN = searchParams.get('topN') || '10';
 
+    const supabaseAdmin = getSupabaseAdmin();
+
+
+    
+
+
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
@@ -44,9 +50,8 @@ export async function GET(request: NextRequest) {
       .from('activities')
       .select(`
         id,
-        title,
+        title_narrative,
         transactions (
-          id,
           transaction_type,
           value,
           currency
@@ -93,17 +98,23 @@ export async function GET(request: NextRequest) {
         const value = transaction.currency === defaultCurrency ? transaction.value : transaction.value;
 
         switch (transaction.transaction_type) {
-          case 'C':
-          case 'commitment':
+          case '2': // Commitment
+          case 2:
+          case '2': // Commitment
+          case 2:
             financeTypeData.budget += value;
             break;
-          case 'D':
-          case 'disbursement':
+          case '3': // Disbursement
+          case 3:
+          case '3': // Disbursement
+          case 3:
             financeTypeData.disbursements += value;
             financeTypeData.totalSpending += value;
             break;
-          case 'E':
-          case 'expenditure':
+          case '4': // Expenditure
+          case 4:
+          case '4': // Expenditure
+          case 4:
             financeTypeData.expenditures += value;
             financeTypeData.totalSpending += value;
             break;

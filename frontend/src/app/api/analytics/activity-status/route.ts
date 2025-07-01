@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +11,8 @@ interface StatusData {
 
 export async function GET() {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
