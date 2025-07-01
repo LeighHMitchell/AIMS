@@ -15,6 +15,7 @@ export interface OrganizationGroup {
   updatedAt: string;
   updatedBy?: string;
   updatedByName?: string;
+  isPublic: boolean;
 }
 
 // Ensure data directory exists
@@ -71,7 +72,8 @@ export function createOrganizationGroup(group: Omit<OrganizationGroup, 'id' | 'c
     ...group,
     id: `grp-${Date.now()}`,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    isPublic: group.isPublic ?? false // Default to private if not specified
   };
   groups.push(newGroup);
   saveOrganizationGroups(groups);

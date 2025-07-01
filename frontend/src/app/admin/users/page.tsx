@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { UserManagementSkeleton } from "@/components/skeletons";
 
 // Role badge color mapping
 const getRoleBadgeVariant = (role: UserRole): "default" | "secondary" | "destructive" | "outline" => {
@@ -250,11 +251,7 @@ export default function UserManagement() {
     return (
       <ProtectedRoute allowedRoles={[USER_ROLES.SUPER_USER]}>
         <MainLayout>
-          <div className="min-h-screen bg-slate-50">
-            <div className="flex items-center justify-center min-h-screen">
-              <p className="text-muted-foreground">Loading...</p>
-            </div>
-          </div>
+          <UserManagementSkeleton />
         </MainLayout>
       </ProtectedRoute>
     );
@@ -378,7 +375,11 @@ export default function UserManagement() {
                         <SelectContent>
                           <SelectItem value="all">All Organizations</SelectItem>
                           {partners.map((org) => (
-                            <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
+                            <SelectItem key={org.id} value={org.id}>
+                              {org.fullName && org.name && org.fullName !== org.name 
+                                ? `${org.fullName} (${org.name})` 
+                                : org.fullName || org.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -602,7 +603,11 @@ function UserEditor({
           <SelectContent>
             <SelectItem value="none">No Organization (Orphan)</SelectItem>
             {partners.map((org) => (
-              <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
+              <SelectItem key={org.id} value={org.id}>
+                {org.fullName && org.name && org.fullName !== org.name 
+                  ? `${org.fullName} (${org.name})` 
+                  : org.fullName || org.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>

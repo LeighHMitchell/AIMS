@@ -24,7 +24,15 @@ import {
   Upload,
   HelpCircle,
   MessageSquare,
-  UserPlus
+  UserPlus,
+  PieChart,
+  Banknote,
+  Globe,
+  Activity,
+  RefreshCw,
+  AlertCircle,
+  Lock,
+  Wallet
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -53,11 +61,22 @@ import GovernmentInputsSection from "@/components/GovernmentInputsSection"
 import { useUser } from "@/hooks/useUser"
 import { ActivityFeed } from "@/components/ActivityFeed"
 import { ActivityComments } from "@/components/ActivityComments"
-import { TRANSACTION_ACRONYMS, LEGACY_TRANSACTION_TYPE_MAP } from "@/types/transaction"
+import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
+import TransactionTab from "@/components/activities/TransactionTab"
 import { DeleteActivityDialog } from "@/components/DeleteActivityDialog"
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions"
+import { SDG_GOALS, SDG_TARGETS } from "@/data/sdg-targets"
 import ContributorsSection from "@/components/ContributorsSection"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { ActivityProfileSkeleton } from "@/components/skeletons/ActivityProfileSkeleton"
+import { IATISyncPanel } from "@/components/activities/IATISyncPanel"
+import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip"
 
 interface Activity {
   id: string
@@ -65,15 +84,17 @@ interface Activity {
   iatiId: string
   title: string
   description: string
-  objectives: string
+  created_by_org_name: string
+  created_by_org_acronym: string
   targetGroups: string
   collaborationType: string
   banner?: string
+  icon?: string
   activityStatus: string
   publicationStatus: string
   submissionStatus: 'draft' | 'submitted' | 'validated' | 'rejected' | 'published'
   sectors?: any[]
-  transactions?: Transaction[]
+  transactions?: any[]
   extendingPartners?: Array<{ orgId: string; name: string }>
   implementingPartners?: Array<{ orgId: string; name: string }>
   governmentPartners?: Array<{ orgId: string; name: string }>
@@ -81,6 +102,7 @@ interface Activity {
   governmentInputs?: any
   comments?: any[]
   contributors?: ActivityContributor[]
+  sdgMappings?: any[]
   createdBy?: { id: string; name: string; role: string }
   createdByOrg?: string
   plannedStartDate?: string
@@ -89,6 +111,12 @@ interface Activity {
   actualEndDate?: string
   createdAt: string
   updatedAt: string
+  // IATI Sync fields
+  iatiIdentifier?: string
+  autoSync?: boolean
+  lastSyncTime?: string
+  syncStatus?: 'live' | 'pending' | 'outdated'
+  autoSyncFields?: string[]
 }
 
 interface Document {
@@ -113,7 +141,7 @@ interface Partner {
 
 export default function ActivityDetailPage() {
   const params = useParams()
-  const id = params.id as string
+  const id = params?.id as string
   const [loading, setLoading] = useState(true)
   const [activity, setActivity] = useState<Activity | null>(null)
   const [activeTab, setActiveTab] = useState("about")
@@ -123,7 +151,7 @@ export default function ActivityDetailPage() {
   const searchParams = useSearchParams()
   
   // Check if user is trying to join as contributor
-  const isJoinAction = searchParams.get('action') === 'join'
+  const isJoinAction = searchParams?.get('action') === 'join'
   
   // Debug logging for user role
   console.log('[AIMS DEBUG Activity Detail] Current user:', user);
@@ -159,9 +187,11 @@ export default function ActivityDetailPage() {
   const [allPartners, setAllPartners] = useState<Partner[]>([])
 
   useEffect(() => {
-    fetchActivity(true)
-    loadAllPartners();
-  }, [params.id])
+    if (params?.id) {
+      fetchActivity(true)
+      loadAllPartners();
+    }
+  }, [params?.id])
 
   // Refresh activity data when comments tab is selected to ensure we have latest comments count
   useEffect(() => {
@@ -171,13 +201,18 @@ export default function ActivityDetailPage() {
   }, [activeTab])
 
   const fetchActivity = async (showLoading = true) => {
+    if (!params?.id) return;
+    
     try {
       if (showLoading) setLoading(true)
-      const res = await fetch("/api/activities")
+      const res = await fetch(`/api/activities/${params.id}`)
       if (res.ok) {
-        const activities = await res.json()
-        const found = activities.find((a: any) => a.id === params.id)
+        const found = await res.json()
         if (found) {
+          console.log('[ACTIVITY DETAIL DEBUG] Found activity:', found);
+          console.log('[ACTIVITY DETAIL DEBUG] Activity contacts:', found.contacts);
+          console.log('[ACTIVITY DETAIL DEBUG] Contacts count:', found.contacts?.length || 0);
+          
           setActivity(found)
           setBanner(found.banner || null)
           
@@ -325,9 +360,7 @@ export default function ActivityDetailPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <p className="text-gray-500">Loading activity...</p>
-        </div>
+        <ActivityProfileSkeleton />
       </MainLayout>
     )
   }
@@ -348,57 +381,120 @@ export default function ActivityDetailPage() {
 
   // Calculate financial summary
   const calculateFinancials = () => {
-    const transactions: Transaction[] = activity?.transactions || []
-    const actualTransactions = transactions.filter(t => t.status === "actual")
+    const transactions: any[] = activity?.transactions || []
     
-    // Helper function to normalize transaction type
-    const normalizeType = (type: string): string => {
-      return LEGACY_TRANSACTION_TYPE_MAP[type] || type;
-    }
+    // Include all transactions regardless of status for profile view
+    // This ensures published activities show their financial data
+    const allTransactions = transactions
     
-    const commitment = actualTransactions
-      .filter(t => normalizeType(t.type) === "C")
-      .reduce((sum, t) => sum + t.value, 0)
+    // IATI transaction types:
+    // '2' = Outgoing Commitment
+    // '3' = Disbursement  
+    // '4' = Expenditure
     
-    const disbursement = actualTransactions
-      .filter(t => normalizeType(t.type) === "D")
-      .reduce((sum, t) => sum + t.value, 0)
+    const commitment = allTransactions
+      .filter(t => t.transaction_type === "2")
+      .reduce((sum, t) => {
+        const value = parseFloat(t.value) || 0
+        return sum + (isNaN(value) ? 0 : value)
+      }, 0)
     
-    const expenditure = actualTransactions
-      .filter(t => normalizeType(t.type) === "E")
-      .reduce((sum, t) => sum + t.value, 0)
+    const disbursement = allTransactions
+      .filter(t => t.transaction_type === "3")
+      .reduce((sum, t) => {
+        const value = parseFloat(t.value) || 0
+        return sum + (isNaN(value) ? 0 : value)
+      }, 0)
+    
+    const expenditure = allTransactions
+      .filter(t => t.transaction_type === "4")
+      .reduce((sum, t) => {
+        const value = parseFloat(t.value) || 0
+        return sum + (isNaN(value) ? 0 : value)
+      }, 0)
     
     // Get unique aid types and flow types
-    const aidTypes = Array.from(new Set(transactions.map(t => t.aidType).filter(Boolean)))
-    const flowTypes = Array.from(new Set(transactions.map(t => t.flowType).filter(Boolean)))
+    const aidTypes = Array.from(new Set(transactions.map(t => t.aid_type).filter(Boolean)))
+    const flowTypes = Array.from(new Set(transactions.map(t => t.flow_type).filter(Boolean)))
+    
+    // Calculate draft vs actual
+    const draftTransactions = transactions.filter(t => t.status === "draft")
+    const actualTransactions = transactions.filter(t => t.status === "actual")
     
     return {
       totalCommitment: commitment,
       totalDisbursement: disbursement,
       totalExpenditure: expenditure,
-      percentDisbursed: commitment > 0 ? (disbursement / commitment) * 100 : 0,
+      percentDisbursed: commitment > 0 && !isNaN(disbursement) && !isNaN(commitment) 
+        ? Math.round((disbursement / commitment) * 100) 
+        : 0,
       aidTypes,
-      flowTypes
+      flowTypes,
+      totalTransactions: transactions.length,
+      draftCount: draftTransactions.length,
+      actualCount: actualTransactions.length
     }
   }
 
   const financials = calculateFinancials()
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'Not set'
     try {
-      return format(new Date(dateString), 'dd MMM yyyy')
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Not set';
+      return format(date, 'dd MMM yyyy')
     } catch {
       return 'Not set'
     }
   }
 
+  // Helper function for status-aware date display
+  const getDisplayDates = (activity: Activity) => {
+    if (!activity) return null;
+    
+    const activityStatus = activity.activityStatus?.toLowerCase() || 'planning';
+    const isPipeline = activityStatus === 'planning' || activityStatus === 'pipeline';
+    const isActive = activityStatus === 'implementation' || activityStatus === 'active';
+    const isClosed = ['completed', 'cancelled', 'suspended'].includes(activityStatus);
+
+    return (
+      <div className="space-y-2 text-sm">
+        {activity.plannedStartDate && (
+          <div className="flex items-center gap-2">
+            <Calendar className="h-3 w-3 text-gray-400" />
+            <span className="font-medium text-gray-900">Planned Start:</span>
+            <span className="text-slate-700">{formatDate(activity.plannedStartDate)}</span>
+          </div>
+        )}
+        {isPipeline && activity.plannedEndDate && (
+          <div className="flex items-center gap-2">
+            <Calendar className="h-3 w-3 text-gray-400" />
+            <span className="font-medium text-gray-900">Planned End:</span>
+            <span className="text-slate-700">{formatDate(activity.plannedEndDate)}</span>
+          </div>
+        )}
+        {(isActive || isClosed) && activity.actualStartDate && (
+          <div className="flex items-center gap-2">
+            <Calendar className="h-3 w-3 text-green-500" />
+            <span className="font-medium text-gray-900">Actual Start:</span>
+            <span className="text-slate-700">{formatDate(activity.actualStartDate)}</span>
+          </div>
+        )}
+        {isClosed && activity.actualEndDate && (
+          <div className="flex items-center gap-2">
+            <Calendar className="h-3 w-3 text-green-500" />
+            <span className="font-medium text-gray-900">Actual End:</span>
+            <span className="text-slate-700">{formatDate(activity.actualEndDate)}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const getTransactionTypeName = (type: string) => {
-    // Handle legacy numeric types
-    if (LEGACY_TRANSACTION_TYPE_MAP[type]) {
-      return TRANSACTION_ACRONYMS[LEGACY_TRANSACTION_TYPE_MAP[type]];
-    }
-    // Handle new acronym types
-    return TRANSACTION_ACRONYMS[type as keyof typeof TRANSACTION_ACRONYMS] || type;
+    if (!type) return '-';
+    return TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type;
   }
 
   const getAidTypeName = (code: string) => {
@@ -461,41 +557,163 @@ export default function ActivityDetailPage() {
             <div className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-gray-900">{activity.title}</h1>
-                  <p className="text-lg text-gray-600 mt-2">{activity.partnerId && `Partner: ${activity.partnerId}`}</p>
-                  
-                  {/* IDs and Metadata */}
-                  <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-500">
-                    <span>MOHINGA ID: {activity.id}</span>
-                    {activity.iatiId && <span>IATI ID: {activity.iatiId}</span>}
-                    <span>Last Updated: {formatDate(activity.updatedAt)}</span>
-                  </div>
-                  
-                  {/* Status and Dates */}
-                  <div className="flex flex-wrap gap-6 mt-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-600">STATUS:</span>
-                      <Badge variant={activity.activityStatus === "completed" ? "success" : "default"}>
-                        {activity.activityStatus?.toUpperCase() || "PLANNING"}
-                      </Badge>
+                  <div className="flex items-start gap-4 mb-6">
+                    {activity.icon ? (
+                      <img
+                        src={activity.icon}
+                        alt={`Icon for ${activity.title}`}
+                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0 border-2 border-gray-200 shadow-sm"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<div class="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 border-2 border-gray-200 shadow-sm"><svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 border-2 border-gray-200 shadow-sm">
+                        <Activity className="w-8 h-8 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <h1 className="text-3xl font-bold text-gray-900">{activity.title}</h1>
                     </div>
-                    {activity.actualStartDate && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">
-                          <span className="font-medium">ACTUAL START DATE:</span> {formatDate(activity.actualStartDate)}
-                        </span>
-                      </div>
-                    )}
-                    {activity.plannedEndDate && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">
-                          <span className="font-medium">PLANNED END DATE:</span> {formatDate(activity.plannedEndDate)}
-                        </span>
-                      </div>
-                    )}
                   </div>
+                  
+                  {/* Comprehensive Metadata Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 divide-x divide-gray-100">
+                    {/* Identifiers Section */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200 pb-1">Activity Identifiers</h3>
+                      {activity.partnerId && (
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-900">Activity Partner ID:</span>
+                          <p className="text-slate-700">{activity.partnerId}</p>
+                        </div>
+                      )}
+                      {activity.iatiId && (
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-900">IATI Identifier:</span>
+                          <p className="text-slate-700">{activity.iatiId}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status & Dates Section */}
+                    <div className="space-y-3 pl-8">
+                      <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200 pb-1">Activity Timeline</h3>
+                      <div className="text-sm">
+                        <span className="font-medium text-gray-900">Status:</span>
+                        <div className="mt-1 flex items-center gap-2">
+                          <Badge 
+                            variant={
+                              activity.activityStatus === "completed" ? "success" : 
+                              activity.activityStatus === "implementation" ? "default" :
+                              activity.activityStatus === "cancelled" ? "destructive" : "secondary"
+                            }
+                            className="px-3 py-1"
+                          >
+                            {(activity.activityStatus || "Planning").charAt(0).toUpperCase() + 
+                             (activity.activityStatus || "Planning").slice(1).toLowerCase()}
+                          </Badge>
+                          
+                          {/* IATI Sync Status Icon */}
+                          {activity.iatiIdentifier && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-md">
+                                    {activity.syncStatus === 'live' ? (
+                                      <>
+                                        <RefreshCw className="h-3.5 w-3.5 text-green-600" />
+                                        <span className="text-xs font-medium text-green-600">IATI Synced</span>
+                                      </>
+                                    ) : activity.syncStatus === 'outdated' ? (
+                                      <>
+                                        <AlertCircle className="h-3.5 w-3.5 text-yellow-600" />
+                                        <span className="text-xs font-medium text-yellow-600">IATI Outdated</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Globe className="h-3.5 w-3.5 text-gray-600" />
+                                        <span className="text-xs font-medium text-gray-600">IATI Linked</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="text-xs space-y-1">
+                                    <p className="font-medium">IATI Sync Status</p>
+                                    {activity.lastSyncTime && (
+                                      <p>Last synced: {format(new Date(activity.lastSyncTime), 'dd MMM yyyy HH:mm')}</p>
+                                    )}
+                                    {activity.autoSync && (
+                                      <p className="text-green-600">Auto-sync enabled</p>
+                                    )}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        {getDisplayDates(activity)}
+                      </div>
+                    </div>
+
+                    {/* Organization & Creator Section */}
+                    <div className="space-y-3 pl-8">
+                      <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200 pb-1">Participating Organizations</h3>
+                      <div className="text-sm">
+                        <span className="font-medium text-gray-900">Created by:</span>
+                        <p className="text-slate-700">
+                          {(() => {
+                            const creatorOrg = partners.find(p => p.id === activity.createdByOrg);
+                            if (creatorOrg) {
+                              return creatorOrg.acronym || creatorOrg.code || creatorOrg.name;
+                            }
+                            return 'Unknown Organization';
+                          })()}
+                        </p>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-medium text-gray-900">Creator:</span>
+                        <p className="text-slate-700">{activity.createdBy?.name || 'Unknown'}</p>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-medium text-gray-900">Created:</span>
+                        <p className="text-slate-700">{formatDate(activity.createdAt)}</p>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-medium text-gray-900">Last Updated:</span>
+                        <p className="text-slate-700">{formatDate(activity.updatedAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Activity Contributors Section */}
+                  {activity.contributors && activity.contributors.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Activity Contributors</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {activity.contributors
+                          .filter(c => c.status === 'accepted')
+                          .map((contributor, idx) => {
+                            const partner = allPartners.find(p => p.id === contributor.organizationId);
+                            const displayName = partner 
+                              ? `${partner.acronym || partner.code || partner.name}${partner.countryRepresented ? ` (${partner.countryRepresented})` : ''}`
+                              : contributor.organizationName;
+                            return (
+                              <Badge key={contributor.id} variant="outline" className="text-xs">
+                                {displayName}
+                              </Badge>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Action Buttons */}
@@ -518,95 +736,28 @@ export default function ActivityDetailPage() {
             </div>
           </div>
 
-          {/* Activity Metadata Summary */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="space-y-4">
-              {/* Activity Title */}
-              <h2 className="text-2xl font-semibold text-gray-900">{activity.title}</h2>
-              
-              {/* Metadata Grid */}
-              <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
-                <div>
-                  <span className="text-gray-500">Activity ID(s):</span>
-                  <span className="ml-2 font-medium">
-                    {activity.id}
-                    {activity.iatiId && ` | IATI: ${activity.iatiId}`}
-                  </span>
-                </div>
-                
-                <div>
-                  <span className="text-gray-500">Name of creator:</span>
-                  <span className="ml-2 font-medium">{activity.createdBy?.name || 'Unknown'}</span>
-                </div>
-                
-                <div>
-                  <span className="text-gray-500">Date created:</span>
-                  <span className="ml-2 font-medium">{formatDate(activity.createdAt)}</span>
-                </div>
-                
-                <div>
-                  <span className="text-gray-500">Last edited date:</span>
-                  <span className="ml-2 font-medium">{formatDate(activity.updatedAt)}</span>
-                </div>
-                
-                <div className="col-span-2">
-                  <span className="text-gray-500">Organisation that created the activity:</span>
-                  <span className="ml-2 font-medium">
-                    {(() => {
-                      // Find the organization details from partners
-                      const creatorOrg = partners.find(p => p.id === activity.createdByOrg);
-                      if (creatorOrg) {
-                        return `${creatorOrg.name}`;
-                      }
-                      return activity.createdByOrg || 'Unknown Organization';
-                    })()}
-                  </span>
-                </div>
-                
-                <div className="col-span-2">
-                  <div className="text-gray-500 mb-2">List of Activity Contributors:</div>
-                  {activity.contributors && activity.contributors.length > 0 ? (
-                    <div className="space-y-1">
-                      {activity.contributors
-                        .filter(c => c.status === 'accepted')
-                        .map((contributor, idx) => {
-                          // Find the full partner details
-                          const partner = allPartners.find(p => p.id === contributor.organizationId);
-                          if (partner) {
-                            let display = `${partner.acronym || partner.code || partner.id} - ${partner.fullName || partner.name}`;
-                            if (partner.countryRepresented) {
-                              display += ` (${partner.countryRepresented})`;
-                            }
-                            return (
-                              <div key={contributor.id} className="font-medium">
-                                {display}
-                              </div>
-                            );
-                          }
-                          return (
-                            <div key={contributor.id} className="font-medium">
-                              {contributor.organizationName}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  ) : (
-                    <div className="text-gray-400 italic">No contributors yet</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Main Content with Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-9' : 'grid-cols-8'}`}>
+            <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-12' : 'grid-cols-11'}`}>
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="sectors">Sectors</TabsTrigger>
               <TabsTrigger value="contributors">Contributors</TabsTrigger>
+              <TabsTrigger value="sdg">SDG</TabsTrigger>
               <TabsTrigger value="organisations">Organisations</TabsTrigger>
               <TabsTrigger value="locations">Locations</TabsTrigger>
-              <TabsTrigger value="finances">Finances</TabsTrigger>
+              <TabsTrigger value="finances">
+                <Wallet className="w-4 w-4 mr-1" />
+                Finances
+              </TabsTrigger>
+              <TabsTrigger value="budgets">
+                <Wallet className="w-4 w-4 mr-1" />
+                Budgets
+              </TabsTrigger>
+              <TabsTrigger value="transactions">
+                <Banknote className="h-4 w-4 mr-1" />
+                Transactions
+              </TabsTrigger>
               <TabsTrigger value="results">Results</TabsTrigger>
               <TabsTrigger value="comments">
                 Comments
@@ -637,9 +788,9 @@ export default function ActivityDetailPage() {
                       <div className="space-y-2">
                         {activity.sectors.map((sector: any) => (
                           <div key={sector.id} className="text-sm">
-                            <div className="font-medium">{sector.name}</div>
+                            <div className="font-medium">{`${sector.sector_code || sector.code} – ${sector.sector_name || sector.name}`}</div>
                             <div className="text-gray-500">
-                              {sector.code} • {sector.percentage}% • {sector.type}
+                              {sector.percentage}% • {sector.type || 'secondary'}
                             </div>
                           </div>
                         ))}
@@ -722,16 +873,88 @@ export default function ActivityDetailPage() {
                   <p className="text-gray-700">
                     {activity.description || "No description provided."}
                   </p>
-                  {activity.objectives && (
+                  {activity.created_by_org_name && (
                     <div className="mt-4">
-                      <h4 className="font-medium mb-2">Objectives</h4>
-                      <p className="text-gray-700">{activity.objectives}</p>
+                      <h4 className="font-medium mb-2">Created By Organization</h4>
+                      <p className="text-gray-700">{activity.created_by_org_name}</p>
+                      {activity.created_by_org_acronym && (
+                        <p className="text-sm text-gray-600 mt-1">({activity.created_by_org_acronym})</p>
+                      )}
                     </div>
                   )}
                   {activity.targetGroups && (
                     <div className="mt-4">
                       <h4 className="font-medium mb-2">Target Groups</h4>
                       <p className="text-gray-700">{activity.targetGroups}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Sectors Tab */}
+            <TabsContent value="sectors" className="space-y-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Sector Allocations</CardTitle>
+                  {permissions.canEditActivity && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => router.push(`/activities/${activity.id}/sectors`)}
+                    >
+                      <PieChart className="h-4 w-4 mr-2" />
+                      Manage Sectors
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {activity.sectors && activity.sectors.length > 0 ? (
+                    <div className="space-y-4">
+                      {/* Sectors List */}
+                      <div className="space-y-3">
+                        {activity.sectors.map((sector: any) => (
+                          <div key={sector.id} className="p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium text-sm">{`${sector.sector_code || sector.code} – ${sector.sector_name || sector.name}`}</div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {sector.category || 'Unknown Category'}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-lg font-semibold">{sector.percentage}%</div>
+                                <Badge variant="outline" className="text-xs mt-1">
+                                  {sector.type === 'primary' ? 'Primary' : 'Secondary'}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Summary */}
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <div className="text-sm text-blue-800">
+                          <strong>Total Allocation:</strong> {activity.sectors.reduce((sum: number, s: any) => {
+                            const percentage = parseFloat(s.percentage) || 0
+                            return sum + (isNaN(percentage) ? 0 : percentage)
+                          }, 0)}%
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <PieChart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No sectors have been allocated to this activity yet.</p>
+                      {permissions.canEditActivity && (
+                        <Button 
+                          variant="outline" 
+                          className="mt-4"
+                          onClick={() => router.push(`/activities/${activity.id}/sectors`)}
+                        >
+                          Add Sectors
+                        </Button>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -748,6 +971,119 @@ export default function ActivityDetailPage() {
                   <p className="text-muted-foreground">
                     MSDP alignment information will be displayed here once implemented.
                   </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* SDG Alignment Tab */}
+            <TabsContent value="sdg" className="space-y-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5" />
+                    SDG Alignment
+                  </CardTitle>
+                  {permissions.canEditActivity && (
+                    <Button 
+                      size="sm" 
+                      onClick={handleEdit}
+                    >
+                      Edit SDG Alignment
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {activity.sdgMappings && activity.sdgMappings.length > 0 ? (
+                    <div className="space-y-6">
+                      {/* SDG Summary */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {Array.from(new Set(activity.sdgMappings?.map((m: any) => m.sdgGoal) || [])).map(goalId => {
+                          const goal = SDG_GOALS.find(g => g.id === Number(goalId));
+                                                      const goalMappings = activity.sdgMappings?.filter((m: any) => m.sdgGoal === goalId) || [];
+                          const totalContribution = goalMappings.reduce((sum: number, m: any) => {
+                            const contrib = parseFloat(m.contributionPercent) || 0
+                            return sum + (isNaN(contrib) ? 0 : contrib)
+                          }, 0);
+                          
+                          return goal ? (
+                            <div 
+                              key={goalId} 
+                              className="p-4 rounded-lg border-2 hover:shadow-md transition-shadow"
+                              style={{ borderColor: goal.color + '40', backgroundColor: goal.color + '10' }}
+                            >
+                              <div className="flex items-center gap-3 mb-2">
+                                <div 
+                                  className="text-xl font-bold rounded-full w-10 h-10 flex items-center justify-center text-white shrink-0"
+                                  style={{ backgroundColor: goal.color }}
+                                >
+                                  {goal.id}
+                                </div>
+                                <div className="text-sm font-medium line-clamp-2">{goal.name}</div>
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {goalMappings.length} target{goalMappings.length !== 1 ? 's' : ''}
+                                {totalContribution > 0 && ` • ${totalContribution}%`}
+                              </div>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+
+                      {/* Detailed Targets */}
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-gray-900">Selected Targets</h4>
+                        {activity.sdgMappings.map((mapping: any, idx: number) => {
+                          const goal = SDG_GOALS.find(g => g.id === mapping.sdgGoal);
+                          const target = SDG_TARGETS.find(t => t.id === mapping.sdgTarget);
+                          
+                          return (goal && target) ? (
+                            <div key={idx} className="p-4 bg-gray-50 rounded-lg">
+                              <div className="flex items-start gap-3">
+                                <Badge 
+                                  className="text-white shrink-0"
+                                  style={{ backgroundColor: goal.color }}
+                                >
+                                  SDG {goal.id}
+                                </Badge>
+                                <div className="flex-1">
+                                  <div className="font-medium">
+                                    Target {target.id}: {target.text}
+                                  </div>
+                                  <div className="text-sm text-gray-600 mt-1">
+                                    {target.description}
+                                  </div>
+                                  {mapping.contributionPercent && (
+                                    <div className="mt-2">
+                                      <span className="text-sm font-medium">Contribution: {mapping.contributionPercent}%</span>
+                                    </div>
+                                  )}
+                                  {mapping.notes && (
+                                    <div className="mt-2 p-2 bg-white rounded border border-gray-200">
+                                      <p className="text-sm text-gray-700">{mapping.notes}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Globe className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No SDG alignment has been specified for this activity yet.</p>
+                      {permissions.canEditActivity && (
+                        <Button 
+                          variant="outline" 
+                          className="mt-4"
+                          onClick={handleEdit}
+                        >
+                          Add SDG Alignment
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -834,6 +1170,7 @@ export default function ActivityDetailPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-10"></TableHead>
                           <TableHead>Aid Type</TableHead>
                           <TableHead>Finance Type</TableHead>
                           <TableHead>Provider</TableHead>
@@ -845,18 +1182,32 @@ export default function ActivityDetailPage() {
                       </TableHeader>
                       <TableBody>
                         {activity.transactions && activity.transactions.length > 0 ? (
-                          activity.transactions.map((transaction: Transaction) => (
+                          activity.transactions.map((transaction: any) => (
                             <TableRow key={transaction.id}>
+                              <TableCell>
+                                {!transaction.created_by && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Lock className="h-4 w-4 text-gray-400" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs">Imported from IATI</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </TableCell>
                               <TableCell className="font-medium">
-                                {transaction.aidType ? getAidTypeName(transaction.aidType) : '-'}
+                                {transaction.aid_type ? getAidTypeName(transaction.aid_type) : '-'}
                               </TableCell>
                               <TableCell>
-                                {transaction.flowType ? getFlowTypeName(transaction.flowType) : '-'}
+                                {transaction.flow_type ? getFlowTypeName(transaction.flow_type) : '-'}
                               </TableCell>
-                              <TableCell>{transaction.providerOrg || '-'}</TableCell>
-                              <TableCell>{transaction.receiverOrg || '-'}</TableCell>
-                              <TableCell>{formatDate(transaction.transactionDate)}</TableCell>
-                              <TableCell>{getTransactionTypeName(transaction.type)}</TableCell>
+                              <TableCell>{transaction.provider_org_name || '-'}</TableCell>
+                              <TableCell>{transaction.receiver_org_name || '-'}</TableCell>
+                              <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
+                              <TableCell>{getTransactionTypeName(transaction.transaction_type)}</TableCell>
                               <TableCell className="text-right font-medium">
                                 {transaction.currency} {transaction.value.toLocaleString()}
                               </TableCell>
@@ -864,7 +1215,7 @@ export default function ActivityDetailPage() {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center text-gray-500">
+                            <TableCell colSpan={8} className="text-center text-gray-500">
                               No transactions recorded
                             </TableCell>
                           </TableRow>
@@ -874,6 +1225,24 @@ export default function ActivityDetailPage() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Budgets Tab */}
+            <TabsContent value="budgets" className="space-y-4">
+              <ActivityBudgetsTab 
+                activityId={activity.id}
+                startDate={activity.plannedStartDate || activity.actualStartDate || ""}
+                endDate={activity.plannedEndDate || activity.actualEndDate || ""}
+                defaultCurrency="USD"
+              />
+            </TabsContent>
+
+            {/* Transactions Tab */}
+            <TabsContent value="transactions">
+              <TransactionTab 
+                activityId={activity.id} 
+                readOnly={!permissions.canEditActivity}
+              />
             </TabsContent>
 
             {/* Contacts Tab */}

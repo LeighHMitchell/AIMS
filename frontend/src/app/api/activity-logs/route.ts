@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export interface ActivityLog {
   id: string;
@@ -31,9 +31,9 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    // Check if supabaseAdmin is properly initialized
-    if (!supabaseAdmin) {
-      console.error('[AIMS] supabaseAdmin is not initialized');
+    // Check if getSupabaseAdmin is properly initialized
+    if (!getSupabaseAdmin()) {
+      console.error('[AIMS] getSupabaseAdmin() is not initialized');
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       },
     };
 
-    const { data: newLog, error } = await supabaseAdmin
+    const { data: newLog, error } = await getSupabaseAdmin()
       .from('activity_logs')
       .insert([logData])
       .select()
@@ -104,15 +104,9 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     
     // Build query
-    let query = supabaseAdmin
+    let query = getSupabaseAdmin()
       .from('activity_logs')
-      .select(`
-        *,
-        activities!activity_logs_activity_id_fkey (
-          id,
-          title
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);
     
@@ -148,7 +142,7 @@ export async function GET(request: NextRequest) {
       entityType: log.details?.entityType || 'activity',
       entityId: log.details?.entityId || log.activity_id,
       activityId: log.activity_id,
-      activityTitle: log.details?.activityTitle || log.activities?.title,
+      activityTitle: log.details?.activityTitle,
       user: log.details?.user || {
         id: log.user_id,
         name: log.details?.userName || 'Unknown User',

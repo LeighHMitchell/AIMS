@@ -13,20 +13,23 @@ export const IATI_FIELD_HELP = {
   iatiId: "The IATI activity identifier - a globally unique identifier for this activity (format: {reporting-org-ref}-{activity-id})",
   localId: "System-generated unique identifier for this activity record",
   title: "A short, human-readable title that contains a meaningful summary of the activity. Max 200 characters recommended.",
-  description: "A longer, human-readable description of the activity. May include objectives, implementation, expected outcomes, etc.",
-  objectives: "A description of the intended ultimate objectives of the activity. What are the intended impacts?",
+  description: "A longer, human-readable description of the activity. May include implementation, expected outcomes, etc.",
   targetGroups: "A description of the groups that are intended to benefit from this activity",
   collaborationType: "The type of collaboration involved in the activity (bilateral, multilateral, etc.)",
   activityStatus: "The current lifecycle stage of the activity from the IATI activity status codelist",
-  plannedStartDate: "The date on which the activity is planned to start",
-  plannedEndDate: "The date on which the activity is planned to end",
-  actualStartDate: "The actual date the activity started (if known)",
-  actualEndDate: "The actual date the activity ended (if known)",
+  plannedStartDate: "The date on which the activity is planned to start, for example the date of the first planned disbursement or when physical activity starts.",
+  plannedEndDate: "The date on which the activity is planned to end, for example the date of the last planned disbursement or when physical activity is complete.",
+  actualStartDate: "The actual date the activity starts, for example the date of the first disbursement or when physical activity starts.",
+  actualEndDate: "The actual date the activity ends, for example the date of the last disbursement or when physical activity is complete.",
   sectors: "The specific areas of the recipient's economic or social structure targeted by the activity",
   aidType: "The type of aid being supplied (project-type intervention, budget support, debt relief, etc.)",
+  defaultAidType: "This sets the main modality for this activity using the OECD DAC classification. Individual transactions may override this if needed.",
+  defaultFinanceType: "The default financial instrument for transactions in this activity (grant, loan, guarantee, etc.). Individual transactions may override this.",
+  defaultCurrency: "The default currency for all monetary values in this activity per IATI standards. Use ISO 4217 currency codes (e.g., USD, EUR, GBP). Individual transactions may override if needed.",
   flowType: "Whether the activity is funded by Official Development Assistance (ODA), Other Official Flows (OOF), etc.",
   currency: "The default currency for all financial values in this activity. Use ISO 4217 currency codes.",
   tiedStatus: "Whether the activity is tied, untied, or partially tied according to OECD definitions",
+  systemUuid: "System-generated unique identifier for internal database reference. This is not the IATI identifier.",
 };
 
 // Required fields for publishing
@@ -37,11 +40,12 @@ export const REQUIRED_FIELDS = [
   'plannedStartDate',
   'sectors',
   'participatingOrg',
+  'defaultAidType',
 ];
 
 // Recommended fields for better completeness
 export const RECOMMENDED_FIELDS = [
-  'objectives',
+
   'targetGroups',
   'collaborationType',
   'plannedEndDate',
@@ -67,7 +71,7 @@ export const FieldHelp: React.FC<FieldHelpProps> = ({ field, className = "" }) =
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className={`h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-help inline-block ml-1 ${className}`} />
+          <HelpCircle className={`w-4 h-4 text-slate-500 cursor-help inline-block ml-1 ${className}`} />
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <p>{helpText}</p>

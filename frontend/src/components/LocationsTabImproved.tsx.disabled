@@ -1,0 +1,765 @@
+"use client"
+
+import React, { useState, useEffect, useRef } from "react"
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet"
+import L from "leaflet"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { MapPin, Edit, Trash2, Plus, Search, X, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+
+// Fix for default markers in react-leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+})
+
+export interface Location {
+  id: string
+  location_name: string
+  description: string
+  latitude: number
+  longitude: number
+  reach: string // 1=Local, 2=Regional, 3=National
+  precision: string // 1=Exact, 2=Approximate, 3=Estimated
+  admin_level_1?: string // Province/State
+  admin_level_2?: string // District/County
+}
+
+interface LocationsTabProps {
+  locations: Location[]
+  onChange: (locations: Location[]) => void
+}
+
+interface NominatimResult {
+  place_id: number
+  display_name: string
+  lat: string
+  lon: string
+  address?: {
+    country?: string
+    state?: string
+    county?: string
+    city?: string
+    town?: string
+    village?: string
+    suburb?: string
+    neighbourhood?: string
+  }
+}
+
+const REACH_OPTIONS = {
+  '1': 'Local',
+  '2': 'Regional', 
+  '3': 'National'
+}
+
+const PRECISION_OPTIONS = {
+  '1': 'Exact',
+  '2': 'Approximate',
+  '3': 'Estimated'
+}
+
+// Map component that updates when coordinates change
+function MapUpdater({ center, zoom }: { center: [number, number], zoom: number }) {
+  const map = useMap()
+  
+  useEffect(() => {
+    if (center[0] !== 0 || center[1] !== 0) {
+      map.setView(center, zoom)
+    }
+  }, [center, zoom, map])
+  
+  return null
+}
+
+// Custom hook for map click events
+function MapClickHandler({ onMapClick }: { onMapClick: (latlng: L.LatLng) => void }) {
+  useMapEvents({
+    click: (e) => {
+      onMapClick(e.latlng)
+    }
+  })
+  return null
+}
+
+// Enhanced location search component with geocoding
+function LocationSearch({ 
+  onLocationSelect, 
+  initialValue = "" 
+}: { 
+  onLocationSelect: (location: { lat: number, lng: number, name: string, address?: any }) => void
+  initialValue?: string
+}) {
+  const [searchQuery, setSearchQuery] = useState(initialValue)
+  const [searchResults, setSearchResults] = useState<NominatimResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showResults, setShowResults] = useState(false)
+  const searchTimeout = useRef<NodeJS.Timeout>()
+
+  const searchLocations = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      setShowResults(false)
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      // Use Nominatim with English language preference
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?` +
+        `format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&` +
+        `accept-language=en&countrycodes=&dedupe=1`,
+        { 
+          headers: { 
+            'User-Agent': 'AIMS-Activity-Editor/1.0',
+            'Accept': 'application/json'
+          } 
+        }
+      )
+      
+      if (!response.ok) {
+        throw new Error('Search service unavailable')
+      }
+      
+      const results = await response.json()
+      setSearchResults(results)
+      setShowResults(results.length > 0)
+    } catch (error) {
+      console.error('Search error:', error)
+      toast.error('Failed to search locations. Please try again.')
+      setSearchResults([])
+      setShowResults(false)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current)
+    }
+    
+    if (value.trim()) {
+      searchTimeout.current = setTimeout(() => {
+        searchLocations(value)
+      }, 600) // Slightly longer delay for better UX
+    } else {
+      setSearchResults([])
+      setShowResults(false)
+    }
+  }
+
+  const handleResultSelect = (result: NominatimResult) => {
+    const lat = parseFloat(result.lat)
+    const lng = parseFloat(result.lon)
+    
+    if (isNaN(lat) || isNaN(lng)) {
+      toast.error('Invalid coordinates from search result')
+      return
+    }
+    
+    onLocationSelect({
+      lat,
+      lng,
+      name: result.display_name,
+      address: result.address
+    })
+    
+    setSearchQuery(result.display_name)
+    setSearchResults([])
+    setShowResults(false)
+    toast.success('Location found and pin placed')
+  }
+
+  // Handle manual geocoding submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      searchLocations(searchQuery)
+    }
+  }
+
+  return (
+    <div className="relative">
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Enter address (e.g., '4 Lake Road, Blackburn, VIC 3130, Australia')"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-10 pr-10"
+          />
+          {isSearching && (
+            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-500 animate-spin" />
+          )}
+          {searchQuery && !isSearching && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("")
+                setSearchResults([])
+                setShowResults(false)
+              }}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2"
+            >
+              <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+            </button>
+          )}
+        </div>
+        <Button type="submit" variant="outline" disabled={isSearching || !searchQuery.trim()}>
+          Search
+        </Button>
+      </form>
+
+      {showResults && searchResults.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {searchResults.map((result) => (
+            <button
+              key={result.place_id}
+              onClick={() => handleResultSelect(result)}
+              className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-blue-50"
+            >
+              <div className="text-sm font-medium truncate">{result.display_name}</div>
+              <div className="text-xs text-gray-500 mt-1">
+                📍 {parseFloat(result.lat).toFixed(4)}, {parseFloat(result.lon).toFixed(4)}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {showResults && searchResults.length === 0 && !isSearching && searchQuery.trim() && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+          <div className="px-4 py-3 text-sm text-gray-500">
+            No locations found. Try a different search term.
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Enhanced location form modal
+function LocationModal({ 
+  isOpen, 
+  onClose, 
+  location, 
+  onSave 
+}: { 
+  isOpen: boolean
+  onClose: () => void
+  location?: Location | null
+  onSave: (location: Omit<Location, 'id'>) => void 
+}) {
+  const [formData, setFormData] = useState({
+    location_name: '',
+    description: '',
+    latitude: 19.5, // Default to Myanmar center
+    longitude: 96.5,
+    reach: '1',
+    precision: '1',
+    admin_level_1: '',
+    admin_level_2: ''
+  })
+
+  const [mapKey, setMapKey] = useState(0) // Force map re-render
+
+  useEffect(() => {
+    if (location && isOpen) {
+      setFormData({
+        location_name: location.location_name,
+        description: location.description,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        reach: location.reach,
+        precision: location.precision,
+        admin_level_1: location.admin_level_1 || '',
+        admin_level_2: location.admin_level_2 || ''
+      })
+    } else if (isOpen) {
+      setFormData({
+        location_name: '',
+        description: '',
+        latitude: 19.5,
+        longitude: 96.5,
+        reach: '1',
+        precision: '1',
+        admin_level_1: '',
+        admin_level_2: ''
+      })
+    }
+    // Force map re-render when modal opens
+    setMapKey(prev => prev + 1)
+  }, [location, isOpen])
+
+  const handleSave = () => {
+    if (!formData.location_name.trim()) {
+      toast.error('Location name is required')
+      return
+    }
+    
+    if (formData.latitude === 0 && formData.longitude === 0) {
+      toast.error('Please set coordinates by clicking on the map or using search')
+      return
+    }
+
+    onSave(formData)
+    onClose()
+  }
+
+  const handleLocationSelect = (searchLocation: { lat: number, lng: number, name: string, address?: any }) => {
+    setFormData(prev => ({
+      ...prev,
+      latitude: searchLocation.lat,
+      longitude: searchLocation.lng,
+      location_name: prev.location_name || searchLocation.name.split(',')[0].trim(),
+      admin_level_1: searchLocation.address?.state || searchLocation.address?.country || prev.admin_level_1,
+      admin_level_2: searchLocation.address?.county || searchLocation.address?.city || 
+                     searchLocation.address?.town || searchLocation.address?.suburb || prev.admin_level_2
+    }))
+    
+    // Force map to update
+    setMapKey(prev => prev + 1)
+  }
+
+  const handleCoordinateChange = (field: 'latitude' | 'longitude', value: string) => {
+    const numValue = parseFloat(value)
+    if (!isNaN(numValue)) {
+      setFormData(prev => ({ ...prev, [field]: numValue }))
+      // Force map to update when coordinates change
+      setMapKey(prev => prev + 1)
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col"
+        style={{ 
+          position: 'fixed',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          margin: '0',
+          zIndex: 1000,
+          width: 'calc(100vw - 2rem)',
+          maxWidth: '56rem'
+        }}>
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>{location ? 'Edit Location' : 'Add New Location'}</DialogTitle>
+          <DialogDescription>
+            {location ? 'Update location details and coordinates' : 'Add a new location for this activity using the map or search'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-1">
+          <div className="space-y-6 max-w-full">
+            {/* Search */}
+            <div className="space-y-2">
+              <Label htmlFor="location-search" className="text-sm font-medium">
+                Search for Location (Optional)
+              </Label>
+              <LocationSearch onLocationSelect={handleLocationSelect} />
+              <p className="text-xs text-gray-500">
+                Enter an address like "4 Lake Road, Blackburn, VIC 3130, Australia" to automatically find and place a pin
+              </p>
+            </div>
+
+            {/* Map with proper constraints and containment */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Location on Map</Label>
+              <div className="relative w-full h-[350px] overflow-hidden rounded border border-gray-200 bg-gray-100" style={{ maxWidth: '100%' }}>
+                <MapContainer
+                  key={mapKey}
+                  center={[formData.latitude, formData.longitude]}
+                  zoom={formData.latitude !== 19.5 || formData.longitude !== 96.5 ? 12 : 6}
+                  style={{ height: '100%', width: '100%', zIndex: 0 }}
+                  scrollWheelZoom={true}
+                  doubleClickZoom={true}
+                  zoomControl={true}
+                  whenReady={(mapInstance) => {
+                    // Fix Leaflet layout when modal opens
+                    setTimeout(() => {
+                      mapInstance.target.invalidateSize()
+                    }, 200)
+                  }}
+                >
+                  <TileLayer
+                    url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Wikimedia'
+                    maxZoom={18}
+                  />
+                  <MapUpdater 
+                    center={[formData.latitude, formData.longitude]} 
+                    zoom={formData.latitude !== 19.5 || formData.longitude !== 96.5 ? 12 : 6}
+                  />
+                  <MapClickHandler 
+                    onMapClick={(latlng) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        latitude: latlng.lat,
+                        longitude: latlng.lng
+                      }))
+                    }}
+                  />
+                  <Marker position={[formData.latitude, formData.longitude]}>
+                    <Popup>
+                      <div className="text-sm">
+                        <div className="font-medium">{formData.location_name || 'New Location'}</div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                </MapContainer>
+              </div>
+              <p className="text-xs text-gray-500">Click anywhere on the map to place or move the pin</p>
+            </div>
+
+            {/* Coordinates - Two-way sync */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude" className="text-sm font-medium">Latitude</Label>
+                <Input
+                  id="latitude"
+                  type="number"
+                  step="any"
+                  value={formData.latitude}
+                  onChange={(e) => handleCoordinateChange('latitude', e.target.value)}
+                  placeholder="0.000000"
+                  className="font-mono text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="longitude" className="text-sm font-medium">Longitude</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="any"
+                  value={formData.longitude}
+                  onChange={(e) => handleCoordinateChange('longitude', e.target.value)}
+                  placeholder="0.000000"
+                  className="font-mono text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="precision" className="text-sm font-medium">Precision</Label>
+                <Select value={formData.precision} onValueChange={(value) => setFormData(prev => ({ ...prev, precision: value }))}>
+                  <SelectTrigger id="precision">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PRECISION_OPTIONS).map(([key, value]) => (
+                      <SelectItem key={key} value={key}>{value}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Basic Information */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="location_name" className="text-sm font-medium">
+                  Location Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="location_name"
+                  value={formData.location_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location_name: e.target.value }))}
+                  placeholder="e.g., Training Centre - Lashio"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reach" className="text-sm font-medium">Reach</Label>
+                <Select value={formData.reach} onValueChange={(value) => setFormData(prev => ({ ...prev, reach: value }))}>
+                  <SelectTrigger id="reach">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(REACH_OPTIONS).map(([key, value]) => (
+                      <SelectItem key={key} value={key}>{value}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe what happens at this location (e.g., Vocational training site for young women)"
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Administrative Areas */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin_level_1" className="text-sm font-medium">Province/State</Label>
+                <Input
+                  id="admin_level_1"
+                  value={formData.admin_level_1}
+                  onChange={(e) => setFormData(prev => ({ ...prev, admin_level_1: e.target.value }))}
+                  placeholder="e.g., Shan State, Victoria, California"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin_level_2" className="text-sm font-medium">District/Township</Label>
+                <Input
+                  id="admin_level_2"
+                  value={formData.admin_level_2}
+                  onChange={(e) => setFormData(prev => ({ ...prev, admin_level_2: e.target.value }))}
+                  placeholder="e.g., Lashio Township, Blackburn, Los Angeles County"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="flex-shrink-0 pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
+            {location ? 'Update' : 'Add'} Location
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Location card component (unchanged but included for completeness)
+function LocationCard({ 
+  location, 
+  onEdit, 
+  onDelete 
+}: { 
+  location: Location
+  onEdit: () => void
+  onDelete: () => void 
+}) {
+  return (
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-base">{location.location_name}</CardTitle>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={onEdit}>
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 text-red-600" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-3">
+          {location.description && (
+            <p className="text-sm text-gray-600">{location.description}</p>
+          )}
+          
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">
+              {REACH_OPTIONS[location.reach as keyof typeof REACH_OPTIONS]}
+            </Badge>
+            <Badge variant="outline">
+              {PRECISION_OPTIONS[location.precision as keyof typeof PRECISION_OPTIONS]}
+            </Badge>
+          </div>
+
+          <div className="text-xs text-gray-500 space-y-1">
+            <div>📍 {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}</div>
+            {(location.admin_level_1 || location.admin_level_2) && (
+              <div>🏢 {[location.admin_level_2, location.admin_level_1].filter(Boolean).join(', ')}</div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Main LocationsTab component
+export default function LocationsTabImproved({ locations, onChange }: LocationsTabProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingLocation, setEditingLocation] = useState<Location | null>(null)
+  const [mapCenter, setMapCenter] = useState<[number, number]>([19.5, 96.5]) // Myanmar center
+  const [mapZoom, setMapZoom] = useState(6)
+
+  useEffect(() => {
+    // Center map on locations if any exist
+    if (locations.length > 0) {
+      const avgLat = locations.reduce((sum, loc) => sum + loc.latitude, 0) / locations.length
+      const avgLng = locations.reduce((sum, loc) => sum + loc.longitude, 0) / locations.length
+      setMapCenter([avgLat, avgLng])
+      setMapZoom(8)
+    }
+  }, [locations])
+
+  const handleAddLocation = () => {
+    setEditingLocation(null)
+    setIsModalOpen(true)
+  }
+
+  const handleEditLocation = (location: Location) => {
+    setEditingLocation(location)
+    setIsModalOpen(true)
+  }
+
+  const handleDeleteLocation = (locationId: string) => {
+    if (confirm('Are you sure you want to delete this location?')) {
+      onChange(locations.filter(loc => loc.id !== locationId))
+      toast.success('Location deleted')
+    }
+  }
+
+  const handleSaveLocation = (locationData: Omit<Location, 'id'>) => {
+    if (editingLocation) {
+      // Update existing location
+      const updated = locations.map(loc => 
+        loc.id === editingLocation.id 
+          ? { ...locationData, id: editingLocation.id }
+          : loc
+      )
+      onChange(updated)
+      toast.success('Location updated')
+    } else {
+      // Add new location
+      const newLocation: Location = {
+        ...locationData,
+        id: `loc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }
+      onChange([...locations, newLocation])
+      toast.success('Location added')
+    }
+  }
+
+  const handleMapClick = (latlng: L.LatLng) => {
+    // Quick add location at clicked point
+    const newLocation: Location = {
+      id: `loc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      location_name: `Location ${locations.length + 1}`,
+      description: '',
+      latitude: latlng.lat,
+      longitude: latlng.lng,
+      reach: '1',
+      precision: '2'
+    }
+    onChange([...locations, newLocation])
+    toast.success('Location added! Click edit to add details.')
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Activity Locations</h2>
+          <p className="text-sm text-gray-600">Add locations where this activity takes place</p>
+        </div>
+        <Button onClick={handleAddLocation}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Location
+        </Button>
+      </div>
+
+      {/* Overview Map */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Locations Overview</Label>
+        <div className="relative w-full h-80 overflow-hidden rounded border border-gray-300 bg-gray-100">
+          <MapContainer
+            center={mapCenter}
+            zoom={mapZoom}
+            style={{ height: '100%', width: '100%', zIndex: 0 }}
+            scrollWheelZoom={true}
+            whenReady={(mapInstance) => {
+              // Ensure proper sizing for overview map
+              setTimeout(() => {
+                mapInstance.target.invalidateSize()
+              }, 100)
+            }}
+          >
+            <TileLayer
+              url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Wikimedia'
+              maxZoom={18}
+            />
+            <MapClickHandler onMapClick={handleMapClick} />
+            {locations.map((location) => (
+              <Marker
+                key={location.id}
+                position={[location.latitude, location.longitude]}
+              >
+                <Popup>
+                  <div className="space-y-1">
+                    <div className="font-medium">{location.location_name}</div>
+                    {location.description && <div className="text-sm text-gray-600">{location.description}</div>}
+                    <div className="text-xs text-gray-500">
+                      {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        </div>
+        <p className="text-xs text-gray-500">Click anywhere on the map to quickly add a location</p>
+      </div>
+
+      {/* Location Cards */}
+      {locations.length > 0 ? (
+        <div className="space-y-4">
+          <h3 className="text-base font-medium text-gray-900">
+            Locations ({locations.length})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {locations.map((location) => (
+              <LocationCard
+                key={location.id}
+                location={location}
+                onEdit={() => handleEditLocation(location)}
+                onDelete={() => handleDeleteLocation(location.id)}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-12 text-gray-500">
+          <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p className="text-lg font-medium">No locations added yet</p>
+          <p className="text-sm">Click "Add Location" or click on the map to get started</p>
+        </div>
+      )}
+
+      {/* Location Modal */}
+      <LocationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        location={editingLocation}
+        onSave={handleSaveLocation}
+      />
+    </div>
+  )
+}

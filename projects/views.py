@@ -30,6 +30,7 @@ from .models import (
 )
 from .iati_service import IATIRegistryService
 
+@login_required
 def home(request):
     """Enhanced home page with key statistics"""
     # Key statistics
@@ -71,6 +72,7 @@ def home(request):
     
     return render(request, 'home.html', context)
 
+@login_required
 def submit_project(request):
     """Enhanced project submission with better form handling"""
     if request.method == 'POST':
@@ -161,6 +163,7 @@ def submit_project(request):
     
     return render(request, 'projects/submit_project.html', context)
 
+@login_required
 def project_dashboard(request):
     """Enhanced dashboard with filtering and search"""
     projects = AidProject.objects.select_related('donor', 'recipient_country', 'sector').all()
@@ -229,6 +232,7 @@ def project_dashboard(request):
     
     return render(request, 'projects/dashboard.html', context)
 
+@login_required
 def project_detail(request, project_id):
     """Detailed project view"""
     project = get_object_or_404(
@@ -344,6 +348,7 @@ def edit_project(request, project_id):
     
     return render(request, 'projects/submit_project.html', context)
 
+@login_required
 def analytics_dashboard(request):
     """Analytics and reporting dashboard"""
     # Time-based analysis
@@ -402,6 +407,7 @@ def analytics_dashboard(request):
     
     return render(request, 'projects/analytics.html', context)
 
+@login_required
 def export_projects(request):
     """Export projects to CSV"""
     response = HttpResponse(content_type='text/csv')
@@ -436,6 +442,7 @@ def export_projects(request):
     return response
 
 # API endpoints for AJAX requests
+@login_required
 def api_project_stats(request):
     """API endpoint for project statistics"""
     stats = {
@@ -446,6 +453,7 @@ def api_project_stats(request):
     }
     return JsonResponse(stats)
 
+@login_required
 def api_funding_by_country(request):
     """API endpoint for funding by country data"""
     data = list(AidProject.objects
@@ -454,11 +462,13 @@ def api_funding_by_country(request):
                 .order_by('-total_funding')[:10])
     return JsonResponse(data, safe=False)
 
+@login_required
 def api_countries(request):
     """API endpoint for countries list"""
     countries = list(Country.objects.values('id', 'name').order_by('name'))
     return JsonResponse(countries, safe=False)
 
+@login_required
 @require_http_methods(["POST"])
 def api_add_transaction(request):
     """API endpoint to add a financial transaction"""
@@ -505,6 +515,7 @@ def api_add_transaction(request):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+@login_required
 @require_http_methods(["POST"])
 def api_add_commitment(request):
     """API endpoint to add a financial commitment"""
@@ -551,6 +562,7 @@ def api_add_commitment(request):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+@login_required
 @require_http_methods(["DELETE"])
 def api_delete_transaction(request, transaction_id):
     """API endpoint to delete a financial transaction"""
@@ -561,6 +573,7 @@ def api_delete_transaction(request, transaction_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+@login_required
 @require_http_methods(["DELETE"])
 def api_delete_commitment(request, commitment_id):
     """API endpoint to delete a financial commitment"""
@@ -728,6 +741,7 @@ def remove_role(request, role_id):
     
     return render(request, 'profiles/confirm_remove_role.html', context)
 
+@login_required
 def organization_directory(request):
     """Public directory of organizations"""
     form = OrganizationSearchForm(request.GET)
@@ -766,6 +780,7 @@ def organization_directory(request):
     
     return render(request, 'profiles/organization_directory.html', context)
 
+@login_required
 def organization_detail(request, org_id):
     """View organization details"""
     organization = get_object_or_404(Organization, id=org_id, is_active=True)
@@ -859,6 +874,7 @@ def edit_organization(request, org_id):
     
     return render(request, 'profiles/organization_form.html', context)
 
+@login_required
 def role_directory(request):
     """Directory of available roles"""
     roles = Role.objects.filter(is_active=True).order_by('category', 'name')

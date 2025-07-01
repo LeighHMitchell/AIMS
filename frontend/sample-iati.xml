@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2024-01-15T10:00:00Z">
+  <iati-activity default-currency="USD" last-updated-datetime="2024-01-15T10:00:00Z">
+    <iati-identifier>SAMPLE-ACTIVITY-001</iati-identifier>
+    
+    <reporting-org ref="SAMPLE-ORG-001" type="40">
+      <narrative>Sample Development Bank</narrative>
+    </reporting-org>
+    
+    <title>
+      <narrative>Sample Health Project in Myanmar</narrative>
+    </title>
+    
+    <description type="1">
+      <narrative>This is a sample project to improve health services in rural Myanmar</narrative>
+    </description>
+    
+    <activity-status code="2" />
+    
+    <activity-date type="2" iso-date="2024-01-01">
+      <narrative>Planned start date</narrative>
+    </activity-date>
+    
+    <activity-date type="3" iso-date="2025-12-31">
+      <narrative>Planned end date</narrative>
+    </activity-date>
+    
+    <participating-org ref="SAMPLE-ORG-001" type="40" role="1">
+      <narrative>Sample Development Bank</narrative>
+    </participating-org>
+    
+    <participating-org ref="SAMPLE-ORG-002" type="22" role="2">
+      <narrative>Myanmar Health Foundation (MHF)</narrative>
+    </participating-org>
+    
+    <recipient-country code="MM" percentage="100">
+      <narrative>Myanmar</narrative>
+    </recipient-country>
+    
+    <sector vocabulary="2" code="12220" percentage="100">
+      <narrative>Basic health care</narrative>
+    </sector>
+    
+    <transaction>
+      <transaction-type code="2" />
+      <transaction-date iso-date="2024-01-15" />
+      <value currency="USD" value-date="2024-01-15">500000</value>
+      <description>
+        <narrative>Initial commitment for health project</narrative>
+      </description>
+      <provider-org ref="SAMPLE-ORG-001">
+        <narrative>Sample Development Bank</narrative>
+      </provider-org>
+      <receiver-org ref="SAMPLE-ORG-002">
+        <narrative>Myanmar Health Foundation</narrative>
+      </receiver-org>
+    </transaction>
+    
+    <transaction>
+      <transaction-type code="3" />
+      <transaction-date iso-date="2024-03-01" />
+      <value currency="USD" value-date="2024-03-01">100000</value>
+      <description>
+        <narrative>First disbursement</narrative>
+      </description>
+      <provider-org ref="SAMPLE-ORG-001">
+        <narrative>Sample Development Bank</narrative>
+      </provider-org>
+      <receiver-org ref="SAMPLE-ORG-002">
+        <narrative>Myanmar Health Foundation</narrative>
+      </receiver-org>
+    </transaction>
+    
+    <transaction>
+      <transaction-type code="3" />
+      <transaction-date iso-date="2024-06-01" />
+      <value currency="USD" value-date="2024-06-01">150000</value>
+      <description>
+        <narrative>Second disbursement</narrative>
+      </description>
+    </transaction>
+  </iati-activity>
+  
+  <iati-activity default-currency="USD" last-updated-datetime="2024-01-15T10:00:00Z">
+    <iati-identifier>SAMPLE-ACTIVITY-002</iati-identifier>
+    
+    <reporting-org ref="SAMPLE-ORG-003" type="10">
+      <narrative>Sample Bilateral Agency</narrative>
+    </reporting-org>
+    
+    <title>
+      <narrative>Education Support Program</narrative>
+    </title>
+    
+    <description type="1">
+      <narrative>Supporting primary education in Myanmar</narrative>
+    </description>
+    
+    <activity-status code="2" />
+    
+    <activity-date type="2" iso-date="2023-06-01" />
+    <activity-date type="3" iso-date="2025-05-31" />
+    
+    <participating-org ref="SAMPLE-ORG-003" type="10" role="1">
+      <narrative>Sample Bilateral Agency</narrative>
+    </participating-org>
+    
+    <participating-org ref="SAMPLE-ORG-004" type="21" role="2">
+      <narrative>Education International NGO</narrative>
+    </participating-org>
+    
+    <recipient-country code="MM" />
+    
+    <sector vocabulary="2" code="11220">
+      <narrative>Primary education</narrative>
+    </sector>
+    
+    <transaction>
+      <transaction-type code="3" />
+      <transaction-date iso-date="2024-01-01" />
+      <value currency="USD" value-date="2024-01-01">250000</value>
+      <description>
+        <narrative>Q1 2024 disbursement for education program</narrative>
+      </description>
+    </transaction>
+  </iati-activity>
+</iati-activities> 

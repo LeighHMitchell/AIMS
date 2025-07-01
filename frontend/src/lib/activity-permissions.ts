@@ -101,7 +101,7 @@ export function getActivityPermissions(
     canEditOtherContributions: isSuperUser,
     
     // Join request permissions
-    canRequestToJoin: !isContributor && !isCreator && user.role !== USER_ROLES.ORPHAN,
+    canRequestToJoin: !isContributor && !isCreator,
     canApproveJoinRequests: isCreator || isGovUser || isSuperUser,
   };
 }

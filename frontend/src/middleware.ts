@@ -5,6 +5,19 @@ import type { NextRequest } from 'next/server'
 const API_ROUTES = ['/api/activities', '/api/partners', '/api/activity-logs', '/api/projects']
 
 export function middleware(request: NextRequest) {
+  // Handle CORS
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 200 })
+  }
+
+  // For API routes that handle user updates (with profile pictures)
+  if (request.nextUrl.pathname === '/api/users' && request.method === 'PUT') {
+    // Allow larger request bodies for profile picture uploads
+    const response = NextResponse.next()
+    response.headers.set('x-middleware-request-size-limit', '10mb')
+    return response
+  }
+
   // Only process API routes
   if (!request.nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.next()
@@ -41,5 +54,13 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 } 

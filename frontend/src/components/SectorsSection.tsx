@@ -5,26 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, AlertCircle, PieChart, ExternalLink } from "lucide-react";
+import { DAC_CODES } from "@/data/dac-codes";
+import { useRouter } from "next/navigation";
 
-// OECD DAC 5-digit sector codes (sample)
-const SECTOR_CODES = [
-  { code: "11110", name: "Education policy and administrative management" },
-  { code: "11120", name: "Education facilities and training" },
-  { code: "11130", name: "Teacher training" },
-  { code: "12110", name: "Health policy and administrative management" },
-  { code: "12220", name: "Basic health care" },
-  { code: "12230", name: "Basic health infrastructure" },
-  { code: "13020", name: "Reproductive health care" },
-  { code: "14010", name: "Water sector policy and administrative management" },
-  { code: "14030", name: "Basic drinking water supply and basic sanitation" },
-  { code: "15110", name: "Public sector policy and administrative management" },
-  { code: "16010", name: "Social protection" },
-  { code: "21010", name: "Transport policy and administrative management" },
-  { code: "23110", name: "Energy policy and administrative management" },
-  { code: "31110", name: "Agricultural policy and administrative management" },
-  { code: "43010", name: "Multisector aid" },
-];
+// Convert DAC_CODES to the format used by this component
+const SECTOR_CODES = DAC_CODES.map(code => ({
+  code: code.dac5_code,
+  name: code.dac5_name,
+  category: code.dac3_parent_name || 'Unknown'
+}));
 
 interface Sector {
   id: string;
@@ -32,6 +22,7 @@ interface Sector {
   name: string;
   percentage: number;
   type: "primary" | "secondary";
+  category?: string;
 }
 
 interface SectorsSectionProps {
@@ -40,6 +31,7 @@ interface SectorsSectionProps {
 }
 
 export default function SectorsSection({ sectors: initialSectors = [], onChange }: SectorsSectionProps) {
+  const router = useRouter();
   const [sectors, setSectors] = useState<Sector[]>(initialSectors);
   const [showAddSector, setShowAddSector] = useState(false);
   const [newSector, setNewSector] = useState({ code: "", percentage: 0 });
@@ -58,7 +50,8 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
       code: sectorInfo.code,
       name: sectorInfo.name,
       percentage: newSector.percentage,
-      type: !hasPrimary ? "primary" : "secondary"
+      type: !hasPrimary ? "primary" : "secondary",
+      category: sectorInfo.category
     };
 
     const updatedSectors = [...sectors, sector];
@@ -118,6 +111,17 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
           </div>
         </CardHeader>
         <CardContent>
+          {/* Info about advanced sector management */}
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
+            <PieChart className="h-4 w-4 text-blue-600 mt-0.5" />
+            <div className="text-sm flex-1">
+              <p className="font-medium text-blue-900">Advanced Sector Management Available</p>
+              <p className="text-blue-700">
+                After saving this activity, you can access advanced sector allocation features including visualizations and batch management.
+              </p>
+            </div>
+          </div>
+
           {/* Total Percentage Alert */}
           {totalPercentage !== 0 && totalPercentage !== 100 && (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
@@ -189,11 +193,14 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
                     <SelectTrigger>
                       <SelectValue placeholder="Select a sector" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[300px]">
                       {SECTOR_CODES.map((sector) => (
                         <SelectItem key={sector.code} value={sector.code}>
-                          <div>
-                            <span className="font-medium">{sector.code}</span> - {sector.name}
+                          <div className="flex flex-col">
+                            <div>
+                              <span className="font-medium">{sector.code}</span> - {sector.name}
+                            </div>
+                            <span className="text-xs text-muted-foreground">{sector.category}</span>
                           </div>
                         </SelectItem>
                       ))}

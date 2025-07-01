@@ -74,7 +74,7 @@ export const ACTIVITY_FIELDS: SystemField[] = [
 
 export const ORGANIZATION_FIELDS: SystemField[] = [
   { id: 'name', name: 'Organization Name', type: 'string', required: true, description: 'Full name of the organization' },
-  { id: 'short_name', name: 'Short Name', type: 'string', required: false, description: 'Abbreviated name or acronym' },
+  { id: 'acronym', name: 'Acronym', type: 'string', required: false, description: 'Abbreviated name or acronym' },
   { id: 'iati_identifier', name: 'IATI Organization ID', type: 'string', required: false, description: 'IATI organization identifier' },
   { id: 'organization_type', name: 'Organization Type', type: 'select', required: true, description: 'Type of organization', options: [
     { value: 'government', label: 'Government Agency' },

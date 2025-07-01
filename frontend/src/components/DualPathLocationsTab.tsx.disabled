@@ -1,0 +1,1225 @@
+"use client"
+
+import React, { useState, useEffect, useRef } from "react"
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap, GeoJSON } from "react-leaflet"
+import L from "leaflet"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { MapPin, Edit, Trash2, Plus, Search, X, Loader2, Globe, Building, Users, Check, ChevronsUpDown } from "lucide-react"
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+
+// Fix for default markers in react-leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+})
+
+// Data Types
+export interface SiteLocation {
+  id: string
+  location_name: string
+  lat: number
+  lng: number
+  category: string
+  description: string
+}
+
+export interface BroadCoverageLocation {
+  id: string
+  admin_unit: string
+  description: string
+}
+
+export interface DualPathLocationData {
+  site_locations: SiteLocation[]
+  broad_coverage_locations: BroadCoverageLocation[]
+}
+
+interface DualPathLocationsTabProps {
+  data: DualPathLocationData
+  onChange: (data: DualPathLocationData) => void
+}
+
+interface NominatimResult {
+  place_id: number
+  display_name: string
+  lat: string
+  lon: string
+  address?: any
+}
+
+// Location Categories
+const LOCATION_CATEGORIES = [
+  { value: "health_site", label: "Health Facility" },
+  { value: "education_site", label: "Educational Institution" },
+  { value: "community_center", label: "Community Center" },
+  { value: "office", label: "Office/Administrative" },
+  { value: "field_site", label: "Field Implementation Site" },
+  { value: "distribution_point", label: "Distribution Point" },
+  { value: "training_venue", label: "Training Venue" },
+  { value: "other", label: "Other" }
+]
+
+// Myanmar GeoJSON boundaries (simplified for demo - in production would load from API)
+const MYANMAR_BOUNDARIES = {
+  "yangon_region": {
+    name: "Yangon Region",
+    bounds: [[16.7, 95.8], [17.2, 96.4]],
+    center: [16.85, 96.1],
+    geoJson: {
+      type: "Feature",
+      properties: { name: "Yangon Region" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [[
+          [95.8, 16.7], [96.4, 16.7], [96.4, 17.2], [95.8, 17.2], [95.8, 16.7]
+        ]]
+      }
+    }
+  },
+  "mandalay_region": {
+    name: "Mandalay Region", 
+    bounds: [[21.5, 95.5], [22.5, 96.5]],
+    center: [22.0, 96.0],
+    geoJson: {
+      type: "Feature",
+      properties: { name: "Mandalay Region" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [[
+          [95.5, 21.5], [96.5, 21.5], [96.5, 22.5], [95.5, 22.5], [95.5, 21.5]
+        ]]
+      }
+    }
+  },
+  "kachin_state": {
+    name: "Kachin State",
+    bounds: [[25.0, 96.0], [28.5, 98.5]], 
+    center: [26.75, 97.25],
+    geoJson: {
+      type: "Feature",
+      properties: { name: "Kachin State" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [[
+          [96.0, 25.0], [98.5, 25.0], [98.5, 28.5], [96.0, 28.5], [96.0, 25.0]
+        ]]
+      }
+    }
+  },
+  "shan_state": {
+    name: "Shan State",
+    bounds: [[19.5, 97.0], [24.5, 101.2]],
+    center: [22.0, 99.1],
+    geoJson: {
+      type: "Feature",
+      properties: { name: "Shan State" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [[
+          [97.0, 19.5], [101.2, 19.5], [101.2, 24.5], [97.0, 24.5], [97.0, 19.5]
+        ]]
+      }
+    }
+  },
+  "nationwide": {
+    name: "Nationwide Coverage",
+    bounds: [[9.5, 92.0], [28.5, 101.2]],
+    center: [19.0, 96.5],
+    geoJson: {
+      type: "Feature",
+      properties: { name: "Nationwide Coverage" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [[
+          [92.0, 9.5], [101.2, 9.5], [101.2, 28.5], [92.0, 28.5], [92.0, 9.5]
+        ]]
+      }
+    }
+  }
+}
+
+// Myanmar Administrative Units (simplified dataset)
+const MYANMAR_ADMIN_UNITS = [
+  // States
+  { value: "kachin_state", label: "Kachin State", type: "state", parent: null },
+  { value: "kayah_state", label: "Kayah State", type: "state", parent: null },
+  { value: "kayin_state", label: "Kayin State", type: "state", parent: null },
+  { value: "chin_state", label: "Chin State", type: "state", parent: null },
+  { value: "mon_state", label: "Mon State", type: "state", parent: null },
+  { value: "rakhine_state", label: "Rakhine State", type: "state", parent: null },
+  { value: "shan_state", label: "Shan State", type: "state", parent: null },
+  
+  // Regions
+  { value: "ayeyarwady_region", label: "Ayeyarwady Region", type: "region", parent: null },
+  { value: "bago_region", label: "Bago Region", type: "region", parent: null },
+  { value: "magway_region", label: "Magway Region", type: "region", parent: null },
+  { value: "mandalay_region", label: "Mandalay Region", type: "region", parent: null },
+  { value: "sagaing_region", label: "Sagaing Region", type: "region", parent: null },
+  { value: "tanintharyi_region", label: "Tanintharyi Region", type: "region", parent: null },
+  { value: "yangon_region", label: "Yangon Region", type: "region", parent: null },
+  
+  // Union Territories
+  { value: "naypyitaw", label: "Naypyitaw Union Territory", type: "territory", parent: null },
+  
+  // Sample Townships (would be expanded in real implementation)
+  { value: "yangon_downtown", label: "Downtown Township", type: "township", parent: "Yangon Region" },
+  { value: "yangon_dagon", label: "Dagon Township", type: "township", parent: "Yangon Region" },
+  { value: "mandalay_aungmyethazan", label: "Aungmyethazan Township", type: "township", parent: "Mandalay Region" },
+  { value: "mandalay_chanayethazan", label: "Chanayethazan Township", type: "township", parent: "Mandalay Region" },
+  
+  // Sample Wards
+  { value: "downtown_ward_1", label: "Ward 1", type: "ward", parent: "Downtown Township" },
+  { value: "downtown_ward_2", label: "Ward 2", type: "ward", parent: "Downtown Township" },
+  
+  // National option
+  { value: "nationwide", label: "Nationwide Coverage", type: "national", parent: null }
+]
+
+// Map component that updates when coordinates change
+function MapUpdater({ center, zoom }: { center: [number, number], zoom: number }) {
+  const map = useMap()
+  
+  useEffect(() => {
+    if (center[0] !== 0 || center[1] !== 0) {
+      map.setView(center, zoom)
+    }
+  }, [center, zoom, map])
+  
+  return null
+}
+
+// Custom hook for map click events
+function MapClickHandler({ onMapClick }: { onMapClick: (latlng: L.LatLng) => void }) {
+  useMapEvents({
+    click: (e) => {
+      onMapClick(e.latlng)
+    }
+  })
+  return null
+}
+
+// Address Search Component
+function AddressSearch({ 
+  onLocationSelect, 
+  initialValue = "" 
+}: { 
+  onLocationSelect: (location: { lat: number, lng: number, name: string, address?: any }) => void
+  initialValue?: string
+}) {
+  const [searchQuery, setSearchQuery] = useState(initialValue)
+  const [searchResults, setSearchResults] = useState<NominatimResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showResults, setShowResults] = useState(false)
+  const searchTimeout = useRef<NodeJS.Timeout>()
+
+  const searchLocations = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      setShowResults(false)
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?` +
+        `format=json&q=${encodeURIComponent(query + " Myanmar")}&limit=5&addressdetails=1&` +
+        `accept-language=en&countrycodes=mm&dedupe=1`,
+        { 
+          headers: { 
+            'User-Agent': 'AIMS-Activity-Editor/1.0',
+            'Accept': 'application/json'
+          } 
+        }
+      )
+      
+      if (!response.ok) {
+        throw new Error('Search service unavailable')
+      }
+      
+      const results = await response.json()
+      setSearchResults(results)
+      setShowResults(results.length > 0)
+    } catch (error) {
+      console.error('Search error:', error)
+      toast.error('Failed to search locations. Please try again.')
+      setSearchResults([])
+      setShowResults(false)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current)
+    }
+    
+    if (value.trim()) {
+      searchTimeout.current = setTimeout(() => {
+        searchLocations(value)
+      }, 600)
+    } else {
+      setSearchResults([])
+      setShowResults(false)
+    }
+  }
+
+  const handleResultSelect = (result: NominatimResult) => {
+    const lat = parseFloat(result.lat)
+    const lng = parseFloat(result.lon)
+    
+    if (isNaN(lat) || isNaN(lng)) {
+      toast.error('Invalid coordinates from search result')
+      return
+    }
+    
+    onLocationSelect({
+      lat,
+      lng,
+      name: result.display_name,
+      address: result.address
+    })
+    
+    setSearchQuery(result.display_name)
+    setSearchResults([])
+    setShowResults(false)
+    toast.success('Location found and pin placed')
+  }
+
+  return (
+    <div className="relative">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search for an address in Myanmar"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-10 pr-10"
+          />
+          {isSearching && (
+            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-500 animate-spin" />
+          )}
+          {searchQuery && !isSearching && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("")
+                setSearchResults([])
+                setShowResults(false)
+              }}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2"
+            >
+              <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {showResults && searchResults.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {searchResults.map((result) => (
+            <button
+              key={result.place_id}
+              onClick={() => handleResultSelect(result)}
+              className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-blue-50"
+            >
+              <div className="text-sm font-medium truncate">{result.display_name}</div>
+              <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {parseFloat(result.lat).toFixed(4)}, {parseFloat(result.lon).toFixed(4)}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {showResults && searchResults.length === 0 && !isSearching && searchQuery.trim() && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+          <div className="px-4 py-3 text-sm text-gray-500">
+            No locations found in Myanmar. Try a different search term.
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Admin Unit Combobox Component
+function AdminUnitCombobox({ 
+  value, 
+  onValueChange 
+}: { 
+  value: string
+  onValueChange: (value: string) => void 
+}) {
+  const [open, setOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const filteredUnits = MYANMAR_ADMIN_UNITS.filter(unit =>
+    unit.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (unit.parent && unit.parent.toLowerCase().includes(searchQuery.toLowerCase()))
+  )
+
+  const groupedUnits = {
+    national: filteredUnits.filter(unit => unit.type === "national"),
+    states: filteredUnits.filter(unit => unit.type === "state"),
+    regions: filteredUnits.filter(unit => unit.type === "region"),
+    territories: filteredUnits.filter(unit => unit.type === "territory"),
+    townships: filteredUnits.filter(unit => unit.type === "township"),
+    wards: filteredUnits.filter(unit => unit.type === "ward")
+  }
+
+  const selectedUnit = MYANMAR_ADMIN_UNITS.find(unit => unit.value === value)
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        className="w-full justify-between border border-input bg-background hover:bg-accent hover:text-accent-foreground px-3 py-2 text-sm rounded-md flex items-center"
+        role="combobox"
+        aria-expanded={open}
+      >
+        <span className="truncate">
+          {selectedUnit ? selectedUnit.label : "Select administrative unit"}
+        </span>
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0" align="start">
+        <Command>
+          <CommandInput 
+            placeholder="Search administrative units..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <CommandList>
+            <CommandEmpty>No administrative unit found.</CommandEmpty>
+            
+            {groupedUnits.national.length > 0 && (
+              <CommandGroup>
+                <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  National
+                </div>
+                {groupedUnits.national.map((unit) => (
+                  <CommandItem
+                    key={unit.value}
+                    value={unit.value}
+                    onSelect={() => {
+                      onValueChange(unit.value === value ? "" : unit.value)
+                      setOpen(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === unit.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {unit.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {groupedUnits.states.length > 0 && (
+              <CommandGroup>
+                <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  States
+                </div>
+                {groupedUnits.states.map((unit) => (
+                  <CommandItem
+                    key={unit.value}
+                    value={unit.value}
+                    onSelect={() => {
+                      onValueChange(unit.value === value ? "" : unit.value)
+                      setOpen(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === unit.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {unit.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {groupedUnits.regions.length > 0 && (
+              <CommandGroup>
+                <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Regions
+                </div>
+                {groupedUnits.regions.map((unit) => (
+                  <CommandItem
+                    key={unit.value}
+                    value={unit.value}
+                    onSelect={() => {
+                      onValueChange(unit.value === value ? "" : unit.value)
+                      setOpen(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === unit.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {unit.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {groupedUnits.territories.length > 0 && (
+              <CommandGroup>
+                <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Union Territories
+                </div>
+                {groupedUnits.territories.map((unit) => (
+                  <CommandItem
+                    key={unit.value}
+                    value={unit.value}
+                    onSelect={() => {
+                      onValueChange(unit.value === value ? "" : unit.value)
+                      setOpen(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === unit.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {unit.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {groupedUnits.townships.length > 0 && (
+              <CommandGroup>
+                <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Townships
+                </div>
+                {groupedUnits.townships.map((unit) => (
+                  <CommandItem
+                    key={unit.value}
+                    value={unit.value}
+                    onSelect={() => {
+                      onValueChange(unit.value === value ? "" : unit.value)
+                      setOpen(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === unit.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {unit.label}
+                    {unit.parent && (
+                      <span className="ml-auto text-xs text-gray-500">{unit.parent}</span>
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {groupedUnits.wards.length > 0 && (
+              <CommandGroup>
+                <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Wards
+                </div>
+                {groupedUnits.wards.map((unit) => (
+                  <CommandItem
+                    key={unit.value}
+                    value={unit.value}
+                    onSelect={() => {
+                      onValueChange(unit.value === value ? "" : unit.value)
+                      setOpen(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === unit.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {unit.label}
+                    {unit.parent && (
+                      <span className="ml-auto text-xs text-gray-500">{unit.parent}</span>
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// Site Location Form Component
+function SiteLocationForm({ 
+  onAdd 
+}: { 
+  onAdd: (location: Omit<SiteLocation, 'id'>) => void
+}) {
+  const [formData, setFormData] = useState({
+    location_name: '',
+    lat: 19.5, // Default to Myanmar center
+    lng: 96.5,
+    category: '',
+    description: ''
+  })
+
+  const [mapKey, setMapKey] = useState(0)
+
+  const handleLocationSelect = (searchLocation: { lat: number, lng: number, name: string, address?: any }) => {
+    setFormData(prev => ({
+      ...prev,
+      lat: searchLocation.lat,
+      lng: searchLocation.lng,
+      location_name: prev.location_name || searchLocation.name.split(',')[0].trim()
+    }))
+    setMapKey(prev => prev + 1)
+  }
+
+  const handleCoordinateChange = (field: 'lat' | 'lng', value: string) => {
+    const numValue = parseFloat(value)
+    if (!isNaN(numValue)) {
+      setFormData(prev => ({ ...prev, [field]: numValue }))
+      setMapKey(prev => prev + 1)
+    }
+  }
+
+  const handleSubmit = () => {
+    if (!formData.location_name.trim()) {
+      toast.error('Location name is required')
+      return
+    }
+
+    if (!formData.category) {
+      toast.error('Please select a location category')
+      return
+    }
+    
+    if (formData.lat === 19.5 && formData.lng === 96.5) {
+      toast.error('Please set coordinates by clicking on the map or using search')
+      return
+    }
+
+    onAdd({
+      location_name: formData.location_name,
+      lat: formData.lat,
+      lng: formData.lng,
+      category: formData.category,
+      description: formData.description
+    })
+
+    // Reset form
+    setFormData({
+      location_name: '',
+      lat: 19.5,
+      lng: 96.5,
+      category: '',
+      description: ''
+    })
+    setMapKey(prev => prev + 1)
+    toast.success('Site location added successfully!')
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Address Search */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Search for Location</Label>
+        <AddressSearch onLocationSelect={handleLocationSelect} />
+        <p className="text-xs text-gray-500">
+          Search to auto-fill coordinates and place a pin
+        </p>
+      </div>
+
+      {/* Interactive Map */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Location on Map</Label>
+        <div className="relative w-full h-64 overflow-hidden rounded-md border border-gray-300 bg-gray-100">
+          <MapContainer
+            key={mapKey}
+            center={[formData.lat, formData.lng]}
+            zoom={formData.lat !== 19.5 || formData.lng !== 96.5 ? 12 : 6}
+            style={{ height: '100%', width: '100%', zIndex: 0 }}
+            scrollWheelZoom={true}
+            doubleClickZoom={true}
+            zoomControl={true}
+            whenReady={(mapInstance) => {
+              setTimeout(() => {
+                mapInstance.target.invalidateSize()
+              }, 200)
+            }}
+          >
+            <TileLayer
+              url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Wikimedia'
+              maxZoom={18}
+            />
+            <MapUpdater 
+              center={[formData.lat, formData.lng]} 
+              zoom={formData.lat !== 19.5 || formData.lng !== 96.5 ? 12 : 6}
+            />
+            <MapClickHandler 
+              onMapClick={(latlng) => {
+                setFormData(prev => ({
+                  ...prev,
+                  lat: latlng.lat,
+                  lng: latlng.lng
+                }))
+              }}
+            />
+            <Marker position={[formData.lat, formData.lng]}>
+              <Popup>
+                <div className="text-sm">
+                  <div className="font-medium">{formData.location_name || 'New Location'}</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    {formData.lat.toFixed(4)}, {formData.lng.toFixed(4)}
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          </MapContainer>
+        </div>
+        <p className="text-xs text-gray-500">Click anywhere on the map to place or move the pin</p>
+      </div>
+
+      {/* Coordinates Display */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="lat" className="text-sm font-medium">Latitude</Label>
+          <Input
+            id="lat"
+            type="number"
+            step="any"
+            value={formData.lat}
+            onChange={(e) => handleCoordinateChange('lat', e.target.value)}
+            placeholder="0.000000"
+            className="font-mono text-sm"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="lng" className="text-sm font-medium">Longitude</Label>
+          <Input
+            id="lng"
+            type="number"
+            step="any"
+            value={formData.lng}
+            onChange={(e) => handleCoordinateChange('lng', e.target.value)}
+            placeholder="0.000000"
+            className="font-mono text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Form Fields */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="location_name" className="text-sm font-medium">
+            Location Name <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="location_name"
+            value={formData.location_name}
+            onChange={(e) => setFormData(prev => ({ ...prev, location_name: e.target.value }))}
+            placeholder="e.g., Health Clinic, Community Center"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="category" className="text-sm font-medium">
+            Location Category <span className="text-red-500">*</span>
+          </Label>
+          <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+            <SelectTrigger id="category">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {LOCATION_CATEGORIES.map((category) => (
+                <SelectItem key={category.value} value={category.value}>
+                  {category.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+          <Textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            placeholder="Describe what happens at this location"
+            rows={3}
+            className="resize-none"
+          />
+        </div>
+      </div>
+
+      {/* Add Button */}
+      <Button onClick={handleSubmit} className="w-full">
+        <Plus className="h-4 w-4 mr-2" />
+        Add Site Location
+      </Button>
+    </div>
+  )
+}
+
+// Broad Coverage Form Component
+// Myanmar Map Component for highlighting administrative units
+function MyanmarHighlightMap({ selectedUnit }: { selectedUnit: string }) {
+  const boundary = MYANMAR_BOUNDARIES[selectedUnit as keyof typeof MYANMAR_BOUNDARIES]
+  const mapRef = useRef<any>(null)
+  
+  if (!boundary) {
+    return (
+      <div className="w-full h-64 bg-gray-100 rounded border flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <Globe className="h-8 w-8 mx-auto mb-2" />
+          <p className="text-sm">Select an administrative unit to see it on the map</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Custom hook to fit bounds and highlight selected area
+  function MapController() {
+    const map = useMap()
+    
+    useEffect(() => {
+      if (boundary?.bounds && map) {
+        // Fit the map to the boundary bounds
+        const bounds = L.latLngBounds(boundary.bounds[0], boundary.bounds[1])
+        map.fitBounds(bounds, { padding: [20, 20] })
+      }
+    }, [map])
+    
+    return null
+  }
+
+  const highlightStyle = {
+    fillColor: "#3b82f6", // Tailwind blue-500
+    fillOpacity: 0.25,
+    color: "#1e3a8a", // Tailwind blue-900 
+    weight: 2,
+    opacity: 1
+  }
+
+  return (
+    <div className="w-full h-64 overflow-hidden rounded border border-gray-300 bg-gray-100 relative">
+      <MapContainer
+        ref={mapRef}
+        center={boundary.center as [number, number]}
+        zoom={6}
+        style={{ height: '100%', width: '100%', zIndex: 0 }}
+        scrollWheelZoom={false} // Disable scroll zoom
+        dragging={false} // Disable dragging
+        zoomControl={false} // Disable zoom controls
+        doubleClickZoom={false} // Disable double-click zoom
+        touchZoom={false} // Disable touch zoom
+        keyboard={false} // Disable keyboard navigation
+        whenReady={(mapInstance) => {
+          setTimeout(() => {
+            mapInstance.target.invalidateSize()
+          }, 200)
+        }}
+      >
+        <TileLayer
+          url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Wikimedia'
+          maxZoom={18}
+        />
+        <MapController />
+        {boundary.geoJson && (
+          <GeoJSON 
+            key={selectedUnit} // Force re-render when unit changes
+            data={boundary.geoJson as any}
+            style={highlightStyle}
+          />
+        )}
+      </MapContainer>
+      <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded shadow text-xs font-medium z-10">
+        {boundary.name}
+      </div>
+    </div>
+  )
+}
+
+function BroadCoverageForm({ 
+  onAdd 
+}: { 
+  onAdd: (location: Omit<BroadCoverageLocation, 'id'>) => void
+}) {
+  const [formData, setFormData] = useState({
+    admin_unit: '',
+    description: ''
+  })
+
+  const handleSubmit = () => {
+    if (!formData.admin_unit) {
+      toast.error('Please select an administrative unit')
+      return
+    }
+
+    onAdd({
+      admin_unit: formData.admin_unit,
+      description: formData.description
+    })
+
+    // Reset form
+    setFormData({
+      admin_unit: '',
+      description: ''
+    })
+    toast.success('Coverage area added successfully!')
+  }
+
+  const selectedUnitName = formData.admin_unit ? 
+    MYANMAR_ADMIN_UNITS.find(unit => unit.value === formData.admin_unit)?.label || formData.admin_unit :
+    null
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Administrative Unit Dropdown */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">
+          Administrative Unit <span className="text-red-500">*</span>
+        </Label>
+        <AdminUnitCombobox 
+          value={formData.admin_unit}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, admin_unit: value }))}
+        />
+      </div>
+
+      {/* Description */}
+      <div className="space-y-2">
+        <Label htmlFor="broad_description" className="text-sm font-medium">Description</Label>
+        <Textarea
+          id="broad_description"
+          value={formData.description}
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          placeholder="Describe the scope and nature of activities in this coverage area"
+          rows={3}
+          className="resize-none"
+        />
+      </div>
+
+      {/* Coverage Area Preview */}
+      {selectedUnitName && (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-gray-700">
+            Coverage Area Preview: <strong>{selectedUnitName}</strong>
+          </Label>
+          <MyanmarHighlightMap selectedUnit={formData.admin_unit} />
+        </div>
+      )}
+
+      {/* Add Button */}
+      <Button onClick={handleSubmit} className="w-full">
+        <Plus className="h-4 w-4 mr-2" />
+        Add Coverage Area
+      </Button>
+    </div>
+  )
+}
+
+// Location Cards
+function SiteLocationCard({ 
+  location, 
+  onEdit, 
+  onDelete 
+}: { 
+  location: SiteLocation
+  onEdit: () => void
+  onDelete: () => void 
+}) {
+  const category = LOCATION_CATEGORIES.find(cat => cat.value === location.category)
+
+  return (
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-base">{location.location_name}</CardTitle>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={onEdit}>
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 text-red-600" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-3">
+          {location.description && (
+            <p className="text-sm text-gray-600">{location.description}</p>
+          )}
+          
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="default">
+              {category?.label || location.category}
+            </Badge>
+          </div>
+
+          <div className="text-xs text-gray-500 space-y-1">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function BroadCoverageCard({ 
+  location, 
+  onEdit, 
+  onDelete 
+}: { 
+  location: BroadCoverageLocation
+  onEdit: () => void
+  onDelete: () => void 
+}) {
+  const adminUnit = MYANMAR_ADMIN_UNITS.find(unit => unit.value === location.admin_unit)
+  const boundary = MYANMAR_BOUNDARIES[location.admin_unit as keyof typeof MYANMAR_BOUNDARIES]
+
+  return (
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-base">{adminUnit?.label || location.admin_unit}</CardTitle>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={onEdit}>
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 text-red-600" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-3">
+          {location.description && (
+            <p className="text-sm text-gray-600">{location.description}</p>
+          )}
+          
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">
+              {adminUnit?.type === 'national' ? 'National Coverage' : 
+               adminUnit?.type === 'state' ? 'State Coverage' :
+               adminUnit?.type === 'region' ? 'Regional Coverage' :
+               adminUnit?.type === 'township' ? 'Township Coverage' :
+               adminUnit?.type === 'ward' ? 'Ward Coverage' :
+               'Area Coverage'}
+            </Badge>
+            {boundary && (
+              <Badge variant="outline" className="text-xs">
+                <MapPin className="h-3 w-3 mr-1" />
+                {boundary.name}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Main Dual Path Locations Tab Component
+export default function DualPathLocationsTab({ data, onChange }: DualPathLocationsTabProps) {
+  const [enableSiteLocations, setEnableSiteLocations] = useState(false)
+  const [enableBroadCoverage, setEnableBroadCoverage] = useState(false)
+
+  const handleAddSiteLocation = (locationData: Omit<SiteLocation, 'id'>) => {
+    const newLocation: SiteLocation = {
+      ...locationData,
+      id: `site_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    }
+    onChange({
+      ...data,
+      site_locations: [...data.site_locations, newLocation]
+    })
+  }
+
+  const handleAddBroadCoverage = (locationData: Omit<BroadCoverageLocation, 'id'>) => {
+    const newLocation: BroadCoverageLocation = {
+      ...locationData,
+      id: `broad_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    }
+    onChange({
+      ...data,
+      broad_coverage_locations: [...data.broad_coverage_locations, newLocation]
+    })
+  }
+
+  const handleDeleteSiteLocation = (locationId: string) => {
+    if (confirm('Are you sure you want to delete this site location?')) {
+      onChange({
+        ...data,
+        site_locations: data.site_locations.filter(loc => loc.id !== locationId)
+      })
+      toast.success('Site location deleted')
+    }
+  }
+
+  const handleDeleteBroadCoverage = (locationId: string) => {
+    if (confirm('Are you sure you want to delete this coverage area?')) {
+      onChange({
+        ...data,
+        broad_coverage_locations: data.broad_coverage_locations.filter(loc => loc.id !== locationId)
+      })
+      toast.success('Coverage area deleted')
+    }
+  }
+
+  const totalLocations = data.site_locations.length + data.broad_coverage_locations.length
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900">Activity Locations</h2>
+        <p className="text-sm text-gray-600">
+          Add specific locations and/or broader coverage areas where this activity takes place
+        </p>
+      </div>
+
+      {/* Section Toggles */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Specific Location Toggle */}
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <Checkbox 
+              id="enable-site-locations"
+              checked={enableSiteLocations}
+              onCheckedChange={setEnableSiteLocations}
+            />
+            <Label htmlFor="enable-site-locations" className="text-base font-medium">
+              Add a Specific Location
+            </Label>
+          </div>
+          <p className="text-sm text-gray-600">
+            Pin exact locations on a map (health centers, offices, etc.)
+          </p>
+          {enableSiteLocations && (
+            <div className="mt-4 pt-4 border-t bg-gray-50 -mx-4 -mb-4 px-4 pb-4">
+              <SiteLocationForm onAdd={handleAddSiteLocation} />
+            </div>
+          )}
+        </div>
+
+        {/* Broad Coverage Toggle */}
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <Checkbox 
+              id="enable-broad-coverage"
+              checked={enableBroadCoverage}
+              onCheckedChange={setEnableBroadCoverage}
+            />
+            <Label htmlFor="enable-broad-coverage" className="text-base font-medium">
+              Add a Broader Coverage Area
+            </Label>
+          </div>
+          <p className="text-sm text-gray-600">
+            Define coverage by administrative regions (townships, states, etc.)
+          </p>
+          {enableBroadCoverage && (
+            <div className="mt-4 pt-4 border-t bg-gray-50 -mx-4 -mb-4 px-4 pb-4">
+              <BroadCoverageForm onAdd={handleAddBroadCoverage} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Location Lists */}
+      {totalLocations > 0 && (
+        <div className="space-y-6">
+          {/* Site Locations */}
+          {data.site_locations.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-base font-medium text-gray-900 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-blue-600" />
+                Site Locations ({data.site_locations.length})
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {data.site_locations.map((location) => (
+                  <SiteLocationCard
+                    key={location.id}
+                    location={location}
+                    onEdit={() => toast.info('Edit functionality coming soon!')}
+                    onDelete={() => handleDeleteSiteLocation(location.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Broad Coverage Areas */}
+          {data.broad_coverage_locations.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-base font-medium text-gray-900 flex items-center gap-2">
+                <Globe className="h-4 w-4 text-green-600" />
+                Coverage Areas ({data.broad_coverage_locations.length})
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {data.broad_coverage_locations.map((location) => (
+                  <BroadCoverageCard
+                    key={location.id}
+                    location={location}
+                    onEdit={() => toast.info('Edit functionality coming soon!')}
+                    onDelete={() => handleDeleteBroadCoverage(location.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {totalLocations === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p className="text-lg font-medium">No locations added yet</p>
+          <p className="text-sm">Use the checkboxes above to enable location forms</p>
+        </div>
+      )}
+    </div>
+  )
+}

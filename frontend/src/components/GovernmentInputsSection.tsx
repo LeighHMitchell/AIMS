@@ -233,7 +233,7 @@ export default function GovernmentInputsSection({
               1. On-Budget Classification (per CABRI/SPA model)
               <Tooltip>
                 <TooltipTrigger>
-                  <HelpCircle className="h-4 w-4 text-gray-400" />
+                  <HelpCircle className="w-4 h-4 text-slate-500" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   <p>Classification based on the CABRI/SPA 2008 "Putting Aid on Budget" Good Practice Note six dimensions</p>
@@ -259,7 +259,7 @@ export default function GovernmentInputsSection({
                   On Plan
                   <Tooltip>
                     <TooltipTrigger>
-                      <HelpCircle className="h-3.5 w-3.5 text-gray-400" />
+                      <HelpCircle className="w-4 h-4 text-slate-500" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p>Reflected in government strategic planning documents or sector strategies</p>
@@ -295,7 +295,7 @@ export default function GovernmentInputsSection({
                   On Budget
                   <Tooltip>
                     <TooltipTrigger>
-                      <HelpCircle className="h-3.5 w-3.5 text-gray-400" />
+                      <HelpCircle className="w-4 h-4 text-slate-500" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p>Included in the government budget documentation (national budget book)</p>
@@ -331,7 +331,7 @@ export default function GovernmentInputsSection({
                   On Treasury
                   <Tooltip>
                     <TooltipTrigger>
-                      <HelpCircle className="h-3.5 w-3.5 text-gray-400" />
+                      <HelpCircle className="w-4 h-4 text-slate-500" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p>Funds are disbursed through the government's main Treasury system</p>
@@ -367,7 +367,7 @@ export default function GovernmentInputsSection({
                   On Parliament
                   <Tooltip>
                     <TooltipTrigger>
-                      <HelpCircle className="h-3.5 w-3.5 text-gray-400" />
+                      <HelpCircle className="w-4 h-4 text-slate-500" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p>Subject to parliamentary scrutiny (appropriated or reported in public financial statements)</p>
@@ -403,7 +403,7 @@ export default function GovernmentInputsSection({
                   On Procurement
                   <Tooltip>
                     <TooltipTrigger>
-                      <HelpCircle className="h-3.5 w-3.5 text-gray-400" />
+                      <HelpCircle className="w-4 h-4 text-slate-500" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p>Uses national procurement systems and follows national procurement rules</p>
@@ -439,7 +439,7 @@ export default function GovernmentInputsSection({
                   On Accounting/Audit
                   <Tooltip>
                     <TooltipTrigger>
-                      <HelpCircle className="h-3.5 w-3.5 text-gray-400" />
+                      <HelpCircle className="w-4 h-4 text-slate-500" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p>Reported through the government's accounting system and audited by national audit systems</p>

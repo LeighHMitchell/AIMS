@@ -4,16 +4,15 @@ export const USER_ROLES = {
   DEV_PARTNER_TIER_2: "dev_partner_tier_2",
   GOV_PARTNER_TIER_1: "gov_partner_tier_1", 
   GOV_PARTNER_TIER_2: "gov_partner_tier_2",
-  ORPHAN: "orphan"
 } as const;
 
 export const ROLE_LABELS = {
   [USER_ROLES.SUPER_USER]: "Super User",
   [USER_ROLES.DEV_PARTNER_TIER_1]: "Development Partner Tier 1",
   [USER_ROLES.DEV_PARTNER_TIER_2]: "Development Partner Tier 2",
-  [USER_ROLES.GOV_PARTNER_TIER_1]: "Partner Government Tier 1",
-  [USER_ROLES.GOV_PARTNER_TIER_2]: "Partner Government Tier 2",
-  [USER_ROLES.ORPHAN]: "Orphan User"
+  [USER_ROLES.GOV_PARTNER_TIER_1]: "Government User Tier 1",
+  [USER_ROLES.GOV_PARTNER_TIER_2]: "Government User Tier 2",
+  'admin': "Administrator", // Django admin role
 } as const;
 
 export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
@@ -29,12 +28,21 @@ export interface Organization {
 export interface User {
   id: string;
   email: string;
-  name: string;
-  role: UserRole;
+  name: string; // Computed from first_name + last_name for backward compatibility
+  firstName?: string;
+  lastName?: string;
+  organisation?: string;
+  department?: string;
+  jobTitle?: string;
+  telephone?: string;
+  website?: string;
+  mailingAddress?: string;
+  profilePicture?: string; // Data URL for profile image
+  role: UserRole | 'admin'; // Allow 'admin' from Django backend
   organizationId?: string;
-  organization?: Organization;
-  title?: string;
-  phone?: string;
+  organization?: Organization; // Legacy - for backward compatibility
+  title?: string; // Legacy - replaced by jobTitle
+  phone?: string; // Legacy - replaced by telephone
   isActive: boolean;
   lastLogin?: string;
   createdAt: string;
@@ -50,9 +58,10 @@ export interface UserPermissions {
   canViewAllActivities: boolean;
 }
 
-export function getUserPermissions(role: UserRole): UserPermissions {
+export function getUserPermissions(role: UserRole | string): UserPermissions {
   switch (role) {
     case USER_ROLES.SUPER_USER:
+    case 'admin': // Handle Django admin role
       return {
         canCreateActivities: true,
         canValidateActivities: true,
@@ -84,7 +93,6 @@ export function getUserPermissions(role: UserRole): UserPermissions {
         canViewAllActivities: false
       };
     
-    case USER_ROLES.ORPHAN:
     default:
       return {
         canCreateActivities: false,

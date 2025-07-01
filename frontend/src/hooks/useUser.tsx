@@ -22,24 +22,26 @@ const mockOrganizations: Organization[] = [
 ];
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    // Initialize user state immediately from localStorage if available
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('aims_user');
-      if (storedUser) {
-        try {
-          console.log("[useUser] Found stored user during initialization");
-          return JSON.parse(storedUser);
-        } catch (error) {
-          console.error('[useUser] Failed to parse stored user during init:', error);
-          localStorage.removeItem('aims_user');
-        }
+  const [user, setUser] = useState<User | null>(null); // Always start with null to prevent hydration mismatches
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+  const [isInitialized, setIsInitialized] = useState(false);
+  const router = useRouter();
+
+  // Load user from localStorage only after component mounts
+  useEffect(() => {
+    const storedUser = localStorage.getItem('aims_user');
+    if (storedUser) {
+      try {
+        console.log("[useUser] Found stored user after mount");
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('[useUser] Failed to parse stored user:', error);
+        localStorage.removeItem('aims_user');
       }
     }
-    return null;
-  });
-  const [isLoading, setIsLoading] = useState(false); // Start with false since we check synchronously
-  const router = useRouter();
+    setIsLoading(false);
+    setIsInitialized(true);
+  }, []);
 
   // Save user to localStorage when it changes
   const handleSetUser = (newUser: User | null) => {
@@ -51,9 +53,18 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setUser(newUser);
   };
 
-  const permissions = user ? getUserPermissions(user.role) : getUserPermissions(USER_ROLES.ORPHAN);
+  const permissions = user ? getUserPermissions(user.role) : getUserPermissions(USER_ROLES.DEV_PARTNER_TIER_2);
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Call Supabase logout endpoint
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('[useUser] Logout error:', error);
+    }
+    
     handleSetUser(null);
     router.push('/login');
   };
@@ -78,12 +89,17 @@ export const mockUsers: User[] = [
   {
     id: "1",
     name: "John Doe",
+    firstName: "John",
+    lastName: "Doe",
     email: "john@example.com",
     title: "System Administrator",
+    jobTitle: "System Administrator",
     role: USER_ROLES.SUPER_USER,
     organizationId: "1",
+    organisation: "World Bank",
     organization: mockOrganizations[0],
     phone: "555-1234",
+    telephone: "555-1234",
     isActive: true,
     lastLogin: new Date().toISOString(),
     createdAt: new Date().toISOString(),
@@ -92,12 +108,17 @@ export const mockUsers: User[] = [
   {
     id: "2",
     name: "Jane Smith",
+    firstName: "Jane",
+    lastName: "Smith",
     email: "jane@worldbank.org",
     title: "Senior Program Manager",
+    jobTitle: "Senior Program Manager",
     role: USER_ROLES.DEV_PARTNER_TIER_1,
     organizationId: "1",
+    organisation: "World Bank",
     organization: mockOrganizations[0],
     phone: "555-5678",
+    telephone: "555-5678",
     isActive: true,
     lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
@@ -106,12 +127,17 @@ export const mockUsers: User[] = [
   {
     id: "3",
     name: "Mike Johnson",
+    firstName: "Mike",
+    lastName: "Johnson",
     email: "mike@undp.org",
     title: "Project Coordinator",
+    jobTitle: "Project Coordinator",
     role: USER_ROLES.DEV_PARTNER_TIER_2,
     organizationId: "2",
+    organisation: "UNDP",
     organization: mockOrganizations[1],
     phone: "555-9012",
+    telephone: "555-9012",
     isActive: true,
     lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 60).toISOString(),
@@ -120,12 +146,17 @@ export const mockUsers: User[] = [
   {
     id: "4",
     name: "Sarah Williams",
+    firstName: "Sarah",
+    lastName: "Williams",
     email: "sarah@mof.gov",
     title: "Director of Aid Coordination",
+    jobTitle: "Director of Aid Coordination",
     role: USER_ROLES.GOV_PARTNER_TIER_1,
     organizationId: "3",
+    organisation: "Ministry of Finance",
     organization: mockOrganizations[2],
     phone: "555-3456",
+    telephone: "555-3456",
     isActive: true,
     lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90).toISOString(),
@@ -134,12 +165,17 @@ export const mockUsers: User[] = [
   {
     id: "5",
     name: "Tom Brown",
+    firstName: "Tom",
+    lastName: "Brown",
     email: "tom@moe.gov",
     title: "Aid Officer",
+    jobTitle: "Aid Officer",
     role: USER_ROLES.GOV_PARTNER_TIER_2,
     organizationId: "4",
+    organisation: "Ministry of Education",
     organization: mockOrganizations[3],
     phone: "555-7890",
+    telephone: "555-7890",
     isActive: true,
     lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 45).toISOString(),
@@ -148,12 +184,17 @@ export const mockUsers: User[] = [
   {
     id: "6",
     name: "Emily Davis",
+    firstName: "Emily",
+    lastName: "Davis",
     email: "emily@example.com",
     title: "Consultant",
-    role: USER_ROLES.ORPHAN,
-    organizationId: undefined,
-    organization: undefined,
+    jobTitle: "Consultant",
+    role: USER_ROLES.DEV_PARTNER_TIER_2,
+    organizationId: "2",
+    organisation: "UNDP",
+    organization: mockOrganizations[1],
     phone: "555-2345",
+    telephone: "555-2345",
     isActive: true,
     lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
@@ -162,12 +203,17 @@ export const mockUsers: User[] = [
   {
     id: "7",
     name: "David Wilson",
+    firstName: "David",
+    lastName: "Wilson",
     email: "david@inactive.com",
     title: "Former Advisor",
+    jobTitle: "Former Advisor",
     role: USER_ROLES.DEV_PARTNER_TIER_2,
     organizationId: "2",
+    organisation: "UNDP",
     organization: mockOrganizations[1],
     phone: "555-6789",
+    telephone: "555-6789",
     isActive: false,
     lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 24 * 180).toISOString(),
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365).toISOString(),

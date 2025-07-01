@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { ActivityLogger } from '@/lib/activity-logger';
 
 export interface Partner {
@@ -8,7 +8,6 @@ export interface Partner {
   code?: string;
   type?: string;
   iatiOrgId?: string;
-  fullName?: string;
   acronym?: string;
   organisationType?: string;
   description?: string;
@@ -26,23 +25,6 @@ export interface Partner {
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
 
-// Create Supabase admin client
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    console.error('[AIMS] Missing Supabase environment variables');
-    throw new Error('Missing required environment variables');
-  }
-
-  return createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  });
-}
 
 // Handle OPTIONS requests for CORS
 export async function OPTIONS() {
@@ -80,7 +62,7 @@ export async function GET(request: NextRequest) {
       // Map any missing fields that exist in Partner interface
       code: org.code || null,
       iatiOrgId: org.iati_org_id || null,
-      fullName: org.full_name || org.name,
+      name: org.name,
       acronym: org.acronym || null,
       organisationType: org.organisation_type || null,
       countryRepresented: org.country_represented || null,
@@ -122,7 +104,7 @@ export async function POST(request: NextRequest) {
       // Additional partner fields
       code: body.code || null,
       iati_org_id: body.iatiOrgId || null,
-      full_name: body.fullName || null,
+      // full_name removed - using name field only
       acronym: body.acronym || null,
       organisation_type: body.organisationType || null,
       description: body.description || null,
@@ -158,7 +140,6 @@ export async function POST(request: NextRequest) {
     const partner = {
       ...data,
       iatiOrgId: data.iati_org_id,
-      fullName: data.full_name,
       organisationType: data.organisation_type,
       countryRepresented: data.country_represented,
       createdAt: data.created_at,
@@ -191,7 +172,6 @@ export async function PUT(request: NextRequest) {
     const organizationUpdates = {
       ...updates,
       iati_org_id: updates.iatiOrgId || updates.iati_org_id,
-      full_name: updates.fullName || updates.full_name,
       organisation_type: updates.organisationType || updates.organisation_type,
       country_represented: updates.countryRepresented || updates.country_represented,
     };
@@ -225,7 +205,6 @@ export async function PUT(request: NextRequest) {
     const partner = {
       ...data,
       iatiOrgId: data.iati_org_id,
-      fullName: data.full_name,
       organisationType: data.organisation_type,
       countryRepresented: data.country_represented,
       createdAt: data.created_at,

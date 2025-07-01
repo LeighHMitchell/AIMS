@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
       description: data.description || "",
       organizationIds: data.organizationIds,
       createdBy: data.createdBy || "1",
-      createdByName: data.createdByName || "Unknown User"
+      createdByName: data.createdByName || "Unknown User",
+      isPublic: data.isPublic || false
     });
     
     return NextResponse.json(newGroup, { status: 201 });
@@ -121,7 +122,8 @@ export async function PUT(request: NextRequest) {
       {
         name: data.name,
         description: data.description,
-        organizationIds: data.organizationIds
+        organizationIds: data.organizationIds,
+        isPublic: data.isPublic
       },
       data.updatedBy || "1",
       data.updatedByName || "Unknown User"

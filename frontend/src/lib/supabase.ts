@@ -1,9 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+// Environment variables with validation
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+
+// Validate URL format
+function isValidUrl(url: string): boolean {
+  try {
+    new URL(url)
+    return true
+  } catch {
+    return false
+  }
+}
 
 // Log configuration status only once
 let hasLoggedConfig = false
@@ -20,8 +30,8 @@ let _supabaseAdmin: any = null
 
 // Helper function to create admin client with proper error handling
 function createAdminClient() {
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    console.error('[Supabase] Missing required environment variables for admin client')
+  if (!supabaseUrl || !supabaseServiceRoleKey || !isValidUrl(supabaseUrl)) {
+    console.error('[Supabase] Missing or invalid environment variables for admin client')
     return null
   }
 
@@ -47,7 +57,7 @@ function createAdminClient() {
 }
 
 // Client-side Supabase client (uses anon key)
-export const supabase = (supabaseUrl && supabaseAnonKey) 
+export const supabase = (supabaseUrl && supabaseAnonKey && isValidUrl(supabaseUrl)) 
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
@@ -56,11 +66,11 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
     })
   : null as any
 
-// Server-side Supabase client with singleton pattern
-export const supabaseAdmin = (() => {
+// Server-side Supabase client with lazy initialization
+export function getSupabaseAdmin() {
   if (typeof window !== 'undefined') {
     // Don't create admin client on client-side
-    return null as any
+    return null
   }
   
   if (!_supabaseAdmin) {
@@ -68,7 +78,7 @@ export const supabaseAdmin = (() => {
   }
   
   return _supabaseAdmin
-})()
+}
 
 // Database types (you can generate these from Supabase later)
 export type Database = {
@@ -77,18 +87,21 @@ export type Database = {
       activities: {
         Row: {
           id: string
-          partner_id: string | null
-          iati_id: string | null
-          title: string
-          description: string | null
-          objectives: string | null
-          target_groups: string | null
+          other_identifier: string | null
+          iati_identifier: string | null
+          title_narrative: string
+          description_narrative: string | null
+            created_by_org_name: string | null
+  created_by_org_acronym: string | null
           collaboration_type: string | null
           activity_status: string
           publication_status: string
           submission_status: string
           banner: string | null
-          created_by_org: string | null
+          icon: string | null
+          reporting_org_id: string | null
+          hierarchy: number
+          linked_data_uri: string | null
           planned_start_date: string | null
           planned_end_date: string | null
           actual_start_date: string | null
@@ -106,6 +119,8 @@ export type Database = {
           last_edited_by: string | null
           created_at: string
           updated_at: string
+          default_tied_status: string | null
+          default_currency: string | null
         }
         Insert: Omit<Database['public']['Tables']['activities']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['activities']['Insert']>
@@ -161,8 +176,20 @@ export type Database = {
         Row: {
           id: string
           name: string
+          acronym: string | null
           type: string | null
+          organisation_type: string | null
           country: string | null
+          country_represented: string | null
+          cooperation_modality: string | null
+          iati_org_id: string | null
+          description: string | null
+          website: string | null
+          email: string | null
+          phone: string | null
+          address: string | null
+          logo: string | null
+          banner: string | null
           created_at: string
           updated_at: string
         }

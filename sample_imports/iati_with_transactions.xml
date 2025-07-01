@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <!-- Activity with valid transactions -->
+  <iati-activity>
+    <iati-identifier>MM-SAMPLE-001</iati-identifier>
+    <title>
+      <narrative>Sample Health Project</narrative>
+    </title>
+    
+    <!-- Valid transaction -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-01-15"/>
+      <value currency="USD" value-date="2024-01-15">50000</value>
+      <description>
+        <narrative>First quarter disbursement</narrative>
+      </description>
+      <provider-org ref="GB-CHC-123456" type="21">
+        <narrative>International Health Foundation</narrative>
+      </provider-org>
+      <receiver-org ref="MM-GOV-MOH" type="10">
+        <narrative>Ministry of Health Myanmar</narrative>
+      </receiver-org>
+      <disbursement-channel code="2"/>
+      <sector code="12240" vocabulary="1"/>
+      <recipient-country code="MM"/>
+      <aid-type code="C01"/>
+      <flow-type code="10"/>
+      <tied-status code="5"/>
+    </transaction>
+    
+    <!-- Transaction with formatted value -->
+    <transaction>
+      <transaction-type code="2"/>
+      <transaction-date iso-date="2024-01-01"/>
+      <value currency="USD">$125,000.50</value>
+      <description>
+        <narrative>Commitment for 2024</narrative>
+      </description>
+    </transaction>
+    
+    <!-- Transaction with non-ISO date -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="15-02-2024"/>
+      <value currency="EUR">75000</value>
+    </transaction>
+  </iati-activity>
+  
+  <!-- Activity that might not exist in database -->
+  <iati-activity>
+    <iati-identifier>XX-UNKNOWN-999</iati-identifier>
+    <title>
+      <narrative>Unknown Project</narrative>
+    </title>
+    
+    <!-- Transaction for non-existent activity -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-03-01"/>
+      <value currency="USD">10000</value>
+      <description>
+        <narrative>This should fail - activity not in database</narrative>
+      </description>
+    </transaction>
+  </iati-activity>
+  
+  <!-- Activity with various transaction issues -->
+  <iati-activity>
+    <iati-identifier>MM-SAMPLE-002</iati-identifier>
+    <title>
+      <narrative>Education Support Program</narrative>
+    </title>
+    
+    <!-- Missing required fields -->
+    <transaction>
+      <transaction-type code="3"/>
+      <!-- Missing transaction date -->
+      <value currency="USD">5000</value>
+    </transaction>
+    
+    <!-- Invalid transaction type -->
+    <transaction>
+      <transaction-type code="99"/>
+      <transaction-date iso-date="2024-04-01"/>
+      <value currency="USD">15000</value>
+    </transaction>
+    
+    <!-- Missing value -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-04-15"/>
+      <!-- No value element -->
+    </transaction>
+    
+    <!-- Non-standard currency -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-05-01"/>
+      <value currency="GOLD">1000</value>
+    </transaction>
+    
+    <!-- Text-based transaction type -->
+    <transaction>
+      <transaction-type>Disbursement</transaction-type>
+      <transaction-date iso-date="2024-05-15"/>
+      <value currency="USD">25000</value>
+      <aid-type>C01</aid-type>
+      <flow-type>ODA</flow-type>
+      <tied-status>untied</tied-status>
+    </transaction>
+  </iati-activity>
+</iati-activities> 

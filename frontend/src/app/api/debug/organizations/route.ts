@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   console.log('[AIMS DEBUG] Comparing partners and organizations tables');
   
   try {
-    if (!supabaseAdmin) {
+    if (!getSupabaseAdmin()) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch from partners table
-    const { data: partners, error: partnersError } = await supabaseAdmin
+    const { data: partners, error: partnersError } = await getSupabaseAdmin()
       .from('partners')
       .select('id, name, type, created_at')
       .order('name');
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch from organizations table
-    const { data: organizations, error: orgsError } = await supabaseAdmin
+    const { data: organizations, error: orgsError } = await getSupabaseAdmin()
       .from('organizations')
       .select('id, name, type, created_at')
       .order('name');

@@ -8,7 +8,7 @@ export interface ProgressProps
 }
 
 const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
-  ({ className, value = 0, max = 100, ...props }, ref) => {
+  ({ className, value = 0, max = 100, style, ...props }, ref) => {
     const percentage = Math.min(Math.max(0, (value / max) * 100), 100)
 
     return (
@@ -18,12 +18,16 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
           "relative h-2 w-full overflow-hidden rounded-full bg-secondary",
           className
         )}
+        style={style}
         {...props}
       >
         <div
           className="h-full w-full flex-1 bg-primary transition-all"
           style={{
-            transform: `translateX(-${100 - percentage}%)`
+            transform: `translateX(-${100 - percentage}%)`,
+            backgroundColor: style && '--progress-foreground' in style 
+              ? (style as any)['--progress-foreground'] 
+              : undefined
           }}
         />
       </div>

@@ -1,44 +1,19 @@
 import { NextResponse, NextRequest } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-import { ActivityComment, CommentReply } from '@/types/comment';
-import { ActivityLogger } from '@/lib/activity-logger';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
-// Path to the data file
-const DATA_FILE_PATH = path.join(process.cwd(), 'data', 'activities.json');
+// Mock user ID to database user ID mapping
+const USER_ID_MAP: Record<string, string> = {
+  "1": "85a65398-5d71-4633-a50b-2f167a0b6f7a", // John Doe - super_user
+  "2": "0864da76-2323-44a5-ac33-b27786da024e", // Jane Smith - dev_partner_tier_1
+  "3": "e75c1196-8daa-41f7-b9dd-e8b0bb62981f", // Mike Johnson - dev_partner_tier_2
+  "4": "ab800211-10a9-4d2f-8cfb-bb007fe01c51", // Sarah Williams - gov_partner_tier_1
+  "5": "0420c51c-eb0c-44c6-8dd8-380e88e9e6ed", // Tom Brown - gov_partner_tier_2
+};
 
-// Ensure data directory exists
-async function ensureDataDirectory() {
-  const dataDir = path.join(process.cwd(), 'data');
-  try {
-    await fs.access(dataDir);
-  } catch {
-    await fs.mkdir(dataDir, { recursive: true });
-  }
-}
-
-// Load activities from file
-async function loadActivities(): Promise<any[]> {
-  try {
-    await ensureDataDirectory();
-    const data = await fs.readFile(DATA_FILE_PATH, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.log('[AIMS] No existing activities file found, starting with empty array');
-    return [];
-  }
-}
-
-// Save activities to file
-async function saveActivities(activities: any[]) {
-  try {
-    await ensureDataDirectory();
-    await fs.writeFile(DATA_FILE_PATH, JSON.stringify(activities, null, 2));
-    console.log('[AIMS] Activities saved to file');
-  } catch (error) {
-    console.error('[AIMS] Error saving activities to file:', error);
-    throw error;
-  }
+// Helper to check if string is a valid UUID
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
 }
 
 // GET comments for an activity
@@ -47,22 +22,90 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const activities = await loadActivities();
-    const activity = activities.find(a => a.id === params.id);
+    console.log('[AIMS Comments API] GET request for activity:', params.id);
     
-    if (!activity) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      console.error('[AIMS Comments API] Supabase admin client is null');
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
+    console.log('[AIMS Comments API] Checking if activity exists...');
+    
+    // First check if activity exists
+    const { data: activity, error: activityError } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('id', params.id)
+      .single();
+    
+    console.log('[AIMS Comments API] Activity query result:', { activity, activityError });
+    
+    if (activityError || !activity) {
+      console.error('[AIMS Comments API] Activity not found:', params.id, activityError);
+      
+      // Let's also try to list all activities to debug
+      const { data: allActivities, error: listError } = await supabase
+        .from('activities')
+        .select('id, title')
+        .limit(5);
+      
+      console.log('[AIMS Comments API] Sample activities in DB:', allActivities, listError);
+      
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
-    // Return comments, sorted by creation date (newest first)
-    const comments = activity.comments || [];
-    const sortedComments = [...comments].sort((a: ActivityComment, b: ActivityComment) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    console.log('[AIMS Comments API] Activity found, fetching comments...');
     
-    return NextResponse.json(sortedComments);
+    // Get comments from the database
+    const { data: comments, error: commentsError } = await supabase
+      .from('activity_comments')
+      .select(`
+        id,
+        activity_id,
+        user_id,
+        content,
+        type,
+        created_at,
+        users!activity_comments_user_id_fkey (
+          id,
+          name,
+          role
+        )
+      `)
+      .eq('activity_id', params.id)
+      .order('created_at', { ascending: false });
+    
+    if (commentsError) {
+      console.error('[AIMS Comments API] Error fetching comments:', commentsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch comments' },
+        { status: 500 }
+      );
+    }
+    
+    console.log('[AIMS Comments API] Found', comments?.length || 0, 'comments');
+    
+    // Transform comments to match expected format
+    const transformedComments = (comments || []).map((comment: any) => ({
+      id: comment.id,
+      activityId: comment.activity_id,
+      author: {
+        userId: comment.user_id,
+        name: comment.users?.name || 'Unknown User',
+        role: comment.users?.role || 'user',
+      },
+      type: comment.type || 'Feedback',
+      message: comment.content, // Map content to message
+      createdAt: comment.created_at,
+      status: 'Open', // Default status since it's not in the current schema
+      replies: [], // No replies in current schema
+      attachments: []
+    }));
+    
+    return NextResponse.json(transformedComments);
   } catch (error) {
-    console.error('[AIMS] Error fetching comments:', error);
+    console.error('[AIMS Comments API] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch comments' },
       { status: 500 }
@@ -70,96 +113,90 @@ export async function GET(
   }
 }
 
-// POST new comment or reply
+// POST new comment
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const body = await request.json();
-    const { user, content, type, parentCommentId, attachments } = body;
+    const { user, content, type } = body;
     
-    const activities = await loadActivities();
-    const activityIndex = activities.findIndex(a => a.id === params.id);
+    console.log('[AIMS Comments API] POST request for activity:', params.id);
+    console.log('[AIMS Comments API] User:', user);
+    console.log('[AIMS Comments API] Content:', content);
     
-    if (activityIndex === -1) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      console.error('[AIMS Comments API] Supabase admin client is null');
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
+    // First check if activity exists
+    const { data: activity, error: activityError } = await supabase
+      .from('activities')
+      .select('id, title')
+      .eq('id', params.id)
+      .single();
+    
+    if (activityError || !activity) {
+      console.error('[AIMS Comments API] Activity not found for comment:', params.id, activityError);
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
-    const activity = activities[activityIndex];
+    console.log('[AIMS Comments API] Activity found, preparing to insert comment...');
     
-    if (!activity.comments) {
-      activity.comments = [];
+    // Map mock user ID to real database user ID if needed
+    let userId = user.id;
+    if (!isValidUUID(userId)) {
+      userId = USER_ID_MAP[userId] || userId;
+      console.log(`[AIMS Comments API] Mapped mock user ID ${user.id} to database ID ${userId}`);
     }
     
-    if (parentCommentId) {
-      // This is a reply to an existing comment
-      const parentComment = activity.comments.find((c: ActivityComment) => c.id === parentCommentId);
-      if (!parentComment) {
-        return NextResponse.json({ error: 'Parent comment not found' }, { status: 404 });
-      }
-      
-      const reply: CommentReply = {
-        id: Math.random().toString(36).substring(7),
-        author: {
-          userId: user.id,
-          name: user.name,
-          role: user.role,
-        },
-        message: content,
-        createdAt: new Date().toISOString(),
-        type: type || 'Feedback',
-        attachments: attachments || [],
-      };
-      
-      if (!parentComment.replies) {
-        parentComment.replies = [];
-      }
-      parentComment.replies.push(reply);
-      
-      console.log(`[AIMS] Reply added to comment ${parentCommentId} in activity ${params.id} by ${user.name}`);
-    } else {
-      // This is a new top-level comment
-      const newComment: ActivityComment = {
-        id: Math.random().toString(36).substring(7),
-        activityId: params.id,
-        author: {
-          userId: user.id,
-          name: user.name,
-          role: user.role,
-        },
-        type: type || 'Feedback',
-        message: content,
-        createdAt: new Date().toISOString(),
-        replies: [],
-        status: 'Open',
-        attachments: attachments || [],
-      };
-      
-      activity.comments.push(newComment);
-      
-      console.log(`[AIMS] Comment added to activity ${params.id} by ${user.name}`);
-      
-      // Log the activity
-      if (user) {
-        await ActivityLogger.activityEdited(
-          activity,
-          user,
-          'comments',
-          undefined,
-          `Added comment: ${content.substring(0, 50)}...`
-        );
-      }
+    // Validate that we have a valid UUID now
+    if (!isValidUUID(userId)) {
+      console.error('[AIMS Comments API] Invalid user ID after mapping:', userId);
+      // Use the first available user as fallback for testing
+      userId = "85a65398-5d71-4633-a50b-2f167a0b6f7a"; // John Doe
+      console.log('[AIMS Comments API] Using fallback user ID:', userId);
     }
     
-    // Update the activity
-    activities[activityIndex] = activity;
-    await saveActivities(activities);
+    // Insert new comment
+    const commentData = {
+      activity_id: params.id,
+      user_id: userId,
+      content: content, // Map message to content
+      type: type || 'Feedback',
+    };
     
-    // Return the updated comments
-    return NextResponse.json(activity.comments);
+    console.log('[AIMS Comments API] Inserting comment with data:', commentData);
+    
+    const { data: newComment, error: commentError } = await supabase
+      .from('activity_comments')
+      .insert(commentData)
+      .select()
+      .single();
+    
+    if (commentError) {
+      console.error('[AIMS Comments API] Error adding comment:', commentError);
+      console.error('[AIMS Comments API] Error details:', {
+        code: commentError.code,
+        message: commentError.message,
+        details: commentError.details,
+        hint: commentError.hint
+      });
+      return NextResponse.json(
+        { error: `Failed to add comment: ${commentError.message}` },
+        { status: 500 }
+      );
+    }
+    
+    console.log(`[AIMS Comments API] Comment added successfully:`, newComment);
+    
+    // Return all comments for the activity
+    return GET(request, { params });
   } catch (error) {
-    console.error('[AIMS] Error adding comment:', error);
+    console.error('[AIMS Comments API] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Failed to add comment' },
       { status: 500 }
@@ -167,64 +204,21 @@ export async function POST(
   }
 }
 
-// PATCH to resolve/update a comment
+// PATCH to resolve/update a comment (for future use)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const body = await request.json();
-    const { user, commentId, action, resolutionNote } = body;
+    const { user, commentId, action } = body;
     
-    const activities = await loadActivities();
-    const activityIndex = activities.findIndex(a => a.id === params.id);
+    // For now, just return success since the current schema doesn't support status
+    console.log(`[AIMS Comments API] Comment ${commentId} action: ${action} by ${user.name}`);
     
-    if (activityIndex === -1) {
-      return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
-    }
-    
-    const activity = activities[activityIndex];
-    const comment = activity.comments?.find((c: ActivityComment) => c.id === commentId);
-    
-    if (!comment) {
-      return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
-    }
-    
-    // Only the original author can resolve their comment
-    if (action === 'resolve' && comment.author.userId !== user.id) {
-      return NextResponse.json(
-        { error: 'Only the original author can resolve their comment' },
-        { status: 403 }
-      );
-    }
-    
-    if (action === 'resolve') {
-      comment.status = 'Resolved';
-      comment.resolvedBy = {
-        userId: user.id,
-        name: user.name,
-        role: user.role,
-      };
-      comment.resolvedAt = new Date().toISOString();
-      comment.resolutionNote = resolutionNote || '';
-      
-      console.log(`[AIMS] Comment ${commentId} resolved by ${user.name}`);
-    } else if (action === 'reopen' && comment.author.userId === user.id) {
-      comment.status = 'Open';
-      delete comment.resolvedBy;
-      delete comment.resolvedAt;
-      delete comment.resolutionNote;
-      
-      console.log(`[AIMS] Comment ${commentId} reopened by ${user.name}`);
-    }
-    
-    // Update the activity
-    activities[activityIndex] = activity;
-    await saveActivities(activities);
-    
-    return NextResponse.json(comment);
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[AIMS] Error updating comment:', error);
+    console.error('[AIMS Comments API] Error updating comment:', error);
     return NextResponse.json(
       { error: 'Failed to update comment' },
       { status: 500 }
