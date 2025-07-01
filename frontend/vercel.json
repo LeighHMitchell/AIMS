@@ -5,13 +5,13 @@
   "installCommand": "npm ci",
   "framework": "nextjs",
   "functions": {
-    "api/activities/route.ts": {
+    "src/app/api/activities/route.ts": {
       "maxDuration": 60
     },
-    "api/partners/summary/route.ts": {
+    "src/app/api/partners/summary/route.ts": {
       "maxDuration": 60
     },
-    "api/transactions/route.ts": {
+    "src/app/api/transactions/route.ts": {
       "maxDuration": 60
     }
   },
