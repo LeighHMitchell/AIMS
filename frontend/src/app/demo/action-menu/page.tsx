@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { MoreVertical, Edit, Trash2, Eye, Download, Share, Copy } from "lucide-react"
@@ -48,10 +47,8 @@ export default function ActionMenuDemoPage() {
               <div className="flex items-center gap-4">
                 <span className="text-sm">Click the menu to see available actions:</span>
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" className="p-0 h-auto">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                  <PopoverTrigger className="p-0 h-auto hover:bg-gray-100 rounded-sm">
+                    <MoreVertical className="h-4 w-4" />
                   </PopoverTrigger>
                   <PopoverContent className="w-32 p-1">
                     <button 
@@ -105,10 +102,8 @@ export default function ActionMenuDemoPage() {
                       <TableCell>
                         <div className="flex justify-end">
                           <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="ghost" className="p-0 h-auto">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
+                            <PopoverTrigger className="p-0 h-auto hover:bg-gray-100 rounded-sm">
+                              <MoreVertical className="h-4 w-4" />
                             </PopoverTrigger>
                             <PopoverContent className="w-32 p-1">
                               <button 
@@ -149,10 +144,8 @@ export default function ActionMenuDemoPage() {
               <div className="flex items-center gap-4">
                 <span className="text-sm">Example with more actions:</span>
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" className="p-0 h-auto">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                  <PopoverTrigger className="p-0 h-auto hover:bg-gray-100 rounded-sm">
+                    <MoreVertical className="h-4 w-4" />
                   </PopoverTrigger>
                   <PopoverContent className="w-40 p-1">
                     <button 
@@ -212,10 +205,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button"
 
 <Popover>
-  <PopoverTrigger asChild>
-    <Button variant="ghost" className="p-0 h-auto">
-      <MoreVertical className="h-4 w-4" />
-    </Button>
+  <PopoverTrigger className="p-0 h-auto hover:bg-gray-100 rounded-sm">
+    <MoreVertical className="h-4 w-4" />
   </PopoverTrigger>
   <PopoverContent className="w-32 p-1">
     <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm" onClick={handleEdit}>
