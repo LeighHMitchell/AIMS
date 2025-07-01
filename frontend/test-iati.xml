@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>TEST-ACT-001</iati-identifier>
+    <reporting-org ref="TEST-ORG-001" type="40">
+      <narrative>Test Development Bank (TDB)</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Test Health Project in Myanmar</narrative>
+    </title>
+    <description>
+      <narrative>A test project to improve health services</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date type="2" iso-date="2024-01-01"/>
+    <activity-date type="3" iso-date="2025-12-31"/>
+    <participating-org ref="TEST-ORG-001" type="40" role="1">
+      <narrative>Test Development Bank (TDB)</narrative>
+    </participating-org>
+    <participating-org ref="TEST-ORG-002" type="22" role="2">
+      <narrative>Myanmar Health Foundation (MHF)</narrative>
+    </participating-org>
+    <recipient-country code="MM"/>
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-03-01"/>
+      <value currency="USD" value-date="2024-03-01">100000</value>
+      <description>
+        <narrative>First disbursement</narrative>
+      </description>
+    </transaction>
+  </iati-activity>
+</iati-activities>

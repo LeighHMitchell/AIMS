@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { findSimilarProjects } from '@/lib/project-matching';
 import { PROJECT_STATUS } from '@/types/project';
 
@@ -18,9 +18,9 @@ export async function OPTIONS() {
 // GET /api/projects - Get all projects or search for similar projects
 export async function GET(request: NextRequest) {
   try {
-    // Check if supabaseAdmin is properly initialized
-    if (!supabaseAdmin) {
-      console.error('[AIMS] supabaseAdmin is not initialized');
+    // Check if getSupabaseAdmin is properly initialized
+    if (!getSupabaseAdmin()) {
+      console.error('[AIMS] getSupabaseAdmin() is not initialized');
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     // Build query
-    let query = supabaseAdmin
+    let query = getSupabaseAdmin()
       .from('projects')
       .select('*')
       .order('created_at', { ascending: false });
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicates
-    const { data: existingProjects } = await supabaseAdmin
+    const { data: existingProjects } = await getSupabaseAdmin()
       .from('projects')
       .select('*');
     
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
       currency: body.currency || 'USD',
     };
 
-    const { data: newProject, error } = await supabaseAdmin
+    const { data: newProject, error } = await getSupabaseAdmin()
       .from('projects')
       .insert([projectData])
       .select()
@@ -256,7 +256,7 @@ export async function PATCH(request: NextRequest) {
     if (updates.budget !== undefined) updateData.budget = updates.budget;
     if (updates.currency !== undefined) updateData.currency = updates.currency;
 
-    const { data: updatedProject, error } = await supabaseAdmin
+    const { data: updatedProject, error } = await getSupabaseAdmin()
       .from('projects')
       .update(updateData)
       .eq('id', id)
@@ -323,7 +323,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('projects')
       .delete()
       .eq('id', id);

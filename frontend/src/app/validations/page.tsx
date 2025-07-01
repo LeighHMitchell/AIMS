@@ -18,7 +18,9 @@ import {
   Clock,
   AlertCircle,
   Filter
-} from "lucide-react";
+} from "lucide-react"
+import { ValidationQueueSkeleton } from "@/components/skeletons/ValidationQueueSkeleton";
+import { StatusIcon } from "@/components/ui/status-icon";
 
 interface Activity {
   id: string;
@@ -84,11 +86,7 @@ export default function ValidationsPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-slate-50">
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <p className="text-muted-foreground">Loading validation queue...</p>
-          </div>
-        </div>
+        <ValidationQueueSkeleton />
       </MainLayout>
     );
   }
@@ -202,15 +200,10 @@ export default function ValidationsPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold">{activity.title}</h3>
-                          <Badge 
-                            variant={
-                              activity.submissionStatus === 'submitted' ? 'default' :
-                              activity.submissionStatus === 'validated' ? 'success' :
-                              activity.submissionStatus === 'rejected' ? 'destructive' : 'secondary'
-                            }
-                          >
-                            {activity.submissionStatus}
-                          </Badge>
+                          <StatusIcon 
+                            type="submission" 
+                            status={activity.submissionStatus || 'draft'} 
+                          />
                         </div>
                         
                         {activity.description && (

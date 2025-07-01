@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { ActivityLogger } from '@/lib/activity-logger';
-import { calculateOrgClassification } from '@/components/OrganizationFieldHelpers';
 
 export interface Partner {
   id: string;
@@ -9,13 +8,8 @@ export interface Partner {
   code?: string;
   type?: string;
   iatiOrgId?: string;
-  fullName?: string;
   acronym?: string;
   organisationType?: string;
-  cooperationModality?: 'Multilateral' | 'Regional' | 'External' | 'Internal' | 'Global' | 'Other';
-  isDevelopmentPartner?: boolean;
-  orgClassification?: 'Development Partner' | 'Partner Government' | 'Civil Society – International' | 'Civil Society – Domestic' | 'Private Sector – International' | 'Private Sector – Domestic' | 'Other';
-  orgClassificationOverride?: boolean;
   description?: string;
   website?: string;
   email?: string;
@@ -31,23 +25,6 @@ export interface Partner {
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
 
-// Create Supabase admin client
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    console.error('[AIMS] Missing Supabase environment variables');
-    throw new Error('Missing required environment variables');
-  }
-
-  return createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  });
-}
 
 // Handle OPTIONS requests for CORS
 export async function OPTIONS() {
@@ -61,96 +38,37 @@ export async function OPTIONS() {
 // GET /api/partners
 export async function GET(request: NextRequest) {
   try {
-    console.log('[AIMS] GET /api/partners - Starting request');
+    console.log('[AIMS] GET /api/partners (using organizations table)');
     
-    // Try Supabase first if available
-    try {
-      console.log('[AIMS] Attempting Supabase fetch...');
-      
-      // Create Supabase client
-      const supabaseAdmin = getSupabaseAdmin();
-      
-      // Query organizations table instead of partners
-      const { data, error } = await supabaseAdmin
-        .from('organizations')
-        .select('*')
-        .order('name');
+    // Create Supabase client
+    const supabaseAdmin = getSupabaseAdmin();
+    
+    // Query organizations table instead of partners
+    const { data, error } = await supabaseAdmin
+      .from('organizations')
+      .select('*')
+      .order('name');
 
-      if (error) {
-        console.error('[AIMS] Supabase error fetching organizations:', error);
-        throw new Error(`Supabase error: ${error.message}`);
-      }
-
-      console.log('[AIMS] Found organizations in Supabase:', data?.length || 0);
-
-      // Transform to match partner interface if needed
-      const partners = data?.map((org: any) => {
-        const isDevelopmentPartner = org.is_development_partner;
-        const countryRepresented = org.country_represented || org.country || null;
-        const organisationType = org.organisation_type || null;
-        const orgClassificationOverride = org.org_classification_override || false;
-        
-        return {
-          ...org,
-          // Map any missing fields that exist in Partner interface
-          code: org.code || null,
-          iatiOrgId: org.iati_org_id || null,
-          fullName: org.full_name || org.name,
-          acronym: org.acronym || null,
-          organisationType,
-          cooperationModality: org.cooperation_modality || null,
-          isDevelopmentPartner,
-          countryRepresented,
-          orgClassificationOverride,
-          // Calculate classification automatically
-          orgClassification: calculateOrgClassification(
-            countryRepresented || "",
-            organisationType || "",
-            isDevelopmentPartner
-          ),
-        };
-      }) || [];
-
-      return NextResponse.json(partners);
-      
-    } catch (supabaseError) {
-      console.log('[AIMS] Supabase failed, falling back to file storage:', supabaseError);
-      
-      // Fallback to file-based storage
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      
-      const partnersFilePath = path.join(process.cwd(), 'data', 'partners.json');
-      
-      try {
-        const fileContent = await fs.readFile(partnersFilePath, 'utf-8');
-        const partners = JSON.parse(fileContent);
-        
-        console.log('[AIMS] Successfully loaded partners from file:', partners?.length || 0);
-        
-        // Ensure partners is an array
-        const partnersArray = Array.isArray(partners) ? partners : [];
-        
-        // Transform partners to ensure they have the required structure and calculated classifications
-        const transformedPartners = partnersArray.map((partner: any) => ({
-          ...partner,
-          // Calculate classification automatically
-          orgClassification: calculateOrgClassification(
-            partner.countryRepresented || "",
-            partner.organisationType || "",
-            partner.isDevelopmentPartner
-          ),
-        }));
-        
-        return NextResponse.json(transformedPartners);
-        
-      } catch (fileError) {
-        console.error('[AIMS] Error reading partners file:', fileError);
-        // Return empty array if file doesn't exist or is invalid
-        return NextResponse.json([]);
-      }
+    if (error) {
+      console.error('[AIMS] Error fetching organizations:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
+
+    console.log('[AIMS] Found organizations:', data?.length || 0);
+
+    // Transform to match partner interface if needed
+    const partners = data?.map((org: any) => ({
+      ...org,
+      // Map any missing fields that exist in Partner interface
+      code: org.code || null,
+      iatiOrgId: org.iati_org_id || null,
+      name: org.name,
+      acronym: org.acronym || null,
+      organisationType: org.organisation_type || null,
+      countryRepresented: org.country_represented || null,
+    })) || [];
+
+    return NextResponse.json(partners);
   } catch (error) {
     console.error('[AIMS] Unexpected error in GET /api/partners:', error);
     console.error('[AIMS] Error details:', {
@@ -186,13 +104,9 @@ export async function POST(request: NextRequest) {
       // Additional partner fields
       code: body.code || null,
       iati_org_id: body.iatiOrgId || null,
-      full_name: body.fullName || null,
+      // full_name removed - using name field only
       acronym: body.acronym || null,
       organisation_type: body.organisationType || null,
-      cooperation_modality: body.cooperationModality || null,
-      is_development_partner: body.isDevelopmentPartner || false,
-      org_classification_override: body.orgClassificationOverride || false,
-      org_classification_manual: body.orgClassificationOverride ? body.orgClassification : null,
       description: body.description || null,
       logo: body.logo || null,
       banner: body.banner || null,
@@ -223,26 +137,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Transform back to partner format for frontend compatibility
-    const isDevelopmentPartner = data.is_development_partner;
-    const countryRepresented = data.country_represented || data.country || null;
-    const organisationType = data.organisation_type || null;
-    const orgClassificationOverride = data.org_classification_override || false;
-    
     const partner = {
       ...data,
       iatiOrgId: data.iati_org_id,
-      fullName: data.full_name,
-      organisationType,
-      cooperationModality: data.cooperation_modality,
-      isDevelopmentPartner,
-      countryRepresented,
-      orgClassificationOverride,
-      // Calculate classification automatically
-      orgClassification: calculateOrgClassification(
-        countryRepresented || "",
-        organisationType || "",
-        isDevelopmentPartner
-      ),
+      organisationType: data.organisation_type,
+      countryRepresented: data.country_represented,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -258,174 +157,64 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, user, ...updates } = body;  // Extract user separately so it's not included in updates
+    const { id, ...updates } = body;
 
-    console.log('[AIMS] PUT /api/partners - Updating:', id);
-    console.log('[AIMS] Request body:', JSON.stringify(body, null, 2));
+    console.log('[AIMS] PUT /api/partners (using organizations table) - Updating:', id);
 
     if (!id) {
       return NextResponse.json({ error: 'Partner ID is required' }, { status: 400 });
     }
 
-    // Try Supabase first if available
-    try {
-      console.log('[AIMS] Attempting Supabase update...');
-      
-      // Create Supabase client
-      const supabaseAdmin = getSupabaseAdmin();
+    // Create Supabase client
+    const supabaseAdmin = getSupabaseAdmin();
 
-      // Map partner fields to organization fields
-      const organizationUpdates = {
-        ...updates,
-        iati_org_id: updates.iatiOrgId || updates.iati_org_id,
-        full_name: updates.fullName || updates.full_name,
-        organisation_type: updates.organisationType || updates.organisation_type,
-        cooperation_modality: updates.cooperationModality || updates.cooperation_modality,
-        country_represented: updates.countryRepresented || updates.country_represented,
-      };
+    // Map partner fields to organization fields
+    const organizationUpdates = {
+      ...updates,
+      iati_org_id: updates.iatiOrgId || updates.iati_org_id,
+      organisation_type: updates.organisationType || updates.organisation_type,
+      country_represented: updates.countryRepresented || updates.country_represented,
+    };
 
-      // Remove camelCase fields and fields that don't exist in Supabase
-      delete organizationUpdates.iatiOrgId;
-      delete organizationUpdates.fullName;
-      delete organizationUpdates.organisationType;
-      delete organizationUpdates.cooperationModality;
-      delete organizationUpdates.isDevelopmentPartner;
-      delete organizationUpdates.countryRepresented;
-      delete organizationUpdates.orgClassificationOverride;
-      delete organizationUpdates.orgClassificationManual;
-      delete organizationUpdates.orgClassification; // This column doesn't exist in Supabase
-      
-      // Ensure we never try to update the id or any other system fields
-      delete organizationUpdates.id;
-      delete organizationUpdates.created_at;
-      delete organizationUpdates.updated_at;
+    // Remove camelCase fields
+    delete organizationUpdates.iatiOrgId;
+    delete organizationUpdates.fullName;
+    delete organizationUpdates.organisationType;
+    delete organizationUpdates.countryRepresented;
 
-      console.log('[AIMS] Organization updates to apply:', JSON.stringify(organizationUpdates, null, 2));
+    const { data, error } = await supabaseAdmin
+      .from('organizations')
+      .update(organizationUpdates)
+      .eq('id', id)
+      .select()
+      .single();
 
-      const { data, error } = await supabaseAdmin
-        .from('organizations')
-        .update(organizationUpdates)
-        .eq('id', id)
-        .select()
-        .single();
+    if (error) {
+      console.error('[AIMS] Error updating organization:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
-      if (error) {
-        console.error('[AIMS] Supabase error updating organization:', error);
-        throw new Error(`Supabase error: ${error.message}`);
-      }
-
-      console.log('[AIMS] Updated organization in Supabase:', data);
-      
-      // Log the activity if user information is provided
-      if (user) {
-        try {
-          await ActivityLogger.partnerUpdated(data, user);
-        } catch (logError) {
-          console.warn('[AIMS] Failed to log activity:', logError);
-        }
-      }
-      
-      // Transform back to partner format
-      const isDevelopmentPartner = data.is_development_partner;
-      const countryRepresented = data.country_represented || data.country || null;
-      const organisationType = data.organisation_type || null;
-      const orgClassificationOverride = data.org_classification_override || false;
-      
-      const partner = {
-        ...data,
-        iatiOrgId: data.iati_org_id,
-        fullName: data.full_name,
-        organisationType,
-        cooperationModality: data.cooperation_modality,
-        isDevelopmentPartner,
-        countryRepresented,
-        orgClassificationOverride,
-        // Calculate classification automatically
-        orgClassification: calculateOrgClassification(
-          countryRepresented || "",
-          organisationType || "",
-          isDevelopmentPartner
-        ),
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      };
-
-      return NextResponse.json(partner);
-      
-    } catch (supabaseError) {
-      console.log('[AIMS] Supabase failed, falling back to file storage:', supabaseError);
-      
-      // Fallback to file-based storage
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      
-      const partnersFilePath = path.join(process.cwd(), 'data', 'partners.json');
-      
-      try {
-        // Read existing partners
-        let partners: any[] = [];
-        try {
-          const fileContent = await fs.readFile(partnersFilePath, 'utf-8');
-          partners = JSON.parse(fileContent);
-          if (!Array.isArray(partners)) {
-            partners = [];
-          }
-        } catch (fileError) {
-          console.log('[AIMS] Partners file not found, creating empty array');
-          partners = [];
-        }
-
-        // Find and update the partner
-        const partnerIndex = partners.findIndex(p => p.id === id);
-        
-        if (partnerIndex === -1) {
-          return NextResponse.json(
-            { error: 'Partner not found' },
-            { status: 404 }
-          );
-        }
-
-        const existingPartner = partners[partnerIndex];
-        
-        // Merge updates with existing data
-        const updatedPartner = {
-          ...existingPartner,
-          ...updates,
-          id, // Ensure ID doesn't change
-          updatedAt: new Date().toISOString(),
-          // Calculate classification automatically
-          orgClassification: calculateOrgClassification(
-            updates.countryRepresented || existingPartner.countryRepresented || "",
-            updates.organisationType || existingPartner.organisationType || "",
-            updates.isDevelopmentPartner !== undefined ? updates.isDevelopmentPartner : existingPartner.isDevelopmentPartner
-          ),
-        };
-
-        // Replace the partner in the array
-        partners[partnerIndex] = updatedPartner;
-
-        // Save back to file
-        await fs.writeFile(partnersFilePath, JSON.stringify(partners, null, 2));
-        
-        console.log('[AIMS] Successfully updated partner in file storage');
-        
-        return NextResponse.json(updatedPartner);
-        
-      } catch (fileError) {
-        console.error('[AIMS] Error updating partner in file storage:', fileError);
-        return NextResponse.json(
-          { error: 'Failed to update partner' },
-          { status: 500 }
-        );
-      }
+    console.log('[AIMS] Updated organization:', data);
+    
+    // Log the activity if user information is provided
+    if (body.user) {
+      await ActivityLogger.partnerUpdated(data, body.user);
     }
     
+    // Transform back to partner format
+    const partner = {
+      ...data,
+      iatiOrgId: data.iati_org_id,
+      organisationType: data.organisation_type,
+      countryRepresented: data.country_represented,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+
+    return NextResponse.json(partner);
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

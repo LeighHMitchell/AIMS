@@ -1,547 +1,289 @@
-"use client"
-import React, { useState, useEffect, KeyboardEvent } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Tag, TrendingUp, Users, Sparkles, Plus, X, Hash, HelpCircle, Flame, Pin, UserPlus, PenTool } from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { useUser } from "@/hooks/useUser";
+"use client";
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { X, Hash } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { toast } from 'sonner';
+import { useUser } from '@/hooks/useUser';
 
 interface Tag {
   id: string;
   name: string;
-  vocabulary: string;
-  code: string;
-  description?: string;
-  usage_count: number;
-}
-
-interface ActivityTag {
-  tag_id: string;
-  tagged_by: string;
-  tagged_at: string;
-  tags: Tag;
+  created_by?: string;
 }
 
 interface TagsSectionProps {
   activityId?: string;
-  tags: string[];
-  onChange: (tags: string[]) => void;
-  sectors?: any[];
+  tags: Tag[];
+  onChange: (tags: Tag[]) => void;
 }
 
-export default function TagsSection({ activityId, tags, onChange, sectors = [] }: TagsSectionProps) {
+export default function TagsSection({ activityId, tags, onChange }: TagsSectionProps) {
   const { user } = useUser();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [allTags, setAllTags] = useState<Tag[]>([]);
-  const [popularTags, setPopularTags] = useState<Tag[]>([]);
-  const [similarActivityTags, setSimilarActivityTags] = useState<Tag[]>([]);
-  const [otherUserTags, setOtherUserTags] = useState<Tag[]>([]);
-  const [userCreatedTags, setUserCreatedTags] = useState<Tag[]>([]);
-  const [activityTags, setActivityTags] = useState<ActivityTag[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
-  const [databaseError, setDatabaseError] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<Tag[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [apiAvailable, setApiAvailable] = useState(true);
 
-  // Fetch tags data
-  useEffect(() => {
-    fetchTags();
-    if (activityId) {
-      fetchActivityTags();
-    }
-  }, [activityId]);
-
-  // Filter search results
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = allTags.filter(tag => 
-        tag.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !tags.includes(tag.id)
-      );
-      setSearchResults(filtered);
-      setShowSuggestions(true);
-    } else {
-      setSearchResults([]);
-      setShowSuggestions(false);
-    }
-  }, [searchQuery, allTags, tags]);
-
-  const fetchTags = async () => {
-    try {
-      // Fetch all tags for search
-      const res = await fetch(`/api/tags?limit=200`);
-      if (!res.ok) {
-        if (res.status === 503) {
-          const error = await res.json();
-          setDatabaseError(error.details || error.error);
-          return;
-        }
-      } else {
-        const data = await res.json();
-        setAllTags(data);
-        setDatabaseError(null);
-        
-        // Identify user-created tags (vocabulary=99)
-        const userTags = data.filter((tag: Tag) => tag.vocabulary === '99' && tags.includes(tag.id));
-        setUserCreatedTags(userTags);
-      }
-
-      // Fetch popular tags
-      const popularRes = await fetch(`/api/tags?popular=true&limit=10`);
-      if (popularRes.ok) {
-        const data = await popularRes.json();
-        setPopularTags(data);
-      }
-
-      // TODO: Fetch similar activity tags based on sectors/location
-      // For now, we'll use a subset of popular tags as a placeholder
-      if (sectors && sectors.length > 0) {
-        // This would ideally call an API endpoint that finds tags from similar activities
-        setSimilarActivityTags(popularTags.slice(0, 5));
-      }
-    } catch (error) {
-      console.error("Error fetching tags:", error);
-    }
-  };
-
-  const fetchActivityTags = async () => {
-    try {
-      const res = await fetch(`/api/tags?activityId=${activityId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setActivityTags(data.activityTags || []);
-        
-        // Get tags added by other users
-        const otherTags = (data.activityTags || [])
-          .filter((at: ActivityTag) => at.tagged_by !== user?.id)
-          .map((at: ActivityTag) => at.tags)
-          .filter((tag: Tag) => tag && !tags.includes(tag.id));
-        
-        setOtherUserTags(otherTags);
-      }
-    } catch (error) {
-      console.error("Error fetching activity tags:", error);
-    }
-  };
-
-  const handleKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
-      e.preventDefault();
-      
-      // Check if tag already exists
-      const existingTag = allTags.find(tag => 
-        tag.name.toLowerCase() === searchQuery.toLowerCase()
-      );
-      
-      if (existingTag) {
-        // Add existing tag
-        handleAddTag(existingTag);
-      } else {
-        // Create new tag
-        await createNewTag(searchQuery.trim());
-      }
-    }
-  };
-
-  const createNewTag = async (tagName: string) => {
+  // Fetch available tags with debounce
+  const fetchTags = useCallback(async (query: string) => {
     setLoading(true);
     try {
-      const createRes = await fetch('/api/tags', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          name: tagName,
-          vocabulary: '99', // Custom vocabulary for user-created tags
-        }),
-      });
-
-      const result = await createRes.json();
-      
-      if (!createRes.ok) {
-        if (createRes.status === 503) {
-          setDatabaseError(result.details || result.error);
-          toast.error("Tags feature not available. Please contact your administrator.");
-          return;
-        }
-        throw new Error(result.error || 'Failed to create tag');
+      const response = await fetch(`/api/tags?q=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
       }
-      
-      const tag = result;
-
-      // Add tag to activity if we have an activityId
-      if (activityId && user?.id) {
-        console.log('[AIMS DEBUG] Creating tag-activity relationship:', { activityId, tagId: tag.id, userId: user.id });
-        const tagResponse = await fetch('/api/tags', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'addToActivity',
-            activityId,
-            tagId: tag.id,
-            userId: user.id,
-          }),
-        });
-        
-        if (!tagResponse.ok) {
-          const error = await tagResponse.json();
-          console.error('[AIMS DEBUG] Failed to create tag-activity relationship:', error);
-          toast.error(`Failed to associate tag with activity: ${error.error || 'Unknown error'}`);
-        } else {
-          console.log('[AIMS DEBUG] Successfully created tag-activity relationship');
-        }
-      } else {
-        console.log('[AIMS DEBUG] Skipping tag-activity relationship - missing activityId or userId:', { activityId, userId: user?.id });
-      }
-
-      // Update local state
-      onChange([...tags, tag.id]);
-      setSearchQuery("");
-      setShowSuggestions(false);
-      toast.success(`Tag "${tagName}" created successfully`);
-      
-      // Log tag creation and addition
-      try {
-        import('@/lib/activity-logger').then(({ ActivityLogger }) => {
-          ActivityLogger.tagAdded(
-            tagName,
-            { id: activityId || 'current-activity', title: 'Current Activity' },
-            { id: user?.id || 'current-user', name: user?.name || 'Current User', role: user?.role || 'user' }
-          );
-        });
-      } catch (error) {
-        console.error('Failed to log tag creation:', error);
-      }
-      
-      // Refresh tags list
-      fetchTags();
+      const data = await response.json();
+      setAvailableTags(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error creating tag:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create tag");
+      console.error('Error fetching tags:', error);
+      setApiAvailable(false);
+      setAvailableTags([]);
+      // Only show error toast if we haven't already shown it
+      if (apiAvailable) {
+        toast.warning('Tags API unavailable. You can still create tags manually.');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleAddTag = (tag: Tag) => {
-    if (!tags.includes(tag.id)) {
-      onChange([...tags, tag.id]);
-      setSearchQuery("");
-      setShowSuggestions(false);
-      
-      // Log tag addition
-      try {
-        import('@/lib/activity-logger').then(({ ActivityLogger }) => {
-          ActivityLogger.tagAdded(
-            tag.name,
-            { id: activityId || 'current-activity', title: 'Current Activity' },
-            { id: user?.id || 'current-user', name: user?.name || 'Current User', role: user?.role || 'user' }
-          );
-        });
-      } catch (error) {
-        console.error('Failed to log tag addition:', error);
-      }
-      
-      if (activityId && user?.id) {
-        // Add to activity in background
-        console.log('[AIMS DEBUG] Adding existing tag to activity:', { activityId, tagId: tag.id, userId: user.id });
-        fetch('/api/tags', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'addToActivity',
-            activityId,
-            tagId: tag.id,
-            userId: user.id,
-          }),
-        }).then(async (response) => {
-          if (!response.ok) {
-            const error = await response.json();
-            console.error('[AIMS DEBUG] Failed to add existing tag to activity:', error);
-          } else {
-            console.log('[AIMS DEBUG] Successfully added existing tag to activity');
-          }
-        }).catch(error => {
-          console.error('[AIMS DEBUG] Error adding existing tag to activity:', error);
-        });
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery) {
+        fetchTags(searchQuery);
       } else {
-        console.log('[AIMS DEBUG] Skipping existing tag-activity relationship - missing activityId or userId:', { activityId, userId: user?.id });
+        fetchTags(''); // Fetch recent/popular tags when no query
       }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, fetchTags]);
+
+  // Add a tag
+  const addTag = async (tagName: string) => {
+    const normalizedName = tagName.toLowerCase().trim();
+    
+    // Check if tag already exists in selection
+    if (tags.some(t => t.name.toLowerCase() === normalizedName)) {
+      toast.error('Tag already added');
+      return;
     }
-  };
 
-  const handleRemoveTag = async (tagId: string) => {
-    try {
-      const tagToRemove = allTags.find(tag => tag.id === tagId);
-      
-      if (activityId) {
-        await fetch('/api/tags', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'removeFromActivity',
-            activityId,
-            tagId,
-          }),
-        });
-      }
-
-      onChange(tags.filter(id => id !== tagId));
-      
-      // Log tag removal
-      if (tagToRemove) {
+    // Check if tag exists in available tags
+    const existingTag = availableTags.find(t => t.name.toLowerCase() === normalizedName);
+    
+    if (existingTag) {
+      onChange([...tags, existingTag]);
+      toast.success('Tag added');
+    } else {
+      // Create new tag
+      if (apiAvailable) {
         try {
-          import('@/lib/activity-logger').then(({ ActivityLogger }) => {
-            ActivityLogger.tagRemoved(
-              tagToRemove.name,
-              { id: activityId || 'current-activity', title: 'Current Activity' },
-              { id: user?.id || 'current-user', name: user?.name || 'Current User', role: user?.role || 'user' }
-            );
+          const response = await fetch('/api/tags', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: normalizedName })
           });
-        } catch (logError) {
-          console.error('Failed to log tag removal:', logError);
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || `HTTP ${response.status}`);
+          }
+          
+          const newTag = await response.json();
+          onChange([...tags, newTag]);
+          toast.success('New tag created and added');
+          
+          // Refresh available tags
+          fetchTags('');
+        } catch (error) {
+          console.error('Error creating tag:', error);
+          setApiAvailable(false);
+          // Fall back to local creation
+          const localTag: Tag = {
+            id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: normalizedName
+          };
+          onChange([...tags, localTag]);
+          toast.warning('Tag created locally. Save activity to persist to database.');
         }
+      } else {
+        // Create local tag when API is unavailable
+        const localTag: Tag = {
+          id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: normalizedName
+        };
+        onChange([...tags, localTag]);
+        toast.success('Tag added (local mode)');
       }
-    } catch (error) {
-      console.error("Error removing tag:", error);
-      toast.error("Failed to remove tag");
     }
+    
+    setInputValue('');
+    setSearchQuery('');
+    setOpen(false);
   };
 
-  const selectedTags = allTags.filter(tag => tags.includes(tag.id));
+  // Remove a tag
+  const removeTag = (tagId: string) => {
+    onChange(tags.filter(t => t.id !== tagId));
+    toast.success('Tag removed');
+  };
+
+  // Handle Enter key in input
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault();
+      addTag(inputValue);
+    }
+  };
 
   return (
-    <TooltipProvider>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Tag className="h-5 w-5" />
-              Activity Tags
-            </CardTitle>
-            <CardDescription>
-              Select existing tags or create your own. Tags help group and discover activities by theme.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {databaseError ? (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <HelpCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-yellow-800">Tags Feature Not Available</p>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      The tags database tables have not been created yet. Please ask your administrator to run the SQL migration script:
-                    </p>
-                    <code className="block mt-2 text-xs bg-yellow-100 p-2 rounded">
-                      sql/create_tags_tables.sql
-                    </code>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Tag Input Field */}
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Input
-                      placeholder="Type to search existing tags or press Enter to create new..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      disabled={loading}
-                      className="pr-10"
-                    />
-                    {loading && (
-                      <div className="absolute right-3 top-3">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Search Results Dropdown */}
-                  {showSuggestions && searchResults.length > 0 && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                      {searchResults.map(tag => (
-                        <button
-                          key={tag.id}
-                          className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center justify-between"
-                          onClick={() => handleAddTag(tag)}
-                        >
-                          <span>{tag.name}</span>
-                          <span className="text-xs text-gray-500 flex items-center gap-1">
-                            <Hash className="h-3 w-3" />
-                            {tag.usage_count}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Selected Tags */}
-                  <div className="flex flex-wrap gap-2 min-h-[40px] p-3 border rounded-lg bg-gray-50">
-                    {selectedTags.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No tags selected</p>
-                    ) : (
-                      selectedTags.map(tag => (
-                        <Badge
-                          key={tag.id}
-                          variant="secondary"
-                          className="gap-1 pr-1 py-1"
-                        >
-                          {tag.name}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
-                            onClick={() => handleRemoveTag(tag.id)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </Badge>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Tag Suggestion Sections */}
-                <div className="space-y-6">
-                  {/* Popular Tags */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Flame className="h-4 w-4 text-orange-500" />
-                      <h4 className="text-sm font-medium">Popular Tags Across the System</h4>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-3 w-3 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>These are the most frequently used tags across all activities.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {popularTags.map(tag => (
-                        <Badge
-                          key={tag.id}
-                          variant={tags.includes(tag.id) ? "gray" : "outline"}
-                          className={cn(
-                            "cursor-pointer hover:bg-gray-200",
-                            tags.includes(tag.id) && "opacity-50 cursor-not-allowed"
-                          )}
-                          onClick={() => !tags.includes(tag.id) && handleAddTag(tag)}
-                        >
-                          {tag.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Similar Activities Tags */}
-                  {similarActivityTags.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Pin className="h-4 w-4 text-blue-500" />
-                        <h4 className="text-sm font-medium">Tags Used on Similar Activities</h4>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <HelpCircle className="h-3 w-3 text-gray-400" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Tags from activities with similar sectors, locations, or funding.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {similarActivityTags.map(tag => (
-                          <Badge
-                            key={tag.id}
-                            variant="blue"
-                            className={cn(
-                              "cursor-pointer hover:bg-blue-100",
-                              tags.includes(tag.id) && "opacity-50 cursor-not-allowed"
-                            )}
-                            onClick={() => !tags.includes(tag.id) && handleAddTag(tag)}
-                          >
-                            {tag.name}
-                            <span className="ml-1 text-xs opacity-60">used in 3</span>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Other Users' Tags */}
-                  {activityId && otherUserTags.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-purple-500" />
-                        <h4 className="text-sm font-medium">Tags Used by Other Contributors on This Activity</h4>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <HelpCircle className="h-3 w-3 text-gray-400" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Tags previously applied to this activity by other users.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {otherUserTags.map(tag => (
-                          <Badge
-                            key={tag.id}
-                            variant="purple"
-                            className={cn(
-                              "cursor-pointer hover:bg-purple-100",
-                              tags.includes(tag.id) && "opacity-50 cursor-not-allowed"
-                            )}
-                            onClick={() => !tags.includes(tag.id) && handleAddTag(tag)}
-                          >
-                            {tag.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* User-Created Tags */}
-                  {userCreatedTags.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <PenTool className="h-4 w-4 text-green-500" />
-                        <h4 className="text-sm font-medium">User-Created Tags</h4>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <HelpCircle className="h-3 w-3 text-gray-400" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>New tags you've created that don't exist in the system yet.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {userCreatedTags.map(tag => (
-                          <Badge
-                            key={tag.id}
-                            variant="green"
-                          >
-                            {tag.name}
-                            <span className="ml-1 text-xs bg-green-500 text-white px-1 rounded">+ New</span>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+      <div>
+        <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+          <Hash className="w-5 h-5" />
+          Tags
+        </h3>
+        <p className="text-sm text-gray-600 mt-1">
+          Add custom tags to categorize and improve searchability of this activity
+        </p>
       </div>
-    </TooltipProvider>
+
+      {/* Tag Input */}
+      <div className="space-y-4">
+        <Label htmlFor="tag-input">Add Tags</Label>
+        <div className="flex gap-2">
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <div className="flex-1">
+                <Input
+                  id="tag-input"
+                  placeholder="Type to search or create tags..."
+                  value={inputValue}
+                  onChange={(e) => {
+                    setInputValue(e.target.value);
+                    setSearchQuery(e.target.value);
+                    setOpen(true);
+                  }}
+                  onKeyDown={handleKeyDown}
+                  className="w-full"
+                />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-full" align="start">
+              <Command>
+                <CommandList>
+                  {loading ? (
+                    <CommandEmpty>Loading...</CommandEmpty>
+                  ) : (
+                    <>
+                      {availableTags.length > 0 ? (
+                        <CommandGroup heading="Existing Tags">
+                          {availableTags.map((tag) => (
+                            <CommandItem
+                              key={tag.id}
+                              onSelect={() => {
+                                addTag(tag.name);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Hash className="mr-2 h-4 w-4" />
+                              {tag.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      ) : null}
+                      
+                      {inputValue.trim() && !availableTags.some(t => 
+                        t.name.toLowerCase() === inputValue.toLowerCase().trim()
+                      ) && (
+                        <CommandGroup heading="Create New">
+                          <CommandItem
+                            onSelect={() => addTag(inputValue)}
+                            className="cursor-pointer"
+                          >
+                            <Hash className="mr-2 h-4 w-4" />
+                            Create "{inputValue.trim()}"
+                          </CommandItem>
+                        </CommandGroup>
+                      )}
+                    </>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          
+          <Button
+            onClick={() => inputValue.trim() && addTag(inputValue)}
+            disabled={!inputValue.trim()}
+          >
+            Add Tag
+          </Button>
+        </div>
+        <p className="text-xs text-gray-500">
+          Press Enter to add a tag, or select from suggestions
+        </p>
+      </div>
+
+      {/* Selected Tags */}
+      <div className="space-y-4">
+        <Label>Selected Tags ({tags.length})</Label>
+        {tags.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <Badge
+                key={tag.id}
+                variant="secondary"
+                className="pl-2 pr-1 py-1 flex items-center gap-1"
+              >
+                <Hash className="w-3 h-3" />
+                {tag.name}
+                <button
+                  onClick={() => removeTag(tag.id)}
+                  className="ml-1 hover:bg-gray-300 rounded-full p-0.5 transition-colors"
+                  aria-label={`Remove ${tag.name} tag`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 italic">No tags added yet</p>
+        )}
+      </div>
+
+      {/* API Status Notice */}
+      {!apiAvailable && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-yellow-900 mb-2">Offline Mode</h4>
+          <p className="text-xs text-yellow-800">
+            Tags API is currently unavailable. You can still create tags locally, and they will be saved when you save the activity.
+          </p>
+        </div>
+      )}
+
+      {/* Tag Guidelines */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 className="text-sm font-medium text-blue-900 mb-2">Tagging Guidelines</h4>
+        <ul className="text-xs text-blue-800 space-y-1">
+          <li>• Use descriptive, specific tags (e.g., "water-infrastructure" instead of just "water")</li>
+          <li>• Tags are case-insensitive and will be stored in lowercase</li>
+          <li>• Reuse existing tags when possible for consistency</li>
+          <li>• Tags help with searching and reporting across activities</li>
+        </ul>
+      </div>
+    </div>
   );
-} 
+}

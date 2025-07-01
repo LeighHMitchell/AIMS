@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaflet CSS for maps */
+@import 'leaflet/dist/leaflet.css';
+
 /* Debug: Test if CSS is loading */
 .tailwind-test {
   background-color: #ff0000 !important;
@@ -91,4 +94,147 @@
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
+}
+
+/* Leaflet map fixes for modal containment */
+.leaflet-container {
+  background: transparent;
+  z-index: 0 !important;
+}
+
+/* Ensure Leaflet controls stay within modal bounds */
+.leaflet-control-container {
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 10 !important;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 10 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 5 !important;
+}
+
+/* Prevent map overflow in containers */
+.leaflet-container .leaflet-control-zoom {
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Modal dialog z-index higher than Leaflet */
+[data-radix-dialog-content] {
+  z-index: 1000 !important;
+}
+
+/* Ensure modal overlay is above everything */
+[data-radix-dialog-overlay] {
+  z-index: 999 !important;
+}
+
+/* Ensure modal is properly centered and contained */
+[data-radix-dialog-content] {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  width: calc(100vw - 2rem) !important;
+  max-width: 100% !important;
+}
+
+/* Prevent horizontal overflow on small screens */
+@media (max-width: 768px) {
+  [data-radix-dialog-content] {
+    width: calc(100vw - 1rem) !important;
+    margin: 0.5rem !important;
+    transform: translate(-50%, -50%) !important;
+    left: 50% !important;
+    top: 50% !important;
+  }
+}
+
+/* Prevent body scroll when modal is open */
+body:has([data-radix-dialog-content]) {
+  overflow: hidden;
+}
+
+/* Skeleton Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.08) 50%,
+    rgba(0, 0, 0, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Alternative blush-toned shimmer */
+.skeleton-shimmer-blush {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 228, 225, 0.5) 0%,
+    rgba(255, 228, 225, 0.8) 50%,
+    rgba(255, 228, 225, 0.5) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Soft fade-in animation for content */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Slide up animation for dropdowns */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Line clamp utilities for text truncation */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 } 

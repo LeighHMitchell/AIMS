@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Sector Persistence</title>
+</head>
+<body>
+    <h1>Sector Persistence Test</h1>
+    <p>Open the browser console and run these commands to test sector persistence:</p>
+    
+    <pre>
+// 1. First, check what sectors are currently in state
+console.log('Current sectors:', sectors);
+
+// 2. Check if the SimpleSectorAllocationForm is updating sectors
+// Add a sector and see if the state updates
+
+// 3. Before saving, check the payload
+// The console should show: [AIMS] Sectors being saved: [...]
+
+// 4. After saving, check the response
+// Look for: [AIMS] Response data: {...}
+
+// 5. Check if sectors are in the database
+// Run this SQL in Supabase:
+/*
+SELECT 
+    a.id,
+    a.title,
+    COUNT(s.id) as sector_count,
+    json_agg(
+        json_build_object(
+            'code', s.sector_code,
+            'name', s.sector_name,
+            'percentage', s.percentage
+        )
+    ) as sectors
+FROM activities a
+LEFT JOIN activity_sectors s ON s.activity_id = a.id
+WHERE a.id = 'YOUR_ACTIVITY_ID'
+GROUP BY a.id, a.title;
+*/
+
+// 6. To manually check the API response:
+fetch('/api/activities')
+  .then(r => r.json())
+  .then(data => {
+    const activity = data.find(a => a.id === 'YOUR_ACTIVITY_ID');
+    console.log('Activity from API:', activity);
+    console.log('Sectors from API:', activity?.sectors);
+  });
+    </pre>
+    
+    <h2>Common Issues:</h2>
+    <ul>
+        <li><strong>Sectors not in request:</strong> Check if setSectors is being called</li>
+        <li><strong>Sectors in request but not saved:</strong> Check API logs for errors</li>
+        <li><strong>Sectors saved but not loading:</strong> Check if API GET includes sectors</li>
+    </ul>
+</body>
+</html> 

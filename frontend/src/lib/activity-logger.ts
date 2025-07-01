@@ -83,7 +83,7 @@ export const ActivityLogger = {
       entityType: 'activity',
       entityId: activity.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -97,7 +97,7 @@ export const ActivityLogger = {
       entityType: 'activity',
       entityId: activity.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -112,7 +112,7 @@ export const ActivityLogger = {
       entityType: 'activity',
       entityId: activity.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -126,7 +126,7 @@ export const ActivityLogger = {
       entityType: 'activity',
       entityId: activity.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -140,7 +140,7 @@ export const ActivityLogger = {
       entityType: 'activity',
       entityId: activity.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -154,7 +154,7 @@ export const ActivityLogger = {
       entityType: 'activity',
       entityId: activity.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -168,7 +168,7 @@ export const ActivityLogger = {
       entityType: 'activity',
       entityId: activity.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -182,7 +182,7 @@ export const ActivityLogger = {
       entityType: 'activity',
       entityId: activity.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -197,7 +197,7 @@ export const ActivityLogger = {
       entityType: 'activity',
       entityId: activity.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -217,7 +217,7 @@ export const ActivityLogger = {
       entityType: 'contact',
       entityId: contact.id || Math.random().toString(36).substring(7),
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -234,7 +234,7 @@ export const ActivityLogger = {
       entityType: 'contact',
       entityId: contact.id || Math.random().toString(36).substring(7),
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -252,14 +252,14 @@ export const ActivityLogger = {
       entityType: 'transaction',
       entityId: transaction.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
         role: user.role,
       },
       metadata: {
-        details: `Added ${transaction.type} transaction: ${transaction.currency} ${transaction.value}`,
+        details: `Added ${transaction.transaction_type} transaction: ${transaction.currency} ${transaction.value}`,
       },
     }),
 
@@ -269,7 +269,7 @@ export const ActivityLogger = {
       entityType: 'transaction',
       entityId: transaction.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,
@@ -287,7 +287,7 @@ export const ActivityLogger = {
       entityType: 'transaction',
       entityId: transaction.id,
       activityId: activity.id,
-      activityTitle: activity.title,
+      activityTitle: activity.title_narrative || activity.title,
       user: {
         id: user.id,
         name: user.name,

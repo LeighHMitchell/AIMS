@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, ChevronDown } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { X, Plus, ChevronDown, UserPlus, Info } from "lucide-react";
 import { toast } from "sonner";
+import { ActivityContributor } from "@/lib/activity-permissions";
 
 interface Partner {
   orgId: string;
@@ -15,6 +18,9 @@ interface OrganisationsSectionProps {
   implementingPartners: Partner[];
   governmentPartners: Partner[];
   onChange: (field: string, value: Partner[]) => void;
+  contributors: ActivityContributor[];
+  onContributorAdd: (contributor: ActivityContributor) => void;
+  canNominateContributors?: boolean;
 }
 
 export default function OrganisationsSection({
@@ -22,10 +28,14 @@ export default function OrganisationsSection({
   implementingPartners,
   governmentPartners,
   onChange,
+  contributors,
+  onContributorAdd,
+  canNominateContributors = false,
 }: OrganisationsSectionProps) {
   const [availablePartners, setAvailablePartners] = useState<Partner[]>([]);
   const [governmentOnlyPartners, setGovernmentOnlyPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [nominationModal, setNominationModal] = useState<{open: boolean, partner: Partner | null}>({open: false, partner: null});
 
   // Fetch partners from API
   useEffect(() => {
@@ -116,11 +126,59 @@ export default function OrganisationsSection({
     onChange(fieldName, currentPartners);
   };
 
+  const nominateAsContributor = (partner: Partner) => {
+    setNominationModal({open: true, partner});
+  };
+
+  const confirmNomination = () => {
+    if (!nominationModal.partner) return;
+    
+    const partner = nominationModal.partner;
+    
+    // Check if already a contributor
+    if (contributors.some(c => c.organizationId === partner.orgId)) {
+      toast.error("This organization is already a contributor");
+      setNominationModal({open: false, partner: null});
+      return;
+    }
+
+    const newContributor: ActivityContributor = {
+      id: `contrib_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      organizationId: partner.orgId,
+      organizationName: partner.name,
+      status: 'nominated',
+      nominatedBy: 'current-user', // Would be actual user ID
+      nominatedByName: 'Activity Creator', // Would be actual user name
+      nominatedAt: new Date().toISOString(),
+      canEditOwnData: true,
+      canViewOtherDrafts: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    onContributorAdd(newContributor);
+    setNominationModal({open: false, partner: null});
+    toast.success(`${partner.name} has been nominated as a contributor`);
+  };
+
+  const isAlreadyContributor = (orgId: string) => {
+    return contributors.some(c => c.organizationId === orgId);
+  };
+
   return (
     <div className="max-w-4xl space-y-8">
       <div className="mb-6">
         <h2 className="text-2xl font-bold">PARTICIPATING ORGANISATIONS</h2>
       </div>
+
+      {/* Clarifying Alert */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Organisations listed here define their official roles in this activity for reporting purposes (e.g. implementing, extending, or government partner). 
+          This does not affect who can contribute data in the system — that is managed in the Contributors tab.
+        </AlertDescription>
+      </Alert>
 
       {/* Extending Partners */}
       <Card>
@@ -209,6 +267,20 @@ export default function OrganisationsSection({
                 <div className="flex-1">
                   <p className="font-medium">{partner.name}</p>
                 </div>
+                {canNominateContributors && !isAlreadyContributor(partner.orgId) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => nominateAsContributor(partner)}
+                    className="text-xs"
+                  >
+                    <UserPlus className="h-3 w-3 mr-1" />
+                    Nominate as Data Contributor
+                  </Button>
+                )}
+                {isAlreadyContributor(partner.orgId) && (
+                  <span className="text-xs text-green-600 font-medium">✓ Data Contributor</span>
+                )}
                 <ChevronDown className="h-4 w-4 text-gray-400" />
                 <Button
                   variant="ghost"
@@ -336,6 +408,39 @@ export default function OrganisationsSection({
           </Button>
         </CardContent>
       </Card>
+
+      {/* Nomination Confirmation Modal */}
+      <Dialog open={nominationModal.open} onOpenChange={(open) => setNominationModal({open, partner: nominationModal.partner})}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nominate as Data Contributor</DialogTitle>
+            <DialogDescription>
+              Do you want to allow <strong>{nominationModal.partner?.name}</strong> to contribute transactions, results, or implementation data?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                This will allow them to add and edit their own financial data, results, and implementation records in the system. 
+                It does not change their official role as an implementing partner.
+              </AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setNominationModal({open: false, partner: null})}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmNomination}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Nominate as Contributor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

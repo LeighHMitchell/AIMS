@@ -144,6 +144,14 @@ export default function ContributorsSection({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Clarifying Alert */}
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Contributors are organisations that can edit or add financial transactions, results, and implementation records. 
+            This does not change their official role in the activity — roles are defined in the Organisations tab.
+          </AlertDescription>
+        </Alert>
         {/* Pending Nomination Alert */}
         {pendingNomination && (
           <Alert>

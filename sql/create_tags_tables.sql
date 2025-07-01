@@ -1,56 +1,40 @@
--- Create tags table for storing all tags
-CREATE TABLE IF NOT EXISTS tags (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) NOT NULL UNIQUE,
-  vocabulary VARCHAR(10) NOT NULL DEFAULT '99', -- IATI vocabulary code (99 = custom)
-  code VARCHAR(255) NOT NULL, -- IATI code attribute
-  description TEXT,
-  usage_count INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+Please update the Activity Editor to improve the tagging interface using shadcn components only. The tag input interface should allow users to both select existing tags and create new ones freely.
 
--- Create activity_tags junction table for many-to-many relationship
-CREATE TABLE IF NOT EXISTS activity_tags (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  activity_id UUID NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
-  tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-  tagged_by UUID REFERENCES users(id),
-  tagged_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(activity_id, tag_id)
-);
+1. Replace the existing tag input field with a searchable multi-select component (e.g. shadcn combobox or tag input variant):
+   - Users can type to search tags from the system
+   - Users can also type a new tag and press Enter to add it if it does not exist
+   - Allow multiple tag selection (chips/pills)
 
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
-CREATE INDEX IF NOT EXISTS idx_tags_vocabulary ON tags(vocabulary);
-CREATE INDEX IF NOT EXISTS idx_activity_tags_activity_id ON activity_tags(activity_id);
-CREATE INDEX IF NOT EXISTS idx_activity_tags_tag_id ON activity_tags(tag_id);
-CREATE INDEX IF NOT EXISTS idx_activity_tags_tagged_by ON activity_tags(tagged_by);
+2. Below the input field, implement **four tag suggestion sections** as follows. Each section should display clickable tag chips that populate the tag input when clicked:
 
--- Create function to update tag usage count
-CREATE OR REPLACE FUNCTION update_tag_usage_count()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    UPDATE tags SET usage_count = usage_count + 1 WHERE id = NEW.tag_id;
-  ELSIF TG_OP = 'DELETE' THEN
-    UPDATE tags SET usage_count = usage_count - 1 WHERE id = OLD.tag_id;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
+   🔥 **Popular Tags Across the System**
+   - Show top 10 most frequently used tags
+   - Static, system-wide list
+   - Tags styled in light grey
 
--- Create trigger to automatically update usage count
-CREATE TRIGGER update_tag_usage_count_trigger
-AFTER INSERT OR DELETE ON activity_tags
-FOR EACH ROW
-EXECUTE FUNCTION update_tag_usage_count();
+   📌 **Tags Used on Similar Activities**
+   - Based on shared sector, location, or funding agency
+   - Tags styled in blue
+   - Include a small badge (e.g. “used in 3 activities”) if available
 
--- Insert some default IATI standard tags (vocabulary="1")
-INSERT INTO tags (name, vocabulary, code, description) VALUES
-  ('Climate Change', '1', 'climate-change', 'Activities related to climate change mitigation or adaptation'),
-  ('Gender Equality', '1', 'gender-equality', 'Activities promoting gender equality and women empowerment'),
-  ('Health', '1', 'health', 'Health-related activities'),
-  ('Education', '1', 'education', 'Education and training activities'),
-  ('Governance', '1', 'governance', 'Governance and civil society activities')
-ON CONFLICT (name) DO NOTHING; 
+   👥 **Tags Used by Other Contributors on This Activity**
+   - Tags previously applied to this activity by other users
+   - Tags styled in purple
+   - Only shown if this activity already exists in the system
+
+   ✍️ **User-Created Tags**
+   - Any new tags added by this user that do not already exist in the system
+   - Tags styled in green with a small “+ New” badge
+
+3. Use hover tooltips to explain each section if needed. Example:
+   - “These are the most frequently used tags across all activities.”
+
+4. Visually separate the sections using subheadings and horizontal spacing. Ensure the layout remains responsive and clear on all screen sizes.
+
+5. Help Text (above input field):
+   - _“Select existing tags or create your own. Tags help group and discover activities by theme.”_
+
+6. When publishing or saving the activity, persist all tag sources properly:
+   - Existing tags are referenced
+   - New tags are created and stored
+   - All tags linked to the activity with correct metadata

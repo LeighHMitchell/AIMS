@@ -13,7 +13,9 @@ import {
   Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Transaction, LEGACY_TRANSACTION_TYPE_MAP } from "@/types/transaction";
+import { Badge } from "@/components/ui/badge";
+import { Transaction } from "@/types/transaction";
+import { LEGACY_TRANSACTION_TYPE_MAP } from "@/utils/transactionMigrationHelper";
 import { format } from "date-fns";
 
 interface DisbursementGaugeProps {
@@ -78,34 +80,26 @@ interface CumulativeFinanceChartProps {
 export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
   transactions,
 }) => {
-  // Safe date parser
-  const parseTransactionDate = (dateString: string | undefined | null): Date | null => {
-    if (!dateString) return null;
-    
-    try {
-      const date = new Date(dateString);
-      // Check if the date is valid
-      if (isNaN(date.getTime())) {
-        console.warn(`Invalid transaction date: ${dateString}`);
-        return null;
-      }
-      return date;
-    } catch (error) {
-      console.error(`Error parsing transaction date: ${dateString}`, error);
-      return null;
-    }
-  };
-
   // Process transactions to create cumulative data
   const processedData = React.useMemo(() => {
     const sortedTransactions = [...transactions]
-      .filter(t => t.status === "actual")
-      .map(t => ({
-        ...t,
-        parsedDate: parseTransactionDate(t.transactionDate)
-      }))
-      .filter(t => t.parsedDate !== null)
-      .sort((a, b) => a.parsedDate!.getTime() - b.parsedDate!.getTime());
+      .filter(t => t.status === "actual" && t.transaction_date) // Filter out transactions without dates
+      .filter(t => {
+        // Additional validation for valid dates
+        try {
+          const date = new Date(t.transaction_date);
+          return !isNaN(date.getTime());
+        } catch {
+          return false;
+        }
+      })
+      .sort((a, b) => {
+        try {
+          return new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime();
+        } catch {
+          return 0;
+        }
+      });
 
     const dataMap = new Map<string, { date: string; commitments: number; disbursements: number; expenditures: number }>();
     let cumulativeCommitments = 0;
@@ -113,16 +107,17 @@ export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
     let cumulativeExpenditures = 0;
 
     sortedTransactions.forEach(transaction => {
-      const date = format(transaction.parsedDate!, "yyyy-MM");
+      try {
+        const date = format(new Date(transaction.transaction_date), "yyyy-MM");
       
       // Normalize transaction type to handle both legacy and new types
-      const normalizedType = LEGACY_TRANSACTION_TYPE_MAP[transaction.type] || transaction.type;
+        const normalizedType = LEGACY_TRANSACTION_TYPE_MAP[transaction.transaction_type] || transaction.transaction_type;
       
-      if (normalizedType === "C") { // Commitment
+      if (normalizedType === "2") { // Outgoing Commitment (was "C")
         cumulativeCommitments += transaction.value;
-      } else if (normalizedType === "D") { // Disbursement
+      } else if (normalizedType === "3") { // Disbursement (was "D")
         cumulativeDisbursements += transaction.value;
-      } else if (normalizedType === "E") { // Expenditure
+      } else if (normalizedType === "4") { // Expenditure (was "E")
         cumulativeExpenditures += transaction.value;
       }
 
@@ -132,6 +127,10 @@ export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
         disbursements: cumulativeDisbursements,
         expenditures: cumulativeExpenditures,
       });
+      } catch (error) {
+        // Skip transactions with invalid dates
+        console.warn('[ActivityCharts] Skipping transaction with invalid date:', transaction.transaction_date);
+      }
     });
 
     return Array.from(dataMap.values());

@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from . import import_views
+from . import api_views
 
 urlpatterns = [
     # Main project views
@@ -26,6 +28,13 @@ urlpatterns = [
     path('api/transactions/<int:transaction_id>/delete/', views.api_delete_transaction, name='api_delete_transaction'),
     path('api/commitments/<int:commitment_id>/delete/', views.api_delete_commitment, name='api_delete_commitment'),
     
+    # Django User API endpoints (replacing Supabase)
+    path('api/users/', api_views.api_users, name='api_users'),
+    path('api/auth/login/', api_views.api_login, name='api_login'),
+    path('api/auth/logout/', api_views.api_logout, name='api_logout'),
+    path('api/auth/current/', api_views.api_current_user, name='api_current_user'),
+    path('api/auth/change-password/', api_views.api_change_password, name='api_change_password'),
+    
     # User Profile Management
     path('profile/', views.user_profile, name='user_profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
@@ -43,4 +52,10 @@ urlpatterns = [
     
     # Role Directory
     path('roles/', views.role_directory, name='role_directory'),
+    
+    # Import endpoints
+    path('api/import/activities/', import_views.import_activities, name='import_activities'),
+    path('api/import/organizations/', import_views.import_organizations, name='import_organizations'),
+    path('api/import/transactions/', import_views.import_transactions, name='import_transactions'),
+    path('api/import-logs/', import_views.import_logs, name='import_logs'),
 ]

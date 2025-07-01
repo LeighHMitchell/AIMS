@@ -1,216 +1,165 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
 
+// Set maximum request body size to 10MB for profile pictures
+export const maxDuration = 60; // Maximum allowed duration for Vercel Hobby is 60 seconds
+
+// Configure route segment for larger body size
+export const runtime = 'nodejs'; // Use Node.js runtime for better body parsing
+
 export async function GET(request: NextRequest) {
-  console.log('[AIMS] GET /api/users - Starting request');
+  console.log('[AIMS] GET /api/users - Starting request (Supabase)');
   
   try {
-    // Check if supabaseAdmin is properly initialized
-    if (!supabaseAdmin) {
-      console.error('[AIMS] supabaseAdmin is not initialized');
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
       return NextResponse.json(
-        { error: 'Database connection not initialized' },
+        { error: 'Supabase is not configured' },
+        { status: 500 }
+      );
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const email = searchParams.get('email');
+    
+    let query = supabase.from('users').select(`
+      *,
+      organizations:organization_id (
+        id,
+        name,
+        type,
+        country
+      )
+    `);
+    
+    if (email) {
+      query = query.eq('email', email).single();
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('[AIMS] Error from Supabase:', error);
+      if (error.code === 'PGRST116' && email) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(
+        { error: error.message },
         { status: 500 }
       );
     }
     
-    const searchParams = request.nextUrl.searchParams;
-    const email = searchParams.get('email');
+    console.log('[AIMS] Successfully fetched from Supabase');
+    return NextResponse.json(data);
     
-    if (email) {
-      // Get specific user by email
-      const { data: user, error } = await supabaseAdmin
-        .from('users')
-        .select(`
-          *,
-          organization:organizations(*)
-        `)
-        .eq('email', email)
-        .single();
-      
-      if (error) {
-        console.error('[AIMS] Error fetching user:', error);
-        if (error.code === 'PGRST116') {
-          return NextResponse.json({ error: 'User not found' }, { status: 404 });
-        }
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-      
-      console.log('[AIMS] Found user:', user.email);
-      return NextResponse.json(user);
-    } else {
-      // Get all users
-      const { data: users, error } = await supabaseAdmin
-        .from('users')
-        .select(`
-          *,
-          organization:organizations(*)
-        `)
-        .order('name');
-      
-      if (error) {
-        console.error('[AIMS] Error fetching users:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-      
-      console.log('[AIMS] Fetched users count:', users.length);
-      return NextResponse.json(users);
-    }
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to fetch users' },
       { status: 500 }
     );
   }
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[AIMS] POST /api/users - Starting request');
+  console.log('[AIMS] POST /api/users - Starting request (Supabase)');
   
   try {
-    // Check if supabaseAdmin is properly initialized
-    if (!supabaseAdmin) {
-      console.error('[AIMS] supabaseAdmin is not initialized');
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
       return NextResponse.json(
-        { error: 'Database connection not initialized' },
+        { error: 'Supabase is not configured' },
         { status: 500 }
       );
     }
-    
+
     const body = await request.json();
-    const { name, email, role, organization_id } = body;
     
-    console.log('[AIMS] Creating user with data:', { name, email, role, organization_id });
+    // Create auth user first
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: body.email,
+      password: body.password || `TempPass${Date.now()}!`,
+      email_confirm: true,
+    });
     
-    if (!name || !email || !role) {
+    if (authError) {
+      console.error('[AIMS] Error creating auth user:', authError);
       return NextResponse.json(
-        { error: 'Name, email, and role are required' },
+        { error: authError.message },
         { status: 400 }
       );
     }
     
-    // Validate organization_id if provided
-    if (organization_id) {
-      console.log('[AIMS] Validating organization_id:', organization_id);
-      
-      const { data: org, error: orgError } = await supabaseAdmin
-        .from('organizations')
-        .select('id, name')
-        .eq('id', organization_id)
-        .single();
-        
-      if (orgError || !org) {
-        console.error('[AIMS] Organization not found:', { organization_id, error: orgError });
-        
-        // Create user as orphan if organization is invalid
-        console.log('[AIMS] Creating user as orphan due to invalid organization_id');
-        const { data, error } = await supabaseAdmin
-          .from('users')
-          .insert([{ name, email, role, organization_id: null }])
-          .select(`
-            *,
-            organization:organizations(*)
-          `)
-          .single();
-          
-        if (error) {
-          console.error('[AIMS] Error creating orphan user:', error);
-          if (error.code === '23505') {
-            return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
-          }
-          return NextResponse.json({ error: error.message }, { status: 500 });
-        }
-        
-        console.log('[AIMS] Created orphan user (invalid org):', data.email);
-        return NextResponse.json({
-          ...data,
-          warning: 'User created without organization - provided organization ID was invalid'
-        }, { status: 201 });
-      }
-      
-      console.log('[AIMS] Organization validated:', org.name);
-    }
-    
-    // Create user with validated organization_id
-    const { data, error } = await supabaseAdmin
+    // Create user profile
+    const { data, error } = await supabase
       .from('users')
-      .insert([{ name, email, role, organization_id }])
-      .select(`
-        *,
-        organization:organizations(*)
-      `)
+      .insert({
+        id: authData.user.id,
+        email: body.email,
+        first_name: body.first_name || '',
+        last_name: body.last_name || '',
+        role: body.role || 'dev_partner_tier_1',
+        organisation: body.organisation || null,
+        department: body.department || null,
+        job_title: body.job_title || null,
+        telephone: body.telephone || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
       .single();
     
     if (error) {
-      console.error('[AIMS] Error creating user:', error);
-      console.error('[AIMS] Error details:', JSON.stringify(error, null, 2));
-      
-      if (error.code === '23505') {
-        return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
-      }
-      
-      // Handle foreign key constraint error specifically
-      if (error.code === '23503' && error.message.includes('users_organization_id_fkey')) {
-        console.error('[AIMS] Foreign key constraint violation - organization does not exist');
-        
-        // Try to create user as orphan
-        const { data: orphanUser, error: orphanError } = await supabaseAdmin
-          .from('users')
-          .insert([{ name, email, role, organization_id: null }])
-          .select(`
-            *,
-            organization:organizations(*)
-          `)
-          .single();
-          
-        if (orphanError) {
-          console.error('[AIMS] Error creating orphan user:', orphanError);
-          return NextResponse.json({ error: orphanError.message }, { status: 500 });
-        }
-        
-        console.log('[AIMS] Created orphan user (FK error):', orphanUser.email);
-        return NextResponse.json({
-          ...orphanUser,
-          warning: 'User created without organization due to invalid organization reference'
-        }, { status: 201 });
-      }
-      
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('[AIMS] Error creating user profile:', error);
+      // Clean up auth user if profile creation fails
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
     }
     
-    console.log('[AIMS] Created user:', data.email, 'with org:', data.organization?.name || 'none');
+    console.log('[AIMS] Created user in Supabase:', data.email);
     return NextResponse.json(data, { status: 201 });
+    
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to create user' },
       { status: 500 }
     );
   }
 }
 
 export async function PUT(request: NextRequest) {
-  console.log('[AIMS] PUT /api/users - Starting request');
+  console.log('[AIMS] PUT /api/users - Starting request (Supabase)');
   
   try {
-    // Check if supabaseAdmin is properly initialized
-    if (!supabaseAdmin) {
-      console.error('[AIMS] supabaseAdmin is not initialized');
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
       return NextResponse.json(
-        { error: 'Database connection not initialized' },
+        { error: 'Supabase is not configured' },
         { status: 500 }
       );
     }
-    
+
+    // Handle potentially large request body
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'Request body too large. Maximum size is 10MB.' },
+        { status: 413 }
+      );
+    }
+
     const body = await request.json();
-    const { id, ...updates } = body;
-    
-    console.log('[AIMS] Update request for user:', id);
-    console.log('[AIMS] Updates:', JSON.stringify(updates, null, 2));
+    const { id, ...updateData } = body;
     
     if (!id) {
       return NextResponse.json(
@@ -219,60 +168,49 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    // Check current user state before update
-    const { data: currentUser, error: fetchError } = await supabaseAdmin
+    // Update user profile
+    const { data, error } = await supabase
       .from('users')
-      .select('*')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
-      .single();
-    
-    if (fetchError) {
-      console.error('[AIMS] Error fetching current user:', fetchError);
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-    
-    console.log('[AIMS] Current user state:', JSON.stringify(currentUser, null, 2));
-    
-    const { data, error } = await supabaseAdmin
-      .from('users')
-      .update(updates)
-      .eq('id', id)
-      .select(`
-        *,
-        organization:organizations(*)
-      `)
+      .select()
       .single();
     
     if (error) {
       console.error('[AIMS] Error updating user:', error);
-      console.error('[AIMS] Error details:', JSON.stringify(error, null, 2));
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
     }
     
-    console.log('[AIMS] Updated user:', JSON.stringify(data, null, 2));
+    console.log('[AIMS] Updated user in Supabase');
     return NextResponse.json(data);
+    
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to update user' },
       { status: 500 }
     );
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  console.log('[AIMS] DELETE /api/users - Starting request');
+  console.log('[AIMS] DELETE /api/users - Starting request (Supabase)');
   
   try {
-    // Check if supabaseAdmin is properly initialized
-    if (!supabaseAdmin) {
-      console.error('[AIMS] supabaseAdmin is not initialized');
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
       return NextResponse.json(
-        { error: 'Database connection not initialized' },
+        { error: 'Supabase is not configured' },
         { status: 500 }
       );
     }
-    
+
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
     
@@ -283,22 +221,35 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    const { error } = await supabaseAdmin
+    // Delete from users table first
+    const { error: profileError } = await supabase
       .from('users')
       .delete()
       .eq('id', id);
     
-    if (error) {
-      console.error('[AIMS] Error deleting user:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (profileError) {
+      console.error('[AIMS] Error deleting user profile:', profileError);
+      return NextResponse.json(
+        { error: profileError.message },
+        { status: 400 }
+      );
     }
     
-    console.log('[AIMS] Deleted user:', id);
+    // Delete auth user
+    const { error: authError } = await supabase.auth.admin.deleteUser(id);
+    
+    if (authError) {
+      console.error('[AIMS] Error deleting auth user:', authError);
+      // Profile already deleted, so we continue
+    }
+    
+    console.log('[AIMS] Deleted user in Supabase');
     return NextResponse.json({ success: true });
+    
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to delete user' },
       { status: 500 }
     );
   }

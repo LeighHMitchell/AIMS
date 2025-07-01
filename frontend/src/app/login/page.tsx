@@ -15,11 +15,23 @@ import { toast } from "sonner";
 
 interface DBUser {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   role: string;
   organization_id: string | null;
-  organization: {
+  organisation?: string;
+  department?: string;
+  job_title?: string;
+  telephone?: string;
+  avatar_url?: string;
+  organization?: {
+    id: string;
+    name: string;
+    type: string;
+    country: string;
+  } | null;
+  organizations?: {
     id: string;
     name: string;
     type: string;
@@ -66,47 +78,60 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Fetch user by email
-      const response = await fetch(`/api/users?email=${encodeURIComponent(email)}`);
+      // Authenticate with Supabase
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
       
       if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Invalid email or password");
-        }
-        throw new Error("Login failed");
+        const error = await response.json();
+        throw new Error(error.error || "Invalid email or password");
       }
 
-      const user = await response.json();
+      const data = await response.json();
+      const user = data.user;
       
-      // For now, we're not checking passwords since the DB doesn't have them
-      // In production, you'd implement proper authentication
+      // Create full name from first_name and last_name
+      const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
       
       // Transform DB user to app user format
       const appUser = {
         id: user.id,
-        name: user.name,
+        name: fullName,
         email: user.email,
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
         title: user.role.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
         role: user.role,
         organizationId: user.organization_id,
-        organization: user.organization ? {
-          id: user.organization.id,
-          name: user.organization.name,
-          type: user.organization.type,
+        organization: (user.organizations || user.organization) ? {
+          id: user.organizations?.id || user.organization?.id,
+          name: user.organizations?.name || user.organization?.name,
+          type: user.organizations?.type || user.organization?.type,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         } : undefined,
-        phone: "",
+        phone: user.telephone || user.phone || "",
+        telephone: user.telephone || user.phone || "",
+        department: user.department || "",
+        jobTitle: user.job_title || "",
+        organisation: user.organisation || user.organizations?.name || user.organization?.name || "",
+        profilePicture: user.avatar_url || "",
         isActive: true,
         lastLogin: new Date().toISOString(),
         createdAt: user.created_at,
         updatedAt: user.updated_at,
+        sessionKey: data.session?.access_token,
       };
       
       // Set the user in localStorage
       localStorage.setItem('aims_user', JSON.stringify(appUser));
       
-      toast.success(`Welcome back, ${user.name}!`);
+      toast.success(`Welcome back, ${fullName}!`);
       // Force a hard navigation to ensure the app reloads with the new user
       window.location.href = "/dashboard";
     } catch (err: any) {
@@ -124,22 +149,32 @@ export default function LoginPage() {
 
     const user = users.find(u => u.id === selectedUserId);
     if (user) {
+      // Create full name from first_name and last_name
+      const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+      
       // Transform DB user to app user format
       const appUser = {
         id: user.id,
-        name: user.name,
+        name: fullName,
         email: user.email,
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
         title: user.role.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
         role: user.role,
         organizationId: user.organization_id,
-        organization: user.organization ? {
-          id: user.organization.id,
-          name: user.organization.name,
-          type: user.organization.type,
+        organization: (user.organizations || user.organization) ? {
+          id: user.organizations?.id || user.organization?.id,
+          name: user.organizations?.name || user.organization?.name,
+          type: user.organizations?.type || user.organization?.type,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         } : undefined,
-        phone: "",
+        phone: user.telephone || "",
+        telephone: user.telephone || "",
+        department: user.department || "",
+        jobTitle: user.job_title || "",
+        organisation: user.organisation || user.organizations?.name || user.organization?.name || "",
+        profilePicture: user.avatar_url || "",
         isActive: true,
         lastLogin: new Date().toISOString(),
         createdAt: user.created_at,
@@ -148,7 +183,7 @@ export default function LoginPage() {
       
       // Set the user in localStorage
       localStorage.setItem('aims_user', JSON.stringify(appUser));
-      toast.success(`Logged in as ${user.name} (${ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]})`);
+      toast.success(`Logged in as ${fullName} (${ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]})`);
       // Force a hard navigation to ensure the app reloads with the new user
       window.location.href = "/dashboard";
     }
@@ -248,16 +283,16 @@ export default function LoginPage() {
 
                 <div className="space-y-2 text-sm">
                   <div className="p-3 bg-muted rounded-lg">
-                    <p className="font-medium">Super User</p>
-                    <p className="text-muted-foreground">john@example.com / any password</p>
+                    <p className="font-medium">Super User (Leigh Mitchell)</p>
+                    <p className="text-muted-foreground">leigh.h.mitchell@gmail.com / TempPass1751301868860!</p>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
-                    <p className="font-medium">Dev Partner Tier 1</p>
-                    <p className="text-muted-foreground">jane@worldbank.org / any password</p>
+                    <p className="font-medium">Admin User</p>
+                    <p className="text-muted-foreground">admin@example.com / TempPass1751301868234!</p>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
-                    <p className="font-medium">Gov Partner Tier 1</p>
-                    <p className="text-muted-foreground">sarah@mof.gov / any password</p>
+                    <p className="font-medium">Dev Partner Tier 1 (John)</p>
+                    <p className="text-muted-foreground">john@undp.org / TempPass1751301868536!</p>
                   </div>
                 </div>
               </TabsContent>
@@ -293,7 +328,7 @@ export default function LoginPage() {
                           <SelectItem key={user.id} value={user.id}>
                             <div className="flex items-center justify-between w-full">
                               <div>
-                                <p className="font-medium">{user.name}</p>
+                                <p className="font-medium">{`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email}</p>
                                 <p className="text-sm text-muted-foreground">{user.email}</p>
                               </div>
                               <Badge variant={user.role === "super_user" ? "destructive" : "secondary"}>
@@ -319,7 +354,7 @@ export default function LoginPage() {
                             <div className="flex items-center gap-3">
                               <User className="h-10 w-10 text-muted-foreground" />
                               <div>
-                                <p className="font-medium">{selectedUser.name}</p>
+                                <p className="font-medium">{`${selectedUser.first_name || ''} ${selectedUser.last_name || ''}`.trim() || selectedUser.email}</p>
                                 <p className="text-sm text-muted-foreground">
                                   {selectedUser.role.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                                 </p>
@@ -335,7 +370,7 @@ export default function LoginPage() {
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">Organization:</span>
                                 <span className="font-medium">
-                                  {selectedUser.organization?.name || "None (Orphan)"}
+                                  {selectedUser.organizations?.name || selectedUser.organization?.name || "None (Orphan)"}
                                 </span>
                               </div>
                             </div>

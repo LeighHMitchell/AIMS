@@ -49,6 +49,8 @@ export default function ContactsSection({ contacts, onChange }: ContactsSectionP
   React.useEffect(() => {
     console.log('[CONTACTS DEBUG] ContactsSection mounted/updated');
     console.log('[CONTACTS DEBUG] Received contacts prop:', contacts);
+    console.log('[CONTACTS DEBUG] Contacts array length:', contacts?.length || 0);
+    console.log('[CONTACTS DEBUG] Contacts details:', JSON.stringify(contacts, null, 2));
     console.log('[CONTACTS DEBUG] onChange function exists:', !!onChange);
   }, [contacts, onChange]);
 

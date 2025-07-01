@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'social_django',
 	'projects',
     'crispy_forms',
@@ -50,6 +51,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -150,3 +152,37 @@ LOGIN_URL = '/auth/login/google-oauth2/'
 LOGOUT_URL = 'logout'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# CORS configuration for frontend
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://localhost:3003",
+    "http://localhost:3004",
+    "http://localhost:3005",
+    "http://localhost:3006",
+    "http://localhost:3007",
+    "http://localhost:3008",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
+    "http://127.0.0.1:3003",
+    "http://127.0.0.1:3004",
+    "http://127.0.0.1:3005",
+    "http://127.0.0.1:3006",
+    "http://127.0.0.1:3007",
+    "http://127.0.0.1:3008",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# Session configuration
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+# Increase upload size for profile pictures (10MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB in bytes
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB in bytes

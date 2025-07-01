@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS organization_group_members (
     added_at TIMESTAMPTZ DEFAULT NOW(),
     added_by UUID REFERENCES auth.users(id),
     UNIQUE(organization_id, group_id)
-);
+)
 
 -- 4. Insert IATI DAC Organization Types
 INSERT INTO organization_types (code, label, description, category, sort_order) VALUES

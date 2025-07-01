@@ -1,0 +1,9 @@
+Activity Title,Transaction Date,Amount,Transaction Type,Currency,Description,Provider Organization,Receiver Organization,Reference Number
+"Rural Water Supply Improvement","2024-01-15","50000","disbursement","USD","Initial funding disbursement for project startup","UNICEF","Myanmar Water Resources Department","TXN-2024-001"
+"Rural Water Supply Improvement","2024-02-20","25000","expenditure","USD","Purchase of water pumps and drilling equipment","Myanmar Water Resources Department","Equipment Supplier Ltd","TXN-2024-002"
+"Primary Education Support Program","2024-03-10","75000","disbursement","USD","First quarter funding release","World Bank","Ministry of Education","TXN-2024-003"
+"Primary Education Support Program","2024-04-05","15000","expenditure","USD","Teacher training workshop expenses","Ministry of Education","Training Institute","TXN-2024-004"
+"Healthcare Infrastructure Development","2024-02-28","100000","incoming_funds","USD","Grant received from donor","JICA","Ministry of Health","TXN-2024-005"
+"Healthcare Infrastructure Development","2024-03-15","45000","expenditure","USD","Construction materials for health center","Ministry of Health","Construction Company","TXN-2024-006"
+"Agricultural Productivity Enhancement","2024-04-20","30000","disbursement","USD","Seed distribution program funding","FAO","Department of Agriculture","TXN-2024-007"
+"Women's Economic Empowerment","2024-05-10","40000","disbursement","USD","Microfinance program initial capital","UN Women","Women's Development Association","TXN-2024-008"

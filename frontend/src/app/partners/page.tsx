@@ -7,240 +7,147 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-import { useUser, mockUsers } from "@/hooks/useUser";
-import { usePartners, type Partner } from "@/hooks/usePartners";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import { useUser } from "@/hooks/useUser";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ImageUpload } from "@/components/ImageUpload";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   Building2, 
   Users, 
   Search, 
-  Globe, 
-  MapPin,
   DollarSign,
   Activity,
   ExternalLink,
-  Plus,
   Loader2,
   Download,
-  Upload,
-  X,
-  Briefcase,
-  Flag,
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
-  Mail,
-  Phone,
+  Eye,
   FolderOpen,
   Calendar,
   Clock,
-  Edit,
-  Trash2,
-  RefreshCw
+  TrendingUp,
+  Filter,
+  RefreshCw,
+  Info,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { LEGACY_TRANSACTION_TYPE_MAP } from "@/types/transaction";
-import { 
-  OrganizationFieldHelp, 
-  ORGANIZATION_TYPES, 
-  COUNTRIES, 
-  calculateCooperationModality 
-} from "@/components/OrganizationFieldHelpers";
+import { PartnerFundingSummarySkeleton } from "@/components/skeletons";
 
-type SortField = 'name' | 'type' | 'countryRepresented' | 'createdAt' | 'updatedAt';
+type SortField = 'name' | 'activeProjects' | 'totalAmount' | '2022' | '2023' | '2024' | '2025' | '2026' | '2027';
 type SortOrder = 'asc' | 'desc';
 
-// Convert country code to full country name
-const getCountryDisplayName = (countryCode: string): string => {
-  if (!countryCode) return '';
-  
-  // Handle special cases
-  if (countryCode === 'GLOBAL') return '🌐 Global / Not Country-Specific';
-  if (countryCode === 'Regional') return '🌍 Regional';
-  
-  // Find the country in the COUNTRIES array
-  const country = COUNTRIES.find(c => c.value === countryCode || c.label === countryCode);
-  if (country) {
-    return country.label;
-  }
-  
-  // If no match found, return the original value (might already be a full name)
-  return countryCode;
-};
+interface OrganizationMetrics {
+  id: string;
+  name: string;
+  fullName: string;
+  acronym: string;
+  type?: string;
+  organisationType: string;
+  countryRepresented: string;
+  activeProjects: number;
+  totalAmount: number;
+  financialData: Record<string, number>;
+  website?: string;
+  logo?: string;
+  cooperationModality?: string;  // Partner Origin
+  derivedCategory?: string;       // Partner Classification
+}
 
-// Safe date formatting helper with better handling
-const formatDate = (date: any, formatString: string = "dd MMM yyyy"): string => {
-  if (!date) return "Never updated";
-  
-  try {
-    const dateObj = new Date(date);
-    if (isNaN(dateObj.getTime())) {
-      return "Invalid date";
-    }
-    return format(dateObj, formatString);
-  } catch (error) {
-    console.error("Date formatting error:", error);
-    return "Invalid date";
-  }
-};
+interface GroupData {
+  id: string;
+  name: string;
+  description: string;
+  type: 'predefined' | 'custom';
+  organizations: OrganizationMetrics[];
+  totalOrganizations: number;
+  totalAmount: number;
+  totalActiveProjects: number;
+}
 
-const getPartnerTypeIcon = (type: string) => {
-  switch (type) {
-    case 'development_partner':
-      return <Globe className="h-4 w-4" />;
-    case 'partner_government':
-      return <Building2 className="h-4 w-4" />;
-    case 'bilateral':
-      return <Flag className="h-4 w-4" />;
-    default:
-      return <Briefcase className="h-4 w-4" />;
-  }
-};
-
-const getPartnerTypeLabel = (partner: Partner) => {
-  // Use orgClassification if available, otherwise fall back to type mapping
-  if (partner.orgClassification) {
-    return partner.orgClassification;
-  }
-  
-  // Legacy fallback for compatibility
-  switch (partner.type) {
-    case 'development_partner':
-      return 'Development Partner';
-    case 'partner_government':
-      return 'Partner Government';
-    case 'bilateral':
-      return 'Bilateral Partner';
-    default:
-      return 'Other';
-  }
-};
-
-const formatOrganizationDisplayName = (partner: Partner) => {
-  // If we have both fullName and acronym, show "Full Name (ACRONYM)"
-  if (partner.fullName && partner.acronym && partner.fullName !== partner.acronym) {
-    return `${partner.fullName} (${partner.acronym})`;
-  }
-  // If we only have fullName, show that
-  if (partner.fullName) {
-    return partner.fullName;
-  }
-  // If we only have acronym or name, show that
-  return partner.acronym || partner.name;
-};
+interface SummaryData {
+  groups: GroupData[];
+  totalOrganizations: number;
+  totalActiveProjects: number;
+  totalAmount: number;
+  lastUpdated: string;
+  transactionType: string;
+  groupBy: string;
+}
 
 export default function PartnersPage() {
   const router = useRouter();
-  const { user, permissions } = useUser();
-  const { partners, loading, error, createPartner, getDevelopmentPartners } = usePartners();
+  const { user } = useUser();
+  
+  // Main state
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // UI state
   const [searchTerm, setSearchTerm] = useState("");
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [partnerType, setPartnerType] = useState<'development_partner' | 'partner_government' | 'bilateral' | 'other'>('development_partner');
-  const [sortField, setSortField] = useState<SortField>('updatedAt');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [formData, setFormData] = useState({
-    name: "",
-    iatiOrgId: "",
-    fullName: "",
-    acronym: "",
-    countryRepresented: "",
-    organisationType: "",
-    description: "",
-    website: "",
-    email: "",
-    phone: "",
-    address: "",
-    logo: "",
-    banner: ""
-  });
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [activities, setActivities] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState("development");
-  const [organizationGroupsCount, setOrganizationGroupsCount] = useState(0);
-  const [organizationGroups, setOrganizationGroups] = useState<any[]>([]);
-  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{
-    isOpen: boolean;
-    partner: Partner | null;
-    confirmText: string;
-  }>({ isOpen: false, partner: null, confirmText: '' });
-  const [deleting, setDeleting] = useState(false);
-  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [transactionType, setTransactionType] = useState<'C' | 'D'>('C'); // C = Commitments, D = Disbursements
+  const [groupBy, setGroupBy] = useState<'type' | 'custom'>('type');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [showOrgDialog, setShowOrgDialog] = useState(false);
+  const [selectedOrg, setSelectedOrg] = useState<OrganizationMetrics | null>(null);
 
-  // Add debugging
-  useEffect(() => {
-    console.log('[Partners Page] Loading state:', loading);
-    console.log('[Partners Page] Error state:', error);
-    console.log('[Partners Page] Partners data:', partners);
-  }, [loading, error, partners]);
-
-  // Fetch activities to calculate metrics
-  useEffect(() => {
-    fetchActivities();
-    fetchOrganizationGroupsCount();
-  }, []);
-
-  const fetchActivities = async () => {
+  // Fetch summary data
+  const fetchSummaryData = async () => {
     try {
-      const res = await fetch("/api/activities");
-      if (res.ok) {
-        const data = await res.json();
-        setActivities(data);
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(
+        `/api/partners/summary?groupBy=${groupBy}&transactionType=${transactionType}`,
+        { cache: 'no-store' }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
       }
-    } catch (error) {
-      console.error("Error fetching activities:", error);
+      
+      const data = await response.json();
+      setSummaryData(data);
+      
+      // Auto-expand all groups initially
+      if (data.groups) {
+        setExpandedGroups(new Set(data.groups.map((g: GroupData) => g.id)));
+      }
+    } catch (err) {
+      console.error('Error fetching summary data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchOrganizationGroupsCount = async () => {
-    try {
-      console.log('[PARTNERS] Fetching organization groups...');
-      
-      // First try debug mode to see raw data
-      const debugRes = await fetch("/api/organization-groups?debug=true");
-      if (debugRes.ok) {
-        const debugData = await debugRes.json();
-        console.log('[PARTNERS] Debug data:', debugData);
-      }
-      
-      // Now try regular fetch
-      const res = await fetch("/api/organization-groups");
-      console.log('[PARTNERS] Organization groups response status:', res.status);
-      
-      if (res.ok) {
-        const data = await res.json();
-        console.log('[PARTNERS] Organization groups data received:', {
-          isArray: Array.isArray(data),
-          length: data?.length || 0,
-          data: data
-        });
-        
-        setOrganizationGroups(data);
-        setOrganizationGroupsCount(data?.length || 0);
-        
-        console.log('[PARTNERS] Organization groups state updated:', {
-          count: data?.length || 0,
-          groups: data
-        });
-      } else {
-        const errorData = await res.json();
-        console.error('[PARTNERS] Failed to fetch organization groups:', {
-          status: res.status,
-          error: errorData
-        });
-      }
-    } catch (error) {
-      console.error('[PARTNERS] Error fetching organization groups:', error);
+  useEffect(() => {
+    fetchSummaryData();
+  }, [transactionType, groupBy]);
+
+  // Toggle group expansion
+  const toggleGroup = (groupId: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(groupId)) {
+      newExpanded.delete(groupId);
+    } else {
+      newExpanded.add(groupId);
     }
+    setExpandedGroups(newExpanded);
   };
 
+  // Sorting logic
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -251,259 +158,116 @@ export default function PartnersPage() {
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
-    }
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1" />;
     return sortOrder === 'asc' 
-      ? <ChevronUp className="h-4 w-4 text-gray-700" />
-      : <ChevronDown className="h-4 w-4 text-gray-700" />;
+      ? <ArrowUp className="h-3 w-3 ml-1" />
+      : <ArrowDown className="h-3 w-3 ml-1" />;
   };
 
-  const sortPartners = (partnersToSort: Partner[]) => {
-    return [...partnersToSort].sort((a, b) => {
-      let aValue: any, bValue: any;
+  // Sort organizations within a group
+  const sortOrganizations = (organizations: OrganizationMetrics[]) => {
+    return [...organizations].sort((a, b) => {
+      let aVal: any, bVal: any;
       
       switch (sortField) {
         case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
+          aVal = a.name.toLowerCase();
+          bVal = b.name.toLowerCase();
           break;
-        case 'type':
-          aValue = a.type;
-          bValue = b.type;
+        case 'activeProjects':
+          aVal = a.activeProjects || 0;
+          bVal = b.activeProjects || 0;
           break;
-        case 'countryRepresented':
-          aValue = a.countryRepresented?.toLowerCase() || '';
-          bValue = b.countryRepresented?.toLowerCase() || '';
+        case 'totalAmount':
+          aVal = a.totalAmount;
+          bVal = b.totalAmount;
           break;
-        case 'createdAt':
-          aValue = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          bValue = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          break;
-        case 'updatedAt':
-          aValue = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-          bValue = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        case '2022':
+        case '2023':
+        case '2024':
+        case '2025':
+        case '2026':
+        case '2027':
+          aVal = a.financialData[sortField] || 0;
+          bVal = b.financialData[sortField] || 0;
           break;
         default:
           return 0;
       }
       
-      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
       return 0;
     });
   };
 
-  // Group partners by organization classification
-  const getPartnersByClassification = (classification: string) => {
-    return partners.filter(p => p.orgClassification === classification);
+  // Filter organizations by search term
+  const filterOrganizations = (organizations: OrganizationMetrics[]) => {
+    if (!searchTerm) return organizations;
+    
+    const term = searchTerm.toLowerCase();
+    return organizations.filter(org => 
+      org.name.toLowerCase().includes(term) ||
+      org.fullName.toLowerCase().includes(term) ||
+      org.acronym.toLowerCase().includes(term) ||
+      org.countryRepresented.toLowerCase().includes(term)
+    );
   };
-
-  const developmentPartners = getPartnersByClassification('Development Partner');
-  const partnerGovernments = getPartnersByClassification('Partner Government');
-  const civilSocietyIntl = getPartnersByClassification('Civil Society – International');
-  const civilSocietyDomestic = getPartnersByClassification('Civil Society – Domestic');
-  const privateSectorIntl = getPartnersByClassification('Private Sector – International');
-  const privateSectorDomestic = getPartnersByClassification('Private Sector – Domestic');
-  const otherOrganizations = getPartnersByClassification('Other');
-
-  // Filter and sort functions for each category
-  const getFilteredAndSorted = (partnersList: Partner[]) => {
-    return sortPartners(partnersList.filter(partner =>
-      partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      partner.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    ));
-  };
-
-  const filteredDevelopmentPartners = getFilteredAndSorted(developmentPartners);
-  const filteredPartnerGovernments = getFilteredAndSorted(partnerGovernments);
-  const filteredCivilSocietyIntl = getFilteredAndSorted(civilSocietyIntl);
-  const filteredCivilSocietyDomestic = getFilteredAndSorted(civilSocietyDomestic);
-  const filteredPrivateSectorIntl = getFilteredAndSorted(privateSectorIntl);
-  const filteredPrivateSectorDomestic = getFilteredAndSorted(privateSectorDomestic);
-  const filteredOtherOrganizations = getFilteredAndSorted(otherOrganizations);
 
   // Calculate metrics
-  const calculateMetrics = () => {
-    // Total Funding: Sum all commitments from development partners
-    let totalFunding = 0;
-    activities.forEach(activity => {
-      if (activity.transactions) {
-        activity.transactions.forEach((transaction: any) => {
-          // Check if provider is a development partner and transaction is commitment (type "2" or "C") and actual
-          const isFromDevPartner = partners.some(p => 
-            p.type === 'development_partner' && p.name === transaction.providerOrg
-          );
-          
-          // Normalize transaction type to handle both legacy and new types
-          const normalizedType = LEGACY_TRANSACTION_TYPE_MAP[transaction.type] || transaction.type;
-          
-          if (isFromDevPartner && normalizedType === "C" && transaction.status === "actual") {
-            totalFunding += transaction.value;
-          }
-        });
-      }
-    });
+  const bilateralPartnersCount = useMemo(() => {
+    if (!summaryData) return 0;
+    return summaryData.groups
+      .filter(g => g.id === 'bilateral')
+      .reduce((sum, g) => sum + g.totalOrganizations, 0);
+  }, [summaryData]);
 
-    // Active Projects: Count of published activities in implementation stage
-    const activeProjects = activities.filter(a => {
-      // Check both new fields first, fallback to old status field for backward compatibility
-      const activityStatus = a.activityStatus || (a.status && !["published", "draft"].includes(a.status) ? a.status : "");
-      const publicationStatus = a.publicationStatus || (a.status === "published" ? "published" : "draft");
-      
-      return activityStatus === "implementation" && publicationStatus === "published";
-    }).length;
+  const multilateralPartnersCount = useMemo(() => {
+    if (!summaryData) return 0;
+    return summaryData.groups
+      .filter(g => g.id === 'multilateral')
+      .reduce((sum, g) => sum + g.totalOrganizations, 0);
+  }, [summaryData]);
 
-    // Countries: Total number of bilateral partners
-    const bilateralPartners = partners.filter(p => p.type === 'bilateral').length;
+  const otherPartnersCount = useMemo(() => {
+    if (!summaryData) return 0;
+    return summaryData.groups
+      .filter(g => g.id === 'other')
+      .reduce((sum, g) => sum + g.totalOrganizations, 0);
+  }, [summaryData]);
 
-    return { totalFunding, activeProjects, bilateralPartners };
-  };
+  const activeGroupsCount = useMemo(() => {
+    if (!summaryData) return 0;
+    return summaryData.groups.filter(g => g.totalOrganizations > 0).length;
+  }, [summaryData]);
 
-  const { totalFunding, activeProjects, bilateralPartners } = calculateMetrics();
-
-  // Calculate active projects for a specific partner - memoized to update when activities change
-  const calculatePartnerActiveProjects = useMemo(() => {
-    return (partnerId: string, partnerName: string) => {
-      if (!activities || activities.length === 0) {
-        return 0;
-      }
-
-      console.log(`[DEBUG] Calculating active projects for partner: ${partnerName} (${partnerId})`);
-      
-      // Get all users from this organization (for legacy compatibility)
-      const organizationUsers = mockUsers.filter(u => u.organizationId === partnerId);
-      const organizationUserIds = organizationUsers.map(u => u.id);
-
-      let activeProjectCount = 0;
-      
-      activities.forEach((activity, index) => {
-        // Check various ways this activity could be related to this partner
-        const isCreatedByOrgUser = activity.createdBy && organizationUserIds.includes(activity.createdBy.id);
-        const isCreatedByThisOrg = activity.createdByOrg === partnerId || activity.createdByOrg === partnerName;
-        
-        // Check if partner is involved in transactions
-        const isInvolvedInTransactions = activity.transactions?.some((t: any) => 
-          t.providerOrg === partnerName || 
-          t.receiverOrg === partnerName ||
-          t.providerOrg === partnerId ||
-          t.receiverOrg === partnerId
-        );
-        
-        // Check if partner is a contributor
-        const isContributor = activity.contributors?.some((c: any) => 
-          c.organizationId === partnerId || c.organizationName === partnerName
-        );
-        
-        // Activity is related to this partner if any of the above conditions are true
-        const isRelatedToPartner = isCreatedByOrgUser || isCreatedByThisOrg || isInvolvedInTransactions || isContributor;
-
-        if (isRelatedToPartner) {
-          // Check both new fields first, fallback to old status field for backward compatibility
-          const activityStatus = activity.activityStatus || 
-            (activity.status && !["published", "draft"].includes(activity.status) ? activity.status : "");
-          
-          // Check publication status
-          const publicationStatus = activity.publicationStatus || 
-            (activity.status === "published" ? "published" : "draft");
-          
-          // Count as active if in implementation status and published
-          if (activityStatus === "implementation" && publicationStatus === "published") {
-            activeProjectCount++;
-            console.log(`[DEBUG] Active project found for ${partnerName}: ${activity.title} (status: ${activityStatus}, published: ${publicationStatus})`);
-          }
-        }
-      });
-
-      console.log(`[DEBUG] Total active projects for ${partnerName}: ${activeProjectCount}`);
-      return activeProjectCount;
-    };
-  }, [activities, mockUsers]); // Dependencies include activities and mockUsers
-
-  const handleCreatePartner = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Export to CSV
+  const exportToCSV = () => {
+    if (!summaryData) return;
     
-    // Reset validation errors
-    setValidationErrors({});
-    
-    // Validate required fields
-    const errors: Record<string, string> = {};
-    
-    if (!formData.fullName.trim()) {
-      errors.fullName = "Full Name is required";
-    }
-    if (!formData.acronym.trim()) {
-      errors.acronym = "Acronym is required";
-    }
-    if (!formData.countryRepresented.trim()) {
-      errors.countryRepresented = "Country Represented is required";
-    }
-    if (!formData.organisationType.trim()) {
-      errors.organisationType = "Organisation Type is required";
-    }
-    
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      return;
-    }
+    const allOrganizations = summaryData.groups.flatMap(group => 
+      group.organizations.map(org => ({
+        'Group': group.name,
+        'Organization Name': org.name,
+        'Full Name': org.fullName,
+        'Acronym': org.acronym,
+        'Type': org.organisationType,
+        'Country': org.countryRepresented,
+        'Active Projects': org.activeProjects,
+        'Total Amount': org.totalAmount,
+        '2022': org.financialData['2022'] || 0,
+        '2023': org.financialData['2023'] || 0,
+        '2024': org.financialData['2024'] || 0,
+        '2025': org.financialData['2025'] || 0,
+        '2026': org.financialData['2026'] || 0,
+        '2027': org.financialData['2027'] || 0
+      }))
+    );
 
-    setSubmitting(true);
-    try {
-      // Use acronym as the display name, or fallback to fullName
-      const dataToSubmit = {
-        ...formData,
-        name: formData.acronym || formData.fullName,
-        type: partnerType,
-      };
-      
-      await createPartner(dataToSubmit, user);
-      setShowAddDialog(false);
-      setFormData({
-        name: "",
-        iatiOrgId: "",
-        fullName: "",
-        acronym: "",
-        countryRepresented: "",
-        organisationType: "",
-        description: "",
-        website: "",
-        email: "",
-        phone: "",
-        address: "",
-        logo: "",
-        banner: ""
-      });
-      setValidationErrors({});
-      setPartnerType('development_partner');
-    } catch (error) {
-      // Error is already handled by usePartners hook
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const exportPartners = () => {
-    const dataToExport = partners.map(partner => ({
-      "Partner ID": partner.id,
-      "Partner Name": partner.name,
-      "Partner Type": partner.orgClassification || 'Other',
-      "Country Represented": partner.countryRepresented || "",
-      "Description": partner.description || "",
-      "Website": partner.website || "",
-      "Email": partner.email || "",
-      "Phone": partner.phone || "",
-      "Address": partner.address || "",
-      "Registration Status": "Active",
-      "Total Committed": 0, // These would need to be calculated from activities
-      "Total Disbursed": 0, // These would need to be calculated from activities
-      "Created Date": formatDate(partner.createdAt),
-      "Updated Date": formatDate(partner.updatedAt),
-    }));
-
-    const headers = Object.keys(dataToExport[0] || {});
+    const headers = Object.keys(allOrganizations[0] || {});
     const csv = [
       headers.join(","),
-      ...dataToExport.map(row => 
+      ...allOrganizations.map(row => 
         headers.map(header => {
           const value = row[header as keyof typeof row];
           return typeof value === "string" && value.includes(",") 
@@ -517,1551 +281,637 @@ export default function PartnersPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `partners-export-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.download = `partner-summary-${transactionType === 'C' ? 'commitments' : 'disbursements'}-${format(new Date(), "yyyy-MM-dd")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Partners exported successfully");
+    toast.success("Data exported successfully");
   };
 
-  const handleDeletePartner = async () => {
-    if (!deleteConfirmDialog.partner) return;
-    
-    const partner = deleteConfirmDialog.partner;
-    
-    // Validate confirmation text
-    if (deleteConfirmDialog.confirmText !== partner.name) {
-      toast.error("Organization name doesn't match. Please type the exact name to confirm deletion.");
-      return;
+  // Format currency
+  const formatCurrency = (amount: number | null | undefined): string => {
+    // Handle null, undefined, or non-numeric values
+    if (amount === null || amount === undefined || typeof amount !== 'number' || isNaN(amount)) {
+      return "-";
     }
-
-    setDeleting(true);
+    
+    if (amount === 0) return "-";
+    if (Math.abs(amount) >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+    if (Math.abs(amount) >= 1000) return `$${(amount / 1000).toFixed(1)}K`;
+    
     try {
-      const response = await fetch(`/api/partners/${partner.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user: user
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete organization');
-      }
-
-      // Close dialog and refresh data
-      setDeleteConfirmDialog({ isOpen: false, partner: null, confirmText: '' });
-      
-      // Refresh partners list (this will trigger a re-fetch)
-      window.location.reload();
-      
-      toast.success(`Successfully deleted ${partner.name}`);
-    } catch (error: any) {
-      console.error('Delete error:', error);
-      toast.error(error.message || 'Failed to delete organization');
-    } finally {
-      setDeleting(false);
+      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    } catch {
+      return `$${amount}`;
     }
-  };
-
-  const openDeleteDialog = (partner: Partner, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeleteConfirmDialog({
-      isOpen: true,
-      partner,
-      confirmText: ''
-    });
   };
 
   if (loading) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="text-slate-600">Loading partners...</p>
+        <PartnerFundingSummarySkeleton />
+      </MainLayout>
+    );
+  }
+
+  if (error || !summaryData) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{error || 'Failed to load data'}</p>
+            <Button onClick={fetchSummaryData} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
           </div>
         </div>
       </MainLayout>
     );
   }
 
-  // Check if we should display in card view or table view
-  const shouldUseTableView = activeTab === 'development' || activeTab === 'government';
-
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50">
-        <div className="p-8 max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gray-50">
+        <div className="p-6 max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-slate-900 mb-3">Partner Organizations</h1>
-            <p className="text-lg text-slate-600">
-              Browse and explore our development partner network
-            </p>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Partner Summary</h1>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="bg-white border-slate-200">
-              <CardHeader className="pb-3">
+          {/* Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-white border border-gray-200">
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-slate-600">Total Partners</CardTitle>
-                  <Building2 className="h-4 w-4 text-slate-400" />
+                  <CardTitle className="text-sm font-medium text-gray-700">Bilateral Partners</CardTitle>
+                  <Building2 className="h-4 w-4 text-gray-500" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-slate-900">{partners.length}</div>
-                <p className="text-xs text-slate-500 mt-1">Active organizations</p>
+                <div className="text-2xl font-bold text-gray-900">{bilateralPartnersCount}</div>
+                <p className="text-xs text-gray-500 mt-1">{bilateralPartnersCount} shown</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-slate-200">
-              <CardHeader className="pb-3">
+            <Card className="bg-white border border-gray-200">
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-slate-600">Total Funding</CardTitle>
-                  <DollarSign className="h-4 w-4 text-slate-400" />
+                  <CardTitle className="text-sm font-medium text-gray-700">Multilateral Organisations</CardTitle>
+                  <Users className="h-4 w-4 text-gray-500" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-slate-900">
-                  ${totalFunding.toLocaleString()}
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Committed funding</p>
+                <div className="text-2xl font-bold text-gray-900">{multilateralPartnersCount}</div>
+                <p className="text-xs text-gray-500 mt-1">Multilateral organisations</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-slate-200">
-              <CardHeader className="pb-3">
+            <Card className="bg-white border border-gray-200">
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-slate-600">Active Projects</CardTitle>
-                  <Activity className="h-4 w-4 text-slate-400" />
+                  <CardTitle className="text-sm font-medium text-gray-700">Other Partners</CardTitle>
+                  <Users className="h-4 w-4 text-gray-500" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-slate-900">{activeProjects}</div>
-                <p className="text-xs text-slate-500 mt-1">In implementation</p>
+                <div className="text-2xl font-bold text-gray-900">{otherPartnersCount}</div>
+                <p className="text-xs text-gray-500 mt-1">Other partners</p>
               </CardContent>
             </Card>
 
-            <Card 
-              className="bg-white border-slate-200 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => router.push('/partners/groups')}
-            >
-              <CardHeader className="pb-3">
+            <Card className="bg-white border border-gray-200">
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-slate-600">Organization Groups</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fetchOrganizationGroupsCount();
-                      }}
-                      className="h-6 w-6 p-0"
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                    </Button>
-                    <FolderOpen className="h-4 w-4 text-slate-400" />
-                  </div>
+                  <CardTitle className="text-sm font-medium text-gray-700">Groups with organizations</CardTitle>
+                  <FolderOpen className="h-4 w-4 text-gray-500" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-slate-900">{organizationGroupsCount}</div>
-                <p className="text-xs text-slate-500 mt-1">Custom groups</p>
+                <div className="text-2xl font-bold text-gray-900">{activeGroupsCount}</div>
+                <p className="text-xs text-gray-500 mt-1">Groups with organizations</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Search and Filters */}
-          <Card className="mb-8 bg-white border-slate-200">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-slate-900">Partner Organizations</CardTitle>
-                  <CardDescription className="text-slate-600">
-                    Browse and explore our development partner network
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  {partners.length > 0 && (
-                    <Button 
-                      variant="outline"
-                      onClick={exportPartners}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Export All Partners
-                    </Button>
-                  )}
-                  {permissions.canManageUsers && (
-                    <Button 
-                      className="bg-slate-900 hover:bg-slate-800"
-                      onClick={() => setShowAddDialog(true)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Organization
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6">
+          {/* Main Content */}
+          <Tabs value={groupBy} onValueChange={(value) => setGroupBy(value as 'type' | 'custom')}>
+            <div className="flex items-center justify-between mb-6">
+              <TabsList className="grid w-auto grid-cols-2">
+                <TabsTrigger value="type" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Organization Type
+                </TabsTrigger>
+                <TabsTrigger value="custom" className="flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4" />
+                  Organization Groups
+                </TabsTrigger>
+              </TabsList>
+
+              <div className="flex items-center gap-4">
+                {/* Search */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Search organizations..."
+                    type="text"
+                    placeholder="Search by name, acronym, count..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 border-slate-200 focus:border-slate-400"
+                    className="pl-10 w-64"
                   />
+                </div>
+
+                {/* Transaction Type Toggle */}
+                <div className="flex items-center bg-white border border-gray-200 rounded-md">
+                  <Button
+                    variant={transactionType === 'D' ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setTransactionType('D')}
+                    className="rounded-r-none"
+                  >
+                    Disbursements
+                  </Button>
+                  <Button
+                    variant={transactionType === 'C' ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setTransactionType('C')}
+                    className="rounded-l-none"
+                  >
+                    Commitments
+                  </Button>
+                </div>
+
+                {/* Actions */}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const allGroupIds = summaryData.groups.map(g => g.id);
+                    setExpandedGroups(new Set(allGroupIds));
+                  }}
+                >
+                  Expand All
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setExpandedGroups(new Set())}
+                >
+                  Collapse All
+                </Button>
+              </div>
+            </div>
+
+            <TabsContent value="type">
+              <div className="space-y-4">
+                {summaryData.groups.map((group) => {
+                  const isExpanded = expandedGroups.has(group.id);
+                  const filteredOrgs = filterOrganizations(group.organizations);
+                  const sortedOrgs = sortOrganizations(filteredOrgs);
+
+                  return (
+                    <Card key={group.id} className="bg-white border border-gray-200">
+                      <CardHeader 
+                        className="cursor-pointer hover:bg-gray-50 transition-colors py-4"
+                        onClick={() => toggleGroup(group.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {isExpanded ? (
+                              <ChevronUp className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-gray-400" />
+                            )}
+                            <div>
+                              <CardTitle className="text-lg font-semibold text-gray-900">
+                                {group.name}
+                              </CardTitle>
+                              <CardDescription className="text-gray-600">
+                                {group.description}
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <Badge variant="secondary" className="text-sm">
+                              {group.totalOrganizations} organizations
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+
+                      {isExpanded && (
+                        <CardContent className="pt-0">
+                          {sortedOrgs.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">
+                              {searchTerm ? 'No organizations match your search' : 'No organizations in this group'}
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b border-gray-200">
+                                    <th className="text-left py-3 px-2 font-medium text-gray-700">
+                                      <button
+                                        onClick={() => handleSort('name')}
+                                        className="flex items-center hover:text-gray-900"
+                                      >
+                                        Organisation Name
+                                        {getSortIcon('name')}
+                                      </button>
+                                    </th>
+                                    <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <button
+                                        onClick={() => handleSort('activeProjects')}
+                                        className="flex items-center hover:text-gray-900"
+                                      >
+                                        Active Projects
+                                        {getSortIcon('activeProjects')}
+                                      </button>
+                                    </th>
+                                    <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <button
+                                        onClick={() => handleSort('2022')}
+                                        className="flex items-center hover:text-gray-900"
+                                      >
+                                        2022 (USD)
+                                        {getSortIcon('2022')}
+                                      </button>
+                                    </th>
+                                    <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <button
+                                        onClick={() => handleSort('2023')}
+                                        className="flex items-center hover:text-gray-900"
+                                      >
+                                        2023 (USD)
+                                        {getSortIcon('2023')}
+                                      </button>
+                                    </th>
+                                    <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <button
+                                        onClick={() => handleSort('2024')}
+                                        className="flex items-center hover:text-gray-900"
+                                      >
+                                        2024 (USD)
+                                        {getSortIcon('2024')}
+                                      </button>
+                                    </th>
+                                    <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <button
+                                        onClick={() => handleSort('2025')}
+                                        className="flex items-center hover:text-gray-900"
+                                      >
+                                        2025 (USD)
+                                        {getSortIcon('2025')}
+                                      </button>
+                                    </th>
+                                    <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <button
+                                        onClick={() => handleSort('2026')}
+                                        className="flex items-center hover:text-gray-900"
+                                      >
+                                        2026 (USD)
+                                        {getSortIcon('2026')}
+                                      </button>
+                                    </th>
+                                    <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <button
+                                        onClick={() => handleSort('2027')}
+                                        className="flex items-center hover:text-gray-900"
+                                      >
+                                        2027 (USD)
+                                        {getSortIcon('2027')}
+                                      </button>
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {sortedOrgs.map((org) => (
+                                    <tr key={org.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                      <td className="py-3 px-2">
+                                        <button
+                                          onClick={() => router.push(`/organizations/${org.id}`)}
+                                          className="text-left text-blue-600 hover:text-blue-800 hover:underline"
+                                        >
+                                          {org.fullName && org.acronym 
+                                            ? `${org.fullName} (${org.acronym})`
+                                            : org.name
+                                          }
+                                        </button>
+                                      </td>
+                                      <td className="py-3 px-2 text-center">
+                                        {org.activeProjects || 0}
+                                      </td>
+                                      <td className="py-3 px-2 text-center">
+                                        {formatCurrency(org.financialData['2022'])}
+                                      </td>
+                                      <td className="py-3 px-2 text-center">
+                                        {formatCurrency(org.financialData['2023'])}
+                                      </td>
+                                      <td className="py-3 px-2 text-center">
+                                        {formatCurrency(org.financialData['2024'])}
+                                      </td>
+                                      <td className="py-3 px-2 text-center">
+                                        {formatCurrency(org.financialData['2025'])}
+                                      </td>
+                                      <td className="py-3 px-2 text-center">
+                                        {formatCurrency(org.financialData['2026'])}
+                                      </td>
+                                      <td className="py-3 px-2 text-center">
+                                        {formatCurrency(org.financialData['2027'])}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="custom">
+              <div className="space-y-4">
+                {summaryData.groups.length === 0 ? (
+                  <Card className="bg-white border border-gray-200">
+                    <CardContent className="py-12 text-center">
+                      <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Custom Groups</h3>
+                      <p className="text-gray-600 mb-4">
+                        Create custom organization groups to organize partners by your own criteria.
+                      </p>
+                      <Button onClick={() => router.push('/partners/groups')}>
+                        <FolderOpen className="h-4 w-4 mr-2" />
+                        Manage Groups
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  summaryData.groups.filter(g => g.type === 'custom').map((group) => {
+                    const isExpanded = expandedGroups.has(group.id);
+                    const filteredOrgs = filterOrganizations(group.organizations);
+                    const sortedOrgs = sortOrganizations(filteredOrgs);
+
+                    return (
+                      <Card key={group.id} className="bg-white border border-gray-200">
+                        <CardHeader 
+                          className="cursor-pointer hover:bg-gray-50 transition-colors py-4"
+                          onClick={() => toggleGroup(group.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                                                         <div className="flex items-center gap-3">
+                               {isExpanded ? (
+                                 <ChevronUp className="h-4 w-4 text-gray-400" />
+                               ) : (
+                                 <ChevronDown className="h-4 w-4 text-gray-400" />
+                               )}
+                               <FolderOpen className="h-5 w-5 text-blue-600" />
+                              <div>
+                                <CardTitle className="text-lg font-semibold text-gray-900">
+                                  {group.name}
+                                </CardTitle>
+                                <CardDescription className="text-gray-600">
+                                  {group.description}
+                                </CardDescription>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <Badge variant="secondary" className="text-sm">
+                                {group.totalOrganizations} organizations
+                              </Badge>
+                            </div>
+                          </div>
+                        </CardHeader>
+
+                        {isExpanded && (
+                          <CardContent className="pt-0">
+                            {sortedOrgs.length === 0 ? (
+                              <div className="text-center py-8 text-gray-500">
+                                {searchTerm ? 'No organizations match your search' : 'No organizations in this group'}
+                              </div>
+                            ) : (
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                  <thead>
+                                    <tr className="border-b border-gray-200">
+                                      <th className="text-left py-3 px-2 font-medium text-gray-700">
+                                        <button
+                                          onClick={() => handleSort('name')}
+                                          className="flex items-center hover:text-gray-900"
+                                        >
+                                          Organisation Name
+                                          {getSortIcon('name')}
+                                        </button>
+                                      </th>
+                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                        <button
+                                          onClick={() => handleSort('activeProjects')}
+                                          className="flex items-center hover:text-gray-900"
+                                        >
+                                          Active Projects
+                                          {getSortIcon('activeProjects')}
+                                        </button>
+                                      </th>
+                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                        <button
+                                          onClick={() => handleSort('2022')}
+                                          className="flex items-center hover:text-gray-900"
+                                        >
+                                          2022 (USD)
+                                          {getSortIcon('2022')}
+                                        </button>
+                                      </th>
+                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                        <button
+                                          onClick={() => handleSort('2023')}
+                                          className="flex items-center hover:text-gray-900"
+                                        >
+                                          2023 (USD)
+                                          {getSortIcon('2023')}
+                                        </button>
+                                      </th>
+                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                        <button
+                                          onClick={() => handleSort('2024')}
+                                          className="flex items-center hover:text-gray-900"
+                                        >
+                                          2024 (USD)
+                                          {getSortIcon('2024')}
+                                        </button>
+                                      </th>
+                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                        <button
+                                          onClick={() => handleSort('2025')}
+                                          className="flex items-center hover:text-gray-900"
+                                        >
+                                          2025 (USD)
+                                          {getSortIcon('2025')}
+                                        </button>
+                                      </th>
+                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                        <button
+                                          onClick={() => handleSort('2026')}
+                                          className="flex items-center hover:text-gray-900"
+                                        >
+                                          2026 (USD)
+                                          {getSortIcon('2026')}
+                                        </button>
+                                      </th>
+                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                        <button
+                                          onClick={() => handleSort('2027')}
+                                          className="flex items-center hover:text-gray-900"
+                                        >
+                                          2027 (USD)
+                                          {getSortIcon('2027')}
+                                        </button>
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {sortedOrgs.map((org) => (
+                                      <tr key={org.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                        <td className="py-3 px-2">
+                                          <button
+                                            onClick={() => router.push(`/organizations/${org.id}`)}
+                                            className="text-left text-blue-600 hover:text-blue-800 hover:underline"
+                                          >
+                                            {org.fullName && org.acronym 
+                                              ? `${org.fullName} (${org.acronym})`
+                                              : org.name
+                                            }
+                                          </button>
+                                        </td>
+                                        <td className="py-3 px-2 text-center">
+                                          {org.activeProjects || 0}
+                                        </td>
+                                        <td className="py-3 px-2 text-center">
+                                          {formatCurrency(org.financialData['2022'])}
+                                        </td>
+                                        <td className="py-3 px-2 text-center">
+                                          {formatCurrency(org.financialData['2023'])}
+                                        </td>
+                                        <td className="py-3 px-2 text-center">
+                                          {formatCurrency(org.financialData['2024'])}
+                                        </td>
+                                        <td className="py-3 px-2 text-center">
+                                          {formatCurrency(org.financialData['2025'])}
+                                        </td>
+                                        <td className="py-3 px-2 text-center">
+                                          {formatCurrency(org.financialData['2026'])}
+                                        </td>
+                                        <td className="py-3 px-2 text-center">
+                                          {formatCurrency(org.financialData['2027'])}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </CardContent>
+                        )}
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+
+      {/* Organization Detail Dialog */}
+      <Dialog open={showOrgDialog} onOpenChange={setShowOrgDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {selectedOrg?.logo ? (
+                <img 
+                  src={selectedOrg.logo} 
+                  alt={selectedOrg.name}
+                  className="h-10 w-10 object-contain rounded"
+                />
+              ) : (
+                <Building2 className="h-10 w-10 text-slate-400" />
+              )}
+              <div>
+                <div className="font-semibold">{selectedOrg?.name}</div>
+                <div className="text-sm text-slate-500 font-normal">{selectedOrg?.fullName}</div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedOrg && (
+            <div className="space-y-6">
+              {/* Organization Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Acronym</label>
+                  <p className="text-slate-900">{selectedOrg.acronym || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Type</label>
+                  <p className="text-slate-900">{selectedOrg.organisationType}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Country</label>
+                  <p className="text-slate-900">{selectedOrg.countryRepresented || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Active Projects</label>
+                  <p className="text-slate-900">{selectedOrg.activeProjects}</p>
                 </div>
               </div>
 
-              {/* Tabs */}
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-6 flex-wrap">
-                  <TabsTrigger value="development">
-                    Development Partner ({developmentPartners.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="government">
-                    Partner Government ({partnerGovernments.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="civil-intl">
-                    Civil Society – International ({civilSocietyIntl.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="civil-domestic">
-                    Civil Society – Domestic ({civilSocietyDomestic.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="private-intl">
-                    Private Sector – International ({privateSectorIntl.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="private-domestic">
-                    Private Sector – Domestic ({privateSectorDomestic.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="other">
-                    Other ({otherOrganizations.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="groups">
-                    <FolderOpen className="h-4 w-4 mr-2" />
-                    Organization Groups ({organizationGroupsCount})
-                  </TabsTrigger>
-                </TabsList>
-
-                {/* Development Partners Tab - Table View */}
-                <TabsContent value="development">
-                  {loading ? (
-                    <div className="text-center text-gray-500 py-8">Loading development partners...</div>
-                  ) : filteredDevelopmentPartners.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      {searchTerm ? 'No development partners found matching your search' : 'No development partners yet'}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredDevelopmentPartners.map((partner) => (
-                        <Card 
-                          key={partner.id} 
-                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => router.push(`/partners/${partner.id}`)}
-                        >
-                          {/* Banner Image */}
-                          {partner.banner && (
-                            <div className="h-32 overflow-hidden">
-                              <img 
-                                src={partner.banner} 
-                                alt={`${partner.name} banner`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
-                          
-                          <CardContent className="p-6">
-                            {/* Logo and Name */}
-                            <div className="flex items-start gap-4 mb-4">
-                              {partner.logo ? (
-                                <img 
-                                  src={partner.logo} 
-                                  alt={partner.name} 
-                                  className="h-12 w-12 object-contain rounded"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
-                                  <Globe className="h-6 w-6 text-gray-400" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                  {formatOrganizationDisplayName(partner)}
-                                </h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  {getPartnerTypeLabel(partner)}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            {/* Description */}
-                            {partner.description && (
-                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                {partner.description}
-                              </p>
-                            )}
-
-                            {/* Stats and Info */}
-                            <div className="space-y-2 text-sm">
-                              {partner.countryRepresented && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <MapPin className="h-4 w-4" />
-                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <Activity className="h-4 w-4" />
-                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
-                              </div>
-                              {partner.website && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <Globe className="h-4 w-4" />
-                                  <a 
-                                    href={partner.website} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="hover:text-blue-600 truncate"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {partner.website.replace(/^https?:\/\//, '')}
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Footer */}
-                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
-                              <div className="flex items-center gap-1">
-                                {/* Show Edit button for super users */}
-                                {user?.role === 'super_user' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      setEditingPartner(partner);
-                                      setShowEditDialog(true);
-                                    }}
-                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    aria-label="Edit Organization"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {permissions.canManageUsers && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => openDeleteDialog(partner, e)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/partners/${partner.id}`);
-                                  }}
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Partner Governments Tab */}
-                <TabsContent value="government">
-                  {loading ? (
-                    <div className="text-center text-gray-500 py-8">Loading partner governments...</div>
-                  ) : filteredPartnerGovernments.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      {searchTerm ? 'No partner governments found matching your search' : 'No partner governments yet'}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredPartnerGovernments.map((partner) => (
-                        <Card 
-                          key={partner.id} 
-                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => router.push(`/partners/${partner.id}`)}
-                        >
-                          {/* Banner Image */}
-                          {partner.banner && (
-                            <div className="h-32 overflow-hidden">
-                              <img 
-                                src={partner.banner} 
-                                alt={`${partner.name} banner`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
-                          
-                          <CardContent className="p-6">
-                            {/* Logo and Name */}
-                            <div className="flex items-start gap-4 mb-4">
-                              {partner.logo ? (
-                                <img 
-                                  src={partner.logo} 
-                                  alt={partner.name} 
-                                  className="h-12 w-12 object-contain rounded"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
-                                  <Building2 className="h-6 w-6 text-gray-400" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                  {formatOrganizationDisplayName(partner)}
-                                </h3>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="text-xs">
-                                    Partner Government
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Description */}
-                            {partner.description && (
-                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                {partner.description}
-                              </p>
-                            )}
-
-                            {/* Stats and Info */}
-                            <div className="space-y-2 text-sm">
-                              {partner.email && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <Mail className="h-4 w-4" />
-                                  <a 
-                                    href={`mailto:${partner.email}`}
-                                    className="hover:text-blue-600 truncate"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {partner.email}
-                                  </a>
-                                </div>
-                              )}
-                              {partner.phone && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <Phone className="h-4 w-4" />
-                                  <span>{partner.phone}</span>
-                                </div>
-                              )}
-                              {partner.website && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <Globe className="h-4 w-4" />
-                                  <a 
-                                    href={partner.website} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="hover:text-blue-600 truncate"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {partner.website.replace(/^https?:\/\//, '')}
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Footer */}
-                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
-                              <div className="flex items-center gap-1">
-                                {/* Show Edit button for super users */}
-                                {user?.role === 'super_user' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      setEditingPartner(partner);
-                                      setShowEditDialog(true);
-                                    }}
-                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    aria-label="Edit Organization"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {permissions.canManageUsers && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => openDeleteDialog(partner, e)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/partners/${partner.id}`);
-                                  }}
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Civil Society International Tab */}
-                <TabsContent value="civil-intl">
-                  {loading ? (
-                    <div className="text-center text-gray-500 py-8">Loading civil society organizations...</div>
-                  ) : filteredCivilSocietyIntl.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      {searchTerm ? 'No international civil society organizations found matching your search' : 'No international civil society organizations yet'}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredCivilSocietyIntl.map((partner) => (
-                        <Card 
-                          key={partner.id} 
-                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => router.push(`/partners/${partner.id}`)}
-                        >
-                          <CardContent className="p-6">
-                            <div className="flex items-start gap-4 mb-4">
-                              {partner.logo ? (
-                                <img 
-                                  src={partner.logo} 
-                                  alt={partner.name} 
-                                  className="h-12 w-12 object-contain rounded"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
-                                  <Users className="h-6 w-6 text-gray-400" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                  {formatOrganizationDisplayName(partner)}
-                                </h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Civil Society – International
-                                </Badge>
-                              </div>
-                            </div>
-                            {partner.description && (
-                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                {partner.description}
-                              </p>
-                            )}
-                            <div className="space-y-2 text-sm">
-                              {partner.countryRepresented && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <MapPin className="h-4 w-4" />
-                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <Activity className="h-4 w-4" />
-                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
-                              </div>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
-                              <div className="flex items-center gap-1">
-                                {/* Show Edit button for super users */}
-                                {user?.role === 'super_user' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      setEditingPartner(partner);
-                                      setShowEditDialog(true);
-                                    }}
-                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    aria-label="Edit Organization"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {permissions.canManageUsers && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => openDeleteDialog(partner, e)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/partners/${partner.id}`);
-                                  }}
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Civil Society Domestic Tab */}
-                <TabsContent value="civil-domestic">
-                  {loading ? (
-                    <div className="text-center text-gray-500 py-8">Loading domestic civil society organizations...</div>
-                  ) : filteredCivilSocietyDomestic.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      {searchTerm ? 'No domestic civil society organizations found matching your search' : 'No domestic civil society organizations yet'}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredCivilSocietyDomestic.map((partner) => (
-                        <Card 
-                          key={partner.id} 
-                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => router.push(`/partners/${partner.id}`)}
-                        >
-                          <CardContent className="p-6">
-                            <div className="flex items-start gap-4 mb-4">
-                              {partner.logo ? (
-                                <img 
-                                  src={partner.logo} 
-                                  alt={partner.name} 
-                                  className="h-12 w-12 object-contain rounded"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
-                                  <Users className="h-6 w-6 text-gray-400" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                  {formatOrganizationDisplayName(partner)}
-                                </h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Civil Society – Domestic
-                                </Badge>
-                              </div>
-                            </div>
-                            {partner.description && (
-                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                {partner.description}
-                              </p>
-                            )}
-                            <div className="space-y-2 text-sm">
-                              {partner.countryRepresented && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <MapPin className="h-4 w-4" />
-                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <Activity className="h-4 w-4" />
-                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
-                              </div>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
-                              <div className="flex items-center gap-1">
-                                {/* Show Edit button for super users */}
-                                {user?.role === 'super_user' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      setEditingPartner(partner);
-                                      setShowEditDialog(true);
-                                    }}
-                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    aria-label="Edit Organization"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {permissions.canManageUsers && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => openDeleteDialog(partner, e)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/partners/${partner.id}`);
-                                  }}
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Private Sector International Tab */}
-                <TabsContent value="private-intl">
-                  {loading ? (
-                    <div className="text-center text-gray-500 py-8">Loading international private sector organizations...</div>
-                  ) : filteredPrivateSectorIntl.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      {searchTerm ? 'No international private sector organizations found matching your search' : 'No international private sector organizations yet'}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredPrivateSectorIntl.map((partner) => (
-                        <Card 
-                          key={partner.id} 
-                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => router.push(`/partners/${partner.id}`)}
-                        >
-                          <CardContent className="p-6">
-                            <div className="flex items-start gap-4 mb-4">
-                              {partner.logo ? (
-                                <img 
-                                  src={partner.logo} 
-                                  alt={partner.name} 
-                                  className="h-12 w-12 object-contain rounded"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
-                                  <Briefcase className="h-6 w-6 text-gray-400" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                  {formatOrganizationDisplayName(partner)}
-                                </h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Private Sector – International
-                                </Badge>
-                              </div>
-                            </div>
-                            {partner.description && (
-                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                {partner.description}
-                              </p>
-                            )}
-                            <div className="space-y-2 text-sm">
-                              {partner.countryRepresented && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <MapPin className="h-4 w-4" />
-                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <Activity className="h-4 w-4" />
-                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
-                              </div>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
-                              <div className="flex items-center gap-1">
-                                {/* Show Edit button for super users */}
-                                {user?.role === 'super_user' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      setEditingPartner(partner);
-                                      setShowEditDialog(true);
-                                    }}
-                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    aria-label="Edit Organization"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {permissions.canManageUsers && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => openDeleteDialog(partner, e)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/partners/${partner.id}`);
-                                  }}
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Private Sector Domestic Tab */}
-                <TabsContent value="private-domestic">
-                  {loading ? (
-                    <div className="text-center text-gray-500 py-8">Loading domestic private sector organizations...</div>
-                  ) : filteredPrivateSectorDomestic.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      {searchTerm ? 'No domestic private sector organizations found matching your search' : 'No domestic private sector organizations yet'}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredPrivateSectorDomestic.map((partner) => (
-                        <Card 
-                          key={partner.id} 
-                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => router.push(`/partners/${partner.id}`)}
-                        >
-                          <CardContent className="p-6">
-                            <div className="flex items-start gap-4 mb-4">
-                              {partner.logo ? (
-                                <img 
-                                  src={partner.logo} 
-                                  alt={partner.name} 
-                                  className="h-12 w-12 object-contain rounded"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
-                                  <Briefcase className="h-6 w-6 text-gray-400" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                  {formatOrganizationDisplayName(partner)}
-                                </h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Private Sector – Domestic
-                                </Badge>
-                              </div>
-                            </div>
-                            {partner.description && (
-                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                {partner.description}
-                              </p>
-                            )}
-                            <div className="space-y-2 text-sm">
-                              {partner.countryRepresented && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <MapPin className="h-4 w-4" />
-                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <Activity className="h-4 w-4" />
-                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
-                              </div>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
-                              <div className="flex items-center gap-1">
-                                {/* Show Edit button for super users */}
-                                {user?.role === 'super_user' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      setEditingPartner(partner);
-                                      setShowEditDialog(true);
-                                    }}
-                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    aria-label="Edit Organization"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {permissions.canManageUsers && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => openDeleteDialog(partner, e)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/partners/${partner.id}`);
-                                  }}
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Other Organizations Tab */}
-                <TabsContent value="other">
-                  {loading ? (
-                    <div className="text-center text-gray-500 py-8">Loading other organizations...</div>
-                  ) : filteredOtherOrganizations.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      {searchTerm ? 'No other organizations found matching your search' : 'No other organizations yet'}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredOtherOrganizations.map((partner) => (
-                        <Card 
-                          key={partner.id} 
-                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => router.push(`/partners/${partner.id}`)}
-                        >
-                          <CardContent className="p-6">
-                            <div className="flex items-start gap-4 mb-4">
-                              {partner.logo ? (
-                                <img 
-                                  src={partner.logo} 
-                                  alt={partner.name} 
-                                  className="h-12 w-12 object-contain rounded"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 bg-gray-100 rounded flex items-center justify-center">
-                                  <Building2 className="h-6 w-6 text-gray-400" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                  {formatOrganizationDisplayName(partner)}
-                                </h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Other
-                                </Badge>
-                              </div>
-                            </div>
-                            {partner.description && (
-                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                {partner.description}
-                              </p>
-                            )}
-                            <div className="space-y-2 text-sm">
-                              {partner.countryRepresented && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <MapPin className="h-4 w-4" />
-                                  <span>{getCountryDisplayName(partner.countryRepresented)}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <Activity className="h-4 w-4" />
-                                <span>{calculatePartnerActiveProjects(partner.id, partner.name)} Active Projects</span>
-                              </div>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                              <span>Updated {partner.updatedAt ? formatDate(partner.updatedAt) : 'Never updated'}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  router.push(`/partners/${partner.id}`);
-                                }}
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Organization Groups Tab */}
-                <TabsContent value="groups">
-                  {organizationGroups.length === 0 ? (
-                    <div className="text-center py-12">
-                      <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        No organization groups yet
-                      </h3>
-                      <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                        Create custom groups of organizations for easier filtering and reporting across the application
-                      </p>
-                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <Button 
-                          onClick={() => router.push('/partners/groups?create=true')}
-                          className="bg-slate-900 hover:bg-slate-800"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create Your First Group
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          onClick={() => router.push('/partners/groups')}
-                        >
-                          <FolderOpen className="h-4 w-4 mr-2" />
-                          Manage All Groups
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex justify-between items-center mb-6">
-                        <p className="text-sm text-gray-600">
-                          Showing {organizationGroups.length} organization group{organizationGroups.length !== 1 ? 's' : ''}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm"
-                            onClick={() => router.push('/partners/groups?create=true')}
-                            className="bg-slate-900 hover:bg-slate-800"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create Group
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <TooltipProvider>
-                          {organizationGroups.map((group) => {
-                            const groupPartners = partners.filter(p => 
-                              group.organizationIds.includes(p.id)
-                            );
-                            
-                            return (
-                              <Card key={group.id} className="hover:shadow-lg transition-shadow">
-                                <CardHeader>
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                      <CardTitle className="text-lg">{group.name}</CardTitle>
-                                      {group.description && (
-                                        <CardDescription className="mt-1">
-                                          {group.description}
-                                        </CardDescription>
-                                      )}
-                                    </div>
-                                  </div>
-                                </CardHeader>
-                                <CardContent>
-                                  <div className="space-y-3">
-                                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                                      <Users className="h-4 w-4" />
-                                      <span>{groupPartners.length} organization{groupPartners.length !== 1 ? 's' : ''}</span>
-                                    </div>
-                                    
-                                    {/* Organization Preview */}
-                                    <div className="space-y-2">
-                                      {groupPartners.slice(0, 3).map((org: any) => (
-                                        <div key={org.id} className="flex items-center gap-2">
-                                          {org.logo ? (
-                                            <img 
-                                              src={org.logo} 
-                                              alt={org.name}
-                                              className="h-6 w-6 object-contain"
-                                            />
-                                          ) : (
-                                            <Building2 className="h-6 w-6 text-gray-400" />
-                                          )}
-                                          <span className="text-sm text-gray-700 truncate">
-                                            {formatOrganizationDisplayName(org)}
-                                          </span>
-                                        </div>
-                                      ))}
-                                      {groupPartners.length > 3 && (
-                                        <p className="text-sm text-gray-500 ml-8">
-                                          +{groupPartners.length - 3} more
-                                        </p>
-                                      )}
-                                    </div>
-                                    
-                                    {/* Timestamps */}
-                                    <div className="pt-2 space-y-1">
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                                            <Calendar className="h-3 w-3" />
-                                            <span>Created {formatDate(group.createdAt)}</span>
-                                            {group.createdByName && (
-                                              <span>by {group.createdByName}</span>
-                                            )}
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          Created by {group.createdByName || 'Unknown'} on {formatDate(group.createdAt, "dd MMM yyyy 'at' HH:mm")}
-                                        </TooltipContent>
-                                      </Tooltip>
-                                      
-                                      {group.updatedAt !== group.createdAt && (
-                                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                                          <Clock className="h-3 w-3" />
-                                          <span>Last Updated: {formatDate(group.updatedAt)}</span>
-                                          {group.updatedByName && (
-                                            <span>by {group.updatedByName}</span>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                    
-                                    {/* Action Button */}
-                                    <div className="pt-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full"
-                                        onClick={() => router.push('/partners/groups')}
-                                      >
-                                        View in Groups Manager
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            );
-                          })}
-                        </TooltipProvider>
-                      </div>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-      </div>
-
-        {/* Add Organization Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Organization</DialogTitle>
-            <DialogDesc>
-              Create a new development partner or government entity
-            </DialogDesc>
-          </DialogHeader>
-          <form onSubmit={handleCreatePartner} className="space-y-4">
-            {/* IATI Organisation Identifier */}
-            <div>
-              <label htmlFor="iatiOrgId" className="text-sm font-medium flex items-center">
-                IATI Organisation Identifier
-                <OrganizationFieldHelp field="iatiOrgId" />
-              </label>
-              <Input
-                id="iatiOrgId"
-                value={formData.iatiOrgId}
-                onChange={(e) => {
-                  setFormData({ ...formData, iatiOrgId: e.target.value });
-                  if (validationErrors.iatiOrgId) {
-                    setValidationErrors({ ...validationErrors, iatiOrgId: "" });
-                  }
-                }}
-                placeholder="e.g., XM-DAC-12-1"
-                className={validationErrors.iatiOrgId ? "border-red-500" : ""}
-              />
-              {validationErrors.iatiOrgId && (
-                <p className="text-sm text-red-500 mt-1">{validationErrors.iatiOrgId}</p>
-              )}
-            </div>
-
-            {/* Full Name */}
-            <div>
-              <label htmlFor="fullName" className="text-sm font-medium flex items-center">
-                Full Name *
-                <OrganizationFieldHelp field="fullName" />
-              </label>
-              <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => {
-                  setFormData({ ...formData, fullName: e.target.value });
-                  if (validationErrors.fullName) {
-                    setValidationErrors({ ...validationErrors, fullName: "" });
-                  }
-                }}
-                placeholder="e.g., Australian Department of Foreign Affairs and Trade"
-                className={validationErrors.fullName ? "border-red-500" : ""}
-                required
-              />
-              {validationErrors.fullName && (
-                <p className="text-sm text-red-500 mt-1">{validationErrors.fullName}</p>
-              )}
-            </div>
-
-            {/* Acronym / Short Name */}
-            <div>
-              <label htmlFor="acronym" className="text-sm font-medium flex items-center">
-                Acronym / Short Name *
-                <OrganizationFieldHelp field="acronym" />
-              </label>
-              <Input
-                id="acronym"
-                value={formData.acronym}
-                onChange={(e) => {
-                  setFormData({ ...formData, acronym: e.target.value });
-                  if (validationErrors.acronym) {
-                    setValidationErrors({ ...validationErrors, acronym: "" });
-                  }
-                }}
-                placeholder="e.g., DFAT"
-                className={validationErrors.acronym ? "border-red-500" : ""}
-                required
-              />
-              {validationErrors.acronym && (
-                <p className="text-sm text-red-500 mt-1">{validationErrors.acronym}</p>
-              )}
-            </div>
-
-            {/* Country Represented */}
-            <div>
-              <label htmlFor="country" className="text-sm font-medium flex items-center">
-                Country Represented *
-                <OrganizationFieldHelp field="countryRepresented" />
-              </label>
-              <Select 
-                value={formData.countryRepresented} 
-                onValueChange={(value) => {
-                  setFormData({ ...formData, countryRepresented: value });
-                  if (validationErrors.countryRepresented) {
-                    setValidationErrors({ ...validationErrors, countryRepresented: "" });
-                  }
-                }}
-              >
-                <SelectTrigger 
-                  id="country"
-                  className={validationErrors.countryRepresented ? "border-red-500" : ""}
-                >
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRIES.map(country => (
-                    <SelectItem key={country.value} value={country.value}>
-                      {country.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-500 mt-1">
-                Select 'Global / Not Country-Specific' for multilaterals or regional organisations like UN agencies, the World Bank, etc.
-              </p>
-              {validationErrors.countryRepresented && (
-                <p className="text-sm text-red-500 mt-1">{validationErrors.countryRepresented}</p>
-              )}
-            </div>
-
-            {/* Organisation Type */}
-            <div>
-              <label htmlFor="organisationType" className="block text-sm font-medium mb-1.5">
-                <span className="flex items-center">
-                  Organisation Type *
-                  <OrganizationFieldHelp field="organisationType" />
-                </span>
-              </label>
-              <Select 
-                value={formData.organisationType} 
-                onValueChange={(value) => {
-                  setFormData({ ...formData, organisationType: value });
-                  if (validationErrors.organisationType) {
-                    setValidationErrors({ ...validationErrors, organisationType: "" });
-                  }
-                }}
-              >
-                <SelectTrigger 
-                  id="organisationType"
-                  className={`text-left ${validationErrors.organisationType ? "border-red-500" : ""}`}
-                >
-                  <SelectValue placeholder="Select organisation type" />
-                </SelectTrigger>
-                <SelectContent align="start">
-                  {ORGANIZATION_TYPES.map(type => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <div className="text-left">
-                        <div className="font-medium">{type.value} - {type.label}</div>
-                        <div className="text-xs text-gray-500">{type.description}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {validationErrors.organisationType && (
-                <p className="text-sm text-red-500 mt-1">{validationErrors.organisationType}</p>
-              )}
-            </div>
-
-            {/* Cooperation Modality (Read-only) */}
-            <div>
-              <label htmlFor="cooperationModality" className="text-sm font-medium flex items-center">
-                Cooperation Modality
-                <OrganizationFieldHelp field="cooperationModality" />
-              </label>
-              <Input
-                id="cooperationModality"
-                value={calculateCooperationModality(
-                  formData.countryRepresented, 
-                  formData.organisationType
-                )}
-                disabled
-                className="bg-gray-100"
-                placeholder="Auto-calculated based on country and type"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="description" className="text-sm font-medium">Description</label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description of the organization"
-                rows={3}
-              />
-            </div>
-
-            {/* Logo Upload */}
-            <div>
-              <label className="text-sm font-medium">Partner Logo</label>
-              <div className="mt-2">
-                <ImageUpload
-                  currentImage={formData.logo}
-                  onImageChange={(image) => setFormData({ ...formData, logo: image || "" })}
-                  label="Partner Logo"
-                  aspectRatio="square"
-                  previewHeight="h-20"
-                  previewWidth="w-20"
-                  id="logo-upload"
-                />
-              </div>
-            </div>
-
-            {/* Banner Upload */}
-            <div>
-              <label className="text-sm font-medium">Banner Image</label>
-              <div className="mt-2">
-                <ImageUpload
-                  currentImage={formData.banner}
-                  onImageChange={(image) => setFormData({ ...formData, banner: image || "" })}
-                  label="Banner Image"
-                  aspectRatio="banner"
-                  previewHeight="h-32"
-                  previewWidth="w-full"
-                  id="banner-upload"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+              {/* Financial Summary */}
               <div>
-                <label htmlFor="website" className="text-sm font-medium">Website</label>
-                <Input
-                  id="website"
-                  type="url"
-                  value={formData.website}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                  placeholder="https://example.org"
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="contact@example.org"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="text-sm font-medium">Phone</label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+1 234 567 8900"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="address" className="text-sm font-medium">Address</label>
-              <Textarea
-                id="address"
-                value={formData.address}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Full address"
-                rows={2}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false);
-                  setFormData({
-                    name: "",
-                    iatiOrgId: "",
-                    fullName: "",
-                    acronym: "",
-                    countryRepresented: "",
-                    organisationType: "",
-                    description: "",
-                    website: "",
-                    email: "",
-                    phone: "",
-                    address: "",
-                    logo: "",
-                    banner: ""
-                  });
-                  setValidationErrors({});
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={submitting || !formData.fullName.trim() || !formData.acronym.trim()}
-                className="bg-slate-900 hover:bg-slate-800"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  'Create Organization'
-                )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmDialog.isOpen} onOpenChange={(open) => 
-        setDeleteConfirmDialog({ isOpen: open, partner: null, confirmText: '' })
-      }>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-red-600">Delete Organization</DialogTitle>
-            <DialogDesc>
-              This action cannot be undone. This will permanently delete the organization.
-            </DialogDesc>
-          </DialogHeader>
-          
-          {deleteConfirmDialog.partner && (
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900">
-                  {formatOrganizationDisplayName(deleteConfirmDialog.partner)}
+                <h4 className="font-medium text-slate-900 mb-3">
+                  Financial Summary ({transactionType === 'C' ? 'Commitments' : 'Disbursements'})
                 </h4>
-                <p className="text-sm text-gray-600 mt-1">
-                  {deleteConfirmDialog.partner.orgClassification || 'Other'}
-                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  {[2022, 2023, 2024, 2025, 2026, 2027].map(year => (
+                    <div key={year} className="text-center p-3 bg-slate-50 rounded">
+                      <div className="text-sm text-slate-600">{year}</div>
+                      <div className="font-mono font-medium">
+                        {formatCurrency(selectedOrg.financialData[year.toString()] || 0)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-slate-700">Total:</span>
+                    <span className="font-mono font-bold text-lg">
+                      {formatCurrency(selectedOrg.totalAmount)}
+                    </span>
+                  </div>
+                </div>
               </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Type the organization name to confirm:
-                </label>
-                <Input
-                  value={deleteConfirmDialog.confirmText}
-                  onChange={(e) => setDeleteConfirmDialog({
-                    ...deleteConfirmDialog,
-                    confirmText: e.target.value
-                  })}
-                  placeholder={deleteConfirmDialog.partner.name}
-                  className="mt-1"
-                  autoComplete="off"
-                />
-              </div>
-              
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setDeleteConfirmDialog({ isOpen: false, partner: null, confirmText: '' })}
-                  disabled={deleting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeletePartner}
-                  disabled={deleting || deleteConfirmDialog.confirmText !== deleteConfirmDialog.partner.name}
-                >
-                  {deleting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Organization
-                    </>
+
+              {/* Actions */}
+              <div className="flex justify-between pt-4 border-t border-slate-200">
+                <div className="flex gap-2">
+                  {selectedOrg.website && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.open(selectedOrg.website, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Visit Website
+                    </Button>
                   )}
+                </div>
+                <Button onClick={() => router.push(`/organizations/${selectedOrg.id}`)}>
+                  View Full Profile
                 </Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Edit Organization Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Organization</DialogTitle>
-            <DialogDesc>Edit the details for this organization.</DialogDesc>
-          </DialogHeader>
-          {/* You can reuse your form fields here, pre-filled with editingPartner data */}
-          {/* ...form fields and save logic... */}
-          <Button onClick={() => setShowEditDialog(false)} variant="outline">Cancel</Button>
-          <Button type="submit">Save Changes</Button>
-        </DialogContent>
-      </Dialog>
-      </div>
     </MainLayout>
   );
 } 

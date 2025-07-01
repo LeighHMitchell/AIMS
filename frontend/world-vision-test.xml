@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2025-06-09T17:04:36.286Z">
+<iati-activity default-currency="USD" humanitarian="1" last-updated-datetime="2025-02-11T03:17:18.528000+00:00" xml:lang="en">
+<iati-identifier>US-EIN-95-3202116-MM</iati-identifier>
+<reporting-org ref="US-EIN-95-3202116" type="21">
+<narrative>World Vision International</narrative>
+</reporting-org>
+<title>
+<narrative>World Vision Myanmar</narrative>
+</title>
+<description>
+<narrative>Breakdown of expenditure by World Vision Myanmar from 2017 onwards.</narrative>
+</description>
+<participating-org ref="US-EIN-95-3202116" role="3" type="21">
+<narrative>World Vision International</narrative>
+</participating-org>
+<participating-org role="4" type="21">
+<narrative>World Vision Myanmar</narrative>
+</participating-org>
+<participating-org role="1" type="21">
+<narrative>World Vision Australia</narrative>
+</participating-org>
+<participating-org ref="GB-CHC-285908" role="1" type="21">
+<narrative>World Vision United Kingdom</narrative>
+</participating-org>
+<activity-status code="2"/>
+<activity-date iso-date="2017-10-01" type="2"/>
+<recipient-country code="MM">
+<narrative>Myanmar</narrative>
+</recipient-country>
+<transaction humanitarian="0">
+<transaction-type code="4"/>
+<transaction-date iso-date="2024-09-30"/>
+<value currency="USD" value-date="2024-09-30">276314</value>
+<description>
+<narrative>Development expenditure on Child Protection in Myanmar within FY 2024</narrative>
+</description>
+<provider-org>
+<narrative>World Vision Myanmar</narrative>
+</provider-org>
+<sector code="160" vocabulary="2"/>
+</transaction>
+<transaction humanitarian="1">
+<transaction-type code="4"/>
+<transaction-date iso-date="2024-09-30"/>
+<value currency="USD" value-date="2024-09-30">126333</value>
+<description>
+<narrative>Humanitarian expenditure on Child Protection in Myanmar within FY 2024</narrative>
+</description>
+<provider-org>
+<narrative>World Vision Myanmar</narrative>
+</provider-org>
+<sector code="160" vocabulary="2"/>
+</transaction>
+<transaction humanitarian="0">
+<transaction-type code="4"/>
+<transaction-date iso-date="2024-09-30"/>
+<value currency="USD" value-date="2024-09-30">345601</value>
+<description>
+<narrative>Development expenditure on Education in Myanmar within FY 2024</narrative>
+</description>
+<provider-org>
+<narrative>World Vision Myanmar</narrative>
+</provider-org>
+<sector code="112" vocabulary="2"/>
+</transaction>
+<transaction humanitarian="0">
+<transaction-type code="4"/>
+<transaction-date iso-date="2024-09-30"/>
+<value currency="USD" value-date="2024-09-30">341156</value>
+<description>
+<narrative>Development expenditure on Health and Nutrition in Myanmar within FY 2024</narrative>
+</description>
+<provider-org>
+<narrative>World Vision Myanmar</narrative>
+</provider-org>
+<sector code="122" vocabulary="2"/>
+</transaction>
+<transaction humanitarian="0">
+<transaction-type code="4"/>
+<transaction-date iso-date="2024-09-30"/>
+<value currency="USD" value-date="2024-09-30">623369</value>
+<description>
+<narrative>Development expenditure on Livelihoods in Myanmar within FY 2024</narrative>
+</description>
+<provider-org>
+<narrative>World Vision Myanmar</narrative>
+</provider-org>
+<sector code="430" vocabulary="2"/>
+</transaction>
+</iati-activity>
+</iati-activities> 
