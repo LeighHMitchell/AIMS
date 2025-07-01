@@ -342,6 +342,7 @@ export default function ActivityDetailPage() {
       organizationId: user.organizationId,
       organizationName: user.organization?.name || 'Unknown Organization',
       status: 'requested',
+      role: 'contributor',
       nominatedBy: user.id,
       nominatedByName: user.name,
       nominatedAt: new Date().toISOString(),

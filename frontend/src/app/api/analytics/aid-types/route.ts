@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { AID_TYPES } from '@/types/transaction';
+import { AID_TYPES } from '@/utils/transactionMigrationHelper';
 
 export const dynamic = 'force-dynamic';
 
