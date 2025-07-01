@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { BudgetVsSpendingChart } from "@/components/charts/BudgetVsSpendingChart"
+import { ReportingOrgChart } from "@/components/charts/ReportingOrgChart"
+import { AidTypeChart } from "@/components/charts/AidTypeChart"
+import { FinanceTypeChart } from "@/components/charts/FinanceTypeChart"
+import { OrgTypeChart } from "@/components/charts/OrgTypeChart"
 import { 
   BarChart3, 
   Calendar, 
@@ -14,7 +18,10 @@ import {
   Download,
   RefreshCw,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Building2,
+  FileText,
+  Users
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -26,6 +33,7 @@ interface AnalyticsFilters {
   financeType: string
   flowType: string
   timePeriod: TimePeriodType
+  topN: string
 }
 
 export default function AnalyticsPage() {
@@ -34,7 +42,8 @@ export default function AnalyticsPage() {
     aidType: 'all',
     financeType: 'all',
     flowType: 'all',
-    timePeriod: 'year'
+    timePeriod: 'year',
+    topN: '10'
   })
   
   const [loading, setLoading] = useState(false)
@@ -169,7 +178,7 @@ export default function AnalyticsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   {/* Donor Filter */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Donor</label>
@@ -255,36 +264,53 @@ export default function AnalyticsPage() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Top N Filter */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Show Top</label>
+                    <Select value={filters.topN} onValueChange={(value) => handleFilterChange('topN', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">Top 10</SelectItem>
+                        <SelectItem value="20">Top 20</SelectItem>
+                        <SelectItem value="50">Top 50</SelectItem>
+                        <SelectItem value="all">Show All</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Active Filters Display */}
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {Object.entries(filters).map(([key, value]) => {
-                    if (value !== 'all' && value !== 'year') {
-                      return (
-                        <Badge key={key} variant="secondary" className="flex items-center gap-1">
-                          {key}: {value}
-                          <button
-                            onClick={() => handleFilterChange(key as keyof AnalyticsFilters, key === 'timePeriod' ? 'year' : 'all')}
-                            className="ml-1 hover:bg-slate-200 rounded-full w-4 h-4 flex items-center justify-center text-xs"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      )
-                    }
-                    return null
-                  })}
+                                  {Object.entries(filters).map(([key, value]) => {
+                  if (value !== 'all' && value !== 'year' && value !== '10') {
+                    return (
+                      <Badge key={key} variant="secondary" className="flex items-center gap-1">
+                        {key}: {value}
+                        <button
+                          onClick={() => handleFilterChange(key as keyof AnalyticsFilters, 
+                            key === 'timePeriod' ? 'year' : key === 'topN' ? '10' : 'all')}
+                          className="ml-1 hover:bg-slate-200 rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    )
+                  }
+                  return null
+                })}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Main Chart */}
+            {/* Time Series Chart */}
             <Card className="bg-white">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
-                  Budget vs. Spending Analysis
+                  Budget vs. Spending Over Time
                 </CardTitle>
                 <CardDescription>
                   Compare total budget allocations with actual spending (disbursements + expenditures) over time
@@ -292,6 +318,70 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <BudgetVsSpendingChart filters={filters} />
+              </CardContent>
+            </Card>
+
+            {/* Reporting Organization Chart */}
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Budget vs. Spending by Reporting Organization
+                </CardTitle>
+                <CardDescription>
+                  Compare budget and spending across different reporting organizations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ReportingOrgChart filters={filters} />
+              </CardContent>
+            </Card>
+
+            {/* Aid Type Chart */}
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Budget vs. Spending by Aid Type
+                </CardTitle>
+                <CardDescription>
+                  Analyze budget and spending patterns across different aid types
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AidTypeChart filters={filters} />
+              </CardContent>
+            </Card>
+
+            {/* Finance Type Chart */}
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Budget vs. Spending by Finance Type
+                </CardTitle>
+                <CardDescription>
+                  Compare budget and spending across different finance types
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FinanceTypeChart filters={filters} />
+              </CardContent>
+            </Card>
+
+            {/* Organization Type Chart */}
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Budget vs. Spending by Organization Type
+                </CardTitle>
+                <CardDescription>
+                  Analyze budget and spending patterns by organization type (Government, NGO, Multilateral, etc.)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <OrgTypeChart filters={filters} />
               </CardContent>
             </Card>
 
