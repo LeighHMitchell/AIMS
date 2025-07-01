@@ -299,7 +299,7 @@ export default function PartnerProfilePage() {
                         <span>{partner.countryRepresented}</span>
                       </div>
                     )}
-                    <span>Member since {new Date(partner.createdAt).getFullYear()}</span>
+                    <span>Member since {partner.createdAt ? new Date(partner.createdAt as string).getFullYear() : 'Unknown'}</span>
                   </div>
                 </div>
                 {permissions.canManageUsers && (
