@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // Enhanced types for the dual grouping system
 export interface PartnerSummaryData {
   id: string;
