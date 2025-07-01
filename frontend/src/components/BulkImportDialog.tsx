@@ -13,9 +13,10 @@ interface BulkImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImport: (data: any[]) => Promise<any>;
+  entityType?: string;
 }
 
-export function BulkImportDialog({ open, onOpenChange, onImport }: BulkImportDialogProps) {
+export function BulkImportDialog({ open, onOpenChange, onImport, entityType = "activities" }: BulkImportDialogProps) {
   const [csvData, setCsvData] = useState<any[]>([]);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -146,9 +147,9 @@ export function BulkImportDialog({ open, onOpenChange, onImport }: BulkImportDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import Activities</DialogTitle>
+          <DialogTitle>Import {entityType?.charAt(0).toUpperCase() + entityType?.slice(1) || "Activities"}</DialogTitle>
           <DialogDescription>
-            Upload a CSV file to import multiple activities at once. 
+            Upload a CSV file to import multiple {entityType || "activities"} at once. 
             <Button 
               variant="link" 
               className="p-0 h-auto text-blue-600 hover:text-blue-800"
@@ -193,7 +194,7 @@ export function BulkImportDialog({ open, onOpenChange, onImport }: BulkImportDia
                 <div className="flex-1">
                   <p className="font-medium">{fileName}</p>
                   <p className="text-sm text-gray-500">
-                    {csvData.length} activities ready to import
+                    {csvData.length} {entityType || "activities"} ready to import
                   </p>
                 </div>
                 <Button 
@@ -229,7 +230,7 @@ export function BulkImportDialog({ open, onOpenChange, onImport }: BulkImportDia
           {importing && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span>Importing activities...</span>
+                <span>Importing {entityType || "activities"}...</span>
                 <span>{progress}%</span>
               </div>
               <Progress value={progress} className="h-2" />
@@ -240,7 +241,7 @@ export function BulkImportDialog({ open, onOpenChange, onImport }: BulkImportDia
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <div className="ml-2 text-green-800">
-                Activities imported successfully!
+                {entityType?.charAt(0).toUpperCase() + entityType?.slice(1) || "Activities"} imported successfully!
               </div>
             </Alert>
           )}
@@ -254,7 +255,7 @@ export function BulkImportDialog({ open, onOpenChange, onImport }: BulkImportDia
             onClick={handleImport} 
             disabled={csvData.length === 0 || errors.length > 0 || importing}
           >
-            {importing ? 'Importing...' : `Import ${csvData.length} Activities`}
+            {importing ? 'Importing...' : `Import ${csvData.length} ${entityType?.charAt(0).toUpperCase() + entityType?.slice(1) || "Activities"}`}
           </Button>
         </DialogFooter>
       </DialogContent>
