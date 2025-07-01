@@ -11,6 +11,9 @@ import { ReportingOrgChart } from "@/components/charts/ReportingOrgChart"
 import { AidTypeChart } from "@/components/charts/AidTypeChart"
 import { FinanceTypeChart } from "@/components/charts/FinanceTypeChart"
 import { OrgTypeChart } from "@/components/charts/OrgTypeChart"
+import { ActivityStatusChart } from "@/components/charts/ActivityStatusChart"
+import { TransactionTypeChart } from "@/components/charts/TransactionTypeChart"
+import { SectorAnalysisChart } from "@/components/charts/SectorAnalysisChart"
 import { 
   BarChart3, 
   Calendar, 
@@ -21,7 +24,10 @@ import {
   DollarSign,
   Building2,
   FileText,
-  Users
+  Users,
+  CheckCircle,
+  CreditCard,
+  Target
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -382,6 +388,54 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <OrgTypeChart filters={filters} />
+              </CardContent>
+            </Card>
+
+            {/* Activity Status Chart */}
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Activity Status Distribution
+                </CardTitle>
+                <CardDescription>
+                  Analyze the distribution of activities by their status (activity, publication, and submission status)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ActivityStatusChart filters={filters} />
+              </CardContent>
+            </Card>
+
+            {/* Transaction Type Chart */}
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Transaction Type Analysis
+                </CardTitle>
+                <CardDescription>
+                  Compare transaction types by count and total value (Commitments, Disbursements, Expenditures, etc.)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TransactionTypeChart filters={filters} />
+              </CardContent>
+            </Card>
+
+            {/* Sector Analysis Chart */}
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Sector Analysis
+                </CardTitle>
+                <CardDescription>
+                  Analyze activity distribution across different sectors with percentage allocations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SectorAnalysisChart filters={filters} />
               </CardContent>
             </Card>
 
