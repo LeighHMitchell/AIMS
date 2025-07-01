@@ -3,7 +3,6 @@
 import React from 'react';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -94,22 +93,19 @@ export function StateRegionSelect({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          aria-haspopup="listbox"
-          disabled={disabled}
-          className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-            selectedValues.length === 0 && "text-muted-foreground"
-          )}
-        >
-          <span className="truncate text-left">{getDisplayText()}</span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+      <PopoverTrigger
+        id={id}
+        role="combobox"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        disabled={disabled}
+        className={cn(
+          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50",
+          selectedValues.length === 0 && "text-muted-foreground"
+        )}
+      >
+        <span className="truncate text-left">{getDisplayText()}</span>
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command>

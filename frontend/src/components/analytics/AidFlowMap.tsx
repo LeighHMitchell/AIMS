@@ -217,17 +217,12 @@ export function AidFlowMap({ className, height = 600, initialDateRange }: AidFlo
           </Select>
           
           <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "justify-start text-left font-normal",
-                  !dateRange.from && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange.from ? format(dateRange.from, "PPP") : "Pick start date"}
-              </Button>
+            <PopoverTrigger className={cn(
+              "inline-flex items-center justify-start text-left font-normal px-4 py-2 border rounded-md hover:bg-gray-100",
+              !dateRange.from && "text-muted-foreground"
+            )}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateRange.from ? format(dateRange.from, "PPP") : "Pick start date"}
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
@@ -242,17 +237,12 @@ export function AidFlowMap({ className, height = 600, initialDateRange }: AidFlo
           <span className="text-slate-500">to</span>
           
           <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "justify-start text-left font-normal",
-                  !dateRange.to && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange.to ? format(dateRange.to, "PPP") : "Pick end date"}
-              </Button>
+            <PopoverTrigger className={cn(
+              "inline-flex items-center justify-start text-left font-normal px-4 py-2 border rounded-md hover:bg-gray-100",
+              !dateRange.to && "text-muted-foreground"
+            )}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateRange.to ? format(dateRange.to, "PPP") : "Pick end date"}
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar

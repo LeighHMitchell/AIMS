@@ -164,21 +164,19 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
         <Label htmlFor="tag-input">Add Tags</Label>
         <div className="flex gap-2">
           <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <div className="flex-1">
-                <Input
-                  id="tag-input"
-                  placeholder="Type to search or create tags..."
-                  value={inputValue}
-                  onChange={(e) => {
-                    setInputValue(e.target.value);
-                    setSearchQuery(e.target.value);
-                    setOpen(true);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  className="w-full"
-                />
-              </div>
+            <PopoverTrigger className="flex-1">
+              <Input
+                id="tag-input"
+                placeholder="Type to search or create tags..."
+                value={inputValue}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  setSearchQuery(e.target.value);
+                  setOpen(true);
+                }}
+                onKeyDown={handleKeyDown}
+                className="w-full"
+              />
             </PopoverTrigger>
             <PopoverContent className="p-0 w-full" align="start">
               <Command>
