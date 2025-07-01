@@ -18,9 +18,22 @@ const nextConfig = {
   },
   
   // Webpack configuration
-  webpack: (config, { isServer }) => {
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Ensure TypeScript files are resolved properly
     config.resolve.extensions = ['.ts', '.tsx', '.js', '.jsx', '.json'];
+    
+    // Ensure the data directory is included in module resolution
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@/data': require('path').resolve(__dirname, 'src/data'),
+    };
+    
+    // Add rule to handle TypeScript files
+    config.module.rules.push({
+      test: /\.ts$/,
+      include: /src\/data/,
+      use: [defaultLoaders.babel],
+    });
     
     // Add fallback for modules
     if (!isServer) {
