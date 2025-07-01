@@ -65,6 +65,7 @@ export default function ContributorsSection({
       organizationId: selectedPartnerId,
       organizationName: partner.name,
       status: 'nominated',
+      role: 'contributor',
       nominatedBy: user.id,
       nominatedByName: user.name,
       nominatedAt: new Date().toISOString(),
@@ -201,7 +202,7 @@ export default function ContributorsSection({
                     )
                     .map((partner) => (
                       <SelectItem key={partner.id} value={partner.id}>
-                        {partner.acronym || partner.code || partner.id} - {partner.fullName || partner.name}{partner.countryRepresented ? ` (${partner.countryRepresented})` : ''}
+                        {partner.acronym || partner.code || partner.id} - {partner.name}{partner.countryRepresented ? ` (${partner.countryRepresented})` : ''}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -240,7 +241,7 @@ export default function ContributorsSection({
                           const partner = partners.find(p => p.id === contributor.organizationId);
                           if (partner) {
                             // Format: [Acronym/Code] - [Full Name] (Country)
-                            let display = `${partner.acronym || partner.code || partner.id} - ${partner.fullName || partner.name}`;
+                            let display = `${partner.acronym || partner.code || partner.id} - ${partner.name}`;
                             if (partner.countryRepresented) {
                               display += ` (${partner.countryRepresented})`;
                             }
