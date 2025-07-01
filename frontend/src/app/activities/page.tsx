@@ -31,7 +31,7 @@ import { ActivityListSkeleton } from '@/components/ui/skeleton-loader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Link from 'next/link';
-import { IATISyncStatusIndicator } from '@/components/activities/IATISyncStatusIndicator';
+import { IATISyncStatusIndicator, IATISyncStatusBadge } from '@/components/activities/IATISyncStatusIndicator';
 
 // Aid Type mappings (simplified)
 const AID_TYPE_LABELS: Record<string, string> = {
