@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "1.0.0",
   "private": true,
+  "//": "Deploy trigger - force Vercel rebuild",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
