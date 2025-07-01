@@ -32,8 +32,8 @@ import { format } from "date-fns";
 import { UserManagementSkeleton } from "@/components/skeletons";
 
 // Role badge color mapping
-const getRoleBadgeVariant = (role: UserRole): "default" | "secondary" | "destructive" | "outline" => {
-  if (role === USER_ROLES.SUPER_USER) return "destructive";
+const getRoleBadgeVariant = (role: UserRole | 'admin'): "default" | "secondary" | "destructive" | "outline" => {
+  if (role === USER_ROLES.SUPER_USER || role === 'admin') return "destructive";
   if (role.includes("tier_1")) return "default";
   if (role.includes("tier_2")) return "secondary";
   return "outline";
