@@ -309,7 +309,7 @@ export default function UserManagement() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {users.filter(u => u.role === USER_ROLES.ORPHAN).length}
+                        {users.filter(u => !u.organizationId).length}
                       </div>
                       <Badge variant="outline" className="mt-1">
                         <AlertCircle className="h-3 w-3 mr-1" />
@@ -523,7 +523,7 @@ function UserEditor({
     email: user.email || "",
     title: user.title || "",
     phone: user.phone || "",
-    role: user.role || USER_ROLES.ORPHAN,
+    role: user.role || USER_ROLES.DEV_PARTNER_TIER_2,
     organizationId: user.organizationId || "",
     isActive: user.isActive ?? true,
   });
