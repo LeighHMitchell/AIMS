@@ -70,9 +70,9 @@ export default function UserManagement() {
             organization: user.organization ? {
               id: user.organization.id,
               name: user.organization.name,
-              type: user.organization.type,
-              createdAt: user.organization.created_at,
-              updatedAt: user.organization.updated_at,
+              type: user.organization.type || 'other',
+              createdAt: user.organization.created_at || new Date().toISOString(),
+              updatedAt: user.organization.updated_at || new Date().toISOString(),
             } : undefined,
             phone: "",
             isActive: true,
@@ -103,9 +103,9 @@ export default function UserManagement() {
       organization: partner ? {
         id: partner.id,
         name: partner.name,
-        type: partner.type,
-        createdAt: partner.createdAt,
-        updatedAt: partner.updatedAt
+        type: partner.type || 'other',
+        createdAt: partner.createdAt || new Date().toISOString(),
+        updatedAt: partner.updatedAt || new Date().toISOString()
       } : user.organization,
       isOrganizationOrphaned: user.organizationId && !partner && user.organization
     };
@@ -145,9 +145,9 @@ export default function UserManagement() {
           organization: data.organization ? {
             id: data.organization.id,
             name: data.organization.name,
-            type: data.organization.type,
-            createdAt: data.organization.created_at,
-            updatedAt: data.organization.updated_at,
+            type: data.organization.type || 'other',
+            createdAt: data.organization.created_at || new Date().toISOString(),
+            updatedAt: data.organization.updated_at || new Date().toISOString(),
           } : undefined,
           updatedAt: data.updated_at,
         };
@@ -223,9 +223,9 @@ export default function UserManagement() {
           organization: data.organization ? {
             id: data.organization.id,
             name: data.organization.name,
-            type: data.organization.type,
-            createdAt: data.organization.created_at,
-            updatedAt: data.organization.updated_at,
+            type: data.organization.type || 'other',
+            createdAt: data.organization.created_at || new Date().toISOString(),
+            updatedAt: data.organization.updated_at || new Date().toISOString(),
           } : undefined,
           phone: "",
           isActive: true,
