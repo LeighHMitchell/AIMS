@@ -64,7 +64,7 @@ export default function ProfilePage() {
               </div>
             </CardHeader>
             <CardContent>
-              {user.role === USER_ROLES.ORPHAN && (
+              {!user.organizationId && (
                 <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                   <div className="flex items-center gap-2">
                     <AlertCircle className="h-5 w-5 text-orange-600" />
