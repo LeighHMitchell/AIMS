@@ -19,7 +19,7 @@ const nextConfig = {
   
   // Webpack configuration
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Ensure TypeScript files are resolved properly
+    // Ensure TypeScript and JSON files are resolved properly
     config.resolve.extensions = ['.ts', '.tsx', '.js', '.jsx', '.json'];
     
     // Ensure the data directory is included in module resolution
@@ -28,11 +28,17 @@ const nextConfig = {
       '@/data': require('path').resolve(__dirname, 'src/data'),
     };
     
-    // Add rule to handle TypeScript files
+    // Add rules to handle TypeScript and JSON files
     config.module.rules.push({
-      test: /\.ts$/,
+      test: /\.(ts|tsx)$/,
       include: /src\/data/,
       use: [defaultLoaders.babel],
+    });
+    
+    // Ensure JSON files are handled
+    config.module.rules.push({
+      test: /\.json$/,
+      type: 'json',
     });
     
     // Add fallback for modules
@@ -78,12 +84,12 @@ const nextConfig = {
   },
 
   typescript: {
-    // Ignore TypeScript errors during the build
-    ignoreBuildErrors: true,
+    // During production build, we want to see TypeScript errors
+    ignoreBuildErrors: false,
   },
   eslint: {
-    // Ignore ESLint errors during the build
-    ignoreDuringBuilds: true,
+    // During production build, we want to see ESLint warnings  
+    ignoreDuringBuilds: false,
   },
   images: {
     domains: ['lhiayyjwkjkjkxvhcenw.supabase.co'],
