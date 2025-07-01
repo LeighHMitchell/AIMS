@@ -270,7 +270,7 @@ export default function Dashboard() {
   }
 
   // Orphan user view
-  if (user?.role === USER_ROLES.ORPHAN) {
+  if (!user?.organizationId) {
     return (
       <MainLayout>
         <div className="min-h-screen bg-slate-50">
