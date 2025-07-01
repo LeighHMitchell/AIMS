@@ -25,7 +25,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
   const content = (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Fixed Sidebar */}
-              <aside className="w-72 flex-shrink-0 bg-gray-100 border-r h-full fixed z-40 flex flex-col">
+      <aside className="w-72 flex-shrink-0 bg-gray-100 border-r h-full fixed z-40 flex flex-col">
         {/* Logo Section */}
         <div className="h-16 border-b bg-white flex items-center px-4 flex-shrink-0">
           <Link href="/" className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
