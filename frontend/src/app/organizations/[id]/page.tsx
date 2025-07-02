@@ -27,7 +27,8 @@ import {
   BarChart3,
   FileIcon,
   Briefcase,
-  CalendarDays
+  CalendarDays,
+  Target
 } from 'lucide-react'
 import Flag from 'react-world-flags'
 import {
@@ -37,6 +38,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { ProjectTimeline } from '@/components/organizations/ProjectTimeline'
+import { OrganizationDashboard } from '@/components/organizations/OrganizationDashboard'
+import { ActivityPortfolioTimeline } from '@/components/organizations/ActivityPortfolioTimeline'
+import { GeographicFootprint } from '@/components/organizations/GeographicFootprint'
+import { PartnershipNetwork } from '@/components/organizations/PartnershipNetwork'
+import { SectorAllocationChart } from '@/components/organizations/SectorAllocationChart'
 import {
   Table,
   TableBody,
@@ -136,6 +142,8 @@ export default function OrganizationProfilePage() {
   const [expenditures, setExpenditures] = useState<Expenditure[]>([])
   const [linkedActivities, setLinkedActivities] = useState<LinkedActivity[]>([])
   const [linkedDocuments, setLinkedDocuments] = useState<LinkedDocument[]>([])
+  const [allOrganizations, setAllOrganizations] = useState<any[]>([])
+  const [transactions, setTransactions] = useState<any[]>([])
   
   // Summary stats
   const [stats, setStats] = useState({
@@ -167,7 +175,9 @@ export default function OrganizationProfilePage() {
           fetchBudgets(orgData.id),
           fetchExpenditures(orgData.id),
           fetchLinkedActivities(orgData.id),
-          fetchLinkedDocuments(orgData.id)
+          fetchLinkedDocuments(orgData.id),
+          fetchAllOrganizations(),
+          fetchTransactions(orgData.id)
         ])
         
         calculateStats(orgData)
@@ -304,6 +314,32 @@ export default function OrganizationProfilePage() {
           language: 'en'
         }
       ])
+    }
+  }
+
+  const fetchAllOrganizations = async () => {
+    try {
+      const response = await fetch('/api/partners')
+      if (response.ok) {
+        const data = await response.json()
+        setAllOrganizations(data)
+      }
+    } catch (error) {
+      console.error('Error fetching all organizations:', error)
+      setAllOrganizations([])
+    }
+  }
+
+  const fetchTransactions = async (orgId: string) => {
+    try {
+      const response = await fetch(`/api/organizations/${orgId}/transactions`)
+      if (response.ok) {
+        const data = await response.json()
+        setTransactions(data)
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error)
+      setTransactions([])
     }
   }
 
@@ -551,82 +587,47 @@ export default function OrganizationProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activeProjects}</div>
-              <p className="text-xs text-muted-foreground">Currently implementing</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalBudget)}</div>
-              <p className="text-xs text-muted-foreground">Future commitments</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Expenditure</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalExpenditure)}</div>
-              <p className="text-xs text-muted-foreground">Past spending</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Recipients</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.recipientCount}</div>
-              <p className="text-xs text-muted-foreground">Countries/Organizations</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Documents</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.documentCount}</div>
-              <p className="text-xs text-muted-foreground">Linked documents</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Enhanced Dashboard */}
+        <OrganizationDashboard 
+          organization={{
+            ...organization,
+            budgets: budgets,
+            expenditures: expenditures,
+            activities: linkedActivities,
+            transactions: transactions
+          }}
+        />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="budgets">
               <PieChart className="h-4 w-4 mr-2" />
-              Forward Budgets
+              Budgets
             </TabsTrigger>
             <TabsTrigger value="expenditures">
               <BarChart3 className="h-4 w-4 mr-2" />
-              Expenditure History
+              Expenditures
             </TabsTrigger>
             <TabsTrigger value="activities">
               <Activity className="h-4 w-4 mr-2" />
-              Linked Activities
+              Activities
             </TabsTrigger>
             <TabsTrigger value="timeline">
               <CalendarDays className="h-4 w-4 mr-2" />
-              Timeline View
+              Timeline
+            </TabsTrigger>
+            <TabsTrigger value="geography">
+              <Globe className="h-4 w-4 mr-2" />
+              Geography
+            </TabsTrigger>
+            <TabsTrigger value="partnerships">
+              <Users className="h-4 w-4 mr-2" />
+              Partnerships
+            </TabsTrigger>
+            <TabsTrigger value="sectors">
+              <Target className="h-4 w-4 mr-2" />
+              Sectors
             </TabsTrigger>
             <TabsTrigger value="documents">
               <FileText className="h-4 w-4 mr-2" />
@@ -800,7 +801,32 @@ export default function OrganizationProfilePage() {
 
           {/* Timeline Tab */}
           <TabsContent value="timeline" className="mt-6">
-            <ProjectTimeline activities={linkedActivities} />
+            <ActivityPortfolioTimeline activities={linkedActivities} />
+          </TabsContent>
+
+          {/* Geography Tab */}
+          <TabsContent value="geography" className="mt-6">
+            <GeographicFootprint 
+              organization={{
+                country: organization.country,
+                country_represented: organization.country_represented,
+                activities: linkedActivities
+              }}
+            />
+          </TabsContent>
+
+          {/* Partnerships Tab */}
+          <TabsContent value="partnerships" className="mt-6">
+            <PartnershipNetwork 
+              organizationId={organization.id}
+              activities={linkedActivities}
+              allOrganizations={allOrganizations}
+            />
+          </TabsContent>
+
+          {/* Sectors Tab */}
+          <TabsContent value="sectors" className="mt-6">
+            <SectorAllocationChart activities={linkedActivities} />
           </TabsContent>
 
           {/* Documents Tab */}
