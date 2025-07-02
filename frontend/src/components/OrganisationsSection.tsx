@@ -147,6 +147,7 @@ export default function OrganisationsSection({
       organizationId: partner.orgId,
       organizationName: partner.name,
       status: 'nominated',
+      role: 'contributor',
       nominatedBy: 'current-user', // Would be actual user ID
       nominatedByName: 'Activity Creator', // Would be actual user name
       nominatedAt: new Date().toISOString(),
