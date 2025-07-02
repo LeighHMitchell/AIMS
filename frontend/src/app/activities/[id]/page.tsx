@@ -37,6 +37,8 @@ import {
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
 import { DisbursementGauge, CumulativeFinanceChart } from "@/components/ActivityCharts"
+import { ActivityHeroCards } from "@/components/ActivityHeroCards"
+import { ActivityAnalyticsCharts } from "@/components/ActivityAnalyticsCharts"
 import { BannerUpload } from "@/components/BannerUpload"
 import {
   Table,
@@ -95,6 +97,7 @@ interface Activity {
   submissionStatus: 'draft' | 'submitted' | 'validated' | 'rejected' | 'published'
   sectors?: any[]
   transactions?: any[]
+  budgets?: any[]
   extendingPartners?: Array<{ orgId: string; name: string }>
   implementingPartners?: Array<{ orgId: string; name: string }>
   governmentPartners?: Array<{ orgId: string; name: string }>
@@ -144,6 +147,7 @@ export default function ActivityDetailPage() {
   const id = params?.id as string
   const [loading, setLoading] = useState(true)
   const [activity, setActivity] = useState<Activity | null>(null)
+  const [budgets, setBudgets] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("about")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const router = useRouter()
@@ -190,6 +194,7 @@ export default function ActivityDetailPage() {
     if (params?.id) {
       fetchActivity(true)
       loadAllPartners();
+      fetchBudgets();
     }
   }, [params?.id])
 
@@ -277,6 +282,22 @@ export default function ActivityDetailPage() {
       }
     } catch (error) {
       console.error("Error loading all partners:", error);
+    }
+  }
+
+  const fetchBudgets = async () => {
+    if (!params?.id) return;
+    
+    try {
+      const res = await fetch(`/api/activities/${params.id}/budgets`);
+      if (res.ok) {
+        const budgetData = await res.json();
+        setBudgets(budgetData || []);
+      }
+    } catch (error) {
+      console.error("Error fetching budgets:", error);
+      // Set empty array as fallback
+      setBudgets([]);
     }
   }
 
@@ -737,10 +758,18 @@ export default function ActivityDetailPage() {
             </div>
           </div>
 
+          {/* Hero Cards Section */}
+          <ActivityHeroCards 
+            activity={{
+              ...activity,
+              budgets: budgets
+            }} 
+            partners={allPartners}
+          />
 
           {/* Main Content with Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-12' : 'grid-cols-11'}`}>
+            <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-13' : 'grid-cols-12'}`}>
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="sectors">Sectors</TabsTrigger>
               <TabsTrigger value="contributors">Contributors</TabsTrigger>
@@ -758,6 +787,10 @@ export default function ActivityDetailPage() {
               <TabsTrigger value="transactions">
                 <Banknote className="h-4 w-4 mr-1" />
                 Transactions
+              </TabsTrigger>
+              <TabsTrigger value="analytics">
+                <PieChart className="h-4 w-4 mr-1" />
+                Analytics
               </TabsTrigger>
               <TabsTrigger value="results">Results</TabsTrigger>
               <TabsTrigger value="comments">
@@ -1243,6 +1276,16 @@ export default function ActivityDetailPage() {
               <TransactionTab 
                 activityId={activity.id} 
                 readOnly={!permissions.canEditActivity}
+              />
+            </TabsContent>
+
+            {/* Analytics Tab */}
+            <TabsContent value="analytics" className="space-y-6">
+              <ActivityAnalyticsCharts
+                transactions={activity.transactions || []}
+                budgets={budgets}
+                startDate={activity.plannedStartDate || activity.actualStartDate}
+                endDate={activity.plannedEndDate || activity.actualEndDate}
               />
             </TabsContent>
 
