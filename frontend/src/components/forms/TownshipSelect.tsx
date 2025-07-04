@@ -118,7 +118,6 @@ export function TownshipSelect({
                 {townships.map((township) => (
                   <CommandItem
                     key={township.id}
-                    value={township.name}
                     onSelect={() => handleSelect(township.id)}
                     className="cursor-pointer"
                   >
@@ -139,11 +138,13 @@ export function TownshipSelect({
               // Grouped townships
               <>
                 {myanmarData.states.map((state) => (
-                  <CommandGroup key={state.id} heading={state.name}>
+                  <CommandGroup key={state.id}>
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                    {state.name}
+                  </div>
                     {state.townships.map((township) => (
                       <CommandItem
                         key={township.id}
-                        value={`${state.name} ${township.name}`}
                         onSelect={() => handleSelect(township.id)}
                         className="cursor-pointer"
                       >

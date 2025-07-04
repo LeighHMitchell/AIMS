@@ -45,7 +45,7 @@ export function PersonCard({
   onActivityClick,
   compact = false 
 }: PersonCardProps) {
-  const roleInfo = getRoleLabel(person.role_label);
+  const roleInfo = getRoleLabel(person.role_label || '');
   const sourceInfo = getSourceLabel(person.source);
   
   // Generate initials for avatar

@@ -15,7 +15,7 @@ jest.mock('@/hooks/useUser', () => ({
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 
 // Mock components
 jest.mock('@/components/forms/CollaborationTypeSelect', () => ({

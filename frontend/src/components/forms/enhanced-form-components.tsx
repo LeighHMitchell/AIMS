@@ -171,11 +171,11 @@ export const AutosaveSwitch = React.forwardRef<
 AutosaveSwitch.displayName = 'AutosaveSwitch';
 
 // HOC to add autosave to any existing component
-export function withAutosaveTrigger<P extends object>(
+export function withAutosaveTrigger<P extends Record<string, any>>(
   Component: React.ComponentType<P>,
-  triggerOnProps: (keyof P)[] = []
+  triggerOnProps: string[] = []
 ) {
-  return React.forwardRef<any, P & { autosaveEnabled?: boolean }>((props, ref) => {
+  return React.forwardRef<any, P & { autosaveEnabled?: boolean }>((props: any, ref) => {
     const { autosaveEnabled = true, ...componentProps } = props;
     const { triggerSave } = useAutosaveContext();
 
@@ -201,7 +201,7 @@ export function withAutosaveTrigger<P extends object>(
       return wrapped;
     }, [componentProps, autosaveEnabled, triggerSave]);
 
-    return <Component {...(wrappedProps as P)} ref={ref} />;
+    return <Component {...wrappedProps} ref={ref} />;
   });
 }
 

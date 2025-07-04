@@ -36,7 +36,7 @@ export function generateTransactionXML(transaction: Transaction): string {
   xml.push(`<transaction${transactionAttrs}>`);
   
   // Transaction type
-  xml.push(`  <transaction-type code="${transaction.transaction_type || transaction.type}" />`);
+  xml.push(`  <transaction-type code="${transaction.transaction_type}" />`);
   
   // Transaction date
   xml.push(`  <transaction-date iso-date="${transaction.transaction_date}" />`);
@@ -65,7 +65,7 @@ export function generateTransactionXML(transaction: Transaction): string {
     xml.push(`  <provider-org ${providerAttrs.join(' ')}>`);
     if (transaction.provider_org_name || transaction.provider_org || transaction.providerOrg) {
       const lang = transaction.provider_org_language || 'en';
-      xml.push(`    <narrative xml:lang="${lang}">${escapeXML(transaction.provider_org_name || transaction.provider_org || transaction.providerOrg)}</narrative>`);
+      xml.push(`    <narrative xml:lang="${lang}">${escapeXML(transaction.provider_org_name || transaction.provider_org)}</narrative>`);
     }
     xml.push(`  </provider-org>`);
   }

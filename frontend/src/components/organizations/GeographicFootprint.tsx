@@ -48,7 +48,7 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
     const countryMap = new Map<string, CountryData>();
 
     // Add organization's base countries
-    const baseCountries = [organization.country, organization.country_represented].filter(Boolean);
+    const baseCountries = [organization.country, organization.country_represented].filter(Boolean) as string[];
     baseCountries.forEach((country: string) => {
       if (!countryMap.has(country)) {
         countryMap.set(country, {
