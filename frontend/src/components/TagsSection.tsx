@@ -186,7 +186,10 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                   ) : (
                     <>
                       {availableTags.length > 0 ? (
-                        <CommandGroup heading="Existing Tags">
+                        <CommandGroup>
+                          <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                            Existing Tags
+                          </div>
                           {availableTags.map((tag) => (
                             <CommandItem
                               key={tag.id}
@@ -205,7 +208,10 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                       {inputValue.trim() && !availableTags.some(t => 
                         t.name.toLowerCase() === inputValue.toLowerCase().trim()
                       ) && (
-                        <CommandGroup heading="Create New">
+                        <CommandGroup>
+                          <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                            Create New
+                          </div>
                           <CommandItem
                             onSelect={() => addTag(inputValue)}
                             className="cursor-pointer"
