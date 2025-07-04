@@ -226,10 +226,10 @@ export default function OrganizationProfilePage() {
       }
     }
 
-    if (params.id) {
+    if (params?.id) {
       fetchOrganizationData()
     }
-  }, [params.id])
+  }, [params?.id])
 
   const getTypeColor = (type: string) => {
     const typeMap: { [key: string]: string } = {

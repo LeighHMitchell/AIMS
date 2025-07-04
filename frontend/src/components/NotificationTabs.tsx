@@ -128,7 +128,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
           table: 'notifications',
           filter: `user_id=eq.${userId}`
         },
-        (payload) => {
+        (payload: any) => {
           const newNotification = mapDbNotification(payload.new)
           setNotifications(prev => [newNotification, ...prev])
           toast.info('New notification received')
@@ -142,7 +142,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
           table: 'notifications',
           filter: `user_id=eq.${userId}`
         },
-        (payload) => {
+        (payload: any) => {
           const updatedNotification = mapDbNotification(payload.new)
           setNotifications(prev =>
             prev.map(notif =>
