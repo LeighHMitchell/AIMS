@@ -55,7 +55,7 @@ export async function GET(
     const { data: activities, error: activitiesError } = await getSupabaseAdmin()
       .from('activities')
       .select('id')
-      .eq('created_by_org', params.id)
+      .eq('reporting_org_id', params.id)
       .eq('activity_status', 'implementation');
     
     const { data: contributions, error: contributionsError } = await getSupabaseAdmin()

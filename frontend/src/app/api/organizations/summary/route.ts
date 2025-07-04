@@ -37,10 +37,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch activities count for active projects calculation
-    // Note: Using created_by_org instead of organization_id as per schema
+    // Note: Using reporting_org_id to link to organizations
     const { data: activities, error: activitiesError } = await getSupabaseAdmin()
       .from('activities')
-      .select('id, created_by_org, activity_status')
+      .select('id, reporting_org_id, activity_status')
       .in('activity_status', ['implementation', 'ongoing', 'active']);
 
     if (activitiesError) {
