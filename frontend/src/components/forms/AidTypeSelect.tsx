@@ -33,8 +33,8 @@ interface AidType {
 }
 
 interface AidTypeSelectProps {
-  value?: string
-  onValueChange?: (value: string) => void
+  value?: string | null | undefined
+  onValueChange?: (value: string | null) => void
   placeholder?: string
   id?: string
   disabled?: boolean
@@ -157,7 +157,7 @@ export function AidTypeSelect({
         key={item.code}
         onSelect={() => {
           if (item.level > 0) { // Only allow selection of non-category items
-            onValueChange?.(item.code === value ? "" : item.code)
+            onValueChange?.(item.code === value ? null : item.code)
             setOpen(false)
           }
         }}
