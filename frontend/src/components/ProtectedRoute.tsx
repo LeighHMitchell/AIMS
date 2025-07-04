@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { UserRole } from "@/types/user";
 
-export function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) {
+export function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: (UserRole | 'admin')[] }) {
   const { user } = useUser();
   const router = useRouter();
 
@@ -13,7 +13,7 @@ export function ProtectedRoute({ children, allowedRoles }: { children: React.Rea
       return;
     }
     
-    if (!allowedRoles.includes(user.role)) {
+    if (!allowedRoles.includes(user.role as UserRole | 'admin')) {
       router.push("/unauthorized");
     }
   }, [user, allowedRoles, router]);
@@ -22,7 +22,7 @@ export function ProtectedRoute({ children, allowedRoles }: { children: React.Rea
     return <div>Loading...</div>;
   }
 
-  if (!allowedRoles.includes(user.role)) {
+  if (!allowedRoles.includes(user.role as UserRole | 'admin')) {
     return <div>Unauthorized</div>;
   }
 

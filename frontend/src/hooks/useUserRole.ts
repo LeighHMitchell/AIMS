@@ -8,7 +8,7 @@ export function useUserRole() {
     if (!user) return false
     
     const roles = Array.isArray(role) ? role : [role]
-    return roles.includes(user.role)
+    return roles.includes(user.role as UserRole)
   }
 
   const isSuperUser = (): boolean => {
