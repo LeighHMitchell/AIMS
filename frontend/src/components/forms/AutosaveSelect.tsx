@@ -48,15 +48,9 @@ AutosaveSelect.displayName = 'AutosaveSelect';
 
 // Helper HOC to wrap existing Select components
 export function withAutosave<P extends Record<string, any>>(
-  Component: React.ComponentType<P & {
-    value?: string | null | undefined;
-    onValueChange?: (value: string) => void;
-  }>
+  Component: React.ComponentType<P>
 ) {
-  return forwardRef<any, P & {
-    value?: string | null | undefined;
-    onValueChange?: (value: string) => void;
-  }>((props, ref) => {
+  return forwardRef<any, P>((props: any, ref) => {
     const handleValueChange = (value: string) => {
       console.log(`[withAutosave] Value changed to: ${value}`);
       if (props.onValueChange) {
