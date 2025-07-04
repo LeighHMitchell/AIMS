@@ -40,7 +40,11 @@ export function StateRegionSelect({
   // Ensure value is always in the correct format
   const selectedValues = React.useMemo(() => {
     if (!value) return [];
-    return multiple ? (Array.isArray(value) ? value : [value]) : [value];
+    if (multiple) {
+      return Array.isArray(value) ? value : [value];
+    } else {
+      return Array.isArray(value) ? [value[0]] : [value];
+    }
   }, [value, multiple]);
 
   const handleSelect = (stateId: string) => {
@@ -115,7 +119,6 @@ export function StateRegionSelect({
             {myanmarData.states.map((state) => (
               <CommandItem
                 key={state.id}
-                value={state.name}
                 onSelect={() => handleSelect(state.id)}
                 className="cursor-pointer"
               >
