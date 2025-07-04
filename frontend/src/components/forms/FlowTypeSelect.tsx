@@ -25,8 +25,8 @@ interface FlowType {
 }
 
 interface FlowTypeSelectProps {
-  value?: string
-  onValueChange?: (value: string) => void
+  value?: string | null | undefined
+  onValueChange?: (value: string | null) => void
   placeholder?: string
   id?: string
   disabled?: boolean
@@ -133,7 +133,7 @@ export function FlowTypeSelect({
               <CommandItem
                 key={item.code}
                 onSelect={() => {
-                  onValueChange?.(item.code === value ? "" : item.code)
+                  onValueChange?.(item.code === value ? null : item.code)
                   setOpen(false)
                 }}
                 className="cursor-pointer px-4 py-2 space-y-1 hover:bg-blue-50 hover:text-blue-700 focus:bg-blue-50 focus:text-blue-700 flex items-start gap-3"

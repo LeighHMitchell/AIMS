@@ -19,8 +19,8 @@ import {
 import { getAllCurrenciesWithPinned, getCurrencyByCode, Currency } from '@/data/currencies';
 
 interface CurrencySelectorProps {
-  value?: string;
-  onValueChange: (value: string) => void;
+  value?: string | null | undefined;
+  onValueChange?: (value: string | null) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -53,7 +53,7 @@ export function CurrencySelector({
   const selectedCurrency = value ? getCurrencyByCode(value) : null;
 
   const handleSelect = (currency: Currency) => {
-    onValueChange(currency.code);
+    onValueChange?.(currency.code);
     setOpen(false);
     setSearchQuery('');
   };

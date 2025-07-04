@@ -34,8 +34,8 @@ const TIED_STATUS_OPTIONS: TiedStatusOption[] = [
 ];
 
 interface TiedStatusSelectProps {
-  value?: string;
-  onValueChange?: (value: string) => void;
+  value?: string | null | undefined;
+  onValueChange?: (value: string | null) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -52,8 +52,8 @@ export function TiedStatusSelect({
 }: TiedStatusSelectProps) {
   return (
     <Select 
-      value={value} 
-      onValueChange={onValueChange} 
+      value={value || ""} 
+      onValueChange={(val) => onValueChange?.(val === "" ? null : val)} 
       disabled={disabled}
     >
       <SelectTrigger className={className} id={id}>
