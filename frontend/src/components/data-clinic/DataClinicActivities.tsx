@@ -259,7 +259,7 @@ export function DataClinicActivities() {
             <div className="flex items-center gap-2">
               <AidTypeSelect
                 value={value || ''}
-                onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue)}
+                onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue || '')}
               />
               <Button
                 size="sm"
@@ -275,7 +275,7 @@ export function DataClinicActivities() {
             <div className="flex items-center gap-2">
               <DefaultFinanceTypeSelect
                 value={value || ''}
-                onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue)}
+                onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue || '')}
               />
               <Button
                 size="sm"
@@ -291,7 +291,7 @@ export function DataClinicActivities() {
             <div className="flex items-center gap-2">
               <ActivityStatusSelect
                 value={value || ''}
-                onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue)}
+                onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue || '')}
               />
               <Button
                 size="sm"
