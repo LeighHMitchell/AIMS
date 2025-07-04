@@ -226,9 +226,12 @@ export default function EnhancedAidFlowGraph({
       )
       .force('charge', d3.forceManyBody().strength(-500))
       .force('center', d3.forceCenter(width / 2, actualHeight / 2))
-      .force('collision', d3.forceCollide().radius((d: GraphNode) => radiusScale(
-        (d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0)
-      ) + 10))
+      .force('collision', d3.forceCollide().radius((d) => {
+        const node = d as GraphNode;
+        return radiusScale(
+          (node.totalIn || node.inflow || 0) + (node.totalOut || node.outflow || 0)
+        ) + 10;
+      }))
 
     // Create links
     const link = g.append('g')
