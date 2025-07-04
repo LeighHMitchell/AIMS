@@ -29,8 +29,8 @@ export function useComprehensiveAutosave(
 ) {
   const {
     enabled = true,
-    intervalMs = 5000, // Save every 5 seconds
-    debounceMs = 2000, // Wait 2 seconds after last change
+    intervalMs = 30000, // Save every 30 seconds (reduced from 5)
+    debounceMs = 5000, // Wait 5 seconds after last change (increased from 2)
     maxRetries = 3,
     onSaveSuccess,
     onSaveError,
@@ -136,10 +136,84 @@ export function useComprehensiveAutosave(
         contactsCount: payload.contacts.length
       });
 
+      // Check payload size to prevent 413 errors
+      const payloadString = JSON.stringify(payload);
+      const payloadSizeKB = new Blob([payloadString]).size / 1024;
+      
+      console.log('[ComprehensiveAutosave] Payload size:', {
+        sizeKB: payloadSizeKB.toFixed(2),
+        sizeMB: (payloadSizeKB / 1024).toFixed(2)
+      });
+
+      // Vercel has a 4.5MB limit for function payloads
+      // We'll use a conservative 2MB limit to be safe
+      if (payloadSizeKB > 2048) {
+        console.warn('[ComprehensiveAutosave] Payload too large, reducing size');
+        
+        // Create a minimal payload with just essential fields
+        const minimalPayload = {
+          ...data.general,
+          created_by_org_name: data.general?.created_by_org_name || userRef.current?.organisation || userRef.current?.organization?.name || "",
+          created_by_org_acronym: data.general?.created_by_org_acronym || "",
+          // Only include counts for large arrays
+          sectorsCount: payload.sectors.length,
+          transactionsCount: payload.transactions.length,
+          contactsCount: payload.contacts.length,
+          // Include empty arrays to prevent errors
+          sectors: [],
+          transactions: [],
+          extendingPartners: [],
+          implementingPartners: [],
+          governmentPartners: [],
+          contacts: [],
+          governmentInputs: [],
+          contributors: [],
+          sdgMappings: [],
+          tags: [],
+          workingGroups: [],
+          policyMarkers: [],
+          locations: {
+            specificLocations: [],
+            coverageAreas: []
+          },
+          activityScope: data.activityScope,
+          user: userRef.current ? {
+            id: userRef.current.id,
+            name: userRef.current.name,
+            role: userRef.current.role,
+            organizationId: userRef.current.organizationId
+          } : null,
+          _isPartialSave: true
+        };
+        
+        console.log('[ComprehensiveAutosave] Using minimal payload for autosave');
+        
+        const response = await fetch('/api/activities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(minimalPayload)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const responseData = await response.json();
+        
+        // After minimal save, show warning to user
+        if (showErrorToast) {
+          toast.warning('Autosave: Only basic fields saved due to large data size. Please save manually for complete data.');
+        }
+        
+        onSaveSuccess?.(responseData);
+        return true;
+      }
+
       const response = await fetch('/api/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: payloadString
       });
 
       if (!response.ok) {

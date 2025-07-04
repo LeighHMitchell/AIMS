@@ -48,6 +48,16 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
+    // Check content length to prevent large payloads
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 4 * 1024 * 1024) { // 4MB limit
+      console.warn('[AIMS API] Request payload too large:', contentLength);
+      return NextResponse.json(
+        { error: 'Request payload too large. Please reduce the amount of data being saved.' },
+        { status: 413 }
+      );
+    }
+
     const body = await request.json();
     
     // Enhanced debugging
@@ -62,6 +72,7 @@ export async function POST(request: Request) {
     console.log('[AIMS API] Contacts count:', body.contacts?.length || 0);
     console.log('[AIMS API] Received Partner ID:', body.partnerId);
     console.log('[AIMS API] Partner ID type:', typeof body.partnerId);
+    console.log('[AIMS API] Is partial save:', !!body._isPartialSave);
     
     // Validate required fields
     if (!body.title?.trim()) {
@@ -171,6 +182,42 @@ export async function POST(request: Request) {
           { error: updateError.message || 'Failed to update activity' },
           { status: 500 }
         );
+      }
+
+      // Skip complex operations for partial saves (autosave with large payload)
+      if (body._isPartialSave) {
+        console.log('[AIMS API] Partial save detected - skipping complex operations');
+        
+        // Return minimal response for partial saves
+        const responseData = {
+          ...updatedActivity,
+          partnerId: updatedActivity.other_identifier,
+          iatiId: updatedActivity.iati_identifier,
+          title: updatedActivity.title_narrative,
+          description: updatedActivity.description_narrative,
+          created_by_org_name: updatedActivity.created_by_org_name,
+          created_by_org_acronym: updatedActivity.created_by_org_acronym,
+          collaborationType: updatedActivity.collaboration_type,
+          activityStatus: updatedActivity.activity_status,
+          publicationStatus: updatedActivity.publication_status,
+          submissionStatus: updatedActivity.submission_status,
+          reportingOrgId: updatedActivity.reporting_org_id,
+          hierarchy: updatedActivity.hierarchy,
+          linkedDataUri: updatedActivity.linked_data_uri,
+          plannedStartDate: updatedActivity.planned_start_date,
+          plannedEndDate: updatedActivity.planned_end_date,
+          actualStartDate: updatedActivity.actual_start_date,
+          actualEndDate: updatedActivity.actual_end_date,
+          defaultAidType: updatedActivity.default_aid_type,
+          defaultFinanceType: updatedActivity.default_finance_type,
+          defaultTiedStatus: updatedActivity.default_tied_status,
+          flowType: updatedActivity.default_flow_type,
+          createdAt: updatedActivity.created_at,
+          updatedAt: updatedActivity.updated_at,
+          _isPartialSave: true
+        };
+        
+        return NextResponse.json(responseData);
       }
 
       // Handle sectors
