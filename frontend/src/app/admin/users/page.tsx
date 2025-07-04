@@ -114,8 +114,8 @@ export default function UserManagement() {
   // Filter users based on search and filters
   const filteredUsers = usersWithPartners.filter(user => {
     const matchesSearch = 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
     const matchesRole = filterRole === "all" || user.role === filterRole;
     const matchesOrg = filterOrg === "all" || user.organizationId === filterOrg;
     return matchesSearch && matchesRole && matchesOrg;

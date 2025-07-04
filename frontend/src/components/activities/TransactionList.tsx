@@ -40,6 +40,7 @@ import {
 import { format } from "date-fns";
 import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData } from '@/types/transaction';
 import TransactionForm from './TransactionForm';
+import { TransactionDocumentIndicator } from '../TransactionDocumentIndicator';
 import {
   Tooltip,
   TooltipContent,
@@ -361,6 +362,18 @@ export default function TransactionList({
                         {getSortIcon('value')}
                       </div>
                     </TableHead>
+                    <TableHead className="text-center w-16 px-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            Docs
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Supporting Documents
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableHead>
                     <TableHead className="text-center w-10 px-2">Status</TableHead>
                     {!readOnly && <TableHead className="w-[50px]"></TableHead>}
                   </TableRow>
@@ -409,6 +422,12 @@ export default function TransactionList({
                         {transaction.value > 0 ? formatCurrency(transaction.value, transaction.currency) : (
                           <span className="text-red-600">Invalid</span>
                         )}
+                      </TableCell>
+                      <TableCell className="text-center w-16 px-2">
+                        <TransactionDocumentIndicator 
+                          transactionId={transaction.id} 
+                          compactView={true}
+                        />
                       </TableCell>
                       <TableCell className="text-center w-10 px-2">
                         <div className="flex flex-col items-center gap-1">

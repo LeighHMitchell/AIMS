@@ -23,7 +23,7 @@ export async function PATCH(
     const fieldMap: Record<string, string> = {
       default_aid_type: 'default_aid_type',
       default_finance_type: 'default_finance_type',
-      flow_type: 'flow_type',
+      default_flow_type: 'default_flow_type',
       activityStatus: 'activity_status',
       tied_status: 'tied_status'
     };

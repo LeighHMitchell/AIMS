@@ -23,7 +23,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
   console.log('[MainLayout] User authenticated:', !!user);
 
   const content = (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background border-0">
       {/* Fixed Sidebar */}
       <aside className="w-72 flex-shrink-0 bg-gray-100 border-r h-full fixed z-40 flex flex-col">
         {/* Logo Section */}
@@ -47,7 +47,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
       </aside>
 
       {/* Main Content Area with left margin */}
-      <main className="flex-1 ml-72 overflow-y-auto">
+      <main className="flex-1 ml-72 overflow-y-auto relative scrollbar-thin">
         {/* Hydration-safe Top Navigation */}
         <TopNav 
           user={user}
@@ -56,7 +56,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         />
 
         {/* Page Content */}
-        <div className="p-8">
+        <div className="pt-8 px-8 border-0">
           {children}
         </div>
       </main>

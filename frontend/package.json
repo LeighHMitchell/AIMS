@@ -4,7 +4,7 @@
   "private": true,
   "//": "Deploy trigger - force Vercel rebuild",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -24,6 +24,7 @@
     "check-tied-status": "tsx src/scripts/check-tied-status-values.ts",
     "test-iati-compare": "tsx src/scripts/test-iati-compare.ts",
     "test-iati-import": "tsx src/scripts/test-iati-import.ts",
+    "consolidate-orgs": "tsx scripts/identify-consolidate-duplicate-organizations.ts",
     "clean": "rm -rf .next",
     "clean:all": "rm -rf .next node_modules package-lock.json && npm install",
     "dev:clean": "npm run clean && npm run dev"

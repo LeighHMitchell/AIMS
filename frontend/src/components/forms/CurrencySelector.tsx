@@ -79,7 +79,11 @@ export function CurrencySelector({
         </span>
         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </PopoverTrigger>
-      <PopoverContent className="w-full max-w-[400px] p-0" align="start" sideOffset={4}>
+      <PopoverContent 
+        className="w-full max-w-[400px] p-0 bottom-full mb-2" 
+        align="start" 
+        sideOffset={4}
+      >
         <Command className="max-h-[400px]">
           <CommandInput 
             placeholder="Search currency by code or name..." 

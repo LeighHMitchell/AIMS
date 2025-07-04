@@ -134,8 +134,9 @@ type Activity = {
   // Default financial fields
   default_aid_type?: string;
   default_finance_type?: string;
-  flow_type?: string;
-  tied_status?: string;
+  default_flow_type?: string;
+  default_tied_status?: string;
+  tied_status?: string; // Legacy field
 };
 
 type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'createdAt' | 'updatedAt';
@@ -496,7 +497,7 @@ export default function ActivitiesPage() {
         "Activity Status": activity.activityStatus || activity.status || "",
         "Submission Status": activity.submissionStatus || "draft",
         "Publication Status": activity.publicationStatus || "draft",
-        "Created By Organization": activity.created_by_org_name || "",
+        "Reported By Organization": activity.created_by_org_name || "",
           "Organization Acronym": activity.created_by_org_acronym || "",
         "Target Groups": activity.targetGroups || "",
         "Collaboration Type": activity.collaborationType || "",
@@ -680,12 +681,6 @@ export default function ActivitiesPage() {
               <Download className="h-4 w-4 mr-1" />
               Export CSV
             </Button>
-            <Link href="/activities/new">
-              <Button size="sm" className="h-9">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Activity
-              </Button>
-            </Link>
           </div>
         </div>
 
@@ -1011,7 +1006,7 @@ export default function ActivitiesPage() {
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Shuffle className="h-4 w-4" />
-                                    <span className="text-sm">Flow Type: {activity.flow_type ? FLOW_TYPE_LABELS[activity.flow_type] || activity.flow_type : 'Not specified'}</span>
+                                    <span className="text-sm">Flow Type: {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Link2 className="h-4 w-4" />

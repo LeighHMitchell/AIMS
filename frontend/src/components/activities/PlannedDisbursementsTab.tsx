@@ -18,6 +18,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Badge } from '@/components/ui/badge';
+import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 import {
   Table,
   TableBody,
@@ -708,27 +709,10 @@ export default function PlannedDisbursementsTab({
 
   return (
     <div className="space-y-4">
-      {/* Hero Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <HeroCard
-          title="Total Planned"
-          value={`${heroStats.mainCurrency} ${heroStats.totalPlanned}`}
-          subtitle={`Across ${filteredDisbursements.length} disbursements`}
-          icon={<DollarSign className="h-5 w-5" />}
-        />
-        <HeroCard
-          title="Time Coverage"
-          value={heroStats.timeCoverage}
-          subtitle={heroStats.statusText}
-          icon={<CalendarIcon className="h-5 w-5" />}
-        />
-        <HeroCard
-          title="Organizations"
-          value={`${heroStats.providerCount + heroStats.receiverCount}`}
-          subtitle={`${heroStats.providerCount} providers, ${heroStats.receiverCount} receivers`}
-          icon={<Users className="h-5 w-5" />}
-        />
-      </div>
+      {/* Financial Summary Cards - Unified component */}
+      {activityId && (
+        <FinancialSummaryCards activityId={activityId} className="mb-6" />
+      )}
 
       {/* Chart */}
       {chartData.length > 0 && (

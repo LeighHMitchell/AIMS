@@ -75,7 +75,7 @@ type Activity = {
   iatiIdentifier?: string;
   default_aid_type?: string;
   default_finance_type?: string;
-  flow_type?: string;
+  default_flow_type?: string;
   activityStatus?: string;
   sectors?: any[];
   participatingOrgs?: any[];
@@ -166,8 +166,8 @@ export function DataClinicActivities() {
             return !activity.default_aid_type;
           case 'missing_finance_type':
             return !activity.default_finance_type;
-          case 'missing_flow_type':
-            return !activity.flow_type;
+                case 'missing_default_flow_type':
+        return !activity.default_flow_type;
           case 'missing_sector':
             return !activity.sectors || activity.sectors.length === 0;
           case 'missing_implementing_org':
@@ -332,8 +332,8 @@ export function DataClinicActivities() {
               `${value} - ${AID_TYPE_LABELS[value]}` : 
               field === 'default_finance_type' && FINANCE_TYPE_LABELS[value] ?
               `${value} - ${FINANCE_TYPE_LABELS[value]}` :
-              field === 'flow_type' && FLOW_TYPE_LABELS[value] ?
-              `${value} - ${FLOW_TYPE_LABELS[value]}` :
+                            field === 'default_flow_type' && FLOW_TYPE_LABELS[value] ?
+                `${value} - ${FLOW_TYPE_LABELS[value]}` :
               value
             }
           </span>
@@ -442,7 +442,7 @@ export function DataClinicActivities() {
                 <SelectItem value="all">All Activities</SelectItem>
                 <SelectItem value="missing_aid_type">Missing Aid Type</SelectItem>
                 <SelectItem value="missing_finance_type">Missing Finance Type</SelectItem>
-                <SelectItem value="missing_flow_type">Missing Flow Type</SelectItem>
+                <SelectItem value="missing_default_flow_type">Missing Default Flow Type</SelectItem>
                 <SelectItem value="missing_sector">Missing Sector</SelectItem>
                 <SelectItem value="missing_implementing_org">Missing Implementing Org</SelectItem>
                 <SelectItem value="missing_start_date">Missing Start Date</SelectItem>
@@ -479,7 +479,7 @@ export function DataClinicActivities() {
                   <SelectContent>
                     <SelectItem value="default_aid_type">Aid Type</SelectItem>
                     <SelectItem value="default_finance_type">Finance Type</SelectItem>
-                    <SelectItem value="flow_type">Flow Type</SelectItem>
+                    <SelectItem value="default_flow_type">Default Flow Type</SelectItem>
                     <SelectItem value="activityStatus">Activity Status</SelectItem>
                   </SelectContent>
                 </Select>
@@ -579,7 +579,7 @@ export function DataClinicActivities() {
                         {renderFieldValue(activity, 'default_finance_type')}
                       </td>
                       <td className="p-4">
-                        {renderFieldValue(activity, 'flow_type')}
+                        {renderFieldValue(activity, 'default_flow_type')}
                       </td>
                       <td className="p-4">
                         {renderFieldValue(activity, 'activityStatus')}

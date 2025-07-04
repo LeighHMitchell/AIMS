@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useCallback, useEffect, Suspense } from "react";
+import React, { useState, useCallback, useEffect, Suspense, useRef } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useRouter, useSearchParams } from "next/navigation";
 import FinancesSection from "@/components/FinancesSection";
@@ -18,9 +18,7 @@ import { Transaction } from "@/types/transaction";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ActivityStatusSelect } from "@/components/forms/ActivityStatusSelect";
 import { CollaborationTypeSelect } from "@/components/forms/CollaborationTypeSelect";
-import { DefaultAidTypeSelect } from "@/components/forms/DefaultAidTypeSelect";
-import { FlowTypeSelect } from "@/components/forms/FlowTypeSelect";
-import { CurrencySelector } from "@/components/forms/CurrencySelector";
+
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
@@ -28,7 +26,8 @@ import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, Loader2, UserPlus, ChevronLeft, ChevronRight, HelpCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, Loader2, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, Globe, RefreshCw } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator, ActivityCompletionRating } from "@/components/ActivityFieldHelpers";
 import { CopyField, CopyFieldGroup } from "@/components/ui/copy-field";
@@ -60,13 +59,15 @@ import {
   GenericTabSkeleton 
 } from '@/components/activities/TabSkeletons';
 import { supabase } from '@/lib/supabase';
-import { DefaultFinanceTypeSelect } from "@/components/forms/DefaultFinanceTypeSelect";
-import { FinanceTypeHelp } from "@/components/forms/FinanceTypeHelp";
+import { AutosaveFormWrapper } from "@/components/forms/AutosaveFormWrapper";
+import { useComprehensiveAutosave } from "@/hooks/use-comprehensive-autosave";
+
+
 import { IATISyncPanel } from "@/components/activities/IATISyncPanel";
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab";
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab";
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, triggerAutoSave }: any) {
   switch (section) {
     case "general":
       return (
@@ -148,8 +149,12 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             </label>
             <Input
               id="title"
+              name="title"
               value={general.title}
-              onChange={(e) => setGeneral((g: any) => ({ ...g, title: e.target.value }))}
+              onChange={(e) => {
+                console.log('[AIMS] Title changed to:', e.target.value);
+                setGeneral((g: any) => ({ ...g, title: e.target.value }));
+              }}
               placeholder="Activity Title"
               required
             />
@@ -164,18 +169,22 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             </label>
             <Textarea
               id="description"
+              name="description"
               value={general.description}
-              onChange={(e) => setGeneral((g: any) => ({ ...g, description: e.target.value }))}
+              onChange={(e) => {
+                console.log('[AIMS] Description changed, length:', e.target.value.length);
+                setGeneral((g: any) => ({ ...g, description: e.target.value }));
+              }}
               placeholder="Activity Description"
-              rows={3}
+              rows={12}
             />
           </div>
 
-          {/* Row 4: Reporting Organization (Read-only info) */}
-          {general.created_by_org_name && (
+          {/* Row 4: Reporting Organization (Read-only info) - Hidden per user request */}
+          {/* {general.created_by_org_name && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                Created By Organization
+                Reported By Organization
               </label>
               <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
                 <p className="text-sm text-gray-900">{general.created_by_org_name}</p>
@@ -184,7 +193,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
                 )}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Row 6-7: All Type Selectors */}
           <div className="space-y-6">
@@ -198,7 +207,12 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
                 <CollaborationTypeSelect
                   id="collaborationType"
                   value={general.collaborationType}
-                  onValueChange={(value) => setGeneral((g: any) => ({ ...g, collaborationType: value }))}
+                  onValueChange={(value) => {
+                    console.log('[AIMS DEBUG] CollaborationType changed from', general.collaborationType, 'to', value);
+                    setGeneral((g: any) => ({ ...g, collaborationType: value }));
+                    // Explicitly trigger autosave
+                    triggerAutoSave();
+                  }}
                   placeholder="Select Collaboration Type"
                 />
               </div>
@@ -211,63 +225,18 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
                 <ActivityStatusSelect
                   id="activityStatus"
                   value={general.activityStatus}
-                  onValueChange={(value) => setGeneral((g: any) => ({ ...g, activityStatus: value }))}
+                  onValueChange={(value) => {
+                    console.log('[AIMS DEBUG] ActivityStatus changed from', general.activityStatus, 'to', value);
+                    setGeneral((g: any) => ({ ...g, activityStatus: value }));
+                    // Explicitly trigger autosave
+                    triggerAutoSave();
+                  }}
                   placeholder="Select Activity Status"
                 />
               </div>
             </div>
 
-            {/* Second row: Aid Type, Flow Type, Finance Type, and Default Currency */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="w-full space-y-2">
-                <label htmlFor="defaultAidType" className="text-sm font-medium text-gray-700 flex items-center">
-                  Default Aid Type
-                  <FieldHelp field="defaultAidType" />
-                </label>
-                <DefaultAidTypeSelect
-                  id="defaultAidType"
-                  value={general.defaultAidType}
-                  onValueChange={(value) => setGeneral((g: any) => ({ ...g, defaultAidType: value }))}
-                  placeholder="Select Aid Type"
-                />
-              </div>
-              <div className="w-full space-y-2">
-                <label htmlFor="flowType" className="text-sm font-medium text-gray-700 flex items-center">
-                  Flow Type
-                  <FieldHelp field="flowType" />
-                </label>
-                <FlowTypeSelect
-                  id="flowType"
-                  value={general.flowType}
-                  onValueChange={(value) => setGeneral((g: any) => ({ ...g, flowType: value }))}
-                  placeholder="Select Flow Type"
-                />
-              </div>
-              <div className="w-full space-y-2">
-                <label htmlFor="defaultFinanceType" className="text-sm font-medium text-gray-700 flex items-center">
-                  Default Finance Type
-                  <FinanceTypeHelp />
-                </label>
-                <DefaultFinanceTypeSelect
-                  id="defaultFinanceType"
-                  value={general.defaultFinanceType}
-                  onValueChange={(value) => setGeneral((g: any) => ({ ...g, defaultFinanceType: value }))}
-                  placeholder="Select Finance Type"
-                />
-              </div>
-              <div className="w-full space-y-2">
-                <label htmlFor="defaultCurrency" className="text-sm font-medium text-gray-700 flex items-center">
-                  Default Currency
-                  <FieldHelp field="defaultCurrency" />
-                </label>
-                <CurrencySelector
-                  id="defaultCurrency"
-                  value={general.defaultCurrency}
-                  onValueChange={(value) => setGeneral((g: any) => ({ ...g, defaultCurrency: value }))}
-                  placeholder="Select Currency"
-                />
-              </div>
-            </div>
+
           </div>
 
           {/* Row 8: Date Fields */}
@@ -300,42 +269,61 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="actualStartDate" className="text-sm font-medium flex items-center">
+                <label htmlFor="actualStartDate" className={`text-sm font-medium flex items-center ${!getDateFieldStatus().actualStartDate ? 'text-gray-400' : 'text-gray-700'}`}>
                   Actual Start Date
                   <FieldHelp field="actualStartDate" />
+                  {!getDateFieldStatus().actualStartDate && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <AlertCircle className="h-3 w-3 text-gray-400 ml-1" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Available when activity status is Implementation or beyond</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </label>
                 <Input
                   id="actualStartDate"
                   type="date"
                   value={general.actualStartDate}
                   onChange={(e) => setGeneral((g: any) => ({ ...g, actualStartDate: e.target.value }))}
+                  disabled={!getDateFieldStatus().actualStartDate}
+                  className={!getDateFieldStatus().actualStartDate ? "bg-gray-100 cursor-not-allowed" : ""}
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="actualEndDate" className="text-sm font-medium flex items-center">
+                <label htmlFor="actualEndDate" className={`text-sm font-medium flex items-center ${!getDateFieldStatus().actualEndDate ? 'text-gray-400' : 'text-gray-700'}`}>
                   Actual End Date
                   <FieldHelp field="actualEndDate" />
+                  {!getDateFieldStatus().actualEndDate && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <AlertCircle className="h-3 w-3 text-gray-400 ml-1" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Available when activity status is Completion or beyond</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </label>
                 <Input
                   id="actualEndDate"
                   type="date"
                   value={general.actualEndDate}
                   onChange={(e) => setGeneral((g: any) => ({ ...g, actualEndDate: e.target.value }))}
+                  disabled={!getDateFieldStatus().actualEndDate}
+                  className={!getDateFieldStatus().actualEndDate ? "bg-gray-100 cursor-not-allowed" : ""}
                 />
               </div>
             </div>
           </div>
 
-          {/* Publication Status (Read-only info) */}
-          <div className="pt-4 border-t">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span className="font-medium">Status:</span>
-              <span className="capitalize">{general.publicationStatus}</span>
-              <span className="text-xs text-gray-500 ml-2">
-                (This will be set to "Published" when you click the Publish button)
-              </span>
-            </div>
-          </div>
+
         </div>
       );
     case "iati":
@@ -417,6 +405,35 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         transactions={transactions}
         onTransactionsChange={setTransactions}
         defaultFinanceType={general.defaultFinanceType}
+        defaultAidType={general.defaultAidType}
+        defaultFlowType={general.defaultFlowType}
+        defaultCurrency={general.defaultCurrency}
+        defaultTiedStatus={general.defaultTiedStatus}
+        onDefaultsChange={(field, value) => {
+          console.log('[AIMS DEBUG] Default field changed:', field, '=', value);
+          console.log('[AIMS DEBUG] Current general.id:', general.id);
+          console.log('[AIMS DEBUG] Current general.title:', general.title);
+          
+          if (field === 'defaultFlowType') {
+            setGeneral((g: any) => ({ ...g, defaultFlowType: value }));
+          } else if (field === 'defaultTiedStatus') {
+            setGeneral((g: any) => ({ ...g, defaultTiedStatus: value }));
+          } else {
+            setGeneral((g: any) => ({ ...g, [field]: value }));
+          }
+          
+          // Log immediate state update
+          console.log('[AIMS DEBUG] Calling triggerAutoSave...');
+          
+          // Trigger auto-save after updating state
+          triggerAutoSave();
+          
+          // Log the general state after update
+          setTimeout(() => {
+            console.log('[AIMS DEBUG] General state after update:', general);
+            console.log('[AIMS DEBUG] Specific field value:', general[field]);
+          }, 100);
+        }}
       />;
     case "budgets":
       return <ActivityBudgetsTab 
@@ -514,7 +531,8 @@ function NewActivityPageContent() {
     defaultAidType: "",
     defaultFinanceType: "",
     defaultCurrency: "",
-    flowType: "",
+    defaultFlowType: "",
+    defaultTiedStatus: "",
     publicationStatus: "draft",
     submissionStatus: "draft" as 'draft' | 'submitted' | 'validated' | 'rejected' | 'published',
     submittedBy: "",
@@ -583,6 +601,13 @@ function NewActivityPageContent() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [tabLoading, setTabLoading] = useState(false);
   const isEditing = !!searchParams?.get("id");
+  
+  // Auto-save state and refs
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [showMissingFieldsDialog, setShowMissingFieldsDialog] = useState(false);
+  const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get permissions for current activity
   const permissions = getActivityPermissions(user, general.id ? { 
@@ -590,6 +615,168 @@ function NewActivityPageContent() {
     contributors,
     createdBy: general.createdBy 
   } as any : null);
+
+  // Check required fields for auto-save
+  const checkRequiredFields = useCallback(() => {
+    const missing: string[] = [];
+    
+    if (!general.title?.trim()) missing.push("Activity Title");
+    // Removed other required fields - only title is required now for publishing
+    
+    return missing;
+  }, [general.title]);
+
+  // Auto-save function
+  const autoSave = useCallback(async () => {
+    console.log('[AIMS DEBUG] autoSave called');
+    console.log('[AIMS DEBUG] autoSaving:', autoSaving);
+    console.log('[AIMS DEBUG] submitting:', submitting);
+    console.log('[AIMS DEBUG] general.title:', general.title);
+    console.log('[AIMS DEBUG] general.defaultCurrency:', general.defaultCurrency);
+    console.log('[AIMS DEBUG] general.collaborationType:', general.collaborationType);
+    console.log('[AIMS DEBUG] general.activityStatus:', general.activityStatus);
+    
+    // Don't auto-save if we're already saving or if there's no title (minimum requirement)
+    if (autoSaving || submitting || !general.title?.trim()) {
+      console.log('[AIMS DEBUG] autoSave skipped due to conditions:', {
+        autoSaving,
+        submitting,
+        hasTitle: !!general.title?.trim()
+      });
+      return;
+    }
+
+    // Check required fields
+    const missing = checkRequiredFields();
+    if (missing.length > 0) {
+      setMissingRequiredFields(missing);
+      setShowMissingFieldsDialog(true);
+      return;
+    }
+
+    setAutoSaving(true);
+    
+    try {
+      const payload = {
+        ...general,
+        created_by_org_name: general.created_by_org_name || user?.organisation || user?.organization?.name || "",
+        created_by_org_acronym: general.created_by_org_acronym || "",
+        sectors: sectors.map((s: any) => ({
+          code: s.code,
+          name: s.name,
+          percentage: s.percentage,
+          categoryCode: s.categoryCode || s.code.substring(0, 3),
+          categoryName: s.categoryName || `Category ${s.code.substring(0, 3)}`,
+          categoryPercentage: s.categoryPercentage || s.percentage,
+          type: s.type || 'secondary'
+        })),
+        transactions,
+        extendingPartners,
+        implementingPartners,
+        governmentPartners,
+        contacts,
+        governmentInputs,
+        contributors,
+        sdgMappings,
+        tags,
+        workingGroups,
+        policyMarkers,
+        locations: {
+          specificLocations,
+          coverageAreas
+        },
+        activityScope,
+        activityStatus: general.activityStatus || "planning",
+        publicationStatus: general.publicationStatus || "draft",
+        createdByOrg: general.createdByOrg || user?.organizationId,
+        user: user ? {
+          id: user.id,
+          name: user.name,
+          role: user.role,
+          organizationId: user.organizationId
+        } : null
+      };
+
+      if (general.id) {
+        payload.id = general.id;
+      }
+      
+      console.log('[AIMS DEBUG] autoSave payload:', {
+        id: payload.id,
+        title: payload.title,
+        defaultCurrency: payload.defaultCurrency,
+        defaultAidType: payload.defaultAidType,
+        defaultFinanceType: payload.defaultFinanceType,
+        defaultFlowType: payload.defaultFlowType,
+        defaultTiedStatus: payload.defaultTiedStatus
+      });
+      
+      const res = await fetch("/api/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Update the ID if this was a new activity
+        if (!general.id && data.id) {
+          console.log('[AIMS DEBUG] New activity created with ID:', data.id);
+          setGeneral(prev => ({ ...prev, id: data.id }));
+        }
+        
+        setLastSaved(new Date());
+        setHasUnsavedChanges(false);
+        console.log('[AIMS DEBUG] Auto-save successful at', new Date().toISOString());
+      } else {
+        const errorText = await res.text();
+        console.error('[AIMS DEBUG] Auto-save failed:', {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorText
+        });
+        // Don't throw error to avoid interrupting user flow
+        toast.error('Auto-save failed. Please save manually.');
+      }
+    } catch (error) {
+      console.error('[AIMS DEBUG] Auto-save error:', error);
+      toast.error('Auto-save failed. Please save manually.');
+    } finally {
+      setAutoSaving(false);
+    }
+  }, [
+    general, sectors, transactions, extendingPartners, implementingPartners,
+    governmentPartners, contacts, governmentInputs, contributors, sdgMappings,
+    tags, workingGroups, policyMarkers, specificLocations, coverageAreas,
+    activityScope, user, autoSaving, submitting, checkRequiredFields
+  ]);
+
+  // Debounced auto-save trigger
+  // IMPORTANT: We use a ref to store the latest autoSave function to avoid
+  // recreating triggerAutoSave when autoSave changes
+  const autoSaveRef = useRef(autoSave);
+  useEffect(() => {
+    autoSaveRef.current = autoSave;
+  }, [autoSave]);
+
+  const triggerAutoSave = useCallback(() => {
+    console.log('[AIMS DEBUG] triggerAutoSave called');
+    
+    // Clear any existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    
+    // Set new timeout for auto-save (2 seconds after last change)
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      console.log('[AIMS DEBUG] Executing autoSave after timeout');
+      autoSaveRef.current();
+    }, 2000);
+    
+    // Mark that there are unsaved changes
+    setHasUnsavedChanges(true);
+  }, []); // No dependencies - this function is now stable
 
   // Update transactions callback
   const updateTransactions = useCallback((newTransactions: Transaction[]) => {
@@ -630,7 +817,8 @@ function NewActivityPageContent() {
             defaultAidType: activity.defaultAidType || "",
             defaultFinanceType: activity.defaultFinanceType || "",
             defaultCurrency: activity.defaultCurrency || "",
-            flowType: activity.flowType || "",
+            defaultFlowType: activity.defaultFlowType || "",
+            defaultTiedStatus: activity.defaultTiedStatus || "",
             publicationStatus: activity.publicationStatus || (activity.status === "published" ? "published" : "draft"),
             submissionStatus: activity.submissionStatus || "draft",
             submittedBy: activity.submittedBy || "",
@@ -770,12 +958,83 @@ function NewActivityPageContent() {
     }
   }, [general.title, general.description, isEditing]);
 
+  // Auto-save trigger on data changes
+  useEffect(() => {
+    // Only trigger auto-save if we have loaded the activity and have a user
+    if (!loading && user) {
+      triggerAutoSave();
+    }
+  }, [
+    general, sectors, transactions, extendingPartners, implementingPartners,
+    governmentPartners, contacts, governmentInputs, contributors, sdgMappings,
+    tags, workingGroups, policyMarkers, specificLocations, coverageAreas,
+    activityScope, loading, user, triggerAutoSave
+  ]);
+
+  // Handle navigation away from page
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Clear auto-save timeout
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [hasUnsavedChanges]);
+
   // Permission checks
   const canEdit = general.submissionStatus === 'draft' || general.submissionStatus === 'rejected' || user?.role === 'super_user';
   const canSubmit = user?.role === 'gov_partner_tier_2' || user?.role === 'dev_partner_tier_2';
   const canValidate = user?.role === 'gov_partner_tier_1' || user?.role === 'super_user';
   const canPublish = (user?.role === 'gov_partner_tier_1' || user?.role === 'super_user') && 
                      (general.submissionStatus === 'validated' || user?.role === 'super_user');
+
+  // Date field enable/disable logic based on activity status
+  const getDateFieldStatus = useCallback(() => {
+    const status = general.activityStatus;
+    
+    // Map string status names to IATI numeric codes for backward compatibility
+    const statusMap: Record<string, string> = {
+      'planning': '1',
+      'pipeline': '1',
+      'identification': '1',
+      'implementation': '2',
+      'completion': '3',
+      'finalisation': '3',
+      'post_completion': '4',
+      'closed': '4',
+      'cancelled': '5',
+      'suspended': '6'
+    };
+    
+    // Get the numeric code - either directly or via mapping
+    const mappedStatus = statusMap[status?.toLowerCase()] || status || '1';
+    const statusCode = parseInt(mappedStatus) || 1;
+    
+    // IATI Status codes:
+    // 1 = Pipeline/Identification - only planned dates
+    // 2 = Implementation - planned dates + actual start
+    // 3 = Finalisation - all dates
+    // 4 = Closed - all dates  
+    // 5 = Cancelled - all dates
+    // 6 = Suspended - all dates
+    
+    return {
+      plannedStartDate: true, // Always enabled for all statuses
+      plannedEndDate: true,   // Always enabled for all statuses
+      actualStartDate: statusCode >= 2, // Enabled for implementation and beyond
+      actualEndDate: statusCode >= 3    // Enabled for completion and beyond
+    };
+  }, [general.activityStatus]);
 
   // Helper to get next section id
   function getNextSection(currentId: string) {
@@ -798,12 +1057,7 @@ function NewActivityPageContent() {
       return;
     }
     
-    // Validate sectors before publishing
-    if (publish && sectorValidation && !sectorValidation.isValid) {
-      setError("Cannot publish: " + sectorValidation.errors.join(", "));
-      toast.error("Please fix sector allocation errors before publishing");
-      return;
-    }
+    // Removed sector validation requirement for publishing - only title is required now
     
     // Set specific loading states
     if (publish) {
@@ -869,6 +1123,12 @@ function NewActivityPageContent() {
       console.log("[AIMS] Submitting activity payload:", payload);
       console.log("[AIMS] Activity status being saved:", payload.activityStatus);
       console.log("[AIMS] Publication status being saved:", payload.publicationStatus);
+      console.log("[AIMS] Default values being saved:", {
+        defaultAidType: payload.defaultAidType,
+        defaultFinanceType: payload.defaultFinanceType,
+        defaultCurrency: payload.defaultCurrency,
+        defaultFlowType: payload.defaultFlowType
+      });
       console.log("[AIMS] Transactions count:", payload.transactions.length);
       console.log("[AIMS] Sectors count:", payload.sectors.length);
       console.log("[AIMS] Sectors being saved:", JSON.stringify(payload.sectors, null, 2));
@@ -911,7 +1171,8 @@ function NewActivityPageContent() {
           defaultAidType: data.defaultAidType || "",
           defaultFinanceType: data.defaultFinanceType || "",
           defaultCurrency: data.defaultCurrency || "",
-          flowType: data.flowType || "",
+          defaultFlowType: data.defaultFlowType || "",
+          defaultTiedStatus: data.defaultTiedStatus || "",
           publicationStatus: data.publicationStatus || "draft",
           submissionStatus: data.submissionStatus || "draft",
           submittedBy: data.submittedBy || "",
@@ -1005,6 +1266,11 @@ function NewActivityPageContent() {
 
   // Add loading state when switching tabs
   const handleTabChange = async (value: string) => {
+    // Trigger auto-save before changing tabs
+    if (hasUnsavedChanges) {
+      autoSave();
+    }
+    
     setTabLoading(true);
     setActiveSection(value);
     
@@ -1045,8 +1311,32 @@ function NewActivityPageContent() {
 
   return (
     <MainLayout>
-      {/* 3-Column Layout: Main Sidebar (fixed by MainLayout) | Editor Nav | Main Panel */}
-      <div className="flex h-[calc(100vh-4rem)] overflow-hidden gap-x-6 lg:gap-x-8">
+      <AutosaveFormWrapper
+        activityData={{
+          general,
+          sectors,
+          transactions,
+          extendingPartners,
+          implementingPartners,
+          governmentPartners,
+          contacts,
+          governmentInputs,
+          contributors,
+          sdgMappings,
+          tags,
+          workingGroups,
+          policyMarkers,
+          specificLocations,
+          coverageAreas,
+          activityScope
+        }}
+        user={user}
+        enabled={!loading && !!user}
+        showStatusIndicator={true}
+        showErrorAlerts={true}
+      >
+        {/* 3-Column Layout: Main Sidebar (fixed by MainLayout) | Editor Nav | Main Panel */}
+        <div className="flex h-[calc(100vh-6rem)] overflow-hidden gap-x-6 lg:gap-x-8">
         {/* Activity Editor Navigation Panel */}
         <aside className="w-80 flex-shrink-0 bg-white overflow-y-auto">
           {/* Activity Metadata Summary - Only show when editing */}
@@ -1082,12 +1372,14 @@ function NewActivityPageContent() {
                 </div>
                 <div className="space-y-2">
                   <div>
-                    <span className="text-gray-500">Activity ID:</span>
+                    <span className="text-gray-500">System UUID:</span>
                     <span className="ml-2 font-medium block truncate">{general.id}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Created by:</span>
-                    <span className="ml-2 font-medium block truncate">{general.createdBy?.name || 'Unknown'}</span>
+                    <span className="text-gray-500">Reported by:</span>
+                    <span className="ml-2 font-medium block truncate">
+                      {general.created_by_org_acronym || general.created_by_org_name || 'Unknown'}
+                    </span>
                   </div>
                   <div>
                     <span className="text-gray-500">Date created:</span>
@@ -1116,7 +1408,6 @@ function NewActivityPageContent() {
           
           {/* Activity Editor Navigation */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-900 mb-4 px-4">Activity Editor</h4>
             <ActivityEditorNavigation
               activeSection={activeSection}
               onSectionChange={handleTabChange}
@@ -1137,7 +1428,32 @@ function NewActivityPageContent() {
         {/* Main Content Panel */}
         <main className="flex-1 min-w-0 overflow-y-auto bg-white">
           <div className="activity-editor pl-0 pr-6 md:pr-8 py-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Edit Activity</h1>
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">Edit Activity</h1>
+              <div className="flex items-center gap-6">
+                {/* Publish Toggle */}
+                {canPublish && general.id && (
+                  <div className="flex items-center gap-4">
+                    <span className="text-base font-semibold text-gray-700">Unpublished</span>
+                    <Switch
+                      checked={general.publicationStatus === 'published'}
+                      onCheckedChange={async (checked) => {
+                        if (checked) {
+                          saveActivity({ publish: true });
+                        } else {
+                          // Unpublish the activity
+                          setGeneral(prev => ({ ...prev, publicationStatus: 'draft' }));
+                          saveActivity({ publish: false });
+                        }
+                      }}
+                      disabled={!general.title.trim() || submitting || publishing}
+                      className="data-[state=checked]:bg-green-600 scale-125"
+                    />
+                    <span className="text-base font-semibold text-gray-700">Published</span>
+                  </div>
+                )}
+              </div>
+            </div>
             
             {/* Duplicate Detection Alert */}
             {!isEditing && similarActivities.length > 0 && (
@@ -1193,7 +1509,7 @@ function NewActivityPageContent() {
           
           {/* Comments Section */}
           
-          <div>
+          <div className="px-0 pr-6 md:pr-8">
             <section>
               <h2 className="text-2xl font-semibold mb-6">{getSectionLabel(activeSection)}</h2>
               {tabLoading ? (
@@ -1238,6 +1554,8 @@ function NewActivityPageContent() {
                     activityScope={activityScope}
                     setActivityScope={setActivityScope}
                     user={user}
+                    getDateFieldStatus={getDateFieldStatus}
+                    triggerAutoSave={triggerAutoSave}
                   />
                 </div>
               )}
@@ -1245,99 +1563,51 @@ function NewActivityPageContent() {
           </div>
           
           {/* Sticky Footer */}
-          <footer className="sticky bottom-0 bg-white border-t border-gray-200 py-4 mt-12 flex justify-between gap-4 z-10">
+          <footer className="sticky bottom-0 bg-white border-t-2 border-gray-300 py-6 mt-8 flex justify-between gap-4 z-20 shadow-lg px-6">
             <div className="flex gap-2">
               {/* Validation Actions for Tier 1 Users */}
               {canValidate && general.submissionStatus === 'submitted' && (
                 <>
-                  <Button
-                    variant="default"
+                  <button
+                    className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                    type="button"
                     onClick={() => console.log('Approve clicked')}
                     disabled={submitting}
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <CheckCircle className="h-5 w-5" />
                     Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
+                  </button>
+                  <button
+                    className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                    type="button"
                     onClick={() => {
                       const reason = window.prompt("Please provide a reason for rejection:");
                       if (reason) console.log('Reject clicked:', reason);
                     }}
                     disabled={submitting}
                   >
-                    <XCircle className="h-4 w-4 mr-2" />
+                    <XCircle className="h-5 w-5" />
                     Reject
-                  </Button>
+                  </button>
                 </>
               )}
             </div>
             
             <div className="flex gap-4">
-              {/* Save Button - Always available for editable activities */}
-              {canEdit && (
-                <button
-                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  type="button"
-                  onClick={() => saveActivity({})}
-                  disabled={!general.title.trim() || submitting}
-                >
-                  {saving && (
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  )}
-                  Save
-                </button>
-              )}
-              
               {/* Submit for Validation - For Tier 2 users with draft activities */}
               {canSubmit && general.submissionStatus === 'draft' && general.id && (
-                <Button
+                <button
+                  className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                  type="button"
                   onClick={() => console.log('Submit for validation')}
                   disabled={submitting}
                 >
-                  <Send className="h-4 w-4 mr-2" />
+                  <Send className="h-5 w-5" />
                   Submit for Validation
-                </Button>
-              )}
-              
-              {/* Save and Next - Only in edit mode */}
-              {canEdit && (
-                <button
-                  className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  type="button"
-                  onClick={() => saveActivity({ goToNext: true })}
-                  disabled={submitting}
-                >
-                  {savingAndNext && (
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  )}
-                  Save and Next
                 </button>
               )}
               
-              {/* Publish Button - For users with publish permission */}
-              {canPublish && (
-                <button
-                  className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  type="button"
-                  onClick={() => saveActivity({ publish: true })}
-                  disabled={!general.title.trim() || submitting || (sectorValidation && !sectorValidation.isValid)}
-                >
-                  {publishing && (
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  )}
-                  Publish
-                </button>
-              )}
+
             </div>
           </footer>
         </main>
@@ -1413,6 +1683,37 @@ function NewActivityPageContent() {
         isOpen={isCommentsDrawerOpen}
         onClose={() => setIsCommentsDrawerOpen(false)}
       />
+      
+      {/* Missing Required Fields Dialog */}
+      <Dialog open={showMissingFieldsDialog} onOpenChange={setShowMissingFieldsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Required Field Missing</DialogTitle>
+            <DialogDescription>
+              The Activity Title must be completed before the activity can be auto-saved:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <ul className="list-disc pl-6 space-y-1">
+              {missingRequiredFields.map((field) => (
+                <li key={field} className="text-sm text-gray-700">{field}</li>
+              ))}
+            </ul>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMissingFieldsDialog(false)}>
+              I'll complete them later
+            </Button>
+            <Button onClick={() => {
+              setShowMissingFieldsDialog(false);
+              setActiveSection("general"); // Go to general tab where title field is
+            }}>
+              Add Activity Title
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      </AutosaveFormWrapper>
     </MainLayout>
   );
 }

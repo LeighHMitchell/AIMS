@@ -340,26 +340,68 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    // Check if organization has users before deleting
-    const { data: users, error: checkError } = await getSupabaseAdmin()
-      .from('users')
-      .select('id')
-      .eq('organization_id', id)
-      .limit(1);
+    // Comprehensive check for all references
+    const supabase = getSupabaseAdmin();
+    const references: string[] = [];
     
-    if (checkError) {
-      console.error('[AIMS] Error checking organization users:', checkError);
-      return NextResponse.json({ error: 'Failed to check organization users' }, { status: 500 });
+    // Check users
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, email', { count: 'exact' })
+      .eq('organization_id', id);
+    
+    if (usersError) {
+      console.error('[AIMS] Error checking users:', usersError);
+      return NextResponse.json({ error: 'Failed to check organization references' }, { status: 500 });
     }
     
     if (users && users.length > 0) {
+      references.push(`${users.length} user${users.length > 1 ? 's' : ''} (${users.map((u: any) => u.email).join(', ')})`);
+    }
+    
+    // Check activities as reporting organization
+    const { count: reportingCount } = await supabase
+      .from('activities')
+      .select('id', { count: 'exact', head: true })
+      .eq('reporting_org_id', id);
+    
+    if (reportingCount && reportingCount > 0) {
+      references.push(`${reportingCount} activities as reporting organization`);
+    }
+    
+    // Check activity contributors
+    const { count: contributorCount } = await supabase
+      .from('activity_contributors')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', id);
+    
+    if (contributorCount && contributorCount > 0) {
+      references.push(`${contributorCount} activity contributor entries`);
+    }
+    
+    // Check transactions
+    const { count: transactionCount } = await supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .or(`provider_org_id.eq.${id},receiver_org_id.eq.${id}`);
+    
+    if (transactionCount && transactionCount > 0) {
+      references.push(`${transactionCount} transactions`);
+    }
+    
+    // If there are any references, prevent deletion
+    if (references.length > 0) {
       return NextResponse.json(
-        { error: 'Cannot delete organization with existing users' },
+        { 
+          error: 'Cannot delete organization with existing references',
+          details: `This organization is referenced by: ${references.join(', ')}. Please remove or reassign these references before deleting.`
+        },
         { status: 400 }
       );
     }
     
-    const { error } = await getSupabaseAdmin()
+    // Proceed with deletion
+    const { error } = await supabase
       .from('organizations')
       .delete()
       .eq('id', id);

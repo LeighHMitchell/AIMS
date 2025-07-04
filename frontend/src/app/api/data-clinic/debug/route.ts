@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     };
 
     // 2. Try to query each IATI field individually
-    const activityFields = ['default_aid_type', 'default_finance_type', 'flow_type', 'tied_status'];
+    const activityFields = ['default_aid_type', 'default_finance_type', 'default_flow_type', 'tied_status'];
     results.checks.activityFields = {};
 
     for (const field of activityFields) {

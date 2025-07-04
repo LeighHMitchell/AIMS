@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 
 // Types
 interface ActivityBudget {
@@ -44,22 +45,7 @@ interface ActivityBudgetsTabProps {
 
 type Granularity = 'quarterly' | 'monthly' | 'annual';
 
-// Hero Card Component
-interface HeroCardProps {
-  title: string;
-  value: string;
-  subtitle: string;
-}
 
-function HeroCard({ title, value, subtitle }: HeroCardProps) {
-  return (
-    <div className="p-4 bg-white border rounded-xl shadow-sm text-sm">
-      <h3 className="text-gray-600 text-xs font-medium uppercase tracking-wider">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-      <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
-    </div>
-  );
-}
 
 // Chart Components
 interface ChartData {
@@ -273,45 +259,6 @@ export default function ActivityBudgetsTab({
 
     return revisedTotal > 0 ? revisedTotal : originalTotal;
   }, [budgets]);
-
-  // Calculate hero card statistics
-  const heroStats = useMemo(() => {
-    const sortedBudgets = [...budgets].sort((a, b) => 
-      parseISO(a.period_start).getTime() - parseISO(b.period_start).getTime()
-    );
-
-    // Time coverage
-    const firstBudget = sortedBudgets[0];
-    const lastBudget = sortedBudgets[sortedBudgets.length - 1];
-    const timeCoverage = firstBudget && lastBudget
-      ? `${format(parseISO(firstBudget.period_start), 'MMM yyyy')} – ${format(parseISO(lastBudget.period_end), 'MMM yyyy')}`
-      : 'No periods';
-
-    // Budget status breakdown
-    const indicativeCount = budgets.filter(b => b.status === 1).length;
-    const committedCount = budgets.filter(b => b.status === 2).length;
-    const statusText = [];
-    if (indicativeCount > 0) statusText.push(`${indicativeCount} Indicative`);
-    if (committedCount > 0) statusText.push(`${committedCount} Committed`);
-
-    // Currencies used
-    const currencies = Array.from(new Set(budgets.map(b => b.currency)));
-    const currencyText = currencies.length > 0 ? currencies.join(', ') : defaultCurrency;
-
-    // Period coverage
-    const periodsCount = budgets.length;
-    const expectedPeriods = generatedPeriods.length;
-    const coverageText = `${periodsCount} of ${expectedPeriods} ${granularity} periods covered`;
-
-    return {
-      totalBudget: totalBudget.toLocaleString(),
-      timeCoverage,
-      statusText: statusText.join(' • ') || 'No budgets',
-      currencyText,
-      coverageText,
-      mainCurrency: budgets[0]?.currency || defaultCurrency
-    };
-  }, [budgets, totalBudget, defaultCurrency, generatedPeriods.length, granularity]);
 
   // Calculate chart data
   const chartData = useMemo(() => {
@@ -660,6 +607,11 @@ export default function ActivityBudgetsTab({
 
   return (
     <div className="space-y-6">
+      {/* Financial Summary Cards - Unified component */}
+      {activityId && (
+        <FinancialSummaryCards activityId={activityId} className="mb-6" />
+      )}
+
       {/* Budgets Heading */}
       <div className="flex items-center gap-2 mt-6 mb-2">
         <Wallet className="w-5 h-5 text-muted-foreground" />
@@ -672,31 +624,7 @@ export default function ActivityBudgetsTab({
         </Alert>
       )}
 
-      {/* Hero Cards */}
-      {!budgetNotProvided && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <HeroCard 
-            title="Total Budget" 
-            value={`${heroStats.mainCurrency} ${heroStats.totalBudget}`}
-            subtitle="Based on current entries" 
-          />
-          <HeroCard 
-            title="Time Coverage" 
-            value={heroStats.timeCoverage}
-            subtitle={heroStats.coverageText}
-          />
-          <HeroCard 
-            title="Budget Status" 
-            value={heroStats.statusText}
-            subtitle="Across all periods" 
-          />
-          <HeroCard 
-            title="Currencies" 
-            value={heroStats.currencyText}
-            subtitle="Default currency" 
-          />
-        </div>
-      )}
+
 
       {/* Budget not provided toggle */}
       <div className="bg-white rounded-lg border p-6">

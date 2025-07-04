@@ -1,0 +1,26 @@
+--- a/frontend/src/app/activities/new/page.tsx
++++ b/frontend/src/app/activities/new/page.tsx
+@@ -197,7 +197,11 @@
+                 <CollaborationTypeSelect
+                   id="collaborationType"
+                   value={general.collaborationType}
+-                  onValueChange={(value) => setGeneral((g: any) => ({ ...g, collaborationType: value }))}
++                  onValueChange={(value) => {
++                    console.log('[AIMS] Collaboration type changed to:', value);
++                    setGeneral((g: any) => ({ ...g, collaborationType: value }));
++                    // Autosave is triggered by useEffect watching general state
++                  }}
+                   placeholder="Select Collaboration Type"
+                 />
+               </div>
+@@ -211,8 +215,8 @@
+                   id="activityStatus"
+                   value={general.activityStatus}
+                   onValueChange={(value) => {
+-                    setGeneral((g: any) => ({ ...g, activityStatus: value }));
+-                    // Log for debugging
+                     console.log('[AIMS] Activity status changed to:', value);
++                    setGeneral((g: any) => ({ ...g, activityStatus: value }));
++                    // Autosave is triggered by useEffect watching general state
+                   }}
+                   placeholder="Select Activity Status"

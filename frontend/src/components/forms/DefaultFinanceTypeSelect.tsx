@@ -48,7 +48,7 @@ export function DefaultFinanceTypeSelect({
   id,
   value,
   onValueChange,
-  placeholder = "Select finance type...",
+  placeholder = "Select default finance type",
   disabled = false
 }: DefaultFinanceTypeSelectProps) {
   return (
@@ -56,12 +56,20 @@ export function DefaultFinanceTypeSelect({
       <SelectTrigger id={id} className="w-full">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent 
+        className="max-h-[400px] w-[var(--radix-select-trigger-width)]"
+        position="popper"
+        sideOffset={5}
+      >
         {Object.entries(FINANCE_TYPES_CATEGORIZED).map(([category, types]) => (
           <React.Fragment key={category}>
             <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{category}</div>
             {Object.entries(types).map(([code, label]) => (
-              <SelectItem key={code} value={code}>
+              <SelectItem 
+                key={code} 
+                value={code}
+                className="cursor-pointer hover:bg-accent focus:bg-accent"
+              >
                 <span className="font-mono text-xs mr-2">{code}</span>
                 {label}
               </SelectItem>

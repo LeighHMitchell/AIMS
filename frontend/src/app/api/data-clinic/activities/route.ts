@@ -14,7 +14,7 @@ interface Activity {
   updated_at: string;
   default_aid_type?: string;
   default_finance_type?: string;
-  flow_type?: string;
+  default_flow_type?: string;
   activity_sectors?: Array<{
     id: string;
     sector_id: string;
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
           updated_at,
           default_aid_type,
           default_finance_type,
-          flow_type,
+          default_flow_type,
           activity_sectors (
             id,
             sector_id,
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
           missingFinanceType++;
           hasGap = true;
         }
-        if (!activity.flow_type) {
+        if (!activity.default_flow_type) {
           missingFlowType++;
           hasGap = true;
         }
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
         dataGaps.push({ field: 'missing_finance_type', label: 'Missing Finance Type', count: missingFinanceType });
       }
       if (missingFlowType > 0) {
-        dataGaps.push({ field: 'missing_flow_type', label: 'Missing Flow Type', count: missingFlowType });
+        dataGaps.push({ field: 'missing_default_flow_type', label: 'Missing Default Flow Type', count: missingFlowType });
       }
       if (missingSector > 0) {
         dataGaps.push({ field: 'missing_sector', label: 'Missing Sector', count: missingSector });

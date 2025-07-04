@@ -201,7 +201,7 @@ export default function ActivityLogsPage() {
     if (searchTerm) {
       filtered = filtered.filter(log => {
         const description = getActionDescription(log).toLowerCase();
-        const userName = log.user.name.toLowerCase();
+        const userName = (log.user?.name || '').toLowerCase();
         const activityTitle = (log.activityTitle || '').toLowerCase();
         return (
           description.includes(searchTerm.toLowerCase()) ||
@@ -231,8 +231,8 @@ export default function ActivityLogsPage() {
   const exportLogs = () => {
     const dataToExport = filteredLogs.map(log => ({
       'Timestamp': format(new Date(log.timestamp), 'yyyy-MM-dd HH:mm:ss'),
-      'User': log.user.name,
-      'Role': formatRole(log.user.role),
+      'User': log.user?.name || 'Unknown User',
+      'Role': formatRole(log.user?.role || 'unknown'),
       'Action': log.actionType,
       'Entity Type': log.entityType,
       'Description': getActionDescription(log),
@@ -396,7 +396,7 @@ export default function ActivityLogsPage() {
                         <div className="flex-1">
                           {/* Main description */}
                           <p className="text-sm">
-                            <span className="font-medium">{log.user.name}</span>{' '}
+                            <span className="font-medium">{log.user?.name || 'Unknown User'}</span>{' '}
                             <span className="text-muted-foreground">
                               {getActionDescription(log)}
                             </span>
@@ -425,8 +425,8 @@ export default function ActivityLogsPage() {
                               {format(new Date(log.timestamp), 'dd MMM yyyy, HH:mm')}
                             </span>
                             <span className="text-xs text-muted-foreground">•</span>
-                            <Badge variant={getRoleBadgeVariant(log.user.role)} className="text-xs h-5">
-                              {formatRole(log.user.role)}
+                            <Badge variant={getRoleBadgeVariant(log.user?.role || 'unknown')} className="text-xs h-5">
+                              {formatRole(log.user?.role || 'unknown')}
                             </Badge>
                             {log.activityId && (
                               <>

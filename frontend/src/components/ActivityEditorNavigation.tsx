@@ -140,7 +140,7 @@ export default function ActivityEditorNavigation({
       ))}
       
       {/* Progress indicator */}
-      <div className="mt-auto pt-4 border-t border-gray-200">
+      <div className="mt-auto pt-4">
         <div className="text-xs text-gray-500 px-1">
           <div className="mb-1 font-medium">Progress</div>
           <div className="w-full bg-gray-200 rounded-full h-1">

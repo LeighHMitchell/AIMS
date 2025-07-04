@@ -148,10 +148,10 @@ export function AdminUserTable() {
     // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(user =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
         (user.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
         (user.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
         (user.organization?.name.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
       )
     }

@@ -121,6 +121,9 @@ export type Database = {
           updated_at: string
           default_tied_status: string | null
           default_currency: string | null
+          default_aid_type: string | null
+          default_finance_type: string | null
+          default_flow_type: string | null
         }
         Insert: Omit<Database['public']['Tables']['activities']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['activities']['Insert']>

@@ -239,7 +239,10 @@ export function AidTypeSelect({
         </span>
         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] max-w-none p-0 overflow-visible" align="start">
+      <PopoverContent 
+        className="w-[var(--radix-popover-trigger-width)] max-w-none p-0 overflow-visible bottom-full mb-2" 
+        align="start"
+      >
         <Command className="overflow-visible">
           <div className="border-b border-border px-3 py-2">
             <div className="relative">

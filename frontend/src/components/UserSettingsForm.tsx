@@ -315,6 +315,21 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
       const userResponse = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`)
       const updatedUserData = await userResponse.json()
 
+      // If organization was changed, fetch the new organization data
+      let organizationData = user.organization
+      if (formData.role === 'super_user' && selectedOrgId && selectedOrgId !== user.organizationId) {
+        const selectedOrg = organizations.find(o => o.id === selectedOrgId)
+        if (selectedOrg) {
+          organizationData = {
+            id: selectedOrg.id,
+            name: selectedOrg.name,
+            type: 'development_partner', // Default type, should be fetched from org data
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        }
+      }
+
       // Update local user state with fresh data from server
       const updatedUser = {
         ...user,
@@ -323,6 +338,8 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
         lastName: updatedUserData.last_name || formData.lastName,
         email: (formData.role === 'super_user' && changeEmail) ? formData.email : user.email,
         organisation: updatedUserData.organisation || formData.organisation,
+        organizationId: updatedUserData.organization_id || (formData.role === 'super_user' && selectedOrgId ? selectedOrgId : user.organizationId), // Include organization ID
+        organization: organizationData, // Include full organization object
         department: updatedUserData.department || formData.department,
         jobTitle: updatedUserData.job_title || formData.jobTitle,
         telephone: updatedUserData.telephone || formData.telephone,

@@ -28,4 +28,4 @@ BEGIN
     RAISE NOTICE '- acronym (instead of short_name)';
     RAISE NOTICE '- iati_org_id (instead of identifier)';
     RAISE NOTICE '';
-END $$; 
+END $$; ra

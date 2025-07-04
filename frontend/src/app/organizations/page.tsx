@@ -700,33 +700,35 @@ const ImageUpload: React.FC<{
     setPreview(value || null)
   }, [value])
 
-  // Different sizing for logo vs banner
-  const height = isLogo ? 'h-32' : 'h-48'
-  const iconSize = isLogo ? 'h-8 w-8' : 'h-12 w-12'
+  // Same height but different widths for logo vs banner
+  const containerClass = isLogo 
+    ? 'h-32 w-32 mx-auto' // Square for logo (128px x 128px)
+    : 'h-32 w-full' // Same height but full width for banner
+  const iconSize = isLogo ? 'h-8 w-8' : 'h-10 w-10'
   const objectFit = isLogo ? 'object-contain' : 'object-cover'
-  const bgColor = isLogo ? 'bg-gray-50' : ''
+  const bgColor = isLogo ? 'bg-gray-50' : 'bg-gray-100'
 
   if (preview) {
     return (
       <div className="space-y-2">
         <Label className="text-sm font-medium">{label}</Label>
-        <div className={`relative ${height} rounded-lg overflow-hidden group border ${bgColor}`}>
+        <div className={`relative ${containerClass} rounded-lg overflow-hidden group border ${bgColor}`}>
           <img
             src={preview}
             alt={label}
             className={`w-full h-full ${objectFit}`}
           />
-          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 p-2">
             <div {...getRootProps()}>
               <input {...getInputProps()} />
-              <Button size="sm" variant="secondary" disabled={uploading}>
-                <Upload className="h-4 w-4 mr-2" />
-                Replace
+              <Button size="sm" variant="secondary" disabled={uploading} className="px-3">
+                <Upload className="h-4 w-4 mr-1.5" />
+                <span className="whitespace-nowrap">Replace</span>
               </Button>
             </div>
-            <Button size="sm" variant="destructive" onClick={removeImage} disabled={uploading}>
-              <X className="h-4 w-4 mr-2" />
-              Delete
+            <Button size="sm" variant="destructive" onClick={removeImage} disabled={uploading} className="px-3">
+              <X className="h-4 w-4 mr-1.5" />
+              <span className="whitespace-nowrap">Delete</span>
             </Button>
           </div>
         </div>
@@ -743,19 +745,19 @@ const ImageUpload: React.FC<{
       <div
         {...getRootProps()}
         className={`
-          ${height} border-2 border-dashed rounded-lg cursor-pointer transition-colors ${bgColor}
+          ${containerClass} border-2 border-dashed rounded-lg cursor-pointer transition-colors ${bgColor}
           ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
           ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >
         <input {...getInputProps()} />
-        <div className="h-full flex flex-col items-center justify-center text-gray-500">
-          <ImageIcon className={`${iconSize} mb-3`} />
-          <p className="text-sm font-medium">
-            {isDragActive ? `Drop the ${label.toLowerCase()} here` : `Drag & drop ${label.toLowerCase()} here`}
+        <div className="h-full flex flex-col items-center justify-center text-gray-500 p-4">
+          <ImageIcon className={`${iconSize} mb-4`} />
+          <p className="text-sm font-medium text-center">
+            {isDragActive ? `Drop ${label.toLowerCase()}` : `Drag & drop`}
           </p>
-          <p className="text-xs mt-1">or click to select</p>
-          <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 5MB</p>
+          <p className="text-xs mt-2">or click to select</p>
+          <p className="text-xs mt-3 text-gray-400">PNG, JPG, GIF up to 5MB</p>
         </div>
       </div>
       <p className="text-xs text-gray-500 text-center">
@@ -811,8 +813,10 @@ const EditOrganizationModal: React.FC<{
   useEffect(() => {
     if (organization) {
       console.log('[EditModal] Initializing form with organization data:', {
+        id: organization.id,
         name: organization.name,
         acronym: organization.acronym,
+        iati_org_id: organization.iati_org_id,
         country: organization.country,
         country_represented: organization.country_represented
       })
@@ -855,6 +859,11 @@ const EditOrganizationModal: React.FC<{
   }
 
   const handleSave = async () => {
+    // Enhanced debug logging
+    console.log('[OrganizationModal] Starting save process...');
+    console.log('[OrganizationModal] Form data:', formData);
+    console.log('[OrganizationModal] Organization ID:', organization?.id);
+    
     // Derive cooperation modality based on organization type and country
     const derivedModality = deriveCooperationModality(
       formData.organisation_type || '', 
@@ -870,6 +879,7 @@ const EditOrganizationModal: React.FC<{
     // Debug logging
     console.log('[OrganizationModal] Data to save:', dataToSave);
     console.log('[OrganizationModal] Country represented:', dataToSave.country_represented);
+    console.log('[OrganizationModal] Is country in valid list?', ALL_COUNTRY_AND_REGION_CODES.includes(dataToSave.country_represented || ''));
     
     const errors = validateOrganizationForm(dataToSave)
     if (errors.length > 0) {
@@ -878,6 +888,7 @@ const EditOrganizationModal: React.FC<{
       return
     }
     
+    console.log('[OrganizationModal] Validation passed, saving...');
     setSaving(true)
     setValidationErrors([])
     
@@ -887,7 +898,9 @@ const EditOrganizationModal: React.FC<{
       toast.success('Organization updated successfully')
     } catch (error) {
       console.error('[OrganizationModal] Save error:', error)
-      toast.error('Failed to update organization')
+      // Show more detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update organization'
+      toast.error(errorMessage)
     } finally {
       setSaving(false)
     }
@@ -962,20 +975,26 @@ const EditOrganizationModal: React.FC<{
               <div className="space-y-2">
                 <Label htmlFor="iati_org_id" className="text-sm font-medium">IATI Organisation Identifier</Label>
                 <div className="flex gap-2">
-                  <Input
-                    id="iati_org_id"
-                    value={formData.iati_org_id || ''}
-                    onChange={(e) => handleInputChange('iati_org_id', e.target.value)}
-                    placeholder="DK-CVR-20228799"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(formData.iati_org_id || '')}
-                    disabled={!formData.iati_org_id}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <div className="relative flex-1">
+                    <Input
+                      id="iati_org_id"
+                      value={formData.iati_org_id || ''}
+                      onChange={(e) => handleInputChange('iati_org_id', e.target.value)}
+                      placeholder="DK-CVR-20228799"
+                      className="pr-10"
+                    />
+                    {formData.iati_org_id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(formData.iati_org_id || '')}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                        title="Copy IATI ID"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1108,10 +1127,12 @@ const EditOrganizationModal: React.FC<{
                   onValueChange={(value) => handleInputChange('organisation_type', value)}
                   disabled={loadingTypes}
                 >
-                  <SelectTrigger className={validationErrors.some(e => e.includes('Organisation Type')) ? 'border-red-500' : ''}>
+                  <SelectTrigger 
+                    className={`${validationErrors.some(e => e.includes('Organisation Type')) ? 'border-red-500' : ''} [&>span]:line-clamp-none [&>span]:whitespace-nowrap`}
+                  >
                     <SelectValue placeholder={loadingTypes ? "Loading types..." : "Select organisation type"} />
                   </SelectTrigger>
-                  <SelectContent className="w-[350px] max-w-[90vw] max-h-[300px]">
+                  <SelectContent>
                     {organizationTypes
                       .filter(type => type.is_active)
                       .sort((a, b) => a.sort_order - b.sort_order)
@@ -1119,14 +1140,8 @@ const EditOrganizationModal: React.FC<{
                         <SelectItem 
                           key={type.code} 
                           value={type.code}
-                          className="whitespace-normal max-w-full"
                         >
-                          <div className="flex flex-col items-start py-1">
-                            <span className="font-medium text-sm leading-tight">{type.label}</span>
-                            {type.description && (
-                              <span className="text-xs text-muted-foreground mt-0.5 leading-tight">{type.description}</span>
-                            )}
-                          </div>
+                          {type.label}
                         </SelectItem>
                       ))}
                   </SelectContent>
@@ -1207,24 +1222,29 @@ const EditOrganizationModal: React.FC<{
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Branding & Contact Information</h3>
             
-            {/* Partner Logo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ImageUpload
-                value={formData.logo || ''}
-                onChange={(value) => handleInputChange('logo', value)}
-                label="Partner Logo"
-                recommendedSize="Recommended size: 512×512px for best display"
-                isLogo={true}
-              />
+            {/* Logo and Banner in single row with clear size difference */}
+            <div className="flex gap-4 items-start">
+              {/* Partner Logo - Smaller fixed width */}
+              <div className="w-48 flex-shrink-0">
+                <ImageUpload
+                  value={formData.logo || ''}
+                  onChange={(value) => handleInputChange('logo', value)}
+                  label="Logo"
+                  recommendedSize="512×512px"
+                  isLogo={true}
+                />
+              </div>
               
-              {/* Banner Image */}
-              <ImageUpload
-                value={formData.banner || ''}
-                onChange={(value) => handleInputChange('banner', value)}
-                label="Banner Image"
-                recommendedSize="Recommended size: 1200×300px for best display"
-                isLogo={false}
-              />
+              {/* Banner Image - Larger flexible width */}
+              <div className="flex-grow">
+                <ImageUpload
+                  value={formData.banner || ''}
+                  onChange={(value) => handleInputChange('banner', value)}
+                  label="Banner"
+                  recommendedSize="1200×300px"
+                  isLogo={false}
+                />
+              </div>
             </div>
 
             {/* Contact Information Grid */}
@@ -1330,7 +1350,9 @@ const DeleteConfirmationModal: React.FC<{
       setConfirmationText('')
       toast.success('Organization deleted successfully')
     } catch (error) {
-      toast.error('Failed to delete organization')
+      // Show the actual error message if available
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete organization'
+      toast.error(errorMessage)
     } finally {
       setDeleting(false)
     }
@@ -1559,28 +1581,18 @@ const OrganizationCard: React.FC<{
     router.push(`/organizations/${organization.id}`)
   }
 
-  const getDisplayName = () => {
-    if (organization.name && organization.acronym) {
-      return `${organization.name} (${organization.acronym})`
-    }
-    return organization.displayName
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    toast.success('Copied to clipboard')
   }
 
   return (
     <Card 
-      className="hover:shadow-lg transition-shadow duration-200 cursor-pointer overflow-hidden h-full relative"
+      className="hover:shadow-lg transition-shadow duration-200 cursor-pointer overflow-hidden h-full flex flex-col"
       onClick={handleView}
     >
       {/* Banner Image */}
-      <div className="h-32 bg-gradient-to-r from-blue-500 to-teal-600 relative overflow-hidden">
+      <div className="h-32 bg-gradient-to-r from-blue-500 to-teal-600 relative overflow-hidden flex-shrink-0">
         {organization.banner ? (
           <img 
             src={organization.banner} 
@@ -1592,18 +1604,16 @@ const OrganizationCard: React.FC<{
             <Building2 className="h-16 w-16 text-white/20" />
           </div>
         )}
-      </div>
-
-      <CardContent className="p-6">
-        {/* Actions Dropdown - positioned absolutely */}
+        
+        {/* Actions Dropdown - positioned on banner */}
         <div 
-          className="absolute top-4 right-4 z-10" 
+          className="absolute top-4 right-4" 
           onClick={(e) => e.stopPropagation()}
         >
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-8 w-8 bg-black/20 hover:bg-black/40">
+                <MoreVertical className="h-4 w-4 text-white" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -1626,8 +1636,10 @@ const OrganizationCard: React.FC<{
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
 
-        <div className="flex flex-col space-y-4">
+      <CardContent className="p-6 flex flex-col flex-grow">
+        <div className="flex flex-col space-y-4 flex-grow">
           {/* Top section with logo and name */}
           <div className="flex items-start gap-4">
             {/* Logo */}
@@ -1648,104 +1660,33 @@ const OrganizationCard: React.FC<{
             {/* Organization Name and Details */}
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-lg text-gray-900 line-clamp-2">
-                {getDisplayName()}
+                {organization.name}
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {organization.iati_org_id || 'No IATI identifier'}
-              </p>
-            </div>
-          </div>
-
-          {/* Description */}
-          {organization.description && (
-            <p className="text-sm text-gray-600 line-clamp-2">
-              {organization.description}
-            </p>
-          )}
-
-          {/* Metadata tags */}
-          <div className="flex flex-wrap gap-2">
-            {/* Country */}
-            {(organization.country_represented || organization.country) && (
-              <div className="flex items-center gap-1.5 bg-gray-100 px-2 py-1 rounded-md">
-                {getCountryCode(organization.country_represented || organization.country) && (
-                  <Flag 
-                    code={getCountryCode(organization.country_represented || organization.country)!} 
-                    height="14" 
-                    width="20"
-                    className="rounded-sm"
-                  />
-                )}
-                <span className="text-xs text-gray-700">
-                  {organization.country_represented || organization.country}
-                </span>
-              </div>
-            )}
-            
-            {/* Organization Type */}
-            <Badge 
-              variant="secondary"
-              className="cursor-pointer hover:opacity-80"
-              onClick={(e) => {
-                e.stopPropagation()
-                onTagClick(organization.organisation_type)
-              }}
-            >
-              {getTypeLabel(organization.organisation_type, availableTypes)}
-            </Badge>
-
-            {/* Cooperation Modality */}
-            {organization.cooperation_modality && (
-              <Badge 
-                variant="outline"
-                className="cursor-pointer hover:opacity-80"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onTagClick(organization.cooperation_modality!)
-                }}
-              >
-                {organization.cooperation_modality}
-              </Badge>
-            )}
-          </div>
-
-          {/* Stats section */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              {/* Active Projects */}
-              <div className="flex items-center gap-1.5">
-                <Activity className="h-4 w-4" />
-                <span>Projects: {organization.activeProjects || 0}</span>
-                {organization.projectsByStatus && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="h-3 w-3 ml-1" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <div className="text-xs space-y-1">
-                          <div>Active: {organization.projectsByStatus.active}</div>
-                          <div>Pipeline: {organization.projectsByStatus.pipeline}</div>
-                          <div>Completed: {organization.projectsByStatus.completed}</div>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+              {organization.acronym && (
+                <p className="text-sm text-gray-600 mt-0.5">
+                  {organization.acronym}
+                </p>
+              )}
+              <div className="flex items-center gap-1 mt-2">
+                <p className="text-sm text-gray-500">
+                  {organization.iati_org_id || 'No IATI identifier'}
+                </p>
+                {organization.iati_org_id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      copyToClipboard(organization.iati_org_id || '')
+                    }}
+                    className="h-5 w-5 p-0"
+                    title="Copy IATI ID"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
                 )}
               </div>
-
-              {/* Last Activity */}
-              <div className="text-xs text-gray-500">
-                Last Activity: {organization.lastProjectActivity ? formatRelativeDate(organization.lastProjectActivity) : 'Never'}
-              </div>
             </div>
-            
-
-          </div>
-
-          {/* Updated date footer */}
-          <div className="text-xs text-gray-400 text-right">
-            Updated {formatDate(organization.updated_at)}
           </div>
         </div>
       </CardContent>
@@ -1763,14 +1704,6 @@ const OrganizationListView: React.FC<{
 }> = ({ organizations, onEdit, onDelete, availableTypes, onTagClick }) => {
   const router = useRouter()
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
-
   return (
     <div className="space-y-2">
       {organizations.map((org) => (
@@ -1784,94 +1717,42 @@ const OrganizationListView: React.FC<{
               className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer" 
               onClick={() => router.push(`/organizations/${org.id}`)}
             >
-              {/* Organization Name and Acronym */}
-              <div className="flex-shrink-0 min-w-0">
-                              <h3 className="text-sm font-semibold text-gray-900 truncate">
-                {org.name}
-                {org.acronym && (
-                  <span className="ml-1 text-gray-600 font-normal">({org.acronym})</span>
-                )}
-              </h3>
+              {/* Organization Name */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {org.name}
+                </h3>
               </div>
 
-              {/* IATI ID - hidden on small screens */}
-              <div className="hidden md:block flex-shrink-0">
-                <p className="text-sm text-gray-500">
-                  {org.iati_org_id || 'No IATI ID'}
-                </p>
-              </div>
-
-              {/* Country with flag */}
-              {(org.country_represented || org.country) && (
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {getCountryCode(org.country_represented || org.country) && (
-                    <Flag 
-                      code={getCountryCode(org.country_represented || org.country)!} 
-                      height="14" 
-                      width="18"
-                      className="rounded-sm"
-                    />
-                  )}
-                  <span className="text-sm text-gray-600 hidden lg:inline">
-                    {getCountryFullName(getCountryCode(org.country_represented || org.country))}
+              {/* Acronym */}
+              {org.acronym && (
+                <div className="flex-shrink-0">
+                  <span className="text-sm text-gray-600">
+                    {org.acronym}
                   </span>
                 </div>
               )}
 
-              {/* Organization Type Badge */}
-              <div className="flex-shrink-0">
-                <Badge 
-                  variant="secondary"
-                  className="cursor-pointer hover:opacity-80 text-xs"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onTagClick(org.organisation_type)
-                  }}
-                >
-                  {getTypeLabel(org.organisation_type, availableTypes)}
-                </Badge>
-              </div>
-
-              {/* Active Projects */}
+              {/* IATI ID */}
               <div className="flex items-center gap-1 flex-shrink-0">
-                <Activity className="h-3.5 w-3.5 text-gray-500" />
-                <span className="text-sm text-gray-600">{org.activeProjects || 0}</span>
-                {org.projectsByStatus && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-4 w-4 p-0 ml-0.5">
-                        <Info className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      <DropdownMenuLabel>Project Status Breakdown</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <div className="px-2 py-1.5 text-sm">
-                        <div className="flex justify-between gap-8">
-                          <span className="text-green-600">Active:</span>
-                          <span className="font-medium">{org.projectsByStatus.active}</span>
-                        </div>
-                        <div className="flex justify-between gap-8">
-                          <span className="text-blue-600">Pipeline:</span>
-                          <span className="font-medium">{org.projectsByStatus.pipeline}</span>
-                        </div>
-                        <div className="flex justify-between gap-8">
-                          <span className="text-gray-600">Completed:</span>
-                          <span className="font-medium">{org.projectsByStatus.completed}</span>
-                        </div>
-                        <div className="flex justify-between gap-8">
-                          <span className="text-red-600">Cancelled:</span>
-                          <span className="font-medium">{org.projectsByStatus.cancelled}</span>
-                        </div>
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <p className="text-sm text-gray-500">
+                  {org.iati_org_id || 'No IATI ID'}
+                </p>
+                {org.iati_org_id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      navigator.clipboard.writeText(org.iati_org_id || '')
+                      toast.success('Copied to clipboard')
+                    }}
+                    className="h-5 w-5 p-0"
+                    title="Copy IATI ID"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
                 )}
-              </div>
-
-              {/* Updated date - hidden on small screens */}
-              <div className="hidden xl:block flex-shrink-0 text-xs text-gray-500">
-                Updated: {formatDate(org.updated_at)}
               </div>
             </div>
 
@@ -2223,7 +2104,10 @@ export default function OrganizationsPage() {
     })
     
     if (!response.ok) {
-      throw new Error('Failed to delete organization')
+      const errorData = await response.json()
+      // Use the detailed error message from the API if available
+      const errorMessage = errorData.details || errorData.error || 'Failed to delete organization'
+      throw new Error(errorMessage)
     }
     
     // Refresh organizations list

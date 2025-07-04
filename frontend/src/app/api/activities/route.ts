@@ -124,7 +124,7 @@ export async function POST(request: Request) {
           default_finance_type: body.defaultFinanceType || null,
           default_currency: body.defaultCurrency || null,
           default_tied_status: body.defaultTiedStatus || null,
-          flow_type: body.flowType || null,
+          default_flow_type: body.defaultFlowType || null,
           last_edited_by: body.user?.id ? cleanUUIDValue(body.user.id) : null,
         };
       } catch (error: any) {
@@ -773,7 +773,7 @@ export async function POST(request: Request) {
         default_finance_type: body.defaultFinanceType || null,
         default_currency: body.defaultCurrency || null,
         default_tied_status: body.defaultTiedStatus || null,
-        flow_type: body.flowType || null,
+        default_flow_type: body.defaultFlowType || null,
         created_by: cleanUUIDValue(body.user?.id),
         last_edited_by: cleanUUIDValue(body.user?.id),
       };
@@ -1194,7 +1194,7 @@ export async function POST(request: Request) {
       defaultFinanceType: newActivity.default_finance_type,
       defaultCurrency: newActivity.default_currency,
       defaultTiedStatus: newActivity.default_tied_status,
-      flowType: newActivity.flow_type,
+      defaultFlowType: newActivity.default_flow_type,
       createdAt: newActivity.created_at,
       updatedAt: newActivity.updated_at,
       sdgMappings: sdgMappings?.map((mapping: any) => ({

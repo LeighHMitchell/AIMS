@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     // 2. Check if required columns exist
     const { data: sampleActivity, error: sampleError } = await supabase
       .from('activities')
-      .select('id, title, default_aid_type, default_finance_type, flow_type')
+              .select('id, title, default_aid_type, default_finance_type, default_flow_type')
       .limit(1)
       .single();
 

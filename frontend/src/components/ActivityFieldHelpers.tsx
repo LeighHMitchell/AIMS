@@ -23,10 +23,11 @@ export const IATI_FIELD_HELP = {
   actualEndDate: "The actual date the activity ends, for example the date of the last disbursement or when physical activity is complete.",
   sectors: "The specific areas of the recipient's economic or social structure targeted by the activity",
   aidType: "The type of aid being supplied (project-type intervention, budget support, debt relief, etc.)",
-  defaultAidType: "This sets the main modality for this activity using the OECD DAC classification. Individual transactions may override this if needed.",
+  defaultAidType: "The default type of aid for transactions in this activity (e.g., budget support, project aid, technical assistance). Individual transactions may override this.",
   defaultFinanceType: "The default financial instrument for transactions in this activity (grant, loan, guarantee, etc.). Individual transactions may override this.",
   defaultCurrency: "The default currency for all monetary values in this activity per IATI standards. Use ISO 4217 currency codes (e.g., USD, EUR, GBP). Individual transactions may override if needed.",
-  flowType: "Whether the activity is funded by Official Development Assistance (ODA), Other Official Flows (OOF), etc.",
+  defaultFlowType: "The default flow type for transactions (e.g., ODA, OOF). This value will be automatically applied to new transactions but can be overridden.",
+  defaultTiedStatus: "The default tied status for transactions. Indicates whether aid is tied, partially tied, or untied to procurement from the donor country.",
   currency: "The default currency for all financial values in this activity. Use ISO 4217 currency codes.",
   tiedStatus: "Whether the activity is tied, untied, or partially tied according to OECD definitions",
   systemUuid: "System-generated unique identifier for internal database reference. This is not the IATI identifier.",
@@ -201,16 +202,7 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
           <span className="text-xs text-gray-500">Complete</span>
         </div>
         
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className={`h-2 rounded-full transition-all duration-300 ${
-              completionPercentage >= 80 ? 'bg-green-500' : 
-              completionPercentage >= 60 ? 'bg-yellow-500' : 
-              'bg-red-500'
-            }`}
-            style={{ width: `${completionPercentage}%` }}
-          />
-        </div>
+
       </div>
       
       <button

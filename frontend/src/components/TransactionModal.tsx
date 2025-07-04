@@ -45,6 +45,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CopyField } from "@/components/ui/copy-field";
 import { CurrencyCombobox } from "@/components/ui/currency-combobox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TransactionDocumentUpload, TransactionDocument } from "@/components/TransactionDocumentUpload";
 
 // Constants for dropdowns
 const TRANSACTION_TYPES = {
@@ -266,6 +267,30 @@ export default function TransactionModal({
   const [computedClassification, setComputedClassification] = useState("");
   const [manualClassification, setManualClassification] = useState("");
   const [showValueDate, setShowValueDate] = useState(false);
+  
+  // Document upload state
+  const [documents, setDocuments] = useState<TransactionDocument[]>([]);
+
+  // Load existing documents when editing
+  useEffect(() => {
+    if (isEditing && transaction?.id && open) {
+      const fetchDocuments = async () => {
+        try {
+          const response = await fetch(`/api/transactions/documents?transactionId=${transaction.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setDocuments(data.documents || []);
+          }
+        } catch (error) {
+          console.error('Error fetching transaction documents:', error);
+        }
+      };
+      fetchDocuments();
+    } else if (!open) {
+      // Reset documents when modal closes
+      setDocuments([]);
+    }
+  }, [isEditing, transaction?.id, open]);
 
   // Transform partners to organizations format for OrganizationCombobox
   const organizations: Organization[] = React.useMemo(() => {
@@ -424,7 +449,8 @@ export default function TransactionModal({
       ...formData,
       financing_classification: isClassificationOverridden 
         ? manualClassification 
-        : computedClassification
+        : computedClassification,
+      documents: documents // Include documents in submission
     };
     onSubmit(submissionData);
   };
@@ -1136,6 +1162,25 @@ export default function TransactionModal({
                   <InfoTooltip text="Tick this if the transaction qualifies as humanitarian assistance under IATI or OCHA guidelines, including emergency response, disaster relief, or protection activities." />
                 </Label>
               </div>
+            </div>
+
+            {/* Supporting Documents Section */}
+            <Separator className="my-6" />
+            <div className="space-y-4">
+              <SectionHeader title="Supporting Documents" />
+              <div className="text-sm text-muted-foreground mb-4">
+                Upload receipts, invoices, contracts, or other evidence to support this transaction. 
+                You can also add links to documents hosted elsewhere.
+              </div>
+              <TransactionDocumentUpload
+                transactionId={transaction?.id}
+                activityId={activityId}
+                documents={documents}
+                onDocumentsChange={setDocuments}
+                disabled={isSubmitting}
+                maxFiles={10}
+                maxFileSize={50}
+              />
             </div>
           </div>
         </ScrollArea>

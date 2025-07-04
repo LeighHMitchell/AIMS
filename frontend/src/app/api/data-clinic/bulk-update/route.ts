@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest) {
       const fieldMap: Record<string, string> = {
         default_aid_type: 'default_aid_type',
         default_finance_type: 'default_finance_type',
-        flow_type: 'flow_type',
+        default_flow_type: 'default_flow_type',
         activityStatus: 'activity_status',
         tied_status: 'tied_status'
       };
@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest) {
       const fieldMap: Record<string, string> = {
         financeType: 'finance_type',
         aidType: 'aid_type',
-        flowType: 'flow_type',
+        defaultFlowType: 'default_flow_type',
         transactionType: 'transaction_type'
       };
       dbField = fieldMap[field] || field;

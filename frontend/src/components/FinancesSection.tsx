@@ -9,6 +9,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import { format } from 'date-fns';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { categorizeTransactionType } from "@/utils/transactionTypes";
+import { DefaultAidTypeSelect } from "@/components/forms/DefaultAidTypeSelect";
+import { DefaultFinanceTypeSelect } from "@/components/forms/DefaultFinanceTypeSelect";
+import { FlowTypeSelect } from "@/components/forms/FlowTypeSelect";
+import { CurrencySelector } from "@/components/forms/CurrencySelector";
+import { TiedStatusSelect } from "@/components/forms/TiedStatusSelect";
+import { Label } from "@/components/ui/label";
+import { FinancialSummaryCards } from "@/components/FinancialSummaryCards";
+import { SupabaseFieldsTest } from "@/components/forms/SupabaseFieldsTest";
 
 interface FinancesSectionProps {
   activityId?: string;
@@ -16,6 +24,11 @@ interface FinancesSectionProps {
   transactions?: Transaction[];
   onTransactionsChange?: (transactions: Transaction[]) => void;
   defaultFinanceType?: string;
+  defaultAidType?: string;
+  defaultFlowType?: string;
+  defaultCurrency?: string;
+  defaultTiedStatus?: string;
+  onDefaultsChange?: (field: string, value: string) => void;
 }
 
 // Hero Card Component
@@ -102,7 +115,12 @@ export default function FinancesSection({
   activityTitle,
   transactions = [], 
   onTransactionsChange = () => {},
-  defaultFinanceType
+  defaultFinanceType,
+  defaultAidType,
+  defaultFlowType,
+  defaultCurrency,
+  defaultTiedStatus,
+  onDefaultsChange = () => {}
 }: FinancesSectionProps) {
   const [tab, setTab] = useState("transactions");
 
@@ -251,29 +269,10 @@ export default function FinancesSection({
 
   return (
     <div className="max-w-6xl">
-      {/* Hero Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <HeroCard 
-          title="Total Disbursed" 
-          value={`$${new Intl.NumberFormat().format(heroCardData.totalDisbursed)}`}
-          subtitle="Across all disbursement transactions" 
-        />
-        <HeroCard 
-          title="Total Expenditure" 
-          value={`$${new Intl.NumberFormat().format(heroCardData.totalExpenditure)}`}
-          subtitle="Spent by implementing organisations" 
-        />
-        <HeroCard 
-          title="Outstanding Commitments" 
-          value={`$${new Intl.NumberFormat().format(heroCardData.outstandingCommitments)}`}
-          subtitle="Funds committed but not yet spent" 
-        />
-        <HeroCard 
-          title="Most Recent Transaction" 
-          value={heroCardData.mostRecentDate}
-          subtitle="Latest financial activity" 
-        />
-      </div>
+      {/* Financial Summary Cards - New unified component */}
+      {activityId && activityId !== "new" && (
+        <FinancialSummaryCards activityId={activityId} className="mb-6" />
+      )}
 
       <div className="flex items-center gap-2 mt-6 mb-4">
         <Wallet className="w-5 h-5 text-muted-foreground" />
@@ -285,13 +284,13 @@ export default function FinancesSection({
         <TabsList className="mb-4">
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="linked-transactions">Linked Transactions</TabsTrigger>
+          <TabsTrigger value="defaults">Defaults</TabsTrigger>
         </TabsList>
 
         {/* Transactions Tab */}
         <TabsContent value="transactions">
           <TransactionsManager 
             activityId={activityId}
-            activityTitle={activityTitle}
             transactions={transactions}
             onTransactionsChange={onTransactionsChange}
             defaultFinanceType={defaultFinanceType}
@@ -311,6 +310,87 @@ export default function FinancesSection({
           <LinkedTransactionsEditorTab 
             activityId={activityId}
           />
+        </TabsContent>
+
+        {/* Defaults Tab */}
+        <TabsContent value="defaults">
+          <div className="space-y-6">
+            {/* Supabase Integration Test Component */}
+            <SupabaseFieldsTest 
+              activityId={activityId}
+              currentDefaults={{
+                defaultAidType,
+                defaultFinanceType,
+                defaultFlowType,
+                defaultCurrency,
+                defaultTiedStatus
+              }}
+            />
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Default Values for Transactions</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Set default values that will be automatically applied to new transactions. You can override these values for individual transactions.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Default Aid Type */}
+              <div className="space-y-2">
+                <Label htmlFor="defaultAidType">Default Aid Type</Label>
+                <DefaultAidTypeSelect
+                  id="defaultAidType"
+                  value={defaultAidType || ""}
+                  onValueChange={(value) => onDefaultsChange("defaultAidType", value)}
+                  placeholder="Select default aid type"
+                />
+              </div>
+
+              {/* Default Finance Type */}
+              <div className="space-y-2">
+                <Label htmlFor="defaultFinanceType">Default Finance Type</Label>
+                <DefaultFinanceTypeSelect
+                  id="defaultFinanceType"
+                  value={defaultFinanceType || ""}
+                  onValueChange={(value) => onDefaultsChange("defaultFinanceType", value)}
+                  placeholder="Select default finance type"
+                />
+              </div>
+
+              {/* Default Flow Type */}
+              <div className="space-y-2">
+                <Label htmlFor="defaultFlowType">Default Flow Type</Label>
+                <FlowTypeSelect
+                  id="defaultFlowType"
+                  value={defaultFlowType || ""}
+                  onValueChange={(value) => onDefaultsChange("defaultFlowType", value)}
+                  placeholder="Select default flow type"
+                />
+              </div>
+
+              {/* Default Currency */}
+              <div className="space-y-2">
+                <Label htmlFor="defaultCurrency">Default Currency</Label>
+                <CurrencySelector
+                  id="defaultCurrency"
+                  value={defaultCurrency || ""}
+                  onValueChange={(value) => onDefaultsChange("defaultCurrency", value)}
+                  placeholder="Select default currency"
+                />
+              </div>
+
+              {/* Default Tied Status */}
+              <div className="space-y-2">
+                <Label htmlFor="defaultTiedStatus">Default Tied Status</Label>
+                <TiedStatusSelect
+                  id="defaultTiedStatus"
+                  value={defaultTiedStatus || ""}
+                  onValueChange={(value) => onDefaultsChange("defaultTiedStatus", value)}
+                  placeholder="Select default tied status"
+                />
+              </div>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

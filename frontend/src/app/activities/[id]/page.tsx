@@ -10,7 +10,7 @@ import { format } from "date-fns"
 import { 
   ArrowLeft, 
   Edit, 
-  Printer, 
+  Download, 
   FileText, 
   MapPin, 
   Users, 
@@ -18,12 +18,9 @@ import {
   Phone, 
   Mail,
   Calendar,
-  Download,
   Eye,
   Trash2,
   Upload,
-  HelpCircle,
-  MessageSquare,
   UserPlus,
   PieChart,
   Banknote,
@@ -32,11 +29,16 @@ import {
   RefreshCw,
   AlertCircle,
   Lock,
-  Wallet
+  Wallet,
+  ExternalLink,
+  TrendingUp,
+  Building2,
+  MessageSquare
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
 import { DisbursementGauge, CumulativeFinanceChart } from "@/components/ActivityCharts"
+import { ActivityAnalyticsCharts } from "@/components/ActivityAnalyticsCharts"
 import { BannerUpload } from "@/components/BannerUpload"
 import {
   Table,
@@ -46,30 +48,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import GovernmentInputsSection from "@/components/GovernmentInputsSection"
 import { useUser } from "@/hooks/useUser"
-import { ActivityFeed } from "@/components/ActivityFeed"
 import { ActivityComments } from "@/components/ActivityComments"
 import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
 import TransactionTab from "@/components/activities/TransactionTab"
-import { DeleteActivityDialog } from "@/components/DeleteActivityDialog"
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions"
 import { SDG_GOALS, SDG_TARGETS } from "@/data/sdg-targets"
 import ContributorsSection from "@/components/ContributorsSection"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActivityProfileSkeleton } from "@/components/skeletons/ActivityProfileSkeleton"
-import { IATISyncPanel } from "@/components/activities/IATISyncPanel"
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
 import {
   Tooltip,
@@ -77,6 +64,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Activity {
   id: string
@@ -95,6 +83,7 @@ interface Activity {
   submissionStatus: 'draft' | 'submitted' | 'validated' | 'rejected' | 'published'
   sectors?: any[]
   transactions?: any[]
+  budgets?: any[]
   extendingPartners?: Array<{ orgId: string; name: string }>
   implementingPartners?: Array<{ orgId: string; name: string }>
   governmentPartners?: Array<{ orgId: string; name: string }>
@@ -119,15 +108,6 @@ interface Activity {
   autoSyncFields?: string[]
 }
 
-interface Document {
-  id: string;
-  filename: string;
-  uploadDate: string;
-  uploadedBy: string;
-  fileSize: number;
-  url: string;
-}
-
 interface Partner {
   id: string;
   name: string;
@@ -144,7 +124,8 @@ export default function ActivityDetailPage() {
   const id = params?.id as string
   const [loading, setLoading] = useState(true)
   const [activity, setActivity] = useState<Activity | null>(null)
-  const [activeTab, setActiveTab] = useState("about")
+  const [budgets, setBudgets] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState("overview")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const router = useRouter()
   const { user } = useUser()
@@ -163,26 +144,6 @@ export default function ActivityDetailPage() {
   const [showEditBanner, setShowEditBanner] = useState(false)
   const [banner, setBanner] = useState<string | null>(null)
   
-  // Mock data for now
-  const documents: Document[] = [
-    {
-      id: "1",
-      filename: "Activity_Proposal_2024.pdf",
-      uploadDate: "2024-01-15",
-      uploadedBy: "John Doe",
-      fileSize: 2.5 * 1024 * 1024, // 2.5 MB
-      url: "#"
-    },
-    {
-      id: "2", 
-      filename: "Budget_Breakdown.xlsx",
-      uploadDate: "2024-01-20",
-      uploadedBy: "Jane Smith",
-      fileSize: 1.2 * 1024 * 1024, // 1.2 MB
-      url: "#"
-    }
-  ]
-  
   const [partners, setPartners] = useState<Partner[]>([])
   const [allPartners, setAllPartners] = useState<Partner[]>([])
 
@@ -190,6 +151,7 @@ export default function ActivityDetailPage() {
     if (params?.id) {
       fetchActivity(true)
       loadAllPartners();
+      fetchBudgets();
     }
   }, [params?.id])
 
@@ -280,6 +242,22 @@ export default function ActivityDetailPage() {
     }
   }
 
+  const fetchBudgets = async () => {
+    if (!params?.id) return;
+    
+    try {
+      const res = await fetch(`/api/activities/${params.id}/budgets`);
+      if (res.ok) {
+        const budgetData = await res.json();
+        setBudgets(budgetData || []);
+      }
+    } catch (error) {
+      console.error("Error fetching budgets:", error);
+      // Set empty array as fallback
+      setBudgets([]);
+    }
+  }
+
   const handleBannerChange = async (newBanner: string | null) => {
     setBanner(newBanner)
     // Save banner to backend
@@ -361,7 +339,18 @@ export default function ActivityDetailPage() {
   if (loading) {
     return (
       <MainLayout>
-        <ActivityProfileSkeleton />
+        <div className="min-h-screen bg-slate-50">
+          <div className="max-w-7xl mx-auto p-6">
+            <Skeleton className="h-8 w-64 mb-6" />
+            <Skeleton className="h-64 w-full mb-6" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              {[1, 2, 3, 4].map(i => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+            <Skeleton className="h-96 w-full" />
+          </div>
+        </div>
       </MainLayout>
     )
   }
@@ -369,12 +358,22 @@ export default function ActivityDetailPage() {
   if (!activity) {
     return (
       <MainLayout>
-        <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <h2 className="text-2xl font-bold mb-4">Activity Not Found</h2>
-          <Button onClick={() => router.push("/activities")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Activities
-          </Button>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <Card className="max-w-md mx-auto border-slate-200">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Activity Not Found</h3>
+                <p className="text-slate-600 mb-4">
+                  The activity you are looking for could not be found.
+                </p>
+                <Button onClick={() => router.push("/activities")} className="bg-slate-600 hover:bg-slate-700">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Activities
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </MainLayout>
     )
@@ -529,11 +528,50 @@ export default function ActivityDetailPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header Section with Banner */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-            {/* Banner Image */}
+      <div className="min-h-screen bg-slate-50">
+        <div className="max-w-7xl mx-auto p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <Button 
+              variant="ghost" 
+              onClick={() => router.push('/activities')}
+              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Activities
+            </Button>
+            
+            <div className="flex gap-2">
+              {!banner && !showEditBanner && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowEditBanner(true)}
+                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Add Banner
+                </Button>
+              )}
+              <Button 
+                variant="outline"
+                className="border-slate-300 text-slate-700 hover:bg-slate-100"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Profile
+              </Button>
+              <Button 
+                onClick={handleEdit}
+                className="bg-slate-600 hover:bg-slate-700"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Activity
+              </Button>
+            </div>
+          </div>
+
+          {/* Activity Header Card */}
+          <Card className="mb-6 border-slate-200 shadow-sm">
+            {/* Banner Section */}
             {showEditBanner ? (
               <div className="p-4">
                 <BannerUpload
@@ -554,160 +592,151 @@ export default function ActivityDetailPage() {
               </div>
             ) : null}
             
-            {/* Header Content */}
-            <div className="p-6">
-              <div className="flex items-start justify-between">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-6">
+                {/* Icon */}
+                <div className="flex-shrink-0">
+                  {activity.icon ? (
+                    <img
+                      src={activity.icon}
+                      alt={`Icon for ${activity.title}`}
+                      className="w-20 h-20 rounded-lg object-cover border border-slate-200"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<div class="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200"><svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
+                      <Activity className="w-10 h-10 text-slate-400" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Activity Info */}
                 <div className="flex-1">
-                  <div className="flex items-start gap-4 mb-6">
-                    {activity.icon ? (
-                      <img
-                        src={activity.icon}
-                        alt={`Icon for ${activity.title}`}
-                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0 border-2 border-gray-200 shadow-sm"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          const parent = target.parentElement;
-                          if (parent) {
-                            parent.innerHTML = '<div class="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 border-2 border-gray-200 shadow-sm"><svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 border-2 border-gray-200 shadow-sm">
-                        <Activity className="w-8 h-8 text-slate-400" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <h1 className="text-3xl font-bold text-gray-900">{activity.title}</h1>
-                    </div>
-                  </div>
-                  
-                  {/* Comprehensive Metadata Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 divide-x divide-gray-100">
-                    {/* Identifiers Section */}
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200 pb-1">Activity Identifiers</h3>
-                      {activity.partnerId && (
-                        <div className="text-sm">
-                          <span className="font-medium text-gray-900">Activity Partner ID:</span>
-                          <p className="text-slate-700">{activity.partnerId}</p>
-                        </div>
-                      )}
-                      {activity.iatiId && (
-                        <div className="text-sm">
-                          <span className="font-medium text-gray-900">IATI Identifier:</span>
-                          <p className="text-slate-700">{activity.iatiId}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Status & Dates Section */}
-                    <div className="space-y-3 pl-8">
-                      <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200 pb-1">Activity Timeline</h3>
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-900">Status:</span>
-                        <div className="mt-1 flex items-center gap-2">
-                          <Badge 
-                            variant={
-                              activity.activityStatus === "completed" ? "success" : 
-                              activity.activityStatus === "implementation" ? "default" :
-                              activity.activityStatus === "cancelled" ? "destructive" : "secondary"
-                            }
-                            className="px-3 py-1"
-                          >
-                            {(activity.activityStatus || "Planning").charAt(0).toUpperCase() + 
-                             (activity.activityStatus || "Planning").slice(1).toLowerCase()}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h1 className="text-3xl font-bold text-slate-900">{activity.title}</h1>
+                        {activity.partnerId && (
+                          <Badge variant="outline" className="border-slate-300 text-slate-700">
+                            {activity.partnerId}
                           </Badge>
-                          
-                          {/* IATI Sync Status Icon */}
-                          {activity.iatiIdentifier && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-md">
-                                    {activity.syncStatus === 'live' ? (
-                                      <>
-                                        <RefreshCw className="h-3.5 w-3.5 text-green-600" />
-                                        <span className="text-xs font-medium text-green-600">IATI Synced</span>
-                                      </>
-                                    ) : activity.syncStatus === 'outdated' ? (
-                                      <>
-                                        <AlertCircle className="h-3.5 w-3.5 text-yellow-600" />
-                                        <span className="text-xs font-medium text-yellow-600">IATI Outdated</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Globe className="h-3.5 w-3.5 text-gray-600" />
-                                        <span className="text-xs font-medium text-gray-600">IATI Linked</span>
-                                      </>
-                                    )}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div className="text-xs space-y-1">
-                                    <p className="font-medium">IATI Sync Status</p>
-                                    {activity.lastSyncTime && (
-                                      <p>Last synced: {format(new Date(activity.lastSyncTime), 'dd MMM yyyy HH:mm')}</p>
-                                    )}
-                                    {activity.autoSync && (
-                                      <p className="text-green-600">Auto-sync enabled</p>
-                                    )}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </div>
+                        )}
                       </div>
-                      <div className="space-y-1">
-                        {getDisplayDates(activity)}
+                      
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge 
+                          className={
+                            activity.activityStatus === "completed" ? "bg-green-100 text-green-800" : 
+                            activity.activityStatus === "implementation" ? "bg-blue-100 text-blue-800" :
+                            activity.activityStatus === "cancelled" ? "bg-red-100 text-red-800" : 
+                            "bg-slate-100 text-slate-800"
+                          }
+                        >
+                          {(activity.activityStatus || "Planning").charAt(0).toUpperCase() + 
+                           (activity.activityStatus || "Planning").slice(1).toLowerCase()}
+                        </Badge>
+                        
+                        {/* IATI Sync Status */}
+                        {activity.iatiIdentifier && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className="border-slate-300 text-slate-700">
+                                  {activity.syncStatus === 'live' ? (
+                                    <>
+                                      <RefreshCw className="h-3 w-3 mr-1 text-green-600" />
+                                      IATI Synced
+                                    </>
+                                  ) : activity.syncStatus === 'outdated' ? (
+                                    <>
+                                      <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />
+                                      IATI Outdated
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Globe className="h-3 w-3 mr-1 text-slate-600" />
+                                      IATI Linked
+                                    </>
+                                  )}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="text-xs space-y-1">
+                                  <p className="font-medium">IATI Sync Status</p>
+                                  {activity.lastSyncTime && (
+                                    <p>Last synced: {format(new Date(activity.lastSyncTime), 'dd MMM yyyy HH:mm')}</p>
+                                  )}
+                                  {activity.autoSync && (
+                                    <p className="text-green-600">Auto-sync enabled</p>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
-                    </div>
-
-                    {/* Organization & Creator Section */}
-                    <div className="space-y-3 pl-8">
-                      <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200 pb-1">Participating Organizations</h3>
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-900">Created by:</span>
-                        <p className="text-slate-700">
-                          {(() => {
-                            const creatorOrg = partners.find(p => p.id === activity.createdByOrg);
-                            if (creatorOrg) {
-                              return creatorOrg.acronym || creatorOrg.code || creatorOrg.name;
-                            }
-                            return 'Unknown Organization';
-                          })()}
+                      
+                      {activity.description && (
+                        <p className="text-slate-600 mt-3 max-w-3xl leading-relaxed">
+                          {activity.description}
                         </p>
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-900">Creator:</span>
-                        <p className="text-slate-700">{activity.createdBy?.name || 'Unknown'}</p>
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-900">Created:</span>
-                        <p className="text-slate-700">{formatDate(activity.createdAt)}</p>
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-900">Last Updated:</span>
-                        <p className="text-slate-700">{formatDate(activity.updatedAt)}</p>
-                      </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Activity Contributors Section */}
+                  {/* Metadata Grid */}
+                  <div className="grid grid-cols-2 gap-4 mt-6 text-sm">
+                    <div>
+                      <span className="text-slate-500">Reported by:</span>
+                      <span className="ml-2 text-slate-900">
+                        {(() => {
+                          const creatorOrg = partners.find(p => p.id === activity.createdByOrg);
+                          if (creatorOrg) {
+                            return creatorOrg.acronym || creatorOrg.code || creatorOrg.name;
+                          }
+                          return activity.created_by_org_acronym || activity.created_by_org_name || 'Unknown Organization';
+                        })()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Created:</span>
+                      <span className="ml-2 text-slate-900">{formatDate(activity.createdAt)}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Creator:</span>
+                      <span className="ml-2 text-slate-900">{activity.createdBy?.name || 'Unknown'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Updated:</span>
+                      <span className="ml-2 text-slate-900">{formatDate(activity.updatedAt)}</span>
+                    </div>
+                  </div>
+
+                  {/* Activity Dates */}
+                  <div className="mt-4">
+                    {getDisplayDates(activity)}
+                  </div>
+
+                  {/* Contributors */}
                   {activity.contributors && activity.contributors.length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                      <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Activity Contributors</h3>
-                      <div className="flex flex-wrap gap-2">
+                    <div className="mt-4">
+                      <span className="text-sm text-slate-500">Contributors: </span>
+                      <div className="flex flex-wrap gap-1 mt-1">
                         {activity.contributors
                           .filter(c => c.status === 'accepted')
                           .map((contributor, idx) => {
                             const partner = allPartners.find(p => p.id === contributor.organizationId);
                             const displayName = partner 
-                              ? `${partner.acronym || partner.code || partner.name}${partner.countryRepresented ? ` (${partner.countryRepresented})` : ''}`
+                              ? `${partner.acronym || partner.code || partner.name}`
                               : contributor.organizationName;
                             return (
-                              <Badge key={contributor.id} variant="outline" className="text-xs">
+                              <Badge key={contributor.id} variant="outline" className="text-xs border-slate-300 text-slate-700">
                                 {displayName}
                               </Badge>
                             );
@@ -716,729 +745,431 @@ export default function ActivityDetailPage() {
                     </div>
                   )}
                 </div>
-                
-                {/* Action Buttons */}
-                <div className="flex gap-2 ml-6">
-                  <Button onClick={handleEdit} variant="outline">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Activity
-                  </Button>
-                  {!banner && !showEditBanner && (
-                    <Button onClick={() => setShowEditBanner(true)} variant="outline">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Add Banner
-                    </Button>
-                  )}
-                  <Button onClick={handlePrint} variant="outline">
-                    <Printer className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+
+          {/* Key Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Financial Progress</p>
+                    <p className="text-2xl font-bold text-slate-900">{financials.percentDisbursed}%</p>
+                    <p className="text-xs text-slate-500">disbursed</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-slate-400" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 bg-gradient-to-br from-blue-50 to-blue-100">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Total Commitment</p>
+                    <p className="text-2xl font-bold text-slate-900">
+                      USD {financials.totalCommitment.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500">committed funds</p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Sectors</p>
+                    <p className="text-2xl font-bold text-slate-900">{activity.sectors?.length || 0}</p>
+                    <p className="text-xs text-slate-500">sector allocations</p>
+                  </div>
+                  <PieChart className="h-8 w-8 text-slate-400" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 bg-gradient-to-br from-blue-50 to-blue-100">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Partners</p>
+                    <p className="text-2xl font-bold text-slate-900">{partners.length}</p>
+                    <p className="text-xs text-slate-500">organizations</p>
+                  </div>
+                  <Users className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-
-          {/* Main Content with Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-12' : 'grid-cols-11'}`}>
-              <TabsTrigger value="about">About</TabsTrigger>
-              <TabsTrigger value="sectors">Sectors</TabsTrigger>
-              <TabsTrigger value="contributors">Contributors</TabsTrigger>
-              <TabsTrigger value="sdg">SDG</TabsTrigger>
-              <TabsTrigger value="organisations">Organisations</TabsTrigger>
-              <TabsTrigger value="locations">Locations</TabsTrigger>
-              <TabsTrigger value="finances">
-                <Wallet className="w-4 w-4 mr-1" />
-                Finances
-              </TabsTrigger>
-              <TabsTrigger value="budgets">
-                <Wallet className="w-4 w-4 mr-1" />
-                Budgets
-              </TabsTrigger>
-              <TabsTrigger value="transactions">
-                <Banknote className="h-4 w-4 mr-1" />
-                Transactions
-              </TabsTrigger>
-              <TabsTrigger value="results">Results</TabsTrigger>
-              <TabsTrigger value="comments">
-                Comments
-                {activity.comments && activity.comments.length > 0 && (
-                  <Badge variant="outline" className="ml-1 text-xs">
-                    {activity.comments.length}
-                  </Badge>
+          {/* Main Content Tabs */}
+          <Card className="border-slate-200">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-8' : 'grid-cols-7'} bg-slate-50 border-b border-slate-200`}>
+                <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="finances" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Finances
+                </TabsTrigger>
+                <TabsTrigger value="partnerships" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Partnerships
+                </TabsTrigger>
+                <TabsTrigger value="geography" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Geography
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Analytics
+                </TabsTrigger>
+                <TabsTrigger value="contributors" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Contributors
+                </TabsTrigger>
+                <TabsTrigger value="comments" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Comments
+                  {activity.comments && activity.comments.length > 0 && (
+                    <Badge variant="outline" className="ml-1 text-xs border-slate-300">
+                      {activity.comments.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                {(user?.role?.includes('gov_partner') || user?.role === 'super_user') && (
+                  <TabsTrigger value="government-inputs" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                    Gov Inputs
+                  </TabsTrigger>
                 )}
-              </TabsTrigger>
-              {(user?.role?.includes('gov_partner') || user?.role === 'super_user') && (
-                <TabsTrigger value="government-inputs">Gov Inputs</TabsTrigger>
-              )}
-            </TabsList>
+              </TabsList>
 
-            {/* About Tab */}
-            <TabsContent value="about" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-3">
-                {/* Sectors */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      Sectors
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {activity.sectors && activity.sectors.length > 0 ? (
-                      <div className="space-y-2">
-                        {activity.sectors.map((sector: any) => (
-                          <div key={sector.id} className="text-sm">
-                            <div className="font-medium">{`${sector.sector_code || sector.code} – ${sector.sector_name || sector.name}`}</div>
-                            <div className="text-gray-500">
-                              {sector.percentage}% • {sector.type || 'secondary'}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">No sectors specified</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Extending Partners - only show if there are any */}
-                {partners.filter(p => p.type === 'extending').length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base font-medium flex items-center gap-2">
-                        <Users className="h-4 w-4 text-gray-500" />
-                        Extending Partners
-                      </CardTitle>
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-6 p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Activity Details</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {partners.filter(p => p.type === 'extending').map(partner => (
-                          <div key={partner.id} className="text-sm">
-                            <div className="font-medium">{partner.name}</div>
-                            <div className="text-gray-500">{partner.role}</div>
-                          </div>
-                        ))}
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-slate-500">Status:</span>
+                          <Badge className="ml-2 bg-blue-100 text-blue-800">
+                            {(activity.activityStatus || "Planning").charAt(0).toUpperCase() + 
+                             (activity.activityStatus || "Planning").slice(1).toLowerCase()}
+                          </Badge>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Partner ID:</span>
+                          <span className="ml-2 text-slate-900">{activity.partnerId || 'Not specified'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">IATI ID:</span>
+                          <span className="ml-2 text-slate-900">{activity.iatiId || 'Not specified'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Sectors:</span>
+                          <span className="ml-2 text-slate-900">{activity.sectors?.length || 0}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Created:</span>
+                          <span className="ml-2 text-slate-900">
+                            {formatDate(activity.createdAt)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Updated:</span>
+                          <span className="ml-2 text-slate-900">
+                            {formatDate(activity.updatedAt)}
+                          </span>
+                        </div>
                       </div>
+                      
+                      {activity.description && (
+                        <div className="mt-4">
+                          <h4 className="font-medium mb-2 text-slate-900">Description</h4>
+                          <p className="text-slate-600 text-sm leading-relaxed">{activity.description}</p>
+                        </div>
+                      )}
+                      
+                      {activity.targetGroups && (
+                        <div className="mt-4">
+                          <h4 className="font-medium mb-2 text-slate-900">Target Groups</h4>
+                          <p className="text-slate-600 text-sm">{activity.targetGroups}</p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
-                )}
 
-                {/* Implementing Partners */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      <Users className="h-4 w-4 text-gray-500" />
-                      Implementing Partners
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {partners.filter(p => p.type === 'implementing').map(partner => (
-                        <div key={partner.id} className="text-sm">
-                          <div className="font-medium">{partner.name}</div>
-                          <div className="text-gray-500">{partner.role}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Government Partners */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      <Users className="h-4 w-4 text-gray-500" />
-                      Government Partners
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {partners.filter(p => p.type === 'government').map(partner => (
-                        <div key={partner.id} className="text-sm">
-                          <div className="font-medium">{partner.name}</div>
-                          <div className="text-gray-500">{partner.role}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Activity Description */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Activity Description</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">
-                    {activity.description || "No description provided."}
-                  </p>
-                  {activity.created_by_org_name && (
-                    <div className="mt-4">
-                      <h4 className="font-medium mb-2">Created By Organization</h4>
-                      <p className="text-gray-700">{activity.created_by_org_name}</p>
-                      {activity.created_by_org_acronym && (
-                        <p className="text-sm text-gray-600 mt-1">({activity.created_by_org_acronym})</p>
-                      )}
-                    </div>
-                  )}
-                  {activity.targetGroups && (
-                    <div className="mt-4">
-                      <h4 className="font-medium mb-2">Target Groups</h4>
-                      <p className="text-gray-700">{activity.targetGroups}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Sectors Tab */}
-            <TabsContent value="sectors" className="space-y-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Sector Allocations</CardTitle>
-                  {permissions.canEditActivity && (
-                    <Button 
-                      size="sm" 
-                      onClick={() => router.push(`/activities/${activity.id}/sectors`)}
-                    >
-                      <PieChart className="h-4 w-4 mr-2" />
-                      Manage Sectors
-                    </Button>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {activity.sectors && activity.sectors.length > 0 ? (
-                    <div className="space-y-4">
-                      {/* Sectors List */}
-                      <div className="space-y-3">
-                        {activity.sectors.map((sector: any) => (
-                          <div key={sector.id} className="p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium text-sm">{`${sector.sector_code || sector.code} – ${sector.sector_name || sector.name}`}</div>
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {sector.category || 'Unknown Category'}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-lg font-semibold">{sector.percentage}%</div>
-                                <Badge variant="outline" className="text-xs mt-1">
-                                  {sector.type === 'primary' ? 'Primary' : 'Secondary'}
-                                </Badge>
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Sectors & SDG Alignment</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {activity.sectors && activity.sectors.length > 0 ? (
+                        <div className="space-y-3 mb-6">
+                          <h4 className="font-medium text-slate-900">Sector Allocations</h4>
+                          {activity.sectors.slice(0, 5).map((sector: any) => (
+                            <div key={sector.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
+                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-slate-900">
+                                  {`${sector.sector_code || sector.code} – ${sector.sector_name || sector.name}`}
+                                </p>
+                                <p className="text-xs text-slate-500">{sector.percentage}% • {sector.type || 'secondary'}</p>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Summary */}
-                      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                        <div className="text-sm text-blue-800">
-                          <strong>Total Allocation:</strong> {activity.sectors.reduce((sum: number, s: any) => {
-                            const percentage = parseFloat(s.percentage) || 0
-                            return sum + (isNaN(percentage) ? 0 : percentage)
-                          }, 0)}%
+                          ))}
+                          {activity.sectors.length > 5 && (
+                            <p className="text-xs text-slate-500">+ {activity.sectors.length - 5} more sectors</p>
+                          )}
                         </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <PieChart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No sectors have been allocated to this activity yet.</p>
-                      {permissions.canEditActivity && (
-                        <Button 
-                          variant="outline" 
-                          className="mt-4"
-                          onClick={() => router.push(`/activities/${activity.id}/sectors`)}
-                        >
-                          Add Sectors
-                        </Button>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No sectors specified</p>
                       )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* MSDP Alignment Tab */}
-            <TabsContent value="msdp" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>MSDP Alignment</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    MSDP alignment information will be displayed here once implemented.
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* SDG Alignment Tab */}
-            <TabsContent value="sdg" className="space-y-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Globe className="h-5 w-5" />
-                    SDG Alignment
-                  </CardTitle>
-                  {permissions.canEditActivity && (
-                    <Button 
-                      size="sm" 
-                      onClick={handleEdit}
-                    >
-                      Edit SDG Alignment
-                    </Button>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {activity.sdgMappings && activity.sdgMappings.length > 0 ? (
-                    <div className="space-y-6">
-                      {/* SDG Summary */}
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {Array.from(new Set(activity.sdgMappings?.map((m: any) => m.sdgGoal) || [])).map(goalId => {
-                          const goal = SDG_GOALS.find(g => g.id === Number(goalId));
-                                                      const goalMappings = activity.sdgMappings?.filter((m: any) => m.sdgGoal === goalId) || [];
-                          const totalContribution = goalMappings.reduce((sum: number, m: any) => {
-                            const contrib = parseFloat(m.contributionPercent) || 0
-                            return sum + (isNaN(contrib) ? 0 : contrib)
-                          }, 0);
-                          
-                          return goal ? (
-                            <div 
-                              key={goalId} 
-                              className="p-4 rounded-lg border-2 hover:shadow-md transition-shadow"
-                              style={{ borderColor: goal.color + '40', backgroundColor: goal.color + '10' }}
-                            >
-                              <div className="flex items-center gap-3 mb-2">
+                      
+                      {activity.sdgMappings && activity.sdgMappings.length > 0 && (
+                        <div className="mt-4">
+                          <h4 className="font-medium text-slate-900 mb-2">SDG Goals</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {Array.from(new Set(activity.sdgMappings?.map((m: any) => m.sdgGoal) || [])).slice(0, 6).map(goalId => {
+                              const goal = SDG_GOALS.find(g => g.id === Number(goalId));
+                              return goal ? (
                                 <div 
-                                  className="text-xl font-bold rounded-full w-10 h-10 flex items-center justify-center text-white shrink-0"
+                                  key={goalId} 
+                                  className="text-xs font-bold rounded w-6 h-6 flex items-center justify-center text-white"
                                   style={{ backgroundColor: goal.color }}
                                 >
                                   {goal.id}
                                 </div>
-                                <div className="text-sm font-medium line-clamp-2">{goal.name}</div>
-                              </div>
-                              <div className="text-xs text-gray-600">
-                                {goalMappings.length} target{goalMappings.length !== 1 ? 's' : ''}
-                                {totalContribution > 0 && ` • ${totalContribution}%`}
-                              </div>
-                            </div>
-                          ) : null;
-                        })}
-                      </div>
-
-                      {/* Detailed Targets */}
-                      <div className="space-y-4">
-                        <h4 className="font-medium text-gray-900">Selected Targets</h4>
-                        {activity.sdgMappings.map((mapping: any, idx: number) => {
-                          const goal = SDG_GOALS.find(g => g.id === mapping.sdgGoal);
-                          const target = SDG_TARGETS.find(t => t.id === mapping.sdgTarget);
-                          
-                          return (goal && target) ? (
-                            <div key={idx} className="p-4 bg-gray-50 rounded-lg">
-                              <div className="flex items-start gap-3">
-                                <Badge 
-                                  className="text-white shrink-0"
-                                  style={{ backgroundColor: goal.color }}
-                                >
-                                  SDG {goal.id}
-                                </Badge>
-                                <div className="flex-1">
-                                  <div className="font-medium">
-                                    Target {target.id}: {target.text}
-                                  </div>
-                                  <div className="text-sm text-gray-600 mt-1">
-                                    {target.description}
-                                  </div>
-                                  {mapping.contributionPercent && (
-                                    <div className="mt-2">
-                                      <span className="text-sm font-medium">Contribution: {mapping.contributionPercent}%</span>
-                                    </div>
-                                  )}
-                                  {mapping.notes && (
-                                    <div className="mt-2 p-2 bg-white rounded border border-gray-200">
-                                      <p className="text-sm text-gray-700">{mapping.notes}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ) : null;
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Globe className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No SDG alignment has been specified for this activity yet.</p>
-                      {permissions.canEditActivity && (
-                        <Button 
-                          variant="outline" 
-                          className="mt-4"
-                          onClick={handleEdit}
-                        >
-                          Add SDG Alignment
-                        </Button>
+                              ) : null;
+                            })}
+                          </div>
+                        </div>
                       )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
 
-            {/* Finances Tab */}
-            <TabsContent value="finances" className="space-y-6">
-              {/* Financial Summary */}
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-gray-500" />
-                      Finances
+              {/* Finances Tab */}
+              <TabsContent value="finances" className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Financial Overview</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-600">Total Commitment:</span>
+                          <span className="font-bold text-slate-900">USD {financials.totalCommitment.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-600">Total Disbursed:</span>
+                          <span className="font-bold text-green-600">USD {financials.totalDisbursement.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-600">Total Expended:</span>
+                          <span className="font-bold text-blue-600">USD {financials.totalExpenditure.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-600">Remaining:</span>
+                          <span className="font-bold text-orange-600">USD {(financials.totalCommitment - financials.totalDisbursement).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Transaction Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Total Transactions:</span>
+                          <span className="text-slate-900">{financials.totalTransactions}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Aid Types:</span>
+                          <span className="text-slate-900">
+                            {financials.aidTypes.length > 0 
+                              ? financials.aidTypes.map(at => getAidTypeName(at || "")).join(", ")
+                              : "Not specified"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Finance Types:</span>
+                          <span className="text-slate-900">
+                            {financials.flowTypes.length > 0
+                              ? financials.flowTypes.map(ft => getFlowTypeName(ft || "")).join(", ")
+                              : "Not specified"}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Budgets and Transactions */}
+                <div className="space-y-6">
+                  <ActivityBudgetsTab 
+                    activityId={activity.id}
+                    startDate={activity.plannedStartDate || activity.actualStartDate || ""}
+                    endDate={activity.plannedEndDate || activity.actualEndDate || ""}
+                    defaultCurrency="USD"
+                  />
+                  
+                  <TransactionTab 
+                    activityId={activity.id} 
+                    readOnly={!permissions.canEditActivity}
+                  />
+                </div>
+              </TabsContent>
+
+              {/* Partnerships Tab */}
+              <TabsContent value="partnerships" className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Extending Partners */}
+                  {partners.filter(p => p.type === 'extending').length > 0 && (
+                    <Card className="border-slate-200">
+                      <CardHeader>
+                        <CardTitle className="text-slate-900 flex items-center gap-2">
+                          <Building2 className="h-5 w-5" />
+                          Extending Partners
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {partners.filter(p => p.type === 'extending').map(partner => (
+                            <div key={partner.id} className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                              <div className="font-medium text-slate-900">{partner.name}</div>
+                              <div className="text-sm text-slate-600">{partner.role}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Implementing Partners */}
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900 flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Implementing Partners
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {partners.filter(p => p.type === 'implementing').length > 0 ? (
+                        <div className="space-y-3">
+                          {partners.filter(p => p.type === 'implementing').map(partner => (
+                            <div key={partner.id} className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                              <div className="font-medium text-slate-900">{partner.name}</div>
+                              <div className="text-sm text-slate-600">{partner.role}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No implementing partners</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Government Partners */}
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900 flex items-center gap-2">
+                        <Building2 className="h-5 w-5" />
+                        Government Partners
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {partners.filter(p => p.type === 'government').length > 0 ? (
+                        <div className="space-y-3">
+                          {partners.filter(p => p.type === 'government').map(partner => (
+                            <div key={partner.id} className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                              <div className="font-medium text-slate-900">{partner.name}</div>
+                              <div className="text-sm text-slate-600">{partner.role}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No government partners</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Geography Tab */}
+              <TabsContent value="geography" className="p-6">
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-slate-900 flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Activity Locations
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <p className="text-sm text-gray-500">Total Commitment:</p>
-                      <p className="text-2xl font-bold">USD {financials.totalCommitment.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Aid Type Category:</p>
-                      <p className="text-sm font-medium">
-                        {financials.aidTypes.length > 0 
-                          ? financials.aidTypes.map(at => getAidTypeName(at || "")).join(", ")
-                          : "Not specified"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Finance Type(s):</p>
-                      <p className="text-sm font-medium">
-                        {financials.flowTypes.length > 0
-                          ? financials.flowTypes.map(ft => getFlowTypeName(ft || "")).join(", ")
-                          : "Not specified"}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Disbursement Gauge */}
-                <DisbursementGauge
-                  totalCommitment={financials.totalCommitment}
-                  totalDisbursement={financials.totalDisbursement}
-                />
-
-                {/* Additional Metrics Card */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-medium">Financial Progress</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <p className="text-sm text-gray-500">Total Disbursed:</p>
-                      <p className="text-xl font-semibold text-green-600">
-                        USD {financials.totalDisbursement.toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Total Expended:</p>
-                      <p className="text-xl font-semibold text-blue-600">
-                        USD {financials.totalExpenditure.toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Remaining:</p>
-                      <p className="text-xl font-semibold text-orange-600">
-                        USD {(financials.totalCommitment - financials.totalDisbursement).toLocaleString()}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Cumulative Chart */}
-              <CumulativeFinanceChart transactions={activity.transactions || []} />
-
-              {/* Transactions Table */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Transactions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-10"></TableHead>
-                          <TableHead>Aid Type</TableHead>
-                          <TableHead>Finance Type</TableHead>
-                          <TableHead>Provider</TableHead>
-                          <TableHead>Receiver</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead className="text-right">Value</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {activity.transactions && activity.transactions.length > 0 ? (
-                          activity.transactions.map((transaction: any) => (
-                            <TableRow key={transaction.id}>
-                              <TableCell>
-                                {!transaction.created_by && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <Lock className="h-4 w-4 text-gray-400" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p className="text-xs">Imported from IATI</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                {transaction.aid_type ? getAidTypeName(transaction.aid_type) : '-'}
-                              </TableCell>
-                              <TableCell>
-                                {transaction.flow_type ? getFlowTypeName(transaction.flow_type) : '-'}
-                              </TableCell>
-                              <TableCell>{transaction.provider_org_name || '-'}</TableCell>
-                              <TableCell>{transaction.receiver_org_name || '-'}</TableCell>
-                              <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
-                              <TableCell>{getTransactionTypeName(transaction.transaction_type)}</TableCell>
-                              <TableCell className="text-right font-medium">
-                                {transaction.currency} {transaction.value.toLocaleString()}
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={8} className="text-center text-gray-500">
-                              No transactions recorded
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Budgets Tab */}
-            <TabsContent value="budgets" className="space-y-4">
-              <ActivityBudgetsTab 
-                activityId={activity.id}
-                startDate={activity.plannedStartDate || activity.actualStartDate || ""}
-                endDate={activity.plannedEndDate || activity.actualEndDate || ""}
-                defaultCurrency="USD"
-              />
-            </TabsContent>
-
-            {/* Transactions Tab */}
-            <TabsContent value="transactions">
-              <TransactionTab 
-                activityId={activity.id} 
-                readOnly={!permissions.canEditActivity}
-              />
-            </TabsContent>
-
-            {/* Contacts Tab */}
-            <TabsContent value="contacts" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contact Details</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {activity.contacts && activity.contacts.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {activity.contacts.map((contact: any, index: number) => (
-                        <Card key={contact.id || index} className="bg-gray-50">
-                          <CardContent className="pt-6">
-                            <div className="flex items-start gap-4">
-                              {contact.profilePhoto ? (
-                                <img
-                                  src={contact.profilePhoto}
-                                  alt={`${contact.firstName} ${contact.lastName}`}
-                                  className="w-16 h-16 rounded-lg object-cover"
-                                />
-                              ) : (
-                                <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                                  <Users className="h-8 w-8 text-gray-400" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg">
-                                  {contact.title} {contact.firstName} {contact.middleName} {contact.lastName}
-                                </h3>
-                                <p className="text-sm text-gray-600">{contact.position}</p>
-                                {contact.organisation && (
-                                  <p className="text-sm text-gray-500 mb-2">{contact.organisation}</p>
-                                )}
-                                <Badge variant="outline" className="mb-4">{contact.type}</Badge>
-                                
-                                <div className="space-y-2 mt-4">
-                                  {contact.phone && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                      <Phone className="h-4 w-4 text-gray-400" />
-                                      <a href={`tel:${contact.phone}`} className="text-blue-600 hover:underline">
-                                        {contact.phone}
-                                      </a>
-                                    </div>
-                                  )}
-                                  {contact.email && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                      <Mail className="h-4 w-4 text-gray-400" />
-                                      <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline">
-                                        {contact.email}
-                                      </a>
-                                    </div>
-                                  )}
-                                  {contact.fax && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                      <Printer className="h-4 w-4 text-gray-400" />
-                                      <span>Fax: {contact.fax}</span>
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {contact.notes && (
-                                  <div className="mt-4 p-3 bg-white rounded border border-gray-200">
-                                    <p className="text-sm text-gray-600">{contact.notes}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
+                  <CardContent>
                     <div className="text-center py-12">
-                      <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No contacts have been added to this activity yet.</p>
-                      <Button variant="outline" className="mt-4" onClick={handleEdit}>
-                        Add Contacts
+                      <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500">Location information and maps will be displayed here once implemented.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Analytics Tab */}
+              <TabsContent value="analytics" className="p-6">
+                <ActivityAnalyticsCharts
+                  transactions={activity.transactions || []}
+                  budgets={budgets}
+                  startDate={activity.plannedStartDate || activity.actualStartDate}
+                  endDate={activity.plannedEndDate || activity.actualEndDate}
+                />
+              </TabsContent>
+
+              {/* Contributors Tab */}
+              <TabsContent value="contributors" className="p-6">
+                {/* Show join request alert if user came from duplicate detection */}
+                {isJoinAction && permissions.canRequestToJoin && (
+                  <Alert className="mb-4">
+                    <UserPlus className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between">
+                      <span>Would you like to join this activity as a contributor?</span>
+                      <Button 
+                        size="sm" 
+                        onClick={requestToJoin}
+                        disabled={!user?.organizationId}
+                      >
+                        Request to Join
                       </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                <ContributorsSection
+                  contributors={activity.contributors || []}
+                  onChange={updateContributors}
+                  permissions={permissions}
+                  activityId={activity.id}
+                />
+              </TabsContent>
 
-            {/* Documents Tab */}
-            <TabsContent value="documents" className="space-y-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Documents & Images</CardTitle>
-                  <Button size="sm">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Document
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {documents.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Filename</TableHead>
-                            <TableHead>Upload Date</TableHead>
-                            <TableHead>Uploaded By</TableHead>
-                            <TableHead>Size</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {documents.map(doc => (
-                            <TableRow key={doc.id}>
-                              <TableCell className="font-medium">{doc.filename}</TableCell>
-                              <TableCell>{formatDate(doc.uploadDate)}</TableCell>
-                              <TableCell>{doc.uploadedBy}</TableCell>
-                              <TableCell>{(doc.fileSize / 1024).toFixed(2)} KB</TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex gap-2 justify-end">
-                                  <Button variant="ghost" size="sm">
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="sm">
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="sm" className="text-red-600">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <p className="text-center text-gray-500 py-8">No documents uploaded yet</p>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+              {/* Comments Tab */}
+              <TabsContent value="comments" className="p-6">
+                <ActivityComments activityId={activity.id} />
+              </TabsContent>
 
-            {/* Locations Tab */}
-            <TabsContent value="locations" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Activity Locations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Location information and maps will be displayed here once implemented.
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Comments Tab */}
-            <TabsContent value="comments" className="space-y-4">
-              <ActivityComments activityId={activity.id} />
-            </TabsContent>
-
-            {/* Contributors Tab */}
-            <TabsContent value="contributors" className="space-y-4">
-              {/* Show join request alert if user came from duplicate detection */}
-              {isJoinAction && permissions.canRequestToJoin && (
-                <Alert className="mb-4">
-                  <UserPlus className="h-4 w-4" />
-                  <AlertDescription className="flex items-center justify-between">
-                    <span>Would you like to join this activity as a contributor?</span>
-                    <Button 
-                      size="sm" 
-                      onClick={requestToJoin}
-                      disabled={!user?.organizationId}
-                    >
-                      Request to Join
-                    </Button>
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              <ContributorsSection
-                contributors={activity.contributors || []}
-                onChange={updateContributors}
-                permissions={permissions}
-                activityId={activity.id}
-              />
-            </TabsContent>
-
-            {/* Government Inputs Tab */}
-            {(user?.role?.includes('gov_partner') || user?.role === 'super_user') && (
-              <TabsContent value="government-inputs" className="space-y-4">
-                {activity.governmentInputs ? (
-                  <div className="space-y-6">
-                    {/* Display government inputs in read-only format */}
-                    <Card>
+              {/* Government Inputs Tab */}
+              {(user?.role?.includes('gov_partner') || user?.role === 'super_user') && (
+                <TabsContent value="government-inputs" className="p-6">
+                  {activity.governmentInputs ? (
+                    <Card className="border-slate-200">
                       <CardHeader>
-                        <CardTitle>On-Budget Classification (per CABRI/SPA model)</CardTitle>
+                        <CardTitle className="text-slate-900">On-Budget Classification (per CABRI/SPA model)</CardTitle>
                         <CardDescription>
                           Based on the CABRI/SPA 2008 "Putting Aid on Budget" Good Practice Note
                         </CardDescription>
@@ -1455,11 +1186,11 @@ export default function ActivityDetailPage() {
                                 const partial = dimensions.filter(dim => classification[dim] === 'Partial').length;
                                 return (
                                   <div className="flex items-center gap-2">
-                                    <Badge variant={met >= 4 ? "success" : met >= 2 ? "default" : "secondary"}>
+                                    <Badge className={met >= 4 ? "bg-green-100 text-green-800" : met >= 2 ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-800"}>
                                       {met} of 6 dimensions met
                                     </Badge>
                                     {partial > 0 && (
-                                      <Badge variant="outline">{partial} partial</Badge>
+                                      <Badge variant="outline" className="border-slate-300">{partial} partial</Badge>
                                     )}
                                   </div>
                                 );
@@ -1469,130 +1200,53 @@ export default function ActivityDetailPage() {
                           
                           {/* Six Dimensions Display */}
                           <div className="grid gap-3">
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                <span className="text-sm font-medium">On Plan</span>
-                                <span className="text-xs text-gray-500">(Reflected in gov't planning documents)</span>
+                            {[
+                              { key: 'onPlan', label: 'On Plan', desc: 'Reflected in gov\'t planning documents' },
+                              { key: 'onBudget', label: 'On Budget', desc: 'Included in national budget book' },
+                              { key: 'onTreasury', label: 'On Treasury', desc: 'Disbursed via national treasury' },
+                              { key: 'onParliament', label: 'On Parliament', desc: 'Subject to parliamentary scrutiny' },
+                              { key: 'onProcurement', label: 'On Procurement', desc: 'Uses national procurement systems' },
+                              { key: 'onAudit', label: 'On Accounting/Audit', desc: 'Uses national audit systems' },
+                            ].map(({ key, label, desc }) => (
+                              <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                                  <span className="text-sm font-medium text-slate-900">{label}</span>
+                                  <span className="text-xs text-slate-500">({desc})</span>
+                                </div>
+                                <Badge className={
+                                  activity.governmentInputs.onBudgetClassification?.[key] === 'Yes' ? "bg-green-100 text-green-800" :
+                                  activity.governmentInputs.onBudgetClassification?.[key] === 'Partial' ? "bg-blue-100 text-blue-800" : 
+                                  "bg-slate-100 text-slate-800"
+                                }>
+                                  {activity.governmentInputs.onBudgetClassification?.[key] || 'Not specified'}
+                                </Badge>
                               </div>
-                              <Badge variant={
-                                activity.governmentInputs.onBudgetClassification?.onPlan === 'Yes' ? 'success' :
-                                activity.governmentInputs.onBudgetClassification?.onPlan === 'Partial' ? 'default' : 'secondary'
-                              }>
-                                {activity.governmentInputs.onBudgetClassification?.onPlan || 'Not specified'}
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                <span className="text-sm font-medium">On Budget</span>
-                                <span className="text-xs text-gray-500">(Included in national budget book)</span>
-                              </div>
-                              <Badge variant={
-                                activity.governmentInputs.onBudgetClassification?.onBudget === 'Yes' ? 'success' :
-                                activity.governmentInputs.onBudgetClassification?.onBudget === 'Partial' ? 'default' : 'secondary'
-                              }>
-                                {activity.governmentInputs.onBudgetClassification?.onBudget || 'Not specified'}
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                <span className="text-sm font-medium">On Treasury</span>
-                                <span className="text-xs text-gray-500">(Disbursed via national treasury)</span>
-                              </div>
-                              <Badge variant={
-                                activity.governmentInputs.onBudgetClassification?.onTreasury === 'Yes' ? 'success' :
-                                activity.governmentInputs.onBudgetClassification?.onTreasury === 'Partial' ? 'default' : 'secondary'
-                              }>
-                                {activity.governmentInputs.onBudgetClassification?.onTreasury || 'Not specified'}
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                <span className="text-sm font-medium">On Parliament</span>
-                                <span className="text-xs text-gray-500">(Subject to parliamentary scrutiny)</span>
-                              </div>
-                              <Badge variant={
-                                activity.governmentInputs.onBudgetClassification?.onParliament === 'Yes' ? 'success' :
-                                activity.governmentInputs.onBudgetClassification?.onParliament === 'Partial' ? 'default' : 'secondary'
-                              }>
-                                {activity.governmentInputs.onBudgetClassification?.onParliament || 'Not specified'}
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                <span className="text-sm font-medium">On Procurement</span>
-                                <span className="text-xs text-gray-500">(Uses national procurement systems)</span>
-                              </div>
-                              <Badge variant={
-                                activity.governmentInputs.onBudgetClassification?.onProcurement === 'Yes' ? 'success' :
-                                activity.governmentInputs.onBudgetClassification?.onProcurement === 'Partial' ? 'default' : 'secondary'
-                              }>
-                                {activity.governmentInputs.onBudgetClassification?.onProcurement || 'Not specified'}
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                <span className="text-sm font-medium">On Accounting/Audit</span>
-                                <span className="text-xs text-gray-500">(Uses national audit systems)</span>
-                              </div>
-                              <Badge variant={
-                                activity.governmentInputs.onBudgetClassification?.onAudit === 'Yes' ? 'success' :
-                                activity.governmentInputs.onBudgetClassification?.onAudit === 'Partial' ? 'default' : 'secondary'
-                              }>
-                                {activity.governmentInputs.onBudgetClassification?.onAudit || 'Not specified'}
-                              </Badge>
-                            </div>
+                            ))}
                           </div>
                           
-                          {/* Supporting Documents */}
-                          {activity.governmentInputs.onBudgetClassification?.supportingDocs?.length > 0 && (
-                            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                              <h4 className="text-sm font-medium mb-3">Supporting Documents</h4>
-                              <div className="space-y-2">
-                                {activity.governmentInputs.onBudgetClassification.supportingDocs.map((doc: any, index: number) => (
-                                  <div key={index} className="flex items-center gap-2 text-sm">
-                                    <FileText className="h-4 w-4 text-blue-600" />
-                                    <span className="font-medium">{doc.dimension}:</span>
-                                    <span>{doc.docName}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                          <div className="text-center py-4">
+                            <Button variant="outline" onClick={handleEdit} className="border-slate-300 text-slate-700 hover:bg-slate-100">
+                              Edit Government Inputs
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
-                    
-                    {/* Add more cards for other sections of government inputs as needed */}
-                    <div className="text-center py-4">
-                      <Button variant="outline" onClick={handleEdit}>
-                        Edit Government Inputs
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <p className="text-gray-500">No government inputs have been added to this activity yet.</p>
-                      <Button variant="outline" className="mt-4" onClick={handleEdit}>
-                        Add Government Inputs
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-            )}
-          </Tabs>
+                  ) : (
+                    <Card className="border-slate-200">
+                      <CardContent className="text-center py-12">
+                        <p className="text-slate-500">No government inputs have been added to this activity yet.</p>
+                        <Button variant="outline" className="mt-4 border-slate-300 text-slate-700 hover:bg-slate-100" onClick={handleEdit}>
+                          Add Government Inputs
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+              )}
+            </Tabs>
+          </Card>
         </div>
       </div>
     </MainLayout>

@@ -26,6 +26,7 @@ interface Activity {
   id: string
   implementing_org_id?: string
   recipient_org_id?: string
+  default_flow_type?: string
 }
 
 export function buildAidFlowGraphData(

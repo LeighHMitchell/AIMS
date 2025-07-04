@@ -27,7 +27,12 @@ import {
   BarChart3,
   FileIcon,
   Briefcase,
-  CalendarDays
+  CalendarDays,
+  Target,
+  Copy,
+  Edit,
+  Mail,
+  Phone
 } from 'lucide-react'
 import Flag from 'react-world-flags'
 import {
@@ -37,6 +42,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { ProjectTimeline } from '@/components/organizations/ProjectTimeline'
+import { ActivityPortfolioTimeline } from '@/components/organizations/ActivityPortfolioTimeline'
+import { GeographicFootprint } from '@/components/organizations/GeographicFootprint'
+import { PartnershipNetwork } from '@/components/organizations/PartnershipNetwork'
+import { SectorAllocationChart } from '@/components/organizations/SectorAllocationChart'
 import {
   Table,
   TableBody,
@@ -52,7 +61,6 @@ interface Organization {
   id: string
   name: string
   acronym?: string
-  // full_name removed - using name field only
   organisation_type: string
   description?: string
   website?: string
@@ -71,7 +79,6 @@ interface Organization {
   default_currency?: string
   default_language?: string
   secondary_reporter?: boolean
-  // Computed fields
   active_project_count?: number
 }
 
@@ -93,769 +100,655 @@ interface Expenditure {
   year: string
   value: number
   currency: string
-  exchange_rate?: number
-  expense_lines?: ExpenseLine[]
+  description?: string
 }
 
-interface ExpenseLine {
-  reference: string
-  value: number
-  narrative: string
-}
-
-interface LinkedActivity {
-  id: string
-  iati_id: string
-  title: string
-  activity_status: string
-  role: 'reporting' | 'funding' | 'implementing' | 'extending'
-  start_date?: string
-  end_date?: string
-}
-
-interface LinkedDocument {
+interface Activity {
   id: string
   title: string
   description?: string
-  category: string
-  format: string
+  activity_status: string
+  start_date?: string
+  end_date?: string
+  total_budget?: number
+  total_disbursed?: number
+  currency?: string
+  sectors?: string[]
+}
+
+interface Document {
+  id: string
+  title: string
+  type: string
   url: string
-  document_date?: string
-  language?: string
+  uploaded_at: string
+  file_size?: number
+}
+
+interface Transaction {
+  id: string
+  transaction_type: string
+  transaction_date: string
+  value: number
+  currency: string
+  description?: string
+  provider_org_name?: string
+  receiver_org_name?: string
 }
 
 export default function OrganizationProfilePage() {
   const params = useParams()
   const router = useRouter()
   const [organization, setOrganization] = useState<Organization | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('budgets')
-  
-  // Data states
+  const [activities, setActivities] = useState<Activity[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [expenditures, setExpenditures] = useState<Expenditure[]>([])
-  const [linkedActivities, setLinkedActivities] = useState<LinkedActivity[]>([])
-  const [linkedDocuments, setLinkedDocuments] = useState<LinkedDocument[]>([])
-  
-  // Summary stats
-  const [stats, setStats] = useState({
-    activeProjects: 0,
-    totalBudget: 0,
-    totalExpenditure: 0,
-    recipientCount: 0,
-    documentCount: 0
-  })
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
-    if (params?.id) {
-      fetchOrganizationProfile()
-    }
-  }, [params?.id])
-
-  const fetchOrganizationProfile = async () => {
-    try {
-      setLoading(true)
-      
-      // Fetch organization details
-      const orgResponse = await fetch(`/api/organizations/${params?.id}`)
-      if (orgResponse.ok) {
+    const fetchOrganizationData = async () => {
+      try {
+        setLoading(true)
+        
+        // Fetch organization details
+        const orgResponse = await fetch(`/api/organizations/${params.id}`)
+        if (!orgResponse.ok) throw new Error('Failed to fetch organization')
         const orgData = await orgResponse.json()
         setOrganization(orgData)
-        
-        // Fetch related data in parallel
-        await Promise.all([
-          fetchBudgets(orgData.id),
-          fetchExpenditures(orgData.id),
-          fetchLinkedActivities(orgData.id),
-          fetchLinkedDocuments(orgData.id)
-        ])
-        
-        calculateStats(orgData)
-      } else {
-        console.error('Failed to fetch organization')
-      }
-    } catch (error) {
-      console.error('Error fetching organization profile:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  const fetchBudgets = async (orgId: string) => {
-    try {
-      const response = await fetch(`/api/organizations/${orgId}/budgets`)
-      if (response.ok) {
-        const data = await response.json()
-        setBudgets(data)
-      }
-    } catch (error) {
-      console.error('Error fetching budgets:', error)
-      // Use sample data for now
-      setBudgets([
-        {
-          id: '1',
-          type: 'total',
-          status: 'committed',
-          period_start: '2024-01-01',
-          period_end: '2024-12-31',
-          value: 5000000,
-          currency: 'USD',
-          narrative: 'Annual organizational budget'
-        },
-        {
-          id: '2',
-          type: 'recipient-country',
-          status: 'indicative',
-          period_start: '2024-01-01',
-          period_end: '2024-12-31',
-          value: 2000000,
-          currency: 'USD',
-          recipient_name: 'Myanmar',
-          recipient_code: 'MM',
-          narrative: 'Country allocation for Myanmar'
+        // Fetch activities
+        try {
+          const activitiesResponse = await fetch(`/api/activities?organization_id=${params.id}`)
+          if (activitiesResponse.ok) {
+            const activitiesData = await activitiesResponse.json()
+            setActivities(activitiesData || [])
+          }
+        } catch (err) {
+          console.warn('Failed to fetch activities:', err)
         }
-      ])
-    }
-  }
 
-  const fetchExpenditures = async (orgId: string) => {
-    try {
-      const response = await fetch(`/api/organizations/${orgId}/expenditures`)
-      if (response.ok) {
-        const data = await response.json()
-        setExpenditures(data)
-      }
-    } catch (error) {
-      console.error('Error fetching expenditures:', error)
-      // Use sample data for now
-      setExpenditures([
-        {
-          id: '1',
-          year: '2023',
-          value: 3500000,
-          currency: 'USD',
-          expense_lines: [
-            { reference: 'PROG-2023', value: 2500000, narrative: 'Programme costs' },
-            { reference: 'ADMIN-2023', value: 1000000, narrative: 'Administrative costs' }
-          ]
-        },
-        {
-          id: '2',
-          year: '2022',
-          value: 3200000,
-          currency: 'USD'
+        // Fetch budgets
+        try {
+          const budgetsResponse = await fetch(`/api/organizations/${params.id}/budgets`)
+          if (budgetsResponse.ok) {
+            const budgetsData = await budgetsResponse.json()
+            setBudgets(budgetsData || [])
+          }
+        } catch (err) {
+          console.warn('Failed to fetch budgets:', err)
         }
-      ])
-    }
-  }
 
-  const fetchLinkedActivities = async (orgId: string) => {
-    try {
-      // Fetch activities where this org is involved
-      const response = await fetch(`/api/activities?organization_id=${orgId}`)
-      if (response.ok) {
-        const activities = await response.json()
-        const linkedActivities = activities.map((activity: any) => ({
-          id: activity.id,
-          iati_id: activity.iati_id,
-          title: activity.title,
-          activity_status: activity.activity_status,
-          role: determineOrgRole(activity, orgId),
-          start_date: activity.planned_start_date,
-          end_date: activity.planned_end_date
-        }))
-        setLinkedActivities(linkedActivities)
-      }
-    } catch (error) {
-      console.error('Error fetching linked activities:', error)
-      setLinkedActivities([])
-    }
-  }
-
-  const fetchLinkedDocuments = async (orgId: string) => {
-    try {
-      const response = await fetch(`/api/organizations/${orgId}/documents`)
-      if (response.ok) {
-        const data = await response.json()
-        setLinkedDocuments(data)
-      }
-    } catch (error) {
-      console.error('Error fetching documents:', error)
-      // Use sample data for now
-      setLinkedDocuments([
-        {
-          id: '1',
-          title: 'Annual Report 2023',
-          description: 'Comprehensive annual report including financial statements',
-          category: 'Annual Report',
-          format: 'PDF',
-          url: '#',
-          document_date: '2024-03-15',
-          language: 'en'
-        },
-        {
-          id: '2',
-          title: 'Strategic Plan 2024-2028',
-          description: 'Five-year strategic plan and objectives',
-          category: 'Strategy',
-          format: 'PDF',
-          url: '#',
-          document_date: '2023-12-01',
-          language: 'en'
+        // Fetch expenditures
+        try {
+          const expendituresResponse = await fetch(`/api/organizations/${params.id}/expenditures`)
+          if (expendituresResponse.ok) {
+            const expendituresData = await expendituresResponse.json()
+            setExpenditures(expendituresData || [])
+          }
+        } catch (err) {
+          console.warn('Failed to fetch expenditures:', err)
         }
-      ])
+
+        // Fetch documents
+        try {
+          const documentsResponse = await fetch(`/api/organizations/${params.id}/documents`)
+          if (documentsResponse.ok) {
+            const documentsData = await documentsResponse.json()
+            setDocuments(documentsData || [])
+          }
+        } catch (err) {
+          console.warn('Failed to fetch documents:', err)
+        }
+
+        // Fetch transactions
+        try {
+          const transactionsResponse = await fetch(`/api/organizations/${params.id}/transactions`)
+          if (transactionsResponse.ok) {
+            const transactionsData = await transactionsResponse.json()
+            setTransactions(transactionsData || [])
+          }
+        } catch (err) {
+          console.warn('Failed to fetch transactions:', err)
+        }
+
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch organization data')
+      } finally {
+        setLoading(false)
+      }
     }
+
+    if (params.id) {
+      fetchOrganizationData()
+    }
+  }, [params.id])
+
+  const getTypeColor = (type: string) => {
+    const typeMap: { [key: string]: string } = {
+      'Government': 'bg-slate-100 text-slate-800 border-slate-200',
+      'International NGO': 'bg-blue-100 text-blue-800 border-blue-200',
+      'National NGO': 'bg-green-100 text-green-800 border-green-200',
+      'Multilateral': 'bg-purple-100 text-purple-800 border-purple-200',
+      'Private Sector': 'bg-orange-100 text-orange-800 border-orange-200',
+      'Foundation': 'bg-pink-100 text-pink-800 border-pink-200'
+    }
+    return typeMap[type] || 'bg-slate-100 text-slate-800 border-slate-200'
   }
 
-  const determineOrgRole = (activity: any, orgId: string): LinkedActivity['role'] => {
-    if (activity.reporting_org_id === orgId) return 'reporting'
-    // Check other roles based on activity contributors
-    return 'implementing'
-  }
-
-  const calculateStats = (org: Organization) => {
-    const totalBudget = budgets.reduce((sum, b) => sum + b.value, 0)
-    const totalExpenditure = expenditures.reduce((sum, e) => sum + e.value, 0)
-    const recipientCount = new Set(budgets.filter(b => b.recipient_code).map(b => b.recipient_code)).size
-    
-    setStats({
-      activeProjects: org.active_project_count || 0,
-      totalBudget,
-      totalExpenditure,
-      recipientCount,
-      documentCount: linkedDocuments.length
-    })
-  }
-
-  const formatCurrency = (value: number, currency: string = 'USD') => {
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value)
+      maximumFractionDigits: 0,
+    }).format(amount)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'committed': return 'bg-green-100 text-green-800'
-      case 'indicative': return 'bg-blue-100 text-blue-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getActivityStatusColor = (status: string) => {
-    switch (status) {
-      case 'implementation': return 'bg-green-100 text-green-800'
-      case 'completion': return 'bg-blue-100 text-blue-800'
-      case 'pipeline': return 'bg-yellow-100 text-yellow-800'
-      case 'cancelled': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getCategoryIcon = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'annual report': return <FileText className="h-4 w-4" />
-      case 'strategy': return <Briefcase className="h-4 w-4" />
-      case 'audit': return <AlertCircle className="h-4 w-4" />
-      default: return <FileIcon className="h-4 w-4" />
+  const calculateTotals = () => {
+    const totalBudget = budgets.reduce((sum, budget) => sum + budget.value, 0)
+    const totalExpenditure = expenditures.reduce((sum, exp) => sum + exp.value, 0)
+    const totalTransactions = transactions.reduce((sum, txn) => sum + txn.value, 0)
+    
+    return {
+      totalBudget,
+      totalExpenditure,
+      totalTransactions,
+      activeActivities: activities.filter(a => a.activity_status === 'active').length,
+      totalActivities: activities.length
     }
   }
 
   if (loading) {
     return (
       <MainLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-32 w-full" />
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
+        <div className="min-h-screen bg-slate-50">
+          <div className="max-w-7xl mx-auto p-6">
+            <Skeleton className="h-8 w-64 mb-6" />
+            <Skeleton className="h-64 w-full mb-6" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              {[1, 2, 3, 4].map(i => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+            <Skeleton className="h-96 w-full" />
           </div>
-          <Skeleton className="h-96 w-full" />
         </div>
       </MainLayout>
     )
   }
 
-  if (!organization) {
+  if (error || !organization) {
     return (
       <MainLayout>
-        <div className="text-center py-12">
-          <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Organization not found</h3>
-          <Button className="mt-4" onClick={() => router.push('/organizations')}>
-            Back to Organizations
-          </Button>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <Card className="max-w-md mx-auto">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Organization Not Found</h3>
+                <p className="text-slate-600 mb-4">
+                  {error || 'The organization you are looking for could not be found.'}
+                </p>
+                <Button onClick={() => router.push('/organizations')} className="bg-slate-600 hover:bg-slate-700">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Organizations
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </MainLayout>
     )
   }
+
+  const totals = calculateTotals()
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
+      <div className="min-h-screen bg-slate-50">
+        <div className="max-w-7xl mx-auto p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <Button 
+              variant="ghost" 
               onClick={() => router.push('/organizations')}
+              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              Back to Organizations
             </Button>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
+                <Download className="h-4 w-4 mr-2" />
+                Export Profile
+              </Button>
+              <Button className="bg-slate-600 hover:bg-slate-700">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Organization
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export Profile
-            </Button>
-            <Button size="sm">
-              Edit Organization
-            </Button>
-          </div>
-        </div>
 
-        {/* Organization Header */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-4">
-                {organization.logo ? (
-                  <img 
-                    src={organization.logo} 
-                    alt={`${organization.name} logo`}
-                    className="w-16 h-16 object-contain rounded-lg"
-                  />
-                ) : (
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <Building2 className="h-8 w-8 text-gray-400" />
-                  </div>
-                )}
-                
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {organization.name}
-                    {organization.acronym && (
-                      <span className="ml-2 text-gray-600 font-normal">({organization.acronym})</span>
-                    )}
-                  </h1>
-                  
-                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                    {organization.iati_org_id && (
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">IATI ID:</span>
-                        <code className="bg-gray-100 px-2 py-0.5 rounded">{organization.iati_org_id}</code>
+          {/* Organization Header Card */}
+          <Card className="mb-6 border-slate-200 shadow-sm">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-6">
+                {/* Logo */}
+                <div className="flex-shrink-0">
+                  {organization.logo ? (
+                    <img 
+                      src={organization.logo} 
+                      alt={`${organization.name} logo`}
+                      className="w-20 h-20 rounded-lg object-cover border border-slate-200"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
+                      <Building2 className="h-10 w-10 text-slate-400" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Organization Info */}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h1 className="text-3xl font-bold text-slate-900">{organization.name}</h1>
+                        {organization.acronym && (
+                          <Badge variant="outline" className="border-slate-300 text-slate-700">
+                            {organization.acronym}
+                          </Badge>
+                        )}
+                        {organization.country && (
+                          <div className="flex items-center gap-1">
+                            <Flag 
+                              code={getCountryCode(organization.country)} 
+                              style={{ width: '20px', height: '15px' }} 
+                            />
+                            <span className="text-sm text-slate-600">{organization.country}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    
-                    {organization.organisation_type && (
-                      <Badge variant="secondary">
+                      
+                      <Badge className={getTypeColor(organization.organisation_type)}>
                         {organization.organisation_type}
                       </Badge>
-                    )}
-                    
-                    {(organization.country_represented || organization.country) && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        {getCountryCode(organization.country_represented || organization.country) && (
-                          <Flag 
-                            code={getCountryCode(organization.country_represented || organization.country)!} 
-                            height="16" 
-                            width="24"
-                            className="rounded-sm"
-                          />
-                        )}
-                        <span>{organization.country_represented || organization.country}</span>
-                      </div>
-                    )}
-                    
+                      
+                      {organization.description && (
+                        <p className="text-slate-600 mt-3 max-w-3xl leading-relaxed">
+                          {organization.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="flex flex-wrap gap-6 mt-4">
                     {organization.website && (
                       <a 
-                        href={organization.website}
-                        target="_blank"
+                        href={organization.website} 
+                        target="_blank" 
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-blue-600 hover:underline"
+                        className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors"
                       >
                         <Globe className="h-4 w-4" />
-                        Website
+                        <span className="text-sm">Website</span>
+                        <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
-                  </div>
-                  
-                  <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>Last Updated: {formatDate(organization.updated_at)}</span>
-                    </div>
-                    
-                    {organization.default_currency && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-1">
-                              <CreditCard className="h-3 w-3" />
-                              <span>Default Currency: {organization.default_currency}</span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Default currency for financial reporting</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                    {organization.email && (
+                      <a 
+                        href={`mailto:${organization.email}`}
+                        className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors"
+                      >
+                        <Mail className="h-4 w-4" />
+                        <span className="text-sm">{organization.email}</span>
+                      </a>
                     )}
-                    
-                    {organization.default_language && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-1">
-                              <Languages className="h-3 w-3" />
-                              <span>Language: {organization.default_language}</span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Default language for narratives</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                    {organization.phone && (
+                      <a 
+                        href={`tel:${organization.phone}`}
+                        className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors"
+                      >
+                        <Phone className="h-4 w-4" />
+                        <span className="text-sm">{organization.phone}</span>
+                      </a>
                     )}
-                    
-                    {organization.secondary_reporter && (
-                      <Badge variant="outline" className="text-xs">
-                        Secondary Reporter
-                      </Badge>
+                    {organization.iati_org_id && (
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <FileText className="h-4 w-4" />
+                        <span className="text-sm">IATI ID: {organization.iati_org_id}</span>
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
-            
-            {organization.description && (
-              <p className="mt-4 text-sm text-gray-600 max-w-3xl">
-                {organization.description}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activeProjects}</div>
-              <p className="text-xs text-muted-foreground">Currently implementing</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalBudget)}</div>
-              <p className="text-xs text-muted-foreground">Future commitments</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Expenditure</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalExpenditure)}</div>
-              <p className="text-xs text-muted-foreground">Past spending</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Recipients</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.recipientCount}</div>
-              <p className="text-xs text-muted-foreground">Countries/Organizations</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Documents</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.documentCount}</div>
-              <p className="text-xs text-muted-foreground">Linked documents</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="budgets">
-              <PieChart className="h-4 w-4 mr-2" />
-              Forward Budgets
-            </TabsTrigger>
-            <TabsTrigger value="expenditures">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Expenditure History
-            </TabsTrigger>
-            <TabsTrigger value="activities">
-              <Activity className="h-4 w-4 mr-2" />
-              Linked Activities
-            </TabsTrigger>
-            <TabsTrigger value="timeline">
-              <CalendarDays className="h-4 w-4 mr-2" />
-              Timeline View
-            </TabsTrigger>
-            <TabsTrigger value="documents">
-              <FileText className="h-4 w-4 mr-2" />
-              Documents
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Budgets Tab */}
-          <TabsContent value="budgets" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Forward Looking Budgets</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Period</TableHead>
-                      <TableHead>Recipient</TableHead>
-                      <TableHead className="text-right">Value</TableHead>
-                      <TableHead>Narrative</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {budgets.map((budget) => (
-                      <TableRow key={budget.id}>
-                        <TableCell className="font-medium capitalize">
-                          {budget.type.replace('-', ' ')}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(budget.status)}>
-                            {budget.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {formatDate(budget.period_start)} - {formatDate(budget.period_end)}
-                        </TableCell>
-                        <TableCell>
-                          {budget.recipient_name && (
-                            <div className="flex items-center gap-2">
-                              {budget.recipient_code && getCountryCode(budget.recipient_name) && (
-                                <Flag 
-                                  code={budget.recipient_code} 
-                                  height="16" 
-                                  width="24"
-                                  className="rounded-sm"
-                                />
-                              )}
-                              <span>{budget.recipient_name}</span>
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(budget.value, budget.currency)}
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {budget.narrative}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+          {/* Key Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Active Projects</p>
+                    <p className="text-2xl font-bold text-slate-900">{totals.activeActivities}</p>
+                    <p className="text-xs text-slate-500">of {totals.totalActivities} total</p>
+                  </div>
+                  <Activity className="h-8 w-8 text-slate-400" />
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          {/* Expenditures Tab */}
-          <TabsContent value="expenditures" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Expenditure History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {expenditures.map((expenditure) => (
-                    <div key={expenditure.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-semibold">Year {expenditure.year}</h3>
-                        <span className="text-xl font-bold">
-                          {formatCurrency(expenditure.value, expenditure.currency)}
-                        </span>
+            <Card className="border-slate-200 bg-gradient-to-br from-blue-50 to-blue-100">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Total Budget</p>
+                    <p className="text-2xl font-bold text-slate-900">
+                      {formatCurrency(totals.totalBudget, organization.default_currency)}
+                    </p>
+                    <p className="text-xs text-slate-500">allocated funds</p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Expenditures</p>
+                    <p className="text-2xl font-bold text-slate-900">
+                      {formatCurrency(totals.totalExpenditure, organization.default_currency)}
+                    </p>
+                    <p className="text-xs text-slate-500">total spent</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-slate-400" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 bg-gradient-to-br from-blue-50 to-blue-100">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Partnerships</p>
+                    <p className="text-2xl font-bold text-slate-900">{documents.length}</p>
+                    <p className="text-xs text-slate-500">active partnerships</p>
+                  </div>
+                  <Users className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content Tabs */}
+          <Card className="border-slate-200">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-6 lg:grid-cols-6 bg-slate-50 border-b border-slate-200">
+                <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="activities" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Activities
+                </TabsTrigger>
+                <TabsTrigger value="finances" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Finances
+                </TabsTrigger>
+                <TabsTrigger value="partnerships" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Partnerships
+                </TabsTrigger>
+                <TabsTrigger value="geography" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Geography
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Documents
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-6 p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Organization Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-slate-500">Type:</span>
+                          <span className="ml-2 text-slate-900">{organization.organisation_type}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Status:</span>
+                          <Badge className="ml-2 bg-green-100 text-green-800">
+                            {organization.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Country:</span>
+                          <span className="ml-2 text-slate-900">{organization.country || 'Not specified'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Currency:</span>
+                          <span className="ml-2 text-slate-900">{organization.default_currency || 'USD'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Created:</span>
+                          <span className="ml-2 text-slate-900">
+                            {new Date(organization.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Updated:</span>
+                          <span className="ml-2 text-slate-900">
+                            {new Date(organization.updated_at).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
-                      
-                      {expenditure.expense_lines && expenditure.expense_lines.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium text-gray-600">Breakdown:</h4>
-                          {expenditure.expense_lines.map((line, index) => (
-                            <div key={index} className="flex items-center justify-between pl-4">
-                              <span className="text-sm">
-                                <code className="bg-gray-100 px-1 rounded mr-2">{line.reference}</code>
-                                {line.narrative}
-                              </span>
-                              <span className="text-sm font-medium">
-                                {formatCurrency(line.value, expenditure.currency)}
-                              </span>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Recent Activity</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {activities.length > 0 ? (
+                        <div className="space-y-3">
+                          {activities.slice(0, 5).map((activity) => (
+                            <div key={activity.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
+                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-slate-900">{activity.title}</p>
+                                <p className="text-xs text-slate-500">{activity.activity_status}</p>
+                              </div>
                             </div>
                           ))}
                         </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No recent activities</p>
                       )}
-                    </div>
-                  ))}
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </TabsContent>
 
-          {/* Activities Tab */}
-          <TabsContent value="activities" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Linked Activities</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>IATI Identifier</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Period</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {linkedActivities.map((activity) => (
-                      <TableRow key={activity.id}>
-                        <TableCell>
-                          <code className="bg-gray-100 px-2 py-1 rounded text-xs">
-                            {activity.iati_id || 'N/A'}
-                          </code>
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {activity.title}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize">
-                            {activity.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getActivityStatusColor(activity.activity_status)}>
-                            {activity.activity_status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {activity.start_date && activity.end_date && (
-                            <span className="text-sm">
-                              {formatDate(activity.start_date)} - {formatDate(activity.end_date)}
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.push(`/activities/${activity.id}`)}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Timeline Tab */}
-          <TabsContent value="timeline" className="mt-6">
-            <ProjectTimeline activities={linkedActivities} />
-          </TabsContent>
-
-          {/* Documents Tab */}
-          <TabsContent value="documents" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Linked Documents</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {linkedDocuments.map((document) => (
-                    <div key={document.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-3">
-                          <div className="p-2 bg-gray-100 rounded">
-                            {getCategoryIcon(document.category)}
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <h4 className="font-medium">{document.title}</h4>
-                            {document.description && (
-                              <p className="text-sm text-gray-600">{document.description}</p>
-                            )}
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                              <Badge variant="secondary" className="text-xs">
-                                {document.category}
-                              </Badge>
-                              <span>{document.format}</span>
-                              {document.document_date && (
-                                <span>{formatDate(document.document_date)}</span>
-                              )}
-                              {document.language && (
-                                <span>Language: {document.language.toUpperCase()}</span>
-                              )}
+              <TabsContent value="activities" className="p-6">
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-slate-900">Activities Portfolio</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {activities.length > 0 ? (
+                      <div className="space-y-4">
+                        {activities.map((activity) => (
+                          <div key={activity.id} className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="font-medium text-slate-900">{activity.title}</h3>
+                                {activity.description && (
+                                  <p className="text-sm text-slate-600 mt-1">{activity.description}</p>
+                                )}
+                                <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                                  <span>Status: {activity.activity_status}</span>
+                                  {activity.start_date && (
+                                    <span>Start: {new Date(activity.start_date).toLocaleDateString()}</span>
+                                  )}
+                                  {activity.total_budget && (
+                                    <span>Budget: {formatCurrency(activity.total_budget, activity.currency)}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900">
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
-                        </div>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(document.url, '_blank')}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </Button>
+                        ))}
                       </div>
-                    </div>
-                  ))}
+                    ) : (
+                      <div className="text-center py-12">
+                        <Activity className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500">No activities found</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="finances" className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Budgets</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {budgets.length > 0 ? (
+                        <div className="space-y-4">
+                          {budgets.map((budget) => (
+                            <div key={budget.id} className="p-3 border border-slate-200 rounded">
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className="font-medium text-slate-900">{budget.type}</p>
+                                  <p className="text-sm text-slate-600">{budget.status}</p>
+                                </div>
+                                <p className="font-bold text-slate-900">
+                                  {formatCurrency(budget.value, budget.currency)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No budget data available</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Expenditures</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {expenditures.length > 0 ? (
+                        <div className="space-y-4">
+                          {expenditures.map((expenditure) => (
+                            <div key={expenditure.id} className="p-3 border border-slate-200 rounded">
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className="font-medium text-slate-900">{expenditure.year}</p>
+                                  {expenditure.description && (
+                                    <p className="text-sm text-slate-600">{expenditure.description}</p>
+                                  )}
+                                </div>
+                                <p className="font-bold text-slate-900">
+                                  {formatCurrency(expenditure.value, expenditure.currency)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No expenditure data available</p>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </TabsContent>
+
+              <TabsContent value="partnerships" className="p-6">
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-slate-900">Partnership Network</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <PartnershipNetwork organizationId={organization.id} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="geography" className="p-6">
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-slate-900">Geographic Footprint</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <GeographicFootprint organizationId={organization.id} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="documents" className="p-6">
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-slate-900">Documents</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {documents.length > 0 ? (
+                      <div className="space-y-4">
+                        {documents.map((document) => (
+                          <div key={document.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <FileIcon className="h-5 w-5 text-slate-400" />
+                              <div>
+                                <p className="font-medium text-slate-900">{document.title}</p>
+                                <p className="text-sm text-slate-600">{document.type}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-500">
+                                {new Date(document.uploaded_at).toLocaleDateString()}
+                              </span>
+                              <Button variant="ghost" size="sm" asChild>
+                                <a href={document.url} target="_blank" rel="noopener noreferrer">
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500">No documents available</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </Card>
+        </div>
       </div>
     </MainLayout>
   )
-} 
+}
