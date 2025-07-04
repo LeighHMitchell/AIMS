@@ -341,7 +341,7 @@ export default function FinancesSection({
                 <DefaultAidTypeSelect
                   id="defaultAidType"
                   value={defaultAidType || ""}
-                  onValueChange={(value) => onDefaultsChange("defaultAidType", value)}
+                  onValueChange={(value) => onDefaultsChange("defaultAidType", value || "")}
                   placeholder="Select default aid type"
                 />
               </div>
@@ -352,7 +352,7 @@ export default function FinancesSection({
                 <DefaultFinanceTypeSelect
                   id="defaultFinanceType"
                   value={defaultFinanceType || ""}
-                  onValueChange={(value) => onDefaultsChange("defaultFinanceType", value)}
+                  onValueChange={(value) => onDefaultsChange("defaultFinanceType", value || "")}
                   placeholder="Select default finance type"
                 />
               </div>
@@ -363,7 +363,7 @@ export default function FinancesSection({
                 <FlowTypeSelect
                   id="defaultFlowType"
                   value={defaultFlowType || ""}
-                  onValueChange={(value) => onDefaultsChange("defaultFlowType", value)}
+                  onValueChange={(value) => onDefaultsChange("defaultFlowType", value || "")}
                   placeholder="Select default flow type"
                 />
               </div>
@@ -374,7 +374,7 @@ export default function FinancesSection({
                 <CurrencySelector
                   id="defaultCurrency"
                   value={defaultCurrency || ""}
-                  onValueChange={(value) => onDefaultsChange("defaultCurrency", value)}
+                  onValueChange={(value) => onDefaultsChange("defaultCurrency", value || "")}
                   placeholder="Select default currency"
                 />
               </div>
@@ -385,7 +385,7 @@ export default function FinancesSection({
                 <TiedStatusSelect
                   id="defaultTiedStatus"
                   value={defaultTiedStatus || ""}
-                  onValueChange={(value) => onDefaultsChange("defaultTiedStatus", value)}
+                  onValueChange={(value) => onDefaultsChange("defaultTiedStatus", value || "")}
                   placeholder="Select default tied status"
                 />
               </div>
