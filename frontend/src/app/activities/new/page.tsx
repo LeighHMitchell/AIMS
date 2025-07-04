@@ -45,6 +45,7 @@ import SDGAlignmentSection from "@/components/SDGAlignmentSection";
 import TagsSection from "@/components/TagsSection";
 import WorkingGroupsSection from "@/components/WorkingGroupsSection";
 import PolicyMarkersSection from "@/components/PolicyMarkersSection";
+import { ActivityMetadataPanel } from "@/components/ActivityMetadataPanel";
 import { SectorValidation } from "@/types/sector";
 import LinkedActivitiesEditorTab from "@/components/activities/LinkedActivitiesEditorTab";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -1428,7 +1429,7 @@ function NewActivityPageContent() {
         {/* Main Content Panel */}
         <main className="flex-1 min-w-0 overflow-y-auto bg-white">
           <div className="activity-editor pl-0 pr-6 md:pr-8 py-6">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-6">
               <h1 className="text-3xl font-bold text-gray-900">Edit Activity</h1>
               <div className="flex items-center gap-6">
                 {/* Publish Toggle */}
@@ -1454,6 +1455,16 @@ function NewActivityPageContent() {
                 )}
               </div>
             </div>
+            
+            {/* Activity Metadata Panel */}
+            {general.id && (
+              <ActivityMetadataPanel
+                systemUUID={general.id}
+                activityPartnerID={general.partnerId || general.other_identifier}
+                iatiIdentifier={general.iatiId || general.iatiIdentifier}
+                className="mb-6"
+              />
+            )}
             
             {/* Duplicate Detection Alert */}
             {!isEditing && similarActivities.length > 0 && (
