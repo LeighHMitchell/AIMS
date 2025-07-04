@@ -242,7 +242,7 @@ export function DataClinicTransactions() {
             <div className="flex items-center gap-2">
               <AidTypeSelect
                 value={value || ''}
-                onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue)}
+                onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue || '')}
               />
               <Button
                 size="sm"
@@ -258,7 +258,7 @@ export function DataClinicTransactions() {
             <div className="flex items-center gap-2">
               <DefaultFinanceTypeSelect
                 value={value || ''}
-                onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue)}
+                onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue || '')}
               />
               <Button
                 size="sm"
@@ -274,7 +274,7 @@ export function DataClinicTransactions() {
             <div className="flex items-center gap-2">
               <Select
                 value={value || ''}
-                onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue)}
+                onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue || '')}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select type" />
