@@ -226,7 +226,7 @@ export function withSupabaseIntegration<P extends Record<string, any>>(
 
     return (
       <Component
-        {...componentProps}
+        {...(componentProps as any)}
         ref={ref}
         onValueChange={handleValueChange}
       />

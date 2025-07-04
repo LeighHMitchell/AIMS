@@ -63,9 +63,12 @@ export function generateTransactionXML(transaction: Transaction): string {
     }
     
     xml.push(`  <provider-org ${providerAttrs.join(' ')}>`);
-    if (transaction.provider_org_name || transaction.provider_org || transaction.providerOrg) {
+    if (transaction.provider_org_name || transaction.provider_org) {
       const lang = transaction.provider_org_language || 'en';
-      xml.push(`    <narrative xml:lang="${lang}">${escapeXML(transaction.provider_org_name || transaction.provider_org)}</narrative>`);
+      const orgName = transaction.provider_org_name || (typeof transaction.provider_org === 'string' ? transaction.provider_org : transaction.provider_org?.name);
+      if (orgName) {
+        xml.push(`    <narrative xml:lang="${lang}">${escapeXML(orgName)}</narrative>`);
+      }
     }
     xml.push(`  </provider-org>`);
   }
