@@ -154,6 +154,10 @@ export default function OrganizationProfilePage() {
       try {
         setLoading(true)
         
+        if (!params?.id) {
+          throw new Error('Organization ID is required')
+        }
+
         // Fetch organization details
         const orgResponse = await fetch(`/api/organizations/${params.id}`)
         if (!orgResponse.ok) throw new Error('Failed to fetch organization')
@@ -366,10 +370,12 @@ export default function OrganizationProfilePage() {
                         )}
                         {organization.country && (
                           <div className="flex items-center gap-1">
-                            <Flag 
-                              code={getCountryCode(organization.country)} 
-                              style={{ width: '20px', height: '15px' }} 
-                            />
+                            {getCountryCode(organization.country) && (
+                              <Flag 
+                                code={getCountryCode(organization.country)!} 
+                                style={{ width: '20px', height: '15px' }} 
+                              />
+                            )}
                             <span className="text-sm text-slate-600">{organization.country}</span>
                           </div>
                         )}
@@ -690,7 +696,10 @@ export default function OrganizationProfilePage() {
                     <CardTitle className="text-slate-900">Partnership Network</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <PartnershipNetwork organizationId={organization.id} />
+                    <div className="text-center py-12">
+                      <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500">Partnership network feature coming soon</p>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -701,7 +710,10 @@ export default function OrganizationProfilePage() {
                     <CardTitle className="text-slate-900">Geographic Footprint</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <GeographicFootprint organizationId={organization.id} />
+                    <div className="text-center py-12">
+                      <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500">Geographic footprint feature coming soon</p>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
