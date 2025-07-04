@@ -71,7 +71,6 @@ export function LocationCategorySelect({
             {myanmarData.locationCategories.map((category) => (
               <CommandItem
                 key={category.code}
-                value={category.name}
                 onSelect={() => handleSelect(category.code)}
                 className="cursor-pointer"
               >
