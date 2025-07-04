@@ -171,13 +171,17 @@ export function SupabaseSelect({
 }
 
 // Higher-order component to wrap existing Select components
-export function withSupabaseIntegration<P extends {
-  value: string | null | undefined;
-  onValueChange?: (value: string | null) => void;
-}>(Component: React.ComponentType<P>) {
+export function withSupabaseIntegration<P extends Record<string, any>>(
+  Component: React.ComponentType<P & {
+    value?: string | null | undefined;
+    onValueChange?: (value: string | null) => void;
+  }>
+) {
   return React.forwardRef<
     any,
     P & {
+      value?: string | null | undefined;
+      onValueChange?: (value: string | null) => void;
       activityId: string | null;
       fieldName: string;
       tableName?: string;
