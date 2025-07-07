@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   try {
     // Check content length to prevent large payloads
     const contentLength = request.headers.get('content-length');
-    if (contentLength && parseInt(contentLength) > 4 * 1024 * 1024) { // 4MB limit
+    if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) { // 10MB limit for base64 images
       console.warn('[AIMS API] Request payload too large:', contentLength);
       return NextResponse.json(
         { error: 'Request payload too large. Please reduce the amount of data being saved.' },
@@ -193,6 +193,7 @@ export async function POST(request: Request) {
           ...updatedActivity,
           partnerId: updatedActivity.other_identifier,
           iatiId: updatedActivity.iati_identifier,
+          iatiIdentifier: updatedActivity.iati_identifier,  // Add this for frontend compatibility
           title: updatedActivity.title_narrative,
           description: updatedActivity.description_narrative,
           created_by_org_name: updatedActivity.created_by_org_name,
@@ -699,6 +700,7 @@ export async function POST(request: Request) {
         ...updatedActivity,
         partnerId: updatedActivity.other_identifier,
         iatiId: updatedActivity.iati_identifier,
+        iatiIdentifier: updatedActivity.iati_identifier,  // Add this for frontend compatibility
         title: updatedActivity.title_narrative,
         description: updatedActivity.description_narrative,
         created_by_org_name: updatedActivity.created_by_org_name,
@@ -796,20 +798,103 @@ export async function POST(request: Request) {
     // Otherwise, create new activity
     let insertData;
     try {
+      // Fetch user's organization information if user ID is provided
+      let userOrgData = {
+        created_by_org_name: body.created_by_org_name || null,
+        created_by_org_acronym: body.created_by_org_acronym || null,
+        reporting_org_id: cleanUUIDValue(body.reportingOrgId || body.createdByOrg),
+        submitted_by: body.submitted_by || null,
+      };
+
+      if (body.user?.id) {
+        console.log('[AIMS API] Fetching user organization data for user:', body.user.id);
+        const { data: userData, error: userError } = await getSupabaseAdmin()
+          .from('users')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            email,
+            organization_id,
+            organizations:organization_id (
+              id,
+              name,
+              acronym
+            )
+          `)
+          .eq('id', body.user.id)
+          .single();
+
+        if (userData) {
+          console.log('[AIMS API] Found user data:', userData);
+          const userName = userData.first_name && userData.last_name 
+            ? `${userData.first_name} ${userData.last_name}` 
+            : userData.email;
+          
+          if (userData.organizations) {
+            console.log('[AIMS API] Found user organization data:', userData.organizations);
+            userOrgData = {
+              created_by_org_name: userData.organizations.name || userOrgData.created_by_org_name,
+              created_by_org_acronym: userData.organizations.acronym || userOrgData.created_by_org_acronym,
+              reporting_org_id: userData.organizations.id || userOrgData.reporting_org_id,
+              submitted_by: userData.id || userOrgData.submitted_by,
+            };
+          } else if (userData.organization_id) {
+            console.log('[AIMS API] No organization join data found, fetching organization directly');
+            // Fetch organization details directly
+            const { data: orgData, error: orgError } = await getSupabaseAdmin()
+              .from('organizations')
+              .select('id, name, acronym')
+              .eq('id', userData.organization_id)
+              .single();
+            
+            if (orgData) {
+              console.log('[AIMS API] Found organization data:', orgData);
+              userOrgData = {
+                created_by_org_name: orgData.name || userOrgData.created_by_org_name,
+                created_by_org_acronym: orgData.acronym || userOrgData.created_by_org_acronym,
+                reporting_org_id: orgData.id || userOrgData.reporting_org_id,
+                submitted_by: userData.id || userOrgData.submitted_by,
+              };
+            } else {
+              console.log('[AIMS API] Error fetching organization data:', orgError);
+              userOrgData = {
+                created_by_org_name: userOrgData.created_by_org_name,
+                created_by_org_acronym: userOrgData.created_by_org_acronym,
+                reporting_org_id: userData.organization_id || userOrgData.reporting_org_id,
+                submitted_by: userData.id || userOrgData.submitted_by,
+              };
+            }
+          } else {
+            console.log('[AIMS API] No organization ID found for user');
+            userOrgData = {
+              created_by_org_name: userOrgData.created_by_org_name,
+              created_by_org_acronym: userOrgData.created_by_org_acronym,
+              reporting_org_id: userOrgData.reporting_org_id,
+              submitted_by: userData.id || userOrgData.submitted_by,
+            };
+          }
+        } else if (userError) {
+          console.log('[AIMS API] Error fetching user organization data:', userError);
+        } else {
+          console.log('[AIMS API] No user data found');
+        }
+      }
+
       insertData = {
         other_identifier: body.partnerId || null,
         iati_identifier: body.iatiId,
         title_narrative: body.title,
         description_narrative: body.description,
-        created_by_org_name: body.created_by_org_name,
-        created_by_org_acronym: body.created_by_org_acronym,
+        created_by_org_name: userOrgData.created_by_org_name,
+        created_by_org_acronym: userOrgData.created_by_org_acronym,
         collaboration_type: body.collaborationType,
-        activity_status: body.activityStatus || 'planning',
+        activity_status: body.activityStatus || '1',
         publication_status: body.publicationStatus || 'draft',
         submission_status: body.submissionStatus || 'draft',
         banner: body.banner,
         icon: body.icon,
-        reporting_org_id: cleanUUIDValue(body.reportingOrgId || body.createdByOrg),
+        reporting_org_id: userOrgData.reporting_org_id,
         hierarchy: body.hierarchy || 1,
         linked_data_uri: body.linkedDataUri || null,
         planned_start_date: cleanDateValue(body.plannedStartDate),
@@ -823,6 +908,7 @@ export async function POST(request: Request) {
         default_flow_type: body.defaultFlowType || null,
         created_by: cleanUUIDValue(body.user?.id),
         last_edited_by: cleanUUIDValue(body.user?.id),
+        submitted_by: userOrgData.submitted_by,
       };
     } catch (error: any) {
       return NextResponse.json(
@@ -1222,6 +1308,7 @@ export async function POST(request: Request) {
       ...newActivity,
       partnerId: newActivity.other_identifier,
       iatiId: newActivity.iati_identifier,
+      iatiIdentifier: newActivity.iati_identifier,  // Add this for frontend compatibility
       title: newActivity.title_narrative,
       description: newActivity.description_narrative,
       created_by_org_name: newActivity.created_by_org_name,
@@ -1632,6 +1719,7 @@ export async function GET(request: NextRequest) {
       // Map database fields to API fields
       partnerId: activity.other_identifier,
       iatiId: activity.iati_identifier,
+      iatiIdentifier: activity.iati_identifier,  // Add this for frontend compatibility
       title: activity.title_narrative,
       description: activity.description_narrative,
       created_by_org_name: activity.created_by_org_name,

@@ -194,8 +194,8 @@ export default function SectorAllocationPieChart({
                 <Cell
                   key={`category-${index}`}
                   fill={SECTOR_COLORS[index % SECTOR_COLORS.length]}
-                  stroke="none"
-                  strokeWidth={0}
+                  stroke="#fff"
+                  strokeWidth={2}
                   opacity={0.7}
                 />
               ))}
@@ -221,8 +221,8 @@ export default function SectorAllocationPieChart({
                   <Cell
                     key={`sector-${index}`}
                     fill={SECTOR_COLORS[categoryIndex % SECTOR_COLORS.length]}
-                    stroke="none"
-                    strokeWidth={0}
+                    stroke="#fff"
+                    strokeWidth={2}
                   />
                 );
               })}
@@ -234,27 +234,7 @@ export default function SectorAllocationPieChart({
       </div>
 
 
-      {/* Summary Stats */}
-      <div className="bg-gray-50 rounded-lg p-3">
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="text-lg font-semibold text-gray-900">{sectorData.length}</div>
-            <div className="text-xs text-gray-600">Sectors</div>
-          </div>
-          <div>
-            <div className="text-lg font-semibold text-gray-900">
-              {sectorData.reduce((sum, item) => sum + item.value, 0).toFixed(1)}%
-            </div>
-            <div className="text-xs text-gray-600">Total Allocated</div>
-          </div>
-          <div>
-            <div className="text-lg font-semibold text-gray-900">
-              {categoryData.length}
-            </div>
-            <div className="text-xs text-gray-600">Categories</div>
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 }

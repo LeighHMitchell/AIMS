@@ -60,7 +60,7 @@ export function FinanceTypeSelect({
             <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{category}</div>
             {Object.entries(types).map(([code, label]) => (
               <SelectItem key={code} value={code}>
-                <span className="font-mono text-xs mr-2">{code}</span>
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
                 {label}
               </SelectItem>
             ))}

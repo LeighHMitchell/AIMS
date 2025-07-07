@@ -7,6 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Plus, Phone, Mail, Printer, User, Building } from "lucide-react";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
+import { useContactsAutosave } from '@/hooks/use-field-autosave-new';
+import { useUser } from '@/hooks/useUser';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface Contact {
   id?: string;
@@ -27,6 +31,7 @@ interface Contact {
 interface ContactsSectionProps {
   contacts: Contact[];
   onChange: (contacts: Contact[]) => void;
+  activityId?: string;
 }
 
 const CONTACT_TYPES = [
@@ -41,9 +46,21 @@ const CONTACT_TYPES = [
 
 const TITLES = ["Mr.", "Ms.", "Mrs.", "Dr.", "Prof.", "Eng."];
 
-export default function ContactsSection({ contacts, onChange }: ContactsSectionProps) {
+export default function ContactsSection({ contacts, onChange, activityId }: ContactsSectionProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const { user } = useUser();
+
+  // Field-level autosave for contacts
+  const contactsAutosave = useContactsAutosave(activityId, user?.id);
+
+  // Enhanced onChange that triggers autosave
+  const handleContactsChange = (newContacts: Contact[]) => {
+    onChange(newContacts);
+    if (activityId) {
+      contactsAutosave.triggerFieldSave(newContacts);
+    }
+  };
 
   // Debug onChange prop
   React.useEffect(() => {
@@ -134,13 +151,7 @@ export default function ContactsSection({ contacts, onChange }: ContactsSectionP
     console.log('[CONTACTS DEBUG] onChange function type:', typeof onChange);
     console.log('[CONTACTS DEBUG] onChange function:', onChange);
     
-    if (typeof onChange === 'function') {
-      onChange(updatedContacts);
-      console.log('[CONTACTS DEBUG] onChange called successfully');
-    } else {
-      console.error('[CONTACTS DEBUG] onChange is not a function!');
-    }
-    
+    handleContactsChange(updatedContacts);
     setEditingContact(null);
     setEditingIndex(null);
     toast.success("Contact saved successfully");
@@ -149,7 +160,7 @@ export default function ContactsSection({ contacts, onChange }: ContactsSectionP
   const handleRemoveContact = (index: number) => {
     const contactToRemove = contacts[index];
     const updatedContacts = contacts.filter((_, i) => i !== index);
-    onChange(updatedContacts);
+    handleContactsChange(updatedContacts);
     toast.success("Contact removed");
     
     // Log contact removal
@@ -240,11 +251,32 @@ export default function ContactsSection({ contacts, onChange }: ContactsSectionP
   return (
     <div className="max-w-4xl space-y-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">ACTIVITY CONTACTS</h2>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          ACTIVITY CONTACTS
+          {contactsAutosave.state.isSaving && (
+            <span className="text-xs text-blue-600">Saving...</span>
+          )}
+          {contactsAutosave.state.lastSaved && !contactsAutosave.state.isSaving && (
+            <span className="text-xs text-green-600">Saved</span>
+          )}
+          {contactsAutosave.state.error && (
+            <span className="text-xs text-red-600">Save failed</span>
+          )}
+        </h2>
         <p className="text-gray-600 mt-2">
           Add contact information for key personnel involved in this activity
         </p>
       </div>
+
+      {/* Autosave error details */}
+      {contactsAutosave.state.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to save contacts: {contactsAutosave.state.error.message}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Contact List */}
       <div className="space-y-4">

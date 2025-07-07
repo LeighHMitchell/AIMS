@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { autosaveDebugger } from '@/utils/autosave-debugger';
 
 interface ActivityAutosaveState {
   isSaving: boolean;
@@ -24,7 +25,7 @@ export function useActivityAutosave(
     activityId,
     userId,
     enabled = true,
-    debounceMs = 2000,
+    debounceMs = 3000, // 3 seconds debounce (more responsive)
     onSuccess,
     onError
   } = options;
@@ -47,13 +48,23 @@ export function useActivityAutosave(
     activityDataRef.current = activityData;
   }, [activityData]);
 
-  // Core save function
+  // Use refs to avoid stale closures and dependency issues
+  const isSavingRef = useRef(false);
+  const dataRef = useRef(activityData);
+
+  // Update data ref when data changes
+  useEffect(() => {
+    dataRef.current = activityData;
+  }, [activityData]);
+
+  // Core save function - removed state dependency to prevent infinite re-renders
   const performSave = useCallback(async (dataToSave: any) => {
     // Don't save if already saving or missing required data
-    if (state.isSaving || !dataToSave.title?.trim()) {
-      console.log('[ActivityAutosave] Skipping save:', { 
-        isSaving: state.isSaving, 
-        hasTitle: !!dataToSave.title?.trim() 
+    if (isSavingRef.current || !dataToSave.title?.trim()) {
+      autosaveDebugger.log('warn', '⚠️ Skipping save', { 
+        isSaving: isSavingRef.current, 
+        hasTitle: !!dataToSave.title?.trim(),
+        reason: isSavingRef.current ? 'already_saving' : 'no_title'
       });
       return;
     }
@@ -64,13 +75,15 @@ export function useActivityAutosave(
     }
 
     abortControllerRef.current = new AbortController();
+    isSavingRef.current = true;
     setState(prev => ({ ...prev, isSaving: true, error: null }));
 
     try {
-      console.log('[ActivityAutosave] Saving activity:', {
+      autosaveDebugger.log('info', '🚀 Starting activity save', {
         id: dataToSave.id,
         title: dataToSave.title,
-        fields: Object.keys(dataToSave).filter(k => dataToSave[k] !== undefined).length
+        fields: Object.keys(dataToSave).filter(k => dataToSave[k] !== undefined).length,
+        timestamp: new Date().toISOString()
       });
 
       const response = await fetch('/api/activities', {
@@ -90,6 +103,7 @@ export function useActivityAutosave(
 
       const responseData = await response.json();
       
+      isSavingRef.current = false;
       setState(prev => ({
         ...prev,
         isSaving: false,
@@ -117,6 +131,7 @@ export function useActivityAutosave(
       const err = error instanceof Error ? error : new Error('Unknown error');
       console.error('[ActivityAutosave] Save failed:', err);
       
+      isSavingRef.current = false;
       setState(prev => ({
         ...prev,
         isSaving: false,
@@ -125,7 +140,7 @@ export function useActivityAutosave(
 
       onError?.(err);
     }
-  }, [state.isSaving, userId, onSuccess, onError]);
+  }, [userId, onSuccess, onError]); // Removed state.isSaving to prevent infinite re-renders
 
   // Trigger save with debouncing
   const triggerSave = useCallback((newData?: any) => {
@@ -142,7 +157,7 @@ export function useActivityAutosave(
     setState(prev => ({ ...prev, hasUnsavedChanges: true }));
 
     // If currently saving, queue this update
-    if (state.isSaving) {
+    if (isSavingRef.current) {
       saveQueueRef.current = [dataToSave];
       console.log('[ActivityAutosave] Queued save while another save is in progress');
       return;
@@ -152,7 +167,7 @@ export function useActivityAutosave(
     timeoutRef.current = setTimeout(() => {
       performSave(dataToSave);
     }, debounceMs);
-  }, [enabled, debounceMs, performSave, state.isSaving]);
+  }, [enabled, debounceMs, performSave]); // Removed state.isSaving dependency
 
   // Save immediately (bypass debounce)
   const saveNow = useCallback(async () => {

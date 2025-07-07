@@ -44,17 +44,21 @@ export const IconUpload: React.FC<IconUploadProps> = ({
           const base64String = reader.result as string;
           setPreview(base64String);
           onIconChange(base64String);
-          toast.success("Project icon uploaded successfully");
+          if (activityId && activityId !== "new") {
+            toast.success("Icon uploaded and saved successfully");
+          } else {
+            toast.success("The icon has been uploaded and will be saved after activity creation.");
+          }
         };
         reader.readAsDataURL(file);
       } catch (error) {
         console.error("Error uploading icon:", error);
-        toast.error("Failed to upload project icon");
+        toast.error("Failed to upload icon");
       } finally {
         setUploading(false);
       }
     },
-    [onIconChange]
+    [onIconChange, activityId]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -69,7 +73,11 @@ export const IconUpload: React.FC<IconUploadProps> = ({
   const removeIcon = () => {
     setPreview(null);
     onIconChange(null);
-    toast.success("Project icon removed");
+    if (activityId && activityId !== "new") {
+      toast.success("Icon removed and saved successfully");
+    } else {
+      toast.success("The icon has been removed and will be saved after activity creation.");
+    }
   };
 
   if (preview) {
@@ -79,7 +87,7 @@ export const IconUpload: React.FC<IconUploadProps> = ({
           <div className="relative w-32 h-32 rounded-lg overflow-hidden group border-2 border-gray-200">
             <img
               src={preview}
-              alt="Project icon"
+              alt="Activity icon"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
@@ -109,7 +117,7 @@ export const IconUpload: React.FC<IconUploadProps> = ({
           </div>
         </div>
         <p className="text-xs text-gray-500 text-center">
-          Project icon appears in activity cards and profile views
+          Icon appears in activity cards and profile views
         </p>
       </div>
     );
@@ -131,14 +139,14 @@ export const IconUpload: React.FC<IconUploadProps> = ({
             <ImageIcon className="h-12 w-12 text-gray-400" />
           </div>
           <p className="text-sm font-medium">
-            {isDragActive ? "Drop the icon here" : "Drag & drop a project icon here"}
+            {isDragActive ? "Drop the icon here" : "Drag & drop an icon here"}
           </p>
           <p className="text-xs mt-1">or click to select</p>
           <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 2MB (512x512px)</p>
         </div>
       </div>
       <p className="text-xs text-gray-500 text-center">
-        Project icon appears in activity cards and profile views
+        Icon appears in activity cards and profile views
       </p>
     </div>
   );

@@ -57,6 +57,10 @@ interface TransactionListProps {
   onDelete?: (id: string) => Promise<void>;
   readOnly?: boolean;
   currency?: string;
+  defaultFinanceType?: string;
+  defaultAidType?: string;
+  defaultTiedStatus?: string;
+  defaultFlowType?: string;
 }
 
 type SortField = 'transaction_date' | 'transaction_type' | 'value' | 'provider_org_name' | 'receiver_org_name';
@@ -70,7 +74,11 @@ export default function TransactionList({
   onUpdate,
   onDelete,
   readOnly = false,
-  currency = 'USD'
+  currency = 'USD',
+  defaultFinanceType,
+  defaultAidType,
+  defaultTiedStatus,
+  defaultFlowType
 }: TransactionListProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -534,6 +542,10 @@ export default function TransactionList({
               setEditingTransaction(null);
             }}
             defaultCurrency={currency}
+            defaultFinanceType={defaultFinanceType}
+            defaultAidType={defaultAidType}
+            defaultTiedStatus={defaultTiedStatus}
+            defaultFlowType={defaultFlowType}
             activityId={activityId}
           />
         </DialogContent>

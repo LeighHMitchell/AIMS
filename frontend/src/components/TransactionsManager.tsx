@@ -64,13 +64,21 @@ interface TransactionsManagerProps {
   transactions: Transaction[];
   onTransactionsChange: (transactions: Transaction[]) => void;
   defaultFinanceType?: string;
+  defaultAidType?: string;
+  defaultCurrency?: string;
+  defaultTiedStatus?: string;
+  defaultFlowType?: string;
 }
 
 export default function TransactionsManager({ 
   activityId, 
   transactions: initialTransactions = [], 
   onTransactionsChange,
-  defaultFinanceType
+  defaultFinanceType,
+  defaultAidType,
+  defaultCurrency,
+  defaultTiedStatus,
+  defaultFlowType
 }: TransactionsManagerProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -481,6 +489,10 @@ export default function TransactionsManager({
         activityId={activityId}
         onSubmit={handleSubmit}
         defaultFinanceType={defaultFinanceType}
+        defaultAidType={defaultAidType}
+        defaultCurrency={defaultCurrency}
+        defaultTiedStatus={defaultTiedStatus}
+        defaultFlowType={defaultFlowType}
         isSubmitting={submitting}
       />
     </div>

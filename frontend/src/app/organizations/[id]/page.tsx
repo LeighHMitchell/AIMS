@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -148,9 +148,20 @@ export default function OrganizationProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
+  
+  // AbortController ref for race condition prevention
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     const fetchOrganizationData = async () => {
+      // Cancel any previous request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+      
+      // Create new AbortController for this request
+      abortControllerRef.current = new AbortController()
+      
       try {
         setLoading(true)
         
@@ -159,67 +170,103 @@ export default function OrganizationProfilePage() {
         }
 
         // Fetch organization details
-        const orgResponse = await fetch(`/api/organizations/${params.id}`)
+        const orgResponse = await fetch(`/api/organizations/${params.id}`, {
+          signal: abortControllerRef.current.signal
+        })
         if (!orgResponse.ok) throw new Error('Failed to fetch organization')
         const orgData = await orgResponse.json()
         setOrganization(orgData)
 
         // Fetch activities
         try {
-          const activitiesResponse = await fetch(`/api/activities?organization_id=${params.id}`)
+          const activitiesResponse = await fetch(`/api/activities?organization_id=${params.id}`, {
+            signal: abortControllerRef.current.signal
+          })
           if (activitiesResponse.ok) {
             const activitiesData = await activitiesResponse.json()
             setActivities(activitiesData || [])
           }
         } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') {
+            console.log('[OrgProfile] Activities request aborted')
+            return
+          }
           console.warn('Failed to fetch activities:', err)
         }
 
         // Fetch budgets
         try {
-          const budgetsResponse = await fetch(`/api/organizations/${params.id}/budgets`)
+          const budgetsResponse = await fetch(`/api/organizations/${params.id}/budgets`, {
+            signal: abortControllerRef.current.signal
+          })
           if (budgetsResponse.ok) {
             const budgetsData = await budgetsResponse.json()
             setBudgets(budgetsData || [])
           }
         } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') {
+            console.log('[OrgProfile] Budgets request aborted')
+            return
+          }
           console.warn('Failed to fetch budgets:', err)
         }
 
         // Fetch expenditures
         try {
-          const expendituresResponse = await fetch(`/api/organizations/${params.id}/expenditures`)
+          const expendituresResponse = await fetch(`/api/organizations/${params.id}/expenditures`, {
+            signal: abortControllerRef.current.signal
+          })
           if (expendituresResponse.ok) {
             const expendituresData = await expendituresResponse.json()
             setExpenditures(expendituresData || [])
           }
         } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') {
+            console.log('[OrgProfile] Expenditures request aborted')
+            return
+          }
           console.warn('Failed to fetch expenditures:', err)
         }
 
         // Fetch documents
         try {
-          const documentsResponse = await fetch(`/api/organizations/${params.id}/documents`)
+          const documentsResponse = await fetch(`/api/organizations/${params.id}/documents`, {
+            signal: abortControllerRef.current.signal
+          })
           if (documentsResponse.ok) {
             const documentsData = await documentsResponse.json()
             setDocuments(documentsData || [])
           }
         } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') {
+            console.log('[OrgProfile] Documents request aborted')
+            return
+          }
           console.warn('Failed to fetch documents:', err)
         }
 
         // Fetch transactions
         try {
-          const transactionsResponse = await fetch(`/api/organizations/${params.id}/transactions`)
+          const transactionsResponse = await fetch(`/api/organizations/${params.id}/transactions`, {
+            signal: abortControllerRef.current.signal
+          })
           if (transactionsResponse.ok) {
             const transactionsData = await transactionsResponse.json()
             setTransactions(transactionsData || [])
           }
         } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') {
+            console.log('[OrgProfile] Transactions request aborted')
+            return
+          }
           console.warn('Failed to fetch transactions:', err)
         }
 
       } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          console.log('[OrgProfile] Main request aborted')
+          return
+        }
         setError(err instanceof Error ? err.message : 'Failed to fetch organization data')
       } finally {
         setLoading(false)
@@ -228,6 +275,13 @@ export default function OrganizationProfilePage() {
 
     if (params?.id) {
       fetchOrganizationData()
+    }
+    
+    // Cleanup function to abort requests on unmount or param change
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
     }
   }, [params?.id])
 

@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { usePreCache } from "@/hooks/use-pre-cached-data";
+import { AsyncErrorBoundary } from "@/components/errors/AsyncErrorBoundary";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
   Card,
@@ -200,7 +202,7 @@ const canUserEditActivity = (user: any, activity: Activity): boolean => {
   return false;
 };
 
-export default function ActivitiesPage() {
+function ActivitiesPageContent() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -218,7 +220,7 @@ export default function ActivitiesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalActivitiesCount, setTotalActivitiesCount] = useState<number>(0);
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoading: userLoading } = useUser();
 
   const fetchOrganizations = async () => {
     try {
@@ -294,7 +296,26 @@ export default function ActivitiesPage() {
     return org.acronym || org.name;
   };
 
+  // AbortController ref for canceling requests
+  const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Pre-caching for better performance
+  const { preCacheActivityList } = usePreCache();
+  
+  // Initialize activity list pre-caching
+  useEffect(() => {
+    preCacheActivityList().catch(console.warn);
+  }, [preCacheActivityList]);
+
   const fetchActivities = async (page: number = 1, fetchAll: boolean = false) => {
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
+
     try {
       setFetchError(null); // Clear any previous errors
       // Add timestamp to bypass any caching
@@ -303,6 +324,7 @@ export default function ActivitiesPage() {
       const limitParam = `limit=500`;
       const res = await fetch(`/api/activities-simple?page=1&${limitParam}&t=${timestamp}`, {
         cache: 'no-store',
+        signal: abortControllerRef.current.signal, // Add abort signal
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
@@ -329,6 +351,12 @@ export default function ActivitiesPage() {
         console.log("[AIMS Debug] Activities fetched:", Array.isArray(data) ? data.length : 0);
       }
     } catch (error) {
+      // Don't handle AbortError - it's expected when requests are cancelled
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('[AIMS] Request aborted');
+        return;
+      }
+
       console.error("[AIMS] Error fetching activities:", error);
       
       // Track the error for display
@@ -374,8 +402,15 @@ export default function ActivitiesPage() {
       }
     };
     
-    fetchData();
-  }, []);
+    // Only fetch data if user loading is complete
+    // This prevents fetching with null user state before authentication is resolved
+    if (!userLoading) {
+      console.log('[AIMS] User loading complete, fetching activities with user:', user?.email || 'no user');
+      fetchData();
+    } else {
+      console.log('[AIMS] Waiting for user to load before fetching activities...');
+    }
+  }, [userLoading]); // Add userLoading as dependency
 
   // Don't refetch on filter changes - we do client-side filtering
   // Only refetch if we need fresh data
@@ -790,7 +825,7 @@ export default function ActivitiesPage() {
         )}
 
         {/* Activities Content */}
-        {loading ? (
+        {loading || userLoading ? (
           <ActivityListSkeleton />
         ) : totalActivities === 0 ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
@@ -843,7 +878,7 @@ export default function ActivitiesPage() {
                       onClick={() => handleSort('createdBy')}
                     >
                       <div className="flex items-center gap-1">
-                        Created By
+                        Reported By
                         {getSortIcon('createdBy')}
                       </div>
                     </th>
@@ -918,11 +953,11 @@ export default function ActivitiesPage() {
                               <h3 className="font-medium text-foreground leading-tight line-clamp-2" title={activity.title}>
                                 {activity.title}
                               </h3>
-                              {(activity.partnerId || acronymsText) && (
+                              {(activity.partnerId || activity.iatiIdentifier) && (
                                 <div className="text-xs text-muted-foreground line-clamp-1">
                                   {activity.partnerId}
-                                  {activity.partnerId && acronymsText && '  •  '}
-                                  <span className="text-slate-400">{acronymsText}</span>
+                                  {activity.partnerId && activity.iatiIdentifier && '  •  '}
+                                  <span className="text-slate-400">{activity.iatiIdentifier}</span>
                                 </div>
                               )}
                             </div>
@@ -967,16 +1002,13 @@ export default function ActivitiesPage() {
                               <TooltipContent>
                                 <div className="space-y-1">
                                   <div className="font-medium">
-                                    {activity.created_by_org_name || "Unknown Organization"}
+                                    Reported by {activity.created_by_org_name || "Unknown Organization"}
                                   </div>
                                   {activity.createdBy?.name && (
                                     <div className="text-xs text-muted-foreground">
-                                      by {activity.createdBy.name}
+                                      Submitted by {activity.createdBy.name} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
                                     </div>
                                   )}
-                                  <div className="text-xs text-muted-foreground">
-                                    Created on {format(new Date(activity.createdAt), "dd MMM yyyy 'at' HH:mm")}
-                                  </div>
                                 </div>
                               </TooltipContent>
                             </Tooltip>
@@ -1092,11 +1124,11 @@ export default function ActivitiesPage() {
                   
                   <CardHeader onClick={() => router.push(`/activities/${activity.id}`)}>
                     <CardTitle className="text-lg line-clamp-2">{activity.title}</CardTitle>
-                    {(activity.partnerId || acronymsText) && (
+                    {(activity.partnerId || activity.iatiIdentifier) && (
                       <p className="text-sm text-slate-500">
                         {activity.partnerId}
-                        {activity.partnerId && acronymsText && ' • '}
-                        {acronymsText}
+                        {activity.partnerId && activity.iatiIdentifier && ' • '}
+                        {activity.iatiIdentifier}
                       </p>
                     )}
                     {/* IATI Sync Status */}
@@ -1120,16 +1152,13 @@ export default function ActivitiesPage() {
                           <TooltipContent>
                             <div className="space-y-1">
                               <div className="font-medium">
-                                {activity.created_by_org_name || "Unknown Organization"}
+                                Reported by {activity.created_by_org_name || "Unknown Organization"}
                               </div>
                               {activity.createdBy?.name && (
                                 <div className="text-xs text-muted-foreground">
-                                  by {activity.createdBy.name}
+                                  Submitted by {activity.createdBy.name} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
                                 </div>
                               )}
-                              <div className="text-xs text-muted-foreground">
-                                Created on {format(new Date(activity.createdAt), "dd MMM yyyy 'at' HH:mm")}
-                              </div>
                             </div>
                           </TooltipContent>
                         </Tooltip>
@@ -1263,5 +1292,18 @@ export default function ActivitiesPage() {
         </Dialog>
       </div>
     </MainLayout>
+  );
+}
+
+export default function ActivitiesPage() {
+  return (
+    <AsyncErrorBoundary 
+      fallback="page"
+      onError={(error, errorInfo) => {
+        console.error('Activities Page Error:', error, errorInfo);
+      }}
+    >
+      <ActivitiesPageContent />
+    </AsyncErrorBoundary>
   );
 }

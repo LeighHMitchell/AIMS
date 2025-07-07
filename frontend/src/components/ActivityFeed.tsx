@@ -124,6 +124,7 @@ const getActionDescription = (log: ActivityLog) => {
 
 // Get role badge variant
 const getRoleBadgeVariant = (role: string) => {
+  if (!role) return 'outline';
   if (role === 'super_user') return 'destructive';
   if (role.includes('tier_1')) return 'default';
   if (role.includes('tier_2')) return 'secondary';
@@ -165,8 +166,8 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
     try {
       setLoading(true);
       const params = new URLSearchParams({
-        userRole: user.role,
-        userId: user.id,
+        userRole: user.role || '',
+        userId: user.id || '',
         limit: limit.toString(),
       });
 
@@ -286,7 +287,7 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
                     <div className="flex-1">
                       {/* Main description */}
                       <p className="text-sm">
-                        <span className="font-medium">{log.user.name}</span>{' '}
+                        <span className="font-medium">{log.user?.name || 'Unknown User'}</span>{' '}
                         <span className="text-muted-foreground">
                           {getActionDescription(log)}
                         </span>
@@ -315,9 +316,11 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
                           {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
                         </span>
                         <span className="text-xs text-muted-foreground">•</span>
-                        <Badge variant={getRoleBadgeVariant(log.user.role)} className="text-xs h-5">
-                          {formatRole(log.user.role)}
-                        </Badge>
+                        {log.user?.role && (
+                          <Badge variant={getRoleBadgeVariant(log.user.role)} className="text-xs h-5">
+                            {formatRole(log.user.role)}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>

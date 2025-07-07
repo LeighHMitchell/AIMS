@@ -3,7 +3,6 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   skipTrailingSlashRedirect: true,
-  output: 'standalone', // Enable standalone output for Docker deployments
   
   // Disable static exports for error pages
   generateBuildId: async () => {

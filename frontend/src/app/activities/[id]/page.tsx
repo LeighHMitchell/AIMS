@@ -100,6 +100,12 @@ interface Activity {
   actualEndDate?: string
   createdAt: string
   updatedAt: string
+  // Default finance fields
+  defaultAidType?: string
+  defaultFinanceType?: string
+  defaultCurrency?: string
+  defaultTiedStatus?: string
+  defaultFlowType?: string
   // IATI Sync fields
   iatiIdentifier?: string
   autoSync?: boolean
@@ -593,40 +599,11 @@ export default function ActivityDetailPage() {
             ) : null}
             
             <CardContent className="p-8">
-              <div className="flex items-start gap-6">
-                {/* Icon */}
-                <div className="flex-shrink-0">
-                  {activity.icon ? (
-                    <img
-                      src={activity.icon}
-                      alt={`Icon for ${activity.title}`}
-                      className="w-20 h-20 rounded-lg object-cover border border-slate-200"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        const parent = target.parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200"><svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
-                      <Activity className="w-10 h-10 text-slate-400" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Activity Info */}
-                <div className="flex-1">
+              <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
                         <h1 className="text-3xl font-bold text-slate-900">{activity.title}</h1>
-                        {activity.partnerId && (
-                          <Badge variant="outline" className="border-slate-300 text-slate-700">
-                            {activity.partnerId}
-                          </Badge>
-                        )}
                       </div>
                       
                       <div className="flex items-center gap-2 mb-2">
@@ -745,7 +722,6 @@ export default function ActivityDetailPage() {
                     </div>
                   )}
                 </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -860,14 +836,6 @@ export default function ActivityDetailPage() {
                           </Badge>
                         </div>
                         <div>
-                          <span className="text-slate-500">Partner ID:</span>
-                          <span className="ml-2 text-slate-900">{activity.partnerId || 'Not specified'}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">IATI ID:</span>
-                          <span className="ml-2 text-slate-900">{activity.iatiId || 'Not specified'}</span>
-                        </div>
-                        <div>
                           <span className="text-slate-500">Sectors:</span>
                           <span className="ml-2 text-slate-900">{activity.sectors?.length || 0}</span>
                         </div>
@@ -888,7 +856,10 @@ export default function ActivityDetailPage() {
                       {activity.description && (
                         <div className="mt-4">
                           <h4 className="font-medium mb-2 text-slate-900">Description</h4>
-                          <p className="text-slate-600 text-sm leading-relaxed">{activity.description}</p>
+                          <div 
+                            className="prose prose-sm max-w-none text-slate-600 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:text-slate-900 [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-medium [&_h2]:text-slate-900 [&_h2]:mt-3 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-slate-900 [&_h3]:mt-2 [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_blockquote]:border-l-2 [&_blockquote]:border-slate-300 [&_blockquote]:pl-3 [&_blockquote]:italic [&_a]:text-blue-600 [&_a]:underline hover:[&_a]:text-blue-800"
+                            dangerouslySetInnerHTML={{ __html: activity.description }}
+                          />
                         </div>
                       )}
                       
@@ -1024,6 +995,11 @@ export default function ActivityDetailPage() {
                   <TransactionTab 
                     activityId={activity.id} 
                     readOnly={!permissions.canEditActivity}
+                    defaultFinanceType={activity.defaultFinanceType}
+                    defaultAidType={activity.defaultAidType}
+                    defaultCurrency={activity.defaultCurrency}
+                    defaultTiedStatus={activity.defaultTiedStatus}
+                    defaultFlowType={activity.defaultFlowType}
                   />
                 </div>
               </TabsContent>

@@ -23,7 +23,9 @@ export function useIATIReferenceValues() {
   useEffect(() => {
     const fetchReferenceValues = async () => {
       try {
-        const response = await fetch('/api/iati-reference-values');
+        // Try to use cached fetch for better performance
+        const { cachedFetch } = await import('@/lib/pre-cache');
+        const response = await cachedFetch('/api/iati-reference-values');
         if (!response.ok) {
           throw new Error('Failed to fetch reference values');
         }
@@ -40,15 +42,44 @@ export function useIATIReferenceValues() {
     fetchReferenceValues();
   }, []);
 
-  // Helper function to get values for a specific field
+  // Helper function to get values for a specific field with validation
   const getFieldValues = (fieldName: keyof IATIReferenceData): IATIReferenceValue[] => {
-    return data?.[fieldName] || [];
+    const values = data?.[fieldName] || [];
+    // Validate that each item has required properties
+    return values.filter((item): item is IATIReferenceValue => 
+      item && 
+      typeof item === 'object' && 
+      typeof item.code === 'string' && 
+      typeof item.name === 'string' &&
+      item.code.length > 0 &&
+      item.name.length > 0
+    );
   };
 
   // Helper function to get a specific value by code
   const getValue = (fieldName: keyof IATIReferenceData, code: string): IATIReferenceValue | null => {
+    if (!code || typeof code !== 'string') return null;
     const values = getFieldValues(fieldName);
     return values.find(v => v.code === code) || null;
+  };
+
+  // Helper function to validate a code
+  const validateCode = (fieldName: keyof IATIReferenceData, code: string): boolean => {
+    if (!code || typeof code !== 'string') return false;
+    return getValue(fieldName, code) !== null;
+  };
+
+  // Helper function to search values by text
+  const searchValues = (fieldName: keyof IATIReferenceData, searchText: string): IATIReferenceValue[] => {
+    if (!searchText || typeof searchText !== 'string') return getFieldValues(fieldName);
+    
+    const values = getFieldValues(fieldName);
+    const search = searchText.toLowerCase().trim();
+    
+    return values.filter(item => 
+      item.code.toLowerCase().includes(search) || 
+      item.name.toLowerCase().includes(search)
+    );
   };
 
   // Helper function to validate a code
@@ -62,6 +93,8 @@ export function useIATIReferenceValues() {
     error,
     getFieldValues,
     getValue,
+    validateCode,
+    searchValues,
     isValidCode
   };
 }
@@ -75,7 +108,9 @@ export function useIATIFieldValues(fieldName: keyof IATIReferenceData) {
   useEffect(() => {
     const fetchFieldValues = async () => {
       try {
-        const response = await fetch(`/api/iati-reference-values?field_name=${fieldName}`);
+        // Try to use cached fetch for better performance
+        const { cachedFetch } = await import('@/lib/pre-cache');
+        const response = await cachedFetch(`/api/iati-reference-values?field_name=${fieldName}`);
         if (!response.ok) {
           throw new Error('Failed to fetch field values');
         }

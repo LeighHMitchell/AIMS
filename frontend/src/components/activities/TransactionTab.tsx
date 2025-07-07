@@ -8,9 +8,22 @@ import { toast } from 'sonner';
 interface TransactionTabProps {
   activityId: string;
   readOnly?: boolean;
+  defaultFinanceType?: string;
+  defaultAidType?: string;
+  defaultCurrency?: string;
+  defaultTiedStatus?: string;
+  defaultFlowType?: string;
 }
 
-export default function TransactionTab({ activityId, readOnly = false }: TransactionTabProps) {
+export default function TransactionTab({ 
+  activityId, 
+  readOnly = false,
+  defaultFinanceType,
+  defaultAidType,
+  defaultCurrency = 'USD',
+  defaultTiedStatus,
+  defaultFlowType
+}: TransactionTabProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -132,6 +145,11 @@ export default function TransactionTab({ activityId, readOnly = false }: Transac
       onUpdate={handleUpdateTransaction}
       onDelete={handleDeleteTransaction}
       readOnly={readOnly}
+      currency={defaultCurrency}
+      defaultFinanceType={defaultFinanceType}
+      defaultAidType={defaultAidType}
+      defaultTiedStatus={defaultTiedStatus}
+      defaultFlowType={defaultFlowType}
     />
   );
 } 

@@ -46,7 +46,10 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, className = '' })
 
         {/* Description */}
         {activity.description && (
-          <p className="text-sm text-gray-600 line-clamp-2 mb-3">{activity.description}</p>
+          <div 
+            className="text-sm text-gray-600 line-clamp-2 mb-3 prose prose-sm max-w-none [&_h1]:text-sm [&_h1]:font-medium [&_h2]:text-sm [&_h2]:font-medium [&_h3]:text-sm [&_h3]:font-medium [&_p]:my-0 [&_ul]:my-0 [&_ol]:my-0 [&_blockquote]:my-0 [&_a]:text-blue-600 [&_a]:no-underline hover:[&_a]:underline"
+            dangerouslySetInnerHTML={{ __html: activity.description }}
+          />
         )}
 
         {/* Status badges */}

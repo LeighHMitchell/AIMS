@@ -76,6 +76,10 @@ interface TransactionFormProps {
   onSubmit: (data: TransactionFormData) => void;
   onCancel: () => void;
   defaultCurrency?: string;
+  defaultFinanceType?: string;
+  defaultAidType?: string;
+  defaultTiedStatus?: string;
+  defaultFlowType?: string;
   activityId: string;
 }
 
@@ -85,6 +89,10 @@ export default function TransactionForm({
   onSubmit,
   onCancel,
   defaultCurrency = 'USD',
+  defaultFinanceType,
+  defaultAidType,
+  defaultTiedStatus,
+  defaultFlowType,
   activityId
 }: TransactionFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -131,10 +139,10 @@ export default function TransactionForm({
     disbursement_channel: transaction?.disbursement_channel || undefined,
     sector_code: transaction?.sector_code || '',
     recipient_country_code: transaction?.recipient_country_code || '',
-    flow_type: transaction?.flow_type || undefined,
-    finance_type: transaction?.finance_type || undefined,
-    aid_type: transaction?.aid_type || '',
-    tied_status: transaction?.tied_status || undefined,
+    flow_type: (transaction?.flow_type || defaultFlowType || '') as any,
+    finance_type: (transaction?.finance_type || defaultFinanceType || undefined) as any,
+    aid_type: transaction?.aid_type || defaultAidType || '',
+    tied_status: (transaction?.tied_status || defaultTiedStatus || undefined) as any,
     is_humanitarian: transaction?.is_humanitarian ?? false,
   });
 

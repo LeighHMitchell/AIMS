@@ -268,7 +268,24 @@ export async function POST(request: NextRequest) {
     }
     */
 
-    // Prepare transaction data
+    // tied_status mapping - database hasn't been migrated yet, so map to current enum values
+    // Frontend sends IATI standard: '1'=Tied, '2'=Partially tied, '3'=Untied, '4'=Not reported
+    // Database currently expects: '3'=Untied, '4'=Tied, '5'=Partially tied
+    console.log('[Transactions API] tied_status value:', body.tied_status);
+    
+    let mappedTiedStatus = null;
+    if (body.tied_status) {
+      const tiedStatusMapping: Record<string, string> = {
+        '1': '4',  // Frontend Tied (1) -> Database Tied (4)
+        '2': '5',  // Frontend Partially tied (2) -> Database Partially tied (5)
+        '3': '3',  // Frontend Untied (3) -> Database Untied (3)
+        '4': '3'   // Frontend Not reported (4) -> Database Untied (3) as fallback
+      };
+      
+      mappedTiedStatus = tiedStatusMapping[body.tied_status] || '3'; // Default to Untied
+      console.log('[Transactions API] Mapped tied_status from', body.tied_status, 'to', mappedTiedStatus);
+    }
+    
     const transactionData: any = {
       activity_id: body.activity_id,
       transaction_type: cleanEnumValue(body.transaction_type),
@@ -280,15 +297,15 @@ export async function POST(request: NextRequest) {
       receiver_org_type: cleanEnumValue(body.receiver_org_type),
       provider_org_ref: body.provider_org_ref || null,
       receiver_org_ref: body.receiver_org_ref || null,
-      value: body.value,
+      value: parseFloat(body.value?.toString() || '0') || 0,
       currency: body.currency || 'USD',
       status: body.status || 'actual',
-      transaction_date: cleanDateValue(body.transaction_date),
+      transaction_date: cleanDateValue(body.transaction_date) || new Date().toISOString().split('T')[0],
       value_date: cleanDateValue(body.value_date),
       transaction_reference: body.transaction_reference || null,
       description: body.description || null,
       aid_type: cleanEnumValue(body.aid_type),
-      tied_status: cleanEnumValue(body.tied_status),
+      tied_status: mappedTiedStatus, // Use mapped value for current database
       flow_type: cleanEnumValue(body.flow_type),
       finance_type: cleanEnumValue(body.finance_type),
       disbursement_channel: cleanEnumValue(body.disbursement_channel),
@@ -296,12 +313,6 @@ export async function POST(request: NextRequest) {
       financing_classification: body.financing_classification || null,
       created_by: cleanUUIDValue(body.created_by)
     };
-
-    // Only add organization_id if provided and valid
-    const orgId = cleanUUIDValue(body.organization_id);
-    if (orgId) {
-      transactionData.organization_id = orgId;
-    }
 
     console.log('[Transactions API] Inserting transaction:', transactionData);
 

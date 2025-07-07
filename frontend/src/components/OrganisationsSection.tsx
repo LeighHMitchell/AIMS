@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { X, Plus, ChevronDown, UserPlus, Info } from "lucide-react";
 import { toast } from "sonner";
 import { ActivityContributor } from "@/lib/activity-permissions";
+import { useExtendingPartnersAutosave, useImplementingPartnersAutosave, useGovernmentPartnersAutosave } from '@/hooks/use-field-autosave-new';
+import { useUser } from '@/hooks/useUser';
 
 interface Partner {
   orgId: string;
@@ -21,6 +23,7 @@ interface OrganisationsSectionProps {
   contributors: ActivityContributor[];
   onContributorAdd: (contributor: ActivityContributor) => void;
   canNominateContributors?: boolean;
+  activityId?: string;
 }
 
 export default function OrganisationsSection({
@@ -31,11 +34,36 @@ export default function OrganisationsSection({
   contributors,
   onContributorAdd,
   canNominateContributors = false,
+  activityId,
 }: OrganisationsSectionProps) {
   const [availablePartners, setAvailablePartners] = useState<Partner[]>([]);
   const [governmentOnlyPartners, setGovernmentOnlyPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [nominationModal, setNominationModal] = useState<{open: boolean, partner: Partner | null}>({open: false, partner: null});
+  const { user } = useUser();
+
+  // Field-level autosave hooks
+  const extendingPartnersAutosave = useExtendingPartnersAutosave(activityId, user?.id);
+  const implementingPartnersAutosave = useImplementingPartnersAutosave(activityId, user?.id);
+  const governmentPartnersAutosave = useGovernmentPartnersAutosave(activityId, user?.id);
+
+  // Enhanced onChange that triggers autosave
+  const handleChange = (field: string, value: Partner[]) => {
+    onChange(field, value);
+    if (activityId) {
+      switch (field) {
+        case 'extendingPartners':
+          extendingPartnersAutosave.triggerFieldSave(value);
+          break;
+        case 'implementingPartners':
+          implementingPartnersAutosave.triggerFieldSave(value);
+          break;
+        case 'governmentPartners':
+          governmentPartnersAutosave.triggerFieldSave(value);
+          break;
+      }
+    }
+  };
 
   // Fetch partners from API
   useEffect(() => {
@@ -44,9 +72,13 @@ export default function OrganisationsSection({
 
   const fetchPartners = async () => {
     try {
+      console.log('[OrganisationsSection] Fetching partners...');
       const res = await fetch("/api/partners");
+      console.log('[OrganisationsSection] Partners API response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('[OrganisationsSection] Partners API response data:', data?.length || 0, 'partners');
         
         // Format all partners for extending/implementing dropdowns
         const formattedPartners = data.map((partner: any) => ({
@@ -63,10 +95,22 @@ export default function OrganisationsSection({
             name: `${partner.name} ${partner.code || ''}`.trim()
           }));
         setGovernmentOnlyPartners(govPartners);
+      } else {
+        console.error('[OrganisationsSection] Partners API error:', res.status, res.statusText);
+        // Retry once after a delay
+        setTimeout(() => {
+          console.log('[OrganisationsSection] Retrying partners fetch...');
+          fetchPartners();
+        }, 1000);
       }
     } catch (error) {
-      console.error("Error fetching partners:", error);
-      toast.error("Failed to load partners");
+      console.error('[OrganisationsSection] Error fetching partners:', error);
+      toast.error("Failed to load partners - retrying...");
+      // Retry once after a delay
+      setTimeout(() => {
+        console.log('[OrganisationsSection] Retrying partners fetch after error...');
+        fetchPartners();
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -101,7 +145,7 @@ export default function OrganisationsSection({
     }
 
     currentPartners.push(partner);
-    onChange(fieldName, currentPartners);
+    handleChange(fieldName, currentPartners);
   };
 
   const removePartner = (type: 'extending' | 'implementing' | 'government', orgId: string) => {
@@ -123,7 +167,7 @@ export default function OrganisationsSection({
         break;
     }
 
-    onChange(fieldName, currentPartners);
+    handleChange(fieldName, currentPartners);
   };
 
   const nominateAsContributor = (partner: Partner) => {
@@ -184,9 +228,27 @@ export default function OrganisationsSection({
       {/* Extending Partners */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Extending Partners</CardTitle>
+          <CardTitle className="text-xl flex items-center gap-2">
+            Extending Partners
+            {extendingPartnersAutosave.state.isSaving && (
+              <span className="text-xs text-blue-600">Saving...</span>
+            )}
+            {extendingPartnersAutosave.state.lastSaved && !extendingPartnersAutosave.state.isSaving && (
+              <span className="text-xs text-green-600">Saved</span>
+            )}
+            {extendingPartnersAutosave.state.error && (
+              <span className="text-xs text-red-600">Save failed</span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {extendingPartnersAutosave.state.error && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                Failed to save extending partners: {extendingPartnersAutosave.state.error.message}
+              </AlertDescription>
+            </Alert>
+          )}
           <p className="text-gray-600">
             This is the government entity or development partner agency receiving funds from financing partner(s) for
             channeling to implementing partner(s).
@@ -254,9 +316,27 @@ export default function OrganisationsSection({
       {/* Implementing Partners */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Implementing Partners</CardTitle>
+          <CardTitle className="text-xl flex items-center gap-2">
+            Implementing Partners
+            {implementingPartnersAutosave.state.isSaving && (
+              <span className="text-xs text-blue-600">Saving...</span>
+            )}
+            {implementingPartnersAutosave.state.lastSaved && !implementingPartnersAutosave.state.isSaving && (
+              <span className="text-xs text-green-600">Saved</span>
+            )}
+            {implementingPartnersAutosave.state.error && (
+              <span className="text-xs text-red-600">Save failed</span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {implementingPartnersAutosave.state.error && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                Failed to save implementing partners: {implementingPartnersAutosave.state.error.message}
+              </AlertDescription>
+            </Alert>
+          )}
           <p className="text-gray-600">
             The implementer of the activity is the organisation(s) which is/are principally responsible for delivering this
             activity.
@@ -340,9 +420,27 @@ export default function OrganisationsSection({
       {/* Government Partners */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Government Partners</CardTitle>
+          <CardTitle className="text-xl flex items-center gap-2">
+            Government Partners
+            {governmentPartnersAutosave.state.isSaving && (
+              <span className="text-xs text-blue-600">Saving...</span>
+            )}
+            {governmentPartnersAutosave.state.lastSaved && !governmentPartnersAutosave.state.isSaving && (
+              <span className="text-xs text-green-600">Saved</span>
+            )}
+            {governmentPartnersAutosave.state.error && (
+              <span className="text-xs text-red-600">Save failed</span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {governmentPartnersAutosave.state.error && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                Failed to save government partners: {governmentPartnersAutosave.state.error.message}
+              </AlertDescription>
+            </Alert>
+          )}
           <p className="text-gray-600">
             The government entity or entities responsible for oversight or maintenance of the activity. Often this will be
             the government entity with which a MoU or similar agreement is signed. In many cases, the MoU will be

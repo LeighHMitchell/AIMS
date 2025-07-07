@@ -36,7 +36,7 @@ export const IATI_COLLABORATION_TYPES: CollaborationTypeGroup[] = [
       {
         code: "8",
         name: "Bilateral, triangular co-operation",
-        description: "South-South cooperation supported by bilateral/international orgs"
+        description: "South-South cooperation supported by one or more bilateral donors or international organisations"
       }
     ]
   },
@@ -51,17 +51,17 @@ export const IATI_COLLABORATION_TYPES: CollaborationTypeGroup[] = [
       {
         code: "4",
         name: "Multilateral outflows",
-        description: "Disbursements made by multilateral organisations from core funds"
+        description: "Disbursements made by multilateral organisations from their core funds"
       }
     ]
   },
   {
-    label: "Other Types",
+    label: "Other / Non-State Types",
     types: [
       {
         code: "6",
         name: "Private Sector Outflows",
-        description: "Outflows from private sector entities"
+        description: "Outflows from private sector entities such as companies, foundations, or financial institutions"
       }
     ]
   }

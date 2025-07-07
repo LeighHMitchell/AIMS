@@ -16,11 +16,14 @@ import {
 import { SectorSelect, getSectorLabel, getSectorDescription } from '@/components/forms/SectorSelect';
 import { SectorValidation } from '@/types/sector';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 
 interface SectorAllocation {
   id: string;
   code: string;
   percentage: number;
+  categoryName?: string;
+  category?: string;
 }
 
 interface EnhancedSectorAllocationFormProps {
@@ -102,6 +105,20 @@ export default function EnhancedSectorAllocationForm({
     setValidation(newValidation);
     if (onValidationChange) {
       onValidationChange(newValidation);
+    }
+
+    // Show toast notification for over-allocation errors
+    if (errors.length > 0 && localAllocations.length > 0) {
+      const overAllocationError = errors.find(error => 
+        error.includes('exceeds 100%') || error.includes('only') && error.includes('%')
+      );
+      
+      if (overAllocationError) {
+        toast.error(overAllocationError, {
+          position: 'top-right',
+          duration: 4000,
+        });
+      }
     }
   }, [localAllocations, onValidationChange]);
 
@@ -203,6 +220,15 @@ export default function EnhancedSectorAllocationForm({
     return value % 1 === 0 ? value.toString() : value.toFixed(1);
   };
 
+  // Group allocations by category
+  const groupedAllocations = localAllocations.reduce((acc, allocation) => {
+    // Try to get category from allocation, fallback to 'Other'
+    const category = allocation.categoryName || allocation.category || 'Other';
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(allocation);
+    return acc;
+  }, {} as Record<string, typeof localAllocations>);
+
   return (
     <div className="space-y-6">
       {/* Header with Controls */}
@@ -245,33 +271,30 @@ export default function EnhancedSectorAllocationForm({
         </CardHeader>
         <CardContent className="space-y-4">
           <SectorSelect
-            selectedSectors={selectedSectors}
-            onSectorsChange={handleSectorSelection}
+            value={selectedSectors}
+            onValueChange={handleSectorSelection}
             placeholder="Search and select OECD DAC sectors..."
-            allowMultiple={true}
-            maxSelections={20}
+            className="w-full"
           />
           
-          {localAllocations.length > 0 && (
-            <div className="flex gap-2 flex-wrap">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={distributeEqually}
-                className="text-xs"
-              >
-                Distribute Equally
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={clearAll}
-                className="text-xs text-red-600 hover:text-red-700"
-              >
-                Clear All
-              </Button>
-            </div>
+          {localAllocations.length > 1 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={distributeEqually}
+              className="text-xs"
+            >
+              Distribute Equally
+            </Button>
           )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={clearAll}
+            className="text-xs text-red-600 hover:text-red-700"
+          >
+            Clear All
+          </Button>
         </CardContent>
       </Card>
 
@@ -281,62 +304,59 @@ export default function EnhancedSectorAllocationForm({
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Percentage Allocation</CardTitle>
-              <div className="flex items-center gap-2 text-sm">
-                <span className={`font-medium ${
-                  validation.totalPercentage === 100 ? 'text-green-600' : 
-                  validation.totalPercentage > 100 ? 'text-red-600' : 'text-amber-600'
-                }`}>
-                  Total: {formatPercentage(validation.totalPercentage)}%
+              {validation.totalPercentage !== 100 && (
+                <span className="text-gray-500">
+                  ({validation.remainingPercentage > 0 ? '+' : ''}{formatPercentage(validation.remainingPercentage)}%)
                 </span>
-                {validation.totalPercentage !== 100 && (
-                  <span className="text-gray-500">
-                    ({validation.remainingPercentage > 0 ? '+' : ''}{formatPercentage(validation.remainingPercentage)}%)
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {localAllocations.map((allocation) => (
-                <div 
-                  key={allocation.id} 
-                  className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-gray-900 truncate">
-                      {getSectorLabel(allocation.code)}
-                    </div>
-                    {getSectorDescription(allocation.code) && (
-                      <div className="text-xs text-gray-600 mt-1 line-clamp-2">
-                        {getSectorDescription(allocation.code)}
+              {Object.entries(groupedAllocations).map(([category, allocations]) => (
+                <div key={category} className="mb-4">
+                  <div className="font-semibold text-sm text-gray-700 mb-2">{category}</div>
+                  <div className="space-y-2">
+                    {allocations.map((allocation) => (
+                      <div 
+                        key={allocation.id} 
+                        className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm text-gray-900 truncate">
+                            {getSectorLabel(allocation.code)}
+                          </div>
+                          {getSectorDescription(allocation.code) && (
+                            <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                              {getSectorDescription(allocation.code)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              min="0.1"
+                              max="100"
+                              step="0.1"
+                              value={allocation.percentage || ''}
+                              onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
+                              className="w-20 h-8 text-sm text-right"
+                              placeholder="0"
+                            />
+                            <span className="text-sm text-gray-500">%</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSector(allocation.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <Input
-                        type="number"
-                        min="0.1"
-                        max="100"
-                        step="0.1"
-                        value={allocation.percentage || ''}
-                        onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
-                        className="w-20 h-8 text-sm text-right"
-                        placeholder="0"
-                      />
-                      <span className="text-sm text-gray-500">%</span>
-                    </div>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeSector(allocation.id)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    ))}
                   </div>
                 </div>
               ))}

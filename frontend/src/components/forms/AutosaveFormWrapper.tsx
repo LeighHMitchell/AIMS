@@ -55,9 +55,9 @@ export function AutosaveFormWrapper({
     clearError
   } = useComprehensiveAutosave(activityData, user, {
     enabled,
-    intervalMs: 5000, // Save every 5 seconds if changes exist
-    debounceMs: 2000, // Wait 2 seconds after last change
-    maxRetries: 3,
+    intervalMs: 15000, // Save every 15 seconds if changes exist (aggressive)
+    debounceMs: 3000, // Wait 3 seconds after last change (aggressive)
+    maxRetries: 2,
     showSuccessToast: false, // We'll handle UI feedback ourselves
     showErrorToast: false,   // We'll show custom error alerts
     onSaveSuccess: (data) => {
@@ -155,7 +155,7 @@ export function AutosaveFormWrapper({
 
     return (
       <Badge variant="outline" className="text-gray-600">
-        Ready to Save
+        {/* No custom message, just show standard status or nothing */}
       </Badge>
     );
   };
@@ -221,12 +221,15 @@ export function AutosaveFormWrapper({
         {/* Debug info (development only) */}
         {process.env.NODE_ENV === 'development' && (
           <div className="fixed bottom-4 right-4 bg-black text-green-400 p-2 rounded text-xs font-mono z-50 max-w-xs">
-            <div>Saves: {state.saveCount}</div>
-            <div>Errors: {state.errorCount}</div>
-            <div>Auto-saving: {state.isAutoSaving ? 'Yes' : 'No'}</div>
-            <div>Unsaved: {state.hasUnsavedChanges ? 'Yes' : 'No'}</div>
+            <div>💾 Saves: {state.saveCount}</div>
+            <div>❌ Errors: {state.errorCount}</div>
+            <div>🔄 Auto-saving: {state.isAutoSaving ? 'Yes' : 'No'}</div>
+            <div>📝 Unsaved: {state.hasUnsavedChanges ? 'Yes' : 'No'}</div>
             {state.lastSaved && (
-              <div>Last: {state.lastSaved.toLocaleTimeString()}</div>
+              <div>⏰ Last: {state.lastSaved.toLocaleTimeString()}</div>
+            )}
+            {state.lastError && (
+              <div className="text-red-400">💥 Error: {state.lastError.message.substring(0, 30)}...</div>
             )}
           </div>
         )}

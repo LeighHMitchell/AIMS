@@ -4,7 +4,7 @@
  * This file demonstrates how to integrate the new Supabase default fields
  * functionality into the existing activity editor without breaking changes.
  * 
- * Copy the relevant sections to your existing activity editor component.
+ * Copy the relevant sections to your existing activity editor component.I
  */
 
 import React from 'react';

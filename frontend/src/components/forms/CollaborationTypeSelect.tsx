@@ -1,17 +1,10 @@
 "use client"
 
 import React from "react"
-import {
-  EnhancedSelect,
-  EnhancedSelectContent,
-  EnhancedSelectItem,
-  EnhancedSelectTrigger,
-  EnhancedSelectValue,
-  EnhancedSelectGroup,
-  EnhancedSelectLabel,
-  EnhancedSelectSeparator,
-} from "@/components/ui/enhanced-select"
+import { CollaborationTypeSearchableSelect } from "./CollaborationTypeSearchableSelect"
+import { IATI_COLLABORATION_TYPES } from "@/data/iati-collaboration-types"
 
+// Legacy interface for backward compatibility
 interface CollaborationTypeOption {
   value: string
   label: string
@@ -23,59 +16,15 @@ interface CollaborationTypeGroup {
   options: CollaborationTypeOption[]
 }
 
-// IATI Standard Collaboration Types (v2.03)
-const collaborationTypeGroups: CollaborationTypeGroup[] = [
-  {
-    label: "Bilateral Types",
-    options: [
-      {
-        value: "1",
-        label: "Bilateral",
-        description: "Direct cooperation between one donor and one recipient",
-      },
-      {
-        value: "3",
-        label: "Bilateral, core contributions to NGOs",
-        description: "Core contributions to NGOs and other private bodies / PPPs",
-      },
-      {
-        value: "7",
-        label: "Bilateral, ex-post reporting on NGOs",
-        description: "Ex-post reporting on NGOs' activities funded through core contributions",
-      },
-      {
-        value: "8",
-        label: "Bilateral, triangular co-operation",
-        description: "South-South cooperation supported by bilateral/international orgs",
-      },
-    ],
-  },
-  {
-    label: "Multilateral Types",
-    options: [
-      {
-        value: "2",
-        label: "Multilateral (inflows)",
-        description: "Core contributions to multilateral organisations",
-      },
-      {
-        value: "4",
-        label: "Multilateral outflows",
-        description: "Disbursements made by multilateral organisations from core funds",
-      },
-    ],
-  },
-  {
-    label: "Other Types",
-    options: [
-      {
-        value: "6",
-        label: "Private Sector Outflows",
-        description: "Outflows from private sector entities",
-      },
-    ],
-  },
-]
+// Legacy groups for backward compatibility - converted from new data structure
+const collaborationTypeGroups: CollaborationTypeGroup[] = IATI_COLLABORATION_TYPES.map(group => ({
+  label: group.label,
+  options: group.types.map(type => ({
+    value: type.code,
+    label: type.name,
+    description: type.description
+  }))
+}))
 
 // Flatten all options for easy lookup
 const allCollaborationTypeOptions = collaborationTypeGroups.flatMap(group => group.options)
@@ -85,7 +34,7 @@ interface CollaborationTypeSelectProps {
   onValueChange: (value: string) => void
   placeholder?: string
   disabled?: boolean
-  id?: string
+  className?: string
 }
 
 export function CollaborationTypeSelect({
@@ -93,41 +42,16 @@ export function CollaborationTypeSelect({
   onValueChange,
   placeholder = "Select Collaboration Type",
   disabled = false,
-  id,
+  className,
 }: CollaborationTypeSelectProps) {
-  // Find the selected option to display its label in the trigger
-  const selectedOption = allCollaborationTypeOptions.find(option => option.value === value)
-  
   return (
-    <div className="w-full">
-      <EnhancedSelect value={value} onValueChange={onValueChange} disabled={disabled}>
-      <EnhancedSelectTrigger id={id}>
-        <EnhancedSelectValue placeholder={placeholder}>
-          {selectedOption?.label || placeholder}
-        </EnhancedSelectValue>
-      </EnhancedSelectTrigger>
-      <EnhancedSelectContent>
-        {collaborationTypeGroups.map((group, groupIndex) => (
-          <React.Fragment key={group.label}>
-            {groupIndex > 0 && <EnhancedSelectSeparator />}
-            <EnhancedSelectGroup>
-              <EnhancedSelectLabel className="px-2 py-1.5 text-sm font-semibold text-gray-700">
-                {group.label}
-              </EnhancedSelectLabel>
-              {group.options.map((option) => (
-                <EnhancedSelectItem
-                  key={option.value}
-                  value={option.value}
-                  label={option.label}
-                  description={option.description}
-                />
-              ))}
-            </EnhancedSelectGroup>
-          </React.Fragment>
-        ))}
-      </EnhancedSelectContent>
-    </EnhancedSelect>
-    </div>
+    <CollaborationTypeSearchableSelect
+      value={value}
+      onValueChange={onValueChange}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={className}
+    />
   )
 }
 

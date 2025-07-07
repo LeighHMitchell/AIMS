@@ -44,7 +44,11 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
           const base64String = reader.result as string;
           setPreview(base64String);
           onBannerChange(base64String);
-          toast.success("Banner uploaded successfully");
+          if (activityId && activityId !== "new") {
+            toast.success("Banner uploaded and saved successfully");
+          } else {
+            toast.success("The banner has been uploaded and will be saved after activity creation.");
+          }
         };
         reader.readAsDataURL(file);
       } catch (error) {
@@ -54,7 +58,7 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
         setUploading(false);
       }
     },
-    [onBannerChange]
+    [onBannerChange, activityId]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -69,7 +73,11 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
   const removeBanner = () => {
     setPreview(null);
     onBannerChange(null);
-    toast.success("Banner removed");
+    if (activityId && activityId !== "new") {
+      toast.success("Banner removed and saved successfully");
+    } else {
+      toast.success("The banner has been removed and will be saved after activity creation.");
+    }
   };
 
   if (preview) {

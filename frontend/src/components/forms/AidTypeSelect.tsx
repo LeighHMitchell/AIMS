@@ -179,8 +179,8 @@ export function AidTypeSelect({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className={cn(
-              "font-medium",
-              item.level === 0 && "text-gray-700"
+              "text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded",
+              item.level === 0 ? "text-gray-700" : "text-gray-800"
             )}>
               {item.code}
             </span>
@@ -234,8 +234,15 @@ export function AidTypeSelect({
         role="combobox"
         aria-expanded={open}
       >
-        <span className="block truncate text-left flex-1">
-          {selectedItem ? `${selectedItem.code} – ${selectedItem.name}` : placeholder}
+        <span className="truncate">
+          {selectedItem ? (
+            <span className="flex items-center gap-2">
+              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedItem.code}</span>
+              <span className="font-medium">{selectedItem.name}</span>
+            </span>
+          ) : (
+            placeholder
+          )}
         </span>
         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </PopoverTrigger>

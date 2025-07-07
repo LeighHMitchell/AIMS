@@ -17,6 +17,8 @@ import { TiedStatusSelect } from "@/components/forms/TiedStatusSelect";
 import { Label } from "@/components/ui/label";
 import { FinancialSummaryCards } from "@/components/FinancialSummaryCards";
 import { SupabaseFieldsTest } from "@/components/forms/SupabaseFieldsTest";
+import { DefaultFieldsAutosave } from '@/components/forms/DefaultFieldsAutosave';
+import { useUser } from '@/hooks/useUser';
 
 interface FinancesSectionProps {
   activityId?: string;
@@ -123,6 +125,7 @@ export default function FinancesSection({
   onDefaultsChange = () => {}
 }: FinancesSectionProps) {
   const [tab, setTab] = useState("transactions");
+  const { user } = useUser();
 
   // Helper function to safely format dates
   const formatDate = (dateStr: string) => {
@@ -294,6 +297,10 @@ export default function FinancesSection({
             transactions={transactions}
             onTransactionsChange={onTransactionsChange}
             defaultFinanceType={defaultFinanceType}
+            defaultAidType={defaultAidType}
+            defaultCurrency={defaultCurrency}
+            defaultTiedStatus={defaultTiedStatus}
+            defaultFlowType={defaultFlowType}
           />
           
           {/* Dual Charts Section */}
@@ -315,81 +322,18 @@ export default function FinancesSection({
         {/* Defaults Tab */}
         <TabsContent value="defaults">
           <div className="space-y-6">
-            {/* Supabase Integration Test Component */}
-            <SupabaseFieldsTest 
+            <DefaultFieldsAutosave
               activityId={activityId}
-              currentDefaults={{
+              userId={user?.id || ''}
+              defaults={{
                 defaultAidType,
                 defaultFinanceType,
                 defaultFlowType,
                 defaultCurrency,
                 defaultTiedStatus
               }}
+              onDefaultsChange={onDefaultsChange}
             />
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Default Values for Transactions</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                Set default values that will be automatically applied to new transactions. You can override these values for individual transactions.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Default Aid Type */}
-              <div className="space-y-2">
-                <Label htmlFor="defaultAidType">Default Aid Type</Label>
-                <DefaultAidTypeSelect
-                  id="defaultAidType"
-                  value={defaultAidType || ""}
-                  onValueChange={(value) => onDefaultsChange("defaultAidType", value || "")}
-                  placeholder="Select default aid type"
-                />
-              </div>
-
-              {/* Default Finance Type */}
-              <div className="space-y-2">
-                <Label htmlFor="defaultFinanceType">Default Finance Type</Label>
-                <DefaultFinanceTypeSelect
-                  id="defaultFinanceType"
-                  value={defaultFinanceType || ""}
-                  onValueChange={(value) => onDefaultsChange("defaultFinanceType", value || "")}
-                  placeholder="Select default finance type"
-                />
-              </div>
-
-              {/* Default Flow Type */}
-              <div className="space-y-2">
-                <Label htmlFor="defaultFlowType">Default Flow Type</Label>
-                <FlowTypeSelect
-                  id="defaultFlowType"
-                  value={defaultFlowType || ""}
-                  onValueChange={(value) => onDefaultsChange("defaultFlowType", value || "")}
-                  placeholder="Select default flow type"
-                />
-              </div>
-
-              {/* Default Currency */}
-              <div className="space-y-2">
-                <Label htmlFor="defaultCurrency">Default Currency</Label>
-                <CurrencySelector
-                  id="defaultCurrency"
-                  value={defaultCurrency || ""}
-                  onValueChange={(value) => onDefaultsChange("defaultCurrency", value || "")}
-                  placeholder="Select default currency"
-                />
-              </div>
-
-              {/* Default Tied Status */}
-              <div className="space-y-2">
-                <Label htmlFor="defaultTiedStatus">Default Tied Status</Label>
-                <TiedStatusSelect
-                  id="defaultTiedStatus"
-                  value={defaultTiedStatus || ""}
-                  onValueChange={(value) => onDefaultsChange("defaultTiedStatus", value || "")}
-                  placeholder="Select default tied status"
-                />
-              </div>
-            </div>
           </div>
         </TabsContent>
       </Tabs>

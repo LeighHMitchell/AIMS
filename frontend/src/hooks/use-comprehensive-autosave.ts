@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { autosaveDebugger } from '@/utils/autosave-debugger';
 
 interface AutosaveState {
   isAutoSaving: boolean;
@@ -29,9 +30,9 @@ export function useComprehensiveAutosave(
 ) {
   const {
     enabled = true,
-    intervalMs = 30000, // Save every 30 seconds (reduced from 5)
-    debounceMs = 5000, // Wait 5 seconds after last change (increased from 2)
-    maxRetries = 3,
+    intervalMs = 15000, // Save every 15 seconds (much more frequent)
+    debounceMs = 3000, // Wait 3 seconds after last change (more responsive)
+    maxRetries = 3, // More retries for reliability
     onSaveSuccess,
     onSaveError,
     showSuccessToast = false,
@@ -47,6 +48,10 @@ export function useComprehensiveAutosave(
     errorCount: 0,
     hasUnsavedChanges: false
   });
+
+  // Circuit breaker for repeated failures
+  const [circuitBreakerOpen, setCircuitBreakerOpen] = useState(false);
+  const consecutiveFailuresRef = useRef(0);
 
   // Refs to avoid stale closures
   const activityDataRef = useRef(activityData);
@@ -70,65 +75,139 @@ export function useComprehensiveAutosave(
 
   // Core save function
   const performSave = useCallback(async (data: any, isManual = false): Promise<boolean> => {
+    // 🔧 DEBUG: Log save attempt
+    autosaveDebugger.logStateChange('performSave', { enabled, isAutoSaving: state.isAutoSaving }, { enabled, isAutoSaving: true });
+    
     if (!enabled || (!isManual && state.isAutoSaving)) {
+      autosaveDebugger.log('info', '🚫 Save skipped', { 
+        reason: !enabled ? 'disabled' : 'already_saving',
+        enabled, 
+        isAutoSaving: state.isAutoSaving,
+        isManual 
+      });
+      return false;
+    }
+
+    // Circuit breaker: Stop autosave attempts if too many consecutive failures
+    if (!isManual && circuitBreakerOpen && consecutiveFailuresRef.current >= 3) {
+      autosaveDebugger.log('warn', '🚫 Circuit breaker active - skipping autosave', {
+        consecutiveFailures: consecutiveFailuresRef.current
+      });
+      return false;
+    }
+
+    // 🔧 DEBUG: Validate data before save
+    const validation = autosaveDebugger.validateActivityData(data);
+    if (!validation.isValid) {
+      autosaveDebugger.log('error', '❌ Save blocked by validation errors', validation);
+      validation.errors.forEach(error => {
+        toast.error(`Save Error: ${error}`);
+      });
       return false;
     }
 
     // Check minimum requirements
     if (requiresTitle && !data.general?.title?.trim()) {
-      console.log('[ComprehensiveAutosave] Skipping save - no title');
+      autosaveDebugger.log('warn', '🚫 Save skipped - no title', { hasGeneral: !!data.general });
       return false;
     }
 
     setState(prev => ({ ...prev, isAutoSaving: true, lastError: null }));
 
     try {
-      console.log('[ComprehensiveAutosave] Starting save operation:', {
+      autosaveDebugger.log('info', '🚀 Starting save operation', {
         timestamp: new Date().toISOString(),
         activityId: data.general?.id,
         isManual,
-        retry: retryCountRef.current
+        retry: retryCountRef.current,
+        validation
       });
 
-      // Build comprehensive payload
-      const payload = {
-        ...data.general,
-        created_by_org_name: data.general?.created_by_org_name || userRef.current?.organisation || userRef.current?.organization?.name || "",
-        created_by_org_acronym: data.general?.created_by_org_acronym || "",
-        sectors: data.sectors?.map((s: any) => ({
-          code: s.code,
-          name: s.name,
-          percentage: s.percentage,
-          categoryCode: s.categoryCode || s.code?.substring(0, 3),
-          categoryName: s.categoryName || `Category ${s.code?.substring(0, 3)}`,
-          categoryPercentage: s.categoryPercentage || s.percentage,
-          type: s.type || 'secondary'
-        })) || [],
-        transactions: data.transactions || [],
-        extendingPartners: data.extendingPartners || [],
-        implementingPartners: data.implementingPartners || [],
-        governmentPartners: data.governmentPartners || [],
-        contacts: data.contacts || [],
-        governmentInputs: data.governmentInputs || [],
-        contributors: data.contributors || [],
-        sdgMappings: data.sdgMappings || [],
-        tags: data.tags || [],
-        workingGroups: data.workingGroups || [],
-        policyMarkers: data.policyMarkers || [],
-        locations: {
-          specificLocations: data.specificLocations || [],
-          coverageAreas: data.coverageAreas || []
-        },
-        activityScope: data.activityScope,
-        user: userRef.current ? {
-          id: userRef.current.id,
-          name: userRef.current.name,
-          role: userRef.current.role,
-          organizationId: userRef.current.organizationId
-        } : null
-      };
+      // Build payload with size-conscious approach
+      const isLargeDataset = (
+        (data.sectors?.length || 0) > 20 ||
+        (data.transactions?.length || 0) > 50 ||
+        (data.contacts?.length || 0) > 30 ||
+        ((data.extendingPartners?.length || 0) + (data.implementingPartners?.length || 0) + (data.governmentPartners?.length || 0)) > 40
+      );
 
-      console.log('[ComprehensiveAutosave] Payload prepared:', {
+      let payload;
+      
+      if (isLargeDataset && !isManual) {
+        // For autosave with large datasets, start with a reduced payload
+        console.log('[ComprehensiveAutosave] Large dataset detected, using reduced autosave payload');
+        payload = {
+          ...data.general,
+          created_by_org_name: data.general?.created_by_org_name || userRef.current?.organisation || userRef.current?.organization?.name || "",
+          created_by_org_acronym: data.general?.created_by_org_acronym || "",
+          // Include only essential arrays with size limits
+          sectors: (data.sectors || []).slice(0, 10), // Limit to first 10 sectors
+          transactions: (data.transactions || []).slice(0, 20), // Limit to first 20 transactions
+          extendingPartners: (data.extendingPartners || []).slice(0, 10),
+          implementingPartners: (data.implementingPartners || []).slice(0, 10),
+          governmentPartners: (data.governmentPartners || []).slice(0, 10),
+          contacts: (data.contacts || []).slice(0, 15),
+          // Skip heavy optional data for autosave
+          governmentInputs: [],
+          contributors: [],
+          sdgMappings: [],
+          tags: [],
+          workingGroups: [],
+          policyMarkers: [],
+          locations: {
+            specificLocations: (data.specificLocations || []).slice(0, 5),
+            coverageAreas: (data.coverageAreas || []).slice(0, 5)
+          },
+          activityScope: data.activityScope,
+          user: userRef.current ? {
+            id: userRef.current.id,
+            name: userRef.current.name,
+            role: userRef.current.role,
+            organizationId: userRef.current.organizationId
+          } : null,
+          _isReducedSave: true
+        };
+      } else {
+        // Full payload for manual saves or small datasets
+        payload = {
+          ...data.general,
+          created_by_org_name: data.general?.created_by_org_name || userRef.current?.organisation || userRef.current?.organization?.name || "",
+          created_by_org_acronym: data.general?.created_by_org_acronym || "",
+          sectors: data.sectors?.map((s: any) => ({
+            code: s.code,
+            name: s.name,
+            percentage: s.percentage,
+            categoryCode: s.categoryCode || s.code?.substring(0, 3),
+            categoryName: s.categoryName || `Category ${s.code?.substring(0, 3)}`,
+            categoryPercentage: s.categoryPercentage || s.percentage,
+            type: s.type || 'secondary'
+          })) || [],
+          transactions: data.transactions || [],
+          extendingPartners: data.extendingPartners || [],
+          implementingPartners: data.implementingPartners || [],
+          governmentPartners: data.governmentPartners || [],
+          contacts: data.contacts || [],
+          governmentInputs: data.governmentInputs || [],
+          contributors: data.contributors || [],
+          sdgMappings: data.sdgMappings || [],
+          tags: data.tags || [],
+          workingGroups: data.workingGroups || [],
+          policyMarkers: data.policyMarkers || [],
+          locations: {
+            specificLocations: data.specificLocations || [],
+            coverageAreas: data.coverageAreas || []
+          },
+          activityScope: data.activityScope,
+          user: userRef.current ? {
+            id: userRef.current.id,
+            name: userRef.current.name,
+            role: userRef.current.role,
+            organizationId: userRef.current.organizationId
+          } : null
+        };
+      }
+
+      autosaveDebugger.log('info', '📦 Payload prepared', {
         id: payload.id,
         title: payload.title,
         sectorsCount: payload.sectors.length,
@@ -136,30 +215,49 @@ export function useComprehensiveAutosave(
         contactsCount: payload.contacts.length
       });
 
-      // Check payload size to prevent 413 errors
+      // 🔧 DEBUG: Analyze payload size with detailed breakdown
+      const payloadAnalysis = autosaveDebugger.analyzePayload(payload);
       const payloadString = JSON.stringify(payload);
-      const payloadSizeKB = new Blob([payloadString]).size / 1024;
-      
-      console.log('[ComprehensiveAutosave] Payload size:', {
-        sizeKB: payloadSizeKB.toFixed(2),
-        sizeMB: (payloadSizeKB / 1024).toFixed(2)
-      });
+      const payloadSizeKB = payloadAnalysis.sizeKB;
 
-      // Vercel has a 4.5MB limit for function payloads
-      // We'll use a conservative 2MB limit to be safe
-      if (payloadSizeKB > 2048) {
-        console.warn('[ComprehensiveAutosave] Payload too large, reducing size');
+      // Use much more conservative limits for autosave
+      // Vercel has 4.5MB limit, but we'll use 1MB for autosave to be extra safe
+      if (payloadSizeKB > 1024) {
+        console.warn('[ComprehensiveAutosave] Payload too large for autosave, using minimal payload');
         
-        // Create a minimal payload with just essential fields
+        // Create ultra-minimal payload for autosave - only core activity data
         const minimalPayload = {
-          ...data.general,
+          // Only include essential activity fields
+          id: data.general?.id,
+          title: data.general?.title || '',
+          description: data.general?.description ? 
+            (data.general.description.length > 500 ? 
+              data.general.description.substring(0, 500) + '...' : 
+              data.general.description) : '',
+          activity_status: data.general?.activity_status || '',
+          start_date: data.general?.start_date || null,
+          end_date: data.general?.end_date || null,
+          collaboration_type: data.general?.collaboration_type || '',
+          default_flow_type: data.general?.default_flow_type || '',
+          default_finance_type: data.general?.default_finance_type || '',
+          default_aid_type: data.general?.default_aid_type || '',
+          default_tied_status: data.general?.default_tied_status || '',
+          default_currency: data.general?.default_currency || 'USD',
           created_by_org_name: data.general?.created_by_org_name || userRef.current?.organisation || userRef.current?.organization?.name || "",
           created_by_org_acronym: data.general?.created_by_org_acronym || "",
-          // Only include counts for large arrays
-          sectorsCount: payload.sectors.length,
-          transactionsCount: payload.transactions.length,
-          contactsCount: payload.contacts.length,
-          // Include empty arrays to prevent errors
+          
+          // Include only counts for complex data
+          _autosave_metadata: {
+            sectorsCount: payload.sectors?.length || 0,
+            transactionsCount: payload.transactions?.length || 0,
+            contactsCount: payload.contacts?.length || 0,
+            partnersCount: (payload.extendingPartners?.length || 0) + 
+                          (payload.implementingPartners?.length || 0) + 
+                          (payload.governmentPartners?.length || 0),
+            timestamp: new Date().toISOString()
+          },
+          
+          // Empty arrays to prevent API errors
           sectors: [],
           transactions: [],
           extendingPartners: [],
@@ -176,22 +274,41 @@ export function useComprehensiveAutosave(
             specificLocations: [],
             coverageAreas: []
           },
-          activityScope: data.activityScope,
+          
           user: userRef.current ? {
             id: userRef.current.id,
             name: userRef.current.name,
             role: userRef.current.role,
             organizationId: userRef.current.organizationId
           } : null,
-          _isPartialSave: true
+          _isPartialSave: true,
+          _autosaveOnly: true
         };
         
-        console.log('[ComprehensiveAutosave] Using minimal payload for autosave');
+        // Double-check the minimal payload size
+        const minimalPayloadString = JSON.stringify(minimalPayload);
+        const minimalSizeKB = new TextEncoder().encode(minimalPayloadString).length / 1024;
+        
+        console.log('[ComprehensiveAutosave] Minimal payload size:', {
+          sizeKB: minimalSizeKB.toFixed(2),
+          reduction: `${((payloadSizeKB - minimalSizeKB) / payloadSizeKB * 100).toFixed(1)}%`
+        });
+        
+        // If even the minimal payload is too large, skip autosave
+        if (minimalSizeKB > 500) { // 500KB limit for minimal payload
+          console.warn('[ComprehensiveAutosave] Even minimal payload too large, skipping autosave');
+          if (showErrorToast) {
+            toast.warning('Activity too large for autosave. Please save manually.', {
+              duration: 5000
+            });
+          }
+          return false;
+        }
         
         const response = await fetch('/api/activities', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(minimalPayload)
+          body: minimalPayloadString
         });
         
         if (!response.ok) {
@@ -201,15 +318,24 @@ export function useComprehensiveAutosave(
         
         const responseData = await response.json();
         
-        // After minimal save, show warning to user
-        if (showErrorToast) {
-          toast.warning('Autosave: Only basic fields saved due to large data size. Please save manually for complete data.');
+        // Show user-friendly message about partial save
+        if (showSuccessToast && isManual) {
+          toast.success('Core activity data saved. Save manually for complete data.', {
+            duration: 3000,
+            position: 'top-right'
+          });
+        } else if (!isManual) {
+          // For autosave, show a less intrusive message
+          console.log('[ComprehensiveAutosave] Partial autosave completed successfully');
         }
         
         onSaveSuccess?.(responseData);
         return true;
       }
 
+      // 🔧 DEBUG: Log network request
+      autosaveDebugger.logNetworkRequest('/api/activities', 'POST', payload);
+      
       const response = await fetch('/api/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -218,14 +344,21 @@ export function useComprehensiveAutosave(
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+        const error = new Error(`HTTP ${response.status}: ${errorText}`);
+        autosaveDebugger.logNetworkRequest('/api/activities', 'POST', payload, response, error);
+        throw error;
       }
 
       const responseData = await response.json();
+      autosaveDebugger.logNetworkRequest('/api/activities', 'POST', payload, response);
 
       // Update saved data reference
       lastSavedDataRef.current = JSON.stringify(data);
       retryCountRef.current = 0;
+      
+      // Reset circuit breaker on successful save
+      consecutiveFailuresRef.current = 0;
+      setCircuitBreakerOpen(false);
 
       setState(prev => ({
         ...prev,
@@ -242,7 +375,7 @@ export function useComprehensiveAutosave(
       });
 
       if (showSuccessToast && isManual) {
-        toast.success('Changes saved successfully');
+        toast.success('Changes saved successfully', { position: 'top-right' });
       }
 
       onSaveSuccess?.(responseData);
@@ -256,6 +389,15 @@ export function useComprehensiveAutosave(
         retry: retryCountRef.current,
         timestamp: new Date().toISOString()
       });
+
+      // Increment consecutive failures for circuit breaker
+      consecutiveFailuresRef.current++;
+      
+      // Open circuit breaker after 3 consecutive failures
+      if (consecutiveFailuresRef.current >= 3) {
+        setCircuitBreakerOpen(true);
+        console.warn('[ComprehensiveAutosave] Circuit breaker activated - stopping autosave attempts');
+      }
 
       setState(prev => ({
         ...prev,
@@ -275,16 +417,32 @@ export function useComprehensiveAutosave(
       } else {
         // Max retries reached
         if (showErrorToast) {
-          toast.error(`Failed to save changes: ${err.message}`, {
-            action: {
-              label: 'Retry',
-              onClick: () => {
-                retryCountRef.current = 0;
-                performSave(data, true);
-              }
-            },
-            duration: 10000 // Keep error visible longer
-          });
+          // Check if it's a 413 error specifically
+          if (err.message.includes('413') || err.message.includes('payload too large')) {
+            toast.error('Activity too large for autosave. Please save manually.', {
+              action: {
+                label: 'Save Now',
+                onClick: () => {
+                  retryCountRef.current = 0;
+                  performSave(data, true); // Force manual save
+                }
+              },
+              duration: 8000,
+              position: 'top-right'
+            });
+          } else {
+            toast.error(`Autosave failed: ${err.message.includes('HTTP') ? 'Connection issue' : 'Unknown error'}`, {
+              action: {
+                label: 'Save Manually',
+                onClick: () => {
+                  retryCountRef.current = 0;
+                  performSave(data, true);
+                }
+              },
+              duration: 6000,
+              position: 'top-right'
+            });
+          }
         }
         
         onSaveError?.(err);

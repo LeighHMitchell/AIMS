@@ -3,12 +3,14 @@
 import React from "react"
 import { Building2 } from "lucide-react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { AuthGuard } from "@/components/AuthGuard"
 import { useUser } from "@/hooks/useUser"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { SidebarNav } from "@/components/navigation/SidebarNav"
 import { SidebarUserMenu } from "@/components/navigation/SidebarUserMenu"
 import { TopNav } from "@/components/navigation/TopNav"
+import { useSmartPreCache } from "@/hooks/use-pre-cached-data"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -17,6 +19,10 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
   const { user, permissions, logout } = useUser();
+  const pathname = usePathname();
+
+  // Initialize smart pre-caching based on current path
+  useSmartPreCache(pathname || '');
 
   // Debug log
   console.log('[MainLayout] Rendering with user:', user);

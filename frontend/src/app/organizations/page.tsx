@@ -1,6 +1,8 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { usePreCache } from '@/hooks/use-pre-cached-data'
+import { AsyncErrorBoundary } from '@/components/errors/AsyncErrorBoundary'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -1800,7 +1802,7 @@ const OrganizationListView: React.FC<{
 }
 
 // Main Organizations Page Component
-export default function OrganizationsPage() {
+function OrganizationsPageContent() {
   // State management
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [availableTypes, setAvailableTypes] = useState<OrganizationType[]>(DEFAULT_ORGANIZATION_TYPES)
@@ -1828,6 +1830,19 @@ export default function OrganizationsPage() {
   const [customGroups, setCustomGroups] = useState<any[]>([])
   const [loadingCustomGroups, setLoadingCustomGroups] = useState(false)
   const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false)
+  
+  // AbortController refs for race condition prevention
+  const mainFetchControllerRef = useRef<AbortController | null>(null)
+  const typesControllerRef = useRef<AbortController | null>(null)
+  const groupsControllerRef = useRef<AbortController | null>(null)
+  
+  // Pre-caching for better performance
+  const { preCacheOrganizations } = usePreCache()
+  
+  // Initialize organizations pre-caching
+  useEffect(() => {
+    preCacheOrganizations().catch(console.warn)
+  }, [preCacheOrganizations])
 
   // IATI-aligned tab definitions
   const IATI_TABS = [
@@ -1862,6 +1877,19 @@ export default function OrganizationsPage() {
   useEffect(() => {
     fetchOrganizations()
     fetchAvailableTypes()
+    
+    // Cleanup function to abort requests on unmount
+    return () => {
+      if (mainFetchControllerRef.current) {
+        mainFetchControllerRef.current.abort()
+      }
+      if (typesControllerRef.current) {
+        typesControllerRef.current.abort()
+      }
+      if (groupsControllerRef.current) {
+        groupsControllerRef.current.abort()
+      }
+    }
   }, [])
 
   // Fetch custom groups when tab is selected
@@ -1872,8 +1900,18 @@ export default function OrganizationsPage() {
   }, [activeFilter])
 
   const fetchAvailableTypes = async () => {
+    // Cancel any previous types request
+    if (typesControllerRef.current) {
+      typesControllerRef.current.abort()
+    }
+    
+    // Create new AbortController for this request
+    typesControllerRef.current = new AbortController()
+    
     try {
-      const response = await fetch('/api/organization-types')
+      const response = await fetch('/api/organization-types', {
+        signal: typesControllerRef.current.signal
+      })
       if (response.ok) {
         const types = await response.json()
         setAvailableTypes(types)
@@ -1883,15 +1921,29 @@ export default function OrganizationsPage() {
         setAvailableTypes(DEFAULT_ORGANIZATION_TYPES)
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('[OrganizationsPage] Types request aborted')
+        return
+      }
       console.error('[OrganizationsPage] Error fetching organization types:', error)
       setAvailableTypes(DEFAULT_ORGANIZATION_TYPES)
     }
   }
 
   const fetchCustomGroups = async () => {
+    // Cancel any previous groups request
+    if (groupsControllerRef.current) {
+      groupsControllerRef.current.abort()
+    }
+    
+    // Create new AbortController for this request
+    groupsControllerRef.current = new AbortController()
+    
     setLoadingCustomGroups(true)
     try {
-      const response = await fetch('/api/custom-groups?includeMembers=true')
+      const response = await fetch('/api/custom-groups?includeMembers=true', {
+        signal: groupsControllerRef.current.signal
+      })
       if (response.ok) {
         const groups = await response.json()
         setCustomGroups(groups)
@@ -1901,6 +1953,10 @@ export default function OrganizationsPage() {
         setCustomGroups([])
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('[OrganizationsPage] Groups request aborted')
+        return
+      }
       console.error('[OrganizationsPage] Error fetching custom groups:', error)
       setCustomGroups([])
     } finally {
@@ -1950,13 +2006,25 @@ export default function OrganizationsPage() {
   }, [organizations, searchTerm, activeFilter, activeTagFilters, availableTypes])
 
   const fetchOrganizations = async () => {
+    // Cancel any previous main request
+    if (mainFetchControllerRef.current) {
+      mainFetchControllerRef.current.abort()
+    }
+    
+    // Create new AbortController for this request
+    mainFetchControllerRef.current = new AbortController()
+    
     setLoading(true)
     setFetchError(null)
     
     try {
       const [orgsResponse, summaryResponse] = await Promise.all([
-        fetch('/api/organizations'),
-        fetch('/api/organizations/summary')
+        fetch('/api/organizations', {
+          signal: mainFetchControllerRef.current.signal
+        }),
+        fetch('/api/organizations/summary', {
+          signal: mainFetchControllerRef.current.signal
+        })
       ])
 
       if (orgsResponse.ok) {
@@ -1996,6 +2064,11 @@ export default function OrganizationsPage() {
         setSummary(summaryData)
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('[OrganizationsPage] Main request aborted')
+        return
+      }
+      
       console.error('Error fetching organizations:', error)
       setFetchError(error instanceof Error ? error.message : 'Failed to load organizations')
       setOrganizations([])
@@ -2598,4 +2671,17 @@ export default function OrganizationsPage() {
       </div>
     </MainLayout>
   )
+}
+
+export default function OrganizationsPage() {
+  return (
+    <AsyncErrorBoundary 
+      fallback="page"
+      onError={(error, errorInfo) => {
+        console.error('Organizations Page Error:', error, errorInfo);
+      }}
+    >
+      <OrganizationsPageContent />
+    </AsyncErrorBoundary>
+  );
 } 

@@ -248,6 +248,10 @@ interface TransactionModalProps {
   activityId: string;
   onSubmit: (transaction: Partial<Transaction>) => void;
   defaultFinanceType?: string; // From activity settings
+  defaultAidType?: string; // From activity settings
+  defaultCurrency?: string; // From activity settings
+  defaultTiedStatus?: string; // From activity settings
+  defaultFlowType?: string; // From activity settings
   isSubmitting?: boolean;
 }
 
@@ -258,11 +262,93 @@ export default function TransactionModal({
   activityId,
   onSubmit,
   defaultFinanceType,
+  defaultAidType,
+  defaultCurrency,
+  defaultTiedStatus,
+  defaultFlowType,
   isSubmitting
 }: TransactionModalProps) {
   const { partners } = usePartners();
-  const { data: iatiValues, loading: iatiLoading, getFieldValues } = useIATIReferenceValues();
+  const { data: iatiValues, loading: iatiLoading, getFieldValues, error: iatiError } = useIATIReferenceValues();
   const isEditing = !!transaction;
+  
+  // Fallback transaction types if IATI values fail to load
+  const fallbackTransactionTypes = [
+    { code: '1', name: 'Incoming Commitment' },
+    { code: '2', name: 'Outgoing Commitment' },
+    { code: '3', name: 'Disbursement' },
+    { code: '4', name: 'Expenditure' },
+    { code: '5', name: 'Interest Repayment' },
+    { code: '6', name: 'Loan Repayment' },
+    { code: '7', name: 'Reimbursement' },
+    { code: '8', name: 'Purchase of Equity' },
+    { code: '9', name: 'Sale of Equity' },
+    { code: '11', name: 'Credit Guarantee' },
+    { code: '12', name: 'Incoming Funds' },
+    { code: '13', name: 'Commitment Cancellation' }
+  ];
+  
+  // Fallback aid types
+  const fallbackAidTypes = [
+    { code: 'A01', name: 'General budget support' },
+    { code: 'A02', name: 'Sector budget support' },
+    { code: 'B01', name: 'Core support to NGOs, other private bodies, PPPs and research institutes' },
+    { code: 'B02', name: 'Core contributions to multilateral institutions' },
+    { code: 'B03', name: 'Contributions to specific-purpose programmes and funds managed by implementing partners' },
+    { code: 'B04', name: 'Basket funds/pooled funding' },
+    { code: 'C01', name: 'Project-type interventions' },
+    { code: 'D01', name: 'Donor country personnel' },
+    { code: 'D02', name: 'Other technical assistance' },
+    { code: 'E01', name: 'Scholarships/training in donor country' },
+    { code: 'E02', name: 'Imputed student costs' },
+    { code: 'F01', name: 'Debt relief' },
+    { code: 'G01', name: 'Administrative costs not included elsewhere' },
+    { code: 'H01', name: 'Development awareness' },
+    { code: 'H02', name: 'Refugees/asylum seekers in donor countries' }
+  ];
+  
+  // Get transaction types with fallback
+  const getTransactionTypes = () => {
+    if (iatiError || !iatiValues) {
+      console.warn('[TransactionModal] Using fallback transaction types due to IATI loading error:', iatiError);
+      return fallbackTransactionTypes;
+    }
+    
+    const types = getFieldValues('transaction_type')
+      .filter((type): type is { code: string; name: string } => 
+        type && typeof type.code === 'string' && typeof type.name === 'string'
+      );
+    
+    // If no types loaded from IATI, use fallback
+    if (types.length === 0) {
+      console.warn('[TransactionModal] No transaction types loaded from IATI, using fallback');
+      return fallbackTransactionTypes;
+    }
+    
+    return types;
+  };
+  
+  // Get aid types with fallback
+  const getAidTypes = () => {
+    if (iatiError || !iatiValues) {
+      console.warn('[TransactionModal] Using fallback aid types due to IATI loading error:', iatiError);
+      return fallbackAidTypes;
+    }
+    
+    const types = getFieldValues('aid_type')
+      .filter((type): type is { code: string; name: string } => 
+        type && typeof type.code === 'string' && typeof type.name === 'string'
+      );
+    
+    // If no types loaded from IATI, use fallback
+    if (types.length === 0) {
+      console.warn('[TransactionModal] No aid types loaded from IATI, using fallback');
+      return fallbackAidTypes;
+    }
+    
+    return types;
+  };
+  
   const [isClassificationOverridden, setIsClassificationOverridden] = useState(false);
   const [computedClassification, setComputedClassification] = useState("");
   const [manualClassification, setManualClassification] = useState("");
@@ -310,7 +396,7 @@ export default function TransactionModal({
     transaction_type: transaction?.transaction_type || '3',
     transaction_date: transaction?.transaction_date || format(new Date(), "yyyy-MM-dd"),
     value: transaction?.value || 0,
-    currency: transaction?.currency || 'USD',
+    currency: transaction?.currency || defaultCurrency || 'USD',
     status: transaction?.status || 'actual',
     
     // Optional core fields
@@ -330,12 +416,12 @@ export default function TransactionModal({
     receiver_org_ref: transaction?.receiver_org_ref || '',
     receiver_org_name: transaction?.receiver_org_name || '',
     
-    // Classifications
+    // Classifications - Use activity defaults when creating new transactions
     disbursement_channel: transaction?.disbursement_channel || undefined,
-    flow_type: transaction?.flow_type || undefined,
+    flow_type: transaction?.flow_type || (defaultFlowType as FlowType) || undefined,
     finance_type: transaction?.finance_type || (defaultFinanceType as FinanceType) || undefined,
-    aid_type: transaction?.aid_type || undefined,
-    tied_status: transaction?.tied_status || undefined,
+    aid_type: transaction?.aid_type || defaultAidType || undefined,
+    tied_status: transaction?.tied_status || (defaultTiedStatus as TiedStatus) || undefined,
     
     // Sector & Geography
     sector_code: transaction?.sector_code || '',
@@ -361,15 +447,26 @@ export default function TransactionModal({
     setComputedClassification(classification);
   }, [formData.flow_type, formData.aid_type, formData.finance_type]);
 
-  // Update form data when transaction prop changes
+  // Update form data when transaction prop changes OR when defaults change
   useEffect(() => {
+    console.log('[TransactionModal] Form data update triggered:', {
+      isEditing,
+      transaction: transaction?.id,
+      defaultFinanceType,
+      defaultAidType,
+      defaultCurrency,
+      defaultTiedStatus,
+      defaultFlowType
+    });
+    
     if (transaction) {
+      // Editing existing transaction
       setFormData({
         // Core fields
         transaction_type: transaction.transaction_type || '3',
         transaction_date: transaction.transaction_date || format(new Date(), "yyyy-MM-dd"),
         value: transaction.value || 0,
-        currency: transaction.currency || 'USD',
+        currency: transaction.currency || defaultCurrency || 'USD',
         status: transaction.status || 'actual',
         
         // Optional core fields
@@ -389,10 +486,10 @@ export default function TransactionModal({
         receiver_org_ref: transaction.receiver_org_ref || '',
         receiver_org_name: transaction.receiver_org_name || '',
         
-        // Classifications
+        // Classifications - keep existing values when editing
         disbursement_channel: transaction.disbursement_channel || undefined,
         flow_type: transaction.flow_type || undefined,
-        finance_type: transaction.finance_type || (defaultFinanceType as FinanceType) || undefined,
+        finance_type: transaction.finance_type || undefined,
         aid_type: transaction.aid_type || undefined,
         tied_status: transaction.tied_status || undefined,
         
@@ -411,12 +508,20 @@ export default function TransactionModal({
         setShowValueDate(true);
       }
     } else {
-      // Reset form for new transaction
+      // Creating new transaction - use activity defaults
+      console.log('[TransactionModal] Setting form data for new transaction with defaults:', {
+        defaultFinanceType,
+        defaultAidType,
+        defaultCurrency,
+        defaultTiedStatus,
+        defaultFlowType
+      });
+      
       setFormData({
         transaction_type: '3',
         transaction_date: format(new Date(), "yyyy-MM-dd"),
         value: 0,
-        currency: 'USD',
+        currency: defaultCurrency || 'USD',
         status: 'actual',
         transaction_reference: '',
         value_date: '',
@@ -430,10 +535,10 @@ export default function TransactionModal({
         receiver_org_ref: '',
         receiver_org_name: '',
         disbursement_channel: undefined,
-        flow_type: undefined,
+        flow_type: (defaultFlowType as FlowType) || undefined,
         finance_type: (defaultFinanceType as FinanceType) || undefined,
-        aid_type: undefined,
-        tied_status: undefined,
+        aid_type: defaultAidType || undefined,
+        tied_status: (defaultTiedStatus as TiedStatus) || undefined,
         sector_code: '',
         sector_vocabulary: undefined,
         recipient_country_code: '',
@@ -441,8 +546,9 @@ export default function TransactionModal({
         recipient_region_vocab: undefined,
         is_humanitarian: false,
       });
+      setShowValueDate(false);
     }
-  }, [transaction, defaultFinanceType]);
+  }, [transaction, defaultFinanceType, defaultAidType, defaultCurrency, defaultTiedStatus, defaultFlowType]);
 
   const handleSubmit = () => {
     const submissionData: any = {
@@ -611,6 +717,16 @@ export default function TransactionModal({
                 </div>
               )}
 
+              {/* Error alert for IATI loading issues */}
+              {(iatiError || (!iatiLoading && (!iatiValues || getFieldValues('transaction_type').length === 0))) && (
+                <Alert className="mb-4">
+                  <AlertDescription>
+                    Unable to load IATI reference values from server. Using fallback values. 
+                    {iatiError && ` Error: ${iatiError}`}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Type and Status Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -631,7 +747,7 @@ export default function TransactionModal({
                           Loading transaction types...
                         </SelectItem>
                       ) : (
-                        getFieldValues('transaction_type').map((type) => (
+                        getTransactionTypes().map((type) => (
                           <SelectItem key={type.code} value={type.code} className="py-3">
                             <div className="flex items-start gap-3">
                               <span className="text-xs font-mono text-muted-foreground mt-0.5">{type.code}</span>
@@ -989,7 +1105,7 @@ export default function TransactionModal({
                           <SelectItem value="none">
                             <span className="text-muted-foreground">No aid type selected</span>
                           </SelectItem>
-                          {getFieldValues('aid_type').map((type) => {
+                          {getAidTypes().map((type) => {
                             // Get the category from the code prefix
                             const getCategory = (code: string) => {
                               if (code.startsWith('A')) return 'BUDGET SUPPORT';
@@ -1003,16 +1119,20 @@ export default function TransactionModal({
                               return 'OTHER';
                             };
                             
-                            const category = getCategory(type.code);
+                            // Safely access type properties with fallbacks
+                            const typeCode = type?.code || '';
+                            const typeName = type?.name || 'Unknown';
+                            
+                            const category = getCategory(typeCode);
                             // Use getSelectedDescription helper to get the description
-                            const description = getSelectedDescription('aid', type.code);
+                            const description = getSelectedDescription('aid', typeCode);
                             
                             return (
-                              <SelectItem key={type.code} value={type.code} className="py-3">
+                              <SelectItem key={typeCode || `unknown-${Math.random()}`} value={typeCode} className="py-3">
                                 <div className="flex items-start gap-3">
-                                  <span className="text-xs font-mono text-muted-foreground mt-0.5">{type.code}</span>
+                                  <span className="text-xs font-mono text-muted-foreground mt-0.5">{typeCode}</span>
                                   <div className="flex-1">
-                                    <div className="font-medium">{type.name}</div>
+                                    <div className="font-medium">{typeName}</div>
                                     {description && (
                                       <div className="text-xs text-muted-foreground mt-0.5">
                                         {description}

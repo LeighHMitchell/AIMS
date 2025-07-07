@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { SimpleSectorSelect, getSectorLabel, getSectorDescription } from '@/components/forms/SimpleSectorSelect';
 import { SectorValidation } from '@/types/sector';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 import SectorAllocationPieChart from '@/components/charts/SectorAllocationPieChart';
 
 interface SectorAllocation {
@@ -84,6 +85,24 @@ export default function SimpleSectorAllocationForm({
     };
   };
 
+  const validation = calculateValidation(allocations);
+
+  // Show toast notification for over-allocation errors
+  useEffect(() => {
+    if (validation.errors.length > 0 && allocations.length > 0) {
+      const overAllocationError = validation.errors.find(error => 
+        error.includes('exceeds 100%') || error.includes('only') && error.includes('%')
+      );
+      
+      if (overAllocationError) {
+        toast.error(overAllocationError, {
+          position: 'top-right',
+          duration: 4000,
+        });
+      }
+    }
+  }, [validation.errors, allocations.length]);
+
   // Update validation when allocations change
   useEffect(() => {
     if (onValidationChange) {
@@ -156,8 +175,6 @@ export default function SimpleSectorAllocationForm({
   const formatPercentage = (value: number): string => {
     return value % 1 === 0 ? value.toString() : value.toFixed(1);
   };
-
-  const validation = calculateValidation(allocations);
 
   return (
     <div className="space-y-6">
@@ -263,16 +280,18 @@ export default function SimpleSectorAllocationForm({
             </div>
             
             {/* Distribute Equally Button at bottom of sector list */}
-            <div className="pt-4 border-t border-gray-200">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={distributeEqually}
-                className="text-xs w-full"
-              >
-                Distribute Equally
-              </Button>
-            </div>
+            {allocations.length > 1 && (
+              <div className="pt-4 border-t border-gray-200">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={distributeEqually}
+                  className="text-xs w-full"
+                >
+                  Distribute Equally
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
