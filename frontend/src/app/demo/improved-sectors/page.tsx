@@ -8,17 +8,18 @@ import { SectorValidation } from '@/types/sector';
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle } from "lucide-react";
 
-interface DemoSectorAllocation {
+interface SectorAllocation {
   id: string;
   code: string;
-  name?: string;
+  name: string;
   percentage: number;
   category?: string;
+  categoryName?: string;
   categoryCode?: string;
 }
 
 export default function ImprovedSectorsDemoPage() {
-  const [allocations, setAllocations] = useState<DemoSectorAllocation[]>([
+  const [allocations, setAllocations] = useState<SectorAllocation[]>([
     {
       id: '1',
       code: '11110',
