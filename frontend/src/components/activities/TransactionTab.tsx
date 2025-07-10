@@ -62,6 +62,24 @@ export default function TransactionTab({
 
   const handleAddTransaction = async (data: TransactionFormData) => {
     try {
+      // Validate required fields before sending
+      if (!data.transaction_type) {
+        toast.error("Transaction type is required");
+        throw new Error("Transaction type is required");
+      }
+      if (!data.value || data.value <= 0) {
+        toast.error("Transaction value must be greater than 0");
+        throw new Error("Transaction value must be greater than 0");
+      }
+      if (!data.transaction_date) {
+        toast.error("Transaction date is required");
+        throw new Error("Transaction date is required");
+      }
+      if (!data.currency) {
+        toast.error("Currency is required");
+        throw new Error("Currency is required");
+      }
+      
       const response = await fetch(`/api/activities/${activityId}/transactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,28 +89,56 @@ export default function TransactionTab({
         })
       });
 
-      if (!response.ok) throw new Error('Failed to add transaction');
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.details || errorData.error || 'Failed to add transaction';
+        console.error('[TransactionTab] Server error:', errorData);
+        throw new Error(errorMessage);
+      }
       
       const newTransaction = await response.json();
       setTransactions(prev => [...prev, newTransaction]);
       
       toast.success("Transaction added successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding transaction:', error);
-      toast.error("Failed to add transaction");
+      toast.error(error.message || "Failed to add transaction");
       throw error;
     }
   };
 
   const handleUpdateTransaction = async (id: string, data: TransactionFormData) => {
     try {
+      // Validate required fields before sending
+      if (!data.transaction_type) {
+        toast.error("Transaction type is required");
+        throw new Error("Transaction type is required");
+      }
+      if (!data.value || data.value <= 0) {
+        toast.error("Transaction value must be greater than 0");
+        throw new Error("Transaction value must be greater than 0");
+      }
+      if (!data.transaction_date) {
+        toast.error("Transaction date is required");
+        throw new Error("Transaction date is required");
+      }
+      if (!data.currency) {
+        toast.error("Currency is required");
+        throw new Error("Currency is required");
+      }
+      
       const response = await fetch(`/api/activities/${activityId}/transactions/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
 
-      if (!response.ok) throw new Error('Failed to update transaction');
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.details || errorData.error || 'Failed to update transaction';
+        console.error('[TransactionTab] Server error:', errorData);
+        throw new Error(errorMessage);
+      }
       
       const updatedTransaction = await response.json();
       setTransactions(prev => 
@@ -100,9 +146,9 @@ export default function TransactionTab({
       );
       
       toast.success("Transaction updated successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating transaction:', error);
-      toast.error("Failed to update transaction");
+      toast.error(error.message || "Failed to update transaction");
       throw error;
     }
   };

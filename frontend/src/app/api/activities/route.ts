@@ -280,35 +280,81 @@ export async function POST(request: Request) {
         // Upsert transactions (update existing, insert new)
         if (body.transactions.length > 0) {
           let transactionsData;
+          const transactionWarnings = [];
+          
           try {
-                      transactionsData = body.transactions.map((transaction: any) => ({
-            uuid: transaction.uuid || transaction.id || undefined, // Let DB generate if not provided
-            activity_id: body.id,
-            organization_id: cleanUUIDValue(body.createdByOrg),
-            transaction_type: transaction.transaction_type || transaction.type,
-            provider_org_name: transaction.provider_org_name || transaction.provider_org || transaction.providerOrg,
-            receiver_org_name: transaction.receiver_org_name || transaction.receiver_org || transaction.receiverOrg,
-            provider_org_id: cleanUUIDValue(transaction.provider_org_id),
-            receiver_org_id: cleanUUIDValue(transaction.receiver_org_id),
-            provider_org_type: transaction.provider_org_type,
-            receiver_org_type: transaction.receiver_org_type,
-            provider_org_ref: transaction.provider_org_ref,
-            receiver_org_ref: transaction.receiver_org_ref,
-            value: transaction.value,
-            currency: transaction.currency || 'USD',
-            status: transaction.status || 'draft',
-            transaction_date: cleanDateValue(transaction.transaction_date || transaction.transactionDate),
-            value_date: cleanDateValue(transaction.value_date),
-            transaction_reference: transaction.transaction_reference,
-            description: transaction.description || transaction.narrative,
-            aid_type: transaction.aidType || transaction.aid_type,
-            tied_status: transaction.tiedStatus || transaction.tied_status,
-            flow_type: transaction.flowType || transaction.flow_type,
-            finance_type: transaction.finance_type,
-            disbursement_channel: transaction.disbursement_channel,
-            is_humanitarian: transaction.is_humanitarian || false,
-            financing_classification: transaction.financing_classification
-          }));
+            transactionsData = body.transactions.map((transaction: any, index: number) => {
+              // Get organization_id with fallback
+              const organizationId = cleanUUIDValue(body.createdByOrg) || cleanUUIDValue(body.user?.organizationId);
+              
+              // Log warning if no organization_id
+              if (!organizationId) {
+                console.warn(`[AIMS] Transaction ${index} has no organization_id. createdByOrg: ${body.createdByOrg}, user.organizationId: ${body.user?.organizationId}`);
+                transactionWarnings.push(`Transaction ${index + 1}: Missing organization ID`);
+              }
+              
+              // Validate required fields
+              const validationErrors = [];
+              if (!transaction.transaction_type && !transaction.type) {
+                validationErrors.push('transaction type');
+              }
+              if (!transaction.value && transaction.value !== 0) {
+                validationErrors.push('value');
+              }
+              if (!transaction.transaction_date && !transaction.transactionDate) {
+                validationErrors.push('transaction date');
+              }
+              if (!transaction.currency) {
+                validationErrors.push('currency');
+              }
+              
+              if (validationErrors.length > 0) {
+                const errorMsg = `Transaction ${index + 1}: Missing required fields: ${validationErrors.join(', ')}`;
+                console.error(`[AIMS] ${errorMsg}`);
+                transactionWarnings.push(errorMsg);
+              }
+              
+              // Log the mapped transaction for debugging
+              const mappedTransaction = {
+                uuid: transaction.uuid || transaction.id || undefined, // Let DB generate if not provided
+                activity_id: body.id,
+                organization_id: organizationId,
+                transaction_type: transaction.transaction_type || transaction.type,
+                provider_org_name: transaction.provider_org_name || transaction.provider_org || transaction.providerOrg,
+                receiver_org_name: transaction.receiver_org_name || transaction.receiver_org || transaction.receiverOrg,
+                provider_org_id: cleanUUIDValue(transaction.provider_org_id),
+                receiver_org_id: cleanUUIDValue(transaction.receiver_org_id),
+                provider_org_type: transaction.provider_org_type,
+                receiver_org_type: transaction.receiver_org_type,
+                provider_org_ref: transaction.provider_org_ref,
+                receiver_org_ref: transaction.receiver_org_ref,
+                value: transaction.value || 0,
+                currency: transaction.currency || 'USD',
+                status: transaction.status || 'draft',
+                transaction_date: cleanDateValue(transaction.transaction_date || transaction.transactionDate),
+                value_date: cleanDateValue(transaction.value_date),
+                transaction_reference: transaction.transaction_reference,
+                description: transaction.description || transaction.narrative,
+                aid_type: transaction.aidType || transaction.aid_type,
+                tied_status: transaction.tiedStatus || transaction.tied_status,
+                flow_type: transaction.flowType || transaction.flow_type,
+                finance_type: transaction.finance_type,
+                disbursement_channel: transaction.disbursement_channel,
+                is_humanitarian: transaction.is_humanitarian || false,
+                financing_classification: transaction.financing_classification,
+                created_by: cleanUUIDValue(body.user?.id)
+              };
+              
+              console.log(`[AIMS] Mapped transaction ${index}:`, {
+                organization_id: mappedTransaction.organization_id,
+                transaction_type: mappedTransaction.transaction_type,
+                value: mappedTransaction.value,
+                currency: mappedTransaction.currency,
+                transaction_date: mappedTransaction.transaction_date
+              });
+              
+              return mappedTransaction;
+            });
           } catch (error: any) {
             return NextResponse.json(
               { error: `Invalid UUID in transaction data: ${error.message}` },
@@ -316,17 +362,40 @@ export async function POST(request: Request) {
             );
           }
 
-          const { error: upsertError } = await getSupabaseAdmin()
-            .from('transactions')
-            .upsert(transactionsData, {
-              onConflict: 'uuid',
-              ignoreDuplicates: false
-            });
-            
-          if (upsertError) {
-            console.error('[AIMS] Error upserting transactions:', upsertError);
-          } else {
-            console.log(`[AIMS] Upserted ${transactionsData.length} transactions`);
+          // Only proceed with transactions that have organization_id
+          const validTransactions = transactionsData.filter((t: any) => t.organization_id);
+          const skippedCount = transactionsData.length - validTransactions.length;
+          
+          if (skippedCount > 0) {
+            console.warn(`[AIMS] Skipping ${skippedCount} transactions due to missing organization_id`);
+            transactionWarnings.push(`${skippedCount} transactions skipped due to missing organization ID`);
+          }
+
+          if (validTransactions.length > 0) {
+            const { data: upsertedData, error: upsertError } = await getSupabaseAdmin()
+              .from('transactions')
+              .upsert(validTransactions, {
+                onConflict: 'uuid',
+                ignoreDuplicates: false
+              })
+              .select();
+              
+            if (upsertError) {
+              console.error('[AIMS] Error upserting transactions:', upsertError);
+              return NextResponse.json(
+                { 
+                  error: 'Failed to save some transactions', 
+                  details: upsertError.message,
+                  warnings: transactionWarnings 
+                },
+                { status: 400 }
+              );
+            } else {
+              console.log(`[AIMS] Successfully upserted ${validTransactions.length} transactions`);
+              if (upsertedData) {
+                console.log('[AIMS] Upserted transaction IDs:', upsertedData.map((t: any) => t.uuid));
+              }
+            }
           }
         }
       } else {
@@ -985,51 +1054,110 @@ export async function POST(request: Request) {
     // Handle transactions - only insert if provided
     if (body.transactions && body.transactions.length > 0) {
       let transactionsData;
+      const transactionWarnings = [];
+      
       try {
-        transactionsData = body.transactions.map((transaction: any) => ({
-          activity_id: newActivity.id,
-          organization_id: cleanUUIDValue(body.createdByOrg),
-          transaction_type: transaction.transaction_type || transaction.type,
-          provider_org_name: transaction.provider_org_name || transaction.provider_org || transaction.providerOrg,
-          receiver_org_name: transaction.receiver_org_name || transaction.receiver_org || transaction.receiverOrg,
-          provider_org_id: cleanUUIDValue(transaction.provider_org_id),
-          receiver_org_id: cleanUUIDValue(transaction.receiver_org_id),
-          provider_org_type: transaction.provider_org_type,
-          receiver_org_type: transaction.receiver_org_type,
-          provider_org_ref: transaction.provider_org_ref,
-          receiver_org_ref: transaction.receiver_org_ref,
-          value: transaction.value,
-          currency: transaction.currency || 'USD',
-          status: transaction.status || 'draft',
-          transaction_date: cleanDateValue(transaction.transaction_date || transaction.transactionDate),
-          value_date: cleanDateValue(transaction.value_date),
-          transaction_reference: transaction.transaction_reference,
-          description: transaction.description || transaction.narrative,
-          aid_type: transaction.aidType || transaction.aid_type,
-          tied_status: transaction.tiedStatus || transaction.tied_status,
-          flow_type: transaction.flowType || transaction.flow_type,
-          finance_type: transaction.finance_type,
-          disbursement_channel: transaction.disbursement_channel,
-          is_humanitarian: transaction.is_humanitarian || false,
-          financing_classification: transaction.financing_classification,
-          created_by: cleanUUIDValue(body.user?.id)
-        }));
+        transactionsData = body.transactions.map((transaction: any, index: number) => {
+          // Get organization_id with fallback
+          const organizationId = cleanUUIDValue(body.createdByOrg) || 
+                                cleanUUIDValue(body.user?.organizationId) || 
+                                cleanUUIDValue(insertData.reporting_org_id);
+          
+          // Log warning if no organization_id
+          if (!organizationId) {
+            console.warn(`[AIMS] Transaction ${index} has no organization_id. createdByOrg: ${body.createdByOrg}, user.organizationId: ${body.user?.organizationId}`);
+            transactionWarnings.push(`Transaction ${index + 1}: Missing organization ID`);
+          }
+          
+          // Validate required fields
+          const validationErrors = [];
+          if (!transaction.transaction_type && !transaction.type) {
+            validationErrors.push('transaction type');
+          }
+          if (!transaction.value && transaction.value !== 0) {
+            validationErrors.push('value');
+          }
+          if (!transaction.transaction_date && !transaction.transactionDate) {
+            validationErrors.push('transaction date');
+          }
+          if (!transaction.currency) {
+            validationErrors.push('currency');
+          }
+          
+          if (validationErrors.length > 0) {
+            const errorMsg = `Transaction ${index + 1}: Missing required fields: ${validationErrors.join(', ')}`;
+            console.error(`[AIMS] ${errorMsg}`);
+            transactionWarnings.push(errorMsg);
+          }
+          
+          return {
+            activity_id: newActivity.id,
+            organization_id: organizationId,
+            transaction_type: transaction.transaction_type || transaction.type,
+            provider_org_name: transaction.provider_org_name || transaction.provider_org || transaction.providerOrg,
+            receiver_org_name: transaction.receiver_org_name || transaction.receiver_org || transaction.receiverOrg,
+            provider_org_id: cleanUUIDValue(transaction.provider_org_id),
+            receiver_org_id: cleanUUIDValue(transaction.receiver_org_id),
+            provider_org_type: transaction.provider_org_type,
+            receiver_org_type: transaction.receiver_org_type,
+            provider_org_ref: transaction.provider_org_ref,
+            receiver_org_ref: transaction.receiver_org_ref,
+            value: transaction.value || 0,
+            currency: transaction.currency || 'USD',
+            status: transaction.status || 'draft',
+            transaction_date: cleanDateValue(transaction.transaction_date || transaction.transactionDate),
+            value_date: cleanDateValue(transaction.value_date),
+            transaction_reference: transaction.transaction_reference,
+            description: transaction.description || transaction.narrative,
+            aid_type: transaction.aidType || transaction.aid_type,
+            tied_status: transaction.tiedStatus || transaction.tied_status,
+            flow_type: transaction.flowType || transaction.flow_type,
+            finance_type: transaction.finance_type,
+            disbursement_channel: transaction.disbursement_channel,
+            is_humanitarian: transaction.is_humanitarian || false,
+            financing_classification: transaction.financing_classification,
+            created_by: cleanUUIDValue(body.user?.id)
+          };
+        });
       } catch (error: any) {
         console.error('[AIMS] Error preparing transaction data:', error);
         // Don't fail the entire activity creation, just skip transactions
         transactionsData = [];
       }
 
-      if (transactionsData && transactionsData.length > 0) {
-        const { error: insertError } = await getSupabaseAdmin()
+      // Only proceed with transactions that have organization_id
+      const validTransactions = transactionsData.filter((t: any) => t.organization_id);
+      const skippedCount = transactionsData.length - validTransactions.length;
+      
+      if (skippedCount > 0) {
+        console.warn(`[AIMS] Skipping ${skippedCount} transactions due to missing organization_id`);
+        transactionWarnings.push(`${skippedCount} transactions skipped due to missing organization ID`);
+      }
+
+      if (validTransactions.length > 0) {
+        const { data: insertedData, error: insertError } = await getSupabaseAdmin()
           .from('transactions')
-          .insert(transactionsData);
+          .insert(validTransactions)
+          .select();
           
         if (insertError) {
           console.error('[AIMS] Error inserting transactions:', insertError);
+          console.error('[AIMS] Transaction insert error details:', {
+            code: insertError.code,
+            message: insertError.message,
+            details: insertError.details,
+            hint: insertError.hint
+          });
         } else {
-          console.log(`[AIMS] Inserted ${transactionsData.length} transactions for new activity`);
+          console.log(`[AIMS] Successfully inserted ${validTransactions.length} transactions for new activity`);
+          if (insertedData) {
+            console.log('[AIMS] Inserted transaction IDs:', insertedData.map((t: any) => t.uuid));
+          }
         }
+      }
+      
+      if (transactionWarnings.length > 0) {
+        console.warn('[AIMS] Transaction warnings:', transactionWarnings);
       }
     }
 
