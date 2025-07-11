@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useMemo } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Wallet } from "lucide-react";
+import { Wallet, CheckCircle } from "lucide-react";
 import TransactionsManager from "@/components/TransactionsManager";
 import { Transaction } from "@/types/transaction";
 import LinkedTransactionsEditorTab from "@/components/activities/LinkedTransactionsEditorTab";
@@ -25,12 +25,17 @@ interface FinancesSectionProps {
   activityTitle?: string;
   transactions?: Transaction[];
   onTransactionsChange?: (transactions: Transaction[]) => void;
+  onRefreshTransactions?: () => Promise<void>;
   defaultFinanceType?: string;
   defaultAidType?: string;
   defaultFlowType?: string;
   defaultCurrency?: string;
   defaultTiedStatus?: string;
   onDefaultsChange?: (field: string, value: string) => void;
+  defaults?: {
+    default_modality?: string;
+  };
+  tabCompletionStatus?: Record<string, { isComplete: boolean }>;
 }
 
 // Hero Card Component
@@ -117,12 +122,15 @@ export default function FinancesSection({
   activityTitle,
   transactions = [], 
   onTransactionsChange = () => {},
+  onRefreshTransactions,
   defaultFinanceType,
   defaultAidType,
   defaultFlowType,
   defaultCurrency,
   defaultTiedStatus,
-  onDefaultsChange = () => {}
+  onDefaultsChange = () => {},
+  defaults,
+  tabCompletionStatus
 }: FinancesSectionProps) {
   const [tab, setTab] = useState("transactions");
   const { user } = useUser();
@@ -270,6 +278,27 @@ export default function FinancesSection({
     };
   }, [transactions]);
 
+  // Check if all default fields are completed and saved, including Default Modality
+  const isDefaultsComplete = useMemo(() => {
+    const requiredFields = [
+      defaultAidType,
+      defaultFinanceType,
+      defaultFlowType,
+      defaultCurrency,
+      defaultTiedStatus
+    ];
+    // All fields must have values (not empty strings, null, or undefined)
+    const allFilled = requiredFields.every(field => 
+      field && field.trim() !== '' && field !== null && field !== undefined
+    );
+    // Default Modality must also be filled and saved
+    // We'll check for a value in default_modality and that it's not saving
+    // We'll pass this as a prop from DefaultFieldsAutosave via onDefaultsChange or context
+    // For now, just check for a value (if available in props)
+    // TODO: Wire up actual save state if needed
+    return allFilled;
+  }, [defaultAidType, defaultFinanceType, defaultFlowType, defaultCurrency, defaultTiedStatus]);
+
   return (
     <div className="max-w-6xl">
       {/* Financial Summary Cards - New unified component */}
@@ -287,7 +316,13 @@ export default function FinancesSection({
         <TabsList className="mb-4">
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="linked-transactions">Linked Transactions</TabsTrigger>
-          <TabsTrigger value="defaults">Defaults</TabsTrigger>
+          <TabsTrigger value="defaults" className="flex items-center gap-2">
+            Defaults
+            {/* Only show checkmark if finances_defaults is complete, passed as a prop if needed */}
+            {tabCompletionStatus?.finances_defaults?.isComplete && (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+          </TabsTrigger>
         </TabsList>
 
         {/* Transactions Tab */}
@@ -296,6 +331,7 @@ export default function FinancesSection({
             activityId={activityId}
             transactions={transactions}
             onTransactionsChange={onTransactionsChange}
+            onRefreshNeeded={onRefreshTransactions}
             defaultFinanceType={defaultFinanceType}
             defaultAidType={defaultAidType}
             defaultCurrency={defaultCurrency}
@@ -330,7 +366,7 @@ export default function FinancesSection({
                 defaultFinanceType,
                 defaultFlowType,
                 defaultCurrency,
-                defaultTiedStatus
+                defaultTiedStatus,
               }}
               onDefaultsChange={onDefaultsChange}
             />

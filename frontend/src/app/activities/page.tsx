@@ -278,22 +278,28 @@ function ActivitiesPageContent() {
   };
 
   const getCreatorOrganization = (activity: Activity): string => {
-    // First, check if we have the organization name directly on the activity
+    // Prefer acronym from activity fields if present
     if (activity.created_by_org_acronym) {
       return activity.created_by_org_acronym;
     }
+
+    // Try to look up by ID in organizations list for acronym
+    if (activity.createdByOrg) {
+      const org = organizations.find(o => o.id === activity.createdByOrg);
+      if (org && org.acronym) {
+        return org.acronym;
+      }
+      if (org && org.name) {
+        return org.name;
+      }
+    }
+
+    // Fallback to name from activity fields
     if (activity.created_by_org_name) {
       return activity.created_by_org_name;
     }
-    
-    // Fallback to looking up by ID if we don't have the name
-    if (!activity.createdByOrg) return "Unknown";
-    
-    const org = organizations.find(o => o.id === activity.createdByOrg);
-    if (!org) return "Unknown";
-    
-    // Return only the acronym
-    return org.acronym || org.name;
+
+    return "Unknown";
   };
 
   // AbortController ref for canceling requests
@@ -532,7 +538,7 @@ function ActivitiesPageContent() {
         "Activity Status": activity.activityStatus || activity.status || "",
         "Submission Status": activity.submissionStatus || "draft",
         "Publication Status": activity.publicationStatus || "draft",
-        "Reported By Organization": activity.created_by_org_name || "",
+        "Reported by Organization": activity.created_by_org_name || "",
           "Organization Acronym": activity.created_by_org_acronym || "",
         "Target Groups": activity.targetGroups || "",
         "Collaboration Type": activity.collaborationType || "",
@@ -878,7 +884,7 @@ function ActivitiesPageContent() {
                       onClick={() => handleSort('createdBy')}
                     >
                       <div className="flex items-center gap-1">
-                        Reported By
+                        Reported by
                         {getSortIcon('createdBy')}
                       </div>
                     </th>

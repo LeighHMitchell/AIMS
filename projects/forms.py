@@ -20,6 +20,7 @@ class AidProjectForm(forms.ModelForm):
             'sub_national_location', 'sector', 'collaboration_type',
             'total_budget', 'funding_amount', 'currency', 'default_flow_type',
             'default_finance_type', 'default_aid_type', 'default_tied_status',
+            'default_modality', 'default_modality_override',
             'target_beneficiaries', 'actual_beneficiaries', 'results_description',
             'impact_assessment', 'contact_info', 'document_link', 'partner_activity_id'
         ]

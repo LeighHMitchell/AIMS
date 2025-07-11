@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 // Helper function to check user permissions
 async function checkUserPermissions(userId: string, organizationId?: string) {
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!supabaseAdmin) return false;
+  
   // Get user info
   const { data: user, error: userError } = await supabaseAdmin
     .from('users')
@@ -23,6 +22,9 @@ async function checkUserPermissions(userId: string, organizationId?: string) {
 
   // For specific organization, check if user belongs to it
   if (organizationId) {
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return false;
+    
     const { data: userOrg, error: orgError } = await supabaseAdmin
       .from('user_organizations')
       .select('user_id')
@@ -39,6 +41,14 @@ async function checkUserPermissions(userId: string, organizationId?: string) {
 // GET - Fetch strategies
 export async function GET(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 503 }
+      );
+    }
+    
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId');
     const publicOnly = searchParams.get('publicOnly') === 'true';
@@ -196,6 +206,14 @@ export async function POST(request: NextRequest) {
 // PUT - Update strategy
 export async function PUT(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 503 }
+      );
+    }
+    
     const body = await request.json();
     const { id, userId, ...updateData } = body;
 
@@ -255,6 +273,14 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete strategy
 export async function DELETE(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 503 }
+      );
+    }
+    
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const userId = searchParams.get('userId');

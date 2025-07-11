@@ -53,8 +53,8 @@ interface TransactionListProps {
   organizations?: any[];
   activityId: string;
   onAdd?: (transaction: TransactionFormData) => Promise<void>;
-  onUpdate?: (id: string, transaction: TransactionFormData) => Promise<void>;
-  onDelete?: (id: string) => Promise<void>;
+  onUpdate?: (uuid: string, transaction: TransactionFormData) => Promise<void>;
+  onDelete?: (uuid: string) => Promise<void>;
   readOnly?: boolean;
   currency?: string;
   defaultFinanceType?: string;
@@ -132,26 +132,24 @@ export default function TransactionList({
     return stats;
   }, [transactions, currency]);
 
-  // Sort transactions
-  const sortedTransactions = React.useMemo(() => {
-    return [...transactions].sort((a, b) => {
-      let aValue: any = a[sortField];
-      let bValue: any = b[sortField];
-
-      // Handle null/undefined values
-      if (aValue == null) aValue = '';
-      if (bValue == null) bValue = '';
-
-      // Convert to lowercase for string comparison
-      if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-      if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-
-      // Compare values
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [transactions, sortField, sortDirection]);
+  // Custom sort order for transaction types
+  const TRANSACTION_TYPE_SORT_ORDER = ['12', '2', '3', '4'];
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    const aTypeIdx = TRANSACTION_TYPE_SORT_ORDER.indexOf(a.transaction_type);
+    const bTypeIdx = TRANSACTION_TYPE_SORT_ORDER.indexOf(b.transaction_type);
+    if (aTypeIdx !== -1 && bTypeIdx !== -1) {
+      // Both are in the preferred order, sort by order then date
+      if (aTypeIdx !== bTypeIdx) return aTypeIdx - bTypeIdx;
+      return new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime();
+    } else if (aTypeIdx !== -1) {
+      return -1;
+    } else if (bTypeIdx !== -1) {
+      return 1;
+    } else {
+      // Neither is in the preferred order, sort by date
+      return new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime();
+    }
+  });
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -175,7 +173,7 @@ export default function TransactionList({
     setIsLoading(true);
     try {
       if (editingTransaction) {
-        await onUpdate?.(editingTransaction.id, data);
+        await onUpdate?.(editingTransaction.uuid || editingTransaction.id, data);
       } else {
         await onAdd?.(data);
       }
@@ -194,11 +192,20 @@ export default function TransactionList({
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (uuid: string) => {
+    console.log('[TransactionList] handleDelete called with UUID:', uuid, 'Type:', typeof uuid);
+    
+    // Additional validation to prevent undefined UUIDs
+    if (!uuid || uuid === 'undefined' || uuid === undefined) {
+      console.error('[TransactionList] Invalid transaction UUID for deletion:', uuid);
+      alert('Cannot delete transaction: Invalid transaction UUID');
+      return;
+    }
+    
     if (window.confirm('Are you sure you want to delete this transaction?')) {
       setIsLoading(true);
       try {
-        await onDelete?.(id);
+        await onDelete?.(uuid);
       } catch (error) {
         console.error('Error deleting transaction:', error);
       } finally {
@@ -220,6 +227,28 @@ export default function TransactionList({
     const isIncoming = ['1', '12'].includes(type);
     return isIncoming ? 'text-green-600' : 'text-blue-600';
   };
+
+  // Helper to get org acronym or name by ID
+  const getOrgAcronymOrName = (orgId: string | undefined, fallbackName?: string) => {
+    if (!orgId) return fallbackName;
+    const org = organizations.find((o: any) => o.id === orgId);
+    if (org) {
+      return org.acronym || org.name;
+    }
+    return fallbackName;
+  };
+
+  // Debug logging to diagnose acronym issue
+  console.log('Organizations prop:', organizations);
+
+  // Filter out transactions without a valid identifier
+  const validTransactions = transactions.filter(t => {
+    const isValid = (t.uuid && t.uuid !== 'undefined') || (t.id && t.id !== 'undefined');
+    if (!isValid) {
+      console.warn('[TransactionList] Transaction without valid identifier found:', t);
+    }
+    return isValid;
+  });
 
   return (
     <>
@@ -387,9 +416,11 @@ export default function TransactionList({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedTransactions.map((transaction) => (
+                  {validTransactions.map((transaction) => {
+                    console.log('Transaction provider_org_id:', transaction.provider_org_id, 'receiver_org_id:', transaction.receiver_org_id);
+                    return (
                     <TableRow 
-                      key={transaction.id} 
+                      key={transaction.uuid || transaction.id} 
                       className={`hover:bg-gray-50 ${!transaction.created_by ? 'bg-blue-50/50' : ''}`}
                     >
                       <TableCell className="font-medium">
@@ -409,7 +440,7 @@ export default function TransactionList({
                       <TableCell>
                         <div className="max-w-[200px]">
                           <p className="truncate text-base">
-                            {transaction.provider_org_name || <span className="text-gray-400 font-normal">Not specified</span>}
+                            {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name) || <span className="text-gray-400 font-normal">Not specified</span>}
                           </p>
                           {transaction.provider_org_ref && (
                             <p className="text-xs text-gray-500 truncate">{transaction.provider_org_ref}</p>
@@ -419,7 +450,7 @@ export default function TransactionList({
                       <TableCell>
                         <div className="max-w-[200px]">
                           <p className="truncate text-base">
-                            {transaction.receiver_org_name || <span className="text-gray-400 font-normal">Not specified</span>}
+                            {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name) || <span className="text-gray-400 font-normal">Not specified</span>}
                           </p>
                           {transaction.receiver_org_ref && (
                             <p className="text-xs text-gray-500 truncate">{transaction.receiver_org_ref}</p>
@@ -433,7 +464,7 @@ export default function TransactionList({
                       </TableCell>
                       <TableCell className="text-center w-16 px-2">
                         <TransactionDocumentIndicator 
-                          transactionId={transaction.id} 
+                          transactionId={transaction.uuid || transaction.id} 
                           compactView={true}
                         />
                       </TableCell>
@@ -443,10 +474,10 @@ export default function TransactionList({
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="flex justify-center items-center h-full">
-                                  {transaction.status === 'actual' ? (
+                                  {transaction.status === 'published' ? (
                                     <>
                                       <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                                      <span className="sr-only">Actual Transaction</span>
+                                      <span className="sr-only">Published Transaction</span>
                                     </>
                                   ) : (
                                     <>
@@ -457,7 +488,7 @@ export default function TransactionList({
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
-                                {transaction.status === 'actual' ? 'Actual Transaction' : 'Draft Transaction'}
+                                {transaction.status === 'published' ? 'Published Transaction' : 'Draft Transaction'}
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -487,7 +518,20 @@ export default function TransactionList({
                                 Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem 
-                                onClick={() => handleDelete(transaction.id)}
+                                onClick={() => {
+                                  console.log('[TransactionList] Delete button clicked for transaction:', {
+                                    id: transaction.id,
+                                    uuid: transaction.uuid,
+                                    transaction_reference: transaction.transaction_reference,
+                                    hasValidUuid: !!transaction.uuid && transaction.uuid !== 'undefined'
+                                  });
+                                  if (!transaction.uuid || transaction.uuid === 'undefined') {
+                                    console.error('[TransactionList] Cannot delete transaction with invalid UUID:', transaction);
+                                    alert('Cannot delete transaction: Invalid transaction UUID');
+                                    return;
+                                  }
+                                  handleDelete(transaction.uuid);
+                                }}
                                 className="text-red-600"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
@@ -498,7 +542,8 @@ export default function TransactionList({
                         </TableCell>
                       )}
                     </TableRow>
-                  ))}
+                  );
+                  })}
                 </TableBody>
               </Table>
             </div>

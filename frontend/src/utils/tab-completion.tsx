@@ -107,14 +107,68 @@ export function checkGeneralTabCompletion(
   }
 }
 
+export interface FinancesTabData {
+  default_aid_type?: string | null;
+  default_finance_type?: string | null;
+  default_flow_type?: string | null;
+  default_currency?: string | null;
+  default_tied_status?: string | null;
+  hasUnsavedChanges?: boolean; // must be false for completion
+}
+
+/**
+ * Check if the Finances/Defaults tab is complete: all fields filled AND saved (no unsaved changes)
+ */
+export function checkFinancesTabCompletion(
+  finances: FinancesTabData
+): TabCompletionStatus {
+  const completedFields: string[] = [];
+  const missingFields: string[] = [];
+
+  if (finances.default_aid_type) {
+    completedFields.push('default_aid_type');
+  } else {
+    missingFields.push('default_aid_type');
+  }
+  if (finances.default_finance_type) {
+    completedFields.push('default_finance_type');
+  } else {
+    missingFields.push('default_finance_type');
+  }
+  if (finances.default_flow_type) {
+    completedFields.push('default_flow_type');
+  } else {
+    missingFields.push('default_flow_type');
+  }
+  if (finances.default_currency) {
+    completedFields.push('default_currency');
+  } else {
+    missingFields.push('default_currency');
+  }
+  if (finances.default_tied_status) {
+    completedFields.push('default_tied_status');
+  } else {
+    missingFields.push('default_tied_status');
+  }
+
+  // All fields must be filled AND no unsaved changes
+  const isComplete = missingFields.length === 0 && finances.hasUnsavedChanges === false;
+
+  return {
+    isComplete,
+    completedFields,
+    missingFields
+  };
+}
+
 /**
  * Get completion status for all tabs
  * Currently only implements General tab - can be extended for other tabs
  */
 export function getTabCompletionStatus(
   sectionId: string,
-  general: GeneralTabData,
-  getDateFieldStatus: () => {
+  data: any,
+  getDateFieldStatus?: () => {
     plannedStartDate: boolean
     plannedEndDate: boolean
     actualStartDate: boolean
@@ -123,10 +177,12 @@ export function getTabCompletionStatus(
 ): TabCompletionStatus | null {
   switch (sectionId) {
     case 'general':
-      return checkGeneralTabCompletion(general, getDateFieldStatus)
+      return checkGeneralTabCompletion(data, getDateFieldStatus!);
+    case 'finances':
+      return checkFinancesTabCompletion(data);
     // Add other tabs here as needed
     default:
-      return null
+      return null;
   }
 }
 

@@ -21,7 +21,7 @@ CREATE TABLE transaction_documents (
   uploaded_by UUID REFERENCES auth.users(id),
   
   -- Constraints
-  CONSTRAINT transaction_documents_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+  CONSTRAINT transaction_documents_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES transactions(uuid) ON DELETE CASCADE,
   CONSTRAINT transaction_documents_activity_id_fkey FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE,
   CONSTRAINT transaction_documents_file_or_url CHECK (
     (file_url IS NOT NULL AND external_url IS NULL) OR 
@@ -49,8 +49,10 @@ USING (
     LEFT JOIN activity_contributors ac ON a.id = ac.activity_id
     WHERE 
       a.created_by = auth.uid() OR
-      ac.user_id = auth.uid() OR
-      a.published = true
+      ac.organization_id IN (
+        SELECT organization_id FROM users WHERE id = auth.uid()
+      ) OR
+      a.publication_status = 'published'
   )
 );
 
@@ -64,7 +66,9 @@ WITH CHECK (
     LEFT JOIN activity_contributors ac ON a.id = ac.activity_id
     WHERE 
       a.created_by = auth.uid() OR
-      (ac.user_id = auth.uid() AND ac.role IN ('editor', 'admin'))
+      ac.organization_id IN (
+        SELECT organization_id FROM users WHERE id = auth.uid()
+      )
   )
 );
 
@@ -78,7 +82,9 @@ USING (
     LEFT JOIN activity_contributors ac ON a.id = ac.activity_id
     WHERE 
       a.created_by = auth.uid() OR
-      (ac.user_id = auth.uid() AND ac.role IN ('editor', 'admin'))
+      ac.organization_id IN (
+        SELECT organization_id FROM users WHERE id = auth.uid()
+      )
   )
 );
 
@@ -92,7 +98,9 @@ USING (
     LEFT JOIN activity_contributors ac ON a.id = ac.activity_id
     WHERE 
       a.created_by = auth.uid() OR
-      (ac.user_id = auth.uid() AND ac.role = 'admin')
+      ac.organization_id IN (
+        SELECT organization_id FROM users WHERE id = auth.uid()
+      )
   )
 );
 
@@ -147,16 +155,16 @@ ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'transaction-documents' AND
   (
-    -- Extract activity ID from the path (format: transaction-id/filename)
+    -- Extract transaction ID from the path (format: transaction-id/filename)
     substring(name from '^([^/]+)') IN (
-      SELECT t.id::text FROM transactions t
-      JOIN activities a ON a.id::text = ANY(
-        SELECT regexp_split_to_array(name, '/')
-      )
+      SELECT t.uuid::text FROM transactions t
+      JOIN activities a ON t.activity_id = a.id
       LEFT JOIN activity_contributors ac ON a.id = ac.activity_id
       WHERE 
         a.created_by = auth.uid() OR
-        (ac.user_id = auth.uid() AND ac.role IN ('editor', 'admin'))
+        ac.organization_id IN (
+          SELECT organization_id FROM users WHERE id = auth.uid()
+        )
     )
   )
 );
@@ -168,15 +176,15 @@ USING (
   bucket_id = 'transaction-documents' AND
   (
     substring(name from '^([^/]+)') IN (
-      SELECT t.id::text FROM transactions t
-      JOIN activities a ON a.id::text = ANY(
-        SELECT regexp_split_to_array(name, '/')
-      )
+      SELECT t.uuid::text FROM transactions t
+      JOIN activities a ON t.activity_id = a.id
       LEFT JOIN activity_contributors ac ON a.id = ac.activity_id
       WHERE 
         a.created_by = auth.uid() OR
-        ac.user_id = auth.uid() OR
-        a.published = true
+        ac.organization_id IN (
+          SELECT organization_id FROM users WHERE id = auth.uid()
+        ) OR
+        a.publication_status = 'published'
     )
   )
 );
@@ -187,16 +195,15 @@ ON storage.objects FOR DELETE
 USING (
   bucket_id = 'transaction-documents' AND
   (
-    owner = auth.uid() OR
     substring(name from '^([^/]+)') IN (
-      SELECT t.id::text FROM transactions t
-      JOIN activities a ON a.id::text = ANY(
-        SELECT regexp_split_to_array(name, '/')
-      )
+      SELECT t.uuid::text FROM transactions t
+      JOIN activities a ON t.activity_id = a.id
       LEFT JOIN activity_contributors ac ON a.id = ac.activity_id
       WHERE 
         a.created_by = auth.uid() OR
-        (ac.user_id = auth.uid() AND ac.role = 'admin')
+        ac.organization_id IN (
+          SELECT organization_id FROM users WHERE id = auth.uid()
+        )
     )
   )
 );

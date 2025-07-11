@@ -268,6 +268,38 @@ export async function POST(request: NextRequest) {
     }
     */
 
+    // Auto-generate transaction reference if not provided or empty
+    let transactionReference = body.transaction_reference?.trim() || '';
+    
+    if (!transactionReference) {
+      try {
+        console.log('[Transactions API] Auto-generating transaction reference for activity:', body.activity_id);
+        
+        const { data: refData, error: refError } = await getSupabaseAdmin()
+          .rpc('generate_unique_transaction_reference', {
+            p_activity_id: body.activity_id,
+            p_base_reference: null
+          });
+        
+        if (refError) {
+          console.error('[Transactions API] Error generating transaction reference:', refError);
+          return NextResponse.json(
+            { error: 'Failed to generate transaction reference' },
+            { status: 500 }
+          );
+        }
+        
+        transactionReference = refData;
+        console.log('[Transactions API] Generated transaction reference:', transactionReference);
+      } catch (refGenError) {
+        console.error('[Transactions API] Exception generating transaction reference:', refGenError);
+        return NextResponse.json(
+          { error: 'Failed to generate transaction reference' },
+          { status: 500 }
+        );
+      }
+    }
+
     // tied_status mapping - database hasn't been migrated yet, so map to current enum values
     // Frontend sends IATI standard: '1'=Tied, '2'=Partially tied, '3'=Untied, '4'=Not reported
     // Database currently expects: '3'=Untied, '4'=Tied, '5'=Partially tied
@@ -289,21 +321,21 @@ export async function POST(request: NextRequest) {
     const transactionData: any = {
       activity_id: body.activity_id,
       transaction_type: cleanEnumValue(body.transaction_type),
-      provider_org_name: body.provider_org_name || null,
-      receiver_org_name: body.receiver_org_name || null,
+      provider_org_name: body.provider_org_name ?? '',
+      receiver_org_name: body.receiver_org_name ?? '',
       provider_org_id: cleanUUIDValue(body.provider_org_id),
       receiver_org_id: cleanUUIDValue(body.receiver_org_id),
       provider_org_type: cleanEnumValue(body.provider_org_type),
       receiver_org_type: cleanEnumValue(body.receiver_org_type),
-      provider_org_ref: body.provider_org_ref || null,
-      receiver_org_ref: body.receiver_org_ref || null,
+      provider_org_ref: body.provider_org_ref ?? '',
+      receiver_org_ref: body.receiver_org_ref ?? '',
       value: parseFloat(body.value?.toString() || '0') || 0,
       currency: body.currency || 'USD',
       status: body.status || 'actual',
       transaction_date: cleanDateValue(body.transaction_date) || new Date().toISOString().split('T')[0],
-      value_date: cleanDateValue(body.value_date),
-      transaction_reference: body.transaction_reference || null,
-      description: body.description || null,
+      value_date: cleanDateValue(body.value_date), // null if empty
+      transaction_reference: transactionReference,
+      description: body.description ?? '',
       aid_type: cleanEnumValue(body.aid_type),
       tied_status: mappedTiedStatus, // Use mapped value for current database
       flow_type: cleanEnumValue(body.flow_type),
@@ -311,7 +343,14 @@ export async function POST(request: NextRequest) {
       disbursement_channel: cleanEnumValue(body.disbursement_channel),
       is_humanitarian: body.is_humanitarian || false,
       financing_classification: body.financing_classification || null,
-      created_by: cleanUUIDValue(body.created_by)
+      created_by: cleanUUIDValue(body.created_by),
+      sector_code: body.sector_code ?? '',
+      sector_vocabulary: body.sector_vocabulary ?? '',
+      recipient_country_code: body.recipient_country_code ?? '',
+      recipient_region_code: body.recipient_region_code ?? '',
+      recipient_region_vocab: body.recipient_region_vocab ?? '',
+      aid_type_vocabulary: body.aid_type_vocabulary ?? '',
+      activity_iati_ref: body.activity_iati_ref ?? ''
     };
 
     console.log('[Transactions API] Inserting transaction:', transactionData);
@@ -324,6 +363,18 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[Transactions API] Error inserting transaction:', error);
+      
+      // Enhanced error handling for unique constraint violations
+      if (error.message && error.message.includes('unique_transaction_ref')) {
+        return NextResponse.json(
+          { 
+            error: 'Transaction reference already exists. Please provide a unique reference or leave blank for auto-generation.',
+            details: 'The transaction reference must be unique within this activity.'
+          },
+          { status: 409 }
+        );
+      }
+      
       return NextResponse.json(
         { error: error.message || 'Failed to save transaction' },
         { status: 500 }
@@ -378,6 +429,60 @@ export async function PUT(request: NextRequest) {
     }
     */
 
+    // Handle transaction reference - if empty, keep the existing reference to avoid unique constraint issues
+    let transactionReference = body.transaction_reference?.trim() || '';
+    
+    // Get the current transaction to check for reference changes
+    const { data: currentTransaction, error: fetchError } = await getSupabaseAdmin()
+      .from('transactions')
+      .select('transaction_reference, activity_id')
+      .eq('uuid', transactionId)
+      .single();
+    
+    if (fetchError) {
+      console.error('[Transactions API] Error fetching current transaction:', fetchError);
+      return NextResponse.json(
+        { error: 'Failed to fetch current transaction' },
+        { status: 500 }
+      );
+    }
+    
+    if (!transactionReference) {
+      // For updates, we need to keep the existing reference if it's empty
+      transactionReference = currentTransaction?.transaction_reference || null;
+    } else {
+      // Check if the new reference is different from the current one
+      // If it's the same, we don't need to validate uniqueness
+      if (transactionReference !== currentTransaction?.transaction_reference) {
+        // Check if the new reference conflicts with another transaction in the same activity
+        const { data: conflictingTransaction, error: conflictError } = await getSupabaseAdmin()
+          .from('transactions')
+          .select('uuid')
+          .eq('transaction_reference', transactionReference)
+          .eq('activity_id', currentTransaction.activity_id)
+          .neq('uuid', transactionId) // Exclude the current transaction
+          .single();
+        
+        if (conflictError && conflictError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+          console.error('[Transactions API] Error checking for reference conflicts:', conflictError);
+          return NextResponse.json(
+            { error: 'Failed to validate transaction reference' },
+            { status: 500 }
+          );
+        }
+        
+        if (conflictingTransaction) {
+          return NextResponse.json(
+            { 
+              error: 'Transaction reference already exists. Please provide a unique reference or leave blank for auto-generation.',
+              details: 'The transaction reference must be unique within this activity.'
+            },
+            { status: 409 }
+          );
+        }
+      }
+    }
+
     // Prepare update data (exclude id, uuid and timestamps)
     const { id, uuid, created_at, updated_at, ...updateData } = body;
 
@@ -385,6 +490,7 @@ export async function PUT(request: NextRequest) {
     const cleanedData: any = {
       ...updateData,
       transaction_type: cleanEnumValue(updateData.transaction_type),
+      transaction_reference: transactionReference,
       provider_org_id: cleanUUIDValue(updateData.provider_org_id),
       receiver_org_id: cleanUUIDValue(updateData.receiver_org_id),
       provider_org_type: cleanEnumValue(updateData.provider_org_type),
@@ -419,6 +525,18 @@ export async function PUT(request: NextRequest) {
 
     if (error) {
       console.error('[Transactions API] Error updating transaction:', error);
+      
+      // Enhanced error handling for unique constraint violations
+      if (error.message && error.message.includes('unique_transaction_ref')) {
+        return NextResponse.json(
+          { 
+            error: 'Transaction reference already exists. Please provide a unique reference or leave blank for auto-generation.',
+            details: 'The transaction reference must be unique within this activity.'
+          },
+          { status: 409 }
+        );
+      }
+      
       return NextResponse.json(
         { error: error.message || 'Failed to update transaction' },
         { status: 500 }
@@ -448,14 +566,25 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id') || searchParams.get('uuid'); // Support both for compatibility
 
-    if (!id) {
+    if (!id || id === 'undefined') {
+      console.error('[Transactions API] DELETE request with invalid ID:', id);
       return NextResponse.json(
-        { error: 'Transaction ID is required' },
+        { error: 'Valid transaction ID is required' },
         { status: 400 }
       );
     }
 
     console.log('[Transactions API] DELETE request for transaction:', id);
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      console.error('[Transactions API] Invalid UUID format:', id);
+      return NextResponse.json(
+        { error: 'Invalid transaction ID format' },
+        { status: 400 }
+      );
+    }
 
     const { error } = await getSupabaseAdmin()
       .from('transactions')

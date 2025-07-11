@@ -160,11 +160,13 @@ const DISBURSEMENT_CHANNEL_LABELS: Record<string, { short: string; full: string 
 
 interface TransactionData {
   id: string;
+  uuid?: string;
   activity_id?: string;
   activity?: {
     id: string;
     title: string;
     iati_id?: string;
+    title_narrative?: string;
   };
   provider_org_name?: string;
   provider_org_ref?: string;
@@ -363,41 +365,20 @@ export function TransactionTable({
                 {getSortIcon("value")}
               </div>
             </th>
-            {variant === "full" ? (
-              <>
-                <th 
-                  className="hidden xl:table-cell px-4 py-2 text-left text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200 w-[8%]"
-                  onClick={() => onSort("finance_type")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Finance Type</span>
-                    {getSortIcon("finance_type")}
-                  </div>
-                </th>
-                <th 
-                  className="hidden 2xl:table-cell px-4 py-2 text-left text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200 w-[10%]"
-                  onClick={() => onSort("disbursement_channel")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Disbursement Channel</span>
-                    {getSortIcon("disbursement_channel")}
-                  </div>
-                </th>
-                <th 
-                  className="px-4 py-2 text-center text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200 w-[12%]"
-                  onClick={() => onSort("aid_type")}
-                >
-                  <div className="flex items-center justify-center gap-1">
-                    <span>Aid Modality</span>
-                    {getSortIcon("aid_type")}
-                  </div>
-                </th>
-              </>
-            ) : (
-              <th className="px-4 py-2 text-left text-sm font-medium text-muted-foreground w-[20%]">
-                Modality
+            {variant === "full" && (
+              <th className="hidden xl:table-cell px-4 py-2 text-left text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200 w-[8%]" onClick={() => onSort("finance_type")}>
+                <div className="flex items-center gap-1">
+                  <span>Finance Type</span>
+                  {getSortIcon("finance_type")}
+                </div>
               </th>
             )}
+            <th className="px-4 py-2 text-center text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200 w-[12%]" onClick={() => onSort("aid_type")}>
+              <div className="flex items-center gap-1">
+                <span>Modality & Classification</span>
+                {getSortIcon("aid_type")}
+              </div>
+            </th>
             <th className={cn(
               "px-4 py-2 text-right text-sm font-medium text-muted-foreground",
               variant === "compact" ? "w-[10%]" : "w-[6%]"
@@ -425,7 +406,7 @@ export function TransactionTable({
               onClick={(e) => {
                 // Don't trigger row click if clicking on action buttons
                 if ((e.target as HTMLElement).closest('.actions-cell')) return;
-                onRowClick?.(transaction.id);
+                onRowClick?.(transaction.uuid || transaction.id);
               }}
             >
                 <td className="px-2 py-3">
@@ -456,7 +437,7 @@ export function TransactionTable({
                       }}
                     >
                       <div className="text-sm font-normal text-foreground line-clamp-2">
-                        {transaction.activity?.title || 'Untitled Activity'}
+                        {transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
                       </div>
                       {(transaction.activity?.iati_id || transaction.activity?.id) && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -560,87 +541,70 @@ export function TransactionTable({
                 <td className="px-4 py-3 whitespace-nowrap text-sm font-normal text-foreground text-right">
                   {formatCurrency(transaction.value, transaction.currency)}
                 </td>
-                {variant === "full" ? (
-                  <>
-                    <td className="hidden xl:table-cell px-4 py-3 whitespace-nowrap">
-                      {transaction.finance_type ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-sm font-normal text-foreground cursor-help">
-                                {FINANCE_TYPE_LABELS[transaction.finance_type]?.short || transaction.finance_type}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              <p className="text-sm">{transaction.finance_type} – {FINANCE_TYPE_LABELS[transaction.finance_type]?.full || 'Unknown'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <span className="text-sm font-normal text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="hidden 2xl:table-cell px-4 py-3 whitespace-nowrap">
-                      {transaction.disbursement_channel ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-sm font-normal text-foreground cursor-help">
-                                {DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.short || transaction.disbursement_channel}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              <p className="text-sm">{transaction.disbursement_channel} – {DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.full || 'Unknown'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <span className="text-sm font-normal text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <ReceiptText className="w-4 h-4 text-gray-500 hover:text-primary cursor-pointer" />
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              <div className="space-y-2 p-1">
-                                <div className="flex items-center gap-2">
-                                  <Handshake className="w-4 h-4 text-muted-foreground" />
-                                  <span className="text-sm">Aid Type: {transaction.aid_type ? AID_TYPE_LABELS[transaction.aid_type]?.full || 'Unknown' : 'Not specified'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Shuffle className="w-4 h-4 text-muted-foreground" />
-                                  <span className="text-sm">Flow Type: {transaction.flow_type ? FLOW_TYPE_LABELS[transaction.flow_type] || 'Unknown' : 'Not specified'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Link2 className="w-4 h-4 text-muted-foreground" />
-                                  <span className="text-sm">Tied Status: {transaction.tied_status ? TIED_STATUS_LABELS[transaction.tied_status]?.full || 'Unknown' : 'Not specified'}</span>
-                                </div>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    </td>
-                  </>
-                ) : (
-                  <td className="px-4 py-3">
-                    <div className="text-xs leading-tight text-gray-600 space-y-0.5">
-                      <div>
-                        <span className="font-medium">Finance:</span> {transaction.finance_type ? FINANCE_TYPE_LABELS[transaction.finance_type]?.short || transaction.finance_type : '—'}
-                      </div>
-                      <div>
-                        <span className="font-medium">Channel:</span> {transaction.disbursement_channel ? DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.short || transaction.disbursement_channel : '—'}
-                      </div>
-                      <div>
-                        <span className="font-medium">Modality:</span> {transaction.aid_type ? AID_TYPE_LABELS[transaction.aid_type]?.short || transaction.aid_type : '—'}
-                      </div>
-                    </div>
+                {variant === "full" && (
+                  <td className="hidden xl:table-cell px-4 py-3 whitespace-nowrap">
+                    {transaction.finance_type ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-sm font-normal text-foreground cursor-help">
+                              {FINANCE_TYPE_LABELS[transaction.finance_type]?.short || transaction.finance_type}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p className="text-sm">{transaction.finance_type} – {FINANCE_TYPE_LABELS[transaction.finance_type]?.full || 'Unknown'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span className="text-sm font-normal text-muted-foreground">—</span>
+                    )}
                   </td>
                 )}
+                {/* Modality & Classification column with tooltip, triggered by ReceiptText icon */}
+                <td className="px-4 py-3">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center cursor-pointer">
+                          <ReceiptText className="h-5 w-5 text-gray-500 hover:text-primary" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="bg-gray-200 text-foreground border border-gray-300 shadow-lg p-2 min-w-[260px]">
+                        <div className="space-y-1">
+                          {/* Flow Type */}
+                          <div>
+                            <span className="font-bold">Flow Type:</span>
+                            <span className="block text-xs font-normal">
+                              {transaction.flow_type ? (FLOW_TYPE_LABELS[transaction.flow_type] || transaction.flow_type) : 'Not specified'}
+                            </span>
+                          </div>
+                          {/* Aid Type */}
+                          <div>
+                            <span className="font-bold">Aid Type:</span>
+                            <span className="block text-xs font-normal">
+                              {transaction.aid_type ? (AID_TYPE_LABELS[transaction.aid_type]?.full || transaction.aid_type) : 'Not specified'}
+                            </span>
+                          </div>
+                          {/* Tied Status */}
+                          <div>
+                            <span className="font-bold">Tied Status:</span>
+                            <span className="block text-xs font-normal">
+                              {transaction.tied_status ? (TIED_STATUS_LABELS[transaction.tied_status]?.full || transaction.tied_status) : 'Not specified'}
+                            </span>
+                          </div>
+                          {/* Disbursement Channel */}
+                          <div>
+                            <span className="font-bold">Disbursement Channel:</span>
+                            <span className="block text-xs font-normal">
+                              {transaction.disbursement_channel ? (DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.full || transaction.disbursement_channel) : 'Not specified'}
+                            </span>
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </td>
               <td className="px-4 py-3 whitespace-nowrap text-right actions-cell">
                 <div className="flex items-center justify-end gap-2">
                   {onEdit && (
@@ -665,7 +629,7 @@ export function TransactionTable({
                       aria-label="Delete transaction"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onDelete(transaction.id);
+                        onDelete(transaction.uuid || transaction.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />

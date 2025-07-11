@@ -147,6 +147,16 @@ class AidProject(models.Model):
         ('partially_tied', 'Partially Tied')
     ], blank=True, null=True)
     
+    # Default Modality fields
+    default_modality = models.IntegerField(choices=[
+        (1, "Grant – Non-repayable funds, typically public sector support"),
+        (2, "Loan – Repayable funds with terms and conditions"),
+        (3, "Technical Assistance – Personnel, training, or capacity support"),
+        (4, "Reimbursable Grant or Other – Partial repayment or hybrid arrangement"),
+        (5, "Investment/Guarantee – Risk capital or financial instruments without cash transfer"),
+    ], blank=True, null=True)
+    default_modality_override = models.BooleanField(default=False)
+    
     # Additional Information
     contact_info = models.TextField(blank=True, null=True)
     document_link = models.URLField(blank=True, null=True)
@@ -199,7 +209,33 @@ class AidProject(models.Model):
                 self.activity_status == 'implementation' and 
                 date.today() > self.end_date_planned)
 
+    def calculate_modality(self):
+        """Calculate modality based on aid type and finance type"""
+        # Skip auto calculation if override is on
+        if self.default_modality_override:
+            return self.default_modality
+
+        aid_type = self.default_aid_type
+        finance_type = self.default_finance_type
+
+        if aid_type in ['1220', '1230', '1240', '1250']:
+            return 3  # Technical Assistance
+        elif finance_type in ['110', '111', '112', '113', '114', '115', '116', '117', '118']:
+            return 1  # Grant
+        elif finance_type in ['421', '422', '431', '423', '424', '425']:
+            if finance_type == '422':
+                return 4  # Reimbursable Grant
+            return 2  # Loan
+        elif finance_type in ['510', '520', '530', '1100']:
+            return 5  # Investment/Guarantee
+
+        return 4  # Fallback
+
     def save(self, *args, **kwargs):
+        # Auto-calculate modality unless override is enabled
+        if not self.default_modality_override:
+            self.default_modality = self.calculate_modality()
+        
         # PRISM ID is now generated in the view when the form is first loaded
         super().save(*args, **kwargs)
 

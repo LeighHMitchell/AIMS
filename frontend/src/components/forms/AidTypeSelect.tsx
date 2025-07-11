@@ -148,6 +148,13 @@ export function AidTypeSelect({
     return groups
   }, [filteredItems, flattenedAidTypes])
 
+  const COMMONLY_USED_AID_CODES = ["C01", "D02"];
+  const commonlyUsedAidTypes = filteredItems.filter(opt => COMMONLY_USED_AID_CODES.includes(opt.code));
+  const otherGroupedItems = Object.entries(groupedItems).reduce((acc, [group, options]) => {
+    acc[group] = options.filter(opt => !COMMONLY_USED_AID_CODES.includes(opt.code));
+    return acc;
+  }, {} as typeof groupedItems);
+
   const renderItemContent = (item: typeof flattenedAidTypes[0]) => {
     const isSelected = value === item.code
     const indentClass = item.level === 1 ? "pl-6" : item.level === 2 ? "pl-10" : ""
@@ -269,12 +276,15 @@ export function AidTypeSelect({
                 {filteredItems.length} match{filteredItems.length !== 1 ? 'es' : ''} found
               </div>
             )}
-            {filteredItems.length === 0 && (
-              <div className="py-6 text-center text-sm">
-                {searchQuery ? `No aid types found for "${searchQuery}"` : "No aid type found."}
-              </div>
+            {commonlyUsedAidTypes.length > 0 && (
+              <CommandGroup>
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                  Commonly Used
+                </div>
+                {commonlyUsedAidTypes.map(option => renderItemContent(option))}
+              </CommandGroup>
             )}
-            {Object.entries(groupedItems).map(([categoryCode, items]) => {
+            {Object.entries(otherGroupedItems).map(([categoryCode, items]) => {
               const category = items.find(item => item.code === categoryCode && item.level === 0)
               if (!category) return null
 
@@ -291,6 +301,11 @@ export function AidTypeSelect({
                 </CommandGroup>
               )
             })}
+            {filteredItems.length === 0 && (
+              <div className="py-6 text-center text-sm">
+                {searchQuery ? `No aid types found for "${searchQuery}"` : "No aid type found."}
+              </div>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

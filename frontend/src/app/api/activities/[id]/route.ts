@@ -93,7 +93,10 @@ export async function GET(
       defaultFinanceType: activity.default_finance_type,
       defaultCurrency: activity.default_currency,
       defaultTiedStatus: activity.default_tied_status,
-      flowType: activity.flow_type,
+      defaultFlowType: activity.default_flow_type, // <-- Add this line
+      flowType: activity.default_flow_type, // (optional: keep for backward compatibility)
+      defaultAidModality: activity.default_aid_modality,
+      defaultAidModalityOverride: activity.default_aid_modality_override,
       banner: activity.banner,
       icon: activity.icon,
       hierarchy: activity.hierarchy,

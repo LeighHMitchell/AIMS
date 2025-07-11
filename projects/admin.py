@@ -52,7 +52,8 @@ class AidProjectAdmin(admin.ModelAdmin):
     ]
     list_filter = [
         'activity_status', 'donor', 'recipient_country', 'sector', 
-        'collaboration_type', 'default_flow_type', 'default_finance_type'
+        'collaboration_type', 'default_flow_type', 'default_finance_type',
+        'default_modality', 'default_modality_override'
     ]
     search_fields = ['title', 'iati_identifier', 'description']
     date_hierarchy = 'submitted_at'
@@ -82,7 +83,8 @@ class AidProjectAdmin(admin.ModelAdmin):
             'fields': (
                 ('total_budget', 'funding_amount', 'currency'),
                 'default_flow_type', 'default_finance_type', 
-                'default_aid_type', 'default_tied_status'
+                'default_aid_type', 'default_tied_status',
+                'default_modality', 'default_modality_override'
             )
         }),
         ('Beneficiaries and Impact', {

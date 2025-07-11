@@ -16,6 +16,7 @@ interface SectorAllocation {
   category?: string;
   categoryName?: string;
   categoryCode?: string;
+  [key: string]: any;
 }
 
 export default function ImprovedSectorsDemoPage() {

@@ -188,7 +188,7 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
             )}
           </div>
           <div>
-            <p className="text-sm text-green-600 font-medium">Reported By</p>
+            <p className="text-sm text-green-600 font-medium">Reported by</p>
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-green-700" />
               <p className="text-sm font-semibold text-green-800">

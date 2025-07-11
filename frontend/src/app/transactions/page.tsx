@@ -50,7 +50,7 @@ export default function TransactionsPage() {
   });
 
   // Use the custom hook to fetch transactions
-  const { transactions, loading, error, refetch } = useTransactions({
+  const { transactions, loading, error, refetch, deleteTransaction, addTransaction } = useTransactions({
     searchQuery,
     filters,
     sortField,
@@ -154,12 +154,23 @@ export default function TransactionsPage() {
   };
 
   const handleDelete = async (transactionId: string) => {
+    if (!transactionId || transactionId === 'undefined') {
+      toast.error("Invalid transaction ID");
+      return;
+    }
+
     if (!confirm("Are you sure you want to delete this transaction?")) {
       return;
     }
 
+    // Find the transaction to delete (for potential recovery)
+    const transactionToDelete = transactions.data.find(t => (t.uuid || t.id) === transactionId);
+    
+    // Optimistic update - remove from UI immediately
+    deleteTransaction(transactionId);
+
     try {
-      const response = await fetch(`/api/transactions?id=${transactionId}`, {
+      const response = await fetch(`/api/transactions?uuid=${transactionId}`, {
         method: 'DELETE'
       });
 
@@ -169,10 +180,16 @@ export default function TransactionsPage() {
       }
 
       toast.success("Transaction deleted successfully");
-      refetch(); // Refresh the transactions list
     } catch (error: any) {
       console.error('Error deleting transaction:', error);
       toast.error(error.message || "Failed to delete transaction");
+      
+      // Revert the optimistic update on error
+      if (transactionToDelete) {
+        addTransaction(transactionToDelete);
+      } else {
+        refetch(); // Fallback: refresh the entire list
+      }
     }
   };
 
@@ -375,10 +392,7 @@ export default function TransactionsPage() {
               <div className="text-slate-500">No matching transactions found</div>
             ) : (
               <div className="space-y-4">
-                <div className="text-slate-500">No transactions yet</div>
-                <Button onClick={() => setShowTransactionModal(true)} className="mt-4">
-                  Create Your First Transaction
-                </Button>
+                <div className="text-slate-500">No transactions yet.<br/>Transactions are created from within an activity.</div>
               </div>
             )}
           </div>

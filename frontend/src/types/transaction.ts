@@ -30,7 +30,7 @@ export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
   '13': 'Commitment Cancellation'
 };
 
-export type TransactionStatus = 'draft' | 'actual';
+export type TransactionStatus = 'draft' | 'submitted' | 'validated' | 'rejected' | 'published';
 
 export type OrganizationType = 
   | '10'  // Government
@@ -112,7 +112,8 @@ export type TiedStatus =
 // Main Transaction interface
 export interface Transaction {
   // Core fields
-  id: string;
+  id: string; // Legacy field - use uuid as primary identifier
+  uuid: string; // Primary identifier for API operations
   activity_id: string;
   transaction_type: TransactionType;
   transaction_date: string; // ISO date
@@ -241,10 +242,12 @@ export interface TransactionFormData {
   provider_org_id?: string;
   provider_org_name?: string;
   provider_org_ref?: string;
+  provider_org_type?: OrganizationType;
   
   receiver_org_id?: string;
   receiver_org_name?: string;
   receiver_org_ref?: string;
+  receiver_org_type?: OrganizationType;
   
   // Optional fields shown in "Advanced" section
   value_date?: string;
@@ -256,6 +259,7 @@ export interface TransactionFormData {
   finance_type?: FinanceType;
   aid_type?: string;
   tied_status?: TiedStatus;
+  financing_classification?: string;
   is_humanitarian?: boolean;
 }
 

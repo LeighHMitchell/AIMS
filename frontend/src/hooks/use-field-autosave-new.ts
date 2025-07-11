@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { setFieldSaved, isFieldSaved, clearFieldSaved } from '@/utils/persistentSave';
+import { toast } from 'sonner';
 
 interface FieldAutosaveState {
   isSaving: boolean;
@@ -134,11 +135,22 @@ export function useFieldAutosave(
       console.log(`[FieldAutosave] Field ${fieldName} saved successfully`);
 
       // Process any pending value that was queued during this save
+      // FIXED: Prevent infinite loops by checking if we've already processed this value
       if (pendingValueRef.current !== null && pendingValueRef.current !== value) {
         const pendingValue = pendingValueRef.current;
         pendingValueRef.current = null;
-        // Use setTimeout to avoid immediate recursion
-        setTimeout(() => performFieldSave(pendingValue), 100);
+        
+        // Additional safety check to prevent infinite recursion
+        if (JSON.stringify(pendingValue) !== JSON.stringify(value)) {
+          console.log(`[FieldAutosave] Processing pending value for ${fieldName}`);
+          // Use setTimeout to avoid immediate recursion and give time for state updates
+          setTimeout(() => {
+            // Double-check the value hasn't changed again
+            if (pendingValueRef.current === null) {
+              performFieldSave(pendingValue);
+            }
+          }, 200);
+        }
       }
 
     } catch (error) {
@@ -259,7 +271,10 @@ export function useDefaultAidTypeAutosave(activityId?: string, userId?: string) 
   return useFieldAutosave('defaultAidType', { 
     activityId,
     userId,
-    debounceMs: 1000 // Save quickly for defaults
+    debounceMs: 1000, // Save quickly for defaults
+    onSuccess: () => {
+      toast.success('Default Aid Type saved', { position: 'top-right' });
+    },
   });
 }
 
@@ -267,7 +282,10 @@ export function useDefaultFinanceTypeAutosave(activityId?: string, userId?: stri
   return useFieldAutosave('defaultFinanceType', { 
     activityId,
     userId,
-    debounceMs: 1000
+    debounceMs: 1000,
+    onSuccess: () => {
+      toast.success('Default Finance Type saved', { position: 'top-right' });
+    },
   });
 }
 
@@ -275,7 +293,10 @@ export function useDefaultCurrencyAutosave(activityId?: string, userId?: string)
   return useFieldAutosave('defaultCurrency', { 
     activityId,
     userId,
-    debounceMs: 1000
+    debounceMs: 1000,
+    onSuccess: () => {
+      toast.success('Default Currency saved', { position: 'top-right' });
+    },
   });
 }
 
@@ -283,7 +304,10 @@ export function useDefaultTiedStatusAutosave(activityId?: string, userId?: strin
   return useFieldAutosave('defaultTiedStatus', { 
     activityId,
     userId,
-    debounceMs: 1000
+    debounceMs: 1000,
+    onSuccess: () => {
+      toast.success('Default Tied Status saved', { position: 'top-right' });
+    },
   });
 }
 
@@ -291,7 +315,10 @@ export function useDefaultFlowTypeAutosave(activityId?: string, userId?: string)
   return useFieldAutosave('defaultFlowType', { 
     activityId,
     userId,
-    debounceMs: 1000
+    debounceMs: 1000,
+    onSuccess: () => {
+      toast.success('Default Flow Type saved', { position: 'top-right' });
+    },
   });
 }
 
@@ -348,6 +375,50 @@ export function useContactsAutosave(activityId?: string, userId?: string) {
     activityId,
     userId,
     debounceMs: 1500 // Medium debounce for contact operations
+  });
+}
+
+export function useDefaultModalityAutosave(activityId?: string, userId?: string) {
+  return useFieldAutosave('defaultModality', {
+    activityId,
+    userId,
+    debounceMs: 1000,
+    onSuccess: () => {
+      toast.success('Default Modality saved', { position: 'top-right' });
+    },
+  });
+}
+
+export function useDefaultModalityOverrideAutosave(activityId?: string, userId?: string) {
+  return useFieldAutosave('defaultModalityOverride', {
+    activityId,
+    userId,
+    debounceMs: 1000,
+    onSuccess: () => {
+      toast.success('Default Modality Override saved', { position: 'top-right' });
+    },
+  });
+}
+
+export function useDefaultAidModalityAutosave(activityId?: string, userId?: string) {
+  return useFieldAutosave('defaultAidModality', {
+    activityId,
+    userId,
+    debounceMs: 1000,
+    onSuccess: () => {
+      toast.success('Default Aid Modality saved', { position: 'top-right' });
+    },
+  });
+}
+
+export function useDefaultAidModalityOverrideAutosave(activityId?: string, userId?: string) {
+  return useFieldAutosave('defaultAidModalityOverride', {
+    activityId,
+    userId,
+    debounceMs: 1000,
+    onSuccess: () => {
+      toast.success('Default Aid Modality Override saved', { position: 'top-right' });
+    },
   });
 }
 

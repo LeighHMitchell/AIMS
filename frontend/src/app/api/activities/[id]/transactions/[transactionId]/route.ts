@@ -14,6 +14,29 @@ export async function PUT(
       ? body.value_date 
       : null;
 
+    // Handle transaction reference - if empty, keep the existing reference to avoid unique constraint issues
+    let transactionReference = body.transaction_reference?.trim() || '';
+    
+    if (!transactionReference) {
+      // For updates, we need to keep the existing reference if it's empty
+      // Get the current transaction to preserve its reference
+      const { data: currentTransaction, error: fetchError } = await getSupabaseAdmin()
+        .from('transactions')
+        .select('transaction_reference')
+        .eq('uuid', transactionId)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error fetching current transaction:', fetchError);
+        return NextResponse.json(
+          { error: 'Failed to fetch current transaction' },
+          { status: 500 }
+        );
+      }
+      
+      transactionReference = currentTransaction?.transaction_reference || null;
+    }
+
     // Update transaction data - convert empty strings to null
     const updateData: any = {
       transaction_type: body.transaction_type,
@@ -22,7 +45,7 @@ export async function PUT(
       currency: body.currency,
       status: body.status,
       value_date,
-      transaction_reference: body.transaction_reference || null,
+      transaction_reference: transactionReference,
       description: body.description || null,
       provider_org_id: body.provider_org_id || null,
       provider_org_type: body.provider_org_type || null,
@@ -57,7 +80,7 @@ export async function PUT(
     const { data: updatedTransaction, error } = await getSupabaseAdmin()
       .from('transactions')
       .update(updateData)
-      .eq('id', transactionId)
+      .eq('uuid', transactionId)
       .select(`
         *,
         provider_org:provider_org_id(
@@ -110,12 +133,18 @@ export async function DELETE(
 ) {
   try {
     const { transactionId } = params;
+    if (!transactionId || transactionId === 'undefined') {
+      return NextResponse.json(
+        { error: 'Transaction ID is required and must be a valid UUID.' },
+        { status: 400 }
+      );
+    }
 
-    // Delete the transaction
+    // Delete the transaction using the correct primary key column
     const { error } = await getSupabaseAdmin()
       .from('transactions')
       .delete()
-      .eq('id', transactionId);
+      .eq('uuid', transactionId);
 
     if (error) {
       console.error('Error deleting transaction:', error);

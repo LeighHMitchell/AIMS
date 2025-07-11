@@ -40,7 +40,17 @@ export default function TransactionTab({
       if (!response.ok) throw new Error('Failed to fetch transactions');
       const data = await response.json();
       console.log('[TransactionTab] Fetched transactions:', data);
-      setTransactions(data);
+      // Filter out transactions without a valid uuid
+      const validTransactions = data.filter((t: any) => {
+        const hasValidUuid = t.uuid;
+        if (!hasValidUuid) {
+          console.warn('[TransactionTab] Transaction without valid UUID found:', t);
+        }
+        return hasValidUuid;
+      });
+      
+      console.log('[TransactionTab] Valid transactions:', validTransactions);
+      setTransactions(validTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
       toast.error("Failed to load transactions");
@@ -62,6 +72,24 @@ export default function TransactionTab({
 
   const handleAddTransaction = async (data: TransactionFormData) => {
     try {
+      // Validate required fields before sending
+      if (!data.transaction_type) {
+        toast.error("Transaction type is required");
+        throw new Error("Transaction type is required");
+      }
+      if (!data.value || data.value <= 0) {
+        toast.error("Transaction value must be greater than 0");
+        throw new Error("Transaction value must be greater than 0");
+      }
+      if (!data.transaction_date) {
+        toast.error("Transaction date is required");
+        throw new Error("Transaction date is required");
+      }
+      if (!data.currency) {
+        toast.error("Currency is required");
+        throw new Error("Currency is required");
+      }
+      
       const response = await fetch(`/api/activities/${activityId}/transactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,55 +99,91 @@ export default function TransactionTab({
         })
       });
 
-      if (!response.ok) throw new Error('Failed to add transaction');
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.details || errorData.error || 'Failed to add transaction';
+        console.error('[TransactionTab] Server error:', errorData);
+        throw new Error(errorMessage);
+      }
       
       const newTransaction = await response.json();
-      setTransactions(prev => [...prev, newTransaction]);
+      
+      // Refresh the entire transaction list to ensure we have the latest data
+      await fetchTransactions();
       
       toast.success("Transaction added successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding transaction:', error);
-      toast.error("Failed to add transaction");
+      toast.error(error.message || "Failed to add transaction");
       throw error;
     }
   };
 
-  const handleUpdateTransaction = async (id: string, data: TransactionFormData) => {
+  const handleUpdateTransaction = async (uuid: string, data: TransactionFormData) => {
     try {
-      const response = await fetch(`/api/activities/${activityId}/transactions/${id}`, {
+      // Validate required fields before sending
+      if (!data.transaction_type) {
+        toast.error("Transaction type is required");
+        throw new Error("Transaction type is required");
+      }
+      if (!data.value || data.value <= 0) {
+        toast.error("Transaction value must be greater than 0");
+        throw new Error("Transaction value must be greater than 0");
+      }
+      if (!data.transaction_date) {
+        toast.error("Transaction date is required");
+        throw new Error("Transaction date is required");
+      }
+      if (!data.currency) {
+        toast.error("Currency is required");
+        throw new Error("Currency is required");
+      }
+      
+      const response = await fetch(`/api/activities/${activityId}/transactions/${uuid}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
 
-      if (!response.ok) throw new Error('Failed to update transaction');
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.details || errorData.error || 'Failed to update transaction';
+        console.error('[TransactionTab] Server error:', errorData);
+        throw new Error(errorMessage);
+      }
       
       const updatedTransaction = await response.json();
-      setTransactions(prev => 
-        prev.map(t => t.id === id ? updatedTransaction : t)
-      );
+      
+      // Refresh the entire transaction list to ensure we have the latest data
+      await fetchTransactions();
       
       toast.success("Transaction updated successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating transaction:', error);
-      toast.error("Failed to update transaction");
+      toast.error(error.message || "Failed to update transaction");
       throw error;
     }
   };
 
-  const handleDeleteTransaction = async (id: string) => {
+  const handleDeleteTransaction = async (uuid: string) => {
+    console.log('[TransactionTab] Deleting transaction with UUID:', uuid, 'Type:', typeof uuid);
+    if (!uuid || uuid === 'undefined') {
+      toast.error("Invalid transaction UUID for deletion.");
+      console.error('[TransactionTab] Attempted to delete transaction with invalid UUID:', uuid);
+      return;
+    }
     try {
-      const response = await fetch(`/api/activities/${activityId}/transactions/${id}`, {
+      const response = await fetch(`/api/activities/${activityId}/transactions/${uuid}`, {
         method: 'DELETE'
       });
-
       if (!response.ok) throw new Error('Failed to delete transaction');
       
-      setTransactions(prev => prev.filter(t => t.id !== id));
+      // Refresh the entire transaction list to ensure we have the latest data
+      await fetchTransactions();
       
       toast.success("Transaction deleted successfully");
     } catch (error) {
-      console.error('Error deleting transaction:', error);
+      console.error('[TransactionTab] Error deleting transaction:', error);
       toast.error("Failed to delete transaction");
       throw error;
     }

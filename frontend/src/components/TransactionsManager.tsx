@@ -63,6 +63,7 @@ interface TransactionsManagerProps {
   activityId: string;
   transactions: Transaction[];
   onTransactionsChange: (transactions: Transaction[]) => void;
+  onRefreshNeeded?: () => Promise<void>;
   defaultFinanceType?: string;
   defaultAidType?: string;
   defaultCurrency?: string;
@@ -74,6 +75,7 @@ export default function TransactionsManager({
   activityId, 
   transactions: initialTransactions = [], 
   onTransactionsChange,
+  onRefreshNeeded,
   defaultFinanceType,
   defaultAidType,
   defaultCurrency,
@@ -134,7 +136,7 @@ export default function TransactionsManager({
       transaction_date: formData.transaction_date || format(new Date(), "yyyy-MM-dd"),
       value: formData.value || 0,
       currency: formData.currency || 'USD',
-      status: formData.status || 'actual',
+      status: formData.status || 'draft',
       ...formData,
       };
 
@@ -166,20 +168,35 @@ export default function TransactionsManager({
       const savedTransaction = await response.json();
       console.log('[TransactionsManager] Transaction saved:', savedTransaction);
 
-      // Update local state with the saved transaction
-    let updatedTransactions;
-    if (editingTransaction) {
-      updatedTransactions = transactions.map(t => 
-          t.id === editingTransaction.id ? savedTransaction : t
-      );
-      toast.success("Transaction updated successfully");
-    } else {
-        updatedTransactions = [...transactions, savedTransaction];
-      toast.success("Transaction added successfully");
-    }
+      // Show success message
+      if (editingTransaction) {
+        toast.success("Transaction updated successfully");
+      } else {
+        toast.success("Transaction added successfully");
+      }
 
-    setTransactions(updatedTransactions);
-    onTransactionsChange(updatedTransactions);
+      // Refresh from server to get complete data and ensure consistency
+      if (onRefreshNeeded) {
+        console.log('[TransactionsManager] Calling refresh function...');
+        await onRefreshNeeded();
+        console.log('[TransactionsManager] Refresh function completed');
+        // The parent component will update initialTransactions, which will trigger our useEffect
+        // to update the local state, so we don't need to manually update local state here
+      } else {
+        console.log('[TransactionsManager] No refresh function provided');
+        // Fallback: update local state if no refresh function is provided
+        let updatedTransactions;
+        if (editingTransaction) {
+          updatedTransactions = transactions.map(t => 
+              t.id === editingTransaction.id ? savedTransaction : t
+          );
+        } else {
+          updatedTransactions = [...transactions, savedTransaction];
+        }
+        setTransactions(updatedTransactions);
+        onTransactionsChange(updatedTransactions);
+      }
+
     setShowAddDialog(false);
     setEditingTransaction(null);
     } catch (error: any) {
@@ -214,10 +231,16 @@ export default function TransactionsManager({
 
       console.log('[TransactionsManager] Transaction deleted:', id);
 
-    const updatedTransactions = transactions.filter(t => t.id !== id);
-    setTransactions(updatedTransactions);
-    onTransactionsChange(updatedTransactions);
-    toast.success("Transaction deleted");
+      // If refresh function is provided, use it to get fresh data from server
+      if (onRefreshNeeded) {
+        await onRefreshNeeded();
+      } else {
+        // No optimistic updates - let parent handle refresh by calling onTransactionsChange with current data
+        // This signals the parent that something changed and it should refresh
+        onTransactionsChange([...transactions]);
+      }
+      
+      toast.success("Transaction deleted");
     } catch (error: any) {
       console.error('[TransactionsManager] Error deleting transaction:', error);
       toast.error(error.message || "Failed to delete transaction");
@@ -314,9 +337,9 @@ export default function TransactionsManager({
     }
   };
 
-  // Calculate totals (actual transactions only)
-  const totalActual = filteredTransactions
-    .filter(t => t.status === "actual")
+  // Calculate totals (published transactions only)
+  const totalPublished = filteredTransactions
+    .filter(t => t.status === "published")
     .reduce((sum, t) => sum + t.value, 0);
 
   const formatCurrency = (value: number, currency: string) => {
@@ -466,10 +489,10 @@ export default function TransactionsManager({
               {/* Totals */}
               <div className="mt-4 pt-4 border-t">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Total (Actual Transactions Only):</span>
+                  <span className="text-sm font-medium">Total (Published Transactions Only):</span>
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg font-bold">{formatCurrency(totalActual, "USD")}</span>
+                    <span className="text-lg font-bold">{formatCurrency(totalPublished, "USD")}</span>
                   </div>
                 </div>
               </div>

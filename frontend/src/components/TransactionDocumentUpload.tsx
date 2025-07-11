@@ -47,8 +47,10 @@ export function TransactionDocumentUpload({
 }: TransactionDocumentUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  // External links state
   const [externalUrl, setExternalUrl] = useState('');
   const [urlDescription, setUrlDescription] = useState('');
+  const [externalLinks, setExternalLinks] = useState<{ url: string; description: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Accepted file types for transaction evidence
@@ -188,62 +190,23 @@ export function TransactionDocumentUpload({
     }
   }, [handleFileUpload]);
 
-  const addExternalUrl = async () => {
+  // Add handler to add a link to the list
+  const handleAddExternalLink = () => {
     if (!externalUrl.trim()) {
-      toast.error('Please enter a valid URL');
+      toast.error('Please enter a URL.');
       return;
     }
+    setExternalLinks([
+      ...externalLinks,
+      { url: externalUrl.trim(), description: urlDescription.trim() },
+    ]);
+    setExternalUrl('');
+    setUrlDescription('');
+  };
 
-    try {
-      new URL(externalUrl); // Validate URL
-    } catch {
-      toast.error('Please enter a valid URL');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/transactions/documents', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          transactionId: transactionId || 'temp',
-          activityId: activityId,
-          externalUrl: externalUrl,
-          fileName: urlDescription || 'External Document',
-          description: urlDescription,
-          documentType: 'evidence'
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add external document');
-      }
-
-      const result = await response.json();
-      
-      const newDocument: TransactionDocument = {
-        id: result.id,
-        transactionId: transactionId || 'temp',
-        fileName: result.fileName,
-        fileSize: 0,
-        fileType: 'external',
-        externalUrl: result.externalUrl,
-        description: result.description,
-        uploadedAt: new Date(result.uploadedAt),
-        uploadedBy: 'current-user'
-      };
-
-      onDocumentsChange([...documents, newDocument]);
-      setExternalUrl('');
-      setUrlDescription('');
-      toast.success('External document link added');
-    } catch (error) {
-      console.error('Error adding external URL:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to add external document');
-    }
+  // Add handler to remove a link from the list
+  const handleRemoveExternalLink = (idx: number) => {
+    setExternalLinks(externalLinks.filter((_, i) => i !== idx));
   };
 
   const removeDocument = async (documentId: string) => {
@@ -330,42 +293,55 @@ export function TransactionDocumentUpload({
         </CardContent>
       </Card>
 
-      {/* External URL Input */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Add External Document Link</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="external-url" className="text-sm">Document URL</Label>
-            <Input
-              id="external-url"
-              type="url"
-              placeholder="https://example.com/document.pdf"
-              value={externalUrl}
-              onChange={(e) => setExternalUrl(e.target.value)}
-              disabled={disabled}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="url-description" className="text-sm">Description (optional)</Label>
-            <Input
-              id="url-description"
-              placeholder="Invoice receipt, contract agreement, etc."
-              value={urlDescription}
-              onChange={(e) => setUrlDescription(e.target.value)}
-              disabled={disabled}
-            />
-          </div>
-          <Button
-            size="sm"
-            onClick={addExternalUrl}
-            disabled={!externalUrl.trim() || disabled}
+      {/* External Document Links Section */}
+      <div className="rounded-lg border bg-white p-6 mb-6">
+        <h2 className="font-semibold text-lg mb-2">Add External Document Links</h2>
+        <div className="mb-2">
+          <label className="block font-medium mb-1">URL</label>
+          <input
+            type="url"
+            className="w-full border rounded px-3 py-2 mb-2"
+            placeholder="https://example.com/doc.pdf"
+            value={externalUrl}
+            onChange={e => setExternalUrl(e.target.value)}
+          />
+          <label className="block font-medium mb-1">Description (optional)</label>
+          <input
+            type="text"
+            className="w-full border rounded px-3 py-2 mb-2"
+            placeholder="Invoice, contract, etc."
+            value={urlDescription}
+            onChange={e => setUrlDescription(e.target.value)}
+          />
+          <button
+            type="button"
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            onClick={handleAddExternalLink}
           >
             Add Link
-          </Button>
-        </CardContent>
-      </Card>
+          </button>
+        </div>
+        {externalLinks.length > 0 && (
+          <ul className="mt-4 space-y-2">
+            {externalLinks.map((link, idx) => (
+              <li key={idx} className="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
+                <div>
+                  <span className="font-mono text-sm text-blue-700">{link.url}</span>
+                  {link.description && <span className="ml-2 text-gray-600 text-sm">{link.description}</span>}
+                </div>
+                <button
+                  type="button"
+                  className="ml-2 text-red-500 hover:text-red-700"
+                  onClick={() => handleRemoveExternalLink(idx)}
+                  aria-label="Remove link"
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* Documents List */}
       {documents.length > 0 && (
@@ -425,15 +401,6 @@ export function TransactionDocumentUpload({
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {documents.length === 0 && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            No supporting documents uploaded yet. Add documents to provide evidence for this transaction.
-          </AlertDescription>
-        </Alert>
       )}
     </div>
   );

@@ -627,7 +627,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus }: any) {
   switch (section) {
     case "general":
       return <GeneralSection 
@@ -719,6 +719,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         activityId={general.id || "new"}
         transactions={transactions}
         onTransactionsChange={setTransactions}
+        onRefreshTransactions={refreshTransactions}
         defaultFinanceType={general.defaultFinanceType}
         defaultAidType={general.defaultAidType}
         defaultFlowType={general.defaultFlowType}
@@ -736,13 +737,13 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           } else {
             setGeneral((g: any) => ({ ...g, [field]: value }));
           }
-          
           // Log the general state after update
           setTimeout(() => {
             console.log('[AIMS DEBUG] General state after update:', general);
             console.log('[AIMS DEBUG] Specific field value:', general[field]);
           }, 100);
         }}
+        tabCompletionStatus={tabCompletionStatus}
       />;
     case "budgets":
       return <ActivityBudgetsTab 
@@ -857,6 +858,24 @@ function NewActivityPageContent() {
   const [sectors, setSectors] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [transactionsLoaded, setTransactionsLoaded] = useState(false);
+  
+  // Function to refresh transactions from server
+  const refreshTransactions = useCallback(async () => {
+    const activityId = searchParams?.get("id");
+    if (!activityId) return;
+    
+    try {
+      console.log('[AIMS] Refreshing transactions for activity:', activityId);
+      const response = await fetch(`/api/activities/${activityId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTransactions(data.transactions || []);
+        console.log('[AIMS] Refreshed transactions:', data.transactions?.length || 0);
+      }
+    } catch (error) {
+      console.error('[AIMS] Error refreshing transactions:', error);
+    }
+  }, [searchParams]);
   const [extendingPartners, setExtendingPartners] = useState<any[]>([]);
   const [implementingPartners, setImplementingPartners] = useState<any[]>([]);
   const [governmentPartners, setGovernmentPartners] = useState<any[]>([]);
@@ -1128,11 +1147,23 @@ function NewActivityPageContent() {
     const generalCompletion = getTabCompletionStatus('general', general, getDateFieldStatus)
     // Sectors tab: green check if at least one sector and total allocation is valid (100%)
     const sectorsComplete = sectorValidation.isValid && sectors.length > 0;
+
+    // Defaults sub-tab under Finances: require all fields filled AND saved
+    const financesDefaultsCompletion = getTabCompletionStatus('finances', {
+      default_aid_type: general.defaultAidType,
+      default_finance_type: general.defaultFinanceType,
+      default_flow_type: general.defaultFlowType,
+      default_currency: general.defaultCurrency,
+      default_tied_status: general.defaultTiedStatus,
+      hasUnsavedChanges: hasUnsavedChanges
+    });
+
     return {
       general: generalCompletion ? { isComplete: generalCompletion.isComplete } : { isComplete: false },
-      sectors: { isComplete: sectorsComplete }
+      sectors: { isComplete: sectorsComplete },
+      finances_defaults: financesDefaultsCompletion ? { isComplete: financesDefaultsCompletion.isComplete } : { isComplete: false }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors])
+  }, [general, getDateFieldStatus, sectorValidation, sectors, hasUnsavedChanges]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -1383,7 +1414,7 @@ function NewActivityPageContent() {
       setSavingAndNext(false);
       setPublishing(false);
     }
-  }, [general, sectors, transactions, transactionsLoaded, extendingPartners, implementingPartners, governmentPartners, contacts, sdgMappings, tags, workingGroups, policyMarkers, activeSection, router, user, isEditing, sectorValidation]);
+  }, [general, sectors, transactions, transactionsLoaded, extendingPartners, implementingPartners, governmentPartners, contacts, sdgMappings, tags, workingGroups, policyMarkers, activeSection, router, user, isEditing, sectorValidation, hasUnsavedChanges]);
 
   // Add loading state when switching tabs
   const handleTabChange = async (value: string) => {
@@ -1690,6 +1721,7 @@ function NewActivityPageContent() {
                     setSectors={setSectors}
                     transactions={transactions}
                     setTransactions={setTransactions}
+                    refreshTransactions={refreshTransactions}
                     extendingPartners={extendingPartners}
                     setExtendingPartners={setExtendingPartners}
                     implementingPartners={implementingPartners}
@@ -1725,6 +1757,7 @@ function NewActivityPageContent() {
                     updateActivityNestedField={updateActivityNestedField}
                     setShowActivityCreatedAlert={setShowActivityCreatedAlert}
                     onTitleAutosaveState={(state: { isSaving: boolean; hasUnsavedChanges: boolean; lastSaved: Date | null; error: any }, id: string) => { setTitleAutosaveState(state); setActivityId(id); }}
+                    tabCompletionStatus={tabCompletionStatus}
                   />
                 </div>
               )}

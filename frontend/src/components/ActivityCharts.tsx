@@ -83,7 +83,7 @@ export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
   // Process transactions to create cumulative data
   const processedData = React.useMemo(() => {
     const sortedTransactions = [...transactions]
-      .filter(t => t.status === "actual" && t.transaction_date) // Filter out transactions without dates
+      .filter(t => t.status === "published" && t.transaction_date) // Filter out transactions without dates
       .filter(t => {
         // Additional validation for valid dates
         try {

@@ -133,6 +133,29 @@ export async function POST(request: Request) {
         updateData.default_flow_type = body.value || null;
         break;
         
+      case 'defaultModality':
+        oldValue = existingActivity.default_modality;
+        newValue = body.value;
+        updateData.default_modality = body.value || null;
+        break;
+        
+      case 'defaultModalityOverride':
+        oldValue = existingActivity.default_modality_override;
+        newValue = body.value;
+        updateData.default_modality_override = body.value || false;
+        break;
+        
+      case 'defaultAidModality':
+        oldValue = existingActivity.default_aid_modality;
+        newValue = body.value;
+        updateData.default_aid_modality = body.value || null;
+        break;
+      case 'defaultAidModalityOverride':
+        oldValue = existingActivity.default_aid_modality_override;
+        newValue = body.value;
+        updateData.default_aid_modality_override = body.value || false;
+        break;
+        
       case 'sectors':
         // Handle sectors using the activity_sectors table instead of a direct column
         oldValue = existingActivity.sectors; // Keep for logging purposes
@@ -339,6 +362,10 @@ export async function POST(request: Request) {
       defaultCurrency: updatedActivity.default_currency,
       defaultTiedStatus: updatedActivity.default_tied_status,
       defaultFlowType: updatedActivity.default_flow_type,
+      defaultModality: updatedActivity.default_modality,
+      defaultModalityOverride: updatedActivity.default_modality_override,
+      defaultAidModality: updatedActivity.default_aid_modality,
+      defaultAidModalityOverride: updatedActivity.default_aid_modality_override,
       sectors: sectorsData,
       locations: updatedActivity.locations,
       plannedStartDate: updatedActivity.planned_start_date,

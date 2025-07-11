@@ -1,15 +1,13 @@
 "use client"
 
 import React, { useState, useMemo, useRef, useEffect } from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
   Command,
-  CommandEmpty,
-  CommandInput,
   CommandItem,
   CommandList,
+  CommandGroup,
 } from "@/components/ui/command"
 import {
   Popover,
@@ -22,7 +20,22 @@ interface FlowType {
   code: string
   name: string
   description: string
+  group?: string
 }
+
+type Option = {
+  code: string;
+  name: string;
+  description: string;
+  group: string;
+};
+
+const allOptions: Option[] = flowTypesData.map(type => ({
+  code: type.code,
+  name: type.name,
+  description: type.description,
+  group: type.group || 'Other'
+}));
 
 interface FlowTypeSelectProps {
   value?: string | null | undefined
@@ -30,6 +43,7 @@ interface FlowTypeSelectProps {
   placeholder?: string
   id?: string
   disabled?: boolean
+  className?: string
 }
 
 export function FlowTypeSelect({
@@ -37,141 +51,225 @@ export function FlowTypeSelect({
   onValueChange,
   placeholder = "Select Default Flow Type",
   id,
-  disabled = false
+  disabled = false,
+  className
 }: FlowTypeSelectProps) {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  // Handle click outside to close popover
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
         setOpen(false)
       }
     }
-
     if (open) {
       document.addEventListener('mousedown', handleClickOutside)
     }
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [open])
 
-  const flowTypes = flowTypesData as FlowType[]
+  const selectedOption = allOptions.find(option => option.code === value)
 
-  // Get the selected item details
-  const selectedItem = flowTypes.find(item => item.code === value)
+  const filteredOptions = useMemo(() => {
+    if (!searchQuery) return allOptions;
+    const query = searchQuery.toLowerCase();
+    return allOptions.filter(option => 
+      option.code.toLowerCase().includes(query) ||
+      option.name.toLowerCase().includes(query) ||
+      option.description.toLowerCase().includes(query) ||
+      query.replace('#', '') === option.code
+    );
+  }, [searchQuery]);
 
-  // Filter items based on search query
-  const filteredItems = useMemo(() => {
-    if (!searchQuery || searchQuery.trim() === "") {
-      return flowTypes
-    }
+  const groupedOptions = useMemo(() => {
+    const groups: { [key: string]: Option[] } = {};
+    filteredOptions.forEach(option => {
+      if (!groups[option.group]) {
+        groups[option.group] = [];
+      }
+      groups[option.group].push(option);
+    });
+    return groups;
+  }, [filteredOptions]);
 
-    const query = searchQuery.toLowerCase().trim()
-    return flowTypes.filter(item => 
-      item.code.toLowerCase().includes(query) ||
-      item.name.toLowerCase().includes(query) ||
-      item.description.toLowerCase().includes(query)
-    )
-  }, [searchQuery])
+  const COMMONLY_USED_FLOW_CODES = ["10"];
+  const commonlyUsedFlowTypes = filteredOptions.filter(opt => COMMONLY_USED_FLOW_CODES.includes(opt.code));
+  const otherGroupedOptions = Object.entries(groupedOptions).reduce((acc, [group, options]) => {
+    acc[group] = options.filter(opt => !COMMONLY_USED_FLOW_CODES.includes(opt.code));
+    return acc;
+  }, {} as typeof groupedOptions);
 
   return (
-    <div className="relative w-full" ref={popoverRef}>
+    <div className={cn("relative w-full", className)} ref={popoverRef}>
       <Popover 
         open={open} 
         onOpenChange={(newOpen) => {
           setOpen(newOpen)
           if (!newOpen) {
-            setSearchQuery("") // Clear search when closing
+            setSearchQuery("")
           }
         }}
       >
-      <PopoverTrigger
-        className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50",
-          !value && "text-muted-foreground",
-          "min-w-0" // Add this to ensure it can shrink/grow properly
-        )}
-        disabled={disabled}
-        role="combobox"
-        aria-expanded={open}
-      >
-        <span className="truncate">
-          {selectedItem ? (
-            <span className="flex items-center gap-2">
-              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedItem.code}</span>
-              <span className="font-medium">{selectedItem.name}</span>
-            </span>
-          ) : (
-            placeholder
+        <PopoverTrigger
+          className={cn(
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+            !selectedOption && "text-muted-foreground"
           )}
-        </span>
-        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-      </PopoverTrigger>
-      <PopoverContent 
-        className="w-[var(--radix-popover-trigger-width)] max-w-none p-0 overflow-visible bottom-full mb-2" 
-        align="start"
-      >
-        <Command className="overflow-visible">
-          <div className="border-b border-border px-3 py-2">
-            <CommandInput 
-              placeholder="Search flow types..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <CommandList className="max-h-[400px] overflow-auto rounded-md bg-white shadow border">
-            {searchQuery && filteredItems.length > 0 && (
-              <div className="px-3 py-2 text-xs text-muted-foreground border-b">
-                {filteredItems.length} match{filteredItems.length !== 1 ? 'es' : ''} found
-              </div>
+          disabled={disabled}
+          role="combobox"
+          aria-expanded={open}
+        >
+          <span className="truncate">
+            {selectedOption ? (
+              <span className="flex items-center gap-2">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedOption.code}</span>
+                <span className="font-medium">{selectedOption.name}</span>
+              </span>
+            ) : (
+              placeholder
             )}
-            {filteredItems.length === 0 && (
-              <div className="py-6 text-center text-sm">
-                {searchQuery ? `No flow types found for "${searchQuery}"` : "No flow type found."}
-              </div>
-            )}
-            {filteredItems.map((item) => (
-              <CommandItem
-                key={item.code}
-                onSelect={() => {
-                  onValueChange?.(item.code === value ? null : item.code)
-                  setOpen(false)
+          </span>
+          <div className="flex items-center gap-2">
+            {selectedOption && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onValueChange?.(null);
                 }}
-                className="cursor-pointer px-4 py-2 space-y-1 hover:bg-blue-50 hover:text-blue-700 focus:bg-blue-50 focus:text-blue-700 flex items-start gap-3"
+                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                aria-label="Clear selection"
               >
-                <Check
-                  className={cn(
-                    "mt-0.5 h-4 w-4 shrink-0",
-                    value === item.code ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
-                    <span className="font-medium">{item.name}</span>
+                <span className="text-xs">×</span>
+              </button>
+            )}
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          </div>
+        </PopoverTrigger>
+        <PopoverContent 
+          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border"
+          align="start"
+          sideOffset={4}
+        >
+          <Command>
+            <div className="flex items-center border-b px-3 py-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <input
+                placeholder="Search flow types..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setOpen(false);
+                    setSearchQuery("");
+                  }
+                }}
+                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                autoFocus
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                  aria-label="Clear search"
+                >
+                  <span className="text-xs">×</span>
+                </button>
+              )}
+            </div>
+            <CommandList>
+              {commonlyUsedFlowTypes.length > 0 && (
+                <CommandGroup>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                    Commonly Used
                   </div>
-                  <div className="text-sm text-gray-500 leading-snug">
-                    {item.description}
+                  {commonlyUsedFlowTypes.map(option => (
+                    <CommandItem
+                      key={option.code}
+                      onSelect={() => {
+                        onValueChange?.(option.code === value ? null : option.code);
+                        setOpen(false);
+                        setSearchQuery("");
+                      }}
+                      className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value === option.code ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
+                          <span className="font-medium text-foreground">{option.name}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                          {option.description}
+                        </div>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+              {Object.entries(otherGroupedOptions).map(([groupName, options]) => options.length > 0 && (
+                <CommandGroup key={groupName}>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                    {groupName}
+                  </div>
+                  {options.map((option) => (
+                    <CommandItem
+                      key={option.code}
+                      onSelect={() => {
+                        onValueChange?.(option.code === value ? null : option.code);
+                        setOpen(false);
+                        setSearchQuery("");
+                      }}
+                      className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value === option.code ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
+                          <span className="font-medium text-foreground">{option.name}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                          {option.description}
+                        </div>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              ))}
+              {Object.keys(groupedOptions).length === 0 && (
+                <div className="py-8 text-center">
+                  <div className="text-sm text-muted-foreground">
+                    No flow types found.
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Try adjusting your search terms
                   </div>
                 </div>
-              </CommandItem>
-            ))}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }
 
-// Helper function to get flow type label from code
 export const getFlowTypeLabel = (code: string): string => {
-  const flowType = flowTypesData.find((item: FlowType) => item.code === code)
+  const flowType = allOptions.find((item: Option) => item.code === code)
   return flowType ? `${flowType.code} – ${flowType.name}` : code
 }

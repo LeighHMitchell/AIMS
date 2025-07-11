@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, Calendar, DollarSign, Building2, Globe, Tag, Info, X } from "lucide-react";
+import { ChevronDown, Calendar, DollarSign, Building2, Globe, Tag, Info, X, CheckCircle, Loader2, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { 
@@ -22,6 +22,9 @@ import {
   TIED_STATUS_LABELS,
   TransactionStatus
 } from '@/types/transaction';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { toast } from "sonner";
 
 // Common currencies
 const COMMON_CURRENCIES = [
@@ -96,6 +99,8 @@ export default function TransactionForm({
   activityId
 }: TransactionFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [transactionTypePopoverOpen, setTransactionTypePopoverOpen] = useState(false);
+  const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
   
   // Debug logging to see what transaction data we're getting
   useEffect(() => {
@@ -127,11 +132,13 @@ export default function TransactionForm({
     provider_org_id: transaction?.provider_org_id || '',
     provider_org_name: transaction?.provider_org_name || '',
     provider_org_ref: transaction?.provider_org_ref || '',
+    provider_org_type: transaction?.provider_org_type || undefined,
     
     // Receiver
     receiver_org_id: transaction?.receiver_org_id || '',
     receiver_org_name: transaction?.receiver_org_name || '',
     receiver_org_ref: transaction?.receiver_org_ref || '',
+    receiver_org_type: transaction?.receiver_org_type || undefined,
     
     // Advanced fields
     value_date: transaction?.value_date ? formatDateForInput(transaction.value_date) : '',
@@ -143,6 +150,7 @@ export default function TransactionForm({
     finance_type: (transaction?.finance_type || defaultFinanceType || undefined) as any,
     aid_type: transaction?.aid_type || defaultAidType || '',
     tied_status: (transaction?.tied_status || defaultTiedStatus || undefined) as any,
+    financing_classification: transaction?.financing_classification || '',
     is_humanitarian: transaction?.is_humanitarian ?? false,
   });
 
@@ -172,11 +180,13 @@ export default function TransactionForm({
         provider_org_id: transaction.provider_org_id || '',
         provider_org_name: transaction.provider_org_name || '',
         provider_org_ref: transaction.provider_org_ref || '',
+        provider_org_type: transaction.provider_org_type || undefined,
         
         // Receiver
         receiver_org_id: transaction.receiver_org_id || '',
         receiver_org_name: transaction.receiver_org_name || '',
         receiver_org_ref: transaction.receiver_org_ref || '',
+        receiver_org_type: transaction.receiver_org_type || undefined,
         
         // Advanced fields
         value_date: transaction.value_date ? formatDateForInput(transaction.value_date) : '',
@@ -188,35 +198,172 @@ export default function TransactionForm({
         finance_type: transaction.finance_type || undefined,
         aid_type: transaction.aid_type || '',
         tied_status: transaction.tied_status || undefined,
+        financing_classification: transaction.financing_classification || '',
         is_humanitarian: transaction.is_humanitarian ?? false,
       });
     }
   }, [transaction, defaultCurrency]);
 
+  // Add getTransactionPayload helper before handleSubmit
+  const getTransactionPayload = (formData: Partial<TransactionFormData>, organizations: any[]) => {
+    // List of allowed fields in the DB schema
+    const allowed = [
+      'id', 'uuid', 'activity_id', 'transaction_type', 'transaction_date', 'value', 'currency', 'status',
+      'transaction_reference', 'value_date', 'description',
+      'provider_org_id', 'provider_org_type', 'provider_org_ref', 'provider_org_name',
+      'receiver_org_id', 'receiver_org_type', 'receiver_org_ref', 'receiver_org_name',
+      'disbursement_channel', 'flow_type', 'finance_type', 'aid_type', 'tied_status',
+      'sector_code', 'sector_vocabulary', 'recipient_country_code', 'recipient_region_code', 'recipient_region_vocab',
+      'financing_classification', 'is_humanitarian'
+    ];
+    const payload: any = {};
+    for (const key of allowed) {
+      const value = formData[key as keyof TransactionFormData];
+      // Include field if it exists and is not undefined (empty strings are valid)
+      if (value !== undefined) {
+        payload[key] = value;
+      }
+    }
+    // Set organization details when org is selected
+    if (payload.provider_org_id) {
+      const org = organizations.find((o: any) => o.id === payload.provider_org_id);
+      if (org) {
+        payload.provider_org_name = org.acronym || org.name || '';
+        payload.provider_org_type = org.type || '';
+        payload.provider_org_ref = org.iati_org_id || '';
+      }
+    }
+    if (payload.receiver_org_id) {
+      const org = organizations.find((o: any) => o.id === payload.receiver_org_id);
+      if (org) {
+        payload.receiver_org_name = org.acronym || org.name || '';
+        payload.receiver_org_type = org.type || '';
+        payload.receiver_org_ref = org.iati_org_id || '';
+      }
+    }
+    return payload;
+  };
+
+  // Add unique transaction_reference check (in-memory, for now)
+  const [allTransactionReferences, setAllTransactionReferences] = useState<string[]>([]);
+
+  useEffect(() => {
+    // If you have access to all transactions, setAllTransactionReferences([...]) here
+    // For now, this is a placeholder; ideally, pass as prop or fetch from parent
+  }, []);
+
+  const validateTransaction = (data: Partial<TransactionFormData>): string | null => {
+    if (!data.transaction_type) return 'Transaction type is required.';
+    if (!data.transaction_date) return 'Transaction date is required.';
+    if (!data.value || isNaN(Number(data.value)) || Number(data.value) <= 0) return 'Transaction value must be greater than 0.';
+    if (!data.currency) return 'Currency is required.';
+    if (!data.provider_org_id) return 'Provider organization is required.';
+    if (!data.receiver_org_id) return 'Receiver organization is required.';
+    if (data.transaction_reference) {
+      // Check for duplicate reference (case-insensitive)
+      const ref = data.transaction_reference.trim().toLowerCase();
+      if (allTransactionReferences.filter(r => r && r.trim().toLowerCase() === ref).length > (transaction ? 1 : 0)) {
+        return 'Transaction reference must be unique.';
+      }
+    }
+    return null;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const submissionData = getTransactionPayload(formData, organizations);
+    const validationError = validateTransaction(submissionData);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    try {
+      let response;
+      if (transaction && transaction.uuid) {
+        // Update existing transaction
+        response = await fetch(`/api/activities/${activityId}/transactions/${transaction.uuid}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(submissionData)
+        });
+      } else {
+        // Create new transaction
+        response = await fetch(`/api/activities/${activityId}/transactions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(submissionData)
+        });
+      }
+      if (!response.ok) {
+        const error = await response.json();
+        if (error.error && error.error.includes('unique') && error.error.includes('transaction_reference')) {
+          toast.error('Transaction reference must be unique.');
+        } else if (error.error && error.error.includes('required')) {
+          toast.error('A required field is missing.');
+        } else {
+          toast.error(error.error || 'Failed to save transaction');
+        }
+        return;
+      }
+      toast.success(transaction ? 'Transaction updated successfully' : 'Transaction added successfully');
+      onSubmit(submissionData);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to save transaction');
+    }
+  };
+
   // Update organization fields when selection changes
   const handleProviderOrgChange = (orgId: string) => {
-    const org = organizations.find(o => o.id === orgId);
+    const org = organizations.find((o: any) => o.id === orgId);
     setFormData(prev => ({
       ...prev,
       provider_org_id: orgId,
-      provider_org_name: org?.name || '',
+      provider_org_name: (org && (org as any).acronym) ? (org as any).acronym : org?.name || '',
       provider_org_ref: org?.iati_org_id || org?.ref || ''
     }));
   };
 
   const handleReceiverOrgChange = (orgId: string) => {
-    const org = organizations.find(o => o.id === orgId);
+    const org = organizations.find((o: any) => o.id === orgId);
     setFormData(prev => ({
       ...prev,
       receiver_org_id: orgId,
-      receiver_org_name: org?.name || '',
+      receiver_org_name: (org && (org as any).acronym) ? (org as any).acronym : org?.name || '',
       receiver_org_ref: org?.iati_org_id || org?.ref || ''
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
+  const saveField = async (field: string, value: any) => {
+    setFieldStatus((prev) => ({ ...prev, [field]: "saving" }));
+    if (!transaction || !transaction.id) {
+      // New transaction: just update local state and show icons, do not call API
+      setTimeout(() => {
+        setFieldStatus((prev) => ({ ...prev, [field]: "saved" }));
+        toast.success(`${field.replace(/_/g, " ")} updated`);
+      }, 500);
+      return;
+    }
+    try {
+      // Existing transaction: call API
+      await fetch(`/api/activities/${activityId}/transactions/${transaction.id}/field`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      setFieldStatus((prev) => ({ ...prev, [field]: "saved" }));
+      toast.success(`${field.replace(/_/g, " ")} updated`);
+    } catch (e) {
+      setFieldStatus((prev) => ({ ...prev, [field]: "error" }));
+      toast.error(`Failed to update ${field.replace(/_/g, " ")}`);
+    }
+  };
+
+  // Helper to render icon
+  const renderFieldIcon = (field: string) => {
+    if (fieldStatus[field] === "saving") return <Loader2 className="inline h-4 w-4 text-orange-500 animate-spin ml-2" />;
+    if (fieldStatus[field] === "saved") return <CheckCircle className="inline h-4 w-4 text-green-500 ml-2" />;
+    if (fieldStatus[field] === "error") return <AlertTriangle className="inline h-4 w-4 text-red-500 ml-2" />;
+    return null;
   };
 
   // Get transaction type info for display
@@ -232,6 +379,65 @@ export default function TransactionForm({
   };
 
   const typeInfo = getTransactionTypeInfo(formData.transaction_type);
+
+  // Transaction type options for grouping
+  const COMMONLY_USED_TRANSACTION_TYPES = [
+    { code: '3', label: 'Disbursement' },
+    { code: '2', label: 'Outgoing Commitment' },
+    { code: '4', label: 'Expenditure' },
+    { code: '12', label: 'Incoming Funds' },
+  ];
+  const ALL_TRANSACTION_TYPES = [
+    { code: '1', label: 'Incoming Commitment' },
+    { code: '2', label: 'Outgoing Commitment' },
+    { code: '3', label: 'Disbursement' },
+    { code: '4', label: 'Expenditure' },
+    { code: '5', label: 'Interest Payment' },
+    { code: '6', label: 'Loan Repayment' },
+    { code: '7', label: 'Reimbursement' },
+    { code: '8', label: 'Purchase of Equity' },
+    { code: '9', label: 'Sale of Equity' },
+    { code: '10', label: 'Credit Guarantee' },
+    { code: '11', label: 'Incoming Commitment Adjustment' },
+    { code: '12', label: 'Incoming Funds' },
+    { code: '13', label: 'Outgoing Commitment Adjustment' },
+    { code: '14', label: 'Disbursement Adjustment' },
+    { code: '15', label: 'Expenditure Adjustment' },
+    { code: '16', label: 'Interest Payment Adjustment' },
+    { code: '17', label: 'Loan Repayment Adjustment' },
+    { code: '18', label: 'Reimbursement Adjustment' },
+    { code: '19', label: 'Purchase of Equity Adjustment' },
+    { code: '20', label: 'Sale of Equity Adjustment' },
+    { code: '21', label: 'Credit Guarantee Adjustment' },
+  ];
+  const OTHER_TRANSACTION_TYPES = ALL_TRANSACTION_TYPES.filter(
+    t => !COMMONLY_USED_TRANSACTION_TYPES.some(cu => cu.code === t.code)
+  );
+
+  // Transaction status options
+  const TRANSACTION_STATUS_OPTIONS = [
+    { code: '1', status: 'draft', description: 'Initial state; not yet submitted' },
+    { code: '2', status: 'submitted', description: 'Submitted for review; awaiting validation' },
+    { code: '3', status: 'validated', description: 'Reviewed and confirmed by an authorised reviewer' },
+    { code: '4', status: 'rejected', description: 'Returned with issues or corrections required' },
+    { code: '5', status: 'published', description: 'Finalised and publicly available in the system' },
+  ];
+
+  // Field status state
+  const [fieldStatus, setFieldStatus] = useState<{ [key: string]: "saving" | "saved" | "error" | undefined }>({});
+
+  // Set green tick for all pre-populated fields on mount (new or existing transaction)
+  useEffect(() => {
+    // Set green tick for all pre-populated fields
+    const initialStatus: { [key: string]: "saved" } = {};
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== undefined && value !== "" && value !== null) {
+        initialStatus[key] = "saved";
+      }
+    });
+    setFieldStatus(initialStatus);
+    // eslint-disable-next-line
+  }, [transaction, formData]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -252,22 +458,69 @@ export default function TransactionForm({
               <Label htmlFor="transaction_type">
                 Transaction Type <span className="text-red-500">*</span>
               </Label>
-              <Select
-                value={formData.transaction_type}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, transaction_type: value as TransactionType }))}
-              >
-                <SelectTrigger id="transaction_type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(TRANSACTION_TYPE_LABELS).map(([code, label]) => (
-                    <SelectItem key={code} value={code}>
-                      <span className="font-mono text-xs mr-2">{code}</span>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={transactionTypePopoverOpen} onOpenChange={setTransactionTypePopoverOpen}>
+                <PopoverTrigger>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={transactionTypePopoverOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {(() => {
+                      const selected = [...COMMONLY_USED_TRANSACTION_TYPES, ...ALL_TRANSACTION_TYPES].find(
+                        t => t.code === formData.transaction_type
+                      );
+                      return selected ? (
+                        <span className="flex items-center gap-2">
+                          <span className="font-mono text-xs bg-gray-100 px-1 rounded">{selected.code}</span>
+                          <span>{selected.label}</span>
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">Select transaction type...</span>
+                      );
+                    })()}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[320px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search transaction type..." />
+                    <CommandList>
+                      <CommandGroup>
+                        {COMMONLY_USED_TRANSACTION_TYPES.map(option => (
+                          <CommandItem
+                            key={option.code}
+                            onSelect={() => {
+                              setFormData({ ...formData, transaction_type: option.code as TransactionType });
+                              setTransactionTypePopoverOpen(false);
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <span className="font-mono text-xs bg-gray-100 px-1 rounded">{option.code}</span>
+                            <span>{option.label}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      <CommandGroup>
+                        {ALL_TRANSACTION_TYPES.filter(
+                          t => !COMMONLY_USED_TRANSACTION_TYPES.some(cu => cu.code === t.code)
+                        ).map(option => (
+                          <CommandItem
+                            key={option.code}
+                            onSelect={() => {
+                              setFormData({ ...formData, transaction_type: option.code as TransactionType });
+                              setTransactionTypePopoverOpen(false);
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <span className="font-mono text-xs bg-gray-100 px-1 rounded">{option.code}</span>
+                            <span>{option.label}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <Badge variant="outline" className={`w-fit ${typeInfo.bgColor} ${typeInfo.color}`}>
                 {typeInfo.isIncoming ? 'Incoming' : 'Outgoing'} Transaction
               </Badge>
@@ -285,9 +538,15 @@ export default function TransactionForm({
                   type="date"
                   value={formData.transaction_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, transaction_date: e.target.value }))}
+                  onBlur={async (e) => {
+                    if (transaction && formData.transaction_date !== transaction.transaction_date) {
+                      await saveField("transaction_date", formData.transaction_date);
+                    }
+                  }}
                   className="pl-10"
                   required
                 />
+                {renderFieldIcon("transaction_date")}
               </div>
             </div>
 
@@ -305,9 +564,15 @@ export default function TransactionForm({
                   min="0"
                   value={formData.value}
                   onChange={(e) => setFormData(prev => ({ ...prev, value: parseFloat(e.target.value) || 0 }))}
+                  onBlur={async (e) => {
+                    if (transaction && formData.value !== transaction.value) {
+                      await saveField("value", formData.value);
+                    }
+                  }}
                   className="pl-10"
                   required
                 />
+                {renderFieldIcon("value")}
               </div>
             </div>
 
@@ -318,7 +583,12 @@ export default function TransactionForm({
               </Label>
               <Select
                 value={formData.currency}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
+                onValueChange={async (value) => {
+                  setFormData(prev => ({ ...prev, currency: value }));
+                  if (transaction && value !== transaction.currency) {
+                    await saveField("currency", value);
+                  }
+                }}
               >
                 <SelectTrigger id="currency">
                   <SelectValue />
@@ -332,31 +602,20 @@ export default function TransactionForm({
                   ))}
                 </SelectContent>
               </Select>
+              {renderFieldIcon("currency")}
             </div>
 
             {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="status">
-                Status <span className="text-red-500">*</span>
+                Transaction Status <span className="text-red-500">*</span>
               </Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as TransactionStatus }))}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">
-                    <Badge variant="outline" className="mr-2">Draft</Badge>
-                    Planning/Estimated
-                  </SelectItem>
-                  <SelectItem value="actual">
-                    <Badge variant="default" className="mr-2">Actual</Badge>
-                    Confirmed/Executed
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="status"
+                value={formData.status === 'validated' ? '1 Validated' : '2 Unvalidated'}
+                disabled
+                className="bg-gray-100 cursor-not-allowed"
+              />
             </div>
 
             {/* Value Date (optional) */}
@@ -370,7 +629,13 @@ export default function TransactionForm({
                 type="date"
                 value={formData.value_date || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, value_date: e.target.value }))}
+                onBlur={async (e) => {
+                  if (transaction && formData.value_date !== transaction.value_date) {
+                    await saveField("value_date", formData.value_date);
+                  }
+                }}
               />
+              {renderFieldIcon("value_date")}
             </div>
           </div>
 
@@ -384,81 +649,67 @@ export default function TransactionForm({
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onBlur={async (e) => {
+                if (transaction && formData.description !== transaction.description) {
+                  await saveField("description", formData.description);
+                }
+              }}
               placeholder="Enter transaction description..."
               rows={3}
             />
+            {renderFieldIcon("description")}
           </div>
 
           {/* Organizations Section */}
-          <div className="space-y-4">
+          <div className="space-y-8"> {/* Add more whitespace between cards */}
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Organizations
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Provider Organization */}
-              <Card className="border-dashed">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Provider Organization</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <OrganizationCombobox
-                    organizations={organizations}
-                    value={formData.provider_org_id}
-                    onValueChange={handleProviderOrgChange}
-                    placeholder="Select provider organization..."
-                    allowManualEntry={true}
-                  />
-                  
-                  {(!formData.provider_org_id || formData.provider_org_id === '') && (
-                    <>
-                      <Input
-                        placeholder="Organization name"
-                        value={formData.provider_org_name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, provider_org_name: e.target.value }))}
-                      />
-                      <Input
-                        placeholder="IATI identifier (optional)"
-                        value={formData.provider_org_ref}
-                        onChange={(e) => setFormData(prev => ({ ...prev, provider_org_ref: e.target.value }))}
-                      />
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+            {/* Provider Organization */}
+            <Card className="border-dashed bg-gray-50">
+              <CardHeader className="pb-3 border-b border-gray-200">
+                <CardTitle className="text-sm">Provider Organization</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <OrganizationCombobox
+                  organizations={organizations}
+                  value={formData.provider_org_id}
+                  onValueChange={async (orgId: string) => {
+                    handleProviderOrgChange(orgId);
+                    if (transaction && orgId !== transaction.provider_org_id) {
+                      await saveField("provider_org_id", orgId);
+                    }
+                  }}
+                  placeholder="Select provider organization..."
+                  allowManualEntry={false}
+                />
+                {renderFieldIcon("provider_org_id")}
+              </CardContent>
+            </Card>
 
-              {/* Receiver Organization */}
-              <Card className="border-dashed">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Receiver Organization</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <OrganizationCombobox
-                    organizations={organizations}
-                    value={formData.receiver_org_id}
-                    onValueChange={handleReceiverOrgChange}
-                    placeholder="Select receiver organization..."
-                    allowManualEntry={true}
-                  />
-                  
-                  {(!formData.receiver_org_id || formData.receiver_org_id === '') && (
-                    <>
-                      <Input
-                        placeholder="Organization name"
-                        value={formData.receiver_org_name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, receiver_org_name: e.target.value }))}
-                      />
-                      <Input
-                        placeholder="IATI identifier (optional)"
-                        value={formData.receiver_org_ref}
-                        onChange={(e) => setFormData(prev => ({ ...prev, receiver_org_ref: e.target.value }))}
-                      />
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            {/* Receiver Organization */}
+            <Card className="border-dashed bg-gray-50">
+              <CardHeader className="pb-3 border-b border-gray-200">
+                <CardTitle className="text-sm">Receiver Organization</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <OrganizationCombobox
+                  organizations={organizations}
+                  value={formData.receiver_org_id}
+                  onValueChange={async (orgId: string) => {
+                    handleReceiverOrgChange(orgId);
+                    if (transaction && orgId !== transaction.receiver_org_id) {
+                      await saveField("receiver_org_id", orgId);
+                    }
+                  }}
+                  placeholder="Select receiver organization..."
+                  allowManualEntry={false}
+                />
+                {renderFieldIcon("receiver_org_id")}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Advanced Fields */}
@@ -480,8 +731,14 @@ export default function TransactionForm({
                     id="transaction_reference"
                     value={formData.transaction_reference || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, transaction_reference: e.target.value }))}
+                    onBlur={async (e) => {
+                      if (transaction && formData.transaction_reference !== transaction.transaction_reference) {
+                        await saveField("transaction_reference", formData.transaction_reference);
+                      }
+                    }}
                     placeholder="Internal reference number"
                   />
+                  {renderFieldIcon("transaction_reference")}
                 </div>
 
                 {/* Disbursement Channel */}
@@ -491,7 +748,12 @@ export default function TransactionForm({
                   </Label>
                   <Select
                     value={formData.disbursement_channel || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, disbursement_channel: value as any }))}
+                    onValueChange={async (value) => {
+                      setFormData(prev => ({ ...prev, disbursement_channel: value as any }));
+                      if (transaction && value !== transaction.disbursement_channel) {
+                        await saveField("disbursement_channel", value);
+                      }
+                    }}
                   >
                     <SelectTrigger id="disbursement_channel">
                       <SelectValue placeholder="Select channel..." />
@@ -505,6 +767,7 @@ export default function TransactionForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  {renderFieldIcon("disbursement_channel")}
                 </div>
 
                 {/* Sector Code */}
@@ -516,8 +779,14 @@ export default function TransactionForm({
                     id="sector_code"
                     value={formData.sector_code || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, sector_code: e.target.value }))}
+                    onBlur={async (e) => {
+                      if (transaction && formData.sector_code !== transaction.sector_code) {
+                        await saveField("sector_code", formData.sector_code);
+                      }
+                    }}
                     placeholder="DAC 5-digit code"
                   />
+                  {renderFieldIcon("sector_code")}
                 </div>
 
                 {/* Recipient Country */}
@@ -529,8 +798,14 @@ export default function TransactionForm({
                     id="recipient_country_code"
                     value={formData.recipient_country_code || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, recipient_country_code: e.target.value }))}
+                    onBlur={async (e) => {
+                      if (transaction && formData.recipient_country_code !== transaction.recipient_country_code) {
+                        await saveField("recipient_country_code", formData.recipient_country_code);
+                      }
+                    }}
                     placeholder="ISO 3166-1 alpha-2 (e.g., KH)"
                   />
+                  {renderFieldIcon("recipient_country_code")}
                 </div>
 
                 {/* Flow Type */}
@@ -540,7 +815,12 @@ export default function TransactionForm({
                   </Label>
                   <Select
                     value={formData.flow_type || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, flow_type: value as any }))}
+                    onValueChange={async (value) => {
+                      setFormData(prev => ({ ...prev, flow_type: value as any }));
+                      if (transaction && value !== transaction.flow_type) {
+                        await saveField("flow_type", value);
+                      }
+                    }}
                   >
                     <SelectTrigger id="flow_type">
                       <SelectValue placeholder="Select flow type..." />
@@ -554,6 +834,7 @@ export default function TransactionForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  {renderFieldIcon("flow_type")}
                 </div>
 
                 {/* Finance Type */}
@@ -563,7 +844,12 @@ export default function TransactionForm({
                   </Label>
                   <Select
                     value={formData.finance_type || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, finance_type: value as any }))}
+                    onValueChange={async (value) => {
+                      setFormData(prev => ({ ...prev, finance_type: value as any }));
+                      if (transaction && value !== transaction.finance_type) {
+                        await saveField("finance_type", value);
+                      }
+                    }}
                   >
                     <SelectTrigger id="finance_type">
                       <SelectValue placeholder="Select finance type..." />
@@ -577,6 +863,7 @@ export default function TransactionForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  {renderFieldIcon("finance_type")}
                 </div>
 
                 {/* Aid Type */}
@@ -586,7 +873,12 @@ export default function TransactionForm({
                   </Label>
                   <Select
                     value={formData.aid_type || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, aid_type: value }))}
+                    onValueChange={async (value) => {
+                      setFormData(prev => ({ ...prev, aid_type: value }));
+                      if (transaction && value !== transaction.aid_type) {
+                        await saveField("aid_type", value);
+                      }
+                    }}
                   >
                     <SelectTrigger id="aid_type">
                       <SelectValue placeholder="Select aid type..." />
@@ -600,6 +892,7 @@ export default function TransactionForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  {renderFieldIcon("aid_type")}
                 </div>
 
                 {/* Tied Status */}
@@ -609,7 +902,12 @@ export default function TransactionForm({
                   </Label>
                   <Select
                     value={formData.tied_status || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, tied_status: value as any }))}
+                    onValueChange={async (value) => {
+                      setFormData(prev => ({ ...prev, tied_status: value as any }));
+                      if (transaction && value !== transaction.tied_status) {
+                        await saveField("tied_status", value);
+                      }
+                    }}
                   >
                     <SelectTrigger id="tied_status">
                       <SelectValue placeholder="Select tied status..." />
@@ -623,6 +921,29 @@ export default function TransactionForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  {renderFieldIcon("tied_status")}
+                </div>
+              </div>
+
+              {/* Financing Classification */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="flex flex-col space-y-2">
+                  <Label htmlFor="financing_classification">
+                    Financing Classification
+                  </Label>
+                  <Input
+                    id="financing_classification"
+                    type="text"
+                    value={formData.financing_classification || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, financing_classification: e.target.value }))}
+                    onBlur={async (e) => {
+                      if (transaction && formData.financing_classification !== transaction.financing_classification) {
+                        await saveField("financing_classification", formData.financing_classification);
+                      }
+                    }}
+                    placeholder="e.g., ODA Grant, ODA Loan, OOF Grant"
+                  />
+                  {renderFieldIcon("financing_classification")}
                 </div>
               </div>
 
@@ -633,11 +954,17 @@ export default function TransactionForm({
                   id="is_humanitarian"
                   checked={formData.is_humanitarian || false}
                   onChange={(e) => setFormData(prev => ({ ...prev, is_humanitarian: e.target.checked }))}
+                  onBlur={async (e) => {
+                    if (transaction && formData.is_humanitarian !== transaction.is_humanitarian) {
+                      await saveField("is_humanitarian", formData.is_humanitarian);
+                    }
+                  }}
                   className="rounded border-gray-300"
                 />
                 <Label htmlFor="is_humanitarian" className="font-normal cursor-pointer">
                   This is a humanitarian transaction
                 </Label>
+                {renderFieldIcon("is_humanitarian")}
               </div>
             </CollapsibleContent>
           </Collapsible>

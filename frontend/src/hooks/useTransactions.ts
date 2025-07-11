@@ -115,10 +115,30 @@ export function useTransactions(params: TransactionFilter = {}) {
     params.limit,
   ]);
 
+  // Optimistic delete function
+  const deleteTransaction = (transactionId: string) => {
+    setTransactions(prev => ({
+      ...prev,
+      data: prev.data.filter(t => (t.uuid || t.id) !== transactionId),
+      total: prev.total - 1
+    }));
+  };
+
+  // Add back deleted transaction (for error recovery)
+  const addTransaction = (transaction: any) => {
+    setTransactions(prev => ({
+      ...prev,
+      data: [transaction, ...prev.data],
+      total: prev.total + 1
+    }));
+  };
+
   return {
     transactions,
     loading,
     error,
     refetch: fetchTransactions,
+    deleteTransaction,
+    addTransaction,
   };
 } 

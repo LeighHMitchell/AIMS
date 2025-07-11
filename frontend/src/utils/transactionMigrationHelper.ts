@@ -50,7 +50,10 @@ export const TRANSACTION_TYPES = {
 
 export const TRANSACTION_STATUS = {
   draft: 'Draft',
-  actual: 'Actual'
+  submitted: 'Submitted',
+  validated: 'Validated',
+  rejected: 'Rejected',
+  published: 'Published'
 };
 
 export const TIED_STATUS = {
