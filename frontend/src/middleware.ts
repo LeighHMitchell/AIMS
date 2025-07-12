@@ -5,9 +5,24 @@ import type { NextRequest } from 'next/server'
 const API_ROUTES = ['/api/activities', '/api/partners', '/api/activity-logs', '/api/projects']
 
 export function middleware(request: NextRequest) {
-  // Handle CORS
-  if (request.method === 'OPTIONS') {
-    return new NextResponse(null, { status: 200 })
+  // Handle CORS for all API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    if (request.method === 'OPTIONS') {
+      const response = new NextResponse(null, { status: 200 });
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      return response;
+    }
+
+    // Add CORS headers to all API responses
+    const response = NextResponse.next();
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    return response;
   }
 
   // For API routes that handle user updates (with profile pictures)

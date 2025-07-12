@@ -43,6 +43,12 @@ class PreCacheManager {
    * Pre-cache API data for faster access
    */
   async preCacheAPI(url: string, options: PreCacheOptions = {}): Promise<any> {
+    // Only run on client-side to prevent SSR issues
+    if (typeof window === 'undefined') {
+      console.log('[PreCache] Skipping server-side pre-cache for:', url)
+      return null
+    }
+
     const cacheKey = this.getCacheKey(url)
     const { force = false, background = false, ttl = CACHE_CONFIG.ttl } = options
 

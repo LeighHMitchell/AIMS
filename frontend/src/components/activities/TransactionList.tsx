@@ -41,6 +41,9 @@ import { format } from "date-fns";
 import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData } from '@/types/transaction';
 import TransactionForm from './TransactionForm';
 import { TransactionDocumentIndicator } from '../TransactionDocumentIndicator';
+import { TransactionValueDisplay } from '@/components/currency/TransactionValueDisplay';
+import { useCurrencyConverter } from '@/hooks/useCurrencyConverter';
+import { toast } from 'sonner';
 import {
   Tooltip,
   TooltipContent,
@@ -55,6 +58,7 @@ interface TransactionListProps {
   onAdd?: (transaction: TransactionFormData) => Promise<void>;
   onUpdate?: (uuid: string, transaction: TransactionFormData) => Promise<void>;
   onDelete?: (uuid: string) => Promise<void>;
+  onRefresh?: () => Promise<void>;
   readOnly?: boolean;
   currency?: string;
   defaultFinanceType?: string;
@@ -73,6 +77,7 @@ export default function TransactionList({
   onAdd,
   onUpdate,
   onDelete,
+  onRefresh,
   readOnly = false,
   currency = 'USD',
   defaultFinanceType,
@@ -85,6 +90,9 @@ export default function TransactionList({
   const [isLoading, setIsLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>('transaction_date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // Currency converter hook
+  const { convertTransaction, isConverting, convertingIds, error: conversionError } = useCurrencyConverter();
 
   // Calculate summary statistics
   const summary = React.useMemo(() => {
@@ -211,6 +219,35 @@ export default function TransactionList({
       } finally {
         setIsLoading(false);
       }
+    }
+  };
+
+  const handleConvertCurrency = async (transactionId: string) => {
+    const transaction = transactions.find(t => (t.uuid || t.id) === transactionId);
+    if (!transaction) {
+      toast.error("Transaction not found");
+      return;
+    }
+
+    try {
+      const success = await convertTransaction(
+        transactionId,
+        transaction.value,
+        transaction.currency,
+        (transaction as any).value_date || transaction.transaction_date
+      );
+
+      if (success) {
+        toast.success(`Transaction converted to USD successfully`);
+        if (onRefresh) {
+          await onRefresh(); // Refresh to show updated USD values
+        }
+      } else {
+        toast.error(conversionError || "Failed to convert transaction");
+      }
+    } catch (error) {
+      console.error('Currency conversion error:', error);
+      toast.error("Currency conversion failed");
     }
   };
 
@@ -399,6 +436,8 @@ export default function TransactionList({
                         {getSortIcon('value')}
                       </div>
                     </TableHead>
+                    <TableHead className="text-right">Original Value</TableHead>
+                    <TableHead className="text-right">USD Value</TableHead>
                     <TableHead className="text-center w-16 px-2">
                       <TooltipProvider>
                         <Tooltip>
@@ -457,9 +496,40 @@ export default function TransactionList({
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {transaction.value > 0 ? formatCurrency(transaction.value, transaction.currency) : (
+                      <TableCell className="text-right">
+                        {transaction.value > 0 ? (
+                          <TransactionValueDisplay
+                            transaction={{
+                              id: transaction.uuid || transaction.id,
+                              value: transaction.value,
+                              currency: transaction.currency,
+                              transaction_date: transaction.transaction_date,
+                              value_usd: (transaction as any).value_usd,
+                              usd_convertible: (transaction as any).usd_convertible,
+                              usd_conversion_date: (transaction as any).usd_conversion_date,
+                              exchange_rate_used: (transaction as any).exchange_rate_used
+                            }}
+                            onConvert={handleConvertCurrency}
+                            showConvertButton={!readOnly}
+                            compact={true}
+                            variant="full"
+                          />
+                        ) : (
                           <span className="text-red-600">Invalid</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {transaction.value > 0 ? (
+                          <span>{formatCurrency(transaction.value, transaction.currency)}</span>
+                        ) : (
+                          <span className="text-red-600">Invalid</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {(transaction as any).value_usd != null ? (
+                          <span>{formatCurrency((transaction as any).value_usd, 'USD')}</span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
                         )}
                       </TableCell>
                       <TableCell className="text-center w-16 px-2">

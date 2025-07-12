@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { TransactionType } from '@/types/transaction';
 import { createClient } from '@/lib/supabase-simple';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 export const dynamic = 'force-dynamic';
 
@@ -225,6 +226,84 @@ async function validateIATIFields(body: any) {
   return { isValid: errors.length === 0, errors };
 }
 
+// Helper function to perform automatic currency conversion
+async function performCurrencyConversion(transactionId: string, currency: string, value: number, valueDate: string) {
+  try {
+    console.log('[Transactions API] Starting automatic currency conversion for transaction:', transactionId);
+    
+    // Skip conversion if already USD
+    if (currency === 'USD') {
+      console.log('[Transactions API] Transaction is already in USD, updating fields...');
+      
+      // Update USD fields for USD transactions
+      const { error: updateError } = await getSupabaseAdmin()
+        .from('transactions')
+        .update({
+          value_usd: value,
+          exchange_rate_used: 1.0,
+          usd_conversion_date: new Date().toISOString(),
+          usd_convertible: true
+        })
+        .eq('uuid', transactionId);
+
+      if (updateError) {
+        console.error('[Transactions API] Error updating USD transaction fields:', updateError);
+      } else {
+        console.log('[Transactions API] Successfully updated USD transaction fields');
+      }
+      return;
+    }
+
+    // Convert to USD using the currency converter
+    const conversionDate = new Date(valueDate);
+    const result = await fixedCurrencyConverter.convertToUSD(value, currency, conversionDate);
+
+    if (!result.success) {
+      console.log('[Transactions API] Currency conversion failed, marking as unconvertible:', result.error);
+      
+      // Mark as unconvertible
+      const { error: updateError } = await getSupabaseAdmin()
+        .from('transactions')
+        .update({
+          usd_convertible: false,
+          usd_conversion_date: new Date().toISOString()
+        })
+        .eq('uuid', transactionId);
+
+      if (updateError) {
+        console.error('[Transactions API] Error marking transaction as unconvertible:', updateError);
+      }
+      return;
+    }
+
+    // Update transaction with USD values
+    console.log('[Transactions API] Currency conversion successful, updating transaction with USD values...');
+    const { error: updateError } = await getSupabaseAdmin()
+      .from('transactions')
+      .update({
+        value_usd: result.usd_amount,
+        exchange_rate_used: result.exchange_rate,
+        usd_conversion_date: new Date().toISOString(),
+        usd_convertible: true
+      })
+      .eq('uuid', transactionId);
+
+    if (updateError) {
+      console.error('[Transactions API] Error updating transaction with USD values:', updateError);
+    } else {
+      console.log('[Transactions API] Successfully converted and updated transaction:', {
+        transactionId,
+        originalAmount: `${value} ${currency}`,
+        usdAmount: `$${result.usd_amount}`,
+        exchangeRate: result.exchange_rate
+      });
+    }
+
+  } catch (error) {
+    console.error('[Transactions API] Unexpected error during currency conversion:', error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -333,7 +412,11 @@ export async function POST(request: NextRequest) {
       currency: body.currency || 'USD',
       status: body.status || 'actual',
       transaction_date: cleanDateValue(body.transaction_date) || new Date().toISOString().split('T')[0],
-      value_date: cleanDateValue(body.value_date), // null if empty
+      value_date: (() => {
+        const valueDate = cleanDateValue(body.value_date);
+        const transactionDate = cleanDateValue(body.transaction_date) || new Date().toISOString().split('T')[0];
+        return valueDate || transactionDate; // Use value_date if provided, otherwise use transaction_date
+      })(),
       transaction_reference: transactionReference,
       description: body.description ?? '',
       aid_type: cleanEnumValue(body.aid_type),
@@ -389,6 +472,11 @@ export async function POST(request: NextRequest) {
       id: data.uuid // Add id field for backward compatibility
     };
     
+    // Perform currency conversion if the transaction is not in USD
+    if (responseData.currency !== 'USD') {
+      await performCurrencyConversion(responseData.uuid, responseData.currency, responseData.value, responseData.value_date || responseData.transaction_date);
+    }
+
     return NextResponse.json(responseData, { status: 201 });
   } catch (error) {
     console.error('[Transactions API] Unexpected error:', error);
@@ -496,7 +584,19 @@ export async function PUT(request: NextRequest) {
       provider_org_type: cleanEnumValue(updateData.provider_org_type),
       receiver_org_type: cleanEnumValue(updateData.receiver_org_type),
       transaction_date: cleanDateValue(updateData.transaction_date),
-      value_date: cleanDateValue(updateData.value_date),
+      value_date: (() => {
+        const valueDate = cleanDateValue(updateData.value_date);
+        const transactionDate = cleanDateValue(updateData.transaction_date);
+        const result = valueDate || transactionDate;
+        console.log('[DEBUG] value_date logic:', { 
+          input_value_date: updateData.value_date, 
+          input_transaction_date: updateData.transaction_date,
+          cleaned_value_date: valueDate, 
+          cleaned_transaction_date: transactionDate, 
+          final_result: result 
+        });
+        return result; // Use value_date if provided, otherwise use transaction_date
+      })(),
       aid_type: cleanEnumValue(updateData.aid_type),
       tied_status: cleanEnumValue(updateData.tied_status),
       flow_type: cleanEnumValue(updateData.flow_type),
@@ -551,6 +651,11 @@ export async function PUT(request: NextRequest) {
       id: data.uuid // Add id field for backward compatibility
     };
     
+    // Perform currency conversion if the transaction is not in USD
+    if (responseData.currency !== 'USD') {
+      await performCurrencyConversion(responseData.uuid, responseData.currency, responseData.value, responseData.value_date || responseData.transaction_date);
+    }
+
     return NextResponse.json(responseData);
   } catch (error) {
     console.error('[Transactions API] Unexpected error:', error);

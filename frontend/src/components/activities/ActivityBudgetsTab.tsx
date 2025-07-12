@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Types
 interface ActivityBudget {
@@ -437,12 +438,30 @@ export default function ActivityBudgetsTab({
 
   // Duplicate Forward - creates next period based on granularity
   const duplicateForward = useCallback((index: number) => {
+    console.log('[DuplicateForward] Starting duplicate forward for index:', index);
+    
     const budget = budgets[index];
+    console.log('[DuplicateForward] Source budget:', budget);
+    
     const currentStart = parseISO(budget.period_start);
     const currentEnd = parseISO(budget.period_end);
+    console.log('[DuplicateForward] Current period:', {
+      start: budget.period_start,
+      end: budget.period_end,
+      parsedStart: currentStart,
+      parsedEnd: currentEnd,
+      isValidStart: isValid(currentStart),
+      isValidEnd: isValid(currentEnd)
+    });
     
-    let nextPeriodStart: Date;
-    let nextPeriodEnd: Date;
+    if (!isValid(currentStart) || !isValid(currentEnd)) {
+      console.log('[DuplicateForward] ERROR: Invalid dates in source budget');
+      alert('Cannot duplicate - source budget has invalid dates');
+      return;
+    }
+    
+    let nextPeriodStart: Date | undefined;
+    let nextPeriodEnd: Date | undefined;
     
     // Calculate next period based on granularity
     switch (granularity) {
@@ -458,28 +477,55 @@ export default function ActivityBudgetsTab({
         nextPeriodStart = addYears(currentStart, 1);
         nextPeriodEnd = endOfYear(nextPeriodStart);
         break;
+      default:
+        console.log('[DuplicateForward] ERROR: Unknown granularity:', granularity);
+        alert(`Unknown granularity: ${granularity}`);
+        return;
     }
+    
+    if (!nextPeriodStart || !nextPeriodEnd) {
+      console.log('[DuplicateForward] ERROR: Failed to calculate next period');
+      alert('Failed to calculate next period');
+      return;
+    }
+    
+    console.log('[DuplicateForward] Calculated next period:', {
+      granularity,
+      nextStart: format(nextPeriodStart, 'yyyy-MM-dd'),
+      nextEnd: format(nextPeriodEnd, 'yyyy-MM-dd')
+    });
     
     // Ensure period doesn't exceed 12 months
     const monthDiff = differenceInMonths(nextPeriodEnd, nextPeriodStart);
     if (monthDiff > 12) {
+      console.log('[DuplicateForward] Period exceeds 12 months, adjusting...');
       nextPeriodEnd = addMonths(nextPeriodStart, 11);
       nextPeriodEnd = endOfMonth(nextPeriodEnd);
     }
     
     // Ensure period doesn't exceed project end date
     const projectEnd = parseISO(endDate);
+    console.log('[DuplicateForward] Project end date:', endDate, projectEnd);
+    
     if (isAfter(nextPeriodEnd, projectEnd)) {
+      console.log('[DuplicateForward] Period end exceeds project end, adjusting...');
       nextPeriodEnd = projectEnd;
     }
     
     // Check if period is still valid
     if (!isBefore(nextPeriodStart, projectEnd)) {
+      console.log('[DuplicateForward] ERROR: Next period start is after project end, cannot create');
+      alert('Cannot create budget period beyond project end date');
       return; // Can't create period beyond project end
     }
     
     const nextPeriodStartStr = format(nextPeriodStart, 'yyyy-MM-dd');
     const nextPeriodEndStr = format(nextPeriodEnd, 'yyyy-MM-dd');
+    
+    console.log('[DuplicateForward] Formatted next period:', {
+      start: nextPeriodStartStr,
+      end: nextPeriodEndStr
+    });
     
     // Check for overlaps with existing budgets
     const hasOverlap = budgets.some((b, i) => {
@@ -487,14 +533,26 @@ export default function ActivityBudgetsTab({
       const existingStart = parseISO(b.period_start);
       const existingEnd = parseISO(b.period_end);
       
-      return (
+      const overlaps = (
         (nextPeriodStart >= existingStart && nextPeriodStart <= existingEnd) ||
         (nextPeriodEnd >= existingStart && nextPeriodEnd <= existingEnd) ||
         (nextPeriodStart <= existingStart && nextPeriodEnd >= existingEnd)
       );
+      
+      if (overlaps) {
+        console.log('[DuplicateForward] Overlap detected with budget:', {
+          index: i,
+          existingPeriod: `${b.period_start} to ${b.period_end}`,
+          newPeriod: `${nextPeriodStartStr} to ${nextPeriodEndStr}`
+        });
+      }
+      
+      return overlaps;
     });
     
     if (hasOverlap) {
+      console.log('[DuplicateForward] ERROR: Period would overlap with existing budget');
+      alert('Cannot create budget period - it would overlap with an existing budget period');
       return; // Period would overlap, don't create
     }
     
@@ -507,15 +565,21 @@ export default function ActivityBudgetsTab({
       value_date: nextPeriodStartStr, // Set value_date to start of new period
     };
     
+    console.log('[DuplicateForward] Creating new budget:', newBudget);
+    
     // Insert after current row
     setBudgets(prev => {
       const updated = [...prev];
       updated.splice(index + 1, 0, newBudget);
+      console.log('[DuplicateForward] Updated budgets array:', updated);
       return updated;
     });
     
+    console.log('[DuplicateForward] SUCCESS: Budget duplicated forward');
+    
     // Auto-save the new budget
     setTimeout(() => {
+      console.log('[DuplicateForward] Auto-saving new budget...');
       saveBudgetField(newBudget, 'value');
     }, 100);
   }, [budgets, granularity, endDate, saveBudgetField]);
@@ -599,8 +663,81 @@ export default function ActivityBudgetsTab({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="space-y-6">
+        {/* Financial Summary Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white border rounded-xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-8 w-8 rounded" />
+              </div>
+              <Skeleton className="h-7 w-32 mb-1" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          ))}
+        </div>
+
+        {/* Budget Configuration Skeleton */}
+        <div className="bg-white border rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Skeleton className="h-6 w-6" />
+            <Skeleton className="h-6 w-48" />
+          </div>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-40" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-10 rounded-full" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+        </div>
+
+        {/* Budget Table Skeleton */}
+        <div className="bg-white border rounded-xl overflow-hidden">
+          <div className="p-6 border-b bg-gray-50">
+            <Skeleton className="h-6 w-32" />
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  {['Period', 'Type', 'Status', 'Value', 'Currency', 'Value Date', 'Actions'].map((header, i) => (
+                    <th key={i} className="px-4 py-3 text-left">
+                      <Skeleton className="h-4 w-16" />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[...Array(4)].map((_, rowIndex) => (
+                  <tr key={rowIndex} className="border-b">
+                    {[...Array(7)].map((_, colIndex) => (
+                      <td key={colIndex} className="px-4 py-3">
+                        <Skeleton className="h-5 w-24" />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="bg-white border rounded-xl p-6">
+              <Skeleton className="h-5 w-40 mb-4" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -827,7 +964,10 @@ export default function ActivityBudgetsTab({
                           </Button>
                           <button
                             type="button"
-                            onClick={() => duplicateForward(index)}
+                            onClick={() => {
+                              console.log('[DuplicateForward] Button clicked for index:', index);
+                              duplicateForward(index);
+                            }}
                             className="text-sm underline cursor-pointer"
                           >
                             Duplicate Forward

@@ -17,6 +17,13 @@ export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/organizations - Starting request');
   
   try {
+    // Add caching headers to reduce repeated requests
+    const headers = {
+      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600', // 5 minute cache
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    };
     // Check if getSupabaseAdmin() is properly initialized
     if (!getSupabaseAdmin()) {
       console.error('[AIMS] getSupabaseAdmin() is not initialized');
@@ -26,9 +33,10 @@ export async function GET(request: NextRequest) {
       );
     }
     
+    // Optimized query - only select needed fields for better performance
     const { data: organizations, error } = await getSupabaseAdmin()
       .from('organizations')
-      .select('*')
+      .select('id, name, acronym, type, country')
       .order('name');
     
     if (error) {
@@ -124,69 +132,8 @@ export async function GET(request: NextRequest) {
     
     console.log('[AIMS] Fetched organizations count:', organizations.length);
     
-    // Calculate active project counts for each organization
-    if (organizations && organizations.length > 0) {
-      // Fetch all activities with implementation status
-      const { data: activities, error: activitiesError } = await getSupabaseAdmin()
-        .from('activities')
-        .select('id, reporting_org_id, activity_status')
-        .eq('activity_status', 'implementation');
-      
-      // Fetch all activity contributors
-      const { data: contributors, error: contributorsError } = await getSupabaseAdmin()
-        .from('activity_contributors')
-        .select('activity_id, organization_id, contribution_type')
-        .in('contribution_type', ['funder', 'implementer', 'funding', 'implementing']);
-      
-      // Calculate active project counts
-      const activeProjectCounts = new Map<string, number>();
-      
-      if (activities && !activitiesError) {
-        // Count projects by created_by_org
-        activities.forEach((activity: any) => {
-          if (activity.reporting_org_id) {
-            const count = activeProjectCounts.get(activity.reporting_org_id) || 0;
-            activeProjectCounts.set(activity.reporting_org_id, count + 1);
-          }
-        });
-        
-        // Count projects by contributor organizations
-        if (contributors && !contributorsError) {
-          const activeActivityIds = new Set(activities.map((a: any) => a.id));
-          
-          contributors.forEach((contributor: any) => {
-            if (activeActivityIds.has(contributor.activity_id)) {
-              const count = activeProjectCounts.get(contributor.organization_id) || 0;
-              activeProjectCounts.set(contributor.organization_id, count + 1);
-            }
-          });
-        }
-      }
-      
-      // Enhance organizations with active project counts
-      const enhancedOrganizations = organizations.map((org: any) => ({
-        ...org,
-        active_project_count: activeProjectCounts.get(org.id) || 0
-      }));
-      
-      const response = NextResponse.json(enhancedOrganizations);
-      
-      // Add CORS headers
-      response.headers.set('Access-Control-Allow-Origin', '*');
-      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      
-      return response;
-    }
-    
-    const response = NextResponse.json(organizations);
-    
-    // Add CORS headers
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    
-    return response;
+    // Return organizations without expensive activity counting for better performance
+    return NextResponse.json(organizations, { headers });
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(

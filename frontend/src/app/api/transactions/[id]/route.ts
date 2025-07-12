@@ -32,7 +32,7 @@ export async function GET(
           organisation_type
         )
       `)
-      .eq('id', transactionId)
+      .eq('uuid', transactionId)
       .single();
     
     if (error) {

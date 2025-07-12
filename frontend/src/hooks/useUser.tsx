@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User, UserRole, UserPermissions, getUserPermissions, USER_ROLES, Organization } from '@/types/user';
 import { useRouter } from "next/navigation";
+import { supabase } from '@/lib/supabase';
 
 interface UserContextType {
   user: User | null;
@@ -27,7 +28,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
-  // Load user from localStorage only after component mounts
+  // Load user from localStorage and setup Supabase auth listener
   useEffect(() => {
     const storedUser = localStorage.getItem('aims_user');
     if (storedUser) {
@@ -39,8 +40,51 @@ export function UserProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('aims_user');
       }
     }
+
+    // Listen for Supabase auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('[useUser] Supabase auth event:', event);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Create user object from Supabase user data
+          const supabaseUser: User = {
+            id: session.user.id,
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+            firstName: session.user.user_metadata?.given_name || '',
+            lastName: session.user.user_metadata?.family_name || '',
+            email: session.user.email || '',
+            title: session.user.user_metadata?.title || 'User',
+            jobTitle: session.user.user_metadata?.job_title || '',
+            role: USER_ROLES.DEV_PARTNER_TIER_2, // Default role for OAuth users
+            organizationId: "1", // Default organization
+            organisation: "External User",
+            profilePicture: session.user.user_metadata?.avatar_url,
+            phone: session.user.user_metadata?.phone,
+            isActive: true,
+            lastLogin: new Date().toISOString(),
+            createdAt: session.user.created_at || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          
+          console.log('[useUser] Setting Supabase user:', supabaseUser);
+          handleSetUser(supabaseUser);
+        }
+        
+        if (event === 'SIGNED_OUT') {
+          console.log('[useUser] User signed out from Supabase');
+          handleSetUser(null);
+        }
+      }
+    );
+
     setIsLoading(false);
     setIsInitialized(true);
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Save user to localStorage when it changes

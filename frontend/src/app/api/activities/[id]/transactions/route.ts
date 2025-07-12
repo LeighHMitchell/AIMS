@@ -1,15 +1,134 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+
+// Helper function to perform automatic currency conversion
+async function performCurrencyConversion(transactionId: string, currency: string, value: number, valueDate: string) {
+  try {
+    console.log('[Activity Transactions API] Starting automatic currency conversion for transaction:', transactionId);
+    
+    // Use the fixed currency converter
+    const result = await fixedCurrencyConverter.convertTransaction(transactionId);
+    
+    if (result.success) {
+      console.log('[Activity Transactions API] Currency conversion completed successfully for transaction:', transactionId);
+    } else {
+      console.log('[Activity Transactions API] Currency conversion failed for transaction:', transactionId, 'Error:', result.error);
+    }
+
+  } catch (error) {
+    console.error('[Activity Transactions API] Unexpected error during currency conversion:', error);
+  }
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const startTime = Date.now();
+  
   try {
     const activityId = params.id;
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
+    const includeSummary = searchParams.get('includeSummary') === 'true';
+    
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
 
-    // Fetch transactions with organization details
-    const { data: transactions, error } = await getSupabaseAdmin()
+    // Check if optimized endpoint is requested
+    const enableOptimization = process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION !== 'false';
+    
+    if (enableOptimization && (page > 1 || limit < 100)) {
+      // Use optimized pagination
+      const offset = (page - 1) * limit;
+      
+      // Get total count
+      const { count } = await supabase
+        .from('transactions')
+        .select('uuid', { count: 'exact', head: true })
+        .eq('activity_id', activityId);
+      
+      // Fetch paginated transactions with optimized query
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select(`
+          *,
+          provider_org:provider_org_id(
+            id,
+            name,
+            type,
+            iati_org_id,
+            acronym
+          ),
+          receiver_org:receiver_org_id(
+            id,
+            name,
+            type,
+            iati_org_id,
+            acronym
+          )
+        `)
+        .eq('activity_id', activityId)
+        .order('transaction_date', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch transactions' },
+          { status: 500 }
+        );
+      }
+
+      // Transform the data
+      const transformedTransactions = transactions?.map((t: any) => ({
+        ...t,
+        provider_org_ref: t.provider_org?.iati_org_id || t.provider_org_ref,
+        receiver_org_ref: t.receiver_org?.iati_org_id || t.receiver_org_ref,
+        provider_org_name: t.provider_org?.acronym || t.provider_org?.name || t.provider_org_name,
+        receiver_org_name: t.receiver_org?.acronym || t.receiver_org?.name || t.receiver_org_name,
+      })) || [];
+      
+      // Calculate summary if requested
+      let summary = undefined;
+      if (includeSummary) {
+        const actualTransactions = transformedTransactions.filter((t: any) => t.status === 'actual');
+        summary = {
+          commitments: actualTransactions.filter((t: any) => t.transaction_type === '2').reduce((sum: number, t: any) => sum + (t.value || 0), 0),
+          disbursements: actualTransactions.filter((t: any) => t.transaction_type === '3').reduce((sum: number, t: any) => sum + (t.value || 0), 0),
+          expenditures: actualTransactions.filter((t: any) => t.transaction_type === '4').reduce((sum: number, t: any) => sum + (t.value || 0), 0),
+          inflows: actualTransactions.filter((t: any) => ['1', '11'].includes(t.transaction_type || '')).reduce((sum: number, t: any) => sum + (t.value || 0), 0)
+        };
+      }
+      
+      // Log performance
+      const executionTime = Date.now() - startTime;
+      console.log(`[Transactions Optimized] Fetched ${transformedTransactions.length} transactions in ${executionTime}ms`);
+      
+      return NextResponse.json({
+        data: transformedTransactions,
+        pagination: {
+          page,
+          limit,
+          total: count || 0,
+          totalPages: Math.ceil((count || 0) / limit)
+        },
+        summary,
+        performance: {
+          executionTimeMs: executionTime
+        }
+      });
+    }
+    
+    // Legacy implementation for backward compatibility
+    const { data: transactions, error } = await supabase
       .from('transactions')
       .select(`
         *,
@@ -48,6 +167,9 @@ export async function GET(
       receiver_org_name: t.receiver_org?.acronym || t.receiver_org?.name || t.receiver_org_name,
     })) || [];
 
+    const executionTime = Date.now() - startTime;
+    console.log(`[Transactions Legacy] Fetched ${transformedTransactions.length} transactions in ${executionTime}ms`);
+    
     return NextResponse.json(transformedTransactions);
   } catch (error) {
     console.error('Unexpected error:', error);
@@ -201,6 +323,12 @@ export async function POST(
       provider_org_name: newTransaction.provider_org?.acronym || newTransaction.provider_org?.name || newTransaction.provider_org_name,
       receiver_org_name: newTransaction.receiver_org?.acronym || newTransaction.receiver_org?.name || newTransaction.receiver_org_name,
     };
+
+    // Perform currency conversion if needed
+    if (newTransaction.currency && newTransaction.value) {
+      const conversionDate = newTransaction.value_date || newTransaction.transaction_date;
+      await performCurrencyConversion(newTransaction.uuid, newTransaction.currency, newTransaction.value, conversionDate);
+    }
 
     return NextResponse.json(transformedTransaction, { status: 201 });
   } catch (error) {

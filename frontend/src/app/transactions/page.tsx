@@ -14,6 +14,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { TRANSACTION_TYPE_LABELS, Transaction } from "@/types/transaction";
 import TransactionModal from "@/components/TransactionModal";
 import { TransactionsListSkeleton } from "@/components/skeletons";
+import { useCurrencyConverter } from "@/hooks/useCurrencyConverter";
 
 type FilterState = {
   transactionType: string;
@@ -58,6 +59,9 @@ export default function TransactionsPage() {
     page: currentPage,
     limit: pageLimit,
   });
+
+  // Currency converter hook
+  const { convertTransaction, isConverting, convertingIds, error: conversionError } = useCurrencyConverter();
 
   // Load saved page limit preference and fetch organizations on mount
   useEffect(() => {
@@ -190,6 +194,33 @@ export default function TransactionsPage() {
       } else {
         refetch(); // Fallback: refresh the entire list
       }
+    }
+  };
+
+  const handleConvertCurrency = async (transactionId: string) => {
+    const transaction = transactions.data.find(t => (t.uuid || t.id) === transactionId);
+    if (!transaction) {
+      toast.error("Transaction not found");
+      return;
+    }
+
+    try {
+      const success = await convertTransaction(
+        transactionId,
+        transaction.value,
+        transaction.currency,
+        transaction.value_date || transaction.transaction_date
+      );
+
+      if (success) {
+        toast.success(`Transaction converted to USD successfully`);
+        refetch(); // Refresh to show updated USD values
+      } else {
+        toast.error(conversionError || "Failed to convert transaction");
+      }
+    } catch (error) {
+      console.error('Currency conversion error:', error);
+      toast.error("Currency conversion failed");
     }
   };
 
@@ -409,6 +440,7 @@ export default function TransactionsPage() {
                 onRowClick={handleRowClick}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onConvertCurrency={handleConvertCurrency}
               />
             </div>
           </div>

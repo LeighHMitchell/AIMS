@@ -18,7 +18,7 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
-  const { user, permissions, logout } = useUser();
+  const { user, permissions, logout, isLoading } = useUser();
   const pathname = usePathname();
 
   // Initialize smart pre-caching based on current path
@@ -44,7 +44,8 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         <div className="flex-1 overflow-hidden">
           <SidebarNav 
             userRole={user?.role} 
-            canManageUsers={permissions.canManageUsers} 
+            canManageUsers={permissions.canManageUsers}
+            isLoading={isLoading}
           />
         </div>
 

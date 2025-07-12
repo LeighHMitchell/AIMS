@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2, AlertCircle, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
+import { GmailLogin } from "@/components/auth/GmailLogin";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -133,6 +134,21 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+
+          <div className="relative mt-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <GmailLogin redirectTo="/activities" />
+          </div>
 
           <div className="relative mt-6">
             <div className="absolute inset-0 flex items-center">

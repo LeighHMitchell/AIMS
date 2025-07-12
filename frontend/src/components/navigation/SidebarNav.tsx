@@ -21,6 +21,7 @@ import {
 interface SidebarNavProps {
   userRole?: string
   canManageUsers?: boolean
+  isLoading?: boolean
 }
 
 // Define nav items with their visibility rules
@@ -105,19 +106,30 @@ const getNavItems = (userRole?: string, canManageUsers?: boolean) => [
   }
 ]
 
-export function SidebarNav({ userRole, canManageUsers }: SidebarNavProps) {
+export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavProps) {
   // Get nav items based on current user permissions
   const navItems = React.useMemo(
     () => getNavItems(userRole, canManageUsers),
     [userRole, canManageUsers]
   )
 
+  // Show all items initially during loading to prevent layout shift
+  // Once loaded, apply visibility rules
+  const shouldShowItem = (item: any) => {
+    if (isLoading) {
+      // During loading, show all items that would be visible to any user
+      // Hide only admin-specific items
+      return item.href !== '/admin/users' && item.href !== '/validations' && item.href !== '/data-clinic';
+    }
+    return item.show;
+  };
+
   return (
     <nav className="p-4 space-y-2 overflow-y-auto h-full">
       {navItems.map((item) => (
         // Use a stable key and always render the wrapper div
         // This prevents hydration mismatches from conditional rendering
-        <div key={item.href} className={item.show ? undefined : "hidden"}>
+        <div key={item.href} className={shouldShowItem(item) ? undefined : "hidden"}>
           <NavLink href={item.href} icon={item.icon}>
             {item.label}
           </NavLink>

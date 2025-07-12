@@ -30,6 +30,7 @@ import {
   Link2,
   Copy,
 } from "lucide-react";
+import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -189,6 +190,11 @@ interface TransactionData {
   created_by?: string;
   status?: string;
   transaction_status?: string;
+  // Currency conversion fields
+  value_usd?: number | null;
+  usd_convertible?: boolean;
+  usd_conversion_date?: string | null;
+  exchange_rate_used?: number | null;
 }
 
 interface TransactionTableProps {
@@ -201,6 +207,7 @@ interface TransactionTableProps {
   onRowClick?: (transactionId: string) => void;
   onEdit?: (transaction: TransactionData) => void;
   onDelete?: (transactionId: string) => void;
+  onConvertCurrency?: (transactionId: string) => void;
   variant?: "full" | "compact";
 }
 
@@ -214,6 +221,7 @@ export function TransactionTable({
   onRowClick,
   onEdit,
   onDelete,
+  onConvertCurrency,
   variant = "full",
 }: TransactionTableProps) {
   const formatCurrency = (value: number, currency: string = "USD") => {
@@ -356,13 +364,25 @@ export function TransactionTable({
             <th
               className={cn(
                 "px-4 py-2 text-right text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200",
-                variant === "compact" ? "w-[15%]" : "w-[10%]"
+                variant === "compact" ? "w-[10%]" : "w-[8%]"
               )}
               onClick={() => onSort("value")}
             >
               <div className="flex items-center justify-end gap-1">
-                <span>Value</span>
+                <span>Reported Value</span>
                 {getSortIcon("value")}
+              </div>
+            </th>
+            <th
+              className={cn(
+                "px-4 py-2 text-right text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200",
+                variant === "compact" ? "w-[10%]" : "w-[8%]"
+              )}
+              onClick={() => onSort("value_usd")}
+            >
+              <div className="flex items-center justify-end gap-1">
+                <span>USD Value</span>
+                {getSortIcon("value_usd")}
               </div>
             </th>
             {variant === "full" && (
@@ -539,7 +559,30 @@ export function TransactionTable({
                   </div>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm font-normal text-foreground text-right">
-                  {formatCurrency(transaction.value, transaction.currency)}
+                  <TransactionValueDisplay
+                    transaction={transaction}
+                    onConvert={onConvertCurrency}
+                    showConvertButton={!!onConvertCurrency}
+                    compact={true}
+                    variant="original-only"
+                    decimalPlaces={2}
+                    monotone={true}
+                  />
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm font-normal text-foreground text-right">
+                  {transaction.value_usd !== null && transaction.value_usd !== undefined ? (
+                    <TransactionValueDisplay
+                      transaction={transaction}
+                      onConvert={onConvertCurrency}
+                      showConvertButton={!!onConvertCurrency}
+                      compact={true}
+                      variant="usd-only"
+                      decimalPlaces={2}
+                      monotone={true}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </td>
                 {variant === "full" && (
                   <td className="hidden xl:table-cell px-4 py-3 whitespace-nowrap">
