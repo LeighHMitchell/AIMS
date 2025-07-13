@@ -50,6 +50,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Link from 'next/link';
 import { IATISyncStatusIndicator, IATISyncStatusBadge } from '@/components/activities/IATISyncStatusIndicator';
+import { CurrencyTooltip, InfoIconTooltip } from '@/components/ui/currency-tooltip';
 
 // Aid Type mappings (simplified)
 const AID_TYPE_LABELS: Record<string, string> = {
@@ -590,6 +591,8 @@ function ActivitiesPageContent() {
         "Commitments (USD)": activity.commitments || 0,
         "Outflows (USD)": (activity.disbursements || 0) + (activity.expenditures || 0),
         "Inflows (USD)": activity.inflows || 0,
+        "Default Currency": (activity as any).defaultCurrency || "USD",
+        "Currency Note": "Financial amounts are aggregated in USD using historical exchange rates. For detailed transaction-level currency information, export individual activity transactions.",
         "Created Date": format(new Date(activity.createdAt), "yyyy-MM-dd"),
         "Updated Date": format(new Date(activity.updatedAt), "yyyy-MM-dd"),
       };
@@ -954,12 +957,9 @@ function ActivitiesPageContent() {
                     >
                       <div className="flex items-center justify-end gap-1">
                         Commitments
-                        <span className="ml-1 relative group cursor-pointer">
-                          <Info className="inline h-4 w-4 text-muted-foreground" />
-                          <span className="absolute z-10 hidden group-hover:block bg-white text-xs text-muted-foreground border border-gray-200 p-2 rounded-md shadow-md w-64 right-0 mt-1">
-                            Outgoing funds formally obligated but not yet disbursed.
-                          </span>
-                        </span>
+                        <InfoIconTooltip content="All values are displayed in USD. Original currency values are available by clicking on an activity or hovering over the amount.">
+                          <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
+                        </InfoIconTooltip>
                         {getSortIcon('commitments')}
                       </div>
                     </th>
@@ -969,12 +969,9 @@ function ActivitiesPageContent() {
                     >
                       <div className="flex items-center justify-end gap-1">
                         Outflows
-                        <span className="ml-1 relative group cursor-pointer">
-                          <Info className="inline h-4 w-4 text-muted-foreground" />
-                          <span className="absolute z-10 hidden group-hover:block bg-white text-xs text-muted-foreground border border-gray-200 p-2 rounded-md shadow-md w-64 right-0 mt-1">
-                            Funds disbursed or spent — includes disbursements and expenditures.
-                          </span>
-                        </span>
+                        <InfoIconTooltip content="All values are displayed in USD. Original currency values are available by clicking on an activity or hovering over the amount.">
+                          <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
+                        </InfoIconTooltip>
                         {getSortIcon('disbursements')}
                       </div>
                     </th>

@@ -73,6 +73,12 @@ export function getSupabaseAdmin() {
     return null
   }
   
+  // During build time, environment variables might not be available
+  if (process.env.NODE_ENV === 'production' && (!supabaseUrl || !supabaseServiceRoleKey)) {
+    console.warn('[Supabase] Environment variables not available during build')
+    return null
+  }
+  
   if (!_supabaseAdmin) {
     _supabaseAdmin = createAdminClient()
   }

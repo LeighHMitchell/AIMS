@@ -155,6 +155,12 @@ export async function POST(request: NextRequest) {
     // Determine if strategy should be public
     const isPublic = status === 'Published' && hasFile;
 
+    // Get admin client
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
+    }
+
     // Create strategy
     const { data: strategy, error } = await supabaseAdmin
       .from('development_strategies')

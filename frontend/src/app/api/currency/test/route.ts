@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { currencyConverter } from '@/lib/currency-converter';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,17 +12,17 @@ export async function GET(request: NextRequest) {
     console.log(`[Currency Test] Testing conversion: ${amount} ${from} → ${to} on ${date}`);
 
     // Test the conversion
-    const result = await currencyConverter.convertToUSD(
+    const result = await fixedCurrencyConverter.convertToUSD(
       amount,
       from,
       new Date(date)
     );
 
     // Get supported currencies
-    const supportedCurrencies = await currencyConverter.getSupportedCurrencies();
+    const supportedCurrencies = await fixedCurrencyConverter.getSupportedCurrencies();
 
     // Get conversion stats
-    const stats = await currencyConverter.getConversionStats();
+    const stats = await fixedCurrencyConverter.getConversionStats();
 
     return NextResponse.json({
       success: true,
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     console.log(`[Currency Test] Testing transaction conversion: ${transactionId}`);
 
     // Test transaction conversion
-    const result = await currencyConverter.convertTransaction(transactionId);
+    const result = await fixedCurrencyConverter.convertTransaction(transactionId);
 
     return NextResponse.json({
       success: true,

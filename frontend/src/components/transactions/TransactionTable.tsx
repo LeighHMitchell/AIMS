@@ -23,7 +23,6 @@ import {
   ArrowDownToLine,
   DollarSign,
   Heart,
-  Lock,
   ReceiptText,
   Handshake,
   Shuffle,
@@ -313,7 +312,6 @@ export function TransactionTable({
       <table className="w-full divide-y divide-gray-200">
         <thead className="bg-muted">
           <tr>
-            <th className="px-2 py-2 w-8"></th>
             {variant === "full" && (
               <th 
                 className="px-4 py-2 text-left text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200 w-[30%]"
@@ -429,22 +427,6 @@ export function TransactionTable({
                 onRowClick?.(transaction.uuid || transaction.id);
               }}
             >
-                <td className="px-2 py-3">
-                  {!transaction.created_by && (
-                    <div className="flex items-center justify-center">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Lock className="h-4 w-4 text-gray-400" />
-                          </TooltipTrigger>
-                          <TooltipContent side="right">
-                            <p className="text-sm">Imported from IATI</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  )}
-                </td>
                 {variant === "full" && (
                   <td className="px-4 py-3">
                     <div 

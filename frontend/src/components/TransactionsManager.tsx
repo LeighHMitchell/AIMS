@@ -108,10 +108,9 @@ export default function TransactionsManager({
     return transaction;
   };
 
+  // Update local state when transactions prop changes
   useEffect(() => {
-    // Convert any legacy transactions to new format
-    const convertedTransactions = initialTransactions.map(convertLegacyTransaction);
-    setTransactions(convertedTransactions);
+    setTransactions(initialTransactions.map(convertLegacyTransaction));
   }, [initialTransactions]);
 
   const handleSubmit = async (formData: Partial<Transaction>) => {
@@ -165,9 +164,6 @@ export default function TransactionsManager({
         throw new Error(error.error || 'Failed to save transaction');
       }
 
-      const savedTransaction = await response.json();
-      console.log('[TransactionsManager] Transaction saved:', savedTransaction);
-
       // Show success message
       if (editingTransaction) {
         toast.success("Transaction updated successfully");
@@ -175,30 +171,13 @@ export default function TransactionsManager({
         toast.success("Transaction added successfully");
       }
 
-      // Refresh from server to get complete data and ensure consistency
+      // Always refresh from server to get complete data and ensure consistency
       if (onRefreshNeeded) {
-        console.log('[TransactionsManager] Calling refresh function...');
         await onRefreshNeeded();
-        console.log('[TransactionsManager] Refresh function completed');
-        // The parent component will update initialTransactions, which will trigger our useEffect
-        // to update the local state, so we don't need to manually update local state here
-      } else {
-        console.log('[TransactionsManager] No refresh function provided');
-        // Fallback: update local state if no refresh function is provided
-        let updatedTransactions;
-        if (editingTransaction) {
-          updatedTransactions = transactions.map(t => 
-              t.id === editingTransaction.id ? savedTransaction : t
-          );
-        } else {
-          updatedTransactions = [...transactions, savedTransaction];
-        }
-        setTransactions(updatedTransactions);
-        onTransactionsChange(updatedTransactions);
       }
 
-    setShowAddDialog(false);
-    setEditingTransaction(null);
+      setShowAddDialog(false);
+      setEditingTransaction(null);
     } catch (error: any) {
       console.error('[TransactionsManager] Error saving transaction:', error);
       toast.error(error.message || "Failed to save transaction");
@@ -229,15 +208,9 @@ export default function TransactionsManager({
         throw new Error(error.error || 'Failed to delete transaction');
       }
 
-      console.log('[TransactionsManager] Transaction deleted:', id);
-
-      // If refresh function is provided, use it to get fresh data from server
+      // Always refresh from server to get complete data and ensure consistency
       if (onRefreshNeeded) {
         await onRefreshNeeded();
-      } else {
-        // No optimistic updates - let parent handle refresh by calling onTransactionsChange with current data
-        // This signals the parent that something changed and it should refresh
-        onTransactionsChange([...transactions]);
       }
       
       toast.success("Transaction deleted");
@@ -486,16 +459,7 @@ export default function TransactionsManager({
                 variant="compact"
               />
 
-              {/* Totals */}
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Total (Published Transactions Only):</span>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg font-bold">{formatCurrency(totalPublished, "USD")}</span>
-                  </div>
-                </div>
-              </div>
+
             </>
           )}
         </CardContent>

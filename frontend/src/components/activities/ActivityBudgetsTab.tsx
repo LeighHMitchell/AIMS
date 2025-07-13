@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, differenceInMonths, parseISO, isValid, isBefore, isAfter, getQuarter, getYear } from 'date-fns';
-import { Trash2, Copy, Loader2, Wallet } from 'lucide-react';
+import { format as formatDateFns } from 'date-fns';
+import { Trash2, Copy, Loader2, Wallet, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,10 @@ import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 import { Skeleton } from '@/components/ui/skeleton';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { BarChart, Bar } from 'recharts';
+import { useUser } from '@/hooks/useUser';
 
 // Types
 interface ActivityBudget {
@@ -42,6 +47,8 @@ interface ActivityBudgetsTabProps {
   startDate: string;
   endDate: string;
   defaultCurrency?: string;
+  onBudgetsChange?: (budgets: ActivityBudget[]) => void;
+  onBudgetNotProvidedChange?: (notProvided: boolean) => void;
 }
 
 type Granularity = 'quarterly' | 'monthly' | 'annual';
@@ -62,32 +69,123 @@ interface BudgetChartProps {
   color?: string;
 }
 
-function BudgetLineChart({ title, data, dataKey, color = "#3B82F6" }: BudgetChartProps) {
+// Helper for dynamic Y-axis domain and tick formatting
+function getYAxisProps(data: any[], keys: string[], currency: string) {
+  const allValues = data.flatMap(d => keys.map(k => d[k] || 0));
+  const max = Math.max(...allValues, 0);
+  let domain = [0, Math.ceil(max * 1.1)];
+  let tickFormatter = (v: number) => {
+    if (max < 10000) return `${currency === 'USD' ? '$' : ''}${v.toLocaleString()}`;
+    return `${currency === 'USD' ? '$' : ''}${(v / 1000).toFixed(0)}k`;
+  };
+  return { domain, tickFormatter };
+}
+
+// Update BudgetLineChart props for type safety and access to budgets/defaultCurrency
+interface BudgetLineChartProps {
+  title: string;
+  data: ChartData[];
+  dataKey: string;
+  color?: string;
+  currencyMode: 'original' | 'usd';
+  usdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }>;
+  budgets: ActivityBudget[];
+  defaultCurrency: string;
+}
+
+function BudgetLineChart({ title, data, dataKey, color = "#64748b", currencyMode, usdValues, budgets, defaultCurrency }: BudgetLineChartProps) {
   return (
     <div className="bg-white border rounded-xl p-6">
       <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis dataKey="period" tick={{ fontSize: 12 }} stroke="#6B7280" />
-            <YAxis tick={{ fontSize: 12 }} stroke="#6B7280" />
+          <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="period" tick={{ fontSize: 12 }} stroke="#64748b" />
+            <YAxis {...getYAxisProps(data, [dataKey], currencyMode === 'usd' ? 'USD' : (budgets[0]?.currency || defaultCurrency))} stroke="#64748b" fontSize={12}
+              label={{
+                value: `Amount (${currencyMode === 'usd' ? 'USD' : (budgets[0]?.currency || defaultCurrency)})`,
+                angle: -90,
+                position: 'insideLeft',
+                offset: 10,
+                style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13 }
+              }}
+            />
             <Tooltip 
+              formatter={(value, name, props) => {
+                // Enhanced tooltip: show original, USD, rate, date
+                const period = props?.payload?.period;
+                const orig = `${props?.payload?.originalValue} ${props?.payload?.originalCurrency}`;
+                const usd = props?.payload?.usdValue ? `$${Number(props?.payload?.usdValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
+                const rate = props?.payload?.rate ? `@ ${props?.payload?.rate}` : '';
+                const date = props?.payload?.date || '';
+                if (currencyMode === 'usd') {
+                  return [`${usd} (${orig} ${rate}, ${date})`];
+                } else {
+                  return [`${orig} (${usd} ${rate}, ${date})`];
+                }
+              }}
               contentStyle={{ 
                 backgroundColor: 'white', 
-                border: '1px solid #E5E7EB',
-                borderRadius: '0.375rem',
-                fontSize: '0.875rem'
-              }} 
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px'
+              }}
             />
+            <Legend />
             <Line 
               type="monotone" 
               dataKey={dataKey} 
-              stroke={color} 
-              strokeWidth={2}
-              dot={{ fill: color, r: 4 }} 
+              stroke="#64748b" 
+              strokeWidth={3}
+              dot={{ fill: "#64748b", r: 4 }} 
             />
           </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function BudgetBarChart({ title, data, dataKey, color = "#64748b", currencyMode, usdValues, budgets, defaultCurrency }: BudgetLineChartProps) {
+  return (
+    <div className="bg-white border rounded-xl p-6">
+      <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="period" tick={{ fontSize: 12 }} stroke="#64748b" />
+            <YAxis {...getYAxisProps(data, [dataKey], currencyMode === 'usd' ? 'USD' : (budgets[0]?.currency || defaultCurrency))} stroke="#64748b" fontSize={12}
+              label={{
+                value: `Amount (${currencyMode === 'usd' ? 'USD' : (budgets[0]?.currency || defaultCurrency)})`,
+                angle: -90,
+                position: 'insideLeft',
+                offset: 10,
+                style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13 }
+              }}
+            />
+            <Tooltip 
+              formatter={(value, name, props) => {
+                const period = props?.payload?.period;
+                const orig = `${props?.payload?.originalValue} ${props?.payload?.originalCurrency}`;
+                const usd = props?.payload?.usdValue ? `$${Number(props?.payload?.usdValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
+                const rate = props?.payload?.rate ? `@ ${props?.payload?.rate}` : '';
+                const date = props?.payload?.date || '';
+                if (currencyMode === 'usd') {
+                  return [`${usd} (${orig} ${rate}, ${date})`];
+                } else {
+                  return [`${orig} (${usd} ${rate}, ${date})`];
+                }
+              }}
+              contentStyle={{ 
+                backgroundColor: 'white', 
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px'
+              }}
+            />
+            <Legend />
+            <Bar dataKey={dataKey} fill={color} name={title} />
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
@@ -158,7 +256,9 @@ export default function ActivityBudgetsTab({
   activityId, 
   startDate, 
   endDate, 
-  defaultCurrency = 'USD' 
+  defaultCurrency = 'USD',
+  onBudgetsChange,
+  onBudgetNotProvidedChange
 }: ActivityBudgetsTabProps) {
   console.log('[ActivityBudgetsTab] Component mounted with:', { activityId, startDate, endDate, defaultCurrency });
 
@@ -169,8 +269,15 @@ export default function ActivityBudgetsTab({
   const [savingException, setSavingException] = useState(false);
   const [granularity, setGranularity] = useState<Granularity>('quarterly');
   const [error, setError] = useState<string | null>(null);
+  const [usdValues, setUsdValues] = useState<Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }>>({});
+  // Add saveStatus state to track per-row save status
+  const [saveStatus, setSaveStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
+  // Add state for currency and aggregation toggles
+  const [currencyMode, setCurrencyMode] = useState<'original' | 'usd'>('original');
+  const [aggregationMode, setAggregationMode] = useState<'quarterly' | 'annual'>('quarterly');
 
   const currencies = useMemo(() => getAllCurrenciesWithPinned(), []);
+  const { user, isLoading: userLoading } = useUser();
 
   // Generate periods based on granularity
   const generatedPeriods = useMemo(() => {
@@ -184,43 +291,37 @@ export default function ActivityBudgetsTab({
       try {
         setLoading(true);
         setError(null);
-
         console.log('[ActivityBudgetsTab] Fetching budgets for activity:', activityId);
-        console.log('[ActivityBudgetsTab] Supabase client:', supabase ? 'initialized' : 'null');
-
         if (!supabase) {
-          throw new Error('Supabase client not initialized');
+          console.error('[ActivityBudgetsTab] Supabase client not initialized');
+          setError('Supabase client not initialized');
+          return;
         }
-
         // Fetch budgets
         const { data: budgetsData, error: budgetsError } = await supabase
           .from('activity_budgets')
           .select('*')
           .eq('activity_id', activityId)
           .order('period_start', { ascending: true });
-
-        if (budgetsError) throw budgetsError;
-
-        console.log('[ActivityBudgetsTab] Fetched budgets:', budgetsData?.length || 0);
-        console.log('[ActivityBudgetsTab] Budget data:', budgetsData);
-
+        if (budgetsError) {
+          console.error('[ActivityBudgetsTab] Budgets fetch error:', budgetsError);
+          setError(budgetsError.message || 'Failed to load budget data');
+        }
         // Fetch exception
         const { data: exceptionData, error: exceptionError } = await supabase
           .from('activity_budget_exceptions')
           .select('*')
           .eq('activity_id', activityId)
           .single();
-
         if (exceptionError && exceptionError.code !== 'PGRST116') {
-          throw exceptionError;
+          console.error('[ActivityBudgetsTab] Exception fetch error:', exceptionError);
+          setError(exceptionError.message || 'Failed to load budget exception');
         }
-
+        setBudgetNotProvided(!!exceptionData);
         if (exceptionData) {
-          setBudgetNotProvided(true);
           setExceptionReason(exceptionData.reason);
         }
-
-        // If no budgets exist and budget is provided, generate default budgets
+        // Always generate default budgets if no exception and no budgets exist
         if (!exceptionData && (!budgetsData || budgetsData.length === 0) && generatedPeriods.length > 0) {
           const defaultBudgets = generatedPeriods.map(period => ({
             activity_id: activityId,
@@ -233,20 +334,54 @@ export default function ActivityBudgetsTab({
             value_date: period.start,
           }));
           setBudgets(defaultBudgets);
-        } else {
+        } else if (!exceptionData) {
           setBudgets(budgetsData || []);
+        } else {
+          setBudgets([]);
         }
       } catch (err: any) {
         console.error('[ActivityBudgetsTab] Error fetching budget data:', err);
-        console.error('[ActivityBudgetsTab] Error details:', err.message, err.code);
         setError(err.message || 'Failed to load budget data');
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [activityId, defaultCurrency, generatedPeriods]);
+
+  // Convert all budgets to USD when budgets change
+  useEffect(() => {
+    let cancelled = false;
+    async function convertAll() {
+      const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
+      for (const budget of budgets) {
+        if (!budget.value || !budget.currency || !budget.value_date) {
+          newUsdValues[budget.id || `${budget.period_start}-${budget.period_end}`] = { usd: null, rate: null, date: budget.value_date, loading: false, error: 'Missing data' };
+          continue;
+        }
+        newUsdValues[budget.id || `${budget.period_start}-${budget.period_end}`] = { usd: null, rate: null, date: budget.value_date, loading: true };
+        try {
+          const result = await fixedCurrencyConverter.convertToUSD(budget.value, budget.currency, new Date(budget.value_date));
+          if (!cancelled) {
+            newUsdValues[budget.id || `${budget.period_start}-${budget.period_end}`] = {
+              usd: result.usd_amount,
+              rate: result.exchange_rate,
+              date: result.conversion_date || budget.value_date,
+              loading: false,
+              error: result.success ? undefined : result.error || 'Conversion failed'
+            };
+          }
+        } catch (err) {
+          if (!cancelled) {
+            newUsdValues[budget.id || `${budget.period_start}-${budget.period_end}`] = { usd: null, rate: null, date: budget.value_date, loading: false, error: 'Conversion error' };
+          }
+        }
+      }
+      if (!cancelled) setUsdValues(newUsdValues);
+    }
+    if (budgets.length > 0) convertAll();
+    return () => { cancelled = true; };
+  }, [budgets]);
 
   // Calculate total budget
   const totalBudget = useMemo(() => {
@@ -274,15 +409,15 @@ export default function ActivityBudgetsTab({
       const startDate = parseISO(budget.period_start);
       let periodLabel: string;
       
-      switch (granularity) {
+      switch (aggregationMode) {
         case 'quarterly':
           periodLabel = `Q${getQuarter(startDate)} ${getYear(startDate)}`;
           break;
-        case 'monthly':
-          periodLabel = format(startDate, 'MMM yyyy');
-          break;
         case 'annual':
           periodLabel = format(startDate, 'yyyy');
+          break;
+        default:
+          periodLabel = `Q${getQuarter(startDate)} ${getYear(startDate)}`;
           break;
       }
       
@@ -295,14 +430,14 @@ export default function ActivityBudgetsTab({
     });
 
     // Convert to array for charts
-    const quarterlyData: ChartData[] = Array.from(periodMap.entries()).map(([period, value]) => ({
+    const aggregatedData: ChartData[] = Array.from(periodMap.entries()).map(([period, value]) => ({
       period,
       value
     }));
 
     // Calculate cumulative data
     let cumulativeTotal = 0;
-    const cumulativeData: ChartData[] = quarterlyData.map(item => {
+    const cumulativeData: ChartData[] = aggregatedData.map(item => {
       cumulativeTotal += item.value;
       return {
         period: item.period,
@@ -311,18 +446,42 @@ export default function ActivityBudgetsTab({
       };
     });
 
-    return { quarterlyData, cumulativeData };
-  }, [budgets, granularity]);
+    return { aggregatedData, cumulativeData };
+  }, [budgets, aggregationMode]);
 
-  // Auto-save budget field
+  // Validation helper
+  function validateBudget(budget: ActivityBudget, allBudgets: ActivityBudget[]) {
+    if (!budget.activity_id || !budget.type || !budget.status || !budget.period_start || !budget.period_end || !budget.value_date || !budget.currency) {
+      return 'Missing required fields';
+    }
+    // Check for duplicate periods (excluding self)
+    const duplicates = allBudgets.filter(b => b !== budget && b.period_start === budget.period_start && b.period_end === budget.period_end);
+    if (duplicates.length > 0) {
+      return 'Duplicate period for this activity';
+    }
+    return null;
+  }
+
+  // Improved saveBudgetField with error handling and validation
   const saveBudgetField = useCallback(async (budget: ActivityBudget, field: keyof ActivityBudget) => {
-    console.log('[ActivityBudgetsTab] Saving budget field:', field, 'for budget:', budget);
-    
-    // Mark as saving
-    setBudgets(prev => prev.map(b => 
-      b === budget ? { ...b, isSaving: true, hasError: false } : b
-    ));
-
+    const rowKey = budget.id || `${budget.period_start}-${budget.period_end}`;
+    setSaveStatus(prev => ({ ...prev, [rowKey]: 'saving' }));
+    setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: true, hasError: false } : b));
+    // Validation
+    const validationError = validateBudget(budget, budgets);
+    if (validationError) {
+      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false, hasError: true } : b));
+      setSaveStatus(prev => ({ ...prev, [rowKey]: 'error' }));
+      setError(validationError);
+      return;
+    }
+    // Auth check
+    if (!user && !userLoading) {
+      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false, hasError: true } : b));
+      setSaveStatus(prev => ({ ...prev, [rowKey]: 'error' }));
+      setError('You must be logged in to save budgets.');
+      return;
+    }
     try {
       const budgetData = {
         activity_id: budget.activity_id,
@@ -334,14 +493,13 @@ export default function ActivityBudgetsTab({
         currency: budget.currency,
         value_date: budget.value_date,
       };
-
+      let updatedBudget = budget;
       if (budget.id) {
         // Update existing
         const { error } = await supabase
           .from('activity_budgets')
           .update(budgetData)
           .eq('id', budget.id);
-
         if (error) throw error;
       } else {
         // Insert new
@@ -350,27 +508,35 @@ export default function ActivityBudgetsTab({
           .insert(budgetData)
           .select()
           .single();
-
         if (error) throw error;
-
-        // Update with the returned ID
-        setBudgets(prev => prev.map(b => 
-          b === budget ? { ...data, isSaving: false } : b
-        ));
-        return;
+        updatedBudget = { ...data, isSaving: false };
+        setBudgets(prev => prev.map(b => b === budget ? updatedBudget : b));
       }
-
-      // Mark as saved
-      setBudgets(prev => prev.map(b => 
-        b === budget ? { ...b, isSaving: false } : b
-      ));
-    } catch (err) {
-      console.error('Error saving budget:', err);
-      setBudgets(prev => prev.map(b => 
-        b === budget ? { ...b, isSaving: false, hasError: true } : b
-      ));
+      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false } : b));
+      setSaveStatus(prev => ({ ...prev, [rowKey]: 'saved' }));
+      // Trigger USD conversion for this row only
+              const result = await fixedCurrencyConverter.convertToUSD(updatedBudget.value, updatedBudget.currency, new Date(updatedBudget.value_date));
+      setUsdValues(prev => ({
+        ...prev,
+        [rowKey]: {
+          usd: result.usd_amount,
+          rate: result.exchange_rate,
+          date: result.conversion_date || updatedBudget.value_date,
+          loading: false,
+          error: result.success ? undefined : result.error || 'Conversion failed'
+        }
+      }));
+      // Refresh summary cards if present
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('refreshFinancialSummaryCards');
+        window.dispatchEvent(event);
+      }
+    } catch (err: any) {
+      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false, hasError: true } : b));
+      setSaveStatus(prev => ({ ...prev, [rowKey]: 'error' }));
+      setError(err?.message || err?.error_description || 'Save failed');
     }
-  }, []);
+  }, [budgets, user, userLoading]);
 
   // Update budget field with debounce
   const updateBudgetField = useCallback((index: number, field: keyof ActivityBudget, value: any) => {
@@ -420,12 +586,14 @@ export default function ActivityBudgetsTab({
 
   // Duplicate budget
   const duplicateBudget = useCallback((index: number) => {
+    const today = formatDateFns(new Date(), 'yyyy-MM-dd');
     const budget = budgets[index];
     const newBudget: ActivityBudget = {
       ...budget,
       id: undefined,
       period_start: format(addMonths(parseISO(budget.period_start), 3), 'yyyy-MM-dd'),
       period_end: format(addMonths(parseISO(budget.period_end), 3), 'yyyy-MM-dd'),
+      value_date: today, // Default to today
     };
 
     setBudgets(prev => [...prev, newBudget]);
@@ -586,10 +754,11 @@ export default function ActivityBudgetsTab({
 
   // Add custom budget period
   const addCustomPeriod = useCallback(() => {
+    const today = formatDateFns(new Date(), 'yyyy-MM-dd');
     const lastBudget = budgets[budgets.length - 1];
     const startDate = lastBudget 
       ? format(addMonths(parseISO(lastBudget.period_end), 1), 'yyyy-MM-dd')
-      : format(new Date(), 'yyyy-MM-dd');
+      : today;
     
     const newBudget: ActivityBudget = {
       activity_id: activityId,
@@ -599,7 +768,7 @@ export default function ActivityBudgetsTab({
       period_end: format(addMonths(parseISO(startDate), 3), 'yyyy-MM-dd'),
       value: 0,
       currency: defaultCurrency,
-      value_date: startDate,
+      value_date: today, // Default to today
     };
 
     setBudgets(prev => [...prev, newBudget]);
@@ -661,9 +830,24 @@ export default function ActivityBudgetsTab({
     setBudgets(newBudgets);
   }, [startDate, endDate, activityId, defaultCurrency]);
 
+  // Calculate USD total
+  const totalUsd = useMemo(() => {
+    return Object.values(usdValues).reduce((sum, v) => sum + (v.usd || 0), 0);
+  }, [usdValues]);
+
+  // Call onBudgetsChange whenever budgets changes
+  useEffect(() => {
+    if (onBudgetsChange) onBudgetsChange(budgets);
+  }, [budgets, onBudgetsChange]);
+  // Call onBudgetNotProvidedChange whenever budgetNotProvided changes
+  useEffect(() => {
+    if (onBudgetNotProvidedChange) onBudgetNotProvidedChange(budgetNotProvided);
+  }, [budgetNotProvided, onBudgetNotProvidedChange]);
+
   if (loading) {
     return (
       <div className="space-y-6">
+        <div className="text-center text-gray-500">Loading budgets...</div>
         {/* Financial Summary Cards Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
@@ -742,6 +926,20 @@ export default function ActivityBudgetsTab({
     );
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <div className="text-center text-gray-500">Unable to load budgets. Please try refreshing the page or contact support if the problem persists.</div>
+      </div>
+    );
+  }
+
+  // Granularity tab order: Monthly, Quarterly, Annual
+  const granularityOrder: Granularity[] = ['monthly', 'quarterly', 'annual'];
+
   return (
     <div className="space-y-6">
       {/* Financial Summary Cards - Unified component */}
@@ -761,24 +959,75 @@ export default function ActivityBudgetsTab({
         </Alert>
       )}
 
-
-
       {/* Budget not provided toggle */}
       <div className="bg-white rounded-lg border p-6">
         <div className="flex items-center justify-between mb-4">
-          <Label htmlFor="budget-not-provided" className="text-base font-medium">
-            Budget not provided
-          </Label>
+          <div>
+            <Label htmlFor="budget-not-provided" className="text-base font-medium">
+              No budget available for this activity.
+            </Label>
+            <div className="text-xs text-gray-500 mt-1">
+              Enable this if no forward-looking budget is available or applicable for this activity.
+            </div>
+          </div>
           <Switch
             id="budget-not-provided"
             checked={budgetNotProvided}
-            onCheckedChange={(checked) => {
+            onCheckedChange={async (checked) => {
               setBudgetNotProvided(checked);
-              saveException();
+              await saveException();
+              if (checked) {
+                // Always delete all budgets for this activity from the backend, even if local state is empty
+                try {
+                  await supabase
+                    .from('activity_budgets')
+                    .delete()
+                    .eq('activity_id', activityId);
+                  setBudgets([]);
+                } catch (err) {
+                  setError('Failed to delete budgets');
+                }
+              } else {
+                // Delete all existing budgets before regenerating
+                try {
+                  await supabase
+                    .from('activity_budgets')
+                    .delete()
+                    .eq('activity_id', activityId);
+                  setBudgets([]);
+                } catch (err) {
+                  setError('Failed to delete budgets');
+                  return;
+                }
+                // Regenerate and insert default budgets for the current granularity
+                if (startDate && endDate) {
+                  const periods = generateBudgetPeriods(startDate, endDate, granularity);
+                  const defaultBudgets = periods.map(period => ({
+                    activity_id: activityId,
+                    type: 1 as const,
+                    status: 1 as const,
+                    period_start: period.start,
+                    period_end: period.end,
+                    value: 0,
+                    currency: defaultCurrency,
+                    value_date: period.start,
+                  }));
+                  try {
+                    const { data: inserted, error } = await supabase
+                      .from('activity_budgets')
+                      .insert(defaultBudgets)
+                      .select();
+                    if (error) throw error;
+                    setBudgets(inserted || []);
+                  } catch (err) {
+                    setError('Failed to insert default budgets');
+                  }
+                }
+              }
             }}
+            disabled={!user && !userLoading}
           />
         </div>
-
         {budgetNotProvided && (
           <div className="space-y-2">
             <Label htmlFor="exception-reason">Reason</Label>
@@ -789,7 +1038,7 @@ export default function ActivityBudgetsTab({
               onBlur={saveException}
               placeholder="Please explain why budget information is not provided..."
               className="min-h-24"
-              disabled={savingException}
+              disabled={savingException || (!user && !userLoading)}
             />
             {savingException && (
               <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -800,74 +1049,43 @@ export default function ActivityBudgetsTab({
           </div>
         )}
       </div>
-
-      {/* Budget table */}
+      {/* Granularity switcher in correct order */}
       {!budgetNotProvided && (
         <div className="bg-white rounded-lg border">
-          {/* Granularity switcher */}
           <div className="p-4 border-b">
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium">View by:</span>
               <div className="flex gap-2">
-                <Button
-                  variant={granularity === 'quarterly' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleGranularityChange('quarterly')}
-                >
-                  Quarterly
-                </Button>
-                <Button
-                  variant={granularity === 'monthly' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleGranularityChange('monthly')}
-                >
-                  Monthly
-                </Button>
-                <Button
-                  variant={granularity === 'annual' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleGranularityChange('annual')}
-                >
-                  Annual
-                </Button>
+                {granularityOrder.map((g) => (
+                  <Button
+                    key={g}
+                    variant={granularity === g ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleGranularityChange(g)}
+                    disabled={budgetNotProvided}
+                  >
+                    {g.charAt(0).toUpperCase() + g.slice(1)}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
-
+          {/* Budget table */}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Period Start
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Period End
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Value
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Currency
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Value Date
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  {['Period', 'Type', 'Status', 'Value', 'Currency', 'Value Date', 'USD VALUE', 'Actions'].map((header, i) => (
+                    <th key={i} className="px-4 py-3 text-left">
+                      <Skeleton className="h-4 w-16" />
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {budgets.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                       No budgets added yet. Click "Add Custom Period" to get started.
                     </td>
                   </tr>
@@ -877,13 +1095,11 @@ export default function ActivityBudgetsTab({
                       <td className="px-4 py-4 text-sm">
                         {format(parseISO(budget.period_start), 'MMM d, yyyy')}
                       </td>
-                      <td className="px-4 py-4 text-sm">
-                        {format(parseISO(budget.period_end), 'MMM d, yyyy')}
-                      </td>
                       <td className="px-4 py-4">
                         <Select
                           value={budget.type.toString()}
                           onValueChange={(value) => updateBudgetField(index, 'type', parseInt(value) as 1 | 2)}
+                          disabled={budgetNotProvided}
                         >
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue />
@@ -898,6 +1114,7 @@ export default function ActivityBudgetsTab({
                         <Select
                           value={budget.status.toString()}
                           onValueChange={(value) => updateBudgetField(index, 'status', parseInt(value) as 1 | 2)}
+                          disabled={budgetNotProvided}
                         >
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue />
@@ -917,6 +1134,7 @@ export default function ActivityBudgetsTab({
                             className="h-8 text-sm"
                             step="0.01"
                             min="0"
+                            disabled={budgetNotProvided}
                           />
                           {budget.isSaving && <Loader2 className="h-3 w-3 animate-spin" />}
                         </div>
@@ -925,6 +1143,7 @@ export default function ActivityBudgetsTab({
                         <Select
                           value={budget.currency}
                           onValueChange={(value) => updateBudgetField(index, 'currency', value)}
+                          disabled={budgetNotProvided}
                         >
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue />
@@ -941,10 +1160,46 @@ export default function ActivityBudgetsTab({
                       <td className="px-4 py-4">
                         <Input
                           type="date"
-                          value={budget.value_date}
+                          value={budget.value_date || formatDateFns(new Date(), 'yyyy-MM-dd')}
                           onChange={(e) => updateBudgetField(index, 'value_date', e.target.value)}
                           className="h-8 text-sm"
+                          disabled={budgetNotProvided}
                         />
+                      </td>
+                      <td className="px-4 py-4">
+                        {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.loading ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.usd != null ? (
+                          <TooltipProvider>
+                            <UITooltip>
+                              <TooltipTrigger asChild>
+                                <span className="font-mono cursor-help">
+                                  ${usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div>
+                                  <div>Original: {budget.value} {budget.currency}</div>
+                                  <div>Rate: {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].rate}</div>
+                                  <div>Date: {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].date}</div>
+                                </div>
+                              </TooltipContent>
+                            </UITooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <span className="text-xs text-red-500">
+                            {budget.value === 0 ? 'Please enter a value' : (usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.error || '-')}
+                          </span>
+                        )}
+                        {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'saving' && (
+                          <Loader2 className="h-4 w-4 animate-spin text-orange-500 inline ml-2" aria-label="Saving..." />
+                        )}
+                        {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'saved' && (
+                          <CheckCircle className="h-4 w-4 text-green-600 inline ml-2" aria-label="Saved" />
+                        )}
+                        {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'error' && (
+                          <span className="text-xs text-red-500 ml-1">Save failed</span>
+                        )}
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex gap-2 items-center">
@@ -952,6 +1207,7 @@ export default function ActivityBudgetsTab({
                             size="sm"
                             variant="ghost"
                             onClick={() => deleteBudget(index)}
+                            disabled={budgetNotProvided}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -959,16 +1215,17 @@ export default function ActivityBudgetsTab({
                             size="sm"
                             variant="ghost"
                             onClick={() => duplicateBudget(index)}
+                            disabled={budgetNotProvided}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
                           <button
                             type="button"
                             onClick={() => {
-                              console.log('[DuplicateForward] Button clicked for index:', index);
                               duplicateForward(index);
                             }}
                             className="text-sm underline cursor-pointer"
+                            disabled={budgetNotProvided}
                           >
                             Duplicate Forward
                           </button>
@@ -989,6 +1246,7 @@ export default function ActivityBudgetsTab({
                   Total Budget: <span className="font-semibold text-gray-900">
                     {totalBudget.toLocaleString()} {budgets[0]?.currency || defaultCurrency}
                   </span>
+                  <span className="ml-4 text-xs text-muted-foreground">USD: ${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   (Using {budgets.some(b => b.type === 2) ? 'revised' : 'original'} values)
@@ -1008,19 +1266,71 @@ export default function ActivityBudgetsTab({
 
       {/* Budget Charts */}
       {!budgetNotProvided && budgets.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-          <BudgetLineChart 
-            title={`${granularity.charAt(0).toUpperCase() + granularity.slice(1)} Budget`}
-            data={chartData.quarterlyData}
-            dataKey="value"
-            color="#3B82F6"
-          />
-          <BudgetLineChart 
-            title="Cumulative Budget"
-            data={chartData.cumulativeData}
-            dataKey="total"
-            color="#10B981"
-          />
+        <>
+          <div className="flex flex-wrap gap-4 items-center mb-4 mt-8">
+            <span className="text-sm font-medium">Show in:</span>
+            <Button
+              variant={currencyMode === 'original' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setCurrencyMode('original')}
+            >
+              Original Currency
+            </Button>
+            <Button
+              variant={currencyMode === 'usd' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setCurrencyMode('usd')}
+            >
+              Standardized USD
+            </Button>
+            <span className="ml-4 text-sm font-medium">Aggregate by:</span>
+            <Button
+              variant={aggregationMode === 'quarterly' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setAggregationMode('quarterly')}
+            >
+              By Quarter
+            </Button>
+            <Button
+              variant={aggregationMode === 'annual' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setAggregationMode('annual')}
+            >
+              By Calendar Year
+            </Button>
+          </div>
+          <div className="flex flex-row gap-6 w-full items-stretch">
+            <div className="flex-1 flex flex-col">
+              <BudgetBarChart 
+                title={`${aggregationMode.charAt(0).toUpperCase() + aggregationMode.slice(1)} ${currencyMode.charAt(0).toUpperCase() + currencyMode.slice(1)} Budget`}
+                data={chartData.aggregatedData}
+                dataKey="value"
+                color="#64748b"
+                currencyMode={currencyMode}
+                usdValues={usdValues}
+                budgets={budgets}
+                defaultCurrency={defaultCurrency}
+              />
+            </div>
+            <div className="flex-1 flex flex-col">
+              <BudgetLineChart 
+                title="Cumulative Budget"
+                data={chartData.cumulativeData}
+                dataKey="total"
+                color="#10B981"
+                currencyMode={currencyMode}
+                usdValues={usdValues}
+                budgets={budgets}
+                defaultCurrency={defaultCurrency}
+              />
+            </div>
+          </div>
+        </>
+      )}
+      {/* If not authenticated, show message and disable editing */}
+      {!user && !userLoading && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-center">
+          You must be logged in to edit or save budgets.
         </div>
       )}
     </div>

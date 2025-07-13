@@ -11,7 +11,7 @@ import {
   Info,
   Loader2
 } from 'lucide-react';
-import { currencyConverter } from '@/lib/currency-converter';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 interface TransactionData {
   id: string;
@@ -156,7 +156,7 @@ export function TransactionValueDisplay({
       await onConvert(transaction.id);
       
       // Optionally, try to get fresh conversion data
-      const result = await currencyConverter.convertToUSD(
+      const result = await fixedCurrencyConverter.convertToUSD(
         transaction.value,
         transaction.currency,
         new Date(transaction.value_date || transaction.transaction_date)

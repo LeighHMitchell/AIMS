@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { currencyConverter, ConversionResult } from '@/lib/currency-converter';
+import { fixedCurrencyConverter, ConversionResult } from '@/lib/currency-converter-fixed';
 import { supabase } from '@/lib/supabase';
 
 interface UseCurrencyConverterReturn {
@@ -57,7 +57,7 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
 
     try {
       // Convert to USD using the currency converter
-      const result: ConversionResult = await currencyConverter.convertToUSD(
+      const result: ConversionResult = await fixedCurrencyConverter.convertToUSD(
         value,
         currency,
         new Date(transactionDate)

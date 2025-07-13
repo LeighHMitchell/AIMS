@@ -714,6 +714,12 @@ export default function TransactionModal({
       const saved = await response.json();
       setCreatedTransactionId(saved.id || saved.uuid);
       toast.success((isEditing || createdTransactionId) ? 'Transaction updated successfully' : 'Transaction added successfully');
+      
+      // Call onSubmit callback to notify parent component
+      if (onSubmit) {
+        onSubmit(saved);
+      }
+      
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e.message || 'Failed to save transaction');

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TransactionTable } from '@/components/transactions/TransactionTable';
 import { TransactionValueDisplay } from '@/components/currency/TransactionValueDisplay';
 import { useCurrencyConverter } from '@/hooks/useCurrencyConverter';
-import { currencyConverter } from '@/lib/currency-converter';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';

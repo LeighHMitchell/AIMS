@@ -627,7 +627,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided }: any) {
   switch (section) {
     case "general":
       return <GeneralSection 
@@ -751,6 +751,8 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         startDate={general.plannedStartDate || general.actualStartDate || ""}
         endDate={general.plannedEndDate || general.actualEndDate || ""}
         defaultCurrency={general.defaultCurrency || "USD"}
+        onBudgetsChange={setBudgets}
+        onBudgetNotProvidedChange={setBudgetNotProvided}
       />;
     case "planned_disbursements":
       return <PlannedDisbursementsTab 
@@ -915,6 +917,9 @@ function NewActivityPageContent() {
   const [showActivityCreatedAlert, setShowActivityCreatedAlert] = useState(false);
   const [titleAutosaveState, setTitleAutosaveState] = useState<{ isSaving: boolean; hasUnsavedChanges: boolean; lastSaved: Date | null; error: any }>({ isSaving: false, hasUnsavedChanges: false, lastSaved: null, error: null });
   const [activityId, setActivityId] = useState(general.id);
+  // Add state to track budgets and budgetNotProvided for Budgets tab completion
+  const [budgets, setBudgets] = useState<any[]>([]);
+  const [budgetNotProvided, setBudgetNotProvided] = useState(false);
 
   const isEditing = !!searchParams?.get("id");
   
@@ -1158,12 +1163,20 @@ function NewActivityPageContent() {
       hasUnsavedChanges: hasUnsavedChanges
     });
 
+    // Finances tab: green check if at least one transaction
+    const financesComplete = transactions && transactions.length > 0;
+
+    // Budgets tab: green check if at least one budget or budget not provided
+    const budgetsComplete = (budgets && budgets.length > 0) || budgetNotProvided;
+
     return {
       general: generalCompletion ? { isComplete: generalCompletion.isComplete } : { isComplete: false },
       sectors: { isComplete: sectorsComplete },
-      finances_defaults: financesDefaultsCompletion ? { isComplete: financesDefaultsCompletion.isComplete } : { isComplete: false }
+      finances: { isComplete: financesComplete },
+      finances_defaults: financesDefaultsCompletion ? { isComplete: financesDefaultsCompletion.isComplete } : { isComplete: false },
+      budgets: { isComplete: budgetsComplete }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors, hasUnsavedChanges]);
+  }, [general, getDateFieldStatus, sectorValidation, sectors, hasUnsavedChanges, transactions, budgets, budgetNotProvided]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -1758,6 +1771,10 @@ function NewActivityPageContent() {
                     setShowActivityCreatedAlert={setShowActivityCreatedAlert}
                     onTitleAutosaveState={(state: { isSaving: boolean; hasUnsavedChanges: boolean; lastSaved: Date | null; error: any }, id: string) => { setTitleAutosaveState(state); setActivityId(id); }}
                     tabCompletionStatus={tabCompletionStatus}
+                    budgets={budgets}
+                    setBudgets={setBudgets}
+                    budgetNotProvided={budgetNotProvided}
+                    setBudgetNotProvided={setBudgetNotProvided}
                   />
                 </div>
               )}

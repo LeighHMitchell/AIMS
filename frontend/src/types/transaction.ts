@@ -12,8 +12,7 @@ export type TransactionType =
   | '8'   // Purchase of Equity
   | '9'   // Sale of Equity
   | '11'  // Credit Guarantee
-  | '12'  // Incoming Funds
-  | '13'; // Commitment Cancellation
+  | '12'  | '13'; // Incoming Funds, Commitment Cancellation
 
 export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
   '1': 'Incoming Commitment',
@@ -197,6 +196,11 @@ export interface Transaction {
     name: string;
     type?: OrganizationType;
   };
+  // USD conversion fields (from backend)
+  value_usd?: number;
+  usd_convertible?: boolean;
+  usd_conversion_date?: string;
+  exchange_rate_used?: number;
 }
 
 // Helper type for creating new transactions
