@@ -80,7 +80,7 @@ export function FinancialSummaryCards({
           // Planned Disbursements
           supabase
             .from("planned_disbursements")
-            .select("amount")
+            .select("amount, currency, value_date, usd_amount")
             .eq("activity_id", activityId),
           
           // Transactions for Committed and Disbursed/Expended
@@ -125,11 +125,33 @@ export function FinancialSummaryCards({
           totalBudgeted = 0;
         }
 
-        // Calculate Planned Disbursements
-        const plannedDisbursements = disbursementsResult.data?.reduce(
-          (sum, disbursement) => sum + (disbursement.amount || 0), 
-          0
-        ) || 0;
+        // Calculate Planned Disbursements - convert all to USD
+        let plannedDisbursements = 0;
+        if (disbursementsResult.data) {
+          const conversions = disbursementsResult.data.map(async (disbursement) => {
+            // If usd_amount exists, use it directly
+            if (disbursement.usd_amount) {
+              return disbursement.usd_amount;
+            }
+            
+            // Otherwise convert to USD
+            if (disbursement.amount && disbursement.currency) {
+              if (disbursement.currency === 'USD') {
+                return disbursement.amount;
+              } else {
+                try {
+                  const conversionDate = disbursement.value_date ? new Date(disbursement.value_date) : new Date();
+                  const result = await fixedCurrencyConverter.convertToUSD(disbursement.amount, disbursement.currency, conversionDate);
+                  return (result.success && result.usd_amount) ? result.usd_amount : 0;
+                } catch {
+                  return 0;
+                }
+              }
+            }
+            return 0;
+          });
+          plannedDisbursements = (await Promise.all(conversions)).reduce((sum, v) => sum + v, 0);
+        }
 
         // Calculate Total Committed and Total Disbursed/Expended in parallel
         let totalCommitted = 0;
