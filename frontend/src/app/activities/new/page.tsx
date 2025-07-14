@@ -61,6 +61,7 @@ import {
   GenericTabSkeleton 
 } from '@/components/activities/TabSkeletons';
 import { supabase } from '@/lib/supabase';
+import { DebugPanel } from '@/components/DebugPanel';
 // Removed old bulk autosave imports - now using field-level autosave
 // import { AutosaveFormWrapper } from "@/components/forms/AutosaveFormWrapper";
 // import { AutosaveDebugPanel } from "@/components/debug/AutosaveDebugPanel";
@@ -1957,6 +1958,9 @@ function NewActivityPageContent() {
       </Dialog>
       
       {/* Debug Panel - Disabled for field-level autosave */}
+      
+      {/* Debug Panel */}
+      <DebugPanel />
       </div>
     </MainLayout>
   );

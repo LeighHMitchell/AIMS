@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, differenceInMonths, parseISO, isValid, isBefore, isAfter, getQuarter, getYear } from 'date-fns';
 import { format as formatDateFns } from 'date-fns';
-import { Trash2, Copy, Loader2, Wallet, CheckCircle } from 'lucide-react';
+import { Trash2, Copy, Loader2, Wallet, CheckCircle, Lock, Unlock, FastForward } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +20,7 @@ import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BarChart, Bar } from 'recharts';
 import { useUser } from '@/hooks/useUser';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
 
 // Types
 interface ActivityBudget {
@@ -36,11 +37,6 @@ interface ActivityBudget {
   hasError?: boolean;
 }
 
-interface ActivityBudgetException {
-  id?: string;
-  activity_id: string;
-  reason: string;
-}
 
 interface ActivityBudgetsTabProps {
   activityId: string;
@@ -48,7 +44,6 @@ interface ActivityBudgetsTabProps {
   endDate: string;
   defaultCurrency?: string;
   onBudgetsChange?: (budgets: ActivityBudget[]) => void;
-  onBudgetNotProvidedChange?: (notProvided: boolean) => void;
 }
 
 type Granularity = 'quarterly' | 'monthly' | 'annual';
@@ -257,16 +252,12 @@ export default function ActivityBudgetsTab({
   startDate, 
   endDate, 
   defaultCurrency = 'USD',
-  onBudgetsChange,
-  onBudgetNotProvidedChange
+  onBudgetsChange
 }: ActivityBudgetsTabProps) {
   console.log('[ActivityBudgetsTab] Component mounted with:', { activityId, startDate, endDate, defaultCurrency });
 
   const [budgets, setBudgets] = useState<ActivityBudget[]>([]);
-  const [budgetNotProvided, setBudgetNotProvided] = useState(false);
-  const [exceptionReason, setExceptionReason] = useState('');
   const [loading, setLoading] = useState(true);
-  const [savingException, setSavingException] = useState(false);
   const [granularity, setGranularity] = useState<Granularity>('quarterly');
   const [error, setError] = useState<string | null>(null);
   const [usdValues, setUsdValues] = useState<Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }>>({});
@@ -275,6 +266,10 @@ export default function ActivityBudgetsTab({
   // Add state for currency and aggregation toggles
   const [currencyMode, setCurrencyMode] = useState<'original' | 'usd'>('original');
   const [aggregationMode, setAggregationMode] = useState<'quarterly' | 'annual'>('quarterly');
+  const [isLocked, setIsLocked] = useState(true);
+  const [pendingGranularity, setPendingGranularity] = useState<Granularity | null>(null);
+  const [showWarning, setShowWarning] = useState(false);
+  const [isWiping, setIsWiping] = useState(false);
 
   const currencies = useMemo(() => getAllCurrenciesWithPinned(), []);
   const { user, isLoading: userLoading } = useUser();
@@ -285,7 +280,7 @@ export default function ActivityBudgetsTab({
     return generateBudgetPeriods(startDate, endDate, granularity);
   }, [startDate, endDate, granularity]);
 
-  // Fetch existing budgets and exception
+  // Fetch existing budgets
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -307,22 +302,9 @@ export default function ActivityBudgetsTab({
           console.error('[ActivityBudgetsTab] Budgets fetch error:', budgetsError);
           setError(budgetsError.message || 'Failed to load budget data');
         }
-        // Fetch exception
-        const { data: exceptionData, error: exceptionError } = await supabase
-          .from('activity_budget_exceptions')
-          .select('*')
-          .eq('activity_id', activityId)
-          .single();
-        if (exceptionError && exceptionError.code !== 'PGRST116') {
-          console.error('[ActivityBudgetsTab] Exception fetch error:', exceptionError);
-          setError(exceptionError.message || 'Failed to load budget exception');
-        }
-        setBudgetNotProvided(!!exceptionData);
-        if (exceptionData) {
-          setExceptionReason(exceptionData.reason);
-        }
-        // Always generate default budgets if no exception and no budgets exist
-        if (!exceptionData && (!budgetsData || budgetsData.length === 0) && generatedPeriods.length > 0) {
+        // Always generate default budgets if no budgets exist
+        if ((!budgetsData || budgetsData.length === 0) && generatedPeriods.length > 0) {
+          const todayStr = formatDateFns(new Date(), 'yyyy-MM-dd');
           const defaultBudgets = generatedPeriods.map(period => ({
             activity_id: activityId,
             type: 1 as const,
@@ -331,13 +313,11 @@ export default function ActivityBudgetsTab({
             period_end: period.end,
             value: 0,
             currency: defaultCurrency,
-            value_date: period.start,
+            value_date: todayStr,
           }));
           setBudgets(defaultBudgets);
-        } else if (!exceptionData) {
-          setBudgets(budgetsData || []);
         } else {
-          setBudgets([]);
+          setBudgets(budgetsData || []);
         }
       } catch (err: any) {
         console.error('[ActivityBudgetsTab] Error fetching budget data:', err);
@@ -454,10 +434,26 @@ export default function ActivityBudgetsTab({
     if (!budget.activity_id || !budget.type || !budget.status || !budget.period_start || !budget.period_end || !budget.value_date || !budget.currency) {
       return 'Missing required fields';
     }
-    // Check for duplicate periods (excluding self)
-    const duplicates = allBudgets.filter(b => b !== budget && b.period_start === budget.period_start && b.period_end === budget.period_end);
-    if (duplicates.length > 0) {
-      return 'Duplicate period for this activity';
+    // Check for overlapping periods (excluding self)
+    const hasOverlap = allBudgets.some(b => {
+      // Skip if it's the same budget (comparing by ID or by reference)
+      if (b === budget || (budget.id && b.id === budget.id)) return false;
+      
+      const bStart = parseISO(b.period_start);
+      const bEnd = parseISO(b.period_end);
+      const budgetStart = parseISO(budget.period_start);
+      const budgetEnd = parseISO(budget.period_end);
+      
+      // Check if periods overlap
+      return (
+        (budgetStart >= bStart && budgetStart <= bEnd) ||
+        (budgetEnd >= bStart && budgetEnd <= bEnd) ||
+        (budgetStart <= bStart && budgetEnd >= bEnd)
+      );
+    });
+    
+    if (hasOverlap) {
+      return 'Budget periods cannot overlap for the same activity';
     }
     return null;
   }
@@ -483,6 +479,9 @@ export default function ActivityBudgetsTab({
       return;
     }
     try {
+      // Always recalculate USD value before saving
+      const result = await fixedCurrencyConverter.convertToUSD(budget.value, budget.currency, new Date(budget.value_date));
+      const usd_value = result.usd_amount;
       const budgetData = {
         activity_id: budget.activity_id,
         type: budget.type,
@@ -492,8 +491,9 @@ export default function ActivityBudgetsTab({
         value: budget.value,
         currency: budget.currency,
         value_date: budget.value_date,
+        usd_value,
       };
-      let updatedBudget = budget;
+      let updatedBudget = { ...budget, usd_value };
       if (budget.id) {
         // Update existing
         const { error } = await supabase
@@ -512,16 +512,15 @@ export default function ActivityBudgetsTab({
         updatedBudget = { ...data, isSaving: false };
         setBudgets(prev => prev.map(b => b === budget ? updatedBudget : b));
       }
-      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false } : b));
+      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false, usd_value } : b));
       setSaveStatus(prev => ({ ...prev, [rowKey]: 'saved' }));
-      // Trigger USD conversion for this row only
-              const result = await fixedCurrencyConverter.convertToUSD(updatedBudget.value, updatedBudget.currency, new Date(updatedBudget.value_date));
+      // Update USD values for display
       setUsdValues(prev => ({
         ...prev,
         [rowKey]: {
-          usd: result.usd_amount,
+          usd: usd_value,
           rate: result.exchange_rate,
-          date: result.conversion_date || updatedBudget.value_date,
+          date: result.conversion_date || budget.value_date,
           loading: false,
           error: result.success ? undefined : result.error || 'Conversion failed'
         }
@@ -538,23 +537,31 @@ export default function ActivityBudgetsTab({
     }
   }, [budgets, user, userLoading]);
 
-  // Update budget field with debounce
+  // Update budget field without auto-save
   const updateBudgetField = useCallback((index: number, field: keyof ActivityBudget, value: any) => {
+    setBudgets(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  }, []);
+
+  // Handle field blur to save
+  const handleFieldBlur = useCallback((index: number, field: keyof ActivityBudget) => {
     const budget = budgets[index];
-    const updatedBudget = { ...budget, [field]: value };
-    
+    saveBudgetField(budget, field);
+  }, [budgets, saveBudgetField]);
+
+  // Handle select field change (save immediately)
+  const handleSelectChange = useCallback((index: number, field: keyof ActivityBudget, value: any) => {
+    const updatedBudget = { ...budgets[index], [field]: value };
     setBudgets(prev => {
       const updated = [...prev];
       updated[index] = updatedBudget;
       return updated;
     });
-
-    // Auto-save after a short delay
-    const timeoutId = setTimeout(() => {
-      saveBudgetField(updatedBudget, field);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
+    // Save immediately for select fields
+    saveBudgetField(updatedBudget, field);
   }, [budgets, saveBudgetField]);
 
   // Delete budget
@@ -774,37 +781,6 @@ export default function ActivityBudgetsTab({
     setBudgets(prev => [...prev, newBudget]);
   }, [budgets, activityId, defaultCurrency]);
 
-  // Save exception
-  const saveException = useCallback(async () => {
-    setSavingException(true);
-    
-    try {
-      if (budgetNotProvided) {
-        // Save or update exception
-        const { error } = await supabase
-          .from('activity_budget_exceptions')
-          .upsert({
-            activity_id: activityId,
-            reason: exceptionReason,
-          }, {
-            onConflict: 'activity_id'
-          });
-
-        if (error) throw error;
-      } else {
-        // Delete exception if exists
-        await supabase
-          .from('activity_budget_exceptions')
-          .delete()
-          .eq('activity_id', activityId);
-      }
-    } catch (err) {
-      console.error('Error saving exception:', err);
-      setError('Failed to save budget exception');
-    } finally {
-      setSavingException(false);
-    }
-  }, [budgetNotProvided, exceptionReason, activityId]);
 
   // Handle granularity change
   const handleGranularityChange = useCallback((newGranularity: Granularity) => {
@@ -816,6 +792,7 @@ export default function ActivityBudgetsTab({
     
     // Regenerate budgets based on new granularity
     const newPeriods = generateBudgetPeriods(startDate, endDate, newGranularity);
+    const todayStr = formatDateFns(new Date(), 'yyyy-MM-dd');
     const newBudgets = newPeriods.map(period => ({
       activity_id: activityId,
       type: 1 as const,
@@ -824,11 +801,128 @@ export default function ActivityBudgetsTab({
       period_end: period.end,
       value: 0,
       currency: defaultCurrency,
-      value_date: period.start,
+      value_date: todayStr,
     }));
     
     setBudgets(newBudgets);
   }, [startDate, endDate, activityId, defaultCurrency]);
+
+  const handleGranularityTabClick = (g: Granularity) => {
+    if (g === granularity) return; // Don't change to same granularity
+    setPendingGranularity(g);
+    setShowWarning(true);
+  };
+
+  const confirmGranularityChange = async () => {
+    if (!pendingGranularity) return;
+    setIsWiping(true);
+    
+    try {
+      // Clear any existing error first
+      setError(null);
+      
+      console.log('Starting granularity change to:', pendingGranularity);
+      
+      // Step 1: Delete existing budgets
+      const deleteRes = await fetch(`/api/activities/${activityId}/budgets`, { method: 'DELETE' });
+      if (!deleteRes.ok) {
+        const errorText = await deleteRes.text();
+        console.error('DELETE budgets failed:', deleteRes.status, errorText);
+        throw new Error(`Failed to delete budgets: ${deleteRes.status} ${errorText}`);
+      }
+      
+      const deleteResult = await deleteRes.json();
+      console.log('Delete result:', deleteResult);
+      
+      // Step 2: Clear local budgets state immediately
+      setBudgets([]);
+      
+      // Step 3: Wait a moment for database consistency
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Step 4: Verify deletion (optional - the deletion was successful if we got here)
+      try {
+        const verifyRes = await fetch(`/api/activities/${activityId}/budgets`);
+        if (verifyRes.ok) {
+          const remainingBudgets = await verifyRes.json();
+          if (Array.isArray(remainingBudgets) && remainingBudgets.length > 0) {
+            console.warn('Some budgets may still exist after deletion:', remainingBudgets);
+            // Don't fail here - proceed anyway as the DELETE endpoint succeeded
+          }
+        }
+      } catch (verifyError) {
+        console.warn('Verification step failed but proceeding:', verifyError);
+        // Don't fail here - the main deletion succeeded
+      }
+      
+      console.log('Deletion successful, proceeding with granularity change');
+      
+    } catch (e) {
+      console.error('Granularity change failed:', e);
+      setError(`Failed to change granularity: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      setIsWiping(false);
+      setShowWarning(false);
+      setPendingGranularity(null);
+      return;
+    }
+    // Step 5: Generate and save new budgets
+    try {
+      console.log('[GranularityChange] Step 5: Starting budget generation and save');
+      setGranularity(pendingGranularity);
+      
+      // Regenerate budgets based on new granularity
+      console.log('[GranularityChange] Generating periods with:', { startDate, endDate, pendingGranularity });
+      const newPeriods = generateBudgetPeriods(startDate, endDate, pendingGranularity);
+      console.log('[GranularityChange] Generated periods:', newPeriods);
+      
+      const todayStr = formatDateFns(new Date(), 'yyyy-MM-dd');
+      const newBudgets = newPeriods.map(period => ({
+        activity_id: activityId,
+        type: 1 as const,
+        status: 1 as const,
+        period_start: period.start,
+        period_end: period.end,
+        value: 0,
+        currency: defaultCurrency,
+        value_date: todayStr,
+      }));
+      
+      console.log('[GranularityChange] Generated', newBudgets.length, 'new budgets for', pendingGranularity, 'granularity:', newBudgets);
+      
+      if (newBudgets.length === 0) {
+        console.warn('[GranularityChange] No budgets generated - this is likely the problem!');
+        setError('No budget periods could be generated for the selected granularity');
+        return;
+      }
+      
+      // Set budgets locally first
+      console.log('[GranularityChange] Setting budgets in local state');
+      setBudgets(newBudgets);
+      
+      // Then save to database
+      console.log('[GranularityChange] About to save', newBudgets.length, 'new budgets to database');
+      await bulkInsertBudgets(newBudgets);
+      
+      console.log('[GranularityChange] Granularity change completed successfully');
+      
+    } catch (saveError) {
+      console.error('[GranularityChange] Failed to save new budgets during granularity change:', saveError);
+      setError(`Failed to save new budgets: ${saveError instanceof Error ? saveError.message : 'Unknown error'}`);
+      // Keep the UI in the loading state and show the error
+      // Don't reset the dialog yet
+      return;
+    }
+    
+    // Success - reset the UI
+    setIsWiping(false);
+    setShowWarning(false);
+    setPendingGranularity(null);
+  };
+
+  const cancelGranularityChange = () => {
+    setShowWarning(false);
+    setPendingGranularity(null);
+  };
 
   // Calculate USD total
   const totalUsd = useMemo(() => {
@@ -839,10 +933,88 @@ export default function ActivityBudgetsTab({
   useEffect(() => {
     if (onBudgetsChange) onBudgetsChange(budgets);
   }, [budgets, onBudgetsChange]);
-  // Call onBudgetNotProvidedChange whenever budgetNotProvided changes
-  useEffect(() => {
-    if (onBudgetNotProvidedChange) onBudgetNotProvidedChange(budgetNotProvided);
-  }, [budgetNotProvided, onBudgetNotProvidedChange]);
+
+  // Add helper for bulk insert
+  const bulkInsertBudgets = async (budgets: ActivityBudget[]) => {
+    if (!budgets.length) {
+      console.log('No budgets to insert');
+      return;
+    }
+    
+    console.log('[BulkInsert] Starting bulk insert of', budgets.length, 'budgets:', budgets);
+    
+    try {
+      // Calculate usd_value for each budget
+      console.log('[BulkInsert] Converting currencies for all budgets...');
+      const budgetsWithUsd = await Promise.all(budgets.map(async (b, index) => {
+        console.log(`[BulkInsert] Converting budget ${index + 1}/${budgets.length}:`, b);
+        try {
+          const result = await fixedCurrencyConverter.convertToUSD(b.value, b.currency, new Date(b.value_date));
+          const converted = { 
+            activity_id: b.activity_id,
+            type: b.type,
+            status: b.status,
+            period_start: b.period_start,
+            period_end: b.period_end,
+            value: b.value,
+            currency: b.currency,
+            value_date: b.value_date,
+            usd_value: result.usd_amount || 0
+          };
+          console.log(`[BulkInsert] Budget ${index + 1} converted:`, converted);
+          return converted;
+        } catch (conversionError) {
+          console.warn(`[BulkInsert] Currency conversion failed for budget ${index + 1}:`, b, conversionError);
+          const fallback = { 
+            activity_id: b.activity_id,
+            type: b.type,
+            status: b.status,
+            period_start: b.period_start,
+            period_end: b.period_end,
+            value: b.value,
+            currency: b.currency,
+            value_date: b.value_date,
+            usd_value: 0
+          };
+          console.log(`[BulkInsert] Budget ${index + 1} fallback:`, fallback);
+          return fallback;
+        }
+      }));
+      
+      console.log('[BulkInsert] All conversions complete. Inserting', budgetsWithUsd.length, 'budgets with USD values:', budgetsWithUsd);
+      
+      const { data, error } = await supabase
+        .from('activity_budgets')
+        .insert(budgetsWithUsd)
+        .select();
+        
+      if (error) {
+        console.error('[BulkInsert] Supabase insert error:', error);
+        throw error;
+      }
+      
+      console.log('[BulkInsert] Supabase insert successful. Returned data:', data);
+      console.log('[BulkInsert] Successfully inserted', data?.length || 0, 'budgets');
+      
+      // Update local state with the inserted budgets (which now have IDs)
+      if (data) {
+        console.log('[BulkInsert] Updating local state with inserted budgets');
+        setBudgets(data);
+      } else {
+        console.warn('[BulkInsert] No data returned from insert');
+      }
+      
+      // Trigger refresh of financial summary cards
+      console.log('[BulkInsert] Triggering financial summary refresh');
+      window.dispatchEvent(new CustomEvent('refreshFinancialSummaryCards'));
+      
+    } catch (e) {
+      console.error('[BulkInsert] Bulk insert failed:', e);
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      setError(`Failed to save new budgets: ${errorMessage}`);
+      throw e; // Re-throw to handle in the calling function
+    }
+  };
 
   if (loading) {
     return (
@@ -959,125 +1131,55 @@ export default function ActivityBudgetsTab({
         </Alert>
       )}
 
-      {/* Budget not provided toggle */}
-      <div className="bg-white rounded-lg border p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <Label htmlFor="budget-not-provided" className="text-base font-medium">
-              No budget available for this activity.
-            </Label>
-            <div className="text-xs text-gray-500 mt-1">
-              Enable this if no forward-looking budget is available or applicable for this activity.
-            </div>
-          </div>
-          <Switch
-            id="budget-not-provided"
-            checked={budgetNotProvided}
-            onCheckedChange={async (checked) => {
-              setBudgetNotProvided(checked);
-              await saveException();
-              if (checked) {
-                // Always delete all budgets for this activity from the backend, even if local state is empty
-                try {
-                  await supabase
-                    .from('activity_budgets')
-                    .delete()
-                    .eq('activity_id', activityId);
-                  setBudgets([]);
-                } catch (err) {
-                  setError('Failed to delete budgets');
-                }
-              } else {
-                // Delete all existing budgets before regenerating
-                try {
-                  await supabase
-                    .from('activity_budgets')
-                    .delete()
-                    .eq('activity_id', activityId);
-                  setBudgets([]);
-                } catch (err) {
-                  setError('Failed to delete budgets');
-                  return;
-                }
-                // Regenerate and insert default budgets for the current granularity
-                if (startDate && endDate) {
-                  const periods = generateBudgetPeriods(startDate, endDate, granularity);
-                  const defaultBudgets = periods.map(period => ({
-                    activity_id: activityId,
-                    type: 1 as const,
-                    status: 1 as const,
-                    period_start: period.start,
-                    period_end: period.end,
-                    value: 0,
-                    currency: defaultCurrency,
-                    value_date: period.start,
-                  }));
-                  try {
-                    const { data: inserted, error } = await supabase
-                      .from('activity_budgets')
-                      .insert(defaultBudgets)
-                      .select();
-                    if (error) throw error;
-                    setBudgets(inserted || []);
-                  } catch (err) {
-                    setError('Failed to insert default budgets');
-                  }
-                }
-              }
-            }}
-            disabled={!user && !userLoading}
-          />
-        </div>
-        {budgetNotProvided && (
-          <div className="space-y-2">
-            <Label htmlFor="exception-reason">Reason</Label>
-            <Textarea
-              id="exception-reason"
-              value={exceptionReason}
-              onChange={(e) => setExceptionReason(e.target.value)}
-              onBlur={saveException}
-              placeholder="Please explain why budget information is not provided..."
-              className="min-h-24"
-              disabled={savingException || (!user && !userLoading)}
-            />
-            {savingException && (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Saving...
-              </div>
-            )}
-          </div>
-        )}
-      </div>
       {/* Granularity switcher in correct order */}
-      {!budgetNotProvided && (
         <div className="bg-white rounded-lg border">
           <div className="p-4 border-b">
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium">View by:</span>
+              <span className="text-sm font-medium">Budget Frequency:</span>
               <div className="flex gap-2">
                 {granularityOrder.map((g) => (
                   <Button
                     key={g}
                     variant={granularity === g ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => handleGranularityChange(g)}
-                    disabled={budgetNotProvided}
+                    onClick={() => handleGranularityTabClick(g)}
+                    disabled={isWiping}
                   >
                     {g.charAt(0).toUpperCase() + g.slice(1)}
+                    {isWiping && pendingGranularity === g && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
                   </Button>
                 ))}
               </div>
+              {isWiping && (
+                <span className="text-sm text-orange-600 font-medium">
+                  Changing frequency...
+                </span>
+              )}
             </div>
           </div>
+          <Dialog open={showWarning} onOpenChange={cancelGranularityChange}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Warning: Change Budget Frequency?</DialogTitle>
+                <DialogDescription>
+                  Switching the budget frequency (monthly, quarterly, annual) will wipe all previously reported budgets for this activity. This action cannot be undone.<br />
+                  Are you sure you want to continue?
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={cancelGranularityChange} disabled={isWiping}>Cancel</Button>
+                <Button variant="destructive" onClick={confirmGranularityChange} disabled={isWiping}>Yes, Wipe Budgets</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           {/* Budget table */}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  {['Period', 'Type', 'Status', 'Value', 'Currency', 'Value Date', 'USD VALUE', 'Actions'].map((header, i) => (
+                  {['Period Start', 'Period End', 'Type', 'Status', 'Value', 'Currency', 'Value Date', 'USD VALUE', 'Actions'].map((header, i) => (
                     <th key={i} className="px-4 py-3 text-left">
-                      <Skeleton className="h-4 w-16" />
+                      {header}
                     </th>
                   ))}
                 </tr>
@@ -1095,11 +1197,13 @@ export default function ActivityBudgetsTab({
                       <td className="px-4 py-4 text-sm">
                         {format(parseISO(budget.period_start), 'MMM d, yyyy')}
                       </td>
+                      <td className="px-4 py-4 text-sm">
+                        {format(parseISO(budget.period_end), 'MMM d, yyyy')}
+                      </td>
                       <td className="px-4 py-4">
                         <Select
                           value={budget.type.toString()}
-                          onValueChange={(value) => updateBudgetField(index, 'type', parseInt(value) as 1 | 2)}
-                          disabled={budgetNotProvided}
+                          onValueChange={(value) => handleSelectChange(index, 'type', parseInt(value) as 1 | 2)}
                         >
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue />
@@ -1113,8 +1217,7 @@ export default function ActivityBudgetsTab({
                       <td className="px-4 py-4">
                         <Select
                           value={budget.status.toString()}
-                          onValueChange={(value) => updateBudgetField(index, 'status', parseInt(value) as 1 | 2)}
-                          disabled={budgetNotProvided}
+                          onValueChange={(value) => handleSelectChange(index, 'status', parseInt(value) as 1 | 2)}
                         >
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue />
@@ -1131,10 +1234,12 @@ export default function ActivityBudgetsTab({
                             type="number"
                             value={budget.value}
                             onChange={(e) => updateBudgetField(index, 'value', parseFloat(e.target.value) || 0)}
+                            onBlur={() => handleFieldBlur(index, 'value')}
+                            onFocus={(e) => e.target.select()}
+                            onClick={(e) => e.currentTarget.select()}
                             className="h-8 text-sm"
                             step="0.01"
                             min="0"
-                            disabled={budgetNotProvided}
                           />
                           {budget.isSaving && <Loader2 className="h-3 w-3 animate-spin" />}
                         </div>
@@ -1142,8 +1247,7 @@ export default function ActivityBudgetsTab({
                       <td className="px-4 py-4">
                         <Select
                           value={budget.currency}
-                          onValueChange={(value) => updateBudgetField(index, 'currency', value)}
-                          disabled={budgetNotProvided}
+                          onValueChange={(value) => handleSelectChange(index, 'currency', value)}
                         >
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue />
@@ -1162,8 +1266,8 @@ export default function ActivityBudgetsTab({
                           type="date"
                           value={budget.value_date || formatDateFns(new Date(), 'yyyy-MM-dd')}
                           onChange={(e) => updateBudgetField(index, 'value_date', e.target.value)}
+                          onBlur={() => handleFieldBlur(index, 'value_date')}
                           className="h-8 text-sm"
-                          disabled={budgetNotProvided}
                         />
                       </td>
                       <td className="px-4 py-4">
@@ -1207,7 +1311,6 @@ export default function ActivityBudgetsTab({
                             size="sm"
                             variant="ghost"
                             onClick={() => deleteBudget(index)}
-                            disabled={budgetNotProvided}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -1215,20 +1318,17 @@ export default function ActivityBudgetsTab({
                             size="sm"
                             variant="ghost"
                             onClick={() => duplicateBudget(index)}
-                            disabled={budgetNotProvided}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              duplicateForward(index);
-                            }}
-                            className="text-sm underline cursor-pointer"
-                            disabled={budgetNotProvided}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => duplicateForward(index)}
+                            title="Duplicate Forward"
                           >
-                            Duplicate Forward
-                          </button>
+                            <FastForward className="h-4 w-4" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -1262,10 +1362,9 @@ export default function ActivityBudgetsTab({
             </div>
           </div>
         </div>
-      )}
 
       {/* Budget Charts */}
-      {!budgetNotProvided && budgets.length > 0 && (
+      {budgets.length > 0 && (
         <>
           <div className="flex flex-wrap gap-4 items-center mb-4 mt-8">
             <span className="text-sm font-medium">Show in:</span>
