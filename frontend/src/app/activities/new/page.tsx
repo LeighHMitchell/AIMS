@@ -874,6 +874,9 @@ function NewActivityPageContent() {
         const data = await response.json();
         setTransactions(data.transactions || []);
         console.log('[AIMS] Refreshed transactions:', data.transactions?.length || 0);
+        
+        // Dispatch event to refresh financial summary cards
+        window.dispatchEvent(new CustomEvent('refreshFinancialSummaryCards'));
       }
     } catch (error) {
       console.error('[AIMS] Error refreshing transactions:', error);

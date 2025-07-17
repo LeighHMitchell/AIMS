@@ -40,19 +40,32 @@ export function FinancialSummaryCards({ activityId, className }: FinancialSummar
       // Transactions: Committed (type 2), Disbursed/Expended (type 3 or 4)
       const { data: txs, error: txsError } = await supabase
         .from("transactions")
-        .select("transaction_type, value")
+        .select("transaction_type, value, value_usd")
         .eq("activity_id", activityId);
       let committed = 0, disbursed = 0;
       if (!txsError && txs) {
         txs.forEach(t => {
-          if (t.transaction_type === '2') committed += t.value || 0;
-          if (t.transaction_type === '3' || t.transaction_type === '4') disbursed += t.value || 0;
+          // Use value_usd if available, otherwise fall back to value
+          const usdValue = t.value_usd || t.value || 0;
+          if (t.transaction_type === '2') committed += usdValue;
+          if (t.transaction_type === '3' || t.transaction_type === '4') disbursed += usdValue;
         });
       }
       setTotalCommitted(committed);
       setTotalDisbursedAndExpended(disbursed);
     }
     if (activityId) fetchFinancials();
+
+    // Listen for refresh events
+    const handleRefresh = () => {
+      if (activityId) fetchFinancials();
+    };
+    
+    window.addEventListener('refreshFinancialSummaryCards', handleRefresh);
+    
+    return () => {
+      window.removeEventListener('refreshFinancialSummaryCards', handleRefresh);
+    };
   }, [activityId]);
 
   const formatCurrency = (amount: number) => `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
