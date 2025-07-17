@@ -216,8 +216,7 @@ class EnhancedCurrencyConverterV2 {
     diagnostic.steps.push(`🔄 Trying primary API: ${url}`);
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'AIMS Currency Converter/2.0' },
-      timeout: 10000
+      headers: { 'User-Agent': 'AIMS Currency Converter/2.0' }
     });
 
     if (!response.ok) {
@@ -251,8 +250,7 @@ class EnhancedCurrencyConverterV2 {
     diagnostic.steps.push(`🔄 Trying fallback API: ${url}`);
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'AIMS Currency Converter/2.0' },
-      timeout: 10000
+      headers: { 'User-Agent': 'AIMS Currency Converter/2.0' }
     });
 
     if (!response.ok) {
@@ -414,7 +412,7 @@ class EnhancedCurrencyConverterV2 {
    * Diagnose conversion issues for a specific currency and date
    */
   async diagnoseConversion(currency: string, date: string): Promise<any> {
-    const diagnostic = {
+    const diagnostic: any = {
       currency,
       date,
       tests: []

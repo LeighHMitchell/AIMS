@@ -602,8 +602,8 @@ export default function ActivityDetailPage() {
               <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <h1 className="text-3xl font-bold text-slate-900">{activity.title}</h1>
+                      <div className="mb-4">
+                        <h1 className="text-5xl font-bold text-slate-900 leading-tight">{activity.title}</h1>
                       </div>
                       
                       <div className="flex items-center gap-2 mb-2">
@@ -669,9 +669,9 @@ export default function ActivityDetailPage() {
 
                   {/* Metadata Grid */}
                   <div className="grid grid-cols-2 gap-4 mt-6 text-sm">
-                    <div>
-                      <span className="text-slate-500">Reported by:</span>
-                      <span className="ml-2 text-slate-900">
+                    <div className="space-y-1">
+                      <div className="text-slate-500">Reported by:</div>
+                      <div className="text-slate-900 font-medium break-words">
                         {(() => {
                           const creatorOrg = partners.find(p => p.id === activity.createdByOrg);
                           if (creatorOrg) {
@@ -679,7 +679,7 @@ export default function ActivityDetailPage() {
                           }
                           return activity.created_by_org_acronym || activity.created_by_org_name || 'Unknown Organization';
                         })()}
-                      </span>
+                      </div>
                     </div>
                     <div>
                       <span className="text-slate-500">Created:</span>

@@ -90,29 +90,31 @@ export const IconUpload: React.FC<IconUploadProps> = ({
               alt="Activity icon"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-              <div {...getRootProps()}>
-                <input {...getInputProps()} />
+            <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div className="flex flex-col gap-2">
+                <div {...getRootProps()}>
+                  <input {...getInputProps()} />
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={uploading}
+                    className="h-8 text-xs px-3 w-full"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Replace
+                  </Button>
+                </div>
                 <Button
                   size="sm"
-                  variant="secondary"
+                  variant="destructive"
+                  onClick={removeIcon}
                   disabled={uploading}
-                  className="h-8 text-xs px-2"
+                  className="h-8 text-xs px-3 w-full"
                 >
-                  <Upload className="h-3 w-3 mr-1" />
-                  Replace
+                  <X className="h-3 w-3 mr-1" />
+                  Remove
                 </Button>
               </div>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={removeIcon}
-                disabled={uploading}
-                className="h-8 text-xs px-2"
-              >
-                <X className="h-3 w-3 mr-1" />
-                Remove
-              </Button>
             </div>
           </div>
         </div>

@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
     const activities = dataResult.data || [];
 
     // Fetch transaction summaries from materialized view
-    const activityIds = activities.map(a => a.id);
+    const activityIds = activities.map((a: any) => a.id);
     
     let summariesMap = new Map();
     if (activityIds.length > 0) {
@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
         .in('activity_id', activityIds);
 
       if (!summariesError && summaries) {
-        summaries.forEach(s => {
+        summaries.forEach((s: any) => {
           summariesMap.set(s.activity_id, {
             commitments: s.commitments || 0,
             disbursements: s.disbursements || 0,
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
         
         if (!txError && transactions) {
           // Group by activity_id and calculate summaries
-          transactions.forEach(t => {
+          transactions.forEach((t: any) => {
             const current = summariesMap.get(t.activity_id) || {
               commitments: 0,
               disbursements: 0,
@@ -203,7 +203,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform activities with summaries
-    const transformedActivities = activities.map(activity => {
+    const transformedActivities = activities.map((activity: any) => {
       const summary = summariesMap.get(activity.id) || {
         commitments: 0,
         disbursements: 0,

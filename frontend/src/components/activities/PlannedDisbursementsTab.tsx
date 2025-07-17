@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths } from 'date-fns';
-import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, Filter, DollarSign, Users, Edit, Save, X, Check } from 'lucide-react';
+import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, Filter, DollarSign, Users, Edit, Save, X, Check, MoreVertical } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,9 +34,24 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser } from '@/hooks/useUser';
 import { generateBudgetPeriods } from './ActivityBudgetsTab';
+
+// Add custom granularity support
+type Granularity = 'quarterly' | 'monthly' | 'annual' | 'custom';
+
+interface CustomGranularity {
+  type: 'custom';
+  months: number;
+  label: string;
+}
 import {
   Dialog,
   DialogTrigger,
@@ -78,6 +93,7 @@ interface PlannedDisbursementsTabProps {
   endDate: string;
   defaultCurrency?: string;
   readOnly?: boolean;
+  onDisbursementsChange?: (disbursements: PlannedDisbursement[]) => void;
 }
 
 interface Organization {
@@ -118,7 +134,8 @@ export default function PlannedDisbursementsTab({
   startDate, 
   endDate, 
   defaultCurrency = 'USD',
-  readOnly = false 
+  readOnly = false,
+  onDisbursementsChange
 }: PlannedDisbursementsTabProps) {
   const [disbursements, setDisbursements] = useState<PlannedDisbursement[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -329,17 +346,27 @@ export default function PlannedDisbursementsTab({
   const currencies = useMemo(() => getAllCurrenciesWithPinned(), []);
 
   // Add granularity state and handler
-  const [granularity, setGranularity] = useState<'monthly' | 'quarterly' | 'annual'>('quarterly');
-  const granularityOrder = ['monthly', 'quarterly', 'annual'];
+  const [granularity, setGranularity] = useState<Granularity>('quarterly');
+  const [customGranularity, setCustomGranularity] = useState<CustomGranularity>({ type: 'custom', months: 6, label: '6 months' });
+  const [showCustomGranularityDialog, setShowCustomGranularityDialog] = useState(false);
+  const granularityOrder: Granularity[] = ['monthly', 'quarterly', 'annual', 'custom'];
 
   // Generate periods based on granularity
   const generatedPeriods = useMemo(() => {
     if (!startDate || !endDate) return [];
+    if (granularity === 'custom') {
+      return generateBudgetPeriods(startDate, endDate, customGranularity);
+    }
     return generateBudgetPeriods(startDate, endDate, granularity);
-  }, [startDate, endDate, granularity]);
+  }, [startDate, endDate, granularity, customGranularity]);
 
   // Add handler for granularity change
-  const handleGranularityChange = (newGranularity: 'monthly' | 'quarterly' | 'annual') => {
+  const handleGranularityChange = (newGranularity: Granularity) => {
+    if (newGranularity === 'custom') {
+      setShowCustomGranularityDialog(true);
+      return;
+    }
+    
     if (!confirm('Changing granularity will regenerate the planned disbursement table. Any unsaved changes may be lost. Continue?')) return;
     setGranularity(newGranularity);
     // Regenerate disbursements based on new granularity
@@ -471,6 +498,13 @@ export default function PlannedDisbursementsTab({
 
     fetchDisbursements();
   }, [activityId]);
+
+  // Notify parent component when disbursements change
+  useEffect(() => {
+    if (onDisbursementsChange) {
+      onDisbursementsChange(disbursements);
+    }
+  }, [disbursements, onDisbursementsChange]);
 
   // Filter disbursements
   const filteredDisbursements = useMemo(() => {
@@ -758,6 +792,43 @@ export default function PlannedDisbursementsTab({
     return org.name || 'Unknown';
   };
 
+  const getOrganizationAcronym = (orgId?: string, orgName?: string) => {
+    if (!orgId && !orgName) return '-';
+    
+    // Try to find organization by ID to get acronym
+    if (orgId) {
+      const org = organizations.find(o => o.id === orgId);
+      if (org && org.acronym) {
+        return org.acronym;
+      }
+    }
+    
+    // If no acronym found but we have an orgName, extract potential acronym
+    if (orgName) {
+      // Check if orgName contains parentheses with potential acronym
+      const match = orgName.match(/\(([A-Z]+)\)$/);
+      if (match) {
+        return match[1];
+      }
+      
+      // If no parentheses, check if it's already an acronym (short and uppercase)
+      if (orgName.length <= 6 && orgName === orgName.toUpperCase()) {
+        return orgName;
+      }
+      
+      // As fallback, create acronym from first letters of words
+      const words = orgName.split(' ').filter(word => word.length > 0);
+      if (words.length > 1) {
+        return words.map(word => word.charAt(0).toUpperCase()).join('');
+      }
+      
+      // If single word, return first 3-4 characters
+      return orgName.substring(0, Math.min(4, orgName.length)).toUpperCase();
+    }
+    
+    return '-';
+  };
+
   // Enhanced modal save handler
   const handleModalSave = async () => {
     if (isReadOnly || !modalDisbursement) return;
@@ -986,13 +1057,21 @@ export default function PlannedDisbursementsTab({
                 Annual
               </Button>
               <Button
+                variant={granularity === 'custom' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleGranularityChange('custom')}
+                disabled={isReadOnly}
+              >
+                Custom
+              </Button>
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={addCustomPeriod}
                 disabled={isReadOnly}
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Add Custom
+                Add Period
               </Button>
             </div>
           </div>
@@ -1062,13 +1141,13 @@ export default function PlannedDisbursementsTab({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Period</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Provider → Receiver</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>USD Value</TableHead>
-                      <TableHead>Value Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="font-medium">Period</TableHead>
+                      <TableHead className="font-medium">Status</TableHead>
+                      <TableHead className="font-medium">Provider → Receiver</TableHead>
+                      <TableHead className="font-medium">Amount</TableHead>
+                      <TableHead className="font-medium">USD Value</TableHead>
+                      <TableHead className="font-medium">Value Date</TableHead>
+                      <TableHead className="text-right font-medium">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1099,7 +1178,7 @@ export default function PlannedDisbursementsTab({
                           {/* Provider → Receiver */}
                           <TableCell>
                             <div className="text-sm">
-                              {disbursement.provider_org_name || '-'} → {disbursement.receiver_org_name || '-'}
+                              {getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name)} → {getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name)}
                             </div>
                           </TableCell>
 
@@ -1129,54 +1208,36 @@ export default function PlannedDisbursementsTab({
 
                           {/* Actions */}
                           <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openModal(disbursement)}
-                                disabled={isReadOnly}
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                {disbursement.amount > 0 ? 'Edit' : 'Add'}
-                              </Button>
-                                <TooltipProvider>
-                                  <UITooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleDuplicate(disbursement)}
-                                        disabled={isReadOnly}
-                                        aria-label="Duplicate planned disbursement"
-                                      >
-                                        <Copy className="h-4 w-4" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Duplicate</TooltipContent>
-                                  </UITooltip>
-                                </TooltipProvider>
-                                <TooltipProvider>
-                                  <UITooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleDelete(disbursement.id || '')}
-                                        className="text-red-600 hover:text-red-700"
-                                        disabled={isReadOnly || deleteLoading === disbursement.id}
-                                        aria-label="Delete planned disbursement"
-                                      >
-                                        {deleteLoading === disbursement.id ? (
-                                          <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                          <Trash2 className="h-4 w-4" />
-                                        )}
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Delete</TooltipContent>
-                                  </UITooltip>
-                                </TooltipProvider>
-                              </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0" disabled={isReadOnly}>
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openModal(disbursement)} disabled={isReadOnly}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDuplicate(disbursement)} disabled={isReadOnly}>
+                                  <Copy className="mr-2 h-4 w-4" />
+                                  Duplicate
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDelete(disbursement.id || '')} 
+                                  disabled={isReadOnly || deleteLoading === disbursement.id}
+                                  className="text-red-600"
+                                >
+                                  {deleteLoading === disbursement.id ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                  )}
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       );

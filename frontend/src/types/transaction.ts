@@ -29,7 +29,7 @@ export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
   '13': 'Commitment Cancellation'
 };
 
-export type TransactionStatus = 'draft' | 'submitted' | 'validated' | 'rejected' | 'published';
+export type TransactionStatus = 'draft' | 'submitted' | 'validated' | 'rejected' | 'published' | 'actual';
 
 export type OrganizationType = 
   | '10'  // Government

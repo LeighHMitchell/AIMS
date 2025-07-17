@@ -23,6 +23,7 @@ interface CurrencySelectorProps {
   disabled?: boolean;
   className?: string;
   id?: string;
+  showCodeOnly?: boolean; // New prop to control display behavior
 }
 
 const allOptions: Currency[] = currencyList;
@@ -36,6 +37,7 @@ export function CurrencySelector({
   disabled = false,
   className,
   id,
+  showCodeOnly = false, // Default to false for backward compatibility
 }: CurrencySelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,13 +91,17 @@ export function CurrencySelector({
         >
           <span className="truncate">
             {selectedOption ? (
-              <span className="flex items-center gap-2">
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedOption.code}</span>
-                <span className="font-medium">{selectedOption.name}</span>
-                {selectedOption.withdrawn && (
-                  <span className="ml-2 text-xs text-red-500">Withdrawn</span>
-                )}
-              </span>
+              showCodeOnly ? (
+                <span className="font-medium">{selectedOption.code}</span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedOption.code}</span>
+                  <span className="font-medium">{selectedOption.name}</span>
+                  {selectedOption.withdrawn && (
+                    <span className="ml-2 text-xs text-red-500">Withdrawn</span>
+                  )}
+                </span>
+              )
             ) : (
               placeholder
             )}

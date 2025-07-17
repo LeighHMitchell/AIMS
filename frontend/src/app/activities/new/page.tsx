@@ -319,7 +319,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         </div>
         <div className="space-y-2">
           <label htmlFor="uuid" className="text-sm font-medium text-gray-700">
-            UUID
+            UUID (Universally Unique Identifier)
           </label>
           <Input
             id="uuid"
@@ -327,7 +327,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             value={general.uuid || ''}
             readOnly
             className="bg-gray-50 cursor-not-allowed"
-            placeholder="Auto-generated"
+            placeholder="Auto-generated when activity is created"
           />
         </div>
       </div>
@@ -628,7 +628,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements }: any) {
   switch (section) {
     case "general":
       return <GeneralSection 
@@ -753,7 +753,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         endDate={general.plannedEndDate || general.actualEndDate || ""}
         defaultCurrency={general.defaultCurrency || "USD"}
         onBudgetsChange={setBudgets}
-        onBudgetNotProvidedChange={setBudgetNotProvided}
       />;
     case "planned_disbursements":
       return <PlannedDisbursementsTab 
@@ -762,6 +761,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         endDate={general.plannedEndDate || general.actualEndDate || ""}
         defaultCurrency={general.defaultCurrency || "USD"}
         readOnly={!permissions?.canEditActivity}
+        onDisbursementsChange={setPlannedDisbursements}
       />;
     case "results":
       return <div className="bg-white rounded shadow p-8">[Results fields go here]</div>;
@@ -921,6 +921,8 @@ function NewActivityPageContent() {
   // Add state to track budgets and budgetNotProvided for Budgets tab completion
   const [budgets, setBudgets] = useState<any[]>([]);
   const [budgetNotProvided, setBudgetNotProvided] = useState(false);
+  // Add state to track planned disbursements for Planned Disbursements tab completion
+  const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([]);
 
   const isEditing = !!searchParams?.get("id");
   
@@ -1014,6 +1016,49 @@ function NewActivityPageContent() {
           }
           
           setActivityScope(data.activityScope || "national");
+
+          // Fetch budgets for tab completion status
+          try {
+            const budgetsResponse = await fetch(`/api/activities/${activityId}/budgets`);
+            if (budgetsResponse.ok) {
+              const budgetsData = await budgetsResponse.json();
+              setBudgets(budgetsData || []);
+              console.log('[AIMS] Loaded budgets for tab completion:', budgetsData?.length || 0);
+            }
+          } catch (error) {
+            console.warn('[AIMS] Failed to load budgets for tab completion:', error);
+          }
+
+          // Fetch budget exceptions to check "budget not provided" status
+          try {
+            const { data: budgetExceptions, error: budgetExceptionsError } = await supabase
+              .from('activity_budget_exceptions')
+              .select('*')
+              .eq('activity_id', activityId)
+              .single();
+            
+            if (!budgetExceptionsError && budgetExceptions) {
+              setBudgetNotProvided(true);
+              console.log('[AIMS] Found budget exception - budget not provided');
+            } else {
+              setBudgetNotProvided(false);
+            }
+          } catch (error) {
+            console.warn('[AIMS] Failed to load budget exceptions for tab completion:', error);
+            setBudgetNotProvided(false);
+          }
+
+          // Fetch planned disbursements for tab completion status  
+          try {
+            const disbursementsResponse = await fetch(`/api/activities/${activityId}/planned-disbursements`);
+            if (disbursementsResponse.ok) {
+              const disbursementsData = await disbursementsResponse.json();
+              setPlannedDisbursements(disbursementsData || []);
+              console.log('[AIMS] Loaded planned disbursements for tab completion:', disbursementsData?.length || 0);
+            }
+          } catch (error) {
+            console.warn('[AIMS] Failed to load planned disbursements for tab completion:', error);
+          }
         } else {
           // New activity - just set some defaults
           console.log('[AIMS] Creating new activity');
@@ -1170,14 +1215,18 @@ function NewActivityPageContent() {
     // Budgets tab: green check if at least one budget or budget not provided
     const budgetsComplete = (budgets && budgets.length > 0) || budgetNotProvided;
 
+    // Planned Disbursements tab: green check if at least one planned disbursement
+    const plannedDisbursementsComplete = plannedDisbursements && plannedDisbursements.length > 0;
+
     return {
       general: generalCompletion ? { isComplete: generalCompletion.isComplete } : { isComplete: false },
       sectors: { isComplete: sectorsComplete },
       finances: { isComplete: financesComplete },
       finances_defaults: financesDefaultsCompletion ? { isComplete: financesDefaultsCompletion.isComplete } : { isComplete: false },
-      budgets: { isComplete: budgetsComplete }
+      budgets: { isComplete: budgetsComplete },
+      planned_disbursements: { isComplete: plannedDisbursementsComplete }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors, hasUnsavedChanges, transactions, budgets, budgetNotProvided]);
+  }, [general, getDateFieldStatus, sectorValidation, sectors, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -1573,7 +1622,7 @@ function NewActivityPageContent() {
                 <div className="space-y-2">
                   <div>
                     <span className="text-gray-500">Reported by:</span>
-                    <span className="ml-2 font-medium block truncate">
+                    <span className="ml-2 font-medium block break-words">
                       {(() => {
                         if (general.created_by_org_name && general.created_by_org_acronym) {
                           return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
@@ -1776,6 +1825,8 @@ function NewActivityPageContent() {
                     setBudgets={setBudgets}
                     budgetNotProvided={budgetNotProvided}
                     setBudgetNotProvided={setBudgetNotProvided}
+                    plannedDisbursements={plannedDisbursements}
+                    setPlannedDisbursements={setPlannedDisbursements}
                   />
                 </div>
               )}

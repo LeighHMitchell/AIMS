@@ -106,7 +106,7 @@ async function createExecSqlFunction() {
     $$ LANGUAGE plpgsql SECURITY DEFINER;
   `;
   
-  const { error } = await supabase.rpc('exec_sql', { sql: createFunction }).catch(() => ({ error: null }));
+  const { error } = await supabase.rpc('exec_sql', { sql: createFunction });
   
   if (!error) {
     console.log('✅ Created exec_sql function');

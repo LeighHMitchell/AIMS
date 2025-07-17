@@ -3,6 +3,14 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren } from "lucide-react";
 import { toast } from "sonner";
+import { 
+  showTransactionSuccess, 
+  showTransactionError, 
+  showValidationError, 
+  showAutoCreateSuccess,
+  clearAllTransactionToasts,
+  TRANSACTION_TOAST_IDS 
+} from '@/lib/toast-manager';
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -663,16 +671,21 @@ export default function TransactionModal({
       const ref = submissionData.transaction_reference.trim().toLowerCase();
       const isDuplicate = allTransactionReferences.filter(r => r && r.trim().toLowerCase() === ref).length > (createdTransactionId || (isEditing && transaction?.id) ? 1 : 0);
       if (isDuplicate) {
-        toast.error('Transaction reference must be unique.');
+        showValidationError('Transaction reference must be unique.', {
+          isDuplicateReference: true,
+          onClearReference: () => {
+            setFormData(prev => ({ ...prev, transaction_reference: '' }));
+          }
+        });
         return;
       }
     }
     if (validationError) {
       const missingFields = getMissingRequiredFields(formData);
       if (missingFields.length > 0) {
-        toast.error(`Missing required fields: ${missingFields.join(', ')}`);
+        showValidationError(`Missing required fields: ${missingFields.join(', ')}`);
       } else {
-        toast.error(validationError);
+        showValidationError(validationError);
       }
       return;
     }
@@ -703,17 +716,22 @@ export default function TransactionModal({
       if (!response.ok) {
         const error = await response.json();
         if (error.error && error.error.includes('unique') && error.error.includes('transaction_reference')) {
-          toast.error('Transaction reference must be unique.');
+          showValidationError('Transaction reference already exists. Please provide a unique reference or leave blank for auto-generation.', {
+            isDuplicateReference: true,
+            onClearReference: () => {
+              setFormData(prev => ({ ...prev, transaction_reference: '' }));
+            }
+          });
         } else if (error.error && error.error.includes('required')) {
-          toast.error('A required field is missing.');
+          showTransactionError('A required field is missing.');
         } else {
-          toast.error(error.error || 'Failed to save transaction');
+          showTransactionError(error.error || 'Failed to save transaction');
         }
         return;
       }
       const saved = await response.json();
       setCreatedTransactionId(saved.id || saved.uuid);
-      toast.success((isEditing || createdTransactionId) ? 'Transaction updated successfully' : 'Transaction added successfully');
+      showTransactionSuccess((isEditing || createdTransactionId) ? 'Transaction updated successfully' : 'Transaction added successfully');
       
       // Call onSubmit callback to notify parent component
       if (onSubmit) {
@@ -722,7 +740,7 @@ export default function TransactionModal({
       
       onOpenChange(false);
     } catch (e: any) {
-      toast.error(e.message || 'Failed to save transaction');
+      showTransactionError(e.message || 'Failed to save transaction');
     }
   };
 
@@ -922,7 +940,7 @@ export default function TransactionModal({
     
     if (!hasAllRequiredFields(data)) {
       const missingFields = getMissingRequiredFields(data);
-      toast.error(`Missing required fields: ${missingFields.join(', ')}`);
+      showValidationError(`Missing required fields: ${missingFields.join(', ')}`);
       return;
     }
     
@@ -953,7 +971,7 @@ export default function TransactionModal({
       const saved = await response.json();
       setCreatedTransactionId(saved.id || saved.uuid);
       setCreationError(null);
-      toast.success('Transaction saved! You can now upload documents.');
+      showAutoCreateSuccess('Transaction saved! You can now upload documents.');
       
       // Save any pending fields (with same abort controller)
       if (Object.keys(pendingFields).length > 0) {
@@ -990,6 +1008,13 @@ export default function TransactionModal({
       debouncedCreateTransaction(formData);
     }
   }, [formData.transaction_type, formData.transaction_date, formData.value, formData.currency, activityId, isEditing]);
+
+  // Clear toasts when modal closes
+  useEffect(() => {
+    if (!open) {
+      clearAllTransactionToasts();
+    }
+  }, [open]);
 
   // When editing fields before transaction is created, store them as pending
   const handleFieldChange = (field: keyof Transaction, value: any) => {
@@ -1228,6 +1253,7 @@ export default function TransactionModal({
                     }}
                     placeholder="Select currency"
                     id="currency"
+                    showCodeOnly={true}
                   />
                 </div>
               </div>

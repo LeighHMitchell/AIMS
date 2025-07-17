@@ -30,7 +30,17 @@ export default function RootLayout({
       <body className={inter.className}>
         <UserProvider>
           {children}
-          <Toaster position="top-right" richColors />
+          <Toaster 
+            position="top-right" 
+            richColors 
+            closeButton 
+            duration={5000}
+            toastOptions={{
+              style: {
+                fontSize: '14px',
+              },
+            }}
+          />
         </UserProvider>
       </body>
     </html>

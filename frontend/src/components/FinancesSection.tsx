@@ -366,21 +366,21 @@ export default function FinancesSection({
     const totalDisbursed = transactions
       .filter(t => categorizeTransactionType(t.transaction_type) === 'disbursement')
       .reduce((sum, t) => {
-        const value = parseFloat(t.value?.toString() || '0') || 0;
+        const value = parseFloat(t.value_usd?.toString() || '0') || 0;
         return sum + (isNaN(value) ? 0 : value);
       }, 0);
     
     const totalExpenditure = transactions
       .filter(t => categorizeTransactionType(t.transaction_type) === 'expenditure')
       .reduce((sum, t) => {
-        const value = parseFloat(t.value?.toString() || '0') || 0;
+        const value = parseFloat(t.value_usd?.toString() || '0') || 0;
         return sum + (isNaN(value) ? 0 : value);
       }, 0);
     
     const totalCommitment = transactions
       .filter(t => categorizeTransactionType(t.transaction_type) === 'commitment')
       .reduce((sum, t) => {
-        const value = parseFloat(t.value?.toString() || '0') || 0;
+        const value = parseFloat(t.value_usd?.toString() || '0') || 0;
         return sum + (isNaN(value) ? 0 : value);
       }, 0);
     

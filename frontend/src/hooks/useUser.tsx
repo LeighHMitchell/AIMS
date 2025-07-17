@@ -43,7 +43,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     // Listen for Supabase auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: any, session: any) => {
         console.log('[useUser] Supabase auth event:', event);
         
         if (event === 'SIGNED_IN' && session?.user) {

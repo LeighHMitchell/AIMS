@@ -27,10 +27,11 @@ if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
 }
 
 // Test connection with anon key
-console.log('\n🔄 Testing connection with anon key...');
-try {
-  const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey);
-  const { count, error } = await supabaseAnon
+async function testConnection() {
+  console.log('\n🔄 Testing connection with anon key...');
+  try {
+    const supabaseAnon = createClient(supabaseUrl!, supabaseAnonKey!);
+    const { count, error } = await supabaseAnon
     .from('activities')
     .select('*', { count: 'exact', head: true });
   
@@ -46,7 +47,7 @@ try {
 // Test connection with service key
 console.log('\n🔄 Testing connection with service key...');
 try {
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  const supabaseAdmin = createClient(supabaseUrl!, supabaseServiceKey!);
   const { count, error } = await supabaseAdmin
     .from('activities')
     .select('*', { count: 'exact', head: true });
@@ -63,7 +64,7 @@ try {
 // Test transaction summaries view
 console.log('\n🔄 Testing transaction summaries view...');
 try {
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  const supabaseAdmin = createClient(supabaseUrl!, supabaseServiceKey!);
   const { data, error } = await supabaseAdmin
     .from('activity_transaction_summaries')
     .select('*')
@@ -85,7 +86,7 @@ try {
 // Test transactions table
 console.log('\n🔄 Testing transactions table...');
 try {
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  const supabaseAdmin = createClient(supabaseUrl!, supabaseServiceKey!);
   const { count, error } = await supabaseAdmin
     .from('transactions')
     .select('*', { count: 'exact', head: true });
@@ -99,4 +100,8 @@ try {
   console.log('❌ Transactions test failed:', err);
 }
 
-console.log('\n✨ Connection test complete!');
+  console.log('\n✨ Connection test complete!');
+}
+
+// Run the test
+testConnection();

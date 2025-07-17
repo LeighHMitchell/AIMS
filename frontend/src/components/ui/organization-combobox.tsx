@@ -37,6 +37,7 @@ interface OrganizationComboboxProps {
   placeholder?: string
   allowManualEntry?: boolean
   className?: string
+  fallbackRef?: string
 }
 
 export function OrganizationCombobox({
@@ -44,7 +45,8 @@ export function OrganizationCombobox({
   value,
   onValueChange,
   placeholder = "Select organization...",
-  className
+  className,
+  fallbackRef
 }: OrganizationComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
@@ -118,6 +120,19 @@ export function OrganizationCombobox({
                       {getIatiCountryLine(selected)}
                     </span>
                   )}
+                </span>
+              );
+            }
+            // Show fallback reference if no organization found but we have a ref
+            if (fallbackRef && !selected) {
+              return (
+                <span className="flex flex-col min-w-0 text-left">
+                  <span className="truncate font-medium text-yellow-600">
+                    {fallbackRef}
+                  </span>
+                  <span className="text-xs text-yellow-500 truncate">
+                    Organization not found in list
+                  </span>
                 </span>
               );
             }

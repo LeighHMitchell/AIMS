@@ -19,10 +19,12 @@ import { format, differenceInDays, parseISO } from "date-fns";
 interface Transaction {
   transaction_type: string;
   value: string | number;
+  value_usd?: number;
 }
 
 interface Budget {
   value: string | number;
+  usd_value?: number;
 }
 
 interface ActivityHeroCardsProps {
@@ -53,21 +55,21 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
     
     const totalCommitment = transactions
       .filter((t: Transaction) => t.transaction_type === "2")
-      .reduce((sum: number, t: Transaction) => sum + (parseFloat(String(t.value)) || 0), 0);
+      .reduce((sum: number, t: Transaction) => sum + (parseFloat(String(t.value_usd)) || 0), 0);
     
     const totalDisbursement = transactions
       .filter((t: Transaction) => t.transaction_type === "3")
-      .reduce((sum: number, t: Transaction) => sum + (parseFloat(String(t.value)) || 0), 0);
+      .reduce((sum: number, t: Transaction) => sum + (parseFloat(String(t.value_usd)) || 0), 0);
     
     const totalExpenditure = transactions
       .filter((t: Transaction) => t.transaction_type === "4")
-      .reduce((sum: number, t: Transaction) => sum + (parseFloat(String(t.value)) || 0), 0);
+      .reduce((sum: number, t: Transaction) => sum + (parseFloat(String(t.value_usd)) || 0), 0);
 
     const totalSpent = totalDisbursement + totalExpenditure;
     
     // Calculate planned budget from budgets
     const budgets = activity?.budgets || [];
-    const totalPlannedBudget = budgets.reduce((sum: number, b: Budget) => sum + (parseFloat(String(b.value)) || 0), 0);
+    const totalPlannedBudget = budgets.reduce((sum: number, b: Budget) => sum + (parseFloat(String(b.usd_value)) || 0), 0);
     
     return {
       totalCommitment,

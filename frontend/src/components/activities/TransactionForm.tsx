@@ -25,6 +25,13 @@ import {
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from "sonner";
+import { 
+  showTransactionSuccess, 
+  showTransactionError, 
+  showValidationError, 
+  showFieldSaveSuccess,
+  TRANSACTION_TOAST_IDS 
+} from '@/lib/toast-manager';
 
 // Common currencies
 const COMMON_CURRENCIES = [
@@ -119,6 +126,16 @@ export default function TransactionForm({
       return format(new Date(), 'yyyy-MM-dd');
     }
   };
+
+  // Helper function to find organization ID by IATI reference
+  const findOrgIdByRef = (ref: string) => {
+    if (!ref) return '';
+    const org = organizations.find(org => 
+      org.iati_org_id === ref || 
+      org.ref === ref
+    );
+    return org?.id || '';
+  };
   
   const [formData, setFormData] = useState<TransactionFormData>({
     transaction_type: transaction?.transaction_type || '3', // Default to Disbursement
@@ -128,14 +145,14 @@ export default function TransactionForm({
     status: transaction?.status || 'draft',
     description: transaction?.description || '',
     
-    // Provider
-    provider_org_id: transaction?.provider_org_id || '',
+    // Provider - map from ref to org id if needed
+    provider_org_id: transaction?.provider_org_id || findOrgIdByRef(transaction?.provider_org_ref || ''),
     provider_org_name: transaction?.provider_org_name || '',
     provider_org_ref: transaction?.provider_org_ref || '',
     provider_org_type: transaction?.provider_org_type || undefined,
     
-    // Receiver
-    receiver_org_id: transaction?.receiver_org_id || '',
+    // Receiver - map from ref to org id if needed
+    receiver_org_id: transaction?.receiver_org_id || findOrgIdByRef(transaction?.receiver_org_ref || ''),
     receiver_org_name: transaction?.receiver_org_name || '',
     receiver_org_ref: transaction?.receiver_org_ref || '',
     receiver_org_type: transaction?.receiver_org_type || undefined,
@@ -176,14 +193,14 @@ export default function TransactionForm({
         status: transaction.status || 'draft',
         description: transaction.description || '',
         
-        // Provider
-        provider_org_id: transaction.provider_org_id || '',
+        // Provider - map from ref to org id if needed
+        provider_org_id: transaction.provider_org_id || findOrgIdByRef(transaction.provider_org_ref || ''),
         provider_org_name: transaction.provider_org_name || '',
         provider_org_ref: transaction.provider_org_ref || '',
         provider_org_type: transaction.provider_org_type || undefined,
         
-        // Receiver
-        receiver_org_id: transaction.receiver_org_id || '',
+        // Receiver - map from ref to org id if needed
+        receiver_org_id: transaction.receiver_org_id || findOrgIdByRef(transaction.receiver_org_ref || ''),
         receiver_org_name: transaction.receiver_org_name || '',
         receiver_org_ref: transaction.receiver_org_ref || '',
         receiver_org_type: transaction.receiver_org_type || undefined,
@@ -273,10 +290,18 @@ export default function TransactionForm({
     e.preventDefault();
     const submissionData = getTransactionPayload(formData, organizations);
     const validationError = validateTransaction(submissionData);
+    
     if (validationError) {
-      toast.error(validationError);
+      const isDuplicateReference = validationError.includes('reference must be unique');
+      showValidationError(validationError, {
+        isDuplicateReference,
+        onClearReference: isDuplicateReference ? () => {
+          setFormData(prev => ({ ...prev, transaction_reference: '' }));
+        } : undefined
+      });
       return;
     }
+    
     try {
       let response;
       if (transaction && transaction.uuid) {
@@ -294,21 +319,29 @@ export default function TransactionForm({
           body: JSON.stringify(submissionData)
         });
       }
+      
       if (!response.ok) {
         const error = await response.json();
+        
         if (error.error && error.error.includes('unique') && error.error.includes('transaction_reference')) {
-          toast.error('Transaction reference must be unique.');
+          showValidationError('Transaction reference already exists. Please provide a unique reference or leave blank for auto-generation.', {
+            isDuplicateReference: true,
+            onClearReference: () => {
+              setFormData(prev => ({ ...prev, transaction_reference: '' }));
+            }
+          });
         } else if (error.error && error.error.includes('required')) {
-          toast.error('A required field is missing.');
+          showTransactionError('A required field is missing.');
         } else {
-          toast.error(error.error || 'Failed to save transaction');
+          showTransactionError(error.error || 'Failed to save transaction');
         }
         return;
       }
-      toast.success(transaction ? 'Transaction updated successfully' : 'Transaction added successfully');
+      
+      showTransactionSuccess(transaction ? 'Transaction updated successfully' : 'Transaction added successfully');
       onSubmit(submissionData);
     } catch (e: any) {
-      toast.error(e.message || 'Failed to save transaction');
+      showTransactionError(e.message || 'Failed to save transaction');
     }
   };
 
@@ -339,7 +372,7 @@ export default function TransactionForm({
       // New transaction: just update local state and show icons, do not call API
       setTimeout(() => {
         setFieldStatus((prev) => ({ ...prev, [field]: "saved" }));
-        toast.success(`${field.replace(/_/g, " ")} updated`);
+        showFieldSaveSuccess(field, { debounceMs: 500 });
       }, 500);
       return;
     }
@@ -351,10 +384,11 @@ export default function TransactionForm({
         body: JSON.stringify({ [field]: value }),
       });
       setFieldStatus((prev) => ({ ...prev, [field]: "saved" }));
-      toast.success(`${field.replace(/_/g, " ")} updated`);
+      showFieldSaveSuccess(field);
     } catch (e) {
       setFieldStatus((prev) => ({ ...prev, [field]: "error" }));
-      toast.error(`Failed to update ${field.replace(/_/g, " ")}`);
+      // Don't show field-level errors as toasts - the visual indicator is enough
+      console.error(`Failed to update ${field}:`, e);
     }
   };
 
@@ -684,6 +718,7 @@ export default function TransactionForm({
                   }}
                   placeholder="Select provider organization..."
                   allowManualEntry={false}
+                  fallbackRef={formData.provider_org_ref}
                 />
                 {renderFieldIcon("provider_org_id")}
               </CardContent>
@@ -706,6 +741,7 @@ export default function TransactionForm({
                   }}
                   placeholder="Select receiver organization..."
                   allowManualEntry={false}
+                  fallbackRef={formData.receiver_org_ref}
                 />
                 {renderFieldIcon("receiver_org_id")}
               </CardContent>

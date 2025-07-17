@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       count: data?.length || 0,
-      data: data?.map(a => ({
+      data: data?.map((a: any) => ({
         id: a.id,
         title: a.title_narrative
       })) || []

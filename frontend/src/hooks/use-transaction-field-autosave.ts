@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { showFieldSaveSuccess } from '@/lib/toast-manager';
 
 interface TransactionFieldAutosaveOptions {
   transactionId: string;
@@ -39,10 +40,15 @@ export function useTransactionFieldAutosave({
       }
       setIsSaving(false);
       setIsSaved(true);
+      
+      // Show subtle success feedback for field-level saves
+      showFieldSaveSuccess(fieldName);
     } catch (e: any) {
       setError(e.message || 'Failed to save');
       setIsSaving(false);
       setIsSaved(false);
+      // Don't show toast for field-level errors - rely on visual indicators
+      console.error(`Failed to save ${fieldName}:`, e);
     }
   }, [transactionId, fieldName, userId]);
 

@@ -56,7 +56,80 @@ const createCategoryLookup = (): Record<string, string> => {
   return lookup;
 };
 
+// Squarify treemap tiling algorithm
+function squarify(parent: any, x0: number, y0: number, x1: number, y1: number) {
+  const nodes = parent.children;
+  if (!nodes || nodes.length === 0) return;
 
+  const rows: any[][] = [];
+  let row: any[] = [];
+  const n = nodes.length;
+  let i = 0;
+
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const area = dx * dy;
+  const k = area / d3.sum(nodes, (d: any) => d.value);
+
+  // Sort nodes by value descending
+  nodes.sort((a: any, b: any) => b.value - a.value);
+
+  function worst(row: any[], w: number): number {
+    if (row.length === 0) return Infinity;
+    const s = d3.sum(row, (d: any) => d.value) * k;
+    const r = Math.max(...row.map((d: any) => d.value * k));
+    const l = Math.min(...row.map((d: any) => d.value * k));
+    return Math.max((w * w * r) / (s * s), (s * s) / (w * w * l));
+  }
+
+  while (i < n) {
+    const node = nodes[i];
+    const w = dx < dy ? dx : dy;
+    
+    if (row.length === 0 || worst([...row, node], w) <= worst(row, w)) {
+      row.push(node);
+    } else {
+      rows.push(row);
+      row = [node];
+    }
+    i++;
+  }
+  if (row.length > 0) rows.push(row);
+
+  // Position rows
+  let currentY = y0;
+  for (const currentRow of rows) {
+    const rowSum = d3.sum(currentRow, (d: any) => d.value) * k;
+    const rowHeight = dx < dy ? rowSum / dx : dy;
+    const rowWidth = dx < dy ? dx : rowSum / dy;
+
+    if (dx < dy) {
+      // Horizontal layout
+      let currentX = x0;
+      for (const node of currentRow) {
+        const nodeWidth = (node.value * k) / rowHeight;
+        node.x0 = currentX;
+        node.y0 = currentY;
+        node.x1 = currentX + nodeWidth;
+        node.y1 = currentY + rowHeight;
+        currentX += nodeWidth;
+      }
+      currentY += rowHeight;
+    } else {
+      // Vertical layout
+      let currentX = x0;
+      for (const node of currentRow) {
+        const nodeWidth = (node.value * k) / rowHeight;
+        node.x0 = currentX;
+        node.y0 = currentY;
+        node.x1 = currentX + rowWidth;
+        node.y1 = currentY + nodeWidth;
+        currentY += nodeWidth;
+      }
+      currentX += rowWidth;
+    }
+  }
+}
 
 export default function SectorAllocationPieChart({ 
   allocations = [] 
@@ -130,8 +203,9 @@ export default function SectorAllocationPieChart({
       .sum((d: any) => d.value || 0)
       .sort((a, b) => (b.value || 0) - (a.value || 0));
 
-    // Create treemap layout using D3's built-in treemap
+    // Create treemap layout
     const treemap = d3.treemap<any>()
+      .tile(squarify as any)
       .size([innerWidth, innerHeight])
       .padding(2)
       .round(true);

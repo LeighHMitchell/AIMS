@@ -28,6 +28,7 @@ import {
   Shuffle,
   Link2,
   Copy,
+  MoreVertical,
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
 import { format } from "date-fns";
@@ -40,6 +41,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 // Transaction type to icon mapping
 const TRANSACTION_TYPE_ICONS: Record<string, React.FC<any>> = {
@@ -309,103 +324,88 @@ export function TransactionTable({
 
   return (
     <div>
-      <table className="w-full divide-y divide-gray-200">
-        <thead className="bg-muted">
-          <tr>
+      <Table>
+        <TableHeader>
+          <TableRow>
             {variant === "full" && (
-              <th 
-                className="px-4 py-2 text-left text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200 w-[30%]"
+              <TableHead 
+                className="font-medium cursor-pointer hover:bg-gray-200"
                 onClick={() => onSort("activity")}
               >
                 <div className="flex items-center gap-1">
                   <span>Activity</span>
                   {getSortIcon("activity")}
                 </div>
-              </th>
+              </TableHead>
             )}
-            <th 
-              className="px-4 py-2 text-left text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200 w-[10%]"
+            <TableHead 
+              className="font-medium cursor-pointer hover:bg-gray-200"
               onClick={() => onSort("transaction_date")}
             >
               <div className="flex items-center gap-1">
                 <span>Date</span>
                 {getSortIcon("transaction_date")}
               </div>
-            </th>
-            <th
-              className={cn(
-                "px-4 py-2 text-left text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200",
-                variant === "compact" ? "w-[15%]" : "w-[12%]"
-              )}
+            </TableHead>
+            <TableHead
+              className="font-medium cursor-pointer hover:bg-gray-200"
               onClick={() => onSort("transaction_type")}
             >
               <div className="flex items-center gap-1">
                 <span>Type</span>
                 {getSortIcon("transaction_type")}
               </div>
-            </th>
-            <th className="px-4 py-2 text-center text-sm font-medium text-muted-foreground w-[5%]">
+            </TableHead>
+            <TableHead className="text-center font-medium">
               Transaction State
-            </th>
-            <th 
-              className={cn(
-                "px-4 py-2 text-left text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200",
-                variant === "compact" ? "w-[25%]" : "w-[15%]"
-              )}
+            </TableHead>
+            <TableHead 
+              className="font-medium cursor-pointer hover:bg-gray-200"
               onClick={() => onSort("provider_org_name")}
             >
               <div className="flex items-center gap-1">
                 <span>Provider → Receiver</span>
                 {getSortIcon("provider_org_name")}
               </div>
-            </th>
-            <th
-              className={cn(
-                "px-4 py-2 text-right text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200",
-                variant === "compact" ? "w-[10%]" : "w-[8%]"
-              )}
+            </TableHead>
+            <TableHead
+              className="text-right font-medium cursor-pointer hover:bg-gray-200"
               onClick={() => onSort("value")}
             >
               <div className="flex items-center justify-end gap-1">
                 <span>Reported Value</span>
                 {getSortIcon("value")}
               </div>
-            </th>
-            <th
-              className={cn(
-                "px-4 py-2 text-right text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200",
-                variant === "compact" ? "w-[10%]" : "w-[8%]"
-              )}
+            </TableHead>
+            <TableHead
+              className="text-right font-medium cursor-pointer hover:bg-gray-200"
               onClick={() => onSort("value_usd")}
             >
               <div className="flex items-center justify-end gap-1">
                 <span>USD Value</span>
                 {getSortIcon("value_usd")}
               </div>
-            </th>
+            </TableHead>
             {variant === "full" && (
-              <th className="hidden xl:table-cell px-4 py-2 text-left text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200 w-[8%]" onClick={() => onSort("finance_type")}>
+              <TableHead className="hidden xl:table-cell font-medium cursor-pointer hover:bg-gray-200" onClick={() => onSort("finance_type")}>
                 <div className="flex items-center gap-1">
                   <span>Finance Type</span>
                   {getSortIcon("finance_type")}
                 </div>
-              </th>
+              </TableHead>
             )}
-            <th className="px-4 py-2 text-center text-sm font-medium text-muted-foreground cursor-pointer hover:bg-gray-200 w-[12%]" onClick={() => onSort("aid_type")}>
+            <TableHead className="text-center font-medium cursor-pointer hover:bg-gray-200" onClick={() => onSort("aid_type")}>
               <div className="flex items-center gap-1">
                 <span>Modality & Classification</span>
                 {getSortIcon("aid_type")}
               </div>
-            </th>
-            <th className={cn(
-              "px-4 py-2 text-right text-sm font-medium text-muted-foreground",
-              variant === "compact" ? "w-[10%]" : "w-[6%]"
-            )}>
+            </TableHead>
+            <TableHead className="text-right font-medium">
               Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-background divide-y divide-muted">
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {transactions.map((transaction, index) => {
             const providerName = transaction.provider_org_name || transaction.from_org || "Unknown Provider";
             const receiverName = transaction.receiver_org_name || transaction.to_org || "Unknown Receiver";
@@ -414,7 +414,7 @@ export function TransactionTable({
             const orgFlow = `${providerName} → ${receiverName}`;
             
             return (
-            <tr
+            <TableRow
               key={transaction.id}
               className={cn(
                 "hover:bg-muted/10 transition-colors",
@@ -483,20 +483,21 @@ export function TransactionTable({
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
                             {getTransactionIcon(transaction.transaction_type)}
-                            {transaction.is_humanitarian && (
-                              <Heart className="h-3 w-3 text-red-500 fill-red-500" />
-                            )}
                           </div>
                           <span className="text-sm font-normal text-foreground break-words">
                             {TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}
                           </span>
+                          {transaction.is_humanitarian && (
+                            <Heart className="h-3 w-3 text-red-500 fill-red-500" />
+                          )}
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="right">
                         <p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p>
-                        {transaction.is_humanitarian && (
+                        {transaction.is_humanitarian ? (
                           <p className="text-xs text-red-500 mt-1">❤️ Humanitarian Transaction</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p>
                         )}
                       </TooltipContent>
                     </Tooltip>
@@ -595,33 +596,48 @@ export function TransactionTable({
                           <ReceiptText className="h-5 w-5 text-gray-500 hover:text-primary" />
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="bg-gray-200 text-foreground border border-gray-300 shadow-lg p-2 min-w-[260px]">
-                        <div className="space-y-1">
+                      <TooltipContent side="right" className="bg-white text-foreground border border-gray-200 shadow-xl p-4 min-w-[280px] max-w-[320px] rounded-lg">
+                        <div className="space-y-3">
                           {/* Flow Type */}
-                          <div>
-                            <span className="font-bold">Flow Type:</span>
-                            <span className="block text-xs font-normal">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Shuffle className="h-4 w-4 text-gray-500" />
+                              <span className="font-semibold text-gray-800">Flow Type:</span>
+                            </div>
+                            <span className="block text-sm text-gray-600 pl-6">
                               {transaction.flow_type ? (FLOW_TYPE_LABELS[transaction.flow_type] || transaction.flow_type) : 'Not specified'}
                             </span>
                           </div>
+                          
                           {/* Aid Type */}
-                          <div>
-                            <span className="font-bold">Aid Type:</span>
-                            <span className="block text-xs font-normal">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Handshake className="h-4 w-4 text-gray-500" />
+                              <span className="font-semibold text-gray-800">Aid Type:</span>
+                            </div>
+                            <span className="block text-sm text-gray-600 pl-6">
                               {transaction.aid_type ? (AID_TYPE_LABELS[transaction.aid_type]?.full || transaction.aid_type) : 'Not specified'}
                             </span>
                           </div>
+                          
                           {/* Tied Status */}
-                          <div>
-                            <span className="font-bold">Tied Status:</span>
-                            <span className="block text-xs font-normal">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Link2 className="h-4 w-4 text-gray-500" />
+                              <span className="font-semibold text-gray-800">Tied Status:</span>
+                            </div>
+                            <span className="block text-sm text-gray-600 pl-6">
                               {transaction.tied_status ? (TIED_STATUS_LABELS[transaction.tied_status]?.full || transaction.tied_status) : 'Not specified'}
                             </span>
                           </div>
+                          
                           {/* Disbursement Channel */}
-                          <div>
-                            <span className="font-bold">Disbursement Channel:</span>
-                            <span className="block text-xs font-normal">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="h-4 w-4 text-gray-500" />
+                              <span className="font-semibold text-gray-800">Disbursement Channel:</span>
+                            </div>
+                            <span className="block text-sm text-gray-600 pl-6">
                               {transaction.disbursement_channel ? (DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.full || transaction.disbursement_channel) : 'Not specified'}
                             </span>
                           </div>
@@ -631,42 +647,42 @@ export function TransactionTable({
                   </TooltipProvider>
                 </td>
               <td className="px-4 py-3 whitespace-nowrap text-right actions-cell">
-                <div className="flex items-center justify-end gap-2">
-                  {onEdit && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label="Edit transaction"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      className="h-8 w-8 p-0"
+                      aria-label="Open menu"
+                    >
+                      <span className="sr-only">Open menu</span>
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {onEdit && (
+                      <DropdownMenuItem onClick={() => {
                         onEdit(transaction);
-                      }}
-                    >
-                      <Edit className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  )}
-                  {onDelete && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label="Delete transaction"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      }}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                    )}
+                    {onDelete && (
+                      <DropdownMenuItem onClick={() => {
                         onDelete(transaction.uuid || transaction.id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  )}
-                </div>
+                      }} className="text-red-600">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </td>
-            </tr>
+            </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 } 

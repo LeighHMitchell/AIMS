@@ -53,7 +53,8 @@ export const TRANSACTION_STATUS = {
   submitted: 'Submitted',
   validated: 'Validated',
   rejected: 'Rejected',
-  published: 'Published'
+  published: 'Published',
+  actual: 'Actual'
 };
 
 export const TIED_STATUS = {

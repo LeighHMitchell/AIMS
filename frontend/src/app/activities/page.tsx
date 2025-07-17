@@ -106,7 +106,7 @@ type Activity = {
   title: string;
   activityStatus?: string; // IATI activity status (planning, implementation, etc.)
   publicationStatus?: string; // Publication status (draft, published)
-  submissionStatus?: 'draft' | 'submitted' | 'validated' | 'rejected' | 'published';
+  submissionStatus?: string; // Changed to string to match interface
   submittedByName?: string;
   submittedAt?: string;
   status?: string; // Legacy status field for backward compatibility
@@ -572,7 +572,7 @@ function ActivitiesPageContent() {
 
   const exportActivities = () => {
     const dataToExport = activities.map(activity => {
-      const sectors = activity.sectors?.map(s => `${s.name} (${s.percentage}%)`).join("; ") || "";
+      const sectors = activity.sectors?.map((s: any) => `${s.name} (${s.percentage}%)`).join("; ") || "";
       
       return {
         "Activity ID": activity.id,
