@@ -33,6 +33,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ActivityStatusFilterSelect } from "@/components/forms/ActivityStatusFilterSelect";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -136,6 +142,10 @@ type Activity = {
   expenditures?: number;
   inflows?: number;
   totalTransactions?: number;
+  
+  // Budget summaries from API  
+  totalPlannedBudgetUSD?: number;
+  totalDisbursementsAndExpenditureUSD?: number;
   
   // Organization data
   funders?: Organization[];
@@ -588,8 +598,8 @@ function ActivitiesPageContent() {
         "Target Groups": activity.targetGroups || "",
         "Collaboration Type": activity.collaborationType || "",
         "Sectors": sectors,
-        "Commitments (USD)": activity.commitments || 0,
-        "Outflows (USD)": (activity.disbursements || 0) + (activity.expenditures || 0),
+        "Planned Budget (USD)": activity.totalPlannedBudgetUSD || 0,
+        "Disbursements & Expenditure (USD)": activity.totalDisbursementsAndExpenditureUSD || (activity.disbursements || 0) + (activity.expenditures || 0),
         "Inflows (USD)": activity.inflows || 0,
         "Default Currency": (activity as any).defaultCurrency || "USD",
         "Currency Note": "Financial amounts are aggregated in USD using historical exchange rates. For detailed transaction-level currency information, export individual activity transactions.",
@@ -629,13 +639,8 @@ function ActivitiesPageContent() {
       return activities;
     }
     
-    // Legacy client-side filtering
+    // Legacy client-side filtering (search removed as it's now global)
     return activities.filter(activity => {
-      const matchesSearch = activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           activity.partnerId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           activity.iatiId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           activity.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      
       const activityStatus = activity.activityStatus || 
         (activity.status && !["published", "draft"].includes(activity.status) ? activity.status : "1");
       const publicationStatus = activity.publicationStatus || 
@@ -649,9 +654,9 @@ function ActivitiesPageContent() {
         (filterValidation === "rejected" && submissionStatus === "rejected") ||
         (filterValidation === "pending" && !["validated", "rejected"].includes(submissionStatus));
       
-      return matchesSearch && matchesActivityStatus && matchesPublicationStatus && matchesValidationStatus;
+      return matchesActivityStatus && matchesPublicationStatus && matchesValidationStatus;
     });
-  }, [usingOptimization, activities, searchQuery, filterStatus, filterType, filterValidation]);
+  }, [usingOptimization, activities, filterStatus, filterType, filterValidation]);
 
   // Client-side sorting for legacy implementation only
   const sortedActivities = useMemo(() => {
@@ -674,12 +679,12 @@ function ActivitiesPageContent() {
           bValue = b.partnerId?.toLowerCase() || '';
           break;
         case 'commitments':
-          aValue = a.commitments || 0;
-          bValue = b.commitments || 0;
+          aValue = a.totalPlannedBudgetUSD || 0;
+          bValue = b.totalPlannedBudgetUSD || 0;
           break;
         case 'disbursements':
-          aValue = (a.disbursements || 0) + (a.expenditures || 0);
-          bValue = (b.disbursements || 0) + (b.expenditures || 0);
+          aValue = a.totalDisbursementsAndExpenditureUSD || (a.disbursements || 0) + (a.expenditures || 0);
+          bValue = b.totalDisbursementsAndExpenditureUSD || (b.disbursements || 0) + (b.expenditures || 0);
           break;
         case 'createdAt':
           aValue = new Date(a.createdAt).getTime();
@@ -789,20 +794,10 @@ function ActivitiesPageContent() {
           </div>
         </div>
 
-        {/* Search, Filters, and View Controls - All in One Row */}
+        {/* Filters and View Controls - All in One Row */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-4 bg-slate-50 rounded-lg px-4">
-          {/* Left Side: Search + Filters + Page Size */}
+          {/* Left Side: Filters + Page Size */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
-            {/* Search Input */}
-            <div className="w-full sm:w-auto sm:min-w-[240px] lg:min-w-[300px]">
-              <Input
-                placeholder="Search activities..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            
             {/* Status Filters */}
             <div className="flex flex-wrap items-center gap-3">
               <ActivityStatusFilterSelect
@@ -909,7 +904,7 @@ function ActivitiesPageContent() {
                   </Button>
                 </div>
               </div>
-            ) : searchQuery || filterStatus !== "all" || filterType !== "all" ? (
+            ) : filterStatus !== "all" || filterType !== "all" || filterValidation !== "all" ? (
               <div className="text-slate-500">No matching activities found</div>
             ) : (
               <div className="space-y-4">
@@ -1078,10 +1073,10 @@ function ActivitiesPageContent() {
                           </TooltipProvider>
                         </td>
                         <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
-                          {formatCurrency(activity.commitments || 0)}
+                          {formatCurrency(activity.totalPlannedBudgetUSD || 0)}
                         </td>
                         <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
-                          {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}
+                          {formatCurrency(activity.totalDisbursementsAndExpenditureUSD || (activity.disbursements || 0) + (activity.expenditures || 0))}
                         </td>
 
                         <td className="px-4 py-2 text-sm text-foreground whitespace-nowrap text-right">
@@ -1113,39 +1108,36 @@ function ActivitiesPageContent() {
                           </TooltipProvider>
                         </td>
                         <td className="px-4 py-2 text-sm text-foreground text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {canUserEditActivity(user, activity) && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => router.push(`/activities/new?id=${activity.id}`)}
-                                      className="p-1 hover:text-primary cursor-pointer transition-colors"
-                                    >
-                                      <PencilLine className="h-4 w-4" />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Edit Activity</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={() => setDeleteActivityId(activity.id)}
-                                    className="p-1 hover:text-primary cursor-pointer transition-colors"
+                          <div className="flex items-center justify-end">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-32">
+                                {canUserEditActivity(user, activity) && (
+                                  <DropdownMenuItem 
+                                    onClick={() => router.push(`/activities/new?id=${activity.id}`)}
+                                    className="cursor-pointer"
                                   >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Delete Activity</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                                    <PencilLine className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem 
+                                  onClick={() => setDeleteActivityId(activity.id)}
+                                  className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </td>
                       </tr>
@@ -1163,8 +1155,31 @@ function ActivitiesPageContent() {
               const acronymsText = formatOrganizationAcronyms(organizationAcronyms);
               const creatorOrg = getCreatorOrganization(activity);
               
+              // Monochrome status styling and implementation status mapping
+              const statusColors = {
+                'planned': 'bg-gray-100 text-gray-700',
+                'active': 'bg-gray-200 text-gray-800',
+                'completed': 'bg-gray-300 text-gray-900',
+                'cancelled': 'bg-gray-100 text-gray-600',
+                'suspended': 'bg-gray-100 text-gray-600'
+              };
+
+              // Map publication status to implementation phase
+              const getImplementationPhase = (publicationStatus: string, activityStatus: string) => {
+                if (activityStatus === 'completed') return 'Completed';
+                if (activityStatus === 'cancelled') return 'Cancelled';
+                if (activityStatus === 'suspended') return 'Suspended';
+                if (activityStatus === 'active') return 'Implementation';
+                if (activityStatus === 'planned') {
+                  if (publicationStatus === 'published') return 'Pipeline';
+                  return 'Planning';
+                }
+                return activityStatus || 'Unknown';
+              };
+              
               return (
-                <Card key={activity.id} className="hover:shadow-md transition-shadow cursor-pointer overflow-hidden">
+                <div key={activity.id} className="relative group">
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer overflow-hidden">
                   {/* Banner Image */}
                   <div className="relative">
                     {activity.banner ? (
@@ -1183,102 +1198,135 @@ function ActivitiesPageContent() {
                     ) : (
                       <div className="w-full h-24 sm:h-32 bg-slate-100 rounded-t-md" />
                     )}
+                    
+                    {/* Activity Icon Overlay - Square with rounded edges, left side, overlapping banner */}
+                    {(activity as any).icon && (
+                      <div className="absolute bottom-0 left-4 transform translate-y-1/2 z-10">
+                        <div className="w-16 h-16 rounded-xl border-3 border-white bg-white shadow-lg overflow-hidden">
+                          <img
+                            src={(activity as any).icon}
+                            alt={`Icon for ${activity.title}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
-                  <CardHeader onClick={() => router.push(`/activities/${activity.id}`)}>
-                    <CardTitle className="text-lg line-clamp-2">{activity.title}</CardTitle>
+                  <CardHeader onClick={() => router.push(`/activities/${activity.id}`)} className="pb-2">
+                    {/* Reported By Organization - above title */}
+                    <div className="text-xs text-gray-500 mb-2">
+                      <span className="font-medium">Reported by:</span> {(() => {
+                        const orgName = activity.created_by_org_name || "Unknown Organization";
+                        const orgAcronym = activity.created_by_org_acronym;
+                        
+                        if (orgName && orgAcronym && orgName !== orgAcronym) {
+                          return `${orgName} (${orgAcronym})`;
+                        }
+                        return orgName || orgAcronym || creatorOrg;
+                      })()}
+                    </div>
+                    
+                    {/* Activity Title - pushed down and not clipped */}
+                    <CardTitle className={`text-lg font-semibold text-gray-900 ${(activity as any).icon ? "pt-4" : ""}`}>
+                      {activity.title}
+                    </CardTitle>
+                    
+                    {/* Partner/IATI IDs */}
                     {(activity.partnerId || activity.iatiIdentifier) && (
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-gray-500 mt-1">
                         {activity.partnerId}
                         {activity.partnerId && activity.iatiIdentifier && ' • '}
                         {activity.iatiIdentifier}
                       </p>
                     )}
-                    {/* IATI Sync Status */}
-                    <div className="mt-2">
-                      <IATISyncStatusBadge 
-                        syncStatus={activity.syncStatus}
-                        lastSyncTime={activity.lastSyncTime}
-                      />
-                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     
-                    <div className="text-sm text-slate-500">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger className="cursor-help">
-                            <div>
-                              {creatorOrg}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="space-y-1">
-                              <div className="font-medium">
-                                Reported by {activity.created_by_org_name || "Unknown Organization"}
-                              </div>
-                              {activity.createdBy?.name && (
-                                <div className="text-xs text-muted-foreground">
-                                  Submitted by {activity.createdBy.name} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
-                                </div>
-                              )}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                    {/* Financial Information - Monochrome with monotype font */}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-slate-500 text-xs">Commitments</p>
-                        <p className="font-medium">{formatCurrency(activity.commitments || 0)}</p>
+                        <p className="text-gray-500 text-xs">Total Budget</p>
+                        <p className="font-mono font-semibold text-gray-800">{formatCurrency(activity.totalPlannedBudgetUSD || 0)}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs">Outflows</p>
-                        <p className="font-medium">{formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</p>
+                        <p className="text-gray-500 text-xs">Disbursements & Expenditure</p>
+                        <p className="font-mono font-semibold text-gray-800">{formatCurrency(activity.totalDisbursementsAndExpenditureUSD || (activity.disbursements || 0) + (activity.expenditures || 0))}</p>
                       </div>
                     </div>
                     
-                    <div className="flex justify-between items-center pt-2">
+                    {/* Status and Dates */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          statusColors[activity.activityStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {getImplementationPhase(activity.publicationStatus || '', activity.activityStatus || '')}
+                        </span>
+                      </div>
+                      
+                      {(activity.plannedStartDate || activity.plannedEndDate) && (
+                        <div className="text-xs text-slate-600">
+                          <strong>Duration:</strong> {activity.plannedStartDate && format(new Date(activity.plannedStartDate), "dd/MM/yyyy")}
+                          {activity.plannedStartDate && activity.plannedEndDate && ' - '}
+                          {activity.plannedEndDate && format(new Date(activity.plannedEndDate), "dd/MM/yyyy")}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Bottom section with update info and action button */}
+                    <div className="flex justify-between items-center pt-2 mt-auto">
                       <span className="text-xs text-slate-500">
-                        Updated {format(new Date(activity.updatedAt), "dd MMM yyyy")}
+                        Updated {format(new Date(activity.updatedAt), "dd/MM/yyyy")}
                       </span>
-                      <Popover>
-                        <PopoverTrigger>
-                          <Button 
-                            variant="ghost" 
-                            className="p-0 h-auto"
+                      
+                      {/* Action Menu moved to bottom right */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 hover:bg-slate-100"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreVertical className="h-4 w-4" />
+                            <MoreVertical className="h-3 w-3" />
                           </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-32 p-1">
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-32">
                           {canUserEditActivity(user, activity) && (
-                            <button 
-                              className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
+                            <DropdownMenuItem 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(`/activities/new?id=${activity.id}`);
                               }}
+                              className="cursor-pointer"
                             >
-                              <Edit className="h-4 w-4" /> Edit
-                            </button>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
                           )}
-                          <button 
-                            className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
+                          <DropdownMenuItem 
                             onClick={(e) => {
                               e.stopPropagation();
                               setDeleteActivityId(activity.id);
                             }}
+                            className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
-                            <Trash2 className="h-4 w-4" /> Delete
-                          </button>
-                        </PopoverContent>
-                      </Popover>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardContent>
-                </Card>
+                  </Card>
+                  
+
+                </div>
               );
             })}
           </div>

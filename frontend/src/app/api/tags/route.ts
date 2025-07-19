@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { name } = await request.json();
+    const { name, created_by } = await request.json();
     
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -54,30 +54,76 @@ export async function POST(request: NextRequest) {
     
     const normalizedName = name.toLowerCase().trim();
     
-    // Check if tag already exists
-    const { data: existingTag } = await getSupabaseAdmin()
+    // Generate a code from the name (alphanumeric, replace spaces/special chars with hyphens)
+    const code = normalizedName
+      .replace(/[^a-z0-9]+/g, '-')  // Replace non-alphanumeric with hyphens
+      .replace(/^-+|-+$/g, '')      // Remove leading/trailing hyphens
+      .substring(0, 50);            // Limit length
+    
+    // Check if tag already exists by name or code
+    const { data: existingTag, error: fetchError } = await getSupabaseAdmin()
       .from('tags')
       .select('*')
-      .eq('name', normalizedName)
-      .single();
+      .or(`name.eq.${normalizedName},code.eq.${code}`)
+      .maybeSingle();
+    
+    if (fetchError) {
+      console.error('Error checking existing tag:', fetchError);
+      return NextResponse.json(
+        { error: 'Database query failed' },
+        { status: 500 }
+      );
+    }
     
     if (existingTag) {
       return NextResponse.json(existingTag);
     }
     
-    // Create new tag
-    const { data: newTag, error } = await getSupabaseAdmin()
+    // Create new tag - try with created_by first, fallback to basic structure
+    const baseTagData = {
+      name: normalizedName,
+      code: code
+    };
+    
+    // First attempt: try with created_by if provided
+    if (created_by) {
+      try {
+        const { data: newTag, error: createError } = await getSupabaseAdmin()
+          .from('tags')
+          .insert([{ ...baseTagData, created_by }])
+          .select()
+          .single();
+        
+        if (!createError) {
+          return NextResponse.json(newTag, { status: 201 });
+        }
+        
+        // If error contains schema cache message, try without created_by
+        if (createError.message.includes('created_by') || createError.message.includes('schema cache')) {
+          console.log('created_by column not found, trying without it...');
+        } else {
+          throw createError;
+        }
+      } catch (error) {
+        console.log('First attempt failed, trying without created_by field...');
+      }
+    }
+    
+    // Fallback: create tag without created_by field but with code
+    const { data: newTag, error: createError } = await getSupabaseAdmin()
       .from('tags')
-      .insert([{
-        name: normalizedName
-      }])
+      .insert([baseTagData])
       .select()
       .single();
     
-    if (error) {
-      console.error('Error creating tag:', error);
+    if (createError) {
+      console.error('Error creating tag (fallback):', createError);
+      console.error('Tag data attempted:', baseTagData);
       return NextResponse.json(
-        { error: 'Failed to create tag' },
+        { 
+          error: 'Failed to create tag',
+          details: createError.message 
+        },
         { status: 500 }
       );
     }

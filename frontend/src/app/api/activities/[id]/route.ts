@@ -69,6 +69,15 @@ export async function GET(
       .select('*')
       .eq('activity_id', id);
     
+    // Fetch tags
+    const { data: activityTags } = await getSupabaseAdmin()
+      .from('activity_tags')
+      .select(`
+        tag_id,
+        tags (id, name, created_by, created_at)
+      `)
+      .eq('activity_id', id);
+    
     // Transform to match frontend format
     const transformedActivity = {
       ...activity,
@@ -157,6 +166,7 @@ export async function GET(
         contributionPercent: mapping.contribution_percent,
         notes: mapping.notes
       })) || [],
+      tags: activityTags?.map((tagRelation: any) => tagRelation.tags) || [],
       locations: (() => {
         const siteLocations: any[] = [];
         const broadCoverageLocations: any[] = [];

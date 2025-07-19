@@ -170,14 +170,14 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
               return (
                 <Badge
                   key={code}
-                  variant="secondary"
-                  className="pl-2 pr-1 py-1 flex items-center gap-1"
+                  variant="cyan"
+                  className="pl-2 pr-1 py-1 flex items-center gap-1 hover:shadow-sm transition-shadow"
                 >
                   <Users className="w-3 h-3" />
                   <span className="text-xs">{wg.label}</span>
                   <button
                     onClick={() => removeWorkingGroup(code)}
-                    className="ml-1 hover:bg-gray-300 rounded-full p-0.5 transition-colors"
+                    className="ml-1 hover:bg-black/10 rounded-full p-0.5 transition-colors"
                     aria-label={`Remove ${wg.label}`}
                   >
                     <X className="w-3 h-3" />

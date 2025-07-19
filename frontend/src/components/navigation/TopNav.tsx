@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { FolderPlus, User, LogOut } from "lucide-react"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
+import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
 
 interface TopNavProps {
   user?: {
@@ -30,6 +31,9 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
     <nav className="border-b bg-white sticky top-0 z-30">
       <div className="flex h-16 items-center px-6">
         <div className="ml-auto flex items-center space-x-4">
+          {/* Global Search Bar */}
+          <GlobalSearchBar className="w-[500px]" />
+          
           {/* Add New Activity Button - conditionally rendered but with stable structure */}
           <div className={canCreateActivities ? undefined : "hidden"}>
             <Link href="/activities/new">

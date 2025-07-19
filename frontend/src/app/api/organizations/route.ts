@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     // Optimized query - only select needed fields for better performance
     const { data: organizations, error } = await getSupabaseAdmin()
       .from('organizations')
-      .select('id, name, acronym, type, country')
+      .select('id, name, acronym, type, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at')
       .order('name');
     
     if (error) {
@@ -240,6 +240,33 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
+    
+    // Handle iati_org_id field - convert empty strings to null to avoid unique constraint issues
+    if ('iati_org_id' in updates) {
+      if (!updates.iati_org_id || updates.iati_org_id.trim() === '') {
+        updates.iati_org_id = null;
+      }
+    }
+    
+    // Map frontend field names to database column names
+    if ('country_represented' in updates) {
+      updates.country = updates.country_represented;
+      delete updates.country_represented;
+    }
+    
+    if ('organisation_type' in updates) {
+      updates.type = updates.organisation_type;
+      delete updates.organisation_type;
+    }
+    
+    // Handle logo field - check if logo_url column exists, otherwise map to logo
+    if ('logo' in updates) {
+      // Keep the logo field as is for now - we need to verify the correct column name
+      // updates.logo_url = updates.logo;
+      // delete updates.logo;
+    }
+    
+    console.log('[AIMS] Updating organization with mapped data:', updates);
     
     const { data, error } = await getSupabaseAdmin()
       .from('organizations')

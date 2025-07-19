@@ -1700,14 +1700,48 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Add transaction summaries to activities
-    const activitiesWithSummaries = activities?.map((activity: any) => ({
-      ...activity,
-      commitments: activityTransactionMap.get(activity.id)?.commitments || 0,
-      disbursements: activityTransactionMap.get(activity.id)?.disbursements || 0,
-      expenditures: activityTransactionMap.get(activity.id)?.expenditures || 0,
-      totalTransactions: activityTransactionMap.get(activity.id)?.totalTransactions || 0
-    })) || [];
+    // Fetch budget summaries for all activities
+    const { data: budgetSummaries, error: budgetError } = await getSupabaseAdmin()
+      .from('activity_budgets')
+      .select('activity_id, usd_value')
+      .in('activity_id', activities?.map((a: any) => a.id) || []);
+
+    if (budgetError) {
+      console.error('[AIMS] Error fetching budget summaries:', budgetError);
+    }
+
+    // Calculate total planned budget USD for each activity
+    const activityBudgetMap = new Map();
+    
+    if (budgetSummaries) {
+      budgetSummaries.forEach((budget: any) => {
+        if (!activityBudgetMap.has(budget.activity_id)) {
+          activityBudgetMap.set(budget.activity_id, {
+            totalPlannedBudgetUSD: 0
+          });
+        }
+        
+        const summary = activityBudgetMap.get(budget.activity_id);
+        // Sum up all USD budget values
+        summary.totalPlannedBudgetUSD += budget.usd_value || 0;
+      });
+    }
+
+    // Add transaction and budget summaries to activities
+    const activitiesWithSummaries = activities?.map((activity: any) => {
+      const transactionSummary = activityTransactionMap.get(activity.id);
+      const budgetSummary = activityBudgetMap.get(activity.id);
+      
+      return {
+        ...activity,
+        commitments: transactionSummary?.commitments || 0,
+        disbursements: transactionSummary?.disbursements || 0,
+        expenditures: transactionSummary?.expenditures || 0,
+        totalTransactions: transactionSummary?.totalTransactions || 0,
+        totalPlannedBudgetUSD: budgetSummary?.totalPlannedBudgetUSD || 0,
+        totalDisbursementsAndExpenditureUSD: (transactionSummary?.disbursements || 0) + (transactionSummary?.expenditures || 0)
+      };
+    }) || [];
 
     // If no activities found, return empty array
     if (!activities || activities.length === 0) {
@@ -1742,11 +1776,22 @@ export async function GET(request: NextRequest) {
       .select('*')
       .in('activity_id', activityIds);
     
+    // Fetch tags for all activities
+    const { data: allTags } = await getSupabaseAdmin()
+      .from('activity_tags')
+      .select(`
+        activity_id,
+        tag_id,
+        tags (id, name, created_by, created_at)
+      `)
+      .in('activity_id', activityIds);
+    
     // Create maps for easy lookup
     const sectorsMap = new Map();
     const sdgMap = new Map();
     const contactsMap = new Map();
     const locationsMap = new Map();
+    const tagsMap = new Map();
     
     allSectors?.forEach((sector: any) => {
       if (!sectorsMap.has(sector.activity_id)) {
@@ -1774,6 +1819,13 @@ export async function GET(request: NextRequest) {
         locationsMap.set(location.activity_id, []);
       }
       locationsMap.get(location.activity_id).push(location);
+    });
+    
+    allTags?.forEach((tagRelation: any) => {
+      if (!tagsMap.has(tagRelation.activity_id)) {
+        tagsMap.set(tagRelation.activity_id, []);
+      }
+      tagsMap.get(tagRelation.activity_id).push(tagRelation.tags);
     });
 
     // Transform the data to match the expected format
@@ -1844,6 +1896,7 @@ export async function GET(request: NextRequest) {
           broad_coverage_locations: broadCoverageLocations
         };
       })(),
+      tags: tagsMap.get(activity.id) || [],
       // Map database fields to API fields
       partnerId: activity.other_identifier,
       iatiId: activity.iati_identifier,

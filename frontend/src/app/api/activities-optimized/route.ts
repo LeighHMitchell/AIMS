@@ -74,7 +74,9 @@ export async function GET(request: NextRequest) {
         default_aid_type,
         default_finance_type,
         default_flow_type,
-        default_tied_status
+        default_tied_status,
+        banner,
+        icon
       `)
       .range(offset, offset + limit - 1);
 
@@ -234,6 +236,8 @@ export async function GET(request: NextRequest) {
         default_flow_type: activity.default_flow_type,
         default_tied_status: activity.default_tied_status,
         tied_status: activity.default_tied_status, // Legacy compatibility
+        banner: activity.banner, // Include banner for card view
+        icon: activity.icon, // Include icon for card view
         createdAt: activity.created_at,
         updatedAt: activity.updated_at
       };

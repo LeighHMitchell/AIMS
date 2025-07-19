@@ -336,12 +336,12 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
             {formData.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
+                  <Badge key={tag} variant="amber" className="hover:shadow-sm transition-shadow">
                     {tag}
                     <button
                       type="button"
                       onClick={() => handleRemoveTag(tag)}
-                      className="ml-1 hover:text-destructive"
+                      className="ml-1 hover:bg-black/10 rounded-full p-0.5 transition-colors"
                     >
                       <X className="h-3 w-3" />
                     </button>
