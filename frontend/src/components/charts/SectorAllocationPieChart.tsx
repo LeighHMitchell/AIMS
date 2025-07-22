@@ -24,20 +24,20 @@ interface SectorAllocationPieChartProps {
   allocations: SectorAllocation[];
 }
 
-// Financial Times / Economist inspired color palette
+// Enhanced professional color palette
 const SECTOR_COLORS = [
-  '#18375F', // Navy
-  '#7A8471', // Olive green
-  '#6FA8DC', // Soft grey-blue
-  '#C3514E', // Rust red
-  '#A6A09B', // Beige
-  '#5B4A3A', // Dark brown
-  '#8B4F47', // Muted burgundy
-  '#4A5D23', // Dark olive
-  '#2C5F41', // Forest green
-  '#7B6143', // Warm grey
-  '#4A5568', // Slate grey
-  '#744C4C', // Dusty rose
+  '#2563eb', // Blue
+  '#059669', // Emerald
+  '#dc2626', // Red
+  '#7c3aed', // Violet
+  '#ea580c', // Orange
+  '#0891b2', // Cyan
+  '#be123c', // Rose
+  '#16a34a', // Green
+  '#9333ea', // Purple
+  '#0284c7', // Sky
+  '#c2410c', // Orange-600
+  '#0d9488', // Teal
 ];
 
 // Create lookup for 3-digit DAC category codes to names
@@ -119,9 +119,12 @@ export default function SectorAllocationPieChart({
     // Clear previous content
     d3.select(svgRef.current).selectAll('*').remove();
 
-    const width = 600;
-    const height = 400;
-    const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+    // Get container dimensions
+    const containerWidth = svgRef.current.parentElement?.clientWidth || 800;
+    const containerHeight = svgRef.current.parentElement?.clientHeight || 600;
+    const width = Math.min(containerWidth, 1200);
+    const height = Math.max(containerHeight - 40, 600); // Use container height or minimum 600px
+    const margin = { top: 20, right: 20, bottom: 20, left: 20 };
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
@@ -130,10 +133,12 @@ export default function SectorAllocationPieChart({
       .sum((d: any) => d.value || 0)
       .sort((a, b) => (b.value || 0) - (a.value || 0));
 
-    // Create treemap layout using D3's built-in treemap
+    // Create treemap layout with better separation
     const treemap = d3.treemap<any>()
       .size([innerWidth, innerHeight])
-      .padding(2)
+      .paddingOuter(6)
+      .paddingInner(4)
+      .paddingTop(25)
       .round(true);
 
     treemap(root);
@@ -145,9 +150,9 @@ export default function SectorAllocationPieChart({
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Create tooltip
+    // Create tooltip with enhanced styling
     const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute invisible bg-gray-900 text-white text-xs rounded px-3 py-2 pointer-events-none z-50')
+      .attr('class', 'absolute invisible bg-gray-900/95 backdrop-blur-sm text-white text-sm rounded-lg px-4 py-3 pointer-events-none z-50 shadow-2xl border border-gray-700')
       .style('opacity', 0);
 
     // Color scale
@@ -163,34 +168,50 @@ export default function SectorAllocationPieChart({
     leaf.append('rect')
       .attr('width', (d: any) => Math.max(0, d.x1 - d.x0))
       .attr('height', (d: any) => Math.max(0, d.y1 - d.y0))
-             .attr('fill', (d: any) => {
+      .attr('rx', 4)
+      .attr('ry', 4)
+      .attr('fill', (d: any) => {
          const categoryIndex = root.children?.findIndex((cat: any) => cat.data.code === d.data.category) || 0;
          return colorScale(categoryIndex.toString());
        })
       .attr('stroke', '#fff')
-      .attr('stroke-width', 1)
+      .attr('stroke-width', 2)
+      .style('filter', 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))')
+      .style('transition', 'all 0.2s ease')
       .on('mouseover', function(event, d: any) {
-        d3.select(this).attr('opacity', 0.8);
+        d3.select(this)
+          .transition()
+          .duration(150)
+          .attr('opacity', 0.85)
+          .style('filter', 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))')
+          .attr('transform', 'scale(1.02)');
+        
         tooltip.transition().duration(200).style('opacity', 1);
         tooltip.html(`
-          <div class="font-semibold">${d.data.code} - ${d.data.name}</div>
-          <div class="text-xs opacity-75">Category: ${d.parent?.data.name}</div>
-          <div>Allocation: ${d.data.value.toFixed(1)}%</div>
+          <div class="font-semibold text-base mb-1">${d.data.code} - ${d.data.name}</div>
+          <div class="text-sm opacity-75 mb-1">Category: ${d.parent?.data.name}</div>
+          <div class="text-lg font-bold">${d.data.value.toFixed(1)}%</div>
         `)
-          .style('left', `${event.pageX + 10}px`)
+          .style('left', `${event.pageX + 15}px`)
           .style('top', `${event.pageY - 10}px`)
           .classed('invisible', false);
       })
       .on('mouseout', function() {
-        d3.select(this).attr('opacity', 1);
+        d3.select(this)
+          .transition()
+          .duration(150)
+          .attr('opacity', 1)
+          .style('filter', 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))')
+          .attr('transform', 'scale(1)');
+        
         tooltip.transition().duration(200).style('opacity', 0)
           .on('end', () => tooltip.classed('invisible', true));
       });
 
     // Add text labels for larger rectangles
     leaf.append('text')
-      .attr('x', 4)
-      .attr('y', 16)
+      .attr('x', 6)
+      .attr('y', 18)
       .text((d: any) => {
         const width = d.x1 - d.x0;
         const height = d.y1 - d.y0;
@@ -199,15 +220,16 @@ export default function SectorAllocationPieChart({
         }
         return '';
       })
-      .attr('font-size', '10px')
-      .attr('font-weight', 'bold')
+      .attr('font-size', '11px')
+      .attr('font-weight', '600')
       .attr('fill', 'white')
-      .attr('text-anchor', 'start');
+      .attr('text-anchor', 'start')
+      .style('text-shadow', '0 1px 2px rgba(0,0,0,0.3)');
 
     // Add percentage labels for larger rectangles
     leaf.append('text')
-      .attr('x', 4)
-      .attr('y', 28)
+      .attr('x', 6)
+      .attr('y', 32)
       .text((d: any) => {
         const width = d.x1 - d.x0;
         const height = d.y1 - d.y0;
@@ -216,9 +238,11 @@ export default function SectorAllocationPieChart({
         }
         return '';
       })
-      .attr('font-size', '9px')
+      .attr('font-size', '10px')
       .attr('fill', 'white')
-      .attr('text-anchor', 'start');
+      .attr('opacity', 0.9)
+      .attr('text-anchor', 'start')
+      .style('text-shadow', '0 1px 2px rgba(0,0,0,0.3)');
 
     // Draw category boundaries (optional)
     const categoryGroups = g.selectAll('.category')
@@ -231,10 +255,12 @@ export default function SectorAllocationPieChart({
       .attr('y', (d: any) => d.y0)
       .attr('width', (d: any) => d.x1 - d.x0)
       .attr('height', (d: any) => d.y1 - d.y0)
+      .attr('rx', 6)
+      .attr('ry', 6)
       .attr('fill', 'none')
-      .attr('stroke', '#333')
-      .attr('stroke-width', 2)
-      .attr('stroke-dasharray', '5,5');
+      .attr('stroke', '#6b7280')
+      .attr('stroke-width', 3)
+      .attr('opacity', 0.6);
 
     // Category labels
     categoryGroups.append('text')
@@ -271,18 +297,10 @@ export default function SectorAllocationPieChart({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Chart Title */}
-      <div className="text-center">
-        <h4 className="text-base font-semibold text-gray-900">Sector Allocation Breakdown</h4>
-        <p className="text-xs text-gray-600 mt-1">
-          Treemap visualization of OECD DAC sector percentages
-        </p>
-      </div>
-
+    <div className="h-full flex flex-col">
       {/* Chart Container */}
-      <div className="bg-white rounded-lg border p-4 flex justify-center">
-        <svg ref={svgRef}></svg>
+      <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 p-4 flex justify-center shadow-sm hover:shadow-md transition-shadow duration-200">
+        <svg ref={svgRef} className="w-full max-w-full h-full"></svg>
       </div>
     </div>
   );

@@ -4,6 +4,84 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
+    const body = await request.json();
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Activity ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    console.log('[AIMS API] PATCH /api/activities/[id] - Updating activity:', id);
+    console.log('[AIMS API] Update data:', JSON.stringify(body, null, 2));
+    
+    // Handle SDG mappings update
+    if (body.sdgMappings !== undefined) {
+      // First, delete existing SDG mappings
+      const { error: deleteError } = await getSupabaseAdmin()
+        .from('activity_sdg_mappings')
+        .delete()
+        .eq('activity_id', id);
+      
+      if (deleteError) {
+        console.error('[AIMS API] Error deleting existing SDG mappings:', deleteError);
+        throw deleteError;
+      }
+      
+      // Then insert new mappings if any (only those with targets)
+      const mappingsWithTargets = body.sdgMappings.filter((mapping: any) => mapping.sdgTarget && mapping.sdgTarget !== '');
+      
+      if (mappingsWithTargets.length > 0) {
+        const sdgMappingsData = mappingsWithTargets.map((mapping: any) => ({
+          activity_id: id,
+          sdg_goal: mapping.sdgGoal,
+          sdg_target: mapping.sdgTarget,
+          contribution_percent: mapping.contributionPercent || null,
+          notes: mapping.notes || null
+        }));
+        
+        console.log('[AIMS API] Inserting SDG mappings:', JSON.stringify(sdgMappingsData, null, 2));
+        
+        const { error: insertError } = await getSupabaseAdmin()
+          .from('activity_sdg_mappings')
+          .insert(sdgMappingsData);
+        
+        if (insertError) {
+          console.error('[AIMS API] Error inserting SDG mappings:', insertError);
+          throw insertError;
+        }
+      }
+      
+      console.log('[AIMS API] SDG mappings updated successfully');
+    }
+    
+    // Update activity updated_at timestamp
+    const { error: updateError } = await getSupabaseAdmin()
+      .from('activities')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', id);
+    
+    if (updateError) {
+      console.error('[AIMS API] Error updating activity timestamp:', updateError);
+    }
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[AIMS API] Error in PATCH /api/activities/[id]:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -162,7 +240,7 @@ export async function GET(
       sdgMappings: sdgMappings?.map((mapping: any) => ({
         id: mapping.id,
         sdgGoal: mapping.sdg_goal,
-        sdgTarget: mapping.sdg_target,
+        sdgTarget: mapping.sdg_target, // Keep as is - should never be null from DB
         contributionPercent: mapping.contribution_percent,
         notes: mapping.notes
       })) || [],

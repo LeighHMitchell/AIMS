@@ -20,6 +20,7 @@ import { useOptimizedActivities } from "@/hooks/use-optimized-activities";
 import { AsyncErrorBoundary } from "@/components/errors/AsyncErrorBoundary";
 import { PerformanceMetrics } from "@/components/optimization/OptimizedActivityList";
 import { MainLayout } from "@/components/layout/main-layout";
+import { ActivityList } from "@/components/activities/ActivityList";
 import {
   Card,
   CardContent,
@@ -1148,188 +1149,28 @@ function ActivitiesPageContent() {
             </div>
           </div>
         ) : (
-          // Card View
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 fade-in">
-            {paginatedActivities.map(activity => {
-              const organizationAcronyms = getOrganizationAcronyms(activity);
-              const acronymsText = formatOrganizationAcronyms(organizationAcronyms);
-              const creatorOrg = getCreatorOrganization(activity);
-              
-              // Monochrome status styling and implementation status mapping
-              const statusColors = {
-                'planned': 'bg-gray-100 text-gray-700',
-                'active': 'bg-gray-200 text-gray-800',
-                'completed': 'bg-gray-300 text-gray-900',
-                'cancelled': 'bg-gray-100 text-gray-600',
-                'suspended': 'bg-gray-100 text-gray-600'
-              };
-
-              // Map publication status to implementation phase
-              const getImplementationPhase = (publicationStatus: string, activityStatus: string) => {
-                if (activityStatus === 'completed') return 'Completed';
-                if (activityStatus === 'cancelled') return 'Cancelled';
-                if (activityStatus === 'suspended') return 'Suspended';
-                if (activityStatus === 'active') return 'Implementation';
-                if (activityStatus === 'planned') {
-                  if (publicationStatus === 'published') return 'Pipeline';
-                  return 'Planning';
-                }
-                return activityStatus || 'Unknown';
-              };
-              
-              return (
-                <div key={activity.id} className="relative group">
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer overflow-hidden">
-                  {/* Banner Image */}
-                  <div className="relative">
-                    {activity.banner ? (
-                      <img
-                        src={activity.banner}
-                        alt={`Banner for ${activity.title}`}
-                        className="w-full h-24 sm:h-32 object-cover rounded-t-md"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const placeholder = document.createElement('div');
-                          placeholder.className = 'w-full h-24 sm:h-32 bg-slate-100 rounded-t-md';
-                          target.parentNode?.appendChild(placeholder);
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-24 sm:h-32 bg-slate-100 rounded-t-md" />
-                    )}
-                    
-                    {/* Activity Icon Overlay - Square with rounded edges, left side, overlapping banner */}
-                    {(activity as any).icon && (
-                      <div className="absolute bottom-0 left-4 transform translate-y-1/2 z-10">
-                        <div className="w-16 h-16 rounded-xl border-3 border-white bg-white shadow-lg overflow-hidden">
-                          <img
-                            src={(activity as any).icon}
-                            alt={`Icon for ${activity.title}`}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <CardHeader onClick={() => router.push(`/activities/${activity.id}`)} className="pb-2">
-                    {/* Reported By Organization - above title */}
-                    <div className="text-xs text-gray-500 mb-2">
-                      <span className="font-medium">Reported by:</span> {(() => {
-                        const orgName = activity.created_by_org_name || "Unknown Organization";
-                        const orgAcronym = activity.created_by_org_acronym;
-                        
-                        if (orgName && orgAcronym && orgName !== orgAcronym) {
-                          return `${orgName} (${orgAcronym})`;
-                        }
-                        return orgName || orgAcronym || creatorOrg;
-                      })()}
-                    </div>
-                    
-                    {/* Activity Title - pushed down and not clipped */}
-                    <CardTitle className={`text-lg font-semibold text-gray-900 ${(activity as any).icon ? "pt-4" : ""}`}>
-                      {activity.title}
-                    </CardTitle>
-                    
-                    {/* Partner/IATI IDs */}
-                    {(activity.partnerId || activity.iatiIdentifier) && (
-                      <p className="text-sm text-gray-500 mt-1">
-                        {activity.partnerId}
-                        {activity.partnerId && activity.iatiIdentifier && ' • '}
-                        {activity.iatiIdentifier}
-                      </p>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    
-                    {/* Financial Information - Monochrome with monotype font */}
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-500 text-xs">Total Budget</p>
-                        <p className="font-mono font-semibold text-gray-800">{formatCurrency(activity.totalPlannedBudgetUSD || 0)}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-xs">Disbursements & Expenditure</p>
-                        <p className="font-mono font-semibold text-gray-800">{formatCurrency(activity.totalDisbursementsAndExpenditureUSD || (activity.disbursements || 0) + (activity.expenditures || 0))}</p>
-                      </div>
-                    </div>
-                    
-                    {/* Status and Dates */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          statusColors[activity.activityStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {getImplementationPhase(activity.publicationStatus || '', activity.activityStatus || '')}
-                        </span>
-                      </div>
-                      
-                      {(activity.plannedStartDate || activity.plannedEndDate) && (
-                        <div className="text-xs text-slate-600">
-                          <strong>Duration:</strong> {activity.plannedStartDate && format(new Date(activity.plannedStartDate), "dd/MM/yyyy")}
-                          {activity.plannedStartDate && activity.plannedEndDate && ' - '}
-                          {activity.plannedEndDate && format(new Date(activity.plannedEndDate), "dd/MM/yyyy")}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Bottom section with update info and action button */}
-                    <div className="flex justify-between items-center pt-2 mt-auto">
-                      <span className="text-xs text-slate-500">
-                        Updated {format(new Date(activity.updatedAt), "dd/MM/yyyy")}
-                      </span>
-                      
-                      {/* Action Menu moved to bottom right */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0 hover:bg-slate-100"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreVertical className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-32">
-                          {canUserEditActivity(user, activity) && (
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/activities/new?id=${activity.id}`);
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteActivityId(activity.id);
-                            }}
-                            className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardContent>
-                  </Card>
-                  
-
-                </div>
-              );
-            })}
-          </div>
+          // Card View - Using new ActivityList component
+          <ActivityList
+            activities={paginatedActivities.map(activity => ({
+              id: activity.id,
+              title: activity.title,
+              iati_id: activity.iatiIdentifier || activity.iatiId,
+              description: activity.description,
+              activity_status: activity.activityStatus,
+              publication_status: activity.publicationStatus,
+              planned_start_date: activity.plannedStartDate,
+              planned_end_date: activity.plannedEndDate,
+              updated_at: activity.updatedAt,
+              partner_id: activity.partnerId,
+              banner: activity.banner,
+              icon: (activity as any).icon,
+              sdgMappings: (activity as any).sdgMappings || []
+            }))}
+            loading={loading}
+            onEdit={canUserEditActivity(user, {} as Activity) ? (activityId) => router.push(`/activities/new?id=${activityId}`) : undefined}
+            onDelete={(activityId) => setDeleteActivityId(activityId)}
+            className="fade-in"
+          />
         )}
 
         {/* Pagination Controls */}

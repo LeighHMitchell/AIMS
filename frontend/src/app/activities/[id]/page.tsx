@@ -33,7 +33,8 @@ import {
   ExternalLink,
   TrendingUp,
   Building2,
-  MessageSquare
+  MessageSquare,
+  Plus
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -54,6 +55,8 @@ import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
 import TransactionTab from "@/components/activities/TransactionTab"
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions"
 import { SDG_GOALS, SDG_TARGETS } from "@/data/sdg-targets"
+import { SDGImageGrid } from "@/components/ui/SDGImageGrid"
+import SDGAlignmentSection from "@/components/SDGAlignmentSection"
 import ContributorsSection from "@/components/ContributorsSection"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActivityProfileSkeleton } from "@/components/skeletons/ActivityProfileSkeleton"
@@ -65,6 +68,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
+import SectorAllocationPieChart from "@/components/charts/SectorAllocationPieChart"
 
 interface Activity {
   id: string
@@ -152,6 +156,7 @@ export default function ActivityDetailPage() {
   
   const [partners, setPartners] = useState<Partner[]>([])
   const [allPartners, setAllPartners] = useState<Partner[]>([])
+  const [sdgMappings, setSdgMappings] = useState<any[]>([])
 
   useEffect(() => {
     if (params?.id) {
@@ -183,6 +188,7 @@ export default function ActivityDetailPage() {
           
           setActivity(found)
           setBanner(found.banner || null)
+          setSdgMappings(found.sdgMappings || [])
           
           // Convert partner data to display format
           const allPartners: Partner[] = []
@@ -664,6 +670,22 @@ export default function ActivityDetailPage() {
                           {activity.description}
                         </p>
                       )}
+                      
+                      {/* SDG Goals Display */}
+                      {activity.sdgMappings && activity.sdgMappings.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-slate-200">
+                          <div className="flex items-center gap-3">
+                            <div className="text-slate-500 text-sm font-medium">SDG Goals:</div>
+                            <SDGImageGrid 
+                              sdgCodes={Array.from(new Set(activity.sdgMappings.map((m: any) => m.sdgGoal)))}
+                              size="md"
+                              showTooltips={true}
+                              maxDisplay={8}
+                              className="flex-wrap"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -785,12 +807,15 @@ export default function ActivityDetailPage() {
           {/* Main Content Tabs */}
           <Card className="border-slate-200">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-8' : 'grid-cols-7'} bg-slate-50 border-b border-slate-200`}>
+              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-9' : 'grid-cols-8'} bg-slate-50 border-b border-slate-200`}>
                 <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Overview
                 </TabsTrigger>
                 <TabsTrigger value="finances" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Finances
+                </TabsTrigger>
+                <TabsTrigger value="sectors" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Sectors
                 </TabsTrigger>
                 <TabsTrigger value="partnerships" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Partnerships
@@ -800,6 +825,9 @@ export default function ActivityDetailPage() {
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Analytics
+                </TabsTrigger>
+                <TabsTrigger value="sdg" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  SDG Alignment
                 </TabsTrigger>
                 <TabsTrigger value="contributors" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Contributors
@@ -1004,6 +1032,130 @@ export default function ActivityDetailPage() {
                 </div>
               </TabsContent>
 
+              {/* Sectors Tab */}
+              <TabsContent value="sectors" className="p-6">
+                <div className="space-y-6">
+                  {/* Sector Allocation Visualization */}
+                  {activity.sectors && activity.sectors.length > 0 ? (
+                    <>
+                      {/* Treemap Visualization */}
+                      <Card className="border-slate-200">
+                        <CardHeader>
+                          <CardTitle className="text-slate-900">Sector Allocation</CardTitle>
+                          <CardDescription>
+                            Interactive visualization of sector allocations grouped by DAC categories
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="w-full" style={{ height: '800px' }}>
+                            <SectorAllocationPieChart 
+                              allocations={activity.sectors.map((s: any) => ({
+                                id: s.id,
+                                code: s.sector_code || s.code,
+                                percentage: s.percentage
+                              }))}
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Sector Details Table */}
+                      <Card className="border-slate-200">
+                        <CardHeader>
+                          <CardTitle className="text-slate-900">Sector Details</CardTitle>
+                          <CardDescription>
+                            Detailed breakdown of sector allocations
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {activity.sectors.map((sector: any) => {
+                              const isSubSector = sector.sector_code?.length === 5 || sector.code?.length === 5;
+                              const mainSectorCode = (sector.sector_code || sector.code || '').substring(0, 3);
+                              
+                              return (
+                                <div 
+                                  key={sector.id} 
+                                  className={`p-4 rounded-lg border ${isSubSector ? 'ml-8 border-slate-100 bg-slate-50' : 'border-slate-200 bg-white'}`}
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="font-medium text-slate-900">
+                                        {sector.sector_code || sector.code} – {sector.sector_name || sector.name}
+                                      </div>
+                                      {sector.dac3_name && (
+                                        <div className="text-sm text-slate-500 mt-1">
+                                          DAC Category: {mainSectorCode} – {sector.dac3_name}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-lg font-semibold text-slate-900">
+                                        {sector.percentage}%
+                                      </div>
+                                      <div className="text-sm text-slate-500">
+                                        allocated
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Summary */}
+                          <div className="mt-6 pt-4 border-t border-slate-200">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-slate-600">Total Allocation:</span>
+                              <span className="text-lg font-bold text-slate-900">
+                                {activity.sectors.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0)}%
+                              </span>
+                            </div>
+                            {activity.sectors.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0) < 100 && (
+                              <div className="flex justify-between items-center mt-2">
+                                <span className="text-sm font-medium text-slate-600">Unallocated:</span>
+                                <span className="text-lg font-bold text-orange-600">
+                                  {100 - activity.sectors.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0)}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Edit Button */}
+                      {permissions.canEditActivity && (
+                        <div className="flex justify-center">
+                          <Button 
+                            onClick={() => router.push(`/activities/${activity.id}/sectors`)}
+                            className="bg-slate-600 hover:bg-slate-700"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Sector Allocations
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Card className="border-slate-200">
+                      <CardContent className="text-center py-12">
+                        <PieChart className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500 mb-4">No sectors have been allocated for this activity.</p>
+                        {permissions.canEditActivity && (
+                          <Button 
+                            onClick={() => router.push(`/activities/${activity.id}/sectors`)}
+                            className="bg-slate-600 hover:bg-slate-700"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Sector Allocations
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
+
               {/* Partnerships Tab */}
               <TabsContent value="partnerships" className="p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1104,6 +1256,16 @@ export default function ActivityDetailPage() {
                   budgets={budgets}
                   startDate={activity.plannedStartDate || activity.actualStartDate}
                   endDate={activity.plannedEndDate || activity.actualEndDate}
+                />
+              </TabsContent>
+
+              {/* SDG Alignment Tab */}
+              <TabsContent value="sdg" className="p-6">
+                <SDGAlignmentSection 
+                  sdgMappings={sdgMappings} 
+                  onUpdate={setSdgMappings} 
+                  activityId={activity.id}
+                  canEdit={permissions.canEditActivity}
                 />
               </TabsContent>
 

@@ -13,8 +13,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatActivityDate, formatDateRange, formatRelativeTime, calculateDuration } from '@/lib/date-utils';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
+import { SDGImageGrid } from '@/components/ui/SDGImageGrid';
 
-interface ActivityCardProps {
+interface SDGMapping {
+  id?: string;
+  sdgGoal: number;
+  sdgTarget: string;
+  contributionPercent?: number;
+  notes?: string;
+}
+
+interface ActivityCardWithSDGProps {
   activity: {
     id: string;
     title: string;
@@ -29,19 +38,25 @@ interface ActivityCardProps {
     partner_id?: string;
     banner?: string;
     icon?: string;
+    // SDG mapping support
+    sdgMappings?: SDGMapping[];
   };
   className?: string;
   onEdit?: (activityId: string) => void;
   onDelete?: (activityId: string) => void;
   isLoading?: boolean;
+  showSDGs?: boolean; // Option to show/hide SDG display
+  maxSDGDisplay?: number; // Maximum number of SDGs to show
 }
 
-const ActivityCard: React.FC<ActivityCardProps> = ({ 
+const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({ 
   activity, 
   className = '', 
   onEdit, 
   onDelete,
-  isLoading = false 
+  isLoading = false,
+  showSDGs = true,
+  maxSDGDisplay = 5
 }) => {
   const statusColors = {
     'pipeline': 'outline',
@@ -49,8 +64,34 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
     'implementation': 'success', 
     'active': 'success', 
     'completed': 'secondary',
-    'cancelled': 'destructive'
+    'cancelled': 'destructive',
+    '1': 'default', // Pipeline / Identification
+    '2': 'success', // Implementation
+    '3': 'secondary', // Finalisation
+    '4': 'secondary', // Closed
+    '5': 'destructive', // Cancelled
+    '6': 'outline', // Suspended
   } as const;
+
+  // Helper function to get status label from code
+  const getStatusLabel = (status: string): string => {
+    const labels: Record<string, string> = {
+      '1': 'Pipeline',
+      '2': 'Implementation',
+      '3': 'Finalisation',
+      '4': 'Closed',
+      '5': 'Cancelled',
+      '6': 'Suspended',
+      'pipeline': 'Pipeline',
+      'planned': 'Planned',
+      'implementation': 'Implementation',
+      'active': 'Active',
+      'completed': 'Completed',
+      'cancelled': 'Cancelled',
+      'suspended': 'Suspended',
+    };
+    return labels[status] || status;
+  };
 
   const publicationColors = {
     'draft': 'secondary',
@@ -82,6 +123,12 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
     onDelete?.(activity.id);
   };
 
+  // Extract SDG goals from mappings and filter out invalid values
+  const sdgGoals = activity.sdgMappings
+    ?.map(mapping => mapping.sdgGoal)
+    .filter(goal => goal !== undefined && goal !== null && !isNaN(goal)) || [];
+  const hasSDGs = showSDGs && sdgGoals.length > 0;
+
   return (
     <div className={`
       bg-white rounded-lg border border-gray-200 
@@ -90,9 +137,9 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       overflow-hidden relative group
       ${className}
     `}>
-      {/* Action Menu - Better positioned */}
+      {/* Action Menu - Moved to bottom right */}
       {(onEdit || onDelete) && (
-        <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="absolute bottom-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -126,7 +173,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       )}
 
       <Link href={`/activities/${activity.id}`} className="block">
-        {/* Banner Image - Responsive height */}
+        {/* Banner Image */}
         <div className="relative">
           {activity.banner ? (
             <img
@@ -145,10 +192,10 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
             <div className="w-full h-20 sm:h-24 lg:h-28 bg-slate-100" />
           )}
           
-          {/* Activity Icon Overlay - Better positioned */}
+          {/* Activity Icon Overlay */}
           {activity.icon && (
             <div className="absolute bottom-2 right-2">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white bg-white shadow-md overflow-hidden">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border-2 border-white bg-white shadow-md overflow-hidden">
                 <img
                   src={activity.icon}
                   alt={`Icon for ${activity.title}`}
@@ -163,30 +210,31 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           )}
         </div>
         
-        {/* Content - Systematic spacing */}
+        {/* Content */}
         <div className="p-4">
           <div className="space-y-3">
-            {/* Title and IATI ID Section */}
+            {/* Title and IDs Section */}
             <div>
               <h3 className="text-base font-semibold leading-tight line-clamp-2 text-gray-900">
                 {activity.title}
               </h3>
-              {activity.iati_id && (
-                <p className="text-xs leading-normal text-gray-500 mt-1">
-                  IATI: {activity.iati_id}
-                </p>
-              )}
+              {/* Activity ID and IATI ID on separate lines */}
+              <div className="text-xs leading-normal text-gray-500 mt-1 space-y-0.5">
+                <p>ID: {activity.id}</p>
+                {activity.iati_id && (
+                  <p>IATI: {activity.iati_id}</p>
+                )}
+              </div>
             </div>
-
 
             {/* Status Pills Section */}
             <div className="flex flex-wrap gap-2">
               {activity.activity_status && (
                 <Badge 
                   variant={statusColors[activity.activity_status as keyof typeof statusColors] || 'secondary'}
-                  className="text-xs font-medium leading-tight capitalize"
+                  className="text-xs font-medium leading-tight"
                 >
-                  {activity.activity_status}
+                  {getStatusLabel(activity.activity_status)}
                 </Badge>
               )}
               {activity.submission_status && (
@@ -201,7 +249,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               )}
             </div>
 
-            {/* Dates Section - Enhanced formatting */}
+            {/* Dates Section */}
             <div className="space-y-1">
               {(activity.planned_start_date || activity.planned_end_date) && (
                 <div className="flex items-center gap-1 text-xs leading-normal text-gray-500">
@@ -226,6 +274,19 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 </div>
               )}
             </div>
+
+                     {/* SDG Display Section - Bottom Left */}
+         {hasSDGs && (
+           <div className="flex justify-start">
+             <SDGImageGrid 
+               sdgCodes={sdgGoals} 
+               size="sm" 
+               maxDisplay={maxSDGDisplay}
+               showTooltips={true}
+               className="flex-shrink-0"
+             />
+           </div>
+         )}
           </div>
         </div>
       </Link>
@@ -233,4 +294,4 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   );
 };
 
-export default ActivityCard; 
+export default ActivityCardWithSDG;

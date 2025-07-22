@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 import { 
   Check, 
+  CheckCircle,
   ChevronsUpDown, 
   X, 
   AlertCircle,
@@ -38,6 +39,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SDG_GOALS, SDG_TARGETS, getTargetsForGoal } from "@/data/sdg-targets";
+import { SDGImageGrid } from "@/components/ui/SDGImageGrid";
+import { toast } from "sonner";
 
 interface SDGMapping {
   id?: string;
@@ -52,27 +55,76 @@ interface SDGAlignmentSectionProps {
   onUpdate: (mappings: SDGMapping[]) => void;
   contributionMode?: 'simple' | 'percentage'; // Default to 'simple'
   canEdit?: boolean;
+  activityId?: string; // For saving to backend
 }
 
 export default function SDGAlignmentSection({ 
   sdgMappings = [], 
   onUpdate,
   contributionMode = 'simple',
-  canEdit = true
+  canEdit = true,
+  activityId
 }: SDGAlignmentSectionProps) {
   const [selectedGoals, setSelectedGoals] = useState<number[]>([]);
   const [mappings, setMappings] = useState<SDGMapping[]>(sdgMappings);
   const [expandedGoal, setExpandedGoal] = useState<number | null>(null);
   const [targetSearchOpen, setTargetSearchOpen] = useState<{ [key: number]: boolean }>({});
+  
+  // Save state tracking
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Calculate total contribution percentage
   const totalContribution = mappings.reduce((sum, m) => sum + (m.contributionPercent || 0), 0);
   const isValidContribution = contributionMode === 'simple' || totalContribution === 100;
 
-  // Update parent when mappings change
+  // Debounced save function
+  const debouncedSave = async (updatedMappings: SDGMapping[]) => {
+    if (!activityId || !canEdit) return;
+    
+    // Clear existing timeout
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    // Set new timeout for debounced save
+    const timeout = setTimeout(async () => {
+      setIsSaving(true);
+      try {
+        const response = await fetch(`/api/activities/${activityId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sdgMappings: updatedMappings })
+        });
+        
+        if (response.ok) {
+          setLastSaved(new Date());
+          toast.success('SDG mappings saved successfully', { 
+            position: 'top-right',
+            duration: 2000 
+          });
+        } else {
+          throw new Error('Failed to save SDG mappings');
+        }
+      } catch (error) {
+        console.error('Error saving SDG mappings:', error);
+        toast.error('Failed to save SDG mappings', { position: 'top-right' });
+      } finally {
+        setIsSaving(false);
+      }
+    }, 1000); // 1 second debounce
+    
+    setSaveTimeout(timeout);
+  };
+
+  // Update parent and trigger save when mappings change
   useEffect(() => {
     onUpdate(mappings);
-  }, [mappings]);
+    if (mappings.length > 0) {
+      debouncedSave(mappings);
+    }
+  }, [mappings, activityId]);
 
   // Initialize selected goals from existing mappings
   useEffect(() => {
@@ -80,6 +132,15 @@ export default function SDGAlignmentSection({
     setSelectedGoals(goals);
     setMappings(sdgMappings);
   }, [sdgMappings]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+    };
+  }, [saveTimeout]);
 
   const toggleGoal = (goalId: number) => {
     if (!canEdit) return;
@@ -93,6 +154,9 @@ export default function SDGAlignmentSection({
       // Add goal
       setSelectedGoals([...selectedGoals, goalId]);
       setExpandedGoal(goalId);
+      
+      // Don't create a mapping yet - wait until a target is selected
+      // This avoids the database constraint issue
     }
   };
 
@@ -103,20 +167,24 @@ export default function SDGAlignmentSection({
     const exists = mappings.find(m => m.sdgGoal === goalId && m.sdgTarget === targetId);
     if (exists) return;
 
+    // Create new mapping
     const newMapping: SDGMapping = {
       sdgGoal: goalId,
       sdgTarget: targetId,
       contributionPercent: contributionMode === 'percentage' ? 0 : undefined,
       notes: ''
     };
-
+    
     setMappings([...mappings, newMapping]);
   };
 
   const removeTargetMapping = (goalId: number, targetId: string) => {
     if (!canEdit) return;
     
+    // Simply remove the target mapping
     setMappings(mappings.filter(m => !(m.sdgGoal === goalId && m.sdgTarget === targetId)));
+    
+    // Note: The goal remains selected in selectedGoals even if all targets are removed
   };
 
   const updateMappingContribution = (goalId: number, targetId: string, percent: number) => {
@@ -142,19 +210,60 @@ export default function SDGAlignmentSection({
   const getGoalMappings = (goalId: number) => {
     return mappings.filter(m => m.sdgGoal === goalId);
   };
+  
+  const getGoalTargetMappings = (goalId: number) => {
+    return mappings.filter(m => m.sdgGoal === goalId && m.sdgTarget !== '');
+  };
+
+  // Helper function to format time ago
+  const formatTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  };
+
+  // Success indicator component
+  const SaveIndicator = () => {
+    if (isSaving) {
+      return (
+        <div className="flex items-center gap-1 text-orange-600">
+          <div className="animate-spin h-3 w-3 border border-orange-600 border-t-transparent rounded-full"></div>
+          <span className="text-xs">Saving...</span>
+        </div>
+      );
+    }
+    
+    if (lastSaved) {
+      return (
+        <div className="flex items-center gap-1 text-green-600">
+          <CheckCircle className="h-3 w-3" />
+          <span className="text-xs">Saved {formatTimeAgo(lastSaved)}</span>
+        </div>
+      );
+    }
+    
+    return null;
+  };
 
   return (
-    <div className="space-y-6">
-      {/* SDG Goals Grid */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Left Column - SDG Goals Selection */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Select Sustainable Development Goals
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              Select Sustainable Development Goals
+            </div>
+            <SaveIndicator />
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
             {SDG_GOALS.map(goal => (
               <TooltipProvider key={goal.id}>
                 <Tooltip>
@@ -163,36 +272,33 @@ export default function SDGAlignmentSection({
                       onClick={() => toggleGoal(goal.id)}
                       disabled={!canEdit}
                       className={cn(
-                        "relative aspect-square rounded-lg border-2 transition-all hover:scale-105",
+                        "relative aspect-square rounded-lg border-2 transition-all hover:scale-105 overflow-hidden bg-white",
                         selectedGoals.includes(goal.id)
-                          ? "border-primary ring-2 ring-primary/20"
-                          : "border-gray-200 hover:border-gray-300",
+                          ? "border-primary ring-2 ring-primary/20 shadow-lg"
+                          : "border-gray-200 hover:border-gray-300 hover:shadow-md",
                         !canEdit && "opacity-50 cursor-not-allowed"
                       )}
-                      style={{
-                        backgroundColor: selectedGoals.includes(goal.id) ? goal.color + '20' : 'white'
-                      }}
                     >
-                      <div className="p-2 h-full flex flex-col items-center justify-center">
-                        <div 
-                          className="text-2xl font-bold rounded-full w-12 h-12 flex items-center justify-center text-white mb-1"
-                          style={{ backgroundColor: goal.color }}
-                        >
-                          {goal.id}
-                        </div>
-                        <div className="text-xs text-center line-clamp-2">
-                          {goal.name}
-                        </div>
+                      <div className="w-full h-full p-2">
+                        <SDGImageGrid 
+                          sdgCodes={[goal.id]} 
+                          size="xl"
+                          showTooltips={false}
+                          className="w-full h-full"
+                        />
                         {selectedGoals.includes(goal.id) && (
-                          <div className="absolute top-1 right-1">
-                            <Check className="h-4 w-4 text-primary" />
+                          <div className="absolute bottom-2 right-2 bg-blue-600 rounded-full p-1 shadow-lg">
+                            <Check className="h-4 w-4 text-white" />
                           </div>
                         )}
                       </div>
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="max-w-xs">{goal.description}</p>
+                    <div>
+                      <p className="font-semibold">Goal {goal.id}: {goal.name}</p>
+                      <p className="max-w-xs text-sm">{goal.description}</p>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -201,33 +307,42 @@ export default function SDGAlignmentSection({
         </CardContent>
       </Card>
 
-      {/* Selected Goals and Targets */}
-      {selectedGoals.length > 0 && (
-        <Card>
+      {/* Right Column - Selected Goals and Targets */}
+      <Card className={selectedGoals.length === 0 ? "opacity-50" : ""}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              SDG Targets Selection
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                SDG Targets Selection
+              </div>
+              <SaveIndicator />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {selectedGoals.map(goalId => {
+            {selectedGoals.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Select SDGs from the left to configure targets</p>
+              </div>
+            ) : (
+              selectedGoals.map(goalId => {
               const goal = SDG_GOALS.find(g => g.id === goalId)!;
               const goalTargets = getTargetsForGoal(goalId);
-              const goalMappings = getGoalMappings(goalId);
+              const goalTargetMappings = getGoalTargetMappings(goalId);
 
               return (
                 <div key={goalId} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div 
-                        className="text-lg font-bold rounded-full w-10 h-10 flex items-center justify-center text-white"
-                        style={{ backgroundColor: goal.color }}
-                      >
-                        {goal.id}
+                      <div className="w-16 h-16">
+                        <SDGImageGrid 
+                          sdgCodes={[goal.id]} 
+                          size="lg"
+                          showTooltips={false}
+                        />
                       </div>
                       <div>
-                        <h4 className="font-semibold">{goal.name}</h4>
+                        <h4 className="font-semibold">Goal {goal.id}: {goal.name}</h4>
                         <p className="text-sm text-muted-foreground">{goal.description}</p>
                       </div>
                     </div>
@@ -244,18 +359,18 @@ export default function SDGAlignmentSection({
 
                   {/* Target Selection */}
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-start gap-2">
                       <Popover open={targetSearchOpen[goalId]} onOpenChange={(open: boolean) => 
                         setTargetSearchOpen({ ...targetSearchOpen, [goalId]: open })
                       }>
                         <PopoverTrigger
-                          className="justify-between"
+                          className="justify-between w-full"
                           disabled={!canEdit}
                         >
                           <span>Add Target</span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </PopoverTrigger>
-                        <PopoverContent className="w-[400px] p-0">
+                        <PopoverContent className="w-[600px] p-0">
                           <Command>
                             <CommandInput placeholder="Search targets..." />
                             <CommandList>
@@ -272,7 +387,7 @@ export default function SDGAlignmentSection({
                                     <Check
                                       className={cn(
                                         "mr-2 h-4 w-4",
-                                        goalMappings.find(m => m.sdgTarget === target.id)
+                                        goalTargetMappings.find(m => m.sdgTarget === target.id)
                                           ? "opacity-100"
                                           : "opacity-0"
                                       )}
@@ -293,10 +408,15 @@ export default function SDGAlignmentSection({
                     </div>
 
                     {/* Selected Targets */}
-                    {goalMappings.length > 0 && (
+                    {goalTargetMappings.length > 0 && (
                       <div className="space-y-2">
-                        {goalMappings.map(mapping => {
-                          const target = SDG_TARGETS.find(t => t.id === mapping.sdgTarget)!;
+                        {goalTargetMappings.map(mapping => {
+                          // Skip rendering goal-only mappings (empty targets)
+                          if (!mapping.sdgTarget) return null;
+                          
+                          const target = SDG_TARGETS.find(t => t.id === mapping.sdgTarget);
+                          if (!target) return null;
+                          
                           return (
                             <div key={mapping.sdgTarget} className="border rounded p-3 space-y-2">
                               <div className="flex items-start justify-between">
@@ -357,77 +477,11 @@ export default function SDGAlignmentSection({
                   </div>
                 </div>
               );
-            })}
+            })
+            )}
           </CardContent>
         </Card>
-      )}
 
-      {/* Contribution Summary (for percentage mode) */}
-      {contributionMode === 'percentage' && mappings.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Contribution Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Total Contribution:</span>
-                <span className={cn(
-                  "font-bold",
-                  totalContribution === 100 ? "text-green-600" : "text-red-600"
-                )}>
-                  {totalContribution}%
-                </span>
-              </div>
-              <Progress value={totalContribution} max={100} className="h-2" />
-              {!isValidContribution && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Total contribution must equal 100%. Currently at {totalContribution}%.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Summary of Selected SDGs */}
-      {mappings.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>SDG Alignment Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {selectedGoals.map(goalId => {
-                const goal = SDG_GOALS.find(g => g.id === goalId)!;
-                const goalMappings = getGoalMappings(goalId);
-                
-                return (
-                  <div key={goalId} className="flex items-start gap-3">
-                    <Badge style={{ backgroundColor: goal.color }} className="text-white">
-                      SDG {goal.id}
-                    </Badge>
-                    <div className="flex-1">
-                      <div className="font-medium">{goal.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {goalMappings.length} target{goalMappings.length !== 1 ? 's' : ''} selected
-                        {contributionMode === 'percentage' && (
-                          <span className="ml-2">
-                            ({goalMappings.reduce((sum, m) => sum + (m.contributionPercent || 0), 0)}% contribution)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 } 

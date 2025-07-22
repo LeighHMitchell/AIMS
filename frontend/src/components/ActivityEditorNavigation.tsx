@@ -40,7 +40,7 @@ export default function ActivityEditorNavigation({
       sections: [
         { id: "general", label: "General" },
         { id: "iati", label: "IATI Sync" },
-        { id: "sectors", label: "Sector Allocation" },
+        { id: "sectors", label: "Sectors" },
         { id: "locations", label: "Locations" }
       ]
     },

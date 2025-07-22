@@ -119,7 +119,7 @@ export function HeroCard<T = any>({
     }
   }, [calculatedValue, onValueChange]);
 
-  // Format currency based on props
+  // Format value based on props and data type
   const formatValue = (amount: number) => {
     // Legacy support: if value was a string, return as-is
     if (value !== undefined && typeof value === 'string' && isNaN(parseFloat(value))) {
@@ -129,6 +129,7 @@ export function HeroCard<T = any>({
     let formatted: string;
     
     if (currency === "USD") {
+      // Currency formatting with decimal places
       formatted = amount.toLocaleString("en-US", { 
         minimumFractionDigits: 2, 
         maximumFractionDigits: 2 
@@ -136,7 +137,20 @@ export function HeroCard<T = any>({
       if (!prefix) {
         formatted = "$" + formatted;
       }
+    } else if (currency === "" || currency === null || currency === undefined) {
+      // No currency - check if it's a whole number count
+      if (Number.isInteger(amount) && amount >= 0 && amount < 1000) {
+        // Format as whole number for counts (no decimals)
+        formatted = Math.round(amount).toString();
+      } else {
+        // Format as number with appropriate decimal places
+        formatted = amount.toLocaleString("en-US", { 
+          minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+          maximumFractionDigits: 2 
+        });
+      }
     } else {
+      // Other currency or custom formatting
       formatted = amount.toLocaleString("en-US", { 
         minimumFractionDigits: 2, 
         maximumFractionDigits: 2 

@@ -76,7 +76,14 @@ export async function GET(request: NextRequest) {
         default_flow_type,
         default_tied_status,
         banner,
-        icon
+        icon,
+        activity_sdg_mappings (
+          id,
+          sdg_goal,
+          sdg_target,
+          contribution_percent,
+          notes
+        )
       `)
       .range(offset, offset + limit - 1);
 
@@ -239,7 +246,15 @@ export async function GET(request: NextRequest) {
         banner: activity.banner, // Include banner for card view
         icon: activity.icon, // Include icon for card view
         createdAt: activity.created_at,
-        updatedAt: activity.updated_at
+        updatedAt: activity.updated_at,
+        // Include SDG mappings for display with proper field mapping
+        sdgMappings: (activity.activity_sdg_mappings || []).map((mapping: any) => ({
+          id: mapping.id,
+          sdgGoal: mapping.sdg_goal,
+          sdgTarget: mapping.sdg_target,
+          contributionPercent: mapping.contribution_percent,
+          notes: mapping.notes
+        }))
       };
     });
 

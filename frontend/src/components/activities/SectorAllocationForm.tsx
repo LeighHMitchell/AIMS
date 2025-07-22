@@ -239,9 +239,9 @@ export default function SectorAllocationForm({
                     onClick={() => addAllocation(result)}
                     className="w-full text-left px-4 py-3 hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
                   >
-                    <div className="font-medium text-sm">{result.dac5_code} - {result.dac5_name}</div>
+                    <div className="font-medium text-sm">{result.dac5_code} – {result.dac5_name}</div>
                     <div className="text-xs text-gray-500 mt-0.5">
-                      DAC 3: {result.dac3_code} - {result.dac3_name}
+                      DAC 3: {result.dac3_code} – {result.dac3_name}
                     </div>
                   </button>
                 ))}
@@ -266,10 +266,10 @@ export default function SectorAllocationForm({
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="font-medium text-sm">
-                        {allocation.dac5_code} - {allocation.dac5_name}
+                        {allocation.dac5_code} – {allocation.dac5_name}
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        DAC 3: {allocation.dac3_code} - {allocation.dac3_name}
+                        DAC 3: {allocation.dac3_code} – {allocation.dac3_name}
                       </div>
                     </div>
                     <button

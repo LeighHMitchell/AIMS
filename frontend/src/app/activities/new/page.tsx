@@ -662,7 +662,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "sectors":
       return (
         <div className="w-full">
-          <h3 className="text-xl font-semibold text-gray-900">OECD DAC Sector Allocation</h3>
+          <h3 className="text-xl font-semibold text-gray-900">Sectors</h3>
           <p className="text-sm text-gray-600 mt-1">
             Assign OECD DAC sector codes and allocate percentages for this activity.
           </p>
@@ -774,7 +774,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "aid_effectiveness":
       return <AidEffectivenessForm general={general} onUpdate={setGeneral} />;
     case "sdg":
-      return <SDGAlignmentSection sdgMappings={sdgMappings} onUpdate={setSdgMappings} />;
+      return <SDGAlignmentSection sdgMappings={sdgMappings} onUpdate={setSdgMappings} activityId={general.id} />;
     case "tags":
       return <TagsSection activityId={general.id} tags={tags} onChange={setTags} />;
     case "working_groups":
@@ -1094,7 +1094,7 @@ function NewActivityPageContent() {
     const sectionLabels: Record<string, string> = {
       general: "General Information",
       iati: "IATI Sync",
-      sectors: "Sector Allocation",
+      sectors: "Sectors",
       locations: "Activity Locations",
       organisations: "Organisations",
       contributors: "Contributors",
@@ -1519,7 +1519,7 @@ function NewActivityPageContent() {
       sections: [
         { id: "general", label: "General" },
         { id: "iati", label: "IATI Sync" },
-        { id: "sectors", label: "Sector Allocation" },
+        { id: "sectors", label: "Sectors" },
         { id: "locations", label: "Locations" }
       ]
     },

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -456,21 +456,25 @@ export default function ImprovedSectorAllocationForm({
           title="% Allocated" 
           value={`${heroMetrics.allocated}%`}
           variant={validation.isValid ? 'success' : 'default'}
+          currency=""
         />
         <HeroCard 
           title="% Unallocated" 
           value={`${heroMetrics.unallocated}%`}
           variant={parseFloat(heroMetrics.unallocated) > 0 ? 'warning' : 'success'}
+          currency=""
         />
         <HeroCard 
           title="Sectors" 
           value={heroMetrics.sectors}
           subtitle="Sector categories"
+          currency=""
         />
         <HeroCard 
           title="Sub-sectors" 
           value={heroMetrics.subSectors}
           subtitle="Individual sectors"
+          currency=""
         />
       </div>
 
@@ -478,7 +482,7 @@ export default function ImprovedSectorAllocationForm({
       <div className="flex items-center gap-2">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <BarChart3 className="h-5 w-5" />
-          Sector Allocation
+          Sectors
           {sectorsAutosave.state.isSaving && (
             <span className="ml-2 flex items-center gap-1 text-orange-500 text-xs">
               <Loader2 className="h-4 w-4 animate-spin text-orange-500" /> Saving...
@@ -497,7 +501,7 @@ export default function ImprovedSectorAllocationForm({
             </TooltipTrigger>
             <TooltipContent side="right" className="max-w-xs">
               <div className="space-y-2">
-                <p className="font-medium">Sector Allocation Guidelines:</p>
+                <p className="font-medium">Sector Guidelines:</p>
                 <ul className="text-xs space-y-1">
                   <li>• Use the dropdown to search and select sectors by code or name</li>
                   <li>• Percentages must total exactly 100% for valid allocation</li>
@@ -528,20 +532,25 @@ export default function ImprovedSectorAllocationForm({
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Left Side: Pie Chart */}
         {allocations.length > 0 && (
-          <div className="w-full lg:w-1/3">
+          <div className="w-full lg:w-1/2">
             <Card>
               <CardHeader>
-                {/* <CardTitle className="text-base">Allocation Visualization</CardTitle> */}
+                <CardTitle className="text-base">Sector Allocation Visualization</CardTitle>
+                <CardDescription>
+                  Interactive treemap showing sector allocation percentages
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <SectorAllocationPieChart allocations={allocations} />
+                <div className="h-[600px]">
+                  <SectorAllocationPieChart allocations={allocations} />
+                </div>
               </CardContent>
             </Card>
           </div>
         )}
 
         {/* Right Side: Form Interface */}
-        <div className={cn("space-y-6", allocations.length > 0 ? "w-full lg:w-2/3" : "w-full")}>
+        <div className={cn("space-y-6", allocations.length > 0 ? "w-full lg:w-1/2" : "w-full")}>
           {/* Sector Dropdown */}
           <Card>
             <CardHeader className="pb-4">
