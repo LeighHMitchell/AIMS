@@ -27,7 +27,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy } from "lucide-react";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator, ActivityCompletionRating } from "@/components/ActivityFieldHelpers";
 import { CommentsDrawer } from "@/components/CommentsDrawer";
@@ -161,6 +162,13 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     onSuccess: () => toast.success('Activity Icon saved', { position: 'top-right' }),
   });
 
+  // UUID autosave hook (read-only field)
+  const uuidAutosave = useFieldAutosave('uuid', {
+    activityId: general.id,
+    userId: user?.id,
+    onSuccess: () => toast.success('UUID saved', { position: 'top-right' }),
+  });
+
   // Helper function to determine if fields should be locked
   const getFieldLockStatus = () => {
     const isActivityCreated = Boolean(general.id);
@@ -171,6 +179,17 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   };
 
   const fieldLockStatus = getFieldLockStatus();
+
+  // Copy function for identifier fields
+  const handleCopy = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${fieldName} copied to clipboard`, { position: 'top-right' });
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      toast.error('Failed to copy to clipboard', { position: 'top-right' });
+    }
+  };
 
   // Field-level autosave hooks with context-aware success callbacks
   const titleAutosave = useFieldAutosave('title', { 
@@ -216,10 +235,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <div className="lg:col-span-3 flex flex-col">
           <LabelSaveIndicator
             isSaving={bannerAutosave.state.isSaving}
-            isSaved={!!bannerAutosave.state.lastSaved && !bannerAutosave.state.isSaving}
-            className="text-gray-700"
+            isSaved={!!general.banner}
+            className="text-gray-700 mb-2"
           >
-            Activity Banner
+            <div className="flex items-center gap-2">
+              Activity Banner
+              <HelpTextTooltip>
+                Upload a banner image (1200×300 pixels) to visually represent the activity. This image will appear on the activity profile page, activity cards, and other locations throughout the application.
+              </HelpTextTooltip>
+            </div>
           </LabelSaveIndicator>
           <div className="flex-1">
             <BannerUpload
@@ -238,10 +262,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <div className="flex flex-col">
           <LabelSaveIndicator
             isSaving={iconAutosave.state.isSaving}
-            isSaved={!!iconAutosave.state.lastSaved && !iconAutosave.state.isSaving}
-            className="text-gray-700"
+            isSaved={!!general.icon}
+            className="text-gray-700 mb-2"
           >
-            Activity Icon
+            <div className="flex items-center gap-2">
+              Activity Icon/Logo
+              <HelpTextTooltip>
+                Upload a square image (256×256 pixels) to serve as the activity's icon or logo. It will be displayed on the activity profile page, activity cards, tables, and summaries across the application.
+              </HelpTextTooltip>
+            </div>
           </LabelSaveIndicator>
           <div className="flex-1">
             <IconUpload
@@ -264,71 +293,126 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={activityIdAutosave.state.isSaving}
-            isSaved={!!activityIdAutosave.state.lastSaved && !activityIdAutosave.state.isSaving}
+            isSaved={!!general.otherIdentifier?.trim()}
             className="text-gray-700"
           >
-            Activity ID
+            <div className="flex items-center gap-2">
+              Activity ID
+              <HelpTextTooltip>
+                An internal identifier that is unique within the reporting organisation. Used for internal referencing and system management. Distinct from the IATI Identifier and typically follows the organisation's established naming conventions.
+              </HelpTextTooltip>
+            </div>
           </LabelSaveIndicator>
-          <Input
-            id="activityId"
-            type="text"
-            value={general.otherIdentifier || ''}
-            onChange={(e) => {
-              setGeneral((g: any) => ({ ...g, otherIdentifier: e.target.value }));
-            }}
-            onBlur={(e) => {
-              if (e.target.value.trim()) {
-                if (general.id) {
-                  activityIdAutosave.triggerFieldSave(e.target.value);
-                } else {
-                  toast.success('The Activity ID has been stored and will be saved after activity creation.');
+          <div className="relative">
+            <Input
+              id="activityId"
+              type="text"
+              value={general.otherIdentifier || ''}
+              onChange={(e) => {
+                setGeneral((g: any) => ({ ...g, otherIdentifier: e.target.value }));
+              }}
+              onBlur={(e) => {
+                if (e.target.value.trim()) {
+                  if (general.id) {
+                    activityIdAutosave.triggerFieldSave(e.target.value);
+                  } else {
+                    toast.success('The Activity ID has been stored and will be saved after activity creation.');
+                  }
                 }
-              }
-            }}
-            placeholder="Enter your organization's activity ID"
-          />
+              }}
+              placeholder="Enter your organization's activity ID"
+            />
+            {general.otherIdentifier && (
+              <button
+                onClick={() => handleCopy(general.otherIdentifier, 'Activity ID')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                title="Copy Activity ID"
+              >
+                <Copy className="w-4 h-4 text-gray-500 hover:text-gray-700" />
+              </button>
+            )}
+          </div>
           {activityIdAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {activityIdAutosave.state.error.message}</p>}
         </div>
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={iatiIdentifierAutosave.state.isSaving}
-            isSaved={!!iatiIdentifierAutosave.state.lastSaved && !iatiIdentifierAutosave.state.isSaving}
+            isSaved={!!general.iatiIdentifier?.trim()}
             className="text-gray-700"
           >
-            IATI Identifier
+            <div className="flex items-center gap-2">
+              IATI Identifier
+              <HelpTextTooltip>
+                A globally unique identifier that combines the reporting organisation's registered IATI prefix and the activity ID. Enables consistent linking and sharing of data in the IATI Registry.
+              </HelpTextTooltip>
+            </div>
           </LabelSaveIndicator>
-          <Input
-            id="iatiIdentifier"
-            type="text"
-            value={general.iatiIdentifier || ''}
-            onChange={(e) => {
-              setGeneral((g: any) => ({ ...g, iatiIdentifier: e.target.value }));
-            }}
-            onBlur={(e) => {
-              if (e.target.value.trim()) {
-                if (general.id) {
-                  iatiIdentifierAutosave.triggerFieldSave(e.target.value);
-                } else {
-                  toast.success('The IATI Identifier has been stored and will be saved after activity creation.');
+          <div className="relative">
+            <Input
+              id="iatiIdentifier"
+              type="text"
+              value={general.iatiIdentifier || ''}
+              onChange={(e) => {
+                setGeneral((g: any) => ({ ...g, iatiIdentifier: e.target.value }));
+              }}
+              onBlur={(e) => {
+                if (e.target.value.trim()) {
+                  if (general.id) {
+                    iatiIdentifierAutosave.triggerFieldSave(e.target.value);
+                  } else {
+                    toast.success('The IATI Identifier has been stored and will be saved after activity creation.');
+                  }
                 }
-              }
-            }}
-            placeholder="Enter IATI identifier"
-          />
+              }}
+              placeholder="Enter IATI identifier"
+            />
+            {general.iatiIdentifier && (
+              <button
+                onClick={() => handleCopy(general.iatiIdentifier, 'IATI Identifier')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                title="Copy IATI Identifier"
+              >
+                <Copy className="w-4 h-4 text-gray-500 hover:text-gray-700" />
+              </button>
+            )}
+          </div>
           {iatiIdentifierAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {iatiIdentifierAutosave.state.error.message}</p>}
         </div>
         <div className="space-y-2">
-          <label htmlFor="uuid" className="text-sm font-medium text-gray-700">
-            UUID (Universally Unique Identifier)
-          </label>
-          <Input
-            id="uuid"
-            type="text"
-            value={general.uuid || ''}
-            readOnly
-            className="bg-gray-50 cursor-not-allowed"
-            placeholder="Auto-generated when activity is created"
-          />
+          <LabelSaveIndicator
+            isSaving={uuidAutosave.state.isSaving}
+            isSaved={!!general.uuid}
+            className="text-gray-700"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">
+                Universally Unique Identifier
+              </span>
+              <HelpTextTooltip>
+                A system-generated identifier automatically assigned when an activity is created. Ensures global uniqueness within the database.
+              </HelpTextTooltip>
+            </div>
+          </LabelSaveIndicator>
+          <div className="relative">
+            <Input
+              id="uuid"
+              type="text"
+              value={general.uuid || ''}
+              readOnly
+              className="bg-gray-50 cursor-not-allowed pr-10 truncate"
+              placeholder={general.uuid ? general.uuid : "Auto-generated when activity is created"}
+            />
+            {general.uuid && (
+              <button
+                onClick={() => handleCopy(general.uuid, 'UUID')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                title="Copy full UUID"
+              >
+                <Copy className="w-4 h-4 text-gray-500 hover:text-gray-700" />
+              </button>
+            )}
+          </div>
+          {uuidAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {uuidAutosave.state.error.message}</p>}
         </div>
       </div>
 
@@ -336,10 +420,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       <div className="space-y-2">
         <LabelSaveIndicator
           isSaving={titleAutosave.state.isSaving}
-          isSaved={!!titleAutosave.state.lastSaved && !titleAutosave.state.isSaving}
+          isSaved={!!general.title?.trim()}
           className="text-gray-700"
         >
-          Activity Title
+                      <div className="flex items-center gap-2">
+              Activity Title
+              <HelpTextTooltip>
+                A short, human-readable title that provides a meaningful summary of the activity. It should be clear, descriptive, and consistent with the reporting organisation's titles used in published projects.
+              </HelpTextTooltip>
+            </div>
         </LabelSaveIndicator>
         <div>
           <Input
@@ -362,22 +451,27 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       <div className="space-y-2">
         <LabelSaveIndicator
           isSaving={descriptionAutosave.state.isSaving}
-          isSaved={!!descriptionAutosave.state.lastSaved && !descriptionAutosave.state.isSaving}
+          isSaved={!!general.description?.trim()}
           className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
         >
-          Activity Description
-          {fieldLockStatus.isLocked && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Lock className="h-3 w-3 ml-2 text-gray-400" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{fieldLockStatus.tooltipMessage}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+                      <div className="flex items-center gap-2">
+              Activity Description
+              <HelpTextTooltip>
+                A clear summary of the activity's goals, scope, target population, and expected results. Descriptions should use plain language and provide enough context for others to understand the purpose and intent of the activity.
+              </HelpTextTooltip>
+            {fieldLockStatus.isLocked && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{fieldLockStatus.tooltipMessage}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
         </LabelSaveIndicator>
         <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
           <RichTextEditor
@@ -403,10 +497,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="w-full space-y-2">
             <LabelSaveIndicator
               isSaving={collaborationTypeAutosave.state.isSaving}
-              isSaved={!!collaborationTypeAutosave.state.lastSaved && !collaborationTypeAutosave.state.isSaving}
+              isSaved={!!general.collaborationType}
               className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
             >
-              Collaboration Type
+              <div className="flex items-center gap-2">
+                Collaboration Type
+                <HelpTextTooltip>
+                  Indicates the nature of the funding relationship through which the activity is delivered. This classification helps identify how resources are channelled and which actors are involved in implementation.
+                </HelpTextTooltip>
+              </div>
               {fieldLockStatus.isLocked && (
                 <TooltipProvider>
                   <Tooltip>
@@ -437,6 +536,18 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             {collaborationTypeAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {collaborationTypeAutosave.state.error.message}</p>}
           </div>
           <div className="w-full space-y-2">
+            <LabelSaveIndicator
+              isSaving={false}
+              isSaved={!!general.activityStatus}
+              className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Activity Status</span>
+                <HelpTextTooltip>
+                  Indicates the current phase of the activity. This field should be regularly updated to reflect the activity's progress over time.
+                </HelpTextTooltip>
+              </div>
+            </LabelSaveIndicator>
             <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
               <ActivityEditorFieldAutosave
                 activityId={general.id || ''}
@@ -480,27 +591,37 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
       {/* Row 8: Date Fields */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-gray-900">Activity Dates</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-gray-900">Activity Dates</h3>
+          <HelpTextTooltip>
+            Actual Start and End Dates become available based on the activity's status. The Actual Start Date is enabled once the status is set to Implementation or later. The Actual End Date becomes available when the status reaches Completion, Finalisation, or a subsequent phase.
+          </HelpTextTooltip>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={plannedStartDateAutosave.state.isSaving}
-              isSaved={!!plannedStartDateAutosave.state.lastSaved && !plannedStartDateAutosave.state.isSaving}
+              isSaved={!!general.plannedStartDate}
               className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
             >
-              Planned Start Date
-              {fieldLockStatus.isLocked && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Lock className="h-3 w-3 ml-2 text-gray-400" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{fieldLockStatus.tooltipMessage}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+              <div className="flex items-center gap-2">
+                Planned Start Date
+                <HelpTextTooltip>
+                  The expected date when the activity is scheduled to begin, based on initial planning or agreements.
+                </HelpTextTooltip>
+                {fieldLockStatus.isLocked && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{fieldLockStatus.tooltipMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             </LabelSaveIndicator>
             <Input
               id="plannedStartDate"
@@ -520,22 +641,27 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={plannedEndDateAutosave.state.isSaving}
-              isSaved={!!plannedEndDateAutosave.state.lastSaved && !plannedEndDateAutosave.state.isSaving}
+              isSaved={!!general.plannedEndDate}
               className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
             >
-              Planned End Date
-              {fieldLockStatus.isLocked && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Lock className="h-3 w-3 ml-2 text-gray-400" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{fieldLockStatus.tooltipMessage}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+              <div className="flex items-center gap-2">
+                Planned End Date
+                <HelpTextTooltip>
+                  The expected date when the activity is scheduled to be completed, as defined during planning.
+                </HelpTextTooltip>
+                {fieldLockStatus.isLocked && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{fieldLockStatus.tooltipMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             </LabelSaveIndicator>
             <Input
               id="plannedEndDate"
@@ -555,22 +681,27 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={actualStartDateAutosave.state.isSaving}
-              isSaved={!!actualStartDateAutosave.state.lastSaved && !actualStartDateAutosave.state.isSaving}
+              isSaved={!!general.actualStartDate}
               className={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate ? 'text-gray-400' : 'text-gray-700'}
             >
-              Actual Start Date
-              {fieldLockStatus.isLocked && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Lock className="h-3 w-3 ml-2 text-gray-400" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{fieldLockStatus.tooltipMessage}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+              <div className="flex items-center gap-2">
+                Actual Start Date
+                <HelpTextTooltip>
+                  The date when implementation of the activity actually began.
+                </HelpTextTooltip>
+                {fieldLockStatus.isLocked && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{fieldLockStatus.tooltipMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             </LabelSaveIndicator>
             <Input
               id="actualStartDate"
@@ -590,22 +721,27 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={actualEndDateAutosave.state.isSaving}
-              isSaved={!!actualEndDateAutosave.state.lastSaved && !actualEndDateAutosave.state.isSaving}
+              isSaved={!!general.actualEndDate}
               className={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate ? 'text-gray-400' : 'text-gray-700'}
             >
-              Actual End Date
-              {fieldLockStatus.isLocked && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Lock className="h-3 w-3 ml-2 text-gray-400" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{fieldLockStatus.tooltipMessage}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+              <div className="flex items-center gap-2">
+                Actual End Date
+                <HelpTextTooltip>
+                  The date when implementation of the activity was actually completed.
+                </HelpTextTooltip>
+                {fieldLockStatus.isLocked && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{fieldLockStatus.tooltipMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             </LabelSaveIndicator>
             <Input
               id="actualEndDate"
@@ -628,7 +764,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, setIatiSyncState }: any) {
   switch (section) {
     case "general":
       return <GeneralSection 
@@ -655,6 +791,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
               // The IATISyncPanel handles its own updates internally
               // This callback is just for parent notification if needed
             }}
+            onStateChange={setIatiSyncState}
             canEdit={permissions?.canEditActivity ?? true}
           />
         </div>
@@ -923,6 +1060,12 @@ function NewActivityPageContent() {
   const [budgetNotProvided, setBudgetNotProvided] = useState(false);
   // Add state to track planned disbursements for Planned Disbursements tab completion
   const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([]);
+
+  // State for IATI Sync status
+  const [iatiSyncState, setIatiSyncState] = useState({
+    isEnabled: false,
+    syncStatus: 'pending' as 'live' | 'pending' | 'outdated'
+  });
 
   const isEditing = !!searchParams?.get("id");
   
@@ -1218,15 +1361,29 @@ function NewActivityPageContent() {
     // Planned Disbursements tab: green check if at least one planned disbursement
     const plannedDisbursementsComplete = plannedDisbursements && plannedDisbursements.length > 0;
 
+    // IATI Sync tab completion logic
+    const iatiSyncComplete = iatiSyncState.isEnabled && iatiSyncState.syncStatus === 'live';
+    const iatiSyncInProgress = iatiSyncState.isEnabled && (iatiSyncState.syncStatus === 'pending' || iatiSyncState.syncStatus === 'outdated');
+
     return {
-      general: generalCompletion ? { isComplete: generalCompletion.isComplete } : { isComplete: false },
-      sectors: { isComplete: sectorsComplete },
-      finances: { isComplete: financesComplete },
-      finances_defaults: financesDefaultsCompletion ? { isComplete: financesDefaultsCompletion.isComplete } : { isComplete: false },
-      budgets: { isComplete: budgetsComplete },
-      planned_disbursements: { isComplete: plannedDisbursementsComplete }
+      general: generalCompletion ? { 
+        isComplete: generalCompletion.isComplete,
+        isInProgress: generalCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      iati: { 
+        isComplete: iatiSyncComplete, 
+        isInProgress: iatiSyncInProgress 
+      },
+      sectors: { isComplete: sectorsComplete, isInProgress: false },
+      finances: { isComplete: financesComplete, isInProgress: false },
+      finances_defaults: financesDefaultsCompletion ? { 
+        isComplete: financesDefaultsCompletion.isComplete,
+        isInProgress: financesDefaultsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      budgets: { isComplete: budgetsComplete, isInProgress: false },
+      planned_disbursements: { isComplete: plannedDisbursementsComplete, isInProgress: false }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements]);
+  }, [general, getDateFieldStatus, sectorValidation, sectors, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, iatiSyncState]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -1827,6 +1984,7 @@ function NewActivityPageContent() {
                     setBudgetNotProvided={setBudgetNotProvided}
                     plannedDisbursements={plannedDisbursements}
                     setPlannedDisbursements={setPlannedDisbursements}
+                    setIatiSyncState={setIatiSyncState}
                   />
                 </div>
               )}

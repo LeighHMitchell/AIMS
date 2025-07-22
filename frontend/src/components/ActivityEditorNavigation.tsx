@@ -3,8 +3,13 @@
 import React from "react"
 import { cn } from "@/lib/utils"
 import { Lock } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { TabCompletionIndicator } from "@/utils/tab-completion"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface NavigationSection {
   id: string
@@ -22,7 +27,7 @@ interface ActivityEditorNavigationProps {
   onSectionChange: (sectionId: string) => void
   showGovernmentInputs?: boolean
   activityCreated?: boolean
-  tabCompletionStatus?: Record<string, { isComplete: boolean }>
+  tabCompletionStatus?: Record<string, { isComplete: boolean; isInProgress: boolean }>
 }
 
 export default function ActivityEditorNavigation({
@@ -32,8 +37,6 @@ export default function ActivityEditorNavigation({
   activityCreated = false,
   tabCompletionStatus = {}
 }: ActivityEditorNavigationProps) {
-  
-  // Define grouped navigation structure
   const navigationGroups: NavigationGroup[] = [
     {
       title: "Activity Overview",
@@ -41,16 +44,16 @@ export default function ActivityEditorNavigation({
         { id: "general", label: "General" },
         { id: "iati", label: "IATI Sync" },
         { id: "sectors", label: "Sectors" },
-        { id: "locations", label: "Locations" }
+        { id: "locations", label: "Locations" },
       ]
     },
     {
-      title: "Stakeholders", 
+      title: "Stakeholders",
       sections: [
         { id: "organisations", label: "Organisations" },
         { id: "contributors", label: "Contributors" },
         { id: "contacts", label: "Contacts" },
-        { id: "linked_activities", label: "Linked Activities" }
+        { id: "linked-activities", label: "Linked Activities" },
       ]
     },
     {
@@ -58,36 +61,20 @@ export default function ActivityEditorNavigation({
       sections: [
         { id: "finances", label: "Finances" },
         { id: "budgets", label: "Budgets" },
-        { id: "planned_disbursements", label: "Planned Disbursements" },
-        { id: "results", label: "Results" }
-      ]
-    },
-    {
-      title: "Strategic Alignment",
-      sections: [
-        { id: "sdg", label: "SDG Alignment" },
-        { id: "tags", label: "Tags" },
-        { id: "working_groups", label: "Working Groups" },
-        { id: "policy_markers", label: "Policy Markers" }
-      ]
-    },
-    {
-      title: "Supporting Info",
-      sections: [
-        { id: "documents", label: "Documents & Images" },
-        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
-        { id: "aid_effectiveness", label: "Aid Effectiveness", optional: true }
+        { id: "planned-disbursements", label: "Planned Disbursements" },
       ]
     }
   ]
 
+  // Add government inputs section if enabled
+  if (showGovernmentInputs) {
+    navigationGroups[1].sections.push({ id: "government-inputs", label: "Government Inputs" })
+  }
+
   return (
     <TooltipProvider>
-      <nav 
-        aria-label="Activity Editor Navigation" 
-        className="flex flex-col p-4 h-full overflow-y-auto"
-        role="navigation"
-      >
+      <nav className="w-64 bg-white border-r border-gray-200 p-4 space-y-6 h-full flex flex-col">
+        {/* Navigation Groups */}
         {navigationGroups.map((group, groupIndex) => (
           <div 
             key={group.title} 
@@ -114,6 +101,7 @@ export default function ActivityEditorNavigation({
                 const isLocked = !activityCreated && section.id !== "general"
                 const isActive = activeSection === section.id
                 const isComplete = tabCompletionStatus[section.id]?.isComplete || false
+                const isInProgress = tabCompletionStatus[section.id]?.isInProgress || false
                 
                 const buttonContent = (
                   <button
@@ -140,7 +128,7 @@ export default function ActivityEditorNavigation({
                       <div className="flex items-center gap-2">
                         {isLocked && <Lock className="h-3 w-3 text-gray-400" />}
                         <span>{section.label}</span>
-                        <TabCompletionIndicator isComplete={isComplete} />
+                        <TabCompletionIndicator isComplete={isComplete} isInProgress={isInProgress} />
                       </div>
                       {section.optional && (
                         <span 

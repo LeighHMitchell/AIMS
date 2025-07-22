@@ -1,8 +1,9 @@
 import React from "react"
-import { CheckCircle } from "lucide-react"
+import { CheckCircle, Loader2 } from "lucide-react"
 
 export interface TabCompletionStatus {
   isComplete: boolean
+  isInProgress: boolean
   completedFields: string[]
   missingFields: string[]
 }
@@ -18,6 +19,7 @@ export interface GeneralTabData {
   actualEndDate?: string
   otherIdentifier?: string
   iatiIdentifier?: string
+  uuid?: string
   banner?: string
   icon?: string
 }
@@ -63,6 +65,25 @@ export function checkGeneralTabCompletion(
     missingFields.push('activityStatus')
   }
   
+  // Identifier fields - required for completion
+  if (general.otherIdentifier?.trim()) {
+    completedFields.push('otherIdentifier')
+  } else {
+    missingFields.push('otherIdentifier')
+  }
+  
+  if (general.iatiIdentifier?.trim()) {
+    completedFields.push('iatiIdentifier')
+  } else {
+    missingFields.push('iatiIdentifier')
+  }
+  
+  if (general.uuid?.trim()) {
+    completedFields.push('uuid')
+  } else {
+    missingFields.push('uuid')
+  }
+  
   // Date fields - check based on availability
   const dateStatus = getDateFieldStatus()
   
@@ -99,9 +120,11 @@ export function checkGeneralTabCompletion(
   }
   
   const isComplete = missingFields.length === 0
+  const isInProgress = completedFields.includes('title') && completedFields.length === 1
   
   return {
     isComplete,
+    isInProgress,
     completedFields,
     missingFields
   }
@@ -153,9 +176,11 @@ export function checkFinancesTabCompletion(
 
   // All fields must be filled AND no unsaved changes
   const isComplete = missingFields.length === 0 && finances.hasUnsavedChanges === false;
+  const isInProgress = false; // Finances tab doesn't have an in-progress state
 
   return {
     isComplete,
+    isInProgress,
     completedFields,
     missingFields
   };
@@ -189,10 +214,14 @@ export function getTabCompletionStatus(
 /**
  * React component for the completion checkmark
  */
-export function TabCompletionIndicator({ isComplete }: { isComplete: boolean }) {
-  if (!isComplete) return null
+export function TabCompletionIndicator({ isComplete, isInProgress }: { isComplete: boolean; isInProgress: boolean }) {
+  if (isComplete) {
+    return <CheckCircle className="h-4 w-4 text-green-500 ml-2" />
+  }
   
-  return (
-    <CheckCircle className="h-4 w-4 text-green-500 ml-2" />
-  )
+  if (isInProgress) {
+    return <Loader2 className="h-4 w-4 text-orange-500 ml-2 animate-spin" />
+  }
+  
+  return null
 } 

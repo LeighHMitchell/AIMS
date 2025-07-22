@@ -112,9 +112,7 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
             </Button>
           </div>
         </div>
-        <p className="text-xs text-gray-500 text-center">
-          Recommended banner size: 1200x300px for best display.
-        </p>
+
       </div>
     );
   }
@@ -139,9 +137,7 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
           <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 5MB</p>
         </div>
       </div>
-      <p className="text-xs text-gray-500 text-center">
-        Recommended banner size: 1200x300px for best display.
-      </p>
+
     </div>
   );
 }; 

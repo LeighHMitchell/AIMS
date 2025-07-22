@@ -1,39 +1,28 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { 
   Trash2, 
   AlertCircle, 
-  Check, 
-  ChevronDown,
+  CheckCircle, 
+  Loader2, 
   Sparkles,
-  BarChart3,
-  HelpCircle,
-  Loader2,
-  CheckCircle
+  Info
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import dacSectorsData from '@/data/dac-sectors.json';
-import { SectorValidation } from '@/types/sector';
-import { v4 as uuidv4 } from 'uuid';
-import SectorAllocationPieChart from '@/components/charts/SectorAllocationPieChart';
 import { HeroCard } from '@/components/ui/hero-card';
 import { SectorSelect, transformSectorGroups } from '@/components/forms/SectorSelect';
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
+import SectorSunburstChart from '@/components/charts/SectorSunburstChart';
+import { toast } from 'sonner';
 
 interface Sector {
   code: string;
@@ -56,6 +45,13 @@ interface SectorAllocation {
   [key: string]: any;
 }
 
+interface SectorValidation {
+  isValid: boolean;
+  errors: string[];
+  totalPercentage: number;
+  remainingPercentage: number;
+}
+
 interface ImprovedSectorAllocationFormProps {
   allocations: SectorAllocation[];
   onChange: (allocations: SectorAllocation[]) => void;
@@ -64,65 +60,66 @@ interface ImprovedSectorAllocationFormProps {
   activityId?: string;
 }
 
-// Category colors
-const CATEGORY_COLORS: { [key: string]: string } = {
-  '110': '#3B82F6', // Education - Blue
-  '120': '#10B981', // Health - Green
-  '130': '#8B5CF6', // Population - Purple
-  '140': '#F59E0B', // Water - Amber
-  '150': '#6366F1', // Government - Indigo
-  '160': '#EC4899', // Social - Pink
-  '210': '#84CC16', // Transport - Lime
-  '220': '#06B6D4', // Communications - Cyan
-  '230': '#F97316', // Energy - Orange
-  '240': '#14B8A6', // Banking - Teal
-  '250': '#F43F5E', // Business - Rose
-  '310': '#22C55E', // Agriculture - Green
-  '320': '#A855F7', // Industry - Purple
-  '330': '#0EA5E9', // Trade - Sky
-  '410': '#EAB308', // Environment - Yellow
-  '430': '#6B7280', // Other - Gray
-  '500': '#DC2626', // Budget Support - Red
-  '600': '#7C3AED', // Debt - Violet
-  '700': '#059669', // Emergency - Emerald
-  '910': '#9333EA', // Admin - Purple
-  '920': '#DB2777', // NGO Support - Pink
-  '930': '#2563EB', // Refugees - Blue
-  '998': '#525252', // Unallocated - Gray
-};
-
-// Get category color
+// Color mapping for sector categories
 const getCategoryColor = (categoryCode: string): string => {
-  const code = categoryCode.substring(0, 3);
-  return CATEGORY_COLORS[code] || '#6B7280';
+  const colors: { [key: string]: string } = {
+    '111': '#3B82F6', // Education
+    '121': '#10B981', // Health
+    '130': '#8B5CF6', // Population
+    '140': '#F59E0B', // Water Supply & Sanitation
+    '150': '#6366F1', // Government & Civil Society
+    '160': '#EC4899', // Other Social Infrastructure
+    '210': '#84CC16', // Transport & Storage
+    '220': '#06B6D4', // Communications
+    '230': '#F97316', // Energy
+    '240': '#14B8A6', // Banking & Financial Services
+    '250': '#F43F5E', // Business & Other Services
+    '310': '#22C55E', // Agriculture, Forestry, Fishing
+    '320': '#A855F7', // Industry, Mining, Construction
+    '330': '#0EA5E9', // Trade Policies & Regulations
+    '410': '#EAB308', // General Environmental Protection
+    '430': '#EF4444', // Other Multisector
+    '510': '#8B5A2B', // General Budget Support
+    '520': '#6B7280', // Developmental Food Aid
+    '530': '#059669', // Other Commodity Assistance
+    '600': '#DC2626', // Action Relating to Debt
+    '700': '#7C3AED', // Humanitarian Aid
+    '910': '#F97316', // Administrative Costs
+    '920': '#84CC16', // Support to NGOs
+    '930': '#06B6D4', // Refugees in Donor Countries
+    '998': '#6B7280', // Unallocated/Unspecified
+  };
+  return colors[categoryCode] || '#6B7280';
 };
 
-// Get sector information
 const getSectorInfo = (code: string): { name: string; description: string; category: string; categoryCode: string } => {
-  const sectorsData = dacSectorsData as SectorCategory;
+  const dacSectorsData = require('@/data/dac-sectors.json');
   
-  for (const [categoryName, sectors] of Object.entries(sectorsData)) {
-    const sector = sectors.find(s => s.code === code);
+  // Search through all categories to find the sector
+  for (const [categoryName, sectors] of Object.entries(dacSectorsData)) {
+    const sectorArray = sectors as any[];
+    const sector = sectorArray.find((s: any) => s.code === code);
+    
     if (sector) {
-      const categoryCode = categoryName.split(' - ')[0];
+      const categoryCode = sector.code.substring(0, 3);
       return {
-        name: `${sector.code} – ${sector.name}`,
-        description: sector.description,
+        name: sector.name,
+        description: sector.description || '',
         category: categoryName,
-        categoryCode
+        categoryCode: categoryCode
       };
     }
   }
   
+  // Fallback if sector not found
   return {
-    name: code,
+    name: `Sector ${code}`,
     description: '',
-    category: 'Unknown',
-    categoryCode: '999'
+    category: `Category ${code.substring(0, 3)}`,
+    categoryCode: code.substring(0, 3)
   };
 };
 
-// Types for react-select
 interface SectorOption {
   value: string;
   label: string;
@@ -232,477 +229,327 @@ export default function ImprovedSectorAllocationForm({
       const group = transformSectorGroups().find(g => g.options.some(o => o.code === code));
       const option = group?.options.find(o => o.code === code);
       if (option && group) {
+        const sectorInfo = getSectorInfo(code);
         newAllocations.push({
-          id: uuidv4(),
+          id: crypto.randomUUID(),
           code: option.code,
           name: option.name,
-          percentage: 100, // Default, can be edited later
-          category: group.label,
-          categoryCode: group.label.split(' - ')[0]
+          percentage: 0,
+          category: sectorInfo.category,
+          categoryCode: option.code.substring(0, 3)
         });
       }
     });
     // Remove
     newAllocations = newAllocations.filter(a => !toRemove.includes(a.code));
     onChange(newAllocations);
-    if (activityId) {
-      sectorsAutosave.triggerFieldSave(newAllocations);
-    }
   };
-
-  // Prepare options for react-select
-  const sectorOptions = useMemo((): SectorGroup[] => {
-    const sectorsData = dacSectorsData as SectorCategory;
-    const groups: SectorGroup[] = [];
-    const seenCodes = new Set<string>();
-    
-    Object.entries(sectorsData).forEach(([categoryName, sectors]) => {
-      const options = sectors
-        .filter(sector => {
-          // Only include if we haven't seen this code before
-          if (seenCodes.has(sector.code)) {
-            return false;
-          }
-          seenCodes.add(sector.code);
-          return true;
-        })
-        .map(sector => ({
-          value: sector.code,
-          label: `${sector.code} – ${sector.name}`,
-          code: sector.code,
-          name: sector.name,
-          description: sector.description,
-          category: categoryName,
-          categoryCode: categoryName.split(' - ')[0]
-        }));
-      
-      // Only add groups that have options after deduplication
-      if (options.length > 0) {
-        groups.push({
-          label: categoryName,
-          options
-        });
-      }
-    });
-    
-    return groups;
-  }, []);
-
-  // Filter out already selected sectors
-  const availableOptions = useMemo(() => {
-    const selectedCodes = allocations.map(a => a.code);
-    
-    return sectorOptions.map(group => ({
-      ...group,
-      options: group.options.filter(option => !selectedCodes.includes(option.code))
-    })).filter(group => group.options.length > 0);
-  }, [sectorOptions, allocations]);
-
-  // Track if user has interacted with the form
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
   // Calculate validation
   const calculateValidation = (allocs: SectorAllocation[], showEmptyWarning: boolean = true): SectorValidation => {
-    const total = allocs.reduce((sum, alloc) => sum + (alloc.percentage || 0), 0);
     const errors: string[] = [];
+    const totalPercentage = allocs.reduce((sum, a) => sum + (a.percentage || 0), 0);
     
-    // Only show the "at least one sector" warning if user has interacted or we explicitly want to show it
-    if (allocs.length === 0 && showEmptyWarning && hasUserInteracted) {
-      errors.push('At least one sector allocation is required');
+    if (showEmptyWarning && allocs.length === 0) {
+      errors.push('At least one sector must be selected');
     }
     
-    if (total !== 100 && allocs.length > 0) {
-      if (total > 100) {
-        errors.push(`Total allocation exceeds 100% (currently ${total.toFixed(1)}%)`);
-      } else {
-        errors.push(`Total allocation is only ${total.toFixed(1)}% (must equal 100%)`);
-      }
+    if (allocs.length > 0 && totalPercentage === 0) {
+      errors.push('At least one sector must have a percentage greater than 0');
+    }
+    
+    if (totalPercentage > 100) {
+      errors.push(`Total percentage (${totalPercentage.toFixed(1)}%) exceeds 100%`);
+    }
+    
+    if (totalPercentage < 100 && allocs.length > 0) {
+      errors.push(`Total percentage (${totalPercentage.toFixed(1)}%) is less than 100%`);
     }
     
     return {
-      isValid: errors.length === 0 && total === 100,
-      totalPercentage: total,
-      remainingPercentage: 100 - total,
-      errors
+      isValid: errors.length === 0,
+      errors,
+      totalPercentage,
+      remainingPercentage: Math.max(0, 100 - totalPercentage)
     };
   };
 
-  const validation = calculateValidation(allocations, hasUserInteracted);
-
-  // Show toast notification for over-allocation errors
-  useEffect(() => {
-    if (validation.errors.length > 0 && allocations.length > 0) {
-      const overAllocationError = validation.errors.find(error => 
-        error.includes('exceeds 100%') || error.includes('only') && error.includes('%')
-      );
-      
-      if (overAllocationError) {
-        toast.error(overAllocationError, {
-          position: 'top-right',
-          duration: 4000,
-        });
-      }
-    }
-  }, [validation.errors, allocations.length]);
-
-  // Update validation when allocations change
-  useEffect(() => {
-    if (onValidationChange) {
-      onValidationChange(validation);
-    }
-  }, [allocations, onValidationChange, hasUserInteracted]);
-
+  // Add a single sector
   const addSector = (option: SectorOption | null) => {
     if (!option) return;
     
-    // Mark that user has interacted with the form
-    setHasUserInteracted(true);
-    
-    const remainingPercentage = Math.max(0, validation.remainingPercentage);
-    const suggestedPercentage = allocations.length === 0 ? 100 : remainingPercentage;
-    
+    const sectorInfo = getSectorInfo(option.code);
     const newAllocation: SectorAllocation = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       code: option.code,
       name: option.name,
-      percentage: suggestedPercentage,
-      category: option.category,
-      categoryCode: option.categoryCode
+      percentage: 0,
+      category: sectorInfo.category,
+      categoryCode: option.code.substring(0, 3)
     };
     
-    const newAllocations = [...allocations, newAllocation];
-    onChange(newAllocations);
-    if (activityId) {
-      sectorsAutosave.triggerFieldSave(newAllocations);
-    }
+    onChange([...allocations, newAllocation]);
   };
 
+  // Update percentage for a specific allocation
   const updatePercentage = (id: string, percentage: number) => {
-    // Mark that user has interacted with the form
-    setHasUserInteracted(true);
-    
-    const newAllocations = allocations.map(a => 
+    const updated = allocations.map(a => 
       a.id === id ? { ...a, percentage: Math.max(0, Math.min(100, percentage)) } : a
     );
-    onChange(newAllocations);
-    if (activityId) {
-      sectorsAutosave.triggerFieldSave(newAllocations);
-    }
+    onChange(updated);
   };
 
+  // Remove a sector
   const removeSector = (id: string) => {
-    const newAllocations = allocations.filter(a => a.id !== id);
-    onChange(newAllocations);
-    if (activityId) {
-      sectorsAutosave.triggerFieldSave(newAllocations);
-    }
+    onChange(allocations.filter(a => a.id !== id));
   };
 
+  // Distribute percentages equally
   const distributeEqually = () => {
     if (allocations.length === 0) return;
-    
-    const equalPercentage = parseFloat((100 / allocations.length).toFixed(2));
-    const updated = allocations.map((allocation, index) => ({
-      ...allocation,
-      percentage: index === 0 ? 
-        parseFloat((equalPercentage + (100 - equalPercentage * allocations.length)).toFixed(2)) : 
-        equalPercentage
-    }));
-    
+    const equalPercentage = 100 / allocations.length;
+    const updated = allocations.map(a => ({ ...a, percentage: equalPercentage }));
     onChange(updated);
-    if (activityId) {
-      sectorsAutosave.triggerFieldSave(updated);
-    }
   };
 
+  // Clear all sectors
   const clearAll = () => {
     onChange([]);
-    if (activityId) {
-      sectorsAutosave.triggerFieldSave([]);
-    }
   };
 
-  // Calculate hero card metrics
-  const heroMetrics = useMemo(() => {
-    const totalAllocated = validation.totalPercentage;
-    const unallocated = Math.max(0, 100 - totalAllocated);
-    const uniqueSectors = new Set(allocations.map(a => a.categoryCode)).size;
-    const subSectors = allocations.length;
-
-    return {
-      allocated: totalAllocated.toFixed(1),
-      unallocated: unallocated.toFixed(1),
-      sectors: uniqueSectors,
-      subSectors: subSectors
-    };
-  }, [allocations, validation.totalPercentage]);
-
-  // Group allocations by categoryName/category
+  // Group allocations by category for display
   const groupedAllocations = useMemo(() => {
-    const groups: Record<string, typeof allocations> = {};
-    allocations.forEach((allocation) => {
-      const category = allocation.categoryName || allocation.category || 'Other';
-      if (!groups[category]) groups[category] = [];
+    const groups: { [key: string]: SectorAllocation[] } = {};
+    allocations.forEach(allocation => {
+      const sectorInfo = getSectorInfo(allocation.code);
+      const category = sectorInfo.category;
+      if (!groups[category]) {
+        groups[category] = [];
+      }
       groups[category].push(allocation);
     });
     return groups;
   }, [allocations]);
 
+  // Calculate validation
+  const validation = useMemo(() => calculateValidation(allocations), [allocations]);
+
+  // Notify parent of validation changes
+  useEffect(() => {
+    onValidationChange?.(validation);
+  }, [validation, onValidationChange]);
+
+  // Save to autosave when allocations change
+  useEffect(() => {
+    if (allocations.length > 0) {
+      sectorsAutosave.saveNow(allocations);
+    }
+  }, [allocations, sectorsAutosave]);
+
+  // Calculate summary statistics
+  const totalAllocated = allocations.reduce((sum, a) => sum + (a.percentage || 0), 0);
+  const totalUnallocated = Math.max(0, 100 - totalAllocated);
+  const sectorCount = allocations.length;
+  const subSectorCount = allocations.filter(a => a.code.length > 3).length;
+
   return (
     <div className="space-y-6">
       {/* Hero Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <HeroCard 
-          title="% Allocated" 
-          value={`${heroMetrics.allocated}%`}
-          variant={validation.isValid ? 'success' : 'default'}
-          currency=""
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <HeroCard
+          title="% Allocated"
+          value={totalAllocated}
+          suffix="%"
+          subtitle="Total sector allocation"
         />
-        <HeroCard 
-          title="% Unallocated" 
-          value={`${heroMetrics.unallocated}%`}
-          variant={parseFloat(heroMetrics.unallocated) > 0 ? 'warning' : 'success'}
-          currency=""
+        <HeroCard
+          title="% Unallocated"
+          value={totalUnallocated}
+          suffix="%"
+          subtitle="Remaining allocation"
         />
-        <HeroCard 
-          title="Sectors" 
-          value={heroMetrics.sectors}
-          subtitle="Sector categories"
-          currency=""
+        <HeroCard
+          title="Sectors"
+          value={sectorCount}
+          subtitle="Total sectors selected"
         />
-        <HeroCard 
-          title="Sub-sectors" 
-          value={heroMetrics.subSectors}
-          subtitle="Individual sectors"
-          currency=""
+        <HeroCard
+          title="Sub-sectors"
+          value={subSectorCount}
+          subtitle="Detailed sector breakdown"
         />
       </div>
 
-      {/* Section Header with Help Tooltip and Autosave Status */}
-      <div className="flex items-center gap-2">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Sectors
-          {sectorsAutosave.state.isSaving && (
-            <span className="ml-2 flex items-center gap-1 text-orange-500 text-xs">
-              <Loader2 className="h-4 w-4 animate-spin text-orange-500" /> Saving...
-            </span>
-          )}
-          {sectorsAutosave.state.lastSaved && !sectorsAutosave.state.isSaving && (
-            <span className="ml-2 flex items-center gap-1 text-green-600 text-xs">
-              <CheckCircle className="h-4 w-4 text-green-600" /> Saved
-            </span>
-          )}
-        </h2>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <HelpCircle className="h-4 w-4 text-gray-500 hover:text-gray-700 cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent side="right" className="max-w-xs">
-              <div className="space-y-2">
-                <p className="font-medium">Sector Guidelines:</p>
-                <ul className="text-xs space-y-1">
-                  <li>• Use the dropdown to search and select sectors by code or name</li>
-                  <li>• Percentages must total exactly 100% for valid allocation</li>
-                  <li>• Adjust percentages using input fields or distribute equally</li>
-                  <li>• Follow OECD DAC sector classification standards</li>
-                </ul>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        {/* Autosave error indicator */}
-        {sectorsAutosave.state.error && (
-          <span className="ml-2 text-xs text-red-600">Save failed</span>
-        )}
-      </div>
-
-      {/* Autosave error details */}
-      {sectorsAutosave.state.error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to save sectors: {sectorsAutosave.state.error.message || String(sectorsAutosave.state.error)}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Main Layout: Pie Chart (Left) + Form Interface (Right) */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left Side: Pie Chart */}
-        {allocations.length > 0 && (
-          <div className="w-full lg:w-1/2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Sector Allocation Visualization</CardTitle>
-                <CardDescription>
-                  Interactive treemap showing sector allocation percentages
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[600px]">
-                  <SectorAllocationPieChart allocations={allocations} />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Right Side: Form Interface */}
-        <div className={cn("space-y-6", allocations.length > 0 ? "w-full lg:w-1/2" : "w-full")}>
-          {/* Sector Dropdown */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base flex items-center gap-2">
-                <span>Select Sector to Add</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SectorSelect
-                value={selectedSectors}
-                onValueChange={handleSectorsChange}
-                placeholder="Choose sector(s)..."
-                className="w-full"
-              />
-            </CardContent>
-          </Card>
-
-      {/* Selected Sectors */}
-      {allocations.length > 0 && (
+      {/* Form Interface */}
+      <div className="space-y-6 w-full">
+        {/* Sector Dropdown */}
         <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Selected Sectors</CardTitle>
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={clearAll}
-                        className="text-xs"
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Clear All
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Remove all sector allocations</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </div>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span>Select Sector to Add</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {Object.entries(groupedAllocations).map(([category, grouped]) => (
-              <div key={category} className="mb-4">
-                <div className="font-semibold text-sm text-gray-700 mb-2">{category}</div>
-                <div className="space-y-2">
-                  {grouped.map((allocation) => {
-                    const sectorInfo = getSectorInfo(allocation.code);
-                    const categoryCode = sectorInfo.categoryCode;
-                    return (
-                      <div
-                        key={allocation.id}
-                        className={cn(
-                          "flex items-center gap-4 p-4 rounded-lg border transition-all",
-                          allocation.percentage === 0 && "bg-red-50 border-red-200"
-                        )}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm text-gray-900">
-                            {allocation.code} – {allocation.name || sectorInfo.name.split(' – ')[1] || allocation.code}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {sectorInfo.category}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {/* Progress Bar */}
-                          <div className="w-32">
-                            <Progress 
-                              value={allocation.percentage} 
-                              className="h-6"
-                              style={{
-                                '--progress-foreground': getCategoryColor(categoryCode)
-                              } as React.CSSProperties}
-                            />
-                            <div className="text-xs text-center mt-1 font-medium font-mono">
-                              {allocation.percentage.toFixed(1)}%
-                            </div>
-                          </div>
-                          {/* Per-allocation save status icon */}
-                          {allocationStatus[allocation.id] === 'saving' && (
-                            <span title="Saving..."><Loader2 className="h-4 w-4 animate-spin text-orange-500" /></span>
-                          )}
-                          {allocationStatus[allocation.id] === 'saved' && (
-                            <span title="Saved"><CheckCircle className="h-4 w-4 text-green-600" /></span>
-                          )}
-                          {allocationStatus[allocation.id] === 'error' && (
-                            <span title="Save failed"><AlertCircle className="h-4 w-4 text-red-600" /></span>
-                          )}
-                          {/* Percentage Input */}
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            value={allocation.percentage || ''}
-                            onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
-                            className={cn(
-                              "w-20 h-10 text-sm text-center font-mono",
-                              allocation.percentage === 0 && "border-red-300"
-                            )}
-                          />
-                          {/* Delete Button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeSector(allocation.id)}
-                            className="h-10 w-10 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-            {/* Distribute Equally Button only if more than one allocation */}
-            {allocations.length > 1 && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={distributeEqually}
-                className="text-xs"
-              >
-                <Sparkles className="h-3 w-3 mr-1" />
-                Distribute Equally
-              </Button>
-            )}
+          <CardContent>
+            <SectorSelect
+              value={selectedSectors}
+              onValueChange={handleSectorsChange}
+              placeholder="Choose sector(s)..."
+              className="w-full"
+            />
           </CardContent>
         </Card>
-      )}
 
-          {/* Validation Messages */}
-          {validation.errors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="space-y-1">
-                  {validation.errors.map((error, index) => (
-                    <div key={index}>{error}</div>
-                  ))}
+        {/* Selected Sectors */}
+        {allocations.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Selected Sectors</CardTitle>
+                <div className="flex items-center gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={clearAll}
+                          className="text-xs"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Clear All
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Remove all sector allocations</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {Object.entries(groupedAllocations).map(([category, grouped]) => (
+                <div key={category} className="mb-4">
+                  <div className="font-semibold text-sm text-gray-700 mb-2">{category}</div>
+                  <div className="space-y-2">
+                    {grouped.map((allocation) => {
+                      const sectorInfo = getSectorInfo(allocation.code);
+                      const categoryCode = sectorInfo.categoryCode;
+                      return (
+                        <div
+                          key={allocation.id}
+                          className={cn(
+                            "flex items-center gap-4 p-4 rounded-lg border transition-all",
+                            allocation.percentage === 0 && "bg-red-50 border-red-200"
+                          )}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm text-gray-900">
+                              {allocation.code} – {allocation.name || sectorInfo.name.split(' – ')[1] || allocation.code}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {sectorInfo.category}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {/* Progress Bar */}
+                            <div className="w-32">
+                              <Progress 
+                                value={allocation.percentage} 
+                                className="h-6"
+                                style={{
+                                  '--progress-foreground': getCategoryColor(categoryCode)
+                                } as React.CSSProperties}
+                              />
+                              <div className="text-xs text-center mt-1 font-medium font-mono">
+                                {allocation.percentage.toFixed(1)}%
+                              </div>
+                            </div>
+                            {/* Per-allocation save status icon */}
+                            {allocationStatus[allocation.id] === 'saving' && (
+                              <span title="Saving..."><Loader2 className="h-4 w-4 animate-spin text-orange-500" /></span>
+                            )}
+                            {allocationStatus[allocation.id] === 'saved' && (
+                              <span title="Saved"><CheckCircle className="h-4 w-4 text-green-600" /></span>
+                            )}
+                            {allocationStatus[allocation.id] === 'error' && (
+                              <span title="Save failed"><AlertCircle className="h-4 w-4 text-red-600" /></span>
+                            )}
+                            {/* Percentage Input */}
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              value={allocation.percentage || ''}
+                              onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
+                              className={cn(
+                                "w-20 h-10 text-sm text-center font-mono",
+                                allocation.percentage === 0 && "border-red-300"
+                              )}
+                            />
+                            {/* Delete Button */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeSector(allocation.id)}
+                              className="h-10 w-10 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {/* Distribute Equally Button only if more than one allocation */}
+              {allocations.length > 1 && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={distributeEqually}
+                  className="text-xs"
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Distribute Equally
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Validation Messages */}
+        {validation.errors.length > 0 && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-1">
+                {validation.errors.map((error, index) => (
+                  <div key={index}>{error}</div>
+                ))}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Sunburst Chart Visualization */}
+        {allocations.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Sector Allocation Sunburst</CardTitle>
+              <CardDescription>
+                Interactive sunburst chart showing sector allocation hierarchy
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-[500px] relative">
+                <SectorSunburstChart allocations={allocations} />
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

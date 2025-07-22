@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Calendar, MoreVertical, Edit3, Trash2, Clock } from 'lucide-react';
+import { Calendar, MoreVertical, Edit3, Trash2, Clock, Copy } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -123,6 +123,17 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
     onDelete?.(activity.id);
   };
 
+  const handleCopy = async (text: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(text);
+      // You could add a toast notification here if you have a toast system
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
   // Extract SDG goals from mappings and filter out invalid values
   const sdgGoals = activity.sdgMappings
     ?.map(mapping => mapping.sdgGoal)
@@ -218,11 +229,29 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               <h3 className="text-base font-semibold leading-tight line-clamp-2 text-gray-900">
                 {activity.title}
               </h3>
-              {/* Activity ID and IATI ID on separate lines */}
+              {/* Activity ID and IATI ID on separate lines with copy icons */}
               <div className="text-xs leading-normal text-gray-500 mt-1 space-y-0.5">
-                <p>ID: {activity.id}</p>
+                <div className="flex items-center gap-1">
+                  <span>ID: {activity.id}</span>
+                  <button
+                    onClick={(e) => handleCopy(activity.id, e)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                    title="Copy Activity ID"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
                 {activity.iati_id && (
-                  <p>IATI: {activity.iati_id}</p>
+                  <div className="flex items-center gap-1">
+                    <span>IATI: {activity.iati_id}</span>
+                    <button
+                      onClick={(e) => handleCopy(activity.iati_id!, e)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                      title="Copy IATI ID"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

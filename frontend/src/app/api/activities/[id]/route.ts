@@ -159,6 +159,8 @@ export async function GET(
     // Transform to match frontend format
     const transformedActivity = {
       ...activity,
+      // Explicitly map the UUID field
+      uuid: activity.id,
       // Map database fields to frontend fields
       title: activity.title_narrative,
       description: activity.description_narrative,
@@ -276,6 +278,7 @@ export async function GET(
     };
     
     console.log('[AIMS API] Activity found:', transformedActivity.title);
+    console.log('[AIMS API] Activity ID (UUID):', transformedActivity.id);
     console.log('[AIMS API] Transformed sectors being sent to frontend:', JSON.stringify(transformedActivity.sectors, null, 2));
     
     return NextResponse.json(transformedActivity);

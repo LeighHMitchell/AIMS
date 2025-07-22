@@ -138,25 +138,27 @@ export function ActivityEditorFieldAutosave({
       {/* Status Field with Autosave */}
       {shouldShowStatus && (
         <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={statusAutosave.state.isSaving}
-            isSaved={statusAutosave.state.isPersistentlySaved}
-            className={fieldLockStatus?.isLocked ? 'text-gray-400' : 'text-gray-700'}
-          >
-            Activity Status
-            {fieldLockStatus?.isLocked && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Lock className="h-3 w-3 ml-2 text-gray-400" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{fieldLockStatus.tooltipMessage}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </LabelSaveIndicator>
+          {!showOnlyStatus && (
+            <LabelSaveIndicator
+              isSaving={statusAutosave.state.isSaving}
+              isSaved={statusAutosave.state.isPersistentlySaved}
+              className={fieldLockStatus?.isLocked ? 'text-gray-400' : 'text-gray-700'}
+            >
+              Activity Status
+              {fieldLockStatus?.isLocked && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{fieldLockStatus.tooltipMessage}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </LabelSaveIndicator>
+          )}
           <div className={fieldLockStatus?.isLocked ? 'opacity-50' : ''}>
             <ActivityStatusSelect
               value={activity.activityStatus || ''}

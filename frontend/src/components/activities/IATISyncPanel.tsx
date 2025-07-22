@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -48,6 +48,7 @@ interface IATISyncPanelProps {
   syncStatus?: 'live' | 'pending' | 'outdated';
   autoSyncFields?: string[];
   onUpdate?: () => void;
+  onStateChange?: (state: { isEnabled: boolean; syncStatus: 'live' | 'pending' | 'outdated' }) => void;
   canEdit?: boolean;
 }
 
@@ -68,6 +69,7 @@ export function IATISyncPanel({
   syncStatus = 'pending',
   autoSyncFields = [],
   onUpdate,
+  onStateChange,
   canEdit = true
 }: IATISyncPanelProps) {
   const [iatiId, setIatiId] = useState(initialIatiId || '');
@@ -78,6 +80,17 @@ export function IATISyncPanel({
   const [comparisonData, setComparisonData] = useState<any>(null);
   const [selectedFields, setSelectedFields] = useState<Record<string, boolean>>({});
   const [expandedSection, setExpandedSection] = useState(false);
+  const [isIatiSyncEnabled, setIsIatiSyncEnabled] = useState(false);
+
+  // Notify parent of state changes
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        isEnabled: isIatiSyncEnabled,
+        syncStatus: syncStatus
+      });
+    }
+  }, [isIatiSyncEnabled, syncStatus, onStateChange]);
 
   // Get field mappings from the mapper utility
   const fieldMappings = getAllFieldMappings();
@@ -255,116 +268,141 @@ export function IATISyncPanel({
 
   return (
     <div className="space-y-4">
+      {/* Master IATI Sync Toggle */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              <CardTitle>IATI Sync</CardTitle>
-            </div>
-            <div className="flex items-center gap-4">
-              {lastSyncTime && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span>Last sync: {format(new Date(lastSyncTime), 'dd MMM yyyy HH:mm')}</span>
-                </div>
-              )}
-              <Badge variant={syncStatusDisplay.variant} className="flex items-center gap-1">
-                {syncStatusDisplay.icon}
-                {syncStatusDisplay.text}
-              </Badge>
-            </div>
-          </div>
-          <CardDescription>
-            Synchronize this activity with the IATI Datastore to ensure data consistency
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* IATI Identifier Input */}
-          <div className="space-y-2">
-            <Label htmlFor="iati-identifier">IATI Identifier</Label>
-            <div className="flex gap-2">
-              <Input
-                id="iati-identifier"
-                placeholder="e.g. MM-GOV-1234"
-                value={iatiId}
-                onChange={(e) => setIatiId(e.target.value)}
-                disabled={!canEdit}
-              />
-              <Button 
-                onClick={handleCompare} 
-                disabled={isComparing || !canEdit}
-                className="whitespace-nowrap"
-              >
-                {isComparing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Comparing...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Compare with IATI
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Auto-sync Toggle */}
+        <CardContent className="pt-6">
           <div className="flex items-center justify-between space-x-2 p-4 bg-gray-50 rounded-lg">
             <div className="space-y-0.5">
-              <Label htmlFor="auto-sync" className="text-base cursor-pointer">
-                Enable auto-sync every 24 hours
+              <Label htmlFor="iati-sync-enabled" className="text-base cursor-pointer">
+                Enable IATI Sync
               </Label>
               <p className="text-sm text-muted-foreground">
-                Automatically sync selected fields with IATI Datastore daily
+                Enable this option to synchronise the activity with the IATI Datastore. When enabled, changes made here will automatically reflect in your IATI-published data and help ensure consistency between your internal records and externally shared information.
               </p>
             </div>
             <Switch
-              id="auto-sync"
-              checked={autoSync}
-              onCheckedChange={handleAutoSyncToggle}
+              id="iati-sync-enabled"
+              checked={isIatiSyncEnabled}
+              onCheckedChange={setIsIatiSyncEnabled}
               disabled={!canEdit}
             />
           </div>
-
-          {/* Auto-sync Configuration */}
-          {autoSync && (
-            <Collapsible open={expandedSection} onOpenChange={setExpandedSection}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between">
-                  <span>Auto-sync configuration</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${expandedSection ? 'rotate-180' : ''}`} />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-2 pt-2">
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    Select which fields should be automatically synced from IATI. 
-                    Changes made locally to these fields will be overwritten during sync.
-                  </AlertDescription>
-                </Alert>
-                <div className="space-y-2">
-                  {Object.entries(fieldLabels).map(([field, label]) => (
-                    <div key={field} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`auto-${field}`}
-                        checked={autoSyncFields.includes(field)}
-                        disabled={!canEdit}
-                      />
-                      <Label htmlFor={`auto-${field}`} className="text-sm font-normal cursor-pointer">
-                        {label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          )}
         </CardContent>
       </Card>
+
+      {/* IATI Sync Interface - Only shown when enabled */}
+      {isIatiSyncEnabled && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                <CardTitle>IATI Sync</CardTitle>
+              </div>
+              <div className="flex items-center gap-4">
+                {lastSyncTime && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>Last sync: {format(new Date(lastSyncTime), 'dd MMM yyyy HH:mm')}</span>
+                  </div>
+                )}
+                <Badge variant={syncStatusDisplay.variant} className="flex items-center gap-1">
+                  {syncStatusDisplay.icon}
+                  {syncStatusDisplay.text}
+                </Badge>
+              </div>
+            </div>
+            <CardDescription>
+              Synchronize this activity with the IATI Datastore to ensure data consistency
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* IATI Identifier Input */}
+            <div className="space-y-2">
+              <Label htmlFor="iati-identifier">IATI Identifier</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="iati-identifier"
+                  placeholder="e.g. MM-GOV-1234"
+                  value={iatiId}
+                  onChange={(e) => setIatiId(e.target.value)}
+                  disabled={!canEdit}
+                />
+                <Button 
+                  onClick={handleCompare} 
+                  disabled={isComparing || !canEdit}
+                  className="whitespace-nowrap"
+                >
+                  {isComparing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Comparing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Compare with IATI
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Auto-sync Toggle */}
+            <div className="flex items-center justify-between space-x-2 p-4 bg-gray-50 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="auto-sync" className="text-base cursor-pointer">
+                  Enable auto-sync every 24 hours
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Automatically sync selected fields with IATI Datastore daily
+                </p>
+              </div>
+              <Switch
+                id="auto-sync"
+                checked={autoSync}
+                onCheckedChange={handleAutoSyncToggle}
+                disabled={!canEdit}
+              />
+            </div>
+
+            {/* Auto-sync Configuration */}
+            {autoSync && (
+              <Collapsible open={expandedSection} onOpenChange={setExpandedSection}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between">
+                    <span>Auto-sync configuration</span>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedSection ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 pt-2">
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Select which fields should be automatically synced from IATI. 
+                      Changes made locally to these fields will be overwritten during sync.
+                    </AlertDescription>
+                  </Alert>
+                  <div className="space-y-2">
+                    {Object.entries(fieldLabels).map(([field, label]) => (
+                      <div key={field} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`auto-${field}`}
+                          checked={autoSyncFields.includes(field)}
+                          disabled={!canEdit}
+                        />
+                        <Label htmlFor={`auto-${field}`} className="text-sm font-normal cursor-pointer">
+                          {label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Comparison Modal */}
       <CompareDataModal
@@ -415,5 +453,4 @@ export function IATISyncPanel({
       />
     </div>
   );
-} 
-
+}

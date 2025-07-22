@@ -83,44 +83,36 @@ export const IconUpload: React.FC<IconUploadProps> = ({
   if (preview) {
     return (
       <div className="h-full space-y-2">
-        <div className="relative h-48 rounded-lg overflow-hidden group bg-gray-50 flex items-center justify-center">
-          <div className="relative w-32 h-32 rounded-lg overflow-hidden group border-2 border-gray-200">
-            <img
-              src={preview}
-              alt="Activity icon"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <div className="flex flex-col gap-2">
-                <div {...getRootProps()}>
-                  <input {...getInputProps()} />
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={uploading}
-                    className="h-8 text-xs px-3 w-full"
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    Replace
-                  </Button>
-                </div>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={removeIcon}
-                  disabled={uploading}
-                  className="h-8 text-xs px-3 w-full"
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Remove
-                </Button>
-              </div>
+        <div className="relative h-48 rounded-lg overflow-hidden group">
+          <img
+            src={preview}
+            alt="Activity icon"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+            <div {...getRootProps()}>
+              <input {...getInputProps()} />
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={uploading}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Replace
+              </Button>
             </div>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={removeIcon}
+              disabled={uploading}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Remove
+            </Button>
           </div>
         </div>
-        <p className="text-xs text-gray-500 text-center">
-          Icon appears in activity cards and profile views
-        </p>
+
       </div>
     );
   }
@@ -137,19 +129,15 @@ export const IconUpload: React.FC<IconUploadProps> = ({
       >
         <input {...getInputProps()} />
         <div className="flex flex-col items-center justify-center text-gray-500">
-          <div className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center mb-3">
-            <ImageIcon className="h-12 w-12 text-gray-400" />
-          </div>
+          <ImageIcon className="h-16 w-16 text-gray-400 mb-3" />
           <p className="text-sm font-medium">
             {isDragActive ? "Drop the icon here" : "Drag & drop an icon here"}
           </p>
           <p className="text-xs mt-1">or click to select</p>
-          <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 2MB (512x512px)</p>
+          <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 2MB (Recommended: 512x512px)</p>
         </div>
       </div>
-      <p className="text-xs text-gray-500 text-center">
-        Icon appears in activity cards and profile views
-      </p>
+
     </div>
   );
 };
