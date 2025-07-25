@@ -21,7 +21,7 @@ import { HeroCard } from '@/components/ui/hero-card';
 import { SectorSelect, transformSectorGroups } from '@/components/forms/SectorSelect';
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
-import SectorSunburstChart from '@/components/charts/SectorSunburstChart';
+import SectorSunburstChart, { getCategoryColorBySunburstChart } from '@/components/charts/SectorSunburstChart';
 import { toast } from 'sonner';
 
 interface Sector {
