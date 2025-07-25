@@ -22,7 +22,7 @@ import { HeroCard } from '@/components/ui/hero-card';
 // import { getSectorByCode, getHierarchyByCode } from '@/data/sector-hierarchy';
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
-import SectorSunburstChart, { getCategoryColorBySunburstChart } from '@/components/charts/SectorSunburstChart';
+import SectorSunburstChart from '@/components/charts/SectorSunburstChart';
 import { toast } from 'sonner';
 
 interface Sector {
@@ -62,9 +62,12 @@ interface ImprovedSectorAllocationFormProps {
   activityId?: string;
 }
 
-// Get category color that matches the sunburst chart
+// Get category color - simplified implementation
 const getCategoryColor = (categoryCode: string, allAllocations: SectorAllocation[]): string => {
-  return getCategoryColorBySunburstChart(allAllocations, categoryCode);
+  // Simple color assignment based on category code
+  const colors = ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534'];
+  const index = parseInt(categoryCode) % colors.length;
+  return colors[index] || '#6b7280';
 };
 
 const getSectorInfo = (code: string): { name: string; description: string; category: string; categoryCode: string } => {
