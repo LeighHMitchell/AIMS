@@ -2,14 +2,17 @@ import { getSupabaseAdmin } from './supabase';
 import { getCategoryInfo, getCleanSectorName } from './dac-sector-utils';
 
 export interface SectorPayload {
+  id?: string;
   code: string;
   name: string;
   percentage: number;
-  type?: string;
-  // New fields for enhanced schema
-  categoryCode?: string;
+  level?: 'group' | 'sector' | 'subsector';
+  category?: string;
   categoryName?: string;
+  categoryCode?: string;
+  type?: string;
   categoryPercentage?: number;
+  [key: string]: any; // Allow additional properties for flexibility
 }
 
 /**
@@ -21,8 +24,20 @@ export interface SectorPayload {
 export async function upsertActivitySectors(activityId: string, sectors: SectorPayload[]) {
   const supabase = getSupabaseAdmin();
   
-  console.log('[AIMS] upsertActivitySectors called for activity:', activityId);
+  console.log('[AIMS] === UPSERT ACTIVITY SECTORS DEBUG ===');
+  console.log('[AIMS] Activity ID:', activityId);
+  console.log('[AIMS] Number of sectors to save:', sectors?.length || 0);
   console.log('[AIMS] Sectors to save:', JSON.stringify(sectors, null, 2));
+  
+  // Validate input
+  if (!activityId) {
+    throw new Error('Activity ID is required for sector upsert');
+  }
+  
+  if (!sectors || !Array.isArray(sectors)) {
+    console.error('[AIMS] Invalid sectors data - expected array, got:', typeof sectors);
+    throw new Error('Sectors must be an array');
+  }
 
   try {
     // Delete existing sectors for this activity
@@ -41,23 +56,42 @@ export async function upsertActivitySectors(activityId: string, sectors: SectorP
     // Insert new sector allocations
     if (sectors && sectors.length > 0) {
       const formatted = sectors.map(sector => {
-        // Get category information from the sector code
-        const categoryInfo = getCategoryInfo(sector.code);
+        // Use the provided category information or fall back to code-based detection
+        const categoryCode = sector.categoryCode || sector.code.substring(0, 3);
+        const categoryName = sector.categoryName || sector.category || `Category ${categoryCode}`;
         
         // Clean the sector name (remove code prefix if present)
         const cleanSectorName = getCleanSectorName(sector.name);
         
-        // Map to the correct column names based on new schema
-        return {
+        console.log(`[AIMS] Processing sector: ${sector.code} (${sector.name}) - Level: ${sector.level || 'unknown'}`);
+        console.log(`[AIMS] Category mapping: ${categoryCode} -> ${categoryName}`);
+        
+        // Determine hierarchy level based on code length or provided level
+        const level = sector.level || (sector.code.length === 3 ? 'group' : sector.code.length === 5 ? 'subsector' : 'sector');
+        
+        // Map to the simplified schema
+        const mappedSector = {
           activity_id: activityId,
+          
+          // Core sector information (required)
           sector_code: sector.code,
           sector_name: cleanSectorName,
-          sector_percentage: sector.percentage, // NEW schema uses sector_percentage
-          sector_category_code: categoryInfo?.code || sector.code.substring(0, 3),
-          sector_category_name: categoryInfo?.name || `Category ${sector.code.substring(0, 3)}`,
-          category_percentage: sector.categoryPercentage || sector.percentage,
-          type: sector.type || 'secondary'
+          percentage: sector.percentage,
+          
+          // Hierarchy level
+          level: level,
+          
+          // Category information (optional but helpful)
+          category_code: categoryCode,
+          category_name: categoryName,
+          
+          // Metadata
+          type: sector.type || 'secondary',
+          user_id: null // Will be set by the API if user info is available
         };
+        
+        console.log(`[AIMS] Mapped sector object:`, mappedSector);
+        return mappedSector;
       });
 
       console.log('[AIMS] Inserting formatted sectors:', JSON.stringify(formatted, null, 2));
@@ -76,9 +110,23 @@ export async function upsertActivitySectors(activityId: string, sectors: SectorP
         .select();
 
       if (insertError) {
-        console.error('[AIMS] Error saving activity sectors:', insertError);
-        console.error('[AIMS] Insert error details:', JSON.stringify(insertError, null, 2));
+        console.error('[AIMS] === INSERT ERROR DETAILS ===');
+        console.error('[AIMS] Error code:', insertError.code);
+        console.error('[AIMS] Error message:', insertError.message);
+        console.error('[AIMS] Full error object:', JSON.stringify(insertError, null, 2));
         console.error('[AIMS] Data that failed to insert:', JSON.stringify(formatted, null, 2));
+        
+        // Handle specific error types
+        if (insertError.code === '42703') {
+          console.error('[AIMS] COLUMN NOT FOUND ERROR - Database schema may need updating');
+          console.error('[AIMS] This usually means the activity_sectors table is missing required columns');
+          throw new Error(`Database schema error: Column not found. Please check if activity_sectors table has all required columns. Details: ${insertError.message}`);
+        }
+        
+        if (insertError.code === '42P01') {
+          console.error('[AIMS] TABLE NOT FOUND ERROR - activity_sectors table does not exist');
+          throw new Error(`Table not found: activity_sectors table does not exist in the database. Please run the database migrations.`);
+        }
         
         // If batch insert failed, try inserting one by one to identify the problematic sector
         if (insertError.code === '23505') {

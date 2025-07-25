@@ -116,7 +116,7 @@ export async function GET(
     // Fetch related data
     const { data: sectors, error: sectorsError } = await getSupabaseAdmin()
       .from('activity_sectors')
-      .select('id, activity_id, sector_code, sector_name, sector_percentage, sector_category_code, sector_category_name, category_percentage, type, created_at, updated_at')
+      .select('id, activity_id, sector_code, sector_name, percentage, level, category_code, category_name, type, created_at, updated_at')
       .eq('activity_id', id);
     
     if (sectorsError) {
@@ -216,11 +216,10 @@ export async function GET(
         id: sector.id,
         code: sector.sector_code,
         name: sector.sector_name,
-        // Use nullish coalescing to properly handle 0 values
-        percentage: sector.sector_percentage ?? sector.percentage ?? 0,
-        categoryCode: sector.sector_category_code || sector.code?.substring(0, 3),
-        categoryName: sector.sector_category_name || sector.category,
-        categoryPercentage: sector.category_percentage ?? sector.percentage ?? 0,
+        percentage: sector.percentage ?? 0,
+        level: sector.level,
+        categoryCode: sector.category_code || sector.sector_code?.substring(0, 3),
+        categoryName: sector.category_name,
         type: sector.type || 'secondary'
       })) || [],
       transactions: transactions || [],

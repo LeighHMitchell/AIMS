@@ -36,13 +36,32 @@ function cleanUUIDValue(value: any): string | null {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    // Check if the request has a body
+    const contentLength = request.headers.get('content-length');
+    if (!contentLength || contentLength === '0') {
+      console.error('[Field API] Request has no body - content-length:', contentLength);
+      return NextResponse.json(
+        { error: 'Request body is empty' },
+        { status: 400 }
+      );
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('[Field API] Failed to parse request body:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
     
     console.log('[Field API] ============ POST /api/activities/field ============');
     console.log('[Field API] Timestamp:', new Date().toISOString());
     console.log('[Field API] Activity ID:', body.activityId);
     console.log('[Field API] Field:', body.field);
-    console.log('[Field API] Value:', body.value);
+    console.log('[Field API] Value:', JSON.stringify(body.value));
     
     // Validate required fields
     if (!body.activityId) {
@@ -161,15 +180,24 @@ export async function POST(request: Request) {
         oldValue = existingActivity.sectors; // Keep for logging purposes
         newValue = body.value;
         
+        console.log('[Field API] Processing sectors update');
+        console.log('[Field API] Sectors received:', JSON.stringify(body.value, null, 2));
+        console.log('[Field API] Is array:', Array.isArray(body.value));
+        console.log('[Field API] Sectors count:', Array.isArray(body.value) ? body.value.length : 'Not an array');
+        
         try {
           // Use the upsertActivitySectors helper function
-          await upsertActivitySectors(body.activityId, Array.isArray(body.value) ? body.value : []);
+          const sectorsToSave = Array.isArray(body.value) ? body.value : [];
+          console.log('[Field API] Calling upsertActivitySectors with:', sectorsToSave.length, 'sectors');
+          
+          await upsertActivitySectors(body.activityId, sectorsToSave);
           console.log('[Field API] Sectors updated successfully using activity_sectors table');
           
           // Don't add sectors to updateData since we're handling it separately
           // The sectors field will be handled in the response by fetching from activity_sectors table
         } catch (sectorError) {
           console.error('[Field API] Error updating sectors:', sectorError);
+          console.error('[Field API] Sector error stack:', sectorError instanceof Error ? sectorError.stack : 'No stack');
           return NextResponse.json(
             { error: `Failed to save sectors: ${sectorError instanceof Error ? sectorError.message : 'Unknown error'}` },
             { status: 500 }
@@ -339,10 +367,12 @@ export async function POST(request: Request) {
           sectorsData = sectors?.map((sector: any) => ({
             id: sector.id,
             code: sector.sector_code,
-            name: `${sector.sector_code} - ${sector.sector_name}`,
-            percentage: sector.sector_percentage,
-            category: sector.sector_category_name,
-            categoryCode: sector.sector_category_code
+            name: sector.sector_name,
+            percentage: sector.percentage,
+            category: sector.category_name,
+            categoryCode: sector.category_code,
+            level: sector.level,
+            type: sector.type
           })) || [];
         }
       } catch (sectorsFetchError) {

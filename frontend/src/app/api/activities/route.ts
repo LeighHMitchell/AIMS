@@ -713,7 +713,7 @@ export async function POST(request: Request) {
       // Fetch updated sectors
       const { data: sectors, error: sectorsError } = await getSupabaseAdmin()
         .from('activity_sectors')
-        .select('id, activity_id, sector_code, sector_name, sector_percentage, sector_category_code, sector_category_name, category_percentage, type, created_at, updated_at')
+        .select('id, activity_id, sector_code, sector_name, percentage, level, category_code, category_name, type, created_at, updated_at')
         .eq('activity_id', body.id);
         
       if (sectorsError) {
@@ -806,14 +806,14 @@ export async function POST(request: Request) {
         })) || [],
         policyMarkers: activityPolicyMarkers || [],
         transactions: transactions || [],
-              sectors: sectors?.map((sector: any) => ({
+      sectors: sectors?.map((sector: any) => ({
         id: sector.id,
         code: sector.sector_code,
         name: sector.sector_name,
-        percentage: sector.sector_percentage ?? sector.percentage ?? 0,
-        categoryCode: sector.sector_category_code || sector.code?.substring(0, 3),
-        categoryName: sector.sector_category_name || sector.category,
-        categoryPercentage: sector.category_percentage ?? sector.percentage ?? 0,
+        percentage: sector.percentage ?? 0,
+        level: sector.level,
+        categoryCode: sector.category_code || sector.sector_code?.substring(0, 3),
+        categoryName: sector.category_name,
         type: sector.type || 'secondary'
       })) || [],
         contacts: contacts?.map((contact: any) => ({
@@ -1391,7 +1391,7 @@ export async function POST(request: Request) {
     // Fetch created sectors
     const { data: sectors } = await getSupabaseAdmin()
       .from('activity_sectors')
-      .select('id, activity_id, sector_code, sector_name, sector_percentage, sector_category_code, sector_category_name, category_percentage, type, created_at, updated_at')
+      .select('id, activity_id, sector_code, sector_name, percentage, level, category_code, category_name, type, created_at, updated_at')
       .eq('activity_id', newActivity.id);
     
     // Fetch created contacts
@@ -1478,11 +1478,11 @@ export async function POST(request: Request) {
         id: sector.id,
         code: sector.sector_code,
         name: sector.sector_name,
-        percentage: sector.sector_percentage ?? sector.percentage ?? 0,
-        categoryCode: sector.sector_category_code || sector.code?.substring(0, 3),
-        categoryName: sector.sector_category_name || sector.category,
-        categoryPercentage: sector.category_percentage ?? sector.percentage ?? 0,
-        type: sector.type
+        percentage: sector.percentage ?? 0,
+        level: sector.level,
+        categoryCode: sector.category_code || sector.sector_code?.substring(0, 3),
+        categoryName: sector.category_name,
+        type: sector.type || 'secondary'
       })) || [],
       contacts: contacts?.map((contact: any) => ({
         id: contact.id,
@@ -1755,7 +1755,7 @@ export async function GET(request: NextRequest) {
     // Fetch sectors for all activities
     const { data: allSectors } = await getSupabaseAdmin()
       .from('activity_sectors')
-      .select('id, activity_id, sector_code, sector_name, sector_percentage, sector_category_code, sector_category_name, category_percentage, type, created_at, updated_at')
+      .select('id, activity_id, sector_code, sector_name, percentage, level, category_code, category_name, type, created_at, updated_at')
       .in('activity_id', activityIds);
     
     // Fetch SDG mappings for all activities
@@ -1835,10 +1835,10 @@ export async function GET(request: NextRequest) {
         id: sector.id,
         code: sector.sector_code,
         name: sector.sector_name,
-        percentage: sector.sector_percentage ?? sector.percentage ?? 0,
-        categoryCode: sector.sector_category_code || sector.code?.substring(0, 3),
-        categoryName: sector.sector_category_name || sector.category,
-        categoryPercentage: sector.category_percentage ?? sector.percentage ?? 0,
+        percentage: sector.percentage ?? 0,
+        level: sector.level,
+        categoryCode: sector.category_code || sector.sector_code?.substring(0, 3),
+        categoryName: sector.category_name,
         type: sector.type || 'secondary'
       })),
       transactions: [], // Transactions are already handled separately if needed

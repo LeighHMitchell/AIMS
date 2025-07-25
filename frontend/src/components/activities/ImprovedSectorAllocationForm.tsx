@@ -18,8 +18,7 @@ import {
   Info
 } from 'lucide-react';
 import { HeroCard } from '@/components/ui/hero-card';
-import { SectorSelect } from '@/components/forms/SectorSelect';
-import { getSectorByCode, getHierarchyByCode } from '@/data/sector-hierarchy';
+import { SectorSelect, transformSectorGroups } from '@/components/forms/SectorSelect';
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
 import SectorSunburstChart from '@/components/charts/SectorSunburstChart';
@@ -43,7 +42,6 @@ interface SectorAllocation {
   category?: string;
   categoryName?: string;
   categoryCode?: string;
-  level?: 'group' | 'sector' | 'subsector';
   [key: string]: any;
 }
 
@@ -62,42 +60,55 @@ interface ImprovedSectorAllocationFormProps {
   activityId?: string;
 }
 
-// Get category color - simplified implementation
-const getCategoryColor = (categoryCode: string, allAllocations: SectorAllocation[]): string => {
-  // Simple color assignment based on category code
-  const colors = ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534'];
-  const index = parseInt(categoryCode) % colors.length;
-  return colors[index] || '#6b7280';
+// Color mapping for sector categories
+const getCategoryColor = (categoryCode: string): string => {
+  const colors: { [key: string]: string } = {
+    '111': '#3B82F6', // Education
+    '121': '#10B981', // Health
+    '130': '#8B5CF6', // Population
+    '140': '#F59E0B', // Water Supply & Sanitation
+    '150': '#6366F1', // Government & Civil Society
+    '160': '#EC4899', // Other Social Infrastructure
+    '210': '#84CC16', // Transport & Storage
+    '220': '#06B6D4', // Communications
+    '230': '#F97316', // Energy
+    '240': '#14B8A6', // Banking & Financial Services
+    '250': '#F43F5E', // Business & Other Services
+    '310': '#22C55E', // Agriculture, Forestry, Fishing
+    '320': '#A855F7', // Industry, Mining, Construction
+    '330': '#0EA5E9', // Trade Policies & Regulations
+    '410': '#EAB308', // General Environmental Protection
+    '430': '#EF4444', // Other Multisector
+    '510': '#8B5A2B', // General Budget Support
+    '520': '#6B7280', // Developmental Food Aid
+    '530': '#059669', // Other Commodity Assistance
+    '600': '#DC2626', // Action Relating to Debt
+    '700': '#7C3AED', // Humanitarian Aid
+    '910': '#F97316', // Administrative Costs
+    '920': '#84CC16', // Support to NGOs
+    '930': '#06B6D4', // Refugees in Donor Countries
+    '998': '#6B7280', // Unallocated/Unspecified
+  };
+  return colors[categoryCode] || '#6B7280';
 };
 
 const getSectorInfo = (code: string): { name: string; description: string; category: string; categoryCode: string } => {
-  const { group, sector, subsector, level } = getHierarchyByCode(code);
+  const dacSectorsData = require('@/data/dac-sectors.json');
   
-  if (level === 'group' && group) {
-    return {
-      name: group.name,
-      description: '',
-      category: group.name,
-      categoryCode: group.code
-    };
-  }
-  
-  if (level === 'sector' && group && sector) {
-    return {
-      name: sector.name,
-      description: '',
-      category: group.name,
-      categoryCode: sector.code
-    };
-  }
-  
-  if (level === 'subsector' && group && sector && subsector) {
-    return {
-      name: subsector.name,
-      description: subsector.description || '',
-      category: group.name,
-      categoryCode: sector.code
-    };
+  // Search through all categories to find the sector
+  for (const [categoryName, sectors] of Object.entries(dacSectorsData)) {
+    const sectorArray = sectors as any[];
+    const sector = sectorArray.find((s: any) => s.code === code);
+    
+    if (sector) {
+      const categoryCode = sector.code.substring(0, 3);
+      return {
+        name: sector.name,
+        description: sector.description || '',
+        category: categoryName,
+        categoryCode: categoryCode
+      };
+    }
   }
   
   // Fallback if sector not found
@@ -135,20 +146,9 @@ export default function ImprovedSectorAllocationForm({
   // Multi-select: get all selected sector codes
   const selectedSectors = allocations.map(a => a.code);
   const sectorsAutosave = useSectorsAutosave(activityId, user?.id);
-  const [isHierarchyLoading, setIsHierarchyLoading] = useState(false);
 
-  // Per-allocation save status - initialize with persistent saved state
-  const [allocationStatus, setAllocationStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>(() => {
-    // If sectors are persistently saved, initialize all current allocations as 'saved'
-    if (sectorsAutosave.state.isPersistentlySaved && allocations.length > 0) {
-      const initialStatus: Record<string, 'saved'> = {};
-      allocations.forEach(allocation => {
-        initialStatus[allocation.id] = 'saved';
-      });
-      return initialStatus;
-    }
-    return {};
-  });
+  // Per-allocation save status
+  const [allocationStatus, setAllocationStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
   const prevAllocationsRef = useRef(allocations);
 
   // Track changed allocations and set their status to 'saving' on change
@@ -207,139 +207,42 @@ export default function ImprovedSectorAllocationForm({
     }
   }, [sectorsAutosave.state.error]);
 
-  // Initialize allocation status when persistent save state is available
-  useEffect(() => {
-    if (sectorsAutosave.state.isPersistentlySaved && allocations.length > 0) {
-      setAllocationStatus(currentStatus => {
-        const newStatus: Record<string, 'saved'> = {};
-        allocations.forEach(allocation => {
-          // Only set to 'saved' if not already in a different state (like 'saving')
-          if (!currentStatus[allocation.id] || currentStatus[allocation.id] === 'error') {
-            newStatus[allocation.id] = 'saved';
-          }
-        });
-        return { ...currentStatus, ...newStatus };
-      });
-    }
-  }, [sectorsAutosave.state.isPersistentlySaved, allocations]);
-
-  // Enhanced autosave result logging
+  // Add error logging for autosave
   useEffect(() => {
     if (sectorsAutosave.state.error) {
-      console.error('❌ [SectorAutosave] === SAVE FAILED ===');
-      console.error('💥 [SectorAutosave] Error:', sectorsAutosave.state.error);
-      console.error('📊 [SectorAutosave] Failed to save allocations:', allocations.length);
-      console.error('🏢 [SectorAutosave] Activity ID:', activityId);
-      console.error('👤 [SectorAutosave] User ID:', user?.id);
+      console.error('[SectorAutosave] Save failed:', sectorsAutosave.state.error);
     }
     if (sectorsAutosave.state.lastSaved) {
-      console.log('✅ [SectorAutosave] === SAVE SUCCESSFUL ===');
-      console.log('💾 [SectorAutosave] Last saved:', sectorsAutosave.state.lastSaved);
-      console.log('📊 [SectorAutosave] Saved allocations count:', allocations.length);
-      console.log('🏢 [SectorAutosave] Activity ID:', activityId);
-      console.log('👤 [SectorAutosave] User ID:', user?.id);
+      console.log('[SectorAutosave] Save successful:', sectorsAutosave.state.lastSaved);
     }
-    if (sectorsAutosave.state.isSaving) {
-      console.log('⏳ [SectorAutosave] === SAVING IN PROGRESS ===');
-      console.log('📊 [SectorAutosave] Saving allocations:', allocations.length);
-    }
-  }, [sectorsAutosave.state.error, sectorsAutosave.state.lastSaved, sectorsAutosave.state.isSaving, allocations.length, activityId, user?.id]);
-
-  // Determine if all sectors are saved (for green checkmark)
-  const allSectorsSaved = useMemo(() => {
-    if (allocations.length === 0) return false;
-    if (sectorsAutosave.state.isSaving) return false;
-    if (sectorsAutosave.state.error) return false;
-    
-    // Show persistent saved state OR recent successful save
-    if (sectorsAutosave.state.isPersistentlySaved) return true;
-    if (!sectorsAutosave.state.lastSaved) return false;
-    
-    // Check if we have recent successful save (show for 2 seconds after save)
-    const lastSavedTime = new Date(sectorsAutosave.state.lastSaved).getTime();
-    const twoSecondsAgo = Date.now() - 2000;
-    return lastSavedTime > twoSecondsAgo;
-  }, [sectorsAutosave.state.isSaving, sectorsAutosave.state.error, sectorsAutosave.state.lastSaved, sectorsAutosave.state.isPersistentlySaved, allocations.length]);
+  }, [sectorsAutosave.state.error, sectorsAutosave.state.lastSaved]);
 
   // Handler for multi-select
   const handleSectorsChange = (sectorCodes: string[]) => {
-    try {
-      setIsHierarchyLoading(true);
-      
-      // Add new allocations for newly selected codes
-      const currentCodes = allocations.map(a => a.code);
-      const toAdd = sectorCodes.filter(code => !currentCodes.includes(code));
-      const toRemove = currentCodes.filter(code => !sectorCodes.includes(code));
-      let newAllocations = [...allocations];
-      
-      // Add new sectors
-      const failedCodes: string[] = [];
-      toAdd.forEach(code => {
-        // Determine level from code
-        const determineLevel = (code: string): 'group' | 'sector' | 'subsector' => {
-          if (code.length === 3) return 'group';
-          if (code.length === 5) return 'subsector';
-          return 'sector';
-        };
-        
-        const level = determineLevel(code);
-        const { group, sector, subsector } = getHierarchyByCode(code);
-        
-        if (level === 'group' && group) {
-          // Group level selection
-          newAllocations.push({
-            id: crypto.randomUUID(),
-            code: group.code,
-            name: group.name,
-            percentage: 0,
-            level: 'group',
-            category: group.name,
-            categoryCode: group.code,
-            categoryName: group.name
-          });
-        } else if (level === 'sector' && group && sector) {
-          // Sector level selection
-          newAllocations.push({
-            id: crypto.randomUUID(),
-            code: sector.code,
-            name: sector.name,
-            percentage: 0,
-            level: 'sector',
-            category: group.name,
-            categoryCode: sector.code,
-            categoryName: sector.name
-          });
-        } else if (level === 'subsector' && group && sector && subsector) {
-          // Sub-sector level selection
-          newAllocations.push({
-            id: crypto.randomUUID(),
-            code: subsector.code,
-            name: subsector.name,
-            percentage: 0,
-            level: 'subsector',
-            category: group.name,
-            categoryCode: sector.code,
-            categoryName: sector.name
-          });
-        } else {
-          failedCodes.push(code);
-        }
-      });
-      
-      // Show warning for failed codes
-      if (failedCodes.length > 0) {
-        toast.warning(`Could not find hierarchy data for: ${failedCodes.join(', ')}`);
+    // Add new allocations for newly selected codes
+    const currentCodes = allocations.map(a => a.code);
+    const toAdd = sectorCodes.filter(code => !currentCodes.includes(code));
+    const toRemove = currentCodes.filter(code => !sectorCodes.includes(code));
+    let newAllocations = [...allocations];
+    // Add
+    toAdd.forEach(code => {
+      const group = transformSectorGroups().find(g => g.options.some(o => o.code === code));
+      const option = group?.options.find(o => o.code === code);
+      if (option && group) {
+        const sectorInfo = getSectorInfo(code);
+        newAllocations.push({
+          id: crypto.randomUUID(),
+          code: option.code,
+          name: option.name,
+          percentage: 0,
+          category: sectorInfo.category,
+          categoryCode: option.code.substring(0, 3)
+        });
       }
-      
-      // Remove deselected sectors
-      newAllocations = newAllocations.filter(a => !toRemove.includes(a.code));
-      onChange(newAllocations);
-    } catch (error) {
-      console.error('Error updating sector selection:', error);
-      toast.error('Failed to update sector selection. Please try again.');
-    } finally {
-      setIsHierarchyLoading(false);
-    }
+    });
+    // Remove
+    newAllocations = newAllocations.filter(a => !toRemove.includes(a.code));
+    onChange(newAllocations);
   };
 
   // Calculate validation
@@ -355,11 +258,11 @@ export default function ImprovedSectorAllocationForm({
       errors.push('At least one sector must have a percentage greater than 0');
     }
     
-    if (totalPercentage > 100.1) { // Allow small floating point precision errors
+    if (totalPercentage > 100) {
       errors.push(`Total percentage (${totalPercentage.toFixed(1)}%) exceeds 100%`);
     }
     
-    if (totalPercentage < 99.9 && allocs.length > 0) { // Allow small tolerance for 100%
+    if (totalPercentage < 100 && allocs.length > 0) {
       errors.push(`Total percentage (${totalPercentage.toFixed(1)}%) is less than 100%`);
     }
     
@@ -436,132 +339,43 @@ export default function ImprovedSectorAllocationForm({
     onValidationChange?.(validation);
   }, [validation, onValidationChange]);
 
-  // Add ref to track previous allocations for deep comparison
-  const previousAllocationsRef = useRef<SectorAllocation[]>([]);
-  
-  // Helper function to perform deep comparison of sector allocations
-  const areAllocationsEqual = (prev: SectorAllocation[], current: SectorAllocation[]): boolean => {
-    if (prev.length !== current.length) return false;
-    
-    // Sort both arrays by id to ensure consistent comparison
-    const sortedPrev = [...prev].sort((a, b) => a.id.localeCompare(b.id));
-    const sortedCurrent = [...current].sort((a, b) => a.id.localeCompare(b.id));
-    
-    return sortedPrev.every((prevAlloc, index) => {
-      const currentAlloc = sortedCurrent[index];
-      return (
-        prevAlloc.id === currentAlloc.id &&
-        prevAlloc.code === currentAlloc.code &&
-        prevAlloc.name === currentAlloc.name &&
-        prevAlloc.percentage === currentAlloc.percentage &&
-        prevAlloc.level === currentAlloc.level &&
-        prevAlloc.category === currentAlloc.category &&
-        prevAlloc.categoryCode === currentAlloc.categoryCode &&
-        prevAlloc.categoryName === currentAlloc.categoryName
-      );
-    });
-  };
-  
-  // Save to autosave when allocations actually change (with deep comparison)
+  // Save to autosave when allocations change
   useEffect(() => {
-    console.log('🔍 [SectorForm] === SECTOR SAVING DEBUG ===');
-    console.log('🏢 [SectorForm] Activity ID:', activityId);
-    console.log('👤 [SectorForm] User ID:', user?.id);
-    console.log('📊 [SectorForm] Allocations count:', allocations.length);
-    console.log('⚙️ [SectorForm] Autosave state:', sectorsAutosave.state);
-    
-    // Check if we have required data for saving
-    if (!activityId) {
-      console.error('❌ [SectorForm] No Activity ID - cannot save sectors');
-      return;
-    }
-    
-    if (!user?.id) {
-      console.error('❌ [SectorForm] No User ID - cannot save sectors');
-      return;
-    }
-    
-    // Perform deep comparison to check if allocations actually changed
-    const previousAllocations = previousAllocationsRef.current;
-    const allocationsChanged = !areAllocationsEqual(previousAllocations, allocations);
-    
-    console.log('🔄 [SectorForm] Allocations changed check:', allocationsChanged);
-    console.log('📊 [SectorForm] Previous allocations count:', previousAllocations.length);
-    console.log('📊 [SectorForm] Current allocations count:', allocations.length);
-    
-    if (!allocationsChanged) {
-      console.log('⏩ [SectorForm] Allocations unchanged - skipping save');
-      return;
-    }
-    
-    // Update the ref with current allocations
-    previousAllocationsRef.current = [...allocations];
-    
     if (allocations.length > 0) {
-      console.log('📊 [SectorForm] Allocations to save:', JSON.stringify(allocations, null, 2));
-      
-      // Check data structure
-      allocations.forEach((allocation, index) => {
-        console.log(`📋 [SectorForm] Allocation ${index + 1}:`, {
-          id: allocation.id,
-          code: allocation.code,
-          name: allocation.name,
-          percentage: allocation.percentage,
-          level: allocation.level || 'unknown',
-          category: allocation.category,
-          categoryCode: allocation.categoryCode
-        });
-      });
-      
-      console.log('💾 [SectorForm] Calling sectorsAutosave.saveNow()...');
-      sectorsAutosave.saveNow(allocations);
-    } else {
-      console.log('⚠️ [SectorForm] No allocations to save (empty array) - but this is a valid change, saving...');
       sectorsAutosave.saveNow(allocations);
     }
-  }, [allocations, sectorsAutosave, activityId, user?.id]);
+  }, [allocations, sectorsAutosave]);
 
   // Calculate summary statistics
   const totalAllocated = allocations.reduce((sum, a) => sum + (a.percentage || 0), 0);
   const totalUnallocated = Math.max(0, 100 - totalAllocated);
   const sectorCount = allocations.length;
   const subSectorCount = allocations.filter(a => a.code.length > 3).length;
-  const categoryCount = Object.keys(groupedAllocations).length;
 
   return (
     <div className="space-y-6">
       {/* Hero Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <HeroCard
           title="% Allocated"
           value={totalAllocated}
-          currency=""
           suffix="%"
           subtitle="Total sector allocation"
         />
         <HeroCard
           title="% Unallocated"
           value={totalUnallocated}
-          currency=""
           suffix="%"
           subtitle="Remaining allocation"
         />
         <HeroCard
-          title="Categories"
-          value={categoryCount}
-          currency=""
-          subtitle="Sector categories selected"
-        />
-        <HeroCard
           title="Sectors"
           value={sectorCount}
-          currency=""
           subtitle="Total sectors selected"
         />
         <HeroCard
           title="Sub-sectors"
           value={subSectorCount}
-          currency=""
           subtitle="Detailed sector breakdown"
         />
       </div>
@@ -572,30 +386,16 @@ export default function ImprovedSectorAllocationForm({
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center gap-2">
-              <span>Select Sectors from Hierarchy</span>
-              <Badge variant="secondary" className="text-xs">
-                Enhanced
-              </Badge>
+              <span>Select Sector to Add</span>
             </CardTitle>
-            <CardDescription className="text-sm text-gray-600">
-              Browse Groups → Sectors → Sub-sectors using the official OECD DAC classification
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="relative">
-              <SectorSelect
-                value={selectedSectors}
-                onValueChange={handleSectorsChange}
-                placeholder="Choose sector(s) from hierarchy..."
-                className="w-full"
-                maxSelections={20}
-              />
-              {isHierarchyLoading && (
-                <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-lg">
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                </div>
-              )}
-            </div>
+            <SectorSelect
+              value={selectedSectors}
+              onValueChange={handleSectorsChange}
+              placeholder="Choose sector(s)..."
+              className="w-full"
+            />
           </CardContent>
         </Card>
 
@@ -604,21 +404,7 @@ export default function ImprovedSectorAllocationForm({
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-base">Selected Sectors</CardTitle>
-                  {allSectorsSaved && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>All sectors saved successfully</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
+                <CardTitle className="text-base">Selected Sectors</CardTitle>
                 <div className="flex items-center gap-2">
                   <TooltipProvider>
                     <Tooltip>
@@ -659,13 +445,10 @@ export default function ImprovedSectorAllocationForm({
                         >
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm text-gray-900">
-                              {allocation.code} – {allocation.name || sectorInfo.name}
+                              {allocation.code} – {allocation.name || sectorInfo.name.split(' – ')[1] || allocation.code}
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
-                              {allocation.categoryName && allocation.categoryCode ? 
-                                `${allocation.categoryCode} - ${allocation.categoryName}` : 
-                                sectorInfo.category
-                              }
+                              {sectorInfo.category}
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
@@ -675,7 +458,7 @@ export default function ImprovedSectorAllocationForm({
                                 value={allocation.percentage} 
                                 className="h-6"
                                 style={{
-                                  '--progress-foreground': getCategoryColor(categoryCode, allocations)
+                                  '--progress-foreground': getCategoryColor(categoryCode)
                                 } as React.CSSProperties}
                               />
                               <div className="text-xs text-center mt-1 font-medium font-mono">

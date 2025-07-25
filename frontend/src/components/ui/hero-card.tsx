@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
@@ -35,9 +35,17 @@ interface HeroCardProps<T = any> {
 function useCountUp(targetValue: number, duration: number = 400, animate: boolean = true) {
   const [currentValue, setCurrentValue] = useState(targetValue);
   const [isAnimating, setIsAnimating] = useState(false);
+  const prevTargetValueRef = useRef(targetValue);
 
   useEffect(() => {
-    if (!animate || Math.abs(targetValue - currentValue) < 0.01) return;
+    // Only animate if target value actually changed
+    if (prevTargetValueRef.current === targetValue) return;
+    
+    if (!animate || Math.abs(targetValue - currentValue) < 0.01) {
+      setCurrentValue(targetValue);
+      prevTargetValueRef.current = targetValue;
+      return;
+    }
 
     setIsAnimating(true);
     const startValue = currentValue;
@@ -59,11 +67,12 @@ function useCountUp(targetValue: number, duration: number = 400, animate: boolea
       } else {
         setCurrentValue(targetValue);
         setIsAnimating(false);
+        prevTargetValueRef.current = targetValue;
       }
     };
 
     requestAnimationFrame(animateValue);
-  }, [targetValue, duration, animate, currentValue]);
+  }, [targetValue, duration, animate]); // Removed currentValue from dependencies
 
   return { currentValue, isAnimating };
 }
@@ -107,9 +116,13 @@ export function HeroCard<T = any>({
   // Count-up animation
   const { currentValue, isAnimating } = useCountUp(calculatedValue, 400, animate);
 
-  // Debug logging
+  // Debug logging - only log when values actually change
+  const prevCalculatedValueRef = useRef(calculatedValue);
   useEffect(() => {
-    console.log('[HeroCard]', title, 'calculatedValue:', calculatedValue, 'currentValue:', currentValue, 'staticValue:', staticValue);
+    if (prevCalculatedValueRef.current !== calculatedValue) {
+      console.log('[HeroCard]', title, 'calculatedValue:', calculatedValue, 'currentValue:', currentValue, 'staticValue:', staticValue);
+      prevCalculatedValueRef.current = calculatedValue;
+    }
   }, [calculatedValue, currentValue, staticValue, title]);
 
   // Notify parent of value changes
@@ -138,17 +151,8 @@ export function HeroCard<T = any>({
         formatted = "$" + formatted;
       }
     } else if (currency === "" || currency === null || currency === undefined) {
-      // No currency - check if it's a whole number count
-      if (Number.isInteger(amount) && amount >= 0 && amount < 1000) {
-        // Format as whole number for counts (no decimals)
-        formatted = Math.round(amount).toString();
-      } else {
-        // Format as number with appropriate decimal places
-        formatted = amount.toLocaleString("en-US", { 
-          minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
-          maximumFractionDigits: 2 
-        });
-      }
+      // No currency - always format as whole number for counts (no decimals during animation)
+      formatted = Math.round(amount).toString();
     } else {
       // Other currency or custom formatting
       formatted = amount.toLocaleString("en-US", { 
@@ -214,7 +218,7 @@ export function HeroCard<T = any>({
             <p className={cn(
               "text-2xl font-bold transition-all duration-500",
               valueClass,
-              (isUpdating || isAnimating) && "scale-105 text-blue-600",
+              (isUpdating || isAnimating) && "scale-105 text-gray-900",
               justUpdated && !isUpdating && !isAnimating && "scale-105 text-green-600"
             )}>
               {formatValue(animate ? currentValue : calculatedValue)}
