@@ -18,8 +18,8 @@ import {
   Info
 } from 'lucide-react';
 import { HeroCard } from '@/components/ui/hero-card';
-// import { EnhancedSectorSelect } from '@/components/forms/EnhancedSectorSelect';
-// import { getSectorByCode, getHierarchyByCode } from '@/data/sector-hierarchy';
+import { SectorSelect } from '@/components/forms/SectorSelect';
+import { getSectorByCode, getHierarchyByCode } from '@/data/sector-hierarchy';
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
 import SectorSunburstChart from '@/components/charts/SectorSunburstChart';
@@ -71,11 +71,36 @@ const getCategoryColor = (categoryCode: string, allAllocations: SectorAllocation
 };
 
 const getSectorInfo = (code: string): { name: string; description: string; category: string; categoryCode: string } => {
-  // Temporarily simplified implementation - commented out getHierarchyByCode usage
-  // const { group, sector, subsector, level } = getHierarchyByCode(code);
+  const { group, sector, subsector, level } = getHierarchyByCode(code);
   
-  // Use existing sector data from props/state instead
-  // This maintains functionality without external dependencies
+  if (level === 'group' && group) {
+    return {
+      name: group.name,
+      description: '',
+      category: group.name,
+      categoryCode: group.code
+    };
+  }
+  
+  if (level === 'sector' && group && sector) {
+    return {
+      name: sector.name,
+      description: '',
+      category: group.name,
+      categoryCode: sector.code
+    };
+  }
+  
+  if (level === 'subsector' && group && sector && subsector) {
+    return {
+      name: subsector.name,
+      description: subsector.description || '',
+      category: group.name,
+      categoryCode: sector.code
+    };
+  }
+  
+  // Fallback if sector not found
   return {
     name: `Sector ${code}`,
     description: '',
@@ -258,20 +283,47 @@ export default function ImprovedSectorAllocationForm({
         };
         
         const level = determineLevel(code);
-        // Simplified implementation without getHierarchyByCode
+        const { group, sector, subsector } = getHierarchyByCode(code);
         
-        // Create allocation based on code level
-        const sectorInfo = getSectorInfo(code);
-        newAllocations.push({
-          id: crypto.randomUUID(),
-          code: code,
-          name: sectorInfo.name,
-          percentage: 0,
-          level: level,
-          category: sectorInfo.category,
-          categoryCode: sectorInfo.categoryCode,
-          categoryName: sectorInfo.category
-        });
+        if (level === 'group' && group) {
+          // Group level selection
+          newAllocations.push({
+            id: crypto.randomUUID(),
+            code: group.code,
+            name: group.name,
+            percentage: 0,
+            level: 'group',
+            category: group.name,
+            categoryCode: group.code,
+            categoryName: group.name
+          });
+        } else if (level === 'sector' && group && sector) {
+          // Sector level selection
+          newAllocations.push({
+            id: crypto.randomUUID(),
+            code: sector.code,
+            name: sector.name,
+            percentage: 0,
+            level: 'sector',
+            category: group.name,
+            categoryCode: sector.code,
+            categoryName: sector.name
+          });
+        } else if (level === 'subsector' && group && sector && subsector) {
+          // Sub-sector level selection
+          newAllocations.push({
+            id: crypto.randomUUID(),
+            code: subsector.code,
+            name: subsector.name,
+            percentage: 0,
+            level: 'subsector',
+            category: group.name,
+            categoryCode: sector.code,
+            categoryName: sector.name
+          });
+        } else {
+          failedCodes.push(code);
+        }
       });
       
       // Show warning for failed codes
@@ -531,11 +583,13 @@ export default function ImprovedSectorAllocationForm({
           </CardHeader>
           <CardContent>
             <div className="relative">
-              {/* Temporarily replaced EnhancedSectorSelect with basic input */}
-              <div className="text-sm text-muted-foreground p-4 border rounded-lg bg-muted/20">
-                Sector selection component temporarily disabled for deployment.
-                Sectors can be added via the allocation table below.
-              </div>
+              <SectorSelect
+                value={selectedSectors}
+                onValueChange={handleSectorsChange}
+                placeholder="Choose sector(s) from hierarchy..."
+                className="w-full"
+                maxSelections={20}
+              />
               {isHierarchyLoading && (
                 <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-lg">
                   <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
