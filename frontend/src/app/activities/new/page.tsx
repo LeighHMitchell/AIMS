@@ -806,7 +806,12 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           <div className="mt-6">
             <ImprovedSectorAllocationForm
               allocations={sectors}
-              onChange={setSectors}
+              onChange={(newSectors) => {
+                console.log('🎯 [AIMS] === SECTORS CHANGED IN FORM ===');
+                console.log('📊 [AIMS] New sectors:', JSON.stringify(newSectors, null, 2));
+                console.log('📈 [AIMS] Sector count:', newSectors.length);
+                setSectors(newSectors);
+              }}
               onValidationChange={setSectorValidation}
               activityId={general.id}
             />
@@ -891,7 +896,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         defaultCurrency={general.defaultCurrency || "USD"}
         onBudgetsChange={setBudgets}
       />;
-    case "planned_disbursements":
+    case "planned-disbursements":
       return <PlannedDisbursementsTab 
         activityId={general.id}
         startDate={general.plannedStartDate || general.actualStartDate || ""}
@@ -1139,7 +1144,22 @@ function NewActivityPageContent() {
             autoSyncFields: data.autoSyncFields || []
           });
           
-          setSectors(data.sectors || []);
+          // Convert database sectors to ImprovedSectorAllocationForm format
+          const convertedSectors = (data.sectors || []).map((sector: any) => ({
+            id: sector.id || crypto.randomUUID(),
+            code: sector.code,
+            name: sector.name,
+            percentage: sector.percentage || 0,
+            category: sector.categoryName || sector.category,
+            categoryCode: sector.categoryCode,
+            categoryName: sector.categoryName,
+            level: sector.level || (sector.code?.length === 3 ? 'group' : sector.code?.length === 5 ? 'subsector' : 'sector')
+          }));
+          console.log('🔄 [AIMS] === LOADING SECTORS FROM DATABASE ===');
+          console.log('📊 [AIMS] Raw sectors from API:', JSON.stringify(data.sectors, null, 2));
+          console.log('🔧 [AIMS] Converted sectors for form:', JSON.stringify(convertedSectors, null, 2));
+          console.log('📈 [AIMS] Sector count - Raw:', data.sectors?.length || 0, 'Converted:', convertedSectors.length);
+          setSectors(convertedSectors);
           setTransactions(data.transactions || []);
           setTransactionsLoaded(true);
           setExtendingPartners(data.extendingPartners || []);
@@ -1253,7 +1273,7 @@ function NewActivityPageContent() {
       documents: "Documents & Images",
       aid_effectiveness: "Aid Effectiveness",
       budgets: "Budgets",
-      planned_disbursements: "Planned Disbursements"
+      "planned-disbursements": "Planned Disbursements"
     };
     return sectionLabels[sectionId] || sectionId;
   };
@@ -1339,8 +1359,8 @@ function NewActivityPageContent() {
   // Tab completion status calculation
   const tabCompletionStatus = React.useMemo(() => {
     const generalCompletion = getTabCompletionStatus('general', general, getDateFieldStatus)
-    // Sectors tab: green check if at least one sector and total allocation is valid (100%)
-    const sectorsComplete = sectorValidation.isValid && sectors.length > 0;
+    // Sectors tab: use the comprehensive sector completion check
+    const sectorsCompletion = getTabCompletionStatus('sectors', sectors);
 
     // Defaults sub-tab under Finances: require all fields filled AND saved
     const financesDefaultsCompletion = getTabCompletionStatus('finances', {
@@ -1374,14 +1394,17 @@ function NewActivityPageContent() {
         isComplete: iatiSyncComplete, 
         isInProgress: iatiSyncInProgress 
       },
-      sectors: { isComplete: sectorsComplete, isInProgress: false },
+      sectors: sectorsCompletion ? { 
+        isComplete: sectorsCompletion.isComplete,
+        isInProgress: sectorsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
       finances: { isComplete: financesComplete, isInProgress: false },
       finances_defaults: financesDefaultsCompletion ? { 
         isComplete: financesDefaultsCompletion.isComplete,
         isInProgress: financesDefaultsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
       budgets: { isComplete: budgetsComplete, isInProgress: false },
-      planned_disbursements: { isComplete: plannedDisbursementsComplete, isInProgress: false }
+      "planned-disbursements": { isComplete: plannedDisbursementsComplete, isInProgress: false }
     }
   }, [general, getDateFieldStatus, sectorValidation, sectors, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, iatiSyncState]);
 
@@ -1390,7 +1413,7 @@ function NewActivityPageContent() {
     const sections = [
       "general", "iati", "sectors", "locations", "organisations", "contributors", "contacts", 
       "linked_activities",
-      "finances", "budgets", "planned_disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
+      "finances", "budgets", "planned-disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
     ].filter(id => id !== "government" || showGovernmentInputs);
     
     const idx = sections.findIndex(s => s === currentId);
@@ -1573,7 +1596,20 @@ function NewActivityPageContent() {
           syncStatus: data.syncStatus || "not_synced",
           autoSyncFields: data.autoSyncFields || []
         });
-        setSectors(data.sectors || []);
+        // Convert database sectors to ImprovedSectorAllocationForm format
+        const convertedSectors = (data.sectors || []).map((sector: any) => ({
+          id: sector.id || crypto.randomUUID(),
+          code: sector.code,
+          name: sector.name,
+          percentage: sector.percentage || 0,
+          category: sector.categoryName || sector.category,
+          categoryCode: sector.categoryCode,
+          categoryName: sector.categoryName,
+          level: sector.level || (sector.code?.length === 3 ? 'group' : sector.code?.length === 5 ? 'subsector' : 'sector')
+        }));
+        console.log('[AIMS DEBUG] After save - converting sectors:', data.sectors);
+        console.log('[AIMS DEBUG] After save - to form format:', convertedSectors);
+        setSectors(convertedSectors);
         setTransactions(data.transactions || []);
         setExtendingPartners(data.extendingPartners || []);
         setImplementingPartners(data.implementingPartners || []);
@@ -1658,7 +1694,7 @@ function NewActivityPageContent() {
         return <FinancesSkeleton />;
       case 'budgets':
         return <GenericTabSkeleton />;
-      case 'planned_disbursements':
+      case 'planned-disbursements':
         return <GenericTabSkeleton />;
       case 'locations':
         return <LocationsSkeleton />;
@@ -1694,7 +1730,7 @@ function NewActivityPageContent() {
       sections: [
         { id: "finances", label: "Finances" },
         { id: "budgets", label: "Budgets" },
-        { id: "planned_disbursements", label: "Planned Disbursements" },
+        { id: "planned-disbursements", label: "Planned Disbursements" },
         { id: "results", label: "Results" }
       ]
     },

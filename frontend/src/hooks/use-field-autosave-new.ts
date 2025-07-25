@@ -55,14 +55,27 @@ export function useFieldAutosave(
   const isSavingRef = useRef(false);
   const pendingValueRef = useRef<any>(null);
   const saveQueueRef = useRef<any[]>([]);
+  const retryCountRef = useRef(0);
 
-  // Enhanced save function with proper queue handling
-  const performFieldSave = useCallback(async (value: any) => {
+  // Enhanced save function with proper queue handling and retry logic
+  const performFieldSave = useCallback(async (value: any, isRetry = false) => {
+    console.log(`[FieldAutosave] performFieldSave called for field ${fieldName}`);
+    console.log(`[FieldAutosave] performFieldSave - value:`, value);
+    console.log(`[FieldAutosave] performFieldSave - isRetry: ${isRetry}`);
+    console.log(`[FieldAutosave] performFieldSave - enabled: ${enabled}`);
+    console.log(`[FieldAutosave] performFieldSave - isSavingRef.current: ${isSavingRef.current}`);
+    console.log(`[FieldAutosave] performFieldSave - activityId: ${activityId}`);
+    console.log(`[FieldAutosave] performFieldSave - userId: ${userId}`);
+    
     if (!enabled || isSavingRef.current) {
+      console.log(`[FieldAutosave] performFieldSave EARLY RETURN - enabled: ${enabled}, isSaving: ${isSavingRef.current}`);
       // If already saving, queue the latest value
       pendingValueRef.current = value;
+      console.log(`[FieldAutosave] performFieldSave - queued value:`, value);
       return;
     }
+    
+    console.log(`[FieldAutosave] performFieldSave - proceeding with save for ${fieldName}`);
 
     try {
       isSavingRef.current = true;
@@ -101,20 +114,37 @@ export function useFieldAutosave(
         };
       }
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-        signal: abortControllerRef.current.signal
+      console.log(`[FieldAutosave] Making request to ${endpoint}`);
+      console.log('[FieldAutosave] Request body:', JSON.stringify(requestBody, null, 2));
+      
+      // Create a timeout promise that rejects after 30 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000);
       });
 
+      // Race the fetch against the timeout
+      const response = await Promise.race([
+        fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+          signal: abortControllerRef.current.signal
+        }),
+        timeoutPromise
+      ]) as Response;
+
+      console.log(`[FieldAutosave] Response status: ${response.status}`);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`[FieldAutosave] HTTP error details:`, errorText);
+        throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
       }
 
       const responseData = await response.json();
+      console.log('[FieldAutosave] Response data:', responseData);
       
       isSavingRef.current = false;
       setState(prev => ({
@@ -131,6 +161,9 @@ export function useFieldAutosave(
         setIsPersistentlySaved(true);
       }
 
+      // Reset retry counter on successful save
+      retryCountRef.current = 0;
+      
       onSuccess?.(responseData);
       console.log(`[FieldAutosave] Field ${fieldName} saved successfully`);
 
@@ -156,6 +189,9 @@ export function useFieldAutosave(
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log(`[FieldAutosave] Request for ${fieldName} aborted`);
+        // CRITICAL FIX: Reset saving state on abort
+        isSavingRef.current = false;
+        setState(prev => ({ ...prev, isSaving: false }));
         return;
       }
 
@@ -166,9 +202,32 @@ export function useFieldAutosave(
       setState(prev => ({
         ...prev,
         isSaving: false,
-        error: err
+        error: err,
+        hasUnsavedChanges: true // Mark as unsaved since save failed
       }));
 
+      // Show user-friendly error message
+      if (err.message.includes('timeout')) {
+        console.error(`[FieldAutosave] Save timeout - server may be unresponsive`);
+      } else if (err.message.includes('fetch')) {
+        console.error(`[FieldAutosave] Network error - check connection`);
+      }
+
+      // Retry logic - retry up to 2 times for timeout or network errors
+      if (!isRetry && retryCountRef.current < 2 && 
+          (err.message.includes('timeout') || err.message.includes('fetch') || err.message.includes('NetworkError'))) {
+        retryCountRef.current += 1;
+        console.log(`[FieldAutosave] Retrying save attempt ${retryCountRef.current}/2 for ${fieldName}`);
+        
+        // Wait 2 seconds before retry
+        setTimeout(() => {
+          performFieldSave(value, true);
+        }, 2000);
+        return;
+      }
+
+      // Reset retry counter on final failure
+      retryCountRef.current = 0;
       onError?.(err);
     }
   }, [fieldName, activityId, userId, enabled, onSuccess, onError, additionalData]);
@@ -211,11 +270,19 @@ export function useFieldAutosave(
 
   // Save immediately (bypass debounce)
   const saveNow = useCallback(async (value: any) => {
+    console.log(`[FieldAutosave] saveNow called for field ${fieldName} with value:`, value);
+    console.log(`[FieldAutosave] saveNow - enabled: ${enabled}, activityId: ${activityId}, userId: ${userId}`);
+    console.log(`[FieldAutosave] saveNow - isSavingRef.current: ${isSavingRef.current}`);
+    
     if (timeoutRef.current) {
+      console.log(`[FieldAutosave] saveNow - clearing existing timeout for ${fieldName}`);
       clearTimeout(timeoutRef.current);
     }
+    
+    console.log(`[FieldAutosave] saveNow - about to call performFieldSave for ${fieldName}`);
     await performFieldSave(value);
-  }, [performFieldSave]);
+    console.log(`[FieldAutosave] saveNow - performFieldSave completed for ${fieldName}`);
+  }, [performFieldSave, fieldName, enabled, activityId, userId]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -331,11 +398,14 @@ export function useDateFieldAutosave(fieldName: string, activityId?: string, use
 }
 
 export function useSectorsAutosave(activityId?: string, userId?: string) {
-  return useFieldAutosave('sectors', { 
+  console.log(`[useSectorsAutosave] Hook called with activityId: ${activityId}, userId: ${userId}`);
+  const result = useFieldAutosave('sectors', { 
     activityId,
     userId,
     debounceMs: 2000 // Longer debounce for complex array operations
   });
+  console.log(`[useSectorsAutosave] Hook result:`, result);
+  return result;
 }
 
 export function useLocationsAutosave(activityId?: string, userId?: string) {
