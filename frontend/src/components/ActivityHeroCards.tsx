@@ -20,6 +20,7 @@ interface Transaction {
   transaction_type: string;
   value: string | number;
   value_usd?: number;
+  currency?: string;
 }
 
 interface Budget {

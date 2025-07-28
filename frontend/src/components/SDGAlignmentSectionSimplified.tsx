@@ -347,16 +347,12 @@ export default function SDGAlignmentSectionSimplified({
                       <Popover open={targetSearchOpen[goalId]} onOpenChange={(open: boolean) => 
                         setTargetSearchOpen({ ...targetSearchOpen, [goalId]: open })
                       }>
-                        <PopoverTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="justify-start w-full max-w-sm"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Target
-                            <ChevronsUpDown className="ml-auto h-4 w-4" />
-                          </Button>
+                        <PopoverTrigger 
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 justify-start w-full max-w-sm"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Target
+                          <ChevronsUpDown className="ml-auto h-4 w-4" />
                         </PopoverTrigger>
                         <PopoverContent className="w-[500px] p-0" align="start">
                           <Command>

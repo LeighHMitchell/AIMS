@@ -370,16 +370,13 @@ export default function SDGAlignmentSection({
                       <Popover open={targetSearchOpen[goalId]} onOpenChange={(open: boolean) => 
                         setTargetSearchOpen({ ...targetSearchOpen, [goalId]: open })
                       }>
-                        <PopoverTrigger asChild disabled={!canEdit}>
-                          <Button 
-                            variant="outline" 
-                            className="justify-start w-full max-w-xs"
-                            disabled={!canEdit}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            <span>Add Target</span>
-                            <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
+                        <PopoverTrigger 
+                          disabled={!canEdit}
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 justify-start w-full max-w-xs"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          <span>Add Target</span>
+                          <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
                         </PopoverTrigger>
                         <PopoverContent className="w-[600px] p-0">
                           <Command>

@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    const transactionDetails = transactions?.map(t => {
+    const transactionDetails = transactions?.map((t: any) => {
       const isCommitment = t.transaction_type === '2';
       const isDisbursement = t.transaction_type === '3' || t.transaction_type === '4';
       

@@ -183,11 +183,12 @@ export function CurrencySelector({
           </div>
         </PopoverTrigger>
         <PopoverContent
-          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] max-h-[400px] overflow-y-auto p-0 shadow-lg border"
+          className={cn(
+            "w-[var(--radix-popover-trigger-width)] min-w-[320px] max-h-[400px] overflow-y-auto p-0 shadow-lg border",
+            dropDirection === "top" && "bottom-full top-auto mb-1"
+          )}
           align="start"
-          side={dropDirection}
           sideOffset={4}
-          avoidCollisions={false}
         >
           <Command>
             <div className="flex items-center border-b px-3 py-2">

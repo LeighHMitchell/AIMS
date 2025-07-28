@@ -177,14 +177,12 @@ export async function GET(request: NextRequest) {
       }
 
       // Temporarily disable materialized view to force USD calculation
-      const summariesError = { message: 'Forcing fallback to USD calculation' };
-      const summaries = null;
-      
-      // First try materialized view for performance
-      // const { data: summaries, error: summariesError } = await supabase
-      //   .from('activity_transaction_summaries')
-      //   .select('*')
-      //   .in('activity_id', activityIds);
+      // Comment out the materialized view code since we're forcing fallback
+      /*
+      const { data: summaries, error: summariesError } = await supabase
+        .from('activity_transaction_summaries')
+        .select('*')
+        .in('activity_id', activityIds);
 
       if (!summariesError && summaries) {
         console.log('[AIMS Optimized] Transaction summaries fetched:', summaries.length, 'entries');
@@ -200,7 +198,12 @@ export async function GET(request: NextRequest) {
           });
         });
         console.log('[AIMS Optimized] Summaries map:', Object.fromEntries(summariesMap));
-      } else if (summariesError) {
+      } else {
+      */
+      
+      // Force fallback to USD calculation
+      const summariesError = { message: 'Forcing fallback to USD calculation' };
+      if (summariesError) {
         // Fallback: Calculate summaries directly if materialized view doesn't exist
         console.warn('[AIMS Optimized] Materialized view error:', summariesError);
         console.warn('[AIMS Optimized] Falling back to direct calculation');
@@ -253,7 +256,7 @@ export async function GET(request: NextRequest) {
         }
         
         // Ensure all activities have budget data even if no transactions
-        activityIds.forEach(activityId => {
+        activityIds.forEach((activityId: string) => {
           if (!summariesMap.has(activityId)) {
             summariesMap.set(activityId, {
               commitments: 0,
@@ -322,7 +325,7 @@ export async function GET(request: NextRequest) {
 
     // Apply client-side sorting for calculated fields (budget and disbursement)
     if (sortField === 'commitments' || sortField === 'disbursements') {
-      transformedActivities.sort((a, b) => {
+      transformedActivities.sort((a: any, b: any) => {
         let aValue, bValue;
         if (sortField === 'commitments') {
           aValue = a.totalBudget || 0;

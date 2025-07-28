@@ -1338,7 +1338,7 @@ export default function TransactionModal({
                   </LabelSaveIndicator>
                   <CurrencySelector
                     value={formData.currency || undefined}
-                    onValueChange={v => {
+                    onValueChange={(v: string | null) => {
                       const newValue = v || undefined;
                       setFormData({...formData, currency: newValue});
                       currencyAutosave.triggerFieldSave(newValue);
@@ -1513,7 +1513,7 @@ export default function TransactionModal({
                   </LabelSaveIndicator>
                   <AidTypeSelect
                     value={formData.aid_type || undefined}
-                    onValueChange={v => {
+                    onValueChange={(v: string | null) => {
                       const newValue = v || undefined;
                       setFormData({...formData, aid_type: newValue});
                       aidTypeAutosave.triggerFieldSave(newValue);
@@ -1538,7 +1538,7 @@ export default function TransactionModal({
                   </LabelSaveIndicator>
                   <FlowTypeSelect
                     value={formData.flow_type as string | undefined}
-                    onValueChange={v => {
+                    onValueChange={(v: string | null) => {
                       const newValue = v as FlowType || undefined;
                       setFormData({...formData, flow_type: newValue});
                       flowTypeAutosave.triggerFieldSave(newValue);
@@ -1560,7 +1560,7 @@ export default function TransactionModal({
                   </LabelSaveIndicator>
                   <FinanceTypeSelect
                     value={(formData.finance_type as any) as string | undefined}
-                    onChange={v => {
+                    onChange={(v: string | null) => {
                       const newValue = v as FinanceType || undefined;
                       setFormData({...formData, finance_type: newValue});
                       financeTypeAutosave.triggerFieldSave(newValue);
@@ -1579,7 +1579,7 @@ export default function TransactionModal({
                   </LabelSaveIndicator>
                   <TiedStatusSelect
                     value={(formData.tied_status as any) as string | undefined}
-                    onValueChange={v => {
+                    onValueChange={(v: string | null) => {
                       const newValue = v as TiedStatus || undefined;
                       setFormData({...formData, tied_status: newValue});
                       tiedStatusAutosave.triggerFieldSave(newValue);
