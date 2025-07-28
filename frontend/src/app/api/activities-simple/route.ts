@@ -78,7 +78,14 @@ export async function GET(request: NextRequest) {
         default_finance_type,
         default_tied_status,
         default_currency,
-        created_by
+        created_by,
+        activity_sdg_mappings (
+          id,
+          sdg_goal,
+          sdg_target,
+          contribution_percent,
+          notes
+        )
       `)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -93,11 +100,94 @@ export async function GET(request: NextRequest) {
 
     console.log(`[AIMS-SIMPLE] Fetched ${data?.length || 0} activities (page ${page})`);
 
-    // Skip transaction summaries for now to avoid additional complexity
-    // We can add this back later if needed with proper optimization
+    // Fetch budget data and transaction summaries for each activity
+    const activityIds = data?.map((a: any) => a.id) || [];
+    
+    let budgetMap = new Map();
+    let summariesMap = new Map();
+    
+    if (activityIds.length > 0) {
+      // Fetch budget totals
+      const { data: budgets, error: budgetError } = await supabase
+        .from('activity_budgets')
+        .select('activity_id, value, currency, usd_value')
+        .in('activity_id', activityIds);
+
+      if (budgetError) {
+        console.error('[AIMS-SIMPLE] Budget fetch error:', budgetError);
+      } else if (budgets) {
+        console.log('[AIMS-SIMPLE] Budget data fetched:', budgets.length, 'entries');
+        budgets.forEach((b: any) => {
+          const current = budgetMap.get(b.activity_id) || 0;
+          // Use USD converted value for aggregation
+          const budgetValue = b.usd_value || 0;
+          budgetMap.set(b.activity_id, current + budgetValue);
+        });
+        console.log('[AIMS-SIMPLE] Budget map:', Object.fromEntries(budgetMap));
+      } else {
+        console.log('[AIMS-SIMPLE] No budget data found');
+      }
+
+      // Fetch transaction summaries
+      const { data: transactions, error: txError } = await supabase
+        .from('transactions')
+        .select('activity_id, transaction_type, status, value, value_usd')
+        .in('activity_id', activityIds);
+        // Remove status filter temporarily to see all transactions
+      
+      if (!txError && transactions) {
+        // Group by activity_id and calculate summaries
+        transactions.forEach((t: any) => {
+          const current = summariesMap.get(t.activity_id) || {
+            commitments: 0,
+            disbursements: 0,
+            expenditures: 0,
+            inflows: 0,
+            totalTransactions: 0,
+            totalDisbursed: 0
+          };
+          
+          current.totalTransactions++;
+          
+          // Use USD converted value for aggregation
+          const transactionValue = t.value_usd || 0;
+          
+          switch(t.transaction_type) {
+            case '2':
+              current.commitments += transactionValue;
+              break;
+            case '3':
+              current.disbursements += transactionValue;
+              current.totalDisbursed += transactionValue;
+              break;
+            case '4':
+              current.expenditures += transactionValue;
+              current.totalDisbursed += transactionValue;
+              break;
+            case '1':
+            case '11':
+              current.inflows += transactionValue;
+              break;
+          }
+          
+          summariesMap.set(t.activity_id, current);
+        });
+      }
+    }
 
     // Transform the data to match frontend expectations
-    const transformedActivities = data?.map((activity: any) => ({
+    const transformedActivities = data?.map((activity: any) => {
+      const summary = summariesMap.get(activity.id) || {
+        commitments: 0,
+        disbursements: 0,
+        expenditures: 0,
+        inflows: 0,
+        totalTransactions: 0,
+        totalDisbursed: 0
+      };
+      const totalBudget = budgetMap.get(activity.id) || 0;
+
+      return {
       ...activity,
       // Map new column names to old API field names for backward compatibility
       title: activity.title_narrative,
@@ -138,22 +228,31 @@ export async function GET(request: NextRequest) {
       syncStatus: 'never',
       // Add empty arrays for related data to prevent frontend errors
       sectors: [],
-      sdgMappings: [],
+      sdgMappings: (activity.activity_sdg_mappings || []).map((mapping: any) => ({
+        id: mapping.id,
+        sdgGoal: mapping.sdg_goal,
+        sdgTarget: mapping.sdg_target,
+        contributionPercent: mapping.contribution_percent,
+        notes: mapping.notes
+      })),
       contacts: [],
       locations: { site_locations: [], broad_coverage_locations: [] },
-      // Add transaction summaries (set to 0 for now)
-      commitments: 0,
-      disbursements: 0,
-      expenditures: 0,
-      inflows: 0,
-      totalTransactions: 0,
+      // Add transaction summaries
+      commitments: summary.commitments,
+      disbursements: summary.disbursements,
+      expenditures: summary.expenditures,
+      inflows: summary.inflows,
+      totalTransactions: summary.totalTransactions,
+      totalBudget: totalBudget,
+      totalDisbursed: summary.totalDisbursed,
       // Add empty arrays for organizations
       funders: [],
       implementers: [],
       extendingOrganizations: [],
       transactionOrganizations: [],
       transactions: []
-    })) || [];
+    };
+  }) || [];
 
     return NextResponse.json({
       data: transformedActivities,

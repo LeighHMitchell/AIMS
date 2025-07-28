@@ -231,11 +231,11 @@ async function performCurrencyConversion(transactionId: string, currency: string
   try {
     console.log('[Transactions API] Starting automatic currency conversion for transaction:', transactionId);
     
-    // Skip conversion if already USD
+    // For USD transactions, still populate USD Value field
     if (currency === 'USD') {
-      console.log('[Transactions API] Transaction is already in USD, updating fields...');
+      console.log('[Transactions API] Transaction is already in USD, updating USD fields...');
       
-      // Update USD fields for USD transactions
+      // Update USD fields for USD transactions to ensure USD Value field is populated
       const { error: updateError } = await getSupabaseAdmin()
         .from('transactions')
         .update({
@@ -472,10 +472,8 @@ export async function POST(request: NextRequest) {
       id: data.uuid // Add id field for backward compatibility
     };
     
-    // Perform currency conversion if the transaction is not in USD
-    if (responseData.currency !== 'USD') {
-      await performCurrencyConversion(responseData.uuid, responseData.currency, responseData.value, responseData.value_date || responseData.transaction_date);
-    }
+    // Perform currency conversion for all transactions (including USD to populate USD Value field)
+    await performCurrencyConversion(responseData.uuid, responseData.currency, responseData.value, responseData.value_date || responseData.transaction_date);
 
     return NextResponse.json(responseData, { status: 201 });
   } catch (error) {
@@ -651,10 +649,8 @@ export async function PUT(request: NextRequest) {
       id: data.uuid // Add id field for backward compatibility
     };
     
-    // Perform currency conversion if the transaction is not in USD
-    if (responseData.currency !== 'USD') {
-      await performCurrencyConversion(responseData.uuid, responseData.currency, responseData.value, responseData.value_date || responseData.transaction_date);
-    }
+    // Perform currency conversion for all transactions (including USD to populate USD Value field)
+    await performCurrencyConversion(responseData.uuid, responseData.currency, responseData.value, responseData.value_date || responseData.transaction_date);
 
     return NextResponse.json(responseData);
   } catch (error) {

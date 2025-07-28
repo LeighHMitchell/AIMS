@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronsUpDown, Check, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
@@ -24,6 +24,7 @@ interface CurrencySelectorProps {
   className?: string;
   id?: string;
   showCodeOnly?: boolean; // New prop to control display behavior
+  forceDropUp?: boolean; // Force dropdown to open upward
 }
 
 const allOptions: Currency[] = currencyList;
@@ -38,9 +39,12 @@ export function CurrencySelector({
   className,
   id,
   showCodeOnly = false, // Default to false for backward compatibility
+  forceDropUp = false, // Default to false for backward compatibility
 }: CurrencySelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dropDirection, setDropDirection] = useState<"top" | "bottom">(forceDropUp ? "top" : "bottom");
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const selectedOption = allOptions.find(option => option.code === value);
 
@@ -75,10 +79,65 @@ export function CurrencySelector({
 
   const showNoResults = searchQuery && filteredCombined.length === 0;
 
+  // Function to calculate if dropdown should open upward
+  const calculateDropDirection = () => {
+    if (forceDropUp) {
+      setDropDirection("top");
+      return;
+    }
+    
+    if (!triggerRef.current) return;
+    
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const dropdownHeight = 400; // max-h-[400px] from className
+    const spaceBelow = viewportHeight - triggerRect.bottom;
+    const spaceAbove = triggerRect.top;
+    
+    // If there's not enough space below but enough space above, open upward
+    if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+      setDropDirection("top");
+    } else {
+      setDropDirection("bottom");
+    }
+  };
+
+  // Calculate direction when opening
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      calculateDropDirection();
+    }
+    setOpen(newOpen);
+  };
+
+  // Recalculate on scroll/resize
+  useEffect(() => {
+    const handleScroll = () => {
+      if (open) {
+        calculateDropDirection();
+      }
+    };
+
+    const handleResize = () => {
+      if (open) {
+        calculateDropDirection();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [open]);
+
   return (
     <div className={cn("pb-6", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger
+          ref={triggerRef}
           id={id}
           role="combobox"
           aria-expanded={open}
@@ -126,7 +185,9 @@ export function CurrencySelector({
         <PopoverContent
           className="w-[var(--radix-popover-trigger-width)] min-w-[320px] max-h-[400px] overflow-y-auto p-0 shadow-lg border"
           align="start"
+          side={dropDirection}
           sideOffset={4}
+          avoidCollisions={false}
         >
           <Command>
             <div className="flex items-center border-b px-3 py-2">

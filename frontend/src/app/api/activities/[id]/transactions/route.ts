@@ -324,7 +324,7 @@ export async function POST(
       receiver_org_name: newTransaction.receiver_org?.acronym || newTransaction.receiver_org?.name || newTransaction.receiver_org_name,
     };
 
-    // Perform currency conversion if needed
+    // Perform currency conversion for all transactions (including USD to populate USD Value field)
     if (newTransaction.currency && newTransaction.value) {
       const conversionDate = newTransaction.value_date || newTransaction.transaction_date;
       await performCurrencyConversion(newTransaction.uuid, newTransaction.currency, newTransaction.value, conversionDate);

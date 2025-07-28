@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TransactionTypeSelect } from "@/components/forms/TransactionTypeSelect";
 import { Plus, Trash2, Edit, Download, Filter, DollarSign, AlertCircle, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -374,17 +375,14 @@ export default function TransactionsManager({
                 Filters
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <Select value={filters.type} onValueChange={v => setFilters({...filters, type: v})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[9999]">
-                    <SelectItem value="all">All Types</SelectItem>
-                    {Object.entries(TRANSACTION_TYPES).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>{value} ({key})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <TransactionTypeSelect
+                    value={filters.type}
+                    onValueChange={(value) => setFilters({...filters, type: value})}
+                    placeholder="All Types"
+                    className="w-full"
+                  />
+                </div>
                 <Select value={filters.status} onValueChange={v => setFilters({...filters, status: v})}>
                   <SelectTrigger>
                     <SelectValue />
@@ -401,9 +399,9 @@ export default function TransactionsManager({
                     placeholder="From date"
                     value={filters.dateFrom}
                     onChange={e => setFilters({...filters, dateFrom: e.target.value})}
-                    className="pl-8"
+                    className="pl-12"
                   />
-                  <label className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">From</label>
+                  <label className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">From</label>
                 </div>
                 <div className="relative">
                   <Input
@@ -411,9 +409,9 @@ export default function TransactionsManager({
                     placeholder="To date"
                     value={filters.dateTo}
                     onChange={e => setFilters({...filters, dateTo: e.target.value})}
-                    className="pl-8"
+                    className="pl-10"
                   />
-                  <label className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">To</label>
+                  <label className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">To</label>
                 </div>
               </div>
               {(filters.type !== "all" || filters.status !== "all" || filters.dateFrom || filters.dateTo) && (

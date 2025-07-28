@@ -125,6 +125,9 @@ export async function GET(request: NextRequest) {
     } else {
       dataQuery = dataQuery.order('updated_at', { ascending: false });
     }
+    
+    // Note: Budget and disbursement sorting will be handled client-side after data aggregation
+    // since these are calculated fields from multiple tables
 
     // Execute queries in parallel
     const [countResult, dataResult] = await Promise.all([
@@ -145,38 +148,71 @@ export async function GET(request: NextRequest) {
     const totalCount = countResult.count || 0;
     const activities = dataResult.data || [];
 
-    // Fetch transaction summaries from materialized view
+    // Fetch transaction summaries and budget data
     const activityIds = activities.map((a: any) => a.id);
     
     let summariesMap = new Map();
+    let budgetMap = new Map();
+    
     if (activityIds.length > 0) {
-      // First try materialized view for performance
-      const { data: summaries, error: summariesError } = await supabase
-        .from('activity_transaction_summaries')
-        .select('*')
+      // Fetch budget totals
+      const { data: budgets, error: budgetError } = await supabase
+        .from('activity_budgets')
+        .select('activity_id, value, currency, usd_value')
         .in('activity_id', activityIds);
 
+      if (budgetError) {
+        console.error('[AIMS Optimized] Budget fetch error:', budgetError);
+      } else if (budgets) {
+        console.log('[AIMS Optimized] Budget data fetched:', budgets.length, 'entries');
+        budgets.forEach((b: any) => {
+          const current = budgetMap.get(b.activity_id) || 0;
+          // Use USD converted value for aggregation
+          const budgetValue = b.usd_value || 0;
+          budgetMap.set(b.activity_id, current + budgetValue);
+        });
+        console.log('[AIMS Optimized] Budget map:', Object.fromEntries(budgetMap));
+      } else {
+        console.log('[AIMS Optimized] No budget data found');
+      }
+
+      // Temporarily disable materialized view to force USD calculation
+      const summariesError = { message: 'Forcing fallback to USD calculation' };
+      const summaries = null;
+      
+      // First try materialized view for performance
+      // const { data: summaries, error: summariesError } = await supabase
+      //   .from('activity_transaction_summaries')
+      //   .select('*')
+      //   .in('activity_id', activityIds);
+
       if (!summariesError && summaries) {
+        console.log('[AIMS Optimized] Transaction summaries fetched:', summaries.length, 'entries');
         summaries.forEach((s: any) => {
           summariesMap.set(s.activity_id, {
             commitments: s.commitments || 0,
             disbursements: s.disbursements || 0,
             expenditures: s.expenditures || 0,
             inflows: s.inflows || 0,
-            totalTransactions: s.total_transactions || 0
+            totalTransactions: s.total_transactions || 0,
+            totalBudget: budgetMap.get(s.activity_id) || 0,
+            totalDisbursed: (s.disbursements || 0) + (s.expenditures || 0)
           });
         });
-      } else if (summariesError?.message?.includes('relation') || summariesError?.message?.includes('does not exist')) {
+        console.log('[AIMS Optimized] Summaries map:', Object.fromEntries(summariesMap));
+      } else if (summariesError) {
         // Fallback: Calculate summaries directly if materialized view doesn't exist
-        console.warn('[AIMS Optimized] Materialized view not found, falling back to direct calculation');
+        console.warn('[AIMS Optimized] Materialized view error:', summariesError);
+        console.warn('[AIMS Optimized] Falling back to direct calculation');
         
         const { data: transactions, error: txError } = await supabase
           .from('transactions')
-          .select('activity_id, transaction_type, status, value')
-          .in('activity_id', activityIds)
-          .eq('status', 'actual');
+          .select('activity_id, transaction_type, status, value, value_usd')
+          .in('activity_id', activityIds);
+          // Remove status filter temporarily to see all transactions
         
         if (!txError && transactions) {
+          console.log('[AIMS Optimized] Fallback: Found', transactions.length, 'transactions');
           // Group by activity_id and calculate summaries
           transactions.forEach((t: any) => {
             const current = summariesMap.get(t.activity_id) || {
@@ -184,42 +220,68 @@ export async function GET(request: NextRequest) {
               disbursements: 0,
               expenditures: 0,
               inflows: 0,
-              totalTransactions: 0
+              totalTransactions: 0,
+              totalBudget: budgetMap.get(t.activity_id) || 0,
+              totalDisbursed: 0
             };
             
             current.totalTransactions++;
             
+            // Use USD converted value for aggregation
+            const transactionValue = t.value_usd || 0;
+            
             switch(t.transaction_type) {
               case '2':
-                current.commitments += t.value || 0;
+                current.commitments += transactionValue;
                 break;
               case '3':
-                current.disbursements += t.value || 0;
+                current.disbursements += transactionValue;
+                current.totalDisbursed += transactionValue;
                 break;
               case '4':
-                current.expenditures += t.value || 0;
+                current.expenditures += transactionValue;
+                current.totalDisbursed += transactionValue;
                 break;
               case '1':
               case '11':
-                current.inflows += t.value || 0;
+                current.inflows += transactionValue;
                 break;
             }
             
             summariesMap.set(t.activity_id, current);
           });
         }
+        
+        // Ensure all activities have budget data even if no transactions
+        activityIds.forEach(activityId => {
+          if (!summariesMap.has(activityId)) {
+            summariesMap.set(activityId, {
+              commitments: 0,
+              disbursements: 0,
+              expenditures: 0,
+              inflows: 0,
+              totalTransactions: 0,
+              totalBudget: budgetMap.get(activityId) || 0,
+              totalDisbursed: 0
+            });
+          }
+        });
       }
     }
 
     // Transform activities with summaries
-    const transformedActivities = activities.map((activity: any) => {
+    let transformedActivities = activities.map((activity: any) => {
       const summary = summariesMap.get(activity.id) || {
         commitments: 0,
         disbursements: 0,
         expenditures: 0,
         inflows: 0,
-        totalTransactions: 0
+        totalTransactions: 0,
+        totalBudget: 0,
+        totalDisbursed: 0
       };
+      
+      console.log(`[AIMS Optimized] Activity ${activity.id} summary:`, summary);
 
       return {
         ...activity,
@@ -257,6 +319,26 @@ export async function GET(request: NextRequest) {
         }))
       };
     });
+
+    // Apply client-side sorting for calculated fields (budget and disbursement)
+    if (sortField === 'commitments' || sortField === 'disbursements') {
+      transformedActivities.sort((a, b) => {
+        let aValue, bValue;
+        if (sortField === 'commitments') {
+          aValue = a.totalBudget || 0;
+          bValue = b.totalBudget || 0;
+        } else if (sortField === 'disbursements') {
+          aValue = a.totalDisbursed || 0;
+          bValue = b.totalDisbursed || 0;
+        }
+        
+        if (sortOrder === 'asc') {
+          return aValue - bValue;
+        } else {
+          return bValue - aValue;
+        }
+      });
+    }
 
     // Log performance metrics
     const executionTime = Date.now() - startTime;

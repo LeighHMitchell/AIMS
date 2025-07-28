@@ -191,6 +191,68 @@ export function checkFinancesTabCompletion(
  * Currently only implements General tab - can be extended for other tabs
  */
 /**
+ * Check if the Locations tab is complete based on specific locations
+ */
+export function checkLocationsTabCompletion(specificLocations: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  if (specificLocations && specificLocations.length > 0) {
+    // Check if we have at least one valid location with name and coordinates
+    const hasValidLocations = specificLocations.some(location => 
+      location.name?.trim() && 
+      typeof location.latitude === 'number' && 
+      typeof location.longitude === 'number'
+    );
+    
+    if (hasValidLocations) {
+      completedFields.push('locations')
+    } else {
+      missingFields.push('locations')
+    }
+  } else {
+    missingFields.push('locations')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false, // Locations don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
+/**
+ * Check if the Tags tab is complete based on tags
+ */
+export function checkTagsTabCompletion(tags: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  if (tags && tags.length > 0) {
+    // Check if we have at least one valid tag
+    const hasValidTags = tags.some(tag => 
+      tag && (tag.name?.trim() || tag.id)
+    );
+    
+    if (hasValidTags) {
+      completedFields.push('tags')
+    } else {
+      missingFields.push('tags')
+    }
+  } else {
+    missingFields.push('tags')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false, // Tags don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
+/**
  * Check if the Sectors tab is complete based on sector allocations
  */
 export function checkSectorsTabCompletion(sectors: any[]): TabCompletionStatus {
@@ -246,6 +308,10 @@ export function getTabCompletionStatus(
       return checkFinancesTabCompletion(data);
     case 'sectors':
       return checkSectorsTabCompletion(data);
+    case 'locations':
+      return checkLocationsTabCompletion(data);
+    case 'tags':
+      return checkTagsTabCompletion(data);
     // Add other tabs here as needed
     default:
       return null;
@@ -257,11 +323,11 @@ export function getTabCompletionStatus(
  */
 export function TabCompletionIndicator({ isComplete, isInProgress }: { isComplete: boolean; isInProgress: boolean }) {
   if (isComplete) {
-    return <CheckCircle className="h-4 w-4 text-green-500 ml-2" />
+    return <CheckCircle className="h-4 w-4 text-green-500" />
   }
   
   if (isInProgress) {
-    return <Loader2 className="h-4 w-4 text-orange-500 ml-2 animate-spin" />
+    return <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
   }
   
   return null

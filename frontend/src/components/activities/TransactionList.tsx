@@ -256,7 +256,7 @@ export default function TransactionList({
       style: 'currency',
       currency: curr,
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 0
     }).format(value);
   };
 
@@ -642,7 +642,7 @@ export default function TransactionList({
           setEditingTransaction(null);
         }
       }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto pb-6">
           <DialogHeader>
             <DialogTitle>
               {editingTransaction ? 'Edit Transaction' : 'Add New Transaction'}

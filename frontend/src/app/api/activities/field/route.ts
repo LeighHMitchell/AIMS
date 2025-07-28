@@ -208,7 +208,133 @@ export async function POST(request: Request) {
       case 'locations':
         oldValue = existingActivity.locations;
         newValue = body.value;
-        updateData.locations = body.value || { specificLocations: [], coverageAreas: [] };
+        
+        try {
+          console.log('[Field API] Updating locations for activity:', body.activityId);
+          console.log('[Field API] Locations data:', JSON.stringify(body.value, null, 2));
+          
+          // Delete existing locations for this activity
+          const { error: deleteError } = await getSupabaseAdmin()
+            .from('activity_locations')
+            .delete()
+            .eq('activity_id', body.activityId);
+
+          if (deleteError) {
+            console.error('[Field API] Error deleting existing locations:', deleteError);
+            
+            // Check if this is a "table doesn't exist" error
+            if (deleteError.message.includes('relation "activity_locations" does not exist')) {
+              console.error('[Field API] activity_locations table does not exist. Please run the SQL migration:');
+              console.error('[Field API] psql $DATABASE_URL -f frontend/sql/create_activity_locations_table.sql');
+              return NextResponse.json(
+                { error: 'Locations table not found. Please contact administrator to run database migration.' },
+                { status: 500 }
+              );
+            }
+            
+            return NextResponse.json(
+              { error: `Failed to delete existing locations: ${deleteError.message}` },
+              { status: 500 }
+            );
+          }
+
+          // Prepare locations to insert
+          const locationsToInsert: any[] = [];
+          
+          // Process specific locations (sites)
+          if (body.value?.specificLocations && Array.isArray(body.value.specificLocations)) {
+            body.value.specificLocations.forEach((location: any) => {
+              locationsToInsert.push({
+                activity_id: body.activityId,
+                location_type: 'site',
+                location_name: location.name || '',
+                description: location.notes || location.address || '',
+                latitude: location.latitude || null,
+                longitude: location.longitude || null,
+                address: location.address || null,
+                site_type: location.type || 'project_site',
+                // Administrative data - automatically populated from frontend
+                state_region_code: location.stateRegionCode || null,
+                state_region_name: location.stateRegionName || null,
+                township_code: location.townshipCode || null,
+                township_name: location.townshipName || null,
+                created_by: body.user?.id || null,
+                updated_by: body.user?.id || null
+              });
+            });
+          }
+          
+          // Process coverage areas
+          if (body.value?.coverageAreas && Array.isArray(body.value.coverageAreas)) {
+            body.value.coverageAreas.forEach((area: any) => {
+              const locationData: any = {
+                activity_id: body.activityId,
+                location_type: 'coverage',
+                location_name: area.description || area.name || 'Coverage Area',
+                description: area.description || '',
+                coverage_scope: area.scope || 'subnational',
+                created_by: body.user?.id || null,
+                updated_by: body.user?.id || null
+              };
+              
+              // Add administrative data if available
+              if (area.regions && Array.isArray(area.regions) && area.regions.length > 0) {
+                const firstRegion = area.regions[0];
+                locationData.state_region_name = firstRegion.name;
+                locationData.state_region_code = firstRegion.code;
+                locationData.admin_unit = firstRegion.name;
+                
+                // If specific townships are selected
+                if (firstRegion.townships && firstRegion.townships.length > 0) {
+                  const firstTownship = firstRegion.townships[0];
+                  locationData.township_name = firstTownship.name;
+                  locationData.township_code = firstTownship.code;
+                }
+              }
+              
+              locationsToInsert.push(locationData);
+            });
+          }
+          
+          // Insert new locations
+          if (locationsToInsert.length > 0) {
+            console.log('[Field API] Inserting', locationsToInsert.length, 'locations');
+            const { error: insertError } = await getSupabaseAdmin()
+              .from('activity_locations')
+              .insert(locationsToInsert);
+              
+            if (insertError) {
+              console.error('[Field API] Error inserting locations:', insertError);
+              
+              // Check if this is a "table doesn't exist" error
+              if (insertError.message.includes('relation "activity_locations" does not exist')) {
+                console.error('[Field API] activity_locations table does not exist. Please run the SQL migration:');
+                console.error('[Field API] psql $DATABASE_URL -f frontend/sql/create_activity_locations_table.sql');
+                return NextResponse.json(
+                  { error: 'Locations table not found. Please contact administrator to run database migration.' },
+                  { status: 500 }
+                );
+              }
+              
+              return NextResponse.json(
+                { error: `Failed to save locations: ${insertError.message}` },
+                { status: 500 }
+              );
+            }
+            
+            console.log('[Field API] Successfully saved', locationsToInsert.length, 'locations to activity_locations table');
+          } else {
+            console.log('[Field API] No locations to save');
+          }
+          
+          // Don't add to updateData since we're handling locations separately
+        } catch (locationError) {
+          console.error('[Field API] Error updating locations:', locationError);
+          return NextResponse.json(
+            { error: `Failed to save locations: ${locationError instanceof Error ? locationError.message : 'Unknown error'}` },
+            { status: 500 }
+          );
+        }
         break;
         
       case 'extendingPartners':
@@ -299,7 +425,7 @@ export async function POST(request: Request) {
     // Update activity
     let updatedActivity;
     let updateError;
-    if (body.field !== 'sectors') {
+    if (body.field !== 'sectors' && body.field !== 'locations') {
       console.log('[Field API] Updating field with data:', updateData);
       const updateResult = await getSupabaseAdmin()
         .from('activities')
@@ -318,7 +444,7 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // For sectors, fetch the activity for response data
+      // For sectors and locations, fetch the activity for response data
       const fetchResult = await getSupabaseAdmin()
         .from('activities')
         .select('*')
@@ -327,9 +453,9 @@ export async function POST(request: Request) {
       updatedActivity = fetchResult.data;
       updateError = fetchResult.error;
       if (updateError) {
-        console.error('[Field API] Error fetching activity after sector update:', updateError);
+        console.error('[Field API] Error fetching activity after field update:', updateError);
         return NextResponse.json(
-          { error: updateError.message || 'Failed to fetch activity after sector update' },
+          { error: updateError.message || 'Failed to fetch activity after field update' },
           { status: 500 }
         );
       }
@@ -380,6 +506,72 @@ export async function POST(request: Request) {
       }
     }
 
+    // Fetch locations from activity_locations table if this was a locations update
+    let locationsData = updatedActivity.locations; // Default to existing value
+    if (body.field === 'locations') {
+      try {
+        const { data: locations, error: locationsError } = await getSupabaseAdmin()
+          .from('activity_locations')
+          .select('*')
+          .eq('activity_id', body.activityId);
+        
+        if (locationsError) {
+          console.error('[Field API] Error fetching locations for response:', locationsError);
+          locationsData = { specificLocations: [], coverageAreas: [] };
+        } else {
+          // Transform locations back to expected format
+          const specificLocations: any[] = [];
+          const coverageAreas: any[] = [];
+          
+          locations?.forEach((location: any) => {
+            if (location.location_type === 'site') {
+              specificLocations.push({
+                id: location.id,
+                name: location.location_name,
+                type: location.site_type || 'project_site',
+                latitude: location.latitude,
+                longitude: location.longitude,
+                address: location.address,
+                notes: location.description,
+                // Include administrative data
+                stateRegionCode: location.state_region_code,
+                stateRegionName: location.state_region_name,
+                townshipCode: location.township_code,
+                townshipName: location.township_name
+              });
+            } else if (location.location_type === 'coverage') {
+              const coverageArea: any = {
+                id: location.id,
+                scope: location.coverage_scope || 'subnational',
+                description: location.description || location.location_name
+              };
+              
+              // Add regions data if available
+              if (location.state_region_name) {
+                coverageArea.regions = [{
+                  id: location.state_region_code || location.id,
+                  name: location.state_region_name,
+                  code: location.state_region_code || '',
+                  townships: location.township_name ? [{
+                    id: location.township_code || location.id,
+                    name: location.township_name,
+                    code: location.township_code || ''
+                  }] : []
+                }];
+              }
+              
+              coverageAreas.push(coverageArea);
+            }
+          });
+          
+          locationsData = { specificLocations, coverageAreas };
+        }
+      } catch (locationsFetchError) {
+        console.error('[Field API] Error fetching locations for response:', locationsFetchError);
+        locationsData = { specificLocations: [], coverageAreas: [] };
+      }
+    }
+
     // Return the updated activity data
     const responseData = {
       id: updatedActivity.id,
@@ -397,7 +589,7 @@ export async function POST(request: Request) {
       defaultAidModality: updatedActivity.default_aid_modality,
       defaultAidModalityOverride: updatedActivity.default_aid_modality_override,
       sectors: sectorsData,
-      locations: updatedActivity.locations,
+      locations: locationsData,
       plannedStartDate: updatedActivity.planned_start_date,
       plannedEndDate: updatedActivity.planned_end_date,
       actualStartDate: updatedActivity.actual_start_date,

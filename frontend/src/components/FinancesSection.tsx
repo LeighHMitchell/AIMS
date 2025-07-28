@@ -367,21 +367,27 @@ export default function FinancesSection({
       .filter(t => categorizeTransactionType(t.transaction_type) === 'disbursement')
       .reduce((sum, t) => {
         const value = parseFloat(t.value_usd?.toString() || '0') || 0;
-        return sum + (isNaN(value) ? 0 : value);
+        return sum + (value > 0 ? value : 0);
       }, 0);
     
     const totalExpenditure = transactions
       .filter(t => categorizeTransactionType(t.transaction_type) === 'expenditure')
       .reduce((sum, t) => {
         const value = parseFloat(t.value_usd?.toString() || '0') || 0;
-        return sum + (isNaN(value) ? 0 : value);
+        return sum + (value > 0 ? value : 0);
       }, 0);
     
     const totalCommitment = transactions
       .filter(t => categorizeTransactionType(t.transaction_type) === 'commitment')
       .reduce((sum, t) => {
-        const value = parseFloat(t.value_usd?.toString() || '0') || 0;
-        return sum + (isNaN(value) ? 0 : value);
+        let value = parseFloat(t.value_usd?.toString() || '0') || 0;
+        
+        // FIXED: If transaction is in USD but value_usd is missing, use the original value
+        if (!value && t.currency === 'USD' && t.value && Number(t.value) > 0) {
+          value = parseFloat(t.value.toString()) || 0;
+        }
+        
+        return sum + (value > 0 ? value : 0);
       }, 0);
     
     const outstandingCommitments = totalCommitment - totalDisbursed;

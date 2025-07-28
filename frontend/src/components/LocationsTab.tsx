@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LocationSelector from './LocationSelectorDynamic';
-import EnhancedCoverageSelector from './EnhancedCoverageSelectorDynamic';
 import { useLocationsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Types for IATI-compliant location data
 interface SpecificLocation {
@@ -52,8 +52,36 @@ export default function LocationsTab({
 }: LocationsTabProps) {
   const { user } = useUser();
   
+  // Debug logging for locations data
+  useEffect(() => {
+    console.log('[LocationsTab] Received specific locations:', specificLocations);
+    console.log('[LocationsTab] Received coverage areas:', coverageAreas);
+    console.log('[LocationsTab] Activity ID:', activityId);
+  }, [specificLocations, coverageAreas, activityId]);
+  
   // Field-level autosave for locations
   const locationsAutosave = useLocationsAutosave(activityId, user?.id);
+  
+  // Toast notifications for save success/error
+  useEffect(() => {
+    if (locationsAutosave.state.lastSaved && !locationsAutosave.state.isSaving && !locationsAutosave.state.error) {
+      toast.success('Locations saved successfully!', { 
+        position: 'top-right', 
+        duration: 2000,
+        icon: <CheckCircle className="h-4 w-4" />
+      });
+    }
+  }, [locationsAutosave.state.lastSaved]);
+
+  useEffect(() => {
+    if (locationsAutosave.state.error) {
+      toast.error('Failed to save locations. Please try again.', { 
+        position: 'top-right', 
+        duration: 3000,
+        icon: <AlertCircle className="h-4 w-4" />
+      });
+    }
+  }, [locationsAutosave.state.error]);
 
   // Enhanced onChange handlers that trigger autosave
   const handleSpecificLocationsChange = (newLocations: SpecificLocation[]) => {
@@ -67,30 +95,28 @@ export default function LocationsTab({
     }
   };
 
-  const handleCoverageAreasChange = (newAreas: CoverageArea[]) => {
-    onCoverageAreasChange(newAreas);
-    if (activityId) {
-      const locationsData = {
-        specificLocations: specificLocations,
-        coverageAreas: newAreas
-      };
-      locationsAutosave.triggerFieldSave(locationsData);
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header with autosave status */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <h2 className="text-xl font-semibold text-gray-900">Activity Locations</h2>
         {locationsAutosave.state.isSaving && (
-          <span className="text-xs text-blue-600">Saving...</span>
+          <div className="flex items-center gap-1 text-blue-600">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Saving...</span>
+          </div>
         )}
-        {locationsAutosave.state.lastSaved && !locationsAutosave.state.isSaving && (
-          <span className="text-xs text-green-600">Saved</span>
+        {locationsAutosave.state.lastSaved && !locationsAutosave.state.isSaving && !locationsAutosave.state.error && (
+          <div className="flex items-center gap-1 text-green-600">
+            <CheckCircle className="h-4 w-4" />
+            <span className="text-sm">Saved</span>
+          </div>
         )}
         {locationsAutosave.state.error && (
-          <span className="text-xs text-red-600">Save failed</span>
+          <div className="flex items-center gap-1 text-red-600">
+            <AlertCircle className="h-4 w-4" />
+            <span className="text-sm">Save failed</span>
+          </div>
         )}
       </div>
 
@@ -104,21 +130,13 @@ export default function LocationsTab({
         </Alert>
       )}
 
-      {/* Two-column layout with aligned tops */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* Left Column: Interactive Location Selector */}
+      {/* Single column layout */}
+      <div className="max-w-4xl">
+        {/* Location Selector */}
         <div className="flex flex-col h-full">
           <LocationSelector
             locations={specificLocations}
             onLocationsChange={handleSpecificLocationsChange}
-          />
-        </div>
-
-        {/* Right Column: Enhanced Coverage Selector */}
-        <div className="flex flex-col h-full">
-          <EnhancedCoverageSelector
-            coverageAreas={coverageAreas}
-            onCoverageAreasChange={handleCoverageAreasChange}
           />
         </div>
       </div>
@@ -126,8 +144,7 @@ export default function LocationsTab({
       {/* Bottom Summary */}
       <div className="text-center text-sm text-gray-600 py-4 border-t bg-gray-50 rounded-lg">
         <p className="font-medium">
-          {specificLocations.length} physical location{specificLocations.length !== 1 ? 's' : ''} and{' '}
-          {coverageAreas.length} coverage area{coverageAreas.length !== 1 ? 's' : ''} added
+          {specificLocations.length} physical location{specificLocations.length !== 1 ? 's' : ''} added
         </p>
         <p className="text-xs text-gray-500 mt-1">
           All location data will be saved with IATI-compliant structure

@@ -1174,8 +1174,13 @@ function NewActivityPageContent() {
           setPolicyMarkers(data.policyMarkers || []);
           
           if (data.locations) {
-            setSpecificLocations(data.locations.site_locations || []);
-            setCoverageAreas(data.locations.broad_coverage_locations || []);
+            console.log('[Activity New] Locations data received:', data.locations);
+            console.log('[Activity New] Specific locations:', data.locations.specificLocations);
+            console.log('[Activity New] Coverage areas:', data.locations.coverageAreas);
+            setSpecificLocations(data.locations.specificLocations || []);
+            setCoverageAreas(data.locations.coverageAreas || []);
+          } else {
+            console.log('[Activity New] No locations data in response');
           }
           
           setActivityScope(data.activityScope || "national");
@@ -1381,6 +1386,15 @@ function NewActivityPageContent() {
     // Planned Disbursements tab: green check if at least one planned disbursement
     const plannedDisbursementsComplete = plannedDisbursements && plannedDisbursements.length > 0;
 
+    // SDG tab: green check if at least one SDG goal is mapped
+    const sdgComplete = sdgMappings && sdgMappings.length > 0;
+
+    // Locations tab: use the comprehensive locations completion check
+    const locationsCompletion = getTabCompletionStatus('locations', specificLocations);
+
+    // Tags tab: use the comprehensive tags completion check
+    const tagsCompletion = getTabCompletionStatus('tags', tags);
+
     // IATI Sync tab completion logic
     const iatiSyncComplete = iatiSyncState.isEnabled && iatiSyncState.syncStatus === 'live';
     const iatiSyncInProgress = iatiSyncState.isEnabled && (iatiSyncState.syncStatus === 'pending' || iatiSyncState.syncStatus === 'outdated');
@@ -1398,15 +1412,24 @@ function NewActivityPageContent() {
         isComplete: sectorsCompletion.isComplete,
         isInProgress: sectorsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
+      locations: locationsCompletion ? { 
+        isComplete: locationsCompletion.isComplete,
+        isInProgress: locationsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      tags: tagsCompletion ? { 
+        isComplete: tagsCompletion.isComplete,
+        isInProgress: tagsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
       finances: { isComplete: financesComplete, isInProgress: false },
       finances_defaults: financesDefaultsCompletion ? { 
         isComplete: financesDefaultsCompletion.isComplete,
         isInProgress: financesDefaultsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
       budgets: { isComplete: budgetsComplete, isInProgress: false },
-      "planned-disbursements": { isComplete: plannedDisbursementsComplete, isInProgress: false }
+      "planned-disbursements": { isComplete: plannedDisbursementsComplete, isInProgress: false },
+      sdg: { isComplete: sdgComplete, isInProgress: false }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, iatiSyncState]);
+  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -1617,8 +1640,11 @@ function NewActivityPageContent() {
         setContacts(data.contacts || []);
         setGovernmentInputs(data.governmentInputs || {});
         if (data.locations) {
-          setSpecificLocations(data.locations.site_locations || []);
-          setCoverageAreas(data.locations.broad_coverage_locations || []);
+          console.log('[Activity New] Locations data received (2nd load):', data.locations);
+          setSpecificLocations(data.locations.specificLocations || []);
+          setCoverageAreas(data.locations.coverageAreas || []);
+        } else {
+          console.log('[Activity New] No locations data in response (2nd load)');
         }
         setContributors(data.contributors || []);
         setSdgMappings(data.sdgMappings || []);

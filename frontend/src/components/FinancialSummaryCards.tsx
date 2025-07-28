@@ -98,24 +98,30 @@ export function FinancialSummaryCards({ activityId, className, budgets }: Financ
     if (!txsError && txs) {
       txs.forEach(t => {
         // VERIFIED: Use the correct USD column for transactions: value_usd (with fallbacks for schema variations)
-        const usdValue = t.value_usd || t.value_USD || t.usd_value || t.USD_value;
+        let usdValue = t.value_usd || t.value_USD || t.usd_value || t.USD_value;
+        
+        // FIXED: If transaction is in USD but value_usd is missing, use the original value
+        if (!usdValue && t.currency === 'USD' && t.value && t.value > 0) {
+          usdValue = t.value;
+          console.log(`[FinancialSummaryCards] Using original USD value for transaction ${t.id}: $${t.value}`);
+        }
         
         if (t.transaction_type === '2') {
-          if (usdValue) {
+          if (usdValue && usdValue > 0) {
             committed += usdValue;
-          } else {
-            // If no USD conversion, use original value (should be converted by backend)
-            committed += t.value || 0;
+          } else if (t.currency !== 'USD') {
+            // Only mark as missing USD if it's not a USD transaction
             missingUsd = true;
+            console.log(`[FinancialSummaryCards] Commitment transaction ${t.id} missing USD value (${t.currency})`);
           }
         }
         if (t.transaction_type === '3' || t.transaction_type === '4') {
-          if (usdValue) {
+          if (usdValue && usdValue > 0) {
             disbursed += usdValue;
-          } else {
-            // If no USD conversion, use original value (should be converted by backend)
-            disbursed += t.value || 0;
+          } else if (t.currency !== 'USD') {
+            // Only mark as missing USD if it's not a USD transaction
             missingUsd = true;
+            console.log(`[FinancialSummaryCards] Disbursement/Expenditure transaction ${t.id} missing USD value (${t.currency})`);
           }
         }
       });

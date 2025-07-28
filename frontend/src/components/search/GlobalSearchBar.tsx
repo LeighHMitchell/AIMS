@@ -25,7 +25,7 @@ import { format } from 'date-fns'
 
 interface SearchResult {
   id: string
-  type: 'activity' | 'organization' | 'user' | 'sector'
+  type: 'activity' | 'organization' | 'user' | 'sector' | 'tag'
   title: string
   subtitle?: string
   metadata?: {
@@ -42,6 +42,8 @@ interface SearchResult {
     logo_url?: string
     banner_url?: string
     activity_icon_url?: string
+    code?: string
+    activity_count?: number
   }
 }
 
@@ -156,8 +158,27 @@ export function GlobalSearchBar({
       case 'sector':
         router.push(`/activities?sector=${encodeURIComponent(result.metadata?.sector_code || result.title)}`)
         break
+      case 'tag':
+        router.push(`/activities?tag=${encodeURIComponent(result.title)}`)
+        break
     }
   }, [router])
+
+  // Navigate to full search results page
+  const handleSearchSubmit = useCallback(() => {
+    if (query.trim()) {
+      setOpen(false)
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+    }
+  }, [query, router])
+
+  // Handle Enter key press
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSearchSubmit()
+    }
+  }, [handleSearchSubmit])
 
   // Clear search
   const handleClear = useCallback(() => {
@@ -195,7 +216,7 @@ export function GlobalSearchBar({
       case 'organization':
         return result.subtitle || 'Organization'
       case 'tag':
-        return `Tag • ${result.metadata?.tags?.length || 0} activities`
+        return `Tag • ${result.metadata?.activity_count || 0} activities`
       case 'user':
         return result.subtitle || 'User'
       default:
@@ -294,6 +315,10 @@ export function GlobalSearchBar({
         return <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
           <span className="text-teal-600 font-semibold text-sm">S</span>
         </div>
+      case 'tag':
+        return <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+          <span className="text-purple-600 font-semibold text-sm">#</span>
+        </div>
       default:
         return <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
           <span className="text-gray-600 font-semibold text-sm">?</span>
@@ -303,15 +328,16 @@ export function GlobalSearchBar({
 
   return (
     <div className={cn("relative", className)}>
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none z-10" />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger className="w-full">
           <Input
             placeholder={placeholder}
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             onFocus={() => setOpen(true)}
-            className="pl-9 pr-9 rounded-xl w-full"
+            className="pl-10 pr-9 rounded-xl w-full"
           />
         </PopoverTrigger>
         {loading && (
@@ -327,12 +353,11 @@ export function GlobalSearchBar({
             <X className="h-3 w-3" />
           </Button>
         )}
-        <PopoverContent 
-          className="w-[500px] p-0 max-h-96" 
-          align="start"
-          onOpenAutoFocus={(e) => e.preventDefault()}
+          <PopoverContent 
+            className="w-[500px] p-0 max-h-96" 
+            align="start"
         >
-        <Command shouldFilter={false}>
+        <Command>
           <CommandList className="max-h-80 overflow-y-auto">
             {loading && (
               <div className="p-4 text-center text-sm text-muted-foreground">
@@ -357,7 +382,8 @@ export function GlobalSearchBar({
                   { type: 'activity', label: 'Activities', color: 'blue' },
                   { type: 'organization', label: 'Organizations', color: 'green' },
                   { type: 'user', label: 'Users', color: 'orange' },
-                  { type: 'sector', label: 'Sectors', color: 'teal' }
+                  { type: 'sector', label: 'Sectors', color: 'teal' },
+                  { type: 'tag', label: 'Tags', color: 'purple' }
                 ].map(({ type, label, color }) => {
                   const typeResults = results.filter(r => r.type === type)
                   if (typeResults.length === 0) return null
@@ -414,6 +440,11 @@ export function GlobalSearchBar({
                                   Sector
                                 </div>
                               )}
+                              {result.type === 'tag' && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {result.metadata?.activity_count || 0} activities
+                                </div>
+                              )}
                               {result.metadata?.tags && result.metadata.tags.length > 0 && (
                                 <div className="flex gap-1 mt-2 flex-wrap">
                                   {result.metadata.tags.slice(0, 2).map((tag, idx) => (
@@ -453,6 +484,20 @@ export function GlobalSearchBar({
               </div>
             )}
           </CommandList>
+          {/* Add "View All Results" option at bottom if there are results */}
+          {!loading && !error && query.trim() && results.length > 0 && (
+            <div className="border-t border-gray-100 p-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSearchSubmit}
+                className="w-full justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                View all results for "{query}"
+              </Button>
+            </div>
+          )}
         </Command>
         </PopoverContent>
       </Popover>

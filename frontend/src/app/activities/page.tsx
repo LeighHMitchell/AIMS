@@ -147,6 +147,8 @@ type Activity = {
   // Budget summaries from API  
   totalPlannedBudgetUSD?: number;
   totalDisbursementsAndExpenditureUSD?: number;
+  totalBudget?: number;
+  totalDisbursed?: number;
   
   // Organization data
   funders?: Organization[];
@@ -276,6 +278,7 @@ function ActivitiesPageContent() {
   console.log('[Activities Page] optimizedData.loading:', optimizedData.loading);
   console.log('[Activities Page] optimizedData.error:', optimizedData.error);
   console.log('[Activities Page] activities length:', activities.length);
+  console.log('[Activities Page] First activity data:', activities[0]);
   const loading = usingOptimization ? optimizedData.loading : legacyLoading;
   const error = usingOptimization ? optimizedData.error : legacyError;
   const searchQuery = usingOptimization ? optimizedData.searchQuery : '';
@@ -680,12 +683,12 @@ function ActivitiesPageContent() {
           bValue = b.partnerId?.toLowerCase() || '';
           break;
         case 'commitments':
-          aValue = a.totalPlannedBudgetUSD || 0;
-          bValue = b.totalPlannedBudgetUSD || 0;
+          aValue = (a as any).totalBudget || 0;
+          bValue = (b as any).totalBudget || 0;
           break;
         case 'disbursements':
-          aValue = a.totalDisbursementsAndExpenditureUSD || (a.disbursements || 0) + (a.expenditures || 0);
-          bValue = b.totalDisbursementsAndExpenditureUSD || (b.disbursements || 0) + (b.expenditures || 0);
+          aValue = (a as any).totalDisbursed || 0;
+          bValue = (b as any).totalDisbursed || 0;
           break;
         case 'createdAt':
           aValue = new Date(a.createdAt).getTime();
@@ -952,8 +955,8 @@ function ActivitiesPageContent() {
                       onClick={() => handleSort('commitments')}
                     >
                       <div className="flex items-center justify-end gap-1">
-                        Commitments
-                        <InfoIconTooltip content="All values are displayed in USD. Original currency values are available by clicking on an activity or hovering over the amount.">
+                        Total Budgeted
+                        <InfoIconTooltip content="Total budget amount across all budget entries for this activity. All values are displayed in USD.">
                           <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
                         </InfoIconTooltip>
                         {getSortIcon('commitments')}
@@ -964,8 +967,8 @@ function ActivitiesPageContent() {
                       onClick={() => handleSort('disbursements')}
                     >
                       <div className="flex items-center justify-end gap-1">
-                        Outflows
-                        <InfoIconTooltip content="All values are displayed in USD. Original currency values are available by clicking on an activity or hovering over the amount.">
+                        Total Disbursed
+                        <InfoIconTooltip content="Sum of all disbursement (type 3) and expenditure (type 4) transactions for this activity. All values are displayed in USD.">
                           <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
                         </InfoIconTooltip>
                         {getSortIcon('disbursements')}
@@ -1074,10 +1077,10 @@ function ActivitiesPageContent() {
                           </TooltipProvider>
                         </td>
                         <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
-                          {formatCurrency(activity.totalPlannedBudgetUSD || 0)}
+                          {formatCurrency((activity as any).totalBudget || 0)}
                         </td>
                         <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
-                          {formatCurrency(activity.totalDisbursementsAndExpenditureUSD || (activity.disbursements || 0) + (activity.expenditures || 0))}
+                          {formatCurrency((activity as any).totalDisbursed || 0)}
                         </td>
 
                         <td className="px-4 py-2 text-sm text-foreground whitespace-nowrap text-right">

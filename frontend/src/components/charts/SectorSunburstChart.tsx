@@ -1,6 +1,9 @@
 'use client';
 
-import React from 'react';
+// @ts-ignore
+import sectorGroupData from '@/data/SectorGroup.json';
+
+import React, { useState, useRef, useMemo } from 'react';
 
 interface SectorAllocation {
   id: string;
@@ -11,27 +14,44 @@ interface SectorAllocation {
   category?: string;
   categoryName?: string;
   categoryCode?: string;
+  groupName?: string;
 }
 
 interface SectorSunburstChartProps {
   allocations: SectorAllocation[];
+  onSegmentClick?: (code: string, level: 'category' | 'sector' | 'subsector') => void;
+  selectedCodes?: string[];
 }
 
-// Extended color palette for better visual distinction
+interface TooltipData {
+  x: number;
+  y: number;
+  code: string;
+  name: string;
+  percentage: number;
+  level: 'category' | 'sector' | 'subsector';
+}
+
+// Slate and dark blue color palette
 const COLORS = [
-  '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#6366F1',
-  '#EC4899', '#84CC16', '#06B6D4', '#F97316', '#14B8A6',
-  '#F43F5E', '#22C55E', '#A855F7', '#0EA5E9', '#EAB308',
-  '#EF4444', '#8B5CF6', '#59D4E8', '#FAB12F', '#4ADE80'
+  '#1e293b', '#334155', '#475569', '#64748b', '#0f172a',
+  '#1e40af', '#2563eb', '#3b82f6', '#60a5fa', '#93bbfe',
+  '#1e3a8a', '#1d4ed8', '#2b6cb0', '#1a365d', '#1e3b70'
 ];
 
 // Build multi-level hierarchy from allocations
 function buildMultiLevelHierarchy(allocations: SectorAllocation[]) {
+  const sectorGroupData = require('@/data/SectorGroup.json');
+  
+  // Create maps for quick lookup
+  const sectorDataMap = new Map(sectorGroupData.data.map((s: any) => [s.code, s]));
+  
+  // Build hierarchy: Group -> Category -> 5-digit sectors
   const hierarchyMap = new Map<string, {
     name: string;
     code: string;
     totalPercentage: number;
-    sectors: Map<string, {
+    categories: Map<string, {
       name: string;
       code: string;
       totalPercentage: number;
@@ -40,40 +60,80 @@ function buildMultiLevelHierarchy(allocations: SectorAllocation[]) {
   }>();
 
   allocations.forEach(allocation => {
-    const groupCode = allocation.code.substring(0, 3);
-    const sectorCode = allocation.code.length >= 3 ? allocation.code.substring(0, 3) : groupCode;
+    let groupCode: string;
+    let groupName: string;
+    let categoryCode: string;
+    let categoryName: string;
+    
+    // Handle different allocation levels
+    if (allocation.code.length === 3 && allocation.code.endsWith('0')) {
+      // This is a group-level allocation (e.g., 110 for Education)
+      groupCode = allocation.code;
+      groupName = allocation.name;
+      categoryCode = allocation.code; // For group-level, use same code for category
+      categoryName = allocation.name;
+    } else if (allocation.code.length === 3) {
+      // This is a category-level allocation (e.g., 111 for Education, Level Unspecified)
+      const groupCodeBase = allocation.code.substring(0, 2) + '0';
+      groupCode = groupCodeBase;
+      categoryCode = allocation.code;
+      categoryName = allocation.name;
+      
+      // Find group name from data
+      const groupData = sectorGroupData.data.find((s: any) => (s as any)['codeforiati:group-code'] === groupCodeBase);
+      groupName = groupData ? (groupData as any)['codeforiati:group-name'] : `Group ${groupCodeBase}`;
+    } else if (allocation.code.length === 5) {
+      // This is a 5-digit subsector
+      const sectorData = sectorDataMap.get(allocation.code);
+      if (!sectorData) return;
+      
+      groupCode = (sectorData as any)['codeforiati:group-code'] || allocation.code.substring(0, 2) + '0';
+      groupName = (sectorData as any)['codeforiati:group-name'] || `Group ${groupCode}`;
+      categoryCode = (sectorData as any)['codeforiati:category-code'] || allocation.code.substring(0, 3);
+      categoryName = (sectorData as any)['codeforiati:category-name'] || `Category ${categoryCode}`;
+    } else {
+      return; // Skip unknown formats
+    }
     
     // Initialize group if not exists
     if (!hierarchyMap.has(groupCode)) {
       hierarchyMap.set(groupCode, {
-        name: allocation.category || `Group ${groupCode}`,
+        name: groupName,
         code: groupCode,
         totalPercentage: 0,
-        sectors: new Map()
+        categories: new Map()
       });
     }
     
     const group = hierarchyMap.get(groupCode)!;
     
-    // Handle based on allocation level
-    if (allocation.code.length === 3) {
-      // This is a group-level allocation
-      group.totalPercentage += allocation.percentage;
-    } else if (allocation.code.length === 5) {
-      // This is a subsector
-      if (!group.sectors.has(sectorCode)) {
-        group.sectors.set(sectorCode, {
-          name: allocation.categoryName || `Sector ${sectorCode}`,
-          code: sectorCode,
-          totalPercentage: 0,
-          subsectors: []
-        });
-      }
-      const sector = group.sectors.get(sectorCode)!;
-      sector.subsectors.push(allocation);
-      sector.totalPercentage += allocation.percentage;
-      group.totalPercentage += allocation.percentage;
+    // Initialize category if not exists
+    if (!group.categories.has(categoryCode)) {
+      group.categories.set(categoryCode, {
+        name: categoryName,
+        code: categoryCode,
+        totalPercentage: 0,
+        subsectors: []
+      });
     }
+    
+    const category = group.categories.get(categoryCode)!;
+    
+    // Add the allocation at the appropriate level
+    if (allocation.code.length === 5 || 
+        (allocation.code.length === 3 && !allocation.code.endsWith('0'))) {
+      // Add as subsector (5-digit or 3-digit category)
+      const enhancedAllocation = {
+        ...allocation,
+        groupName: groupName,
+        categoryName: categoryName
+      };
+      category.subsectors.push(enhancedAllocation);
+    }
+    
+    // Update percentages
+    category.totalPercentage += allocation.percentage;
+    group.totalPercentage += allocation.percentage;
   });
 
   return hierarchyMap;
@@ -81,15 +141,119 @@ function buildMultiLevelHierarchy(allocations: SectorAllocation[]) {
 
 // Export function to get category color for consistency
 export const getCategoryColorBySunburstChart = (allocations: SectorAllocation[], categoryCode: string): string => {
+  const sectorGroupData = require('@/data/SectorGroup.json');
   const hierarchyMap = buildMultiLevelHierarchy(allocations.filter(a => a.percentage > 0));
   const groups = Array.from(hierarchyMap.entries()).map(([code]) => code).sort();
-  const index = groups.findIndex(code => code === categoryCode);
+  
+  // Find the group code for this category
+  const sectorData = sectorGroupData.data.find((s: any) => 
+    s['codeforiati:category-code'] === categoryCode || 
+    s.code === categoryCode
+  );
+  const groupCode = sectorData?.['codeforiati:group-code'] || categoryCode.substring(0, 2) + '0';
+  
+  const index = groups.findIndex(code => code === groupCode);
   return COLORS[index % COLORS.length] || '#6B7280';
 };
 
-export default function SectorSunburstChart({ allocations = [] }: SectorSunburstChartProps) {
-  // Filter allocations with percentage > 0
-  const validAllocations = allocations.filter(allocation => allocation.percentage > 0);
+export default function SectorSunburstChart({ 
+  allocations = [], 
+  onSegmentClick, 
+  selectedCodes = [] 
+}: SectorSunburstChartProps) {
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  
+  // Handle mouse events for tooltip
+  const handleMouseEnter = (event: React.MouseEvent, data: { code: string; name: string; percentage: number; level: 'category' | 'sector' | 'subsector' }) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (rect) {
+      setTooltip({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+        ...data
+      });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip(null);
+  };
+
+  const handleMouseMove = (event: React.MouseEvent) => {
+    if (tooltip) {
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (rect) {
+        setTooltip(prev => prev ? {
+          ...prev,
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top
+        } : null);
+      }
+    }
+  };
+
+  // Expand allocations to include parent levels for visualization
+  const expandedAllocations = useMemo(() => {
+    const sectorGroupData = require('@/data/SectorGroup.json');
+    const expanded: SectorAllocation[] = [];
+    const addedCodes = new Set<string>();
+    
+    // First add all real allocations
+    allocations.forEach(allocation => {
+      expanded.push(allocation);
+      addedCodes.add(allocation.code);
+    });
+    
+    // Then add virtual parent entries for 5-digit codes
+    allocations.forEach(allocation => {
+      // Only expand 5-digit codes
+      if (allocation.code.length === 5 && allocation.percentage > 0) {
+        const sectorData = sectorGroupData.data.find((s: any) => s.code === allocation.code);
+        if (sectorData) {
+          // Add category (3-digit) if not already present
+          const categoryCode = sectorData['codeforiati:category-code'];
+          const categoryName = sectorData['codeforiati:category-name'];
+          if (categoryCode && !addedCodes.has(categoryCode)) {
+            expanded.push({
+              id: `virtual-${categoryCode}`,
+              code: categoryCode,
+              name: categoryName,
+              percentage: 0, // Virtual entry for hierarchy visualization
+              level: 'sector',
+              category: categoryName,
+              categoryCode: categoryCode
+            });
+            addedCodes.add(categoryCode);
+          }
+          
+          // Add group (e.g., 110) if not already present
+          const groupCode = sectorData['codeforiati:group-code'];
+          const groupName = sectorData['codeforiati:group-name'];
+          if (groupCode && !addedCodes.has(groupCode)) {
+            expanded.push({
+              id: `virtual-${groupCode}`,
+              code: groupCode,
+              name: groupName,
+              percentage: 0, // Virtual entry for hierarchy visualization
+              level: 'group',
+              category: groupName,
+              categoryCode: groupCode
+            });
+            addedCodes.add(groupCode);
+          }
+        }
+      }
+    });
+    
+    console.log('[SunburstChart] Expanded allocations:', expanded);
+    return expanded;
+  }, [allocations]);
+
+  // Filter allocations with percentage > 0 (but keep virtual parents)
+  const validAllocations = expandedAllocations.filter(allocation => 
+    allocation.percentage > 0 || allocation.id?.startsWith('virtual-')
+  );
   
   if (validAllocations.length === 0) {
     return (
@@ -105,12 +269,29 @@ export default function SectorSunburstChart({ allocations = [] }: SectorSunburst
   // Build hierarchy
   const hierarchyMap = buildMultiLevelHierarchy(validAllocations);
   
+  // Debug logging
+  console.log('[SunburstChart] Valid allocations:', validAllocations);
+  console.log('[SunburstChart] Hierarchy map size:', hierarchyMap.size);
+  console.log('[SunburstChart] Groups:', Array.from(hierarchyMap.keys()));
+  hierarchyMap.forEach((group, groupCode) => {
+    console.log(`[SunburstChart] Group ${groupCode} (${group.name}):`);
+    group.categories.forEach((cat, catCode) => {
+      console.log(`  Category ${catCode} (${cat.name}): ${cat.subsectors.length} subsectors`);
+    });
+  });
+  
   // Calculate dimensions
   const centerX = 200;
   const centerY = 200;
   const innerRadius = 50;
   const middleRadius = 100;
   const outerRadius = 150;
+  
+  // Calculate unallocated percentage (only from real allocations, not virtual)
+  const totalAllocated = validAllocations
+    .filter(a => !a.id?.startsWith('virtual-'))
+    .reduce((sum, a) => sum + a.percentage, 0);
+  const unallocatedPercentage = Math.max(0, 100 - totalAllocated);
 
   // Render the multi-level sunburst
   const renderSunburst = () => {
@@ -118,12 +299,105 @@ export default function SectorSunburstChart({ allocations = [] }: SectorSunburst
     let currentAngle = 0;
     const groups = Array.from(hierarchyMap.entries());
     
+    // Add unallocated segment if needed
+    if (unallocatedPercentage > 0) {
+      const unallocatedAngle = (unallocatedPercentage / 100) * 360;
+      
+      // Render unallocated segment across all rings
+      const innerPath = createArcPath(
+        centerX,
+        centerY,
+        innerRadius,
+        middleRadius,
+        currentAngle,
+        currentAngle + unallocatedAngle
+      );
+      
+      const middlePath = createArcPath(
+        centerX,
+        centerY,
+        middleRadius,
+        outerRadius,
+        currentAngle,
+        currentAngle + unallocatedAngle
+      );
+      
+      const outerPath = createArcPath(
+        centerX,
+        centerY,
+        outerRadius,
+        outerRadius + 40,
+        currentAngle,
+        currentAngle + unallocatedAngle
+      );
+      
+      elements.push(
+        <g key="unallocated">
+          <path
+            d={innerPath}
+            fill="#E5E7EB"
+            stroke="#fff"
+            strokeWidth="2"
+            opacity="0.6"
+            onMouseEnter={(e) => handleMouseEnter(e, {
+              code: 'unallocated',
+              name: 'Unallocated',
+              percentage: unallocatedPercentage,
+              level: 'category'
+            })}
+            onMouseLeave={handleMouseLeave}
+          />
+          <path
+            d={middlePath}
+            fill="#E5E7EB"
+            stroke="#fff"
+            strokeWidth="1"
+            opacity="0.5"
+            onMouseEnter={(e) => handleMouseEnter(e, {
+              code: 'unallocated',
+              name: 'Unallocated',
+              percentage: unallocatedPercentage,
+              level: 'sector'
+            })}
+            onMouseLeave={handleMouseLeave}
+          />
+          <path
+            d={outerPath}
+            fill="#E5E7EB"
+            stroke="#fff"
+            strokeWidth="1"
+            opacity="0.4"
+            onMouseEnter={(e) => handleMouseEnter(e, {
+              code: 'unallocated',
+              name: 'Unallocated',
+              percentage: unallocatedPercentage,
+              level: 'subsector'
+            })}
+            onMouseLeave={handleMouseLeave}
+          />
+        </g>
+      );
+      
+      currentAngle += unallocatedAngle;
+    }
+    
     groups.forEach(([groupCode, groupData], groupIndex) => {
-      const groupPercentage = groupData.totalPercentage;
+      // For virtual entries, we need to sum up actual percentages from real allocations
+      const actualGroupPercentage = Array.from(groupData.categories.values())
+        .reduce((sum, cat) => sum + cat.subsectors
+          .filter(s => !s.id?.startsWith('virtual-'))
+          .reduce((catSum, s) => catSum + s.percentage, 0), 0);
+      
+      const groupPercentage = actualGroupPercentage || groupData.totalPercentage;
       const groupAngle = (groupPercentage / 100) * 360;
       const groupColor = COLORS[groupIndex % COLORS.length];
       
-      // Inner ring - Group/Category
+      // Skip rendering if angle is 0
+      if (groupAngle === 0) {
+        return;
+      }
+      
+      // Inner ring - Group (e.g. Education, Health)
       const innerPath = createArcPath(
         centerX,
         centerY,
@@ -141,55 +415,74 @@ export default function SectorSunburstChart({ allocations = [] }: SectorSunburst
             stroke="#fff"
             strokeWidth="2"
             opacity="0.9"
+            style={{
+              cursor: onSegmentClick ? 'pointer' : 'default'
+            }}
+            onClick={() => onSegmentClick?.(groupCode, 'category')}
+            onMouseEnter={(e) => handleMouseEnter(e, {
+              code: groupCode,
+              name: groupData.name,
+              percentage: groupPercentage,
+              level: 'category'
+            })}
+            onMouseLeave={handleMouseLeave}
           />
-          {groupAngle > 15 && (
-            <text
-              x={centerX + ((innerRadius + middleRadius) / 2) * Math.cos((currentAngle + groupAngle / 2 - 90) * Math.PI / 180)}
-              y={centerY + ((innerRadius + middleRadius) / 2) * Math.sin((currentAngle + groupAngle / 2 - 90) * Math.PI / 180)}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize="11"
-              fill="#fff"
-              fontWeight="bold"
-            >
-              {groupCode}
-            </text>
-          )}
         </g>
       );
       
-      // Middle and outer rings - Sectors and Subsectors
-      let sectorStartAngle = currentAngle;
-      const sectors = Array.from(groupData.sectors.values());
+      // Middle and outer rings - Categories and 5-digit sectors
+      let categoryStartAngle = currentAngle;
+      const categories = Array.from(groupData.categories.values());
       
-      sectors.forEach((sectorData, sectorIndex) => {
-        const sectorPercentage = sectorData.totalPercentage;
-        const sectorAngle = (sectorPercentage / 100) * 360;
+      categories.forEach((categoryData, categoryIndex) => {
+        // For virtual entries, sum up actual percentages from real subsectors
+        const actualCategoryPercentage = categoryData.subsectors
+          .filter(s => !s.id?.startsWith('virtual-'))
+          .reduce((sum, s) => sum + s.percentage, 0);
         
-        // Middle ring - Sectors
+        const categoryPercentage = actualCategoryPercentage || categoryData.totalPercentage;
+        const categoryAngle = (categoryPercentage / 100) * 360;
+        
+        // Skip rendering if angle is 0
+        if (categoryAngle === 0) {
+          return;
+        }
+        
+        // Middle ring - Categories (3-digit)
         const middlePath = createArcPath(
           centerX,
           centerY,
           middleRadius,
           outerRadius,
-          sectorStartAngle,
-          sectorStartAngle + sectorAngle
+          categoryStartAngle,
+          categoryStartAngle + categoryAngle
         );
         
         elements.push(
           <path
-            key={`sector-${sectorData.code}`}
+            key={`category-${categoryData.code}`}
             d={middlePath}
             fill={groupColor}
             stroke="#fff"
             strokeWidth="1"
             opacity="0.7"
+            style={{
+              cursor: onSegmentClick ? 'pointer' : 'default'
+            }}
+            onClick={() => onSegmentClick?.(categoryData.code, 'sector')}
+            onMouseEnter={(e) => handleMouseEnter(e, {
+              code: categoryData.code,
+              name: categoryData.name,
+              percentage: categoryPercentage,
+              level: 'sector'
+            })}
+            onMouseLeave={handleMouseLeave}
           />
         );
         
-        // Outer ring - Subsectors
-        let subsectorStartAngle = sectorStartAngle;
-        sectorData.subsectors.forEach((subsector, subsectorIndex) => {
+        // Outer ring - 5-digit subsectors
+        let subsectorStartAngle = categoryStartAngle;
+        categoryData.subsectors.forEach((subsector, subsectorIndex) => {
           const subsectorPercentage = subsector.percentage;
           const subsectorAngle = (subsectorPercentage / 100) * 360;
           
@@ -202,6 +495,8 @@ export default function SectorSunburstChart({ allocations = [] }: SectorSunburst
             subsectorStartAngle + subsectorAngle
           );
           
+          const isSubsectorSelected = selectedCodes.includes(subsector.code);
+          
           elements.push(
             <g key={`subsector-${subsector.code}`}>
               <path
@@ -209,27 +504,27 @@ export default function SectorSunburstChart({ allocations = [] }: SectorSunburst
                 fill={groupColor}
                 stroke="#fff"
                 strokeWidth="1"
-                opacity="0.5"
+                opacity={isSubsectorSelected ? "0.6" : "0.5"}
+                style={{
+                  cursor: onSegmentClick ? 'pointer' : 'default',
+                  filter: isSubsectorSelected ? 'brightness(1.1)' : 'none'
+                }}
+                onClick={() => onSegmentClick?.(subsector.code, 'subsector')}
+                onMouseEnter={(e) => handleMouseEnter(e, {
+                  code: subsector.code,
+                  name: `${subsector.code} – ${subsector.name}`,
+                  percentage: subsector.percentage,
+                  level: 'subsector'
+                })}
+                onMouseLeave={handleMouseLeave}
               />
-              {subsectorAngle > 10 && (
-                <text
-                  x={centerX + (outerRadius + 20) * Math.cos((subsectorStartAngle + subsectorAngle / 2 - 90) * Math.PI / 180)}
-                  y={centerY + (outerRadius + 20) * Math.sin((subsectorStartAngle + subsectorAngle / 2 - 90) * Math.PI / 180)}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize="9"
-                  fill="#374151"
-                >
-                  {subsector.percentage.toFixed(0)}%
-                </text>
-              )}
             </g>
           );
           
           subsectorStartAngle += subsectorAngle;
         });
         
-        sectorStartAngle += sectorAngle;
+        categoryStartAngle += categoryAngle;
       });
       
       currentAngle += groupAngle;
@@ -238,12 +533,37 @@ export default function SectorSunburstChart({ allocations = [] }: SectorSunburst
     return elements;
   };
 
+  // Tooltip component
+  const renderTooltip = () => {
+    if (!tooltip) return null;
+    
+    return (
+      <div
+        className="absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm pointer-events-none"
+        style={{
+          left: tooltip.x + 10,
+          top: tooltip.y - 10,
+          maxWidth: '200px'
+        }}
+      >
+        <div className="font-semibold">{tooltip.name}</div>
+        <div className="text-gray-300">
+          {tooltip.level === 'category' ? 'DAC Category' : 
+           tooltip.level === 'sector' ? 'DAC 3-digit Sector' : 'DAC 5-digit Sub-sector'}
+        </div>
+        <div className="text-gray-300">{tooltip.percentage.toFixed(1)}% allocation</div>
+      </div>
+    );
+  };
+
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4">
+    <div className="w-full h-full flex flex-col items-center justify-center p-4 relative">
       <svg 
+        ref={svgRef}
         width={400} 
         height={400}
         className="max-w-full max-h-full"
+        onMouseMove={handleMouseMove}
       >
         {renderSunburst()}
         
@@ -265,7 +585,7 @@ export default function SectorSunburstChart({ allocations = [] }: SectorSunburst
           fontWeight="bold"
           fill="#374151"
         >
-          100%
+          {totalAllocated.toFixed(0)}%
         </text>
         <text
           x={centerX}
@@ -275,34 +595,10 @@ export default function SectorSunburstChart({ allocations = [] }: SectorSunburst
           fontSize="12"
           fill="#6b7280"
         >
-          Total
+          Allocated
         </text>
       </svg>
-      
-      {/* Legend */}
-      <div className="mt-4 w-full max-w-md">
-        <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border">
-          <div className="text-xs font-medium text-gray-700 mb-2">Sector Categories:</div>
-          <div className="grid grid-cols-2 gap-2">
-            {Array.from(hierarchyMap.entries()).map(([code, data], index) => (
-              <div key={code} className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                />
-                <span className="text-xs text-gray-600 truncate">{data.name}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-2 pt-2 border-t">
-            <div className="text-xs text-gray-500">
-              <div>• Inner ring: Categories</div>
-              <div>• Middle ring: Sectors</div>
-              <div>• Outer ring: Sub-sectors</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {renderTooltip()}
     </div>
   );
 }

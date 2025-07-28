@@ -35,14 +35,14 @@ export async function PATCH(
         throw deleteError;
       }
       
-      // Then insert new mappings if any (only those with targets)
-      const mappingsWithTargets = body.sdgMappings.filter((mapping: any) => mapping.sdgTarget && mapping.sdgTarget !== '');
+      // Then insert new mappings if any (include mappings without targets since we're not using targets)
+      const validMappings = body.sdgMappings.filter((mapping: any) => mapping.sdgGoal);
       
-      if (mappingsWithTargets.length > 0) {
-        const sdgMappingsData = mappingsWithTargets.map((mapping: any) => ({
+      if (validMappings.length > 0) {
+        const sdgMappingsData = validMappings.map((mapping: any) => ({
           activity_id: id,
           sdg_goal: mapping.sdgGoal,
-          sdg_target: mapping.sdgTarget,
+          sdg_target: mapping.sdgTarget && mapping.sdgTarget !== '' ? mapping.sdgTarget : `${mapping.sdgGoal}.1`,
           contribution_percent: mapping.contributionPercent || null,
           notes: mapping.notes || null
         }));
@@ -137,10 +137,20 @@ export async function GET(
       .select('*')
       .eq('activity_id', id);
     
-    const { data: locations } = await getSupabaseAdmin()
+    let { data: locations, error: locationsError } = await getSupabaseAdmin()
       .from('activity_locations')
       .select('*')
       .eq('activity_id', id);
+
+    // Handle case where activity_locations table doesn't exist yet
+    if (locationsError && locationsError.message.includes('relation "activity_locations" does not exist')) {
+      console.warn('[AIMS API] activity_locations table does not exist, using empty locations');
+      // Set empty locations instead of failing
+      locations = null;
+      locationsError = null;
+    } else if (locationsError) {
+      console.error('[AIMS API] Error fetching locations:', locationsError);
+    }
     
     const { data: sdgMappings } = await getSupabaseAdmin()
       .from('activity_sdg_mappings')
@@ -247,32 +257,57 @@ export async function GET(
       })) || [],
       tags: activityTags?.map((tagRelation: any) => tagRelation.tags) || [],
       locations: (() => {
-        const siteLocations: any[] = [];
-        const broadCoverageLocations: any[] = [];
+        console.log('[AIMS API] Raw locations from DB:', locations);
+        const specificLocations: any[] = [];
+        const coverageAreas: any[] = [];
         
         locations?.forEach((loc: any) => {
           if (loc.location_type === 'site') {
-            siteLocations.push({
+            specificLocations.push({
               id: loc.id,
-              location_name: loc.location_name,
-              description: loc.description,
-              lat: parseFloat(loc.latitude),
-              lng: parseFloat(loc.longitude),
-              category: loc.category
+              name: loc.location_name,
+              type: loc.site_type || 'project_site',
+              latitude: loc.latitude ? parseFloat(loc.latitude) : null,
+              longitude: loc.longitude ? parseFloat(loc.longitude) : null,
+              address: loc.address,
+              notes: loc.description,
+              // Include administrative data
+              stateRegionCode: loc.state_region_code,
+              stateRegionName: loc.state_region_name,
+              townshipCode: loc.township_code,
+              townshipName: loc.township_name
             });
           } else if (loc.location_type === 'coverage') {
-            broadCoverageLocations.push({
+            const coverageArea: any = {
               id: loc.id,
-              admin_unit: loc.admin_unit,
-              description: loc.description
-            });
+              scope: loc.coverage_scope || 'subnational',
+              description: loc.description || loc.location_name
+            };
+            
+            // Add regions data if available
+            if (loc.state_region_name) {
+              coverageArea.regions = [{
+                id: loc.state_region_code || loc.id,
+                name: loc.state_region_name,
+                code: loc.state_region_code || '',
+                townships: loc.township_name ? [{
+                  id: loc.township_code || loc.id,
+                  name: loc.township_name,
+                  code: loc.township_code || ''
+                }] : []
+              }];
+            }
+            
+            coverageAreas.push(coverageArea);
           }
         });
         
-        return {
-          site_locations: siteLocations,
-          broad_coverage_locations: broadCoverageLocations
+        const result = {
+          specificLocations,
+          coverageAreas
         };
+        console.log('[AIMS API] Transformed locations result:', result);
+        return result;
       })()
     };
     

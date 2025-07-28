@@ -55,21 +55,39 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
     
     const totalCommitment = transactions
       .filter((t: Transaction) => t.transaction_type === "2")
-      .reduce((sum: number, t: Transaction) => sum + (parseFloat(String(t.value_usd)) || 0), 0);
+      .reduce((sum: number, t: Transaction) => {
+        let usdValue = parseFloat(String(t.value_usd)) || 0;
+        
+        // FIXED: If transaction is in USD but value_usd is missing, use the original value
+        if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
+          usdValue = parseFloat(String(t.value)) || 0;
+        }
+        
+        return sum + (usdValue > 0 ? usdValue : 0);
+      }, 0);
     
     const totalDisbursement = transactions
       .filter((t: Transaction) => t.transaction_type === "3")
-      .reduce((sum: number, t: Transaction) => sum + (parseFloat(String(t.value_usd)) || 0), 0);
+      .reduce((sum: number, t: Transaction) => {
+        const usdValue = parseFloat(String(t.value_usd)) || 0;
+        return sum + (usdValue > 0 ? usdValue : 0);
+      }, 0);
     
     const totalExpenditure = transactions
       .filter((t: Transaction) => t.transaction_type === "4")
-      .reduce((sum: number, t: Transaction) => sum + (parseFloat(String(t.value_usd)) || 0), 0);
+      .reduce((sum: number, t: Transaction) => {
+        const usdValue = parseFloat(String(t.value_usd)) || 0;
+        return sum + (usdValue > 0 ? usdValue : 0);
+      }, 0);
 
     const totalSpent = totalDisbursement + totalExpenditure;
     
     // Calculate planned budget from budgets
     const budgets = activity?.budgets || [];
-    const totalPlannedBudget = budgets.reduce((sum: number, b: Budget) => sum + (parseFloat(String(b.usd_value)) || 0), 0);
+    const totalPlannedBudget = budgets.reduce((sum: number, b: Budget) => {
+      const usdValue = parseFloat(String(b.usd_value)) || 0;
+      return sum + (usdValue > 0 ? usdValue : 0);
+    }, 0);
     
     return {
       totalCommitment,

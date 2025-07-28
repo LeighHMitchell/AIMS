@@ -67,7 +67,22 @@ export async function upsertActivitySectors(activityId: string, sectors: SectorP
         console.log(`[AIMS] Category mapping: ${categoryCode} -> ${categoryName}`);
         
         // Determine hierarchy level based on code length or provided level
-        const level = sector.level || (sector.code.length === 3 ? 'group' : sector.code.length === 5 ? 'subsector' : 'sector');
+        // Map frontend levels to database levels
+        let level: string | undefined = sector.level;
+        if (level === 'category') {
+          level = 'sector'; // Categories are stored as 'sector' level in database
+        } else if (!level) {
+          // Auto-detect based on code length
+          if (sector.code.length === 3 && sector.code.endsWith('0')) {
+            level = 'group';
+          } else if (sector.code.length === 3) {
+            level = 'sector'; // 3-digit non-group codes are categories (stored as sector)
+          } else if (sector.code.length === 5) {
+            level = 'subsector';
+          } else {
+            level = 'sector'; // Default fallback
+          }
+        }
         
         // Map to the simplified schema
         const mappedSector = {

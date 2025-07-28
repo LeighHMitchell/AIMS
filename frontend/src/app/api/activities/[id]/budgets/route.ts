@@ -25,6 +25,7 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch budgets' }, { status: 500 });
     }
 
+    console.log(`[Budgets API] Found ${budgets?.length || 0} budgets for activity ${activityId}:`, budgets);
     return NextResponse.json(budgets || []);
   } catch (error) {
     console.error('Unexpected error fetching activity budgets:', error);

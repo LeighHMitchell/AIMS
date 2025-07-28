@@ -32,6 +32,7 @@ import {
   showFieldSaveSuccess,
   TRANSACTION_TOAST_IDS 
 } from '@/lib/toast-manager';
+import { CopyField } from '@/components/ui/copy-field';
 
 // Common currencies
 const COMMON_CURRENCIES = [
@@ -644,12 +645,16 @@ export default function TransactionForm({
               <Label htmlFor="status">
                 Transaction Status <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="status"
-                value={formData.status === 'validated' ? '1 Validated' : '2 Unvalidated'}
-                disabled
-                className="bg-gray-100 cursor-not-allowed"
-              />
+              <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-gray-100">
+                <span className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                    {formData.status === 'validated' ? '1' : '2'}
+                  </span>
+                  <span className="font-medium">
+                    {formData.status === 'validated' ? 'Validated' : 'Unvalidated'}
+                  </span>
+                </span>
+              </div>
             </div>
 
             {/* Value Date (optional) */}
@@ -673,26 +678,7 @@ export default function TransactionForm({
             </div>
           </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">
-              Description
-              <span className="text-gray-500 text-xs ml-2">(optional)</span>
-            </Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              onBlur={async (e) => {
-                if (transaction && formData.description !== transaction.description) {
-                  await saveField("description", formData.description);
-                }
-              }}
-              placeholder="Enter transaction description..."
-              rows={3}
-            />
-            {renderFieldIcon("description")}
-          </div>
+
 
           {/* Organizations Section */}
           <div className="space-y-8"> {/* Add more whitespace between cards */}
@@ -719,6 +705,7 @@ export default function TransactionForm({
                   placeholder="Select provider organization..."
                   allowManualEntry={false}
                   fallbackRef={formData.provider_org_ref}
+                  className="px-4 py-4 text-base leading-relaxed h-auto min-h-[3.5rem]"
                 />
                 {renderFieldIcon("provider_org_id")}
               </CardContent>
@@ -742,10 +729,32 @@ export default function TransactionForm({
                   placeholder="Select receiver organization..."
                   allowManualEntry={false}
                   fallbackRef={formData.receiver_org_ref}
+                  className="px-4 py-4 text-base leading-relaxed h-auto min-h-[3.5rem]"
                 />
                 {renderFieldIcon("receiver_org_id")}
               </CardContent>
             </Card>
+          </div>
+
+          {/* Description Section */}
+          <div className="space-y-2">
+            <Label htmlFor="description">
+              Description
+              <span className="text-gray-500 text-xs ml-2">(optional)</span>
+            </Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onBlur={async (e) => {
+                if (transaction && formData.description !== transaction.description) {
+                  await saveField("description", formData.description);
+                }
+              }}
+              placeholder="Enter transaction description..."
+              rows={3}
+            />
+            {renderFieldIcon("description")}
           </div>
 
           {/* Advanced Fields */}
@@ -758,25 +767,6 @@ export default function TransactionForm({
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Transaction Reference */}
-                <div className="space-y-2">
-                  <Label htmlFor="transaction_reference">
-                    Transaction Reference
-                  </Label>
-                  <Input
-                    id="transaction_reference"
-                    value={formData.transaction_reference || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, transaction_reference: e.target.value }))}
-                    onBlur={async (e) => {
-                      if (transaction && formData.transaction_reference !== transaction.transaction_reference) {
-                        await saveField("transaction_reference", formData.transaction_reference);
-                      }
-                    }}
-                    placeholder="Internal reference number"
-                  />
-                  {renderFieldIcon("transaction_reference")}
-                </div>
-
                 {/* Disbursement Channel */}
                 <div className="space-y-2">
                   <Label htmlFor="disbursement_channel">
@@ -804,6 +794,26 @@ export default function TransactionForm({
                     </SelectContent>
                   </Select>
                   {renderFieldIcon("disbursement_channel")}
+                </div>
+
+                {/* Humanitarian Transaction */}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_humanitarian"
+                    checked={formData.is_humanitarian || false}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_humanitarian: e.target.checked }))}
+                    onBlur={async (e) => {
+                      if (transaction && formData.is_humanitarian !== transaction.is_humanitarian) {
+                        await saveField("is_humanitarian", formData.is_humanitarian);
+                      }
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="is_humanitarian" className="font-normal cursor-pointer">
+                    This is a humanitarian transaction
+                  </Label>
+                  {renderFieldIcon("is_humanitarian")}
                 </div>
 
                 {/* Sector Code */}
@@ -983,32 +993,65 @@ export default function TransactionForm({
                 </div>
               </div>
 
-              {/* Humanitarian Flag */}
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="is_humanitarian"
-                  checked={formData.is_humanitarian || false}
-                  onChange={(e) => setFormData(prev => ({ ...prev, is_humanitarian: e.target.checked }))}
-                  onBlur={async (e) => {
-                    if (transaction && formData.is_humanitarian !== transaction.is_humanitarian) {
-                      await saveField("is_humanitarian", formData.is_humanitarian);
-                    }
-                  }}
-                  className="rounded border-gray-300"
-                />
-                <Label htmlFor="is_humanitarian" className="font-normal cursor-pointer">
-                  This is a humanitarian transaction
-                </Label>
-                {renderFieldIcon("is_humanitarian")}
-              </div>
+
             </CollapsibleContent>
           </Collapsible>
         </CardContent>
       </Card>
 
+      {/* System Information - at bottom */}
+      <Card className="bg-gray-50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm text-gray-600">System Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Activity UUID */}
+            <CopyField
+              label="Activity ID"
+              value={activityId}
+              placeholder="System generated"
+              fieldClassName="bg-white border-gray-200"
+              toastMessage="Activity ID copied!"
+            />
+            
+            {/* Transaction UUID - only show for existing transactions */}
+            {transaction?.uuid && (
+              <CopyField
+                label="Transaction ID"
+                value={transaction.uuid}
+                placeholder="System generated"
+                fieldClassName="bg-white border-gray-200"
+                toastMessage="Transaction ID copied!"
+              />
+            )}
+          </div>
+          
+          {/* Transaction Reference */}
+          <div className="space-y-2">
+            <Label htmlFor="transaction_reference_bottom">
+              Transaction Reference
+              <span className="text-gray-500 text-xs ml-2">(optional internal reference)</span>
+            </Label>
+            <Input
+              id="transaction_reference_bottom"
+              value={formData.transaction_reference || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, transaction_reference: e.target.value }))}
+              onBlur={async (e) => {
+                if (transaction && formData.transaction_reference !== transaction.transaction_reference) {
+                  await saveField("transaction_reference", formData.transaction_reference);
+                }
+              }}
+              placeholder="Internal reference number"
+              className="bg-white"
+            />
+            {renderFieldIcon("transaction_reference")}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Actions */}
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-end gap-3 mb-6">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>

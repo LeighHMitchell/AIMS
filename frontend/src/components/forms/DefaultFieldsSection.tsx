@@ -197,6 +197,7 @@ export function DefaultFieldsSection({
               id="default-currency"
               value={values.default_currency || ''}
               onValueChange={handleCurrencyChange}
+              forceDropUp={true}
               placeholder="Select Currency"
               disabled={disabled || isUpdating}
             />

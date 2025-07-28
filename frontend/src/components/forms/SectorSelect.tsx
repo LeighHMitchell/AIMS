@@ -23,7 +23,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import dacSectorsData from "@/data/dac-sectors.json"
+import sectorGroupData from "@/data/SectorGroup.json"
 import { EnhancedMultiSelect } from "@/components/ui/enhanced-multi-select"
+import { HierarchicalSectorSelect } from './HierarchicalSectorSelect';
 
 interface Sector {
   code: string
@@ -35,16 +37,60 @@ interface SectorCategory {
   [categoryName: string]: Sector[]
 }
 
-// Helper to transform DAC sector data for EnhancedMultiSelect
+// Helper to transform DAC sector data for EnhancedMultiSelect using SectorGroup.json
 export function transformSectorGroups() {
-  return Object.entries(dacSectorsData).map(([category, options]) => ({
-    label: category,
-    options: options.map(sector => ({
-      code: sector.code,
-      name: sector.name,
-      description: sector.description,
-    })),
-  }));
+  // Group sectors by their group-name from SectorGroup.json
+  const groupedSectors: { [groupName: string]: any[] } = {};
+  
+  // Filter to only include 5-digit DAC sector codes
+  const fiveDigitSectors = sectorGroupData.data.filter((sector: any) => 
+    sector.code && sector.code.length === 5
+  );
+  
+  fiveDigitSectors.forEach((sector: any) => {
+    const groupName = sector['codeforiati:group-name'] || 'Other';
+    if (!groupedSectors[groupName]) {
+      groupedSectors[groupName] = [];
+    }
+    groupedSectors[groupName].push(sector);
+  });
+
+  return Object.entries(groupedSectors).map(([groupName, sectors]) => {
+    // Group by categories within this group
+    const categorizedSectors: { [categoryName: string]: any[] } = {};
+    sectors.forEach(sector => {
+      const categoryName = sector['codeforiati:category-name'] || 'Other';
+      if (!categorizedSectors[categoryName]) {
+        categorizedSectors[categoryName] = [];
+      }
+      categorizedSectors[categoryName].push(sector);
+    });
+
+    // Create options for 5-digit sectors only
+    const options: any[] = [];
+    
+    Object.entries(categorizedSectors).forEach(([categoryName, categorySectors]) => {
+      // Sort sectors by code
+      categorySectors.sort((a, b) => a.code.localeCompare(b.code));
+      
+      // Add individual 5-digit sector options
+      categorySectors.forEach(sector => {
+        options.push({
+          code: sector.code,
+          name: `${sector.code} – ${sector.name}`,
+          description: sector.name,
+          indent: 0, // No indentation for flat list
+          categoryName: categoryName,
+          groupName: groupName
+        });
+      });
+    });
+    
+    return {
+      label: groupName,
+      options: options,
+    };
+  });
 }
 
 interface SectorSelectProps {
@@ -53,22 +99,39 @@ interface SectorSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  variant?: 'flat' | 'hierarchical';
+  maxSelections?: number;
 }
 
 export function SectorSelect({
   value,
   onValueChange,
-  placeholder = "Select OECD DAC sector(s)",
+  placeholder = "Select DAC 5-digit sector code(s)",
   disabled = false,
   className,
+  variant = 'flat',
+  maxSelections = 10,
 }: SectorSelectProps) {
+  if (variant === 'hierarchical') {
+    return (
+      <HierarchicalSectorSelect
+        value={value}
+        onValueChange={onValueChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        className={className}
+        maxSelections={maxSelections}
+      />
+    );
+  }
+
   return (
     <EnhancedMultiSelect
       groups={transformSectorGroups()}
       value={value}
       onValueChange={onValueChange}
       placeholder={placeholder}
-      searchPlaceholder="Search sectors..."
+      searchPlaceholder="Search 5-digit sector codes..."
       disabled={disabled}
       className={className}
     />
@@ -104,3 +167,6 @@ export const getSectorDescription = (code: string): string => {
 }
 
 export default SectorSelect
+
+// Direct export for convenience
+export { HierarchicalSectorSelect } from './HierarchicalSectorSelect';

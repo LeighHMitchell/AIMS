@@ -83,8 +83,8 @@ const nextConfig = {
   },
 
   typescript: {
-    // Temporarily ignore TypeScript errors for deployment
-    ignoreBuildErrors: true,
+    // Enable strict TypeScript checking for production builds
+    ignoreBuildErrors: false,
   },
   eslint: {
     // During production build, we want to see ESLint warnings  

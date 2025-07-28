@@ -121,7 +121,8 @@ export default function SDGAlignmentSection({
   // Update parent and trigger save when mappings change
   useEffect(() => {
     onUpdate(mappings);
-    if (mappings.length > 0) {
+    // Only save when there are actual goal mappings (not on initial load or removal)
+    if (mappings.length > 0 && mappings.some(m => m.sdgGoal)) {
       debouncedSave(mappings);
     }
   }, [mappings, activityId]);
@@ -151,12 +152,19 @@ export default function SDGAlignmentSection({
       setMappings(mappings.filter(m => m.sdgGoal !== goalId));
       if (expandedGoal === goalId) setExpandedGoal(null);
     } else {
-      // Add goal
+      // Add goal and create a basic mapping to trigger save
       setSelectedGoals([...selectedGoals, goalId]);
       setExpandedGoal(goalId);
       
-      // Don't create a mapping yet - wait until a target is selected
-      // This avoids the database constraint issue
+      // Create a basic goal mapping to trigger save and show completion
+      const newMapping: SDGMapping = {
+        sdgGoal: goalId,
+        sdgTarget: '', // Empty target since we're not using targets
+        contributionPercent: undefined,
+        notes: ''
+      };
+      
+      setMappings([...mappings, newMapping]);
     }
   };
 
@@ -259,7 +267,6 @@ export default function SDGAlignmentSection({
               <Globe className="h-5 w-5" />
               Select Sustainable Development Goals
             </div>
-            <SaveIndicator />
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -307,22 +314,21 @@ export default function SDGAlignmentSection({
         </CardContent>
       </Card>
 
-      {/* Right Column - Selected Goals and Targets */}
+      {/* Right Column - Selected Goals */}
       <Card className={selectedGoals.length === 0 ? "opacity-50" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                SDG Targets Selection
+                Selected SDG Goals
               </div>
-              <SaveIndicator />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {selectedGoals.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Select SDGs from the left to configure targets</p>
+                <p>Select SDGs from the left to view selected goals</p>
               </div>
             ) : (
               selectedGoals.map(goalId => {
@@ -331,44 +337,49 @@ export default function SDGAlignmentSection({
               const goalTargetMappings = getGoalTargetMappings(goalId);
 
               return (
-                <div key={goalId} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-16 h-16">
-                        <SDGImageGrid 
-                          sdgCodes={[goal.id]} 
-                          size="lg"
-                          showTooltips={false}
-                        />
+                <div key={goalId} className="border rounded-lg p-4 min-h-[200px]">
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-16 h-16">
+                          <SDGImageGrid 
+                            sdgCodes={[goal.id]} 
+                            size="lg"
+                            showTooltips={false}
+                          />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">Goal {goal.id}: {goal.name}</h4>
+                          <p className="text-sm text-muted-foreground">{goal.description}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold">Goal {goal.id}: {goal.name}</h4>
-                        <p className="text-sm text-muted-foreground">{goal.description}</p>
-                      </div>
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleGoal(goalId)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleGoal(goalId)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
 
-                  {/* Target Selection */}
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2">
+                    {/* Target Selection - Hidden for now */}
+                    {false && (
+                    <div className="flex flex-col items-start space-y-3 pl-4">
                       <Popover open={targetSearchOpen[goalId]} onOpenChange={(open: boolean) => 
                         setTargetSearchOpen({ ...targetSearchOpen, [goalId]: open })
                       }>
-                        <PopoverTrigger
-                          className="justify-between w-full"
-                          disabled={!canEdit}
-                        >
-                          <span>Add Target</span>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <PopoverTrigger asChild disabled={!canEdit}>
+                          <Button 
+                            variant="outline" 
+                            className="justify-start w-full max-w-xs"
+                            disabled={!canEdit}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            <span>Add Target</span>
+                            <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[600px] p-0">
                           <Command>
@@ -405,39 +416,38 @@ export default function SDGAlignmentSection({
                           </Command>
                         </PopoverContent>
                       </Popover>
-                    </div>
 
-                    {/* Selected Targets */}
-                    {goalTargetMappings.length > 0 && (
-                      <div className="space-y-2">
-                        {goalTargetMappings.map(mapping => {
-                          // Skip rendering goal-only mappings (empty targets)
-                          if (!mapping.sdgTarget) return null;
-                          
-                          const target = SDG_TARGETS.find(t => t.id === mapping.sdgTarget);
-                          if (!target) return null;
-                          
-                          return (
-                            <div key={mapping.sdgTarget} className="border rounded p-3 space-y-2">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="font-medium">
-                                    Target {target.id}: {target.text}
+                      {/* Selected Targets */}
+                      {goalTargetMappings.length > 0 && (
+                        <div className="space-y-2 w-full">
+                          {goalTargetMappings.map(mapping => {
+                            // Skip rendering goal-only mappings (empty targets)
+                            if (!mapping.sdgTarget) return null;
+                            
+                            const target = SDG_TARGETS.find(t => t.id === mapping.sdgTarget);
+                            if (!target) return null;
+                            
+                            return (
+                              <div key={mapping.sdgTarget} className="border rounded p-3 space-y-2">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="font-medium">
+                                      Target {target.id}: {target.text}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {target.description}
+                                    </div>
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {target.description}
-                                  </div>
+                                  {canEdit && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeTargetMapping(goalId, mapping.sdgTarget)}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                 </div>
-                                {canEdit && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeTargetMapping(goalId, mapping.sdgTarget)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
 
                               {contributionMode === 'percentage' && (
                                 <div className="flex items-center gap-2">
@@ -472,7 +482,9 @@ export default function SDGAlignmentSection({
                             </div>
                           );
                         })}
-                      </div>
+                        </div>
+                      )}
+                    </div>
                     )}
                   </div>
                 </div>

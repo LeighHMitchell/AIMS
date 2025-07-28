@@ -53,7 +53,7 @@ export default function ActivityEditorNavigation({
         { id: "organisations", label: "Organisations" },
         { id: "contributors", label: "Contributors" },
         { id: "contacts", label: "Contacts" },
-        { id: "linked-activities", label: "Linked Activities" },
+        { id: "linked_activities", label: "Linked Activities" }
       ]
     },
     {
@@ -62,14 +62,27 @@ export default function ActivityEditorNavigation({
         { id: "finances", label: "Finances" },
         { id: "budgets", label: "Budgets" },
         { id: "planned-disbursements", label: "Planned Disbursements" },
+        { id: "results", label: "Results" }
+      ]
+    },
+    {
+      title: "Strategic Alignment",
+      sections: [
+        { id: "sdg", label: "SDG Alignment" },
+        { id: "tags", label: "Tags" },
+        { id: "working_groups", label: "Working Groups" },
+        { id: "policy_markers", label: "Policy Markers" }
+      ]
+    },
+    {
+      title: "Supporting Info",
+      sections: [
+        { id: "documents", label: "Documents & Images" },
+        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
+        { id: "aid_effectiveness", label: "Aid Effectiveness", optional: true }
       ]
     }
   ]
-
-  // Add government inputs section if enabled
-  if (showGovernmentInputs) {
-    navigationGroups[1].sections.push({ id: "government-inputs", label: "Government Inputs" })
-  }
 
   return (
     <TooltipProvider>
@@ -128,17 +141,19 @@ export default function ActivityEditorNavigation({
                       <div className="flex items-center gap-2">
                         {isLocked && <Lock className="h-3 w-3 text-gray-400" />}
                         <span>{section.label}</span>
-                        <TabCompletionIndicator isComplete={isComplete} isInProgress={isInProgress} />
                       </div>
-                      {section.optional && (
-                        <span 
-                          id={`${section.id}-optional`}
-                          className="ml-2 text-xs text-gray-400 font-normal not-italic"
-                          aria-label="Optional section"
-                        >
-                          (Optional)
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <TabCompletionIndicator isComplete={isComplete} isInProgress={isInProgress} />
+                        {section.optional && (
+                          <span 
+                            id={`${section.id}-optional`}
+                            className="text-xs text-gray-400 font-normal not-italic"
+                            aria-label="Optional section"
+                          >
+                            (Optional)
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </button>
                 )

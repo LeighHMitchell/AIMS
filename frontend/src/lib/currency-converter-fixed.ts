@@ -150,7 +150,7 @@ class FixedCurrencyConverter {
       const currencyCode = currency.toUpperCase();
       const dateStr = transactionDate.toISOString().split('T')[0];
 
-      // Already USD
+      // Already USD - but still return the amount to populate USD Value field
       if (currencyCode === 'USD') {
         return { 
           usd_amount: amount, 
@@ -228,9 +228,9 @@ class FixedCurrencyConverter {
         return { success: false, error: 'Transaction not found' };
       }
 
-      // Skip if already converted or is USD
-      if (transaction.value_usd !== null || transaction.currency === 'USD') {
-        console.log(`[FixedConverter] Transaction ${transactionId} already converted or is USD`);
+      // Skip if already converted (but not for USD transactions - they still need USD value populated)
+      if (transaction.value_usd !== null && transaction.currency !== 'USD') {
+        console.log(`[FixedConverter] Transaction ${transactionId} already converted`);
         return { success: true };
       }
 
@@ -239,7 +239,7 @@ class FixedCurrencyConverter {
 
       console.log(`[FixedConverter] Converting transaction ${transactionId}: ${transaction.value} ${transaction.currency} on ${conversionDate.toISOString().split('T')[0]}`);
 
-      // Convert to USD
+      // Convert to USD (even for USD transactions to handle value_date scenarios)
       const result = await this.convertToUSD(
         transaction.value,
         transaction.currency,
@@ -249,14 +249,16 @@ class FixedCurrencyConverter {
       if (!result.success) {
         console.log(`[FixedConverter] Conversion failed for transaction ${transactionId}: ${result.error}`);
         
-        // Mark as unconvertible
-        await supabase
-          .from('transactions')
-          .update({
-            usd_convertible: false,
-            usd_conversion_date: new Date().toISOString()
-          })
-          .eq('uuid', transactionId);
+        // Mark as unconvertible (only for non-USD currencies)
+        if (transaction.currency !== 'USD') {
+          await supabase
+            .from('transactions')
+            .update({
+              usd_convertible: false,
+              usd_conversion_date: new Date().toISOString()
+            })
+            .eq('uuid', transactionId);
+        }
 
         return { success: false, error: result.error };
       }

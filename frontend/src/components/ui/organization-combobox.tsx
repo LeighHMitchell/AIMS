@@ -103,7 +103,7 @@ export function OrganizationCombobox({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between font-normal",
+            "w-full justify-between font-normal min-w-[320px] px-4 py-4 text-base h-auto",
             className
           )}
         >
@@ -111,12 +111,12 @@ export function OrganizationCombobox({
             const selected = organizations.find((o) => o.id === value);
             if (selected) {
               return (
-                <span className="flex flex-col min-w-0 text-left">
-                  <span className="truncate font-medium">
+                <span className="flex flex-col min-w-0 text-left leading-relaxed">
+                  <span className="truncate font-medium text-base leading-relaxed">
                     {getOrganizationDisplay(selected)}
                   </span>
                   {getIatiCountryLine(selected) && (
-                    <span className="text-xs text-gray-500 truncate">
+                    <span className="text-sm text-gray-500 truncate mt-1 leading-relaxed">
                       {getIatiCountryLine(selected)}
                     </span>
                   )}
@@ -126,17 +126,17 @@ export function OrganizationCombobox({
             // Show fallback reference if no organization found but we have a ref
             if (fallbackRef && !selected) {
               return (
-                <span className="flex flex-col min-w-0 text-left">
-                  <span className="truncate font-medium text-yellow-600">
+                <span className="flex flex-col min-w-0 text-left leading-relaxed">
+                  <span className="truncate font-medium text-base text-yellow-600 leading-relaxed">
                     {fallbackRef}
                   </span>
-                  <span className="text-xs text-yellow-500 truncate">
+                  <span className="text-sm text-yellow-500 truncate mt-1 leading-relaxed">
                     Organization not found in list
                   </span>
                 </span>
               );
             }
-            return <span className="text-gray-400">{placeholder}</span>;
+            return <span className="text-gray-400 text-base leading-relaxed">{placeholder}</span>;
           })()}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -144,11 +144,9 @@ export function OrganizationCombobox({
       <PopoverContent
         align="start"
         sideOffset={4}
-        className="p-0"
+        className="p-0 min-w-[320px] max-w-[600px]"
         style={{
           width: triggerRef.current ? `${triggerRef.current.offsetWidth}px` : undefined,
-          minWidth: 240,
-          maxWidth: 600,
         }}
       >
         <Command>
@@ -171,9 +169,10 @@ export function OrganizationCombobox({
                         onValueChange(org.id);
                         setOpen(false);
                       }}
+                      className="py-3"
                     >
                       <div className="flex flex-col">
-                        <span className="font-medium text-gray-900">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
+                        <span className="font-medium text-gray-900 text-base">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
                         {(org.iati_org_id || org.country) && (
                           <span className="text-xs text-gray-500 truncate">
                             {org.iati_org_id}

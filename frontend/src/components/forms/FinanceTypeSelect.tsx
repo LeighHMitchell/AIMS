@@ -103,7 +103,7 @@ export function FinanceTypeSelect({
           </div>
         </PopoverTrigger>
         <PopoverContent
-          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border"
+          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border bottom-full"
           align="start"
           sideOffset={4}
         >

@@ -1660,9 +1660,9 @@ export async function GET(request: NextRequest) {
     // Fetch transaction summaries for all activities
     const { data: transactionSummaries, error: transError } = await getSupabaseAdmin()
       .from('transactions')
-      .select('activity_id, transaction_type, value, status')
+      .select('activity_id, transaction_type, value, value_usd, status')
       .in('activity_id', activities?.map((a: any) => a.id) || [])
-      .eq('status', 'actual'); // Only include actual transactions
+      // Remove status filter to include all transactions for financial totals
 
     if (transError) {
       console.error('[AIMS] Error fetching transaction summaries:', transError);
@@ -1690,12 +1690,13 @@ export async function GET(request: NextRequest) {
         // Type 3 = Disbursement
         // Type 4 = Expenditure
         // Only count actual transactions (status filter already applied in query)
+        // Use USD converted value for aggregation
         if (transaction.transaction_type === '2') {
-          summary.commitments += transaction.value || 0;
+          summary.commitments += transaction.value_usd || 0;
         } else if (transaction.transaction_type === '3') {
-          summary.disbursements += transaction.value || 0;
+          summary.disbursements += transaction.value_usd || 0;
         } else if (transaction.transaction_type === '4') {
-          summary.expenditures += transaction.value || 0;
+          summary.expenditures += transaction.value_usd || 0;
         }
       });
     }

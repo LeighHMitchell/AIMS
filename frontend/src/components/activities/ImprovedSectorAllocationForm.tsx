@@ -21,8 +21,11 @@ import { HeroCard } from '@/components/ui/hero-card';
 import { SectorSelect, transformSectorGroups } from '@/components/forms/SectorSelect';
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
-import SectorSunburstChart, { getCategoryColorBySunburstChart } from '@/components/charts/SectorSunburstChart';
+import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization';
+import SectorAllocationTable from '@/components/charts/SectorAllocationTable';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PieChart, Table } from 'lucide-react';
 
 interface Sector {
   code: string;
@@ -42,6 +45,7 @@ interface SectorAllocation {
   category?: string;
   categoryName?: string;
   categoryCode?: string;
+  level?: 'group' | 'sector' | 'subsector';
   [key: string]: any;
 }
 
@@ -60,36 +64,62 @@ interface ImprovedSectorAllocationFormProps {
   activityId?: string;
 }
 
-// Color mapping for sector categories
+// Color mapping for sector categories - using gray/slate palette to match sunburst chart
 const getCategoryColor = (categoryCode: string): string => {
+  // Gray/slate color palette matching the sunburst chart
+  const GRAY_SLATE_COLORS = [
+    '#1e293b', // slate-800
+    '#334155', // slate-700  
+    '#475569', // slate-600
+    '#64748b', // slate-500
+    '#94a3b8', // slate-400
+    '#0f172a', // slate-900
+    '#374151', // gray-700
+    '#4b5563', // gray-600
+    '#6b7280', // gray-500
+    '#9ca3af', // gray-400
+    '#d1d5db', // gray-300
+    '#111827', // gray-900
+    '#1f2937', // gray-800
+    '#374151', // gray-700
+    '#6b7280'  // gray-500
+  ];
+
   const colors: { [key: string]: string } = {
-    '111': '#3B82F6', // Education
-    '121': '#10B981', // Health
-    '130': '#8B5CF6', // Population
-    '140': '#F59E0B', // Water Supply & Sanitation
-    '150': '#6366F1', // Government & Civil Society
-    '160': '#EC4899', // Other Social Infrastructure
-    '210': '#84CC16', // Transport & Storage
-    '220': '#06B6D4', // Communications
-    '230': '#F97316', // Energy
-    '240': '#14B8A6', // Banking & Financial Services
-    '250': '#F43F5E', // Business & Other Services
-    '310': '#22C55E', // Agriculture, Forestry, Fishing
-    '320': '#A855F7', // Industry, Mining, Construction
-    '330': '#0EA5E9', // Trade Policies & Regulations
-    '410': '#EAB308', // General Environmental Protection
-    '430': '#EF4444', // Other Multisector
-    '510': '#8B5A2B', // General Budget Support
-    '520': '#6B7280', // Developmental Food Aid
-    '530': '#059669', // Other Commodity Assistance
-    '600': '#DC2626', // Action Relating to Debt
-    '700': '#7C3AED', // Humanitarian Aid
-    '910': '#F97316', // Administrative Costs
-    '920': '#84CC16', // Support to NGOs
-    '930': '#06B6D4', // Refugees in Donor Countries
-    '998': '#6B7280', // Unallocated/Unspecified
+    '111': GRAY_SLATE_COLORS[0], // Education
+    '121': GRAY_SLATE_COLORS[1], // Health
+    '130': GRAY_SLATE_COLORS[2], // Population
+    '140': GRAY_SLATE_COLORS[3], // Water Supply & Sanitation
+    '150': GRAY_SLATE_COLORS[4], // Government & Civil Society
+    '160': GRAY_SLATE_COLORS[5], // Other Social Infrastructure
+    '210': GRAY_SLATE_COLORS[6], // Transport & Storage
+    '220': GRAY_SLATE_COLORS[7], // Communications
+    '230': GRAY_SLATE_COLORS[8], // Energy
+    '240': GRAY_SLATE_COLORS[9], // Banking & Financial Services
+    '250': GRAY_SLATE_COLORS[10], // Business & Other Services
+    '310': GRAY_SLATE_COLORS[11], // Agriculture, Forestry, Fishing
+    '320': GRAY_SLATE_COLORS[12], // Industry, Mining, Construction
+    '330': GRAY_SLATE_COLORS[13], // Trade Policies & Regulations
+    '410': GRAY_SLATE_COLORS[14], // General Environmental Protection
+    '430': GRAY_SLATE_COLORS[0], // Other Multisector (wrap around)
+    '510': GRAY_SLATE_COLORS[1], // General Budget Support
+    '520': GRAY_SLATE_COLORS[2], // Developmental Food Aid
+    '530': GRAY_SLATE_COLORS[3], // Other Commodity Assistance
+    '600': GRAY_SLATE_COLORS[4], // Action Relating to Debt
+    '700': GRAY_SLATE_COLORS[5], // Humanitarian Aid
+    '910': GRAY_SLATE_COLORS[6], // Administrative Costs
+    '920': GRAY_SLATE_COLORS[7], // Support to NGOs
+    '930': GRAY_SLATE_COLORS[8], // Refugees in Donor Countries
+    '998': GRAY_SLATE_COLORS[9], // Unallocated/Unspecified
   };
-  return colors[categoryCode] || '#6B7280';
+  return colors[categoryCode] || GRAY_SLATE_COLORS[0]; // Default to slate-800
+};
+
+// Helper function to determine text color based on background color
+const getTextColor = (backgroundColor: string): string => {
+  // Light gray colors that need dark text for contrast
+  const lightColors = ['#94a3b8', '#9ca3af', '#d1d5db'];
+  return lightColors.includes(backgroundColor) ? '#1f2937' : '#ffffff';
 };
 
 const getSectorInfo = (code: string): { name: string; description: string; category: string; categoryCode: string } => {
@@ -182,20 +212,34 @@ export default function ImprovedSectorAllocationForm({
   }, [allocations]);
 
   // On successful save, set all current allocations to 'saved'
+  const lastSavedTimeRef = useRef<Date | null>(null);
   useEffect(() => {
-    if (sectorsAutosave.state.lastSaved && !sectorsAutosave.state.isSaving && !sectorsAutosave.state.error) {
+    if (sectorsAutosave.state.lastSaved && 
+        !sectorsAutosave.state.isSaving && 
+        !sectorsAutosave.state.error &&
+        sectorsAutosave.state.lastSaved !== lastSavedTimeRef.current) {
+      
+      lastSavedTimeRef.current = sectorsAutosave.state.lastSaved;
+      
       setAllocationStatus(s => {
         const updated: Record<string, 'saved'> = {};
         allocations.forEach(a => { updated[a.id] = 'saved'; });
         return updated;
       });
-      toast.success('Sectors saved successfully!', { position: 'top-right', duration: 3000 });
+      
+      // Only show toast if we have meaningful sectors to save
+      if (allocations.length > 0) {
+        toast.success('Sectors saved successfully!', { position: 'top-right', duration: 2000 });
+      }
     }
   }, [sectorsAutosave.state.lastSaved, sectorsAutosave.state.isSaving, sectorsAutosave.state.error, allocations]);
 
   // On save error, set all 'saving' allocations to 'error'
+  const lastErrorRef = useRef<Error | null>(null);
   useEffect(() => {
-    if (sectorsAutosave.state.error) {
+    if (sectorsAutosave.state.error && sectorsAutosave.state.error !== lastErrorRef.current) {
+      lastErrorRef.current = sectorsAutosave.state.error;
+      
       setAllocationStatus(s => {
         const updated = { ...s };
         Object.keys(updated).forEach(id => {
@@ -203,7 +247,8 @@ export default function ImprovedSectorAllocationForm({
         });
         return updated;
       });
-      toast.error('Failed to save sectors. Please try again.', { position: 'top-right', duration: 4000 });
+      
+      toast.error('Failed to save sectors. Please try again.', { position: 'top-right', duration: 3000 });
     }
   }, [sectorsAutosave.state.error]);
 
@@ -219,27 +264,58 @@ export default function ImprovedSectorAllocationForm({
 
   // Handler for multi-select
   const handleSectorsChange = (sectorCodes: string[]) => {
-    // Add new allocations for newly selected codes
+    const sectorGroupData = require('@/data/SectorGroup.json');
     const currentCodes = allocations.map(a => a.code);
     const toAdd = sectorCodes.filter(code => !currentCodes.includes(code));
     const toRemove = currentCodes.filter(code => !sectorCodes.includes(code));
     let newAllocations = [...allocations];
+    
     // Add
     toAdd.forEach(code => {
-      const group = transformSectorGroups().find(g => g.options.some(o => o.code === code));
-      const option = group?.options.find(o => o.code === code);
-      if (option && group) {
-        const sectorInfo = getSectorInfo(code);
+      if (code.length === 3 && code.endsWith('0')) {
+        // This is a group selection (like "110" for Education) - add as a single group-level allocation
+        const groupName = sectorGroupData.data.find((s: any) => s.code.startsWith(code.substring(0, 2)))?.['codeforiati:group-name'] || `Group ${code}`;
         newAllocations.push({
           id: crypto.randomUUID(),
-          code: option.code,
-          name: option.name,
+          code: code,
+          name: groupName,
           percentage: 0,
-          category: sectorInfo.category,
-          categoryCode: option.code.substring(0, 3)
+          category: groupName,
+          categoryCode: code,
+          level: 'group'
         });
+      } else if (code.length === 3) {
+        // This is a category selection (like "111" for Education, Level Unspecified) - add as a single category-level allocation
+        const categoryData = sectorGroupData.data.find((s: any) => s['codeforiati:category-code'] === code);
+        if (categoryData) {
+          newAllocations.push({
+            id: crypto.randomUUID(),
+            code: code,
+            name: categoryData['codeforiati:category-name'],
+            percentage: 0,
+            category: categoryData['codeforiati:category-name'],
+            categoryCode: code,
+            level: 'sector'
+          });
+        }
+      } else if (code.length === 5) {
+        // This is an individual sector selection
+        const sector = sectorGroupData.data.find((s: any) => s.code === code);
+        if (sector) {
+          const sectorInfo = getSectorInfo(code);
+          newAllocations.push({
+            id: crypto.randomUUID(),
+            code: sector.code,
+            name: sector.name,
+            percentage: 0,
+            category: sectorInfo.category,
+            categoryCode: sector.code.substring(0, 3),
+            level: 'subsector'
+          });
+        }
       }
     });
+    
     // Remove
     newAllocations = newAllocations.filter(a => !toRemove.includes(a.code));
     onChange(newAllocations);
@@ -339,45 +415,131 @@ export default function ImprovedSectorAllocationForm({
     onValidationChange?.(validation);
   }, [validation, onValidationChange]);
 
-  // Save to autosave when allocations change
+  // Save to autosave when allocations change (with deep comparison to prevent unnecessary saves)
+  const prevAllocationsStringRef = useRef<string>('');
   useEffect(() => {
-    if (allocations.length > 0) {
+    const currentAllocationsString = JSON.stringify(allocations.map(a => ({ 
+      code: a.code, 
+      percentage: a.percentage, 
+      level: a.level 
+    })).sort((a, b) => a.code.localeCompare(b.code)));
+    
+    // Only save if there's a meaningful change
+    if (currentAllocationsString !== prevAllocationsStringRef.current && allocations.length > 0) {
+      console.log('[SectorForm] Allocations changed, triggering save:', allocations);
+      prevAllocationsStringRef.current = currentAllocationsString;
       sectorsAutosave.saveNow(allocations);
     }
   }, [allocations, sectorsAutosave]);
 
+  // Handle sunburst chart segment selection - only show info, don't modify
+  const handleSunburstSegmentClick = (code: string, level: 'category' | 'sector' | 'subsector') => {
+    // For now, just show information about the clicked segment
+    // Could be extended later to highlight or show details
+    console.log(`Clicked on ${level}: ${code}`);
+  };
+
   // Calculate summary statistics
   const totalAllocated = allocations.reduce((sum, a) => sum + (a.percentage || 0), 0);
   const totalUnallocated = Math.max(0, 100 - totalAllocated);
-  const sectorCount = allocations.length;
-  const subSectorCount = allocations.filter(a => a.code.length > 3).length;
+  
+  // Count different levels properly - count unique values
+  const uniqueCategories = new Set();
+  const unique3DigitSectors = new Set();
+  
+  allocations.forEach(allocation => {
+    const sectorInfo = getSectorInfo(allocation.code);
+    // Add category (DAC Group)
+    uniqueCategories.add(sectorInfo.category);
+    // Add 3-digit sector code
+    unique3DigitSectors.add(allocation.code.substring(0, 3));
+  });
+  
+  const categoryCount = uniqueCategories.size;
+  const sectorCount = unique3DigitSectors.size; // Number of unique 3-digit sectors
+  const subSectorCount = allocations.filter(a => a.level === 'subsector' || a.code.length === 5).length;
 
   return (
     <div className="space-y-6">
       {/* Hero Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <HeroCard
-          title="% Allocated"
-          value={totalAllocated}
-          suffix="%"
-          subtitle="Total sector allocation"
-        />
-        <HeroCard
-          title="% Unallocated"
-          value={totalUnallocated}
-          suffix="%"
-          subtitle="Remaining allocation"
-        />
-        <HeroCard
-          title="Sectors"
-          value={sectorCount}
-          subtitle="Total sectors selected"
-        />
-        <HeroCard
-          title="Sub-sectors"
-          value={subSectorCount}
-          subtitle="Detailed sector breakdown"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <HeroCard
+                title="% Allocation"
+                value={Math.round(totalAllocated * 10) / 10}
+                currency=""
+                suffix="%"
+                subtitle="Total sector allocation"
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Total percentage allocated across selected sectors</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <HeroCard
+                title="% Unallocated"
+                value={Math.round(totalUnallocated * 10) / 10}
+                currency=""
+                suffix="%"
+                subtitle="Remaining allocation"
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Remaining percentage not yet assigned</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <HeroCard
+                title="Sector Categories"
+                value={categoryCount}
+                currency=""
+                subtitle="Selected categories"
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Top-level DAC groups (e.g. Education, Health)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <HeroCard
+                title="3-Digit Sectors"
+                value={sectorCount}
+                currency=""
+                subtitle="Selected sectors"
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Intermediate DAC codes grouping related sub-sectors</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <HeroCard
+                title="Sub-sectors"
+                value={subSectorCount}
+                currency=""
+                subtitle="Selected sub-sectors"
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>DAC 5-digit sector codes (e.g. 12220 – Basic Health Care)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Form Interface */}
@@ -395,6 +557,8 @@ export default function ImprovedSectorAllocationForm({
               onValueChange={handleSectorsChange}
               placeholder="Choose sector(s)..."
               className="w-full"
+              variant="hierarchical"
+              maxSelections={15}
             />
           </CardContent>
         </Card>
@@ -435,6 +599,7 @@ export default function ImprovedSectorAllocationForm({
                     {grouped.map((allocation) => {
                       const sectorInfo = getSectorInfo(allocation.code);
                       const categoryCode = sectorInfo.categoryCode;
+                      const categoryColor = getCategoryColor(categoryCode);
                       return (
                         <div
                           key={allocation.id}
@@ -444,26 +609,35 @@ export default function ImprovedSectorAllocationForm({
                           )}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm text-gray-900">
-                              {allocation.code} – {allocation.name || sectorInfo.name.split(' – ')[1] || allocation.code}
+                            <div className="font-medium text-sm text-gray-900 flex items-center gap-2">
+                              <span className="font-mono">{allocation.code}</span> – {allocation.name || sectorInfo.name.split(' – ')[1] || allocation.code}
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "text-xs",
+                                  allocation.level === 'group' && "bg-blue-50 text-blue-700 border-blue-200",
+                                  (allocation.level === 'sector' && allocation.code.length === 3) && "bg-green-50 text-green-700 border-green-200",
+                                  allocation.level === 'subsector' && "bg-gray-50 text-gray-700 border-gray-200"
+                                )}
+                              >
+                                {allocation.level === 'group' && 'Group'}
+                                {(allocation.level === 'sector' && allocation.code.length === 3) && 'Category'}
+                                {allocation.level === 'subsector' && ''}
+                                {!allocation.level && ''}
+                              </Badge>
                             </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              {sectorInfo.category}
-                            </div>
+                            {/* Removed redundant 3-digit sector label that was: {sectorInfo.category} */}
                           </div>
                           <div className="flex items-center gap-3">
                             {/* Progress Bar */}
-                            <div className="w-32">
+                            <div className="w-40">
                               <Progress 
                                 value={allocation.percentage} 
-                                className="h-6"
+                                className="h-6 [&>*]:rounded-sm"
                                 style={{
-                                  '--progress-foreground': getCategoryColor(categoryCode)
+                                  '--progress-foreground': categoryColor
                                 } as React.CSSProperties}
                               />
-                              <div className="text-xs text-center mt-1 font-medium font-mono">
-                                {allocation.percentage.toFixed(1)}%
-                              </div>
                             </div>
                             {/* Per-allocation save status icon */}
                             {allocationStatus[allocation.id] === 'saving' && (
@@ -484,7 +658,7 @@ export default function ImprovedSectorAllocationForm({
                               value={allocation.percentage || ''}
                               onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
                               className={cn(
-                                "w-20 h-10 text-sm text-center font-mono",
+                                "w-28 h-10 text-sm text-center font-mono",
                                 allocation.percentage === 0 && "border-red-300"
                               )}
                             />
@@ -507,10 +681,10 @@ export default function ImprovedSectorAllocationForm({
               {/* Distribute Equally Button only if more than one allocation */}
               {allocations.length > 1 && (
                 <Button 
-                  variant="outline" 
+                  variant="default" 
                   size="sm"
                   onClick={distributeEqually}
-                  className="text-xs"
+                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <Sparkles className="h-3 w-3 mr-1" />
                   Distribute Equally
@@ -534,19 +708,39 @@ export default function ImprovedSectorAllocationForm({
           </Alert>
         )}
 
-        {/* Sunburst Chart Visualization */}
+        {/* Visualization - Sunburst Chart or Table */}
         {allocations.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Sector Allocation Sunburst</CardTitle>
+              <CardTitle className="text-base">Sector Allocation Visualization</CardTitle>
               <CardDescription>
-                Interactive sunburst chart showing sector allocation hierarchy
+                View sector allocations as an interactive chart or accessible table
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-[500px] relative">
-                <SectorSunburstChart allocations={allocations} />
-              </div>
+            <CardContent>
+              <Tabs defaultValue="sunburst" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="sunburst" className="flex items-center gap-2">
+                    <PieChart className="h-4 w-4" />
+                    Sunburst Chart
+                  </TabsTrigger>
+                  <TabsTrigger value="table" className="flex items-center gap-2">
+                    <Table className="h-4 w-4" />
+                    Table View
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="sunburst" className="mt-4">
+                  <div className="relative overflow-hidden">
+                    <SectorSunburstVisualization 
+                      allocations={allocations}
+                      onSegmentClick={handleSunburstSegmentClick}
+                    />
+                  </div>
+                </TabsContent>
+                <TabsContent value="table" className="mt-4">
+                  <SectorAllocationTable allocations={allocations} />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         )}

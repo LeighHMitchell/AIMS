@@ -8,6 +8,7 @@ export interface EnhancedMultiSelectOption {
   code: string;
   name: string;
   description?: string;
+  indent?: number;
 }
 
 export interface EnhancedMultiSelectGroup {
@@ -193,9 +194,12 @@ export function EnhancedMultiSelect({
                         type="button"
                         onClick={() => handleToggle(option.code)}
                         className={cn(
-                          "pl-6 pr-3 py-3 w-full text-left cursor-pointer transition-colors flex items-start gap-2 hover:bg-accent/50 focus:bg-accent focus:outline-none",
+                          "pr-3 py-3 w-full text-left cursor-pointer transition-colors flex items-start gap-2 hover:bg-accent/50 focus:bg-accent focus:outline-none",
                           isSelected && "bg-accent"
                         )}
+                        style={{
+                          paddingLeft: `${6 + (option.indent || 0) * 20}px`
+                        }}
                       >
                         <Check
                           className={cn(
@@ -208,8 +212,13 @@ export function EnhancedMultiSelect({
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                               {option.code}
                             </span>
-                            <span className="font-medium text-foreground truncate">
-                              {option.name.replace(new RegExp(`^${option.code}\\s*-?\\s*`), "")}
+                            <span className={cn(
+                              "text-foreground truncate",
+                              option.name.includes('(Entire Group)') && "font-bold text-blue-700",
+                              option.name.includes('(Category)') && "font-semibold text-green-700",
+                              option.name.includes('(Sub-sector)') && "font-normal text-gray-700"
+                            )}>
+                              {option.name}
                             </span>
                           </div>
                           {option.description && (

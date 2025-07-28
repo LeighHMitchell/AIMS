@@ -81,16 +81,13 @@ export function TransactionValueDisplay({
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency,
-      minimumFractionDigits: decimalPlaces,
-      maximumFractionDigits: decimalPlaces,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
   const formatOriginalValue = () => {
-    const formattedValue = typeof transaction.value === 'number' 
-      ? transaction.value.toLocaleString(undefined, { minimumFractionDigits: decimalPlaces, maximumFractionDigits: decimalPlaces })
-      : transaction.value;
-    return `${formattedValue} ${transaction.currency}`;
+    return formatCurrency(transaction.value, transaction.currency);
   };
 
   const getConversionStatus = (): ConversionStatus => {
@@ -105,12 +102,22 @@ export function TransactionValueDisplay({
     }
 
     if (transaction.currency === 'USD') {
+      const hasValueDate = transaction.value_date && transaction.value_date !== transaction.transaction_date;
+      const hasCalculatedValue = conversionData.usd_amount !== null && conversionData.usd_amount !== transaction.value;
+      
+      let tooltip = 'Transaction is already in USD';
+      if (hasValueDate && hasCalculatedValue) {
+        tooltip = `USD value calculated using value date: ${transaction.value_date}`;
+      } else if (hasValueDate) {
+        tooltip = `Transaction uses value date: ${transaction.value_date}`;
+      }
+      
       return {
         status: 'native_usd',
-        badge: 'USD',
+        badge: hasValueDate ? 'USD (Value Date)' : 'USD',
         color: 'bg-blue-100 text-blue-800',
         icon: <DollarSign className="h-3 w-3" />,
-        tooltip: 'Transaction is already in USD'
+        tooltip
       };
     }
 
@@ -202,7 +209,7 @@ export function TransactionValueDisplay({
       <div className="flex items-center space-x-2">
         <span className={monotone ? "font-medium text-foreground" : "font-medium"}>{formatOriginalValue()}</span>
         
-        {conversionData.usd_amount !== null && (
+        {conversionData.usd_amount !== null && conversionData.usd_amount !== transaction.value && (
           <span className={monotone ? "text-sm text-foreground" : "text-sm text-green-600"}>
             ({formatCurrency(conversionData.usd_amount, 'USD')})
           </span>
@@ -247,14 +254,30 @@ export function TransactionValueDisplay({
       </div>
 
       {/* USD Value */}
-      {conversionData.usd_amount !== null && (
+      {conversionData.usd_amount !== null && conversionData.usd_amount !== transaction.value && (
         <div className="flex items-center space-x-2">
           <DollarSign className={monotone ? "h-4 w-4 text-foreground" : "h-4 w-4 text-green-600"} />
           <span className={monotone ? "text-lg font-semibold text-foreground" : "text-lg font-semibold text-green-600"}>
             {formatCurrency(conversionData.usd_amount, 'USD')}
           </span>
           
-          {conversionData.exchange_rate && (
+          {transaction.currency === 'USD' ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className={monotone ? "h-4 w-4 text-foreground cursor-help" : "h-4 w-4 text-gray-400 cursor-help"} />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>USD value calculated using value date: {transaction.value_date}</p>
+                  {conversionData.conversion_date && (
+                    <p className="text-xs mt-1">
+                      Calculated: {new Date(conversionData.conversion_date).toLocaleDateString()}
+                    </p>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : conversionData.exchange_rate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

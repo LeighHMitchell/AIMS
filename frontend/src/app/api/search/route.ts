@@ -1,23 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-simple'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   console.log('[AIMS API] GET /api/search - Starting search request')
   
   try {
     const searchParams = request.nextUrl.searchParams
     const query = searchParams.get('q') || ''
+    const page = Math.max(parseInt(searchParams.get('page') || '1'), 1)
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
+    const offset = (page - 1) * limit
 
     if (!query.trim()) {
-      return NextResponse.json({ results: [] })
+      return NextResponse.json({ 
+        results: [],
+        total: 0,
+        page: 1,
+        limit,
+        hasMore: false
+      })
     }
 
     const supabase = createClient()
+    if (!supabase) {
+      throw new Error('Failed to create Supabase client')
+    }
     const searchTerm = `%${query.toLowerCase()}%`
 
     // Search activities - only activity names (title_narrative)
-    const { data: activities, error: activitiesError } = await supabase
+    const { data: activities, error: activitiesError, count: activitiesCount } = await supabase
       .from('activities')
       .select(`
         id,
@@ -29,9 +42,9 @@ export async function GET(request: NextRequest) {
         created_by_org_name,
         created_by_org_acronym,
         icon
-      `)
+      `, { count: 'exact' })
       .ilike('title_narrative', searchTerm)
-      .limit(limit)
+      .range(offset, offset + limit - 1)
       .order('updated_at', { ascending: false })
 
     if (activitiesError) {
@@ -46,17 +59,16 @@ export async function GET(request: NextRequest) {
         console.log(`${idx + 1}. Title: "${activity.title_narrative}"`)
         console.log(`   Partner ID: "${activity.other_identifier}"`)
         console.log(`   IATI ID: "${activity.iati_identifier}"`)
-        console.log(`   Description: "${activity.description_narrative?.substring(0, 100)}..."`)
         console.log('   ---')
       })
     }
 
     // Search organizations - only names and acronyms
-    const { data: organizations, error: orgsError } = await supabase
+    const { data: organizations, error: orgsError, count: organizationsCount } = await supabase
       .from('organizations')
-      .select('id, name, acronym, type, country, logo, banner')
+      .select('id, name, acronym, type, country, logo, banner', { count: 'exact' })
       .or(`name.ilike.${searchTerm},acronym.ilike.${searchTerm}`)
-      .limit(limit)
+      .range(offset, offset + limit - 1)
       .order('name')
 
     if (orgsError) {
@@ -106,6 +118,34 @@ export async function GET(request: NextRequest) {
       }
     } catch (err) {
       console.log('[AIMS API] User search failed, skipping:', err)
+    }
+
+    // Search tags - search by tag name and get associated activities count
+    let tags: any[] = []
+    try {
+      const { data: tagsData, error: tagsError } = await supabase
+        .from('tags')
+        .select(`
+          id,
+          name,
+          code,
+          created_at,
+          activity_tags(count)
+        `)
+        .ilike('name', searchTerm)
+        .limit(limit)
+        .order('name')
+
+      if (!tagsError && tagsData) {
+        tags = tagsData.map(tag => ({
+          ...tag,
+          activity_count: tag.activity_tags?.[0]?.count || 0
+        }))
+      } else {
+        console.log('[AIMS API] Could not search tags:', tagsError?.message)
+      }
+    } catch (err) {
+      console.log('[AIMS API] Tag search failed, skipping:', err)
     }
 
     // Format results
@@ -158,10 +198,33 @@ export async function GET(request: NextRequest) {
         metadata: {
           profile_picture_url: user.profile_picture_url || user.avatar_url || undefined
         }
+      })),
+
+      // Format tags
+      ...(tags || []).map(tag => ({
+        id: tag.id,
+        type: 'tag' as const,
+        title: tag.name,
+        subtitle: `${tag.activity_count || 0} activities`,
+        metadata: {
+          code: tag.code,
+          activity_count: tag.activity_count || 0,
+          created_at: tag.created_at
+        }
       }))
     ]
 
+    // Calculate totals and pagination metadata
+    const totalActivities = activitiesCount || 0
+    const totalOrganizations = organizationsCount || 0
+    const totalSectors = sectors.length // Note: sectors don't have pagination yet
+    const totalUsers = users.length // Note: users don't have pagination yet
+    const totalTags = tags.length // Note: tags don't have pagination yet
+    const totalResults = totalActivities + totalOrganizations + totalSectors + totalUsers + totalTags
+    const hasMore = offset + limit < totalResults
+
     console.log(`[AIMS API] Search completed - Found ${results.length} results for query: "${query}"`)
+    console.log(`[AIMS API] Pagination: page ${page}, limit ${limit}, offset ${offset}, total ${totalResults}, hasMore ${hasMore}`)
     
     // Debug: Log the first few results to see what's matching
     if (results.length > 0) {
@@ -176,6 +239,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       results,
+      total: totalResults,
+      page,
+      limit,
+      hasMore,
       query,
       timestamp: new Date().toISOString()
     })
