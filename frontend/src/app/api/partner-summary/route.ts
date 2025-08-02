@@ -264,7 +264,7 @@ export async function GET(request: NextRequest) {
     // Fetch activities for additional project metadata
     const { data: activities, error: activitiesError } = await getSupabaseAdmin()
       .from('activities')
-      .select('id, title, activity_status, implementing_org, planned_start_date, planned_end_date');
+      .select('id, title_narrative, activity_status, implementing_org, planned_start_date, planned_end_date');
 
     if (activitiesError) {
       console.error('[AIMS] Error fetching activities:', activitiesError);

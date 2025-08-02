@@ -337,32 +337,32 @@ export default function SDGAlignmentSection({
               const goalTargetMappings = getGoalTargetMappings(goalId);
 
               return (
-                <div key={goalId} className="border rounded-lg p-4 min-h-[200px]">
-                  <div className="flex flex-col space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-16 h-16">
-                          <SDGImageGrid 
-                            sdgCodes={[goal.id]} 
-                            size="lg"
-                            showTooltips={false}
-                          />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold">Goal {goal.id}: {goal.name}</h4>
-                          <p className="text-sm text-muted-foreground">{goal.description}</p>
-                        </div>
+                <div key={goalId} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="w-16 h-16 flex-shrink-0">
+                        <SDGImageGrid 
+                          sdgCodes={[goal.id]} 
+                          size="lg"
+                          showTooltips={false}
+                        />
                       </div>
-                      {canEdit && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleGoal(goalId)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold">Goal {goal.id}: {goal.name}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>
+                      </div>
                     </div>
+                    {canEdit && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleGoal(goalId)}
+                        className="flex-shrink-0 ml-2"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
 
                     {/* Target Selection - Hidden for now */}
                     {false && (
@@ -483,7 +483,6 @@ export default function SDGAlignmentSection({
                       )}
                     </div>
                     )}
-                  </div>
                 </div>
               );
             })

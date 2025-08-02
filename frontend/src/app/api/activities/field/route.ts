@@ -248,7 +248,7 @@ export async function POST(request: Request) {
                 activity_id: body.activityId,
                 location_type: 'site',
                 location_name: location.name || '',
-                description: location.notes || location.address || '',
+                description: location.notes || '',
                 latitude: location.latitude || null,
                 longitude: location.longitude || null,
                 address: location.address || null,
@@ -402,6 +402,147 @@ export async function POST(request: Request) {
         newValue = body.value;
         updateData.iati_identifier = body.value || null;
         break;
+
+      case 'policyMarkers':
+        // Handle policy markers using the activity_policy_markers table
+        oldValue = existingActivity.policy_markers; // Keep for logging purposes
+        newValue = body.value;
+        
+        console.log('[Field API] Processing policy markers update');
+        console.log('[Field API] Policy markers received:', JSON.stringify(body.value, null, 2));
+        console.log('[Field API] Is array:', Array.isArray(body.value));
+        console.log('[Field API] Policy markers count:', Array.isArray(body.value) ? body.value.length : 'Not an array');
+        
+        try {
+          // Delete existing policy markers for this activity
+          const { error: deleteError } = await getSupabaseAdmin()
+            .from('activity_policy_markers')
+            .delete()
+            .eq('activity_id', body.activityId);
+
+          if (deleteError) {
+            console.error('[Field API] Error deleting existing policy markers:', deleteError);
+            return NextResponse.json(
+              { error: `Failed to delete existing policy markers: ${deleteError.message}` },
+              { status: 500 }
+            );
+          }
+
+          // Insert new policy markers if any
+          const policyMarkersToSave = Array.isArray(body.value) ? body.value : [];
+          if (policyMarkersToSave.length > 0) {
+            const policyMarkersData = policyMarkersToSave.map((marker: any) => ({
+              activity_id: body.activityId,
+              policy_marker_id: marker.policy_marker_id,
+              score: marker.score,
+              rationale: marker.rationale || null
+            }));
+
+            console.log('[Field API] Inserting policy markers:', JSON.stringify(policyMarkersData, null, 2));
+
+            const { error: insertError } = await getSupabaseAdmin()
+              .from('activity_policy_markers')
+              .insert(policyMarkersData);
+              
+            if (insertError) {
+              console.error('[Field API] Error inserting policy markers:', insertError);
+              return NextResponse.json(
+                { error: `Failed to save policy markers: ${insertError.message}` },
+                { status: 500 }
+              );
+            }
+
+            console.log('[Field API] Successfully saved', policyMarkersData.length, 'policy markers');
+          } else {
+            console.log('[Field API] No policy markers to save - all cleared');
+          }
+          
+          // Don't add policy markers to updateData since we're handling them separately
+        } catch (policyMarkerError) {
+          console.error('[Field API] Error updating policy markers:', policyMarkerError);
+          return NextResponse.json(
+            { error: `Failed to save policy markers: ${policyMarkerError instanceof Error ? policyMarkerError.message : 'Unknown error'}` },
+            { status: 500 }
+          );
+        }
+        break;
+        
+      case 'workingGroups':
+        // Handle working groups using the activity_working_groups table
+        oldValue = existingActivity.working_groups; // Keep for logging purposes
+        newValue = body.value;
+        
+        console.log('[Field API] Processing working groups update');
+        console.log('[Field API] Working groups received:', JSON.stringify(body.value, null, 2));
+        
+        try {
+          // Delete existing working groups for this activity
+          const { error: deleteError } = await getSupabaseAdmin()
+            .from('activity_working_groups')
+            .delete()
+            .eq('activity_id', body.activityId);
+
+          if (deleteError) {
+            console.error('[Field API] Error deleting existing working groups:', deleteError);
+            return NextResponse.json(
+              { error: `Failed to delete existing working groups: ${deleteError.message}` },
+              { status: 500 }
+            );
+          }
+
+          // Insert new working groups if any
+          const workingGroupsToSave = Array.isArray(body.value) ? body.value : [];
+          if (workingGroupsToSave.length > 0) {
+            // Fetch working group IDs from database
+            const codes = workingGroupsToSave.map((wg: any) => wg.code);
+            const { data: dbWorkingGroups, error: wgFetchError } = await getSupabaseAdmin()
+              .from('working_groups')
+              .select('id, code')
+              .in('code', codes);
+
+            if (wgFetchError) {
+              console.error('[Field API] Error fetching working groups:', wgFetchError);
+              return NextResponse.json(
+                { error: `Failed to fetch working groups: ${wgFetchError.message}` },
+                { status: 500 }
+              );
+            }
+
+            if (dbWorkingGroups && dbWorkingGroups.length > 0) {
+              const workingGroupsData = dbWorkingGroups.map((dbWg: any) => ({
+                activity_id: body.activityId,
+                working_group_id: dbWg.id,
+                vocabulary: '99' // IATI custom vocabulary
+              }));
+
+              console.log('[Field API] Inserting working groups:', JSON.stringify(workingGroupsData, null, 2));
+
+              const { error: insertError } = await getSupabaseAdmin()
+                .from('activity_working_groups')
+                .insert(workingGroupsData);
+                
+              if (insertError) {
+                console.error('[Field API] Error inserting working groups:', insertError);
+                return NextResponse.json(
+                  { error: `Failed to save working groups: ${insertError.message}` },
+                  { status: 500 }
+                );
+              }
+
+              console.log('[Field API] Successfully saved', workingGroupsData.length, 'working groups');
+            }
+          } else {
+            console.log('[Field API] No working groups to save - all cleared');
+          }
+          
+        } catch (workingGroupError) {
+          console.error('[Field API] Error updating working groups:', workingGroupError);
+          return NextResponse.json(
+            { error: `Failed to save working groups: ${workingGroupError instanceof Error ? workingGroupError.message : 'Unknown error'}` },
+            { status: 500 }
+          );
+        }
+        break;
         
       default:
         return NextResponse.json(
@@ -425,7 +566,7 @@ export async function POST(request: Request) {
     // Update activity
     let updatedActivity;
     let updateError;
-    if (body.field !== 'sectors' && body.field !== 'locations') {
+    if (body.field !== 'sectors' && body.field !== 'locations' && body.field !== 'policyMarkers' && body.field !== 'workingGroups') {
       console.log('[Field API] Updating field with data:', updateData);
       const updateResult = await getSupabaseAdmin()
         .from('activities')
@@ -444,7 +585,7 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // For sectors and locations, fetch the activity for response data
+      // For sectors, locations, policy markers, and working groups, fetch the activity for response data
       const fetchResult = await getSupabaseAdmin()
         .from('activities')
         .select('*')
@@ -572,6 +713,57 @@ export async function POST(request: Request) {
       }
     }
 
+    // Fetch policy markers from activity_policy_markers table if this was a policy markers update
+    let policyMarkersData = updatedActivity.policy_markers; // Default to existing value
+    if (body.field === 'policyMarkers') {
+      try {
+        const { data: policyMarkers, error: policyMarkersError } = await getSupabaseAdmin()
+          .from('activity_policy_markers')
+          .select('*')
+          .eq('activity_id', body.activityId);
+        
+        if (policyMarkersError) {
+          console.error('[Field API] Error fetching policy markers for response:', policyMarkersError);
+          policyMarkersData = [];
+        } else {
+          policyMarkersData = policyMarkers || [];
+        }
+      } catch (policyMarkersFetchError) {
+        console.error('[Field API] Error fetching policy markers for response:', policyMarkersFetchError);
+        policyMarkersData = [];
+      }
+    }
+
+    // Fetch working groups from activity_working_groups table if this was a working groups update
+    let workingGroupsData = updatedActivity.working_groups; // Default to existing value
+    if (body.field === 'workingGroups') {
+      try {
+        const { data: workingGroups, error: workingGroupsError } = await getSupabaseAdmin()
+          .from('activity_working_groups')
+          .select(`
+            working_group_id,
+            vocabulary,
+            working_groups (id, code, label, description)
+          `)
+          .eq('activity_id', body.activityId);
+        
+        if (workingGroupsError) {
+          console.error('[Field API] Error fetching working groups for response:', workingGroupsError);
+          workingGroupsData = [];
+        } else {
+          // Transform working groups to match expected format
+          workingGroupsData = workingGroups?.map((wgRelation: any) => ({
+            code: wgRelation.working_groups.code,
+            label: wgRelation.working_groups.label,
+            vocabulary: wgRelation.vocabulary
+          })) || [];
+        }
+      } catch (workingGroupsFetchError) {
+        console.error('[Field API] Error fetching working groups for response:', workingGroupsFetchError);
+        workingGroupsData = [];
+      }
+    }
+
     // Return the updated activity data
     const responseData = {
       id: updatedActivity.id,
@@ -590,6 +782,8 @@ export async function POST(request: Request) {
       defaultAidModalityOverride: updatedActivity.default_aid_modality_override,
       sectors: sectorsData,
       locations: locationsData,
+      policyMarkers: policyMarkersData,
+      workingGroups: workingGroupsData,
       plannedStartDate: updatedActivity.planned_start_date,
       plannedEndDate: updatedActivity.planned_end_date,
       actualStartDate: updatedActivity.actual_start_date,

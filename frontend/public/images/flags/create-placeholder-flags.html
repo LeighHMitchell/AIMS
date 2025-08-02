@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flag Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="46" height="30"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const flags = [
+            {name: 'chin-state', color: '#FF6B6B'},
+            {name: 'kachin-state', color: '#4ECDC4'},
+            {name: 'kayah-state', color: '#45B7D1'},
+            {name: 'kayin-state', color: '#96CEB4'},
+            {name: 'mon-state', color: '#FFEAA7'},
+            {name: 'rakhine-state', color: '#DDA0DD'},
+            {name: 'shan-state', color: '#98D8C8'},
+            {name: 'ayeyarwady-region', color: '#F7DC6F'},
+            {name: 'bago-region', color: '#BB8FCE'},
+            {name: 'magway-region', color: '#85C1E9'},
+            {name: 'mandalay-region', color: '#F8C471'},
+            {name: 'sagaing-region', color: '#82E0AA'},
+            {name: 'tanintharyi-region', color: '#F1948A'},
+            {name: 'yangon-region', color: '#85C1E9'},
+            {name: 'naypyitaw-union-territory', color: '#D7DBDD'}
+        ];
+        
+        flags.forEach(flag => {
+            ctx.fillStyle = flag.color;
+            ctx.fillRect(0, 0, 46, 30);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, 0, 46, 30);
+            
+            const link = document.createElement('a');
+            link.download = flag.name + '.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>

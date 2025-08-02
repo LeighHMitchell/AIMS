@@ -25,6 +25,14 @@ export interface Organization {
   updatedAt: string;
 }
 
+export interface UserNotificationPreferences {
+  email: boolean;
+  browser: boolean;
+  activities: boolean;
+  reports: boolean;
+  security: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -38,6 +46,10 @@ export interface User {
   website?: string;
   mailingAddress?: string;
   profilePicture?: string; // Data URL for profile image
+  bio?: string;
+  preferredLanguage?: string;
+  timezone?: string;
+  notifications?: UserNotificationPreferences;
   role: UserRole | 'admin'; // Allow 'admin' from Django backend
   organizationId?: string;
   organization?: Organization; // Legacy - for backward compatibility

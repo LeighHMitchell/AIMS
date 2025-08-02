@@ -12,6 +12,7 @@ const badgeVariants = cva(
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
         success: "bg-green-100 text-green-700 hover:bg-green-200",
+        warning: "bg-yellow-100 text-yellow-700 hover:bg-yellow-200",
         
         // High contrast variants with darker text
         gray: "bg-slate-200 text-slate-900 border border-slate-300 hover:bg-slate-300",

@@ -27,13 +27,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy } from "lucide-react";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator, ActivityCompletionRating } from "@/components/ActivityFieldHelpers";
 import { CommentsDrawer } from "@/components/CommentsDrawer";
 import ActivityLocationEditorWrapper from "@/components/ActivityLocationEditorWrapper";
-import LocationsTab from "@/components/LocationsTab";
+import CombinedLocationsTab from "@/components/CombinedLocationsTab";
 import ActivityEditorNavigation from "@/components/ActivityEditorNavigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -48,6 +48,7 @@ import PolicyMarkersSection from "@/components/PolicyMarkersSection";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { SectorValidation } from "@/types/sector";
 import LinkedActivitiesEditorTab from "@/components/activities/LinkedActivitiesEditorTab";
+import { SubnationalBreakdownTab } from "@/components/activities/SubnationalBreakdownTab";
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePreCache, useIATIReferenceCache, useOrganizationsCache } from "@/hooks/use-pre-cached-data";
 import { AsyncErrorBoundary } from "@/components/errors/AsyncErrorBoundary";
@@ -623,10 +624,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <Input
-              id="plannedStartDate"
+            <input
               type="date"
-              value={general.plannedStartDate}
+              id="plannedStartDate"
+              value={general.plannedStartDate || ''}
               onChange={(e) => {
                 if (!fieldLockStatus.isLocked) {
                   setGeneral((g: any) => ({ ...g, plannedStartDate: e.target.value }));
@@ -634,7 +635,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               disabled={fieldLockStatus.isLocked}
-              className={fieldLockStatus.isLocked ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${fieldLockStatus.isLocked ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}`}
             />
             {plannedStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedStartDateAutosave.state.error.message}</p>}
           </div>
@@ -663,10 +664,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <Input
-              id="plannedEndDate"
+            <input
               type="date"
-              value={general.plannedEndDate}
+              id="plannedEndDate"
+              value={general.plannedEndDate || ''}
               onChange={(e) => {
                 if (!fieldLockStatus.isLocked) {
                   setGeneral((g: any) => ({ ...g, plannedEndDate: e.target.value }));
@@ -674,7 +675,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               disabled={fieldLockStatus.isLocked}
-              className={fieldLockStatus.isLocked ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${fieldLockStatus.isLocked ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}`}
             />
             {plannedEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedEndDateAutosave.state.error.message}</p>}
           </div>
@@ -703,10 +704,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <Input
-              id="actualStartDate"
+            <input
               type="date"
-              value={general.actualStartDate}
+              id="actualStartDate"
+              value={general.actualStartDate || ''}
               onChange={(e) => {
                 if (!fieldLockStatus.isLocked && getDateFieldStatus().actualStartDate) {
                   setGeneral((g: any) => ({ ...g, actualStartDate: e.target.value }));
@@ -714,7 +715,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
-              className={(fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate) ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${(fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate) ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}`}
             />
             {actualStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualStartDateAutosave.state.error.message}</p>}
           </div>
@@ -743,10 +744,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <Input
-              id="actualEndDate"
+            <input
               type="date"
-              value={general.actualEndDate}
+              id="actualEndDate"
+              value={general.actualEndDate || ''}
               onChange={(e) => {
                 if (!fieldLockStatus.isLocked && getDateFieldStatus().actualEndDate) {
                   setGeneral((g: any) => ({ ...g, actualEndDate: e.target.value }));
@@ -754,7 +755,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
-              className={(fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate) ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${(fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate) ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}`}
             />
             {actualEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualEndDateAutosave.state.error.message}</p>}
           </div>
@@ -764,7 +765,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, setIatiSyncState }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, setIatiSyncState, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection }: any) {
   switch (section) {
     case "general":
       return <GeneralSection 
@@ -850,12 +851,16 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         activityId={general.id}
       />;
     case "locations":
-      return <LocationsTab 
+      return <CombinedLocationsTab 
         specificLocations={specificLocations}
         coverageAreas={coverageAreas}
         onSpecificLocationsChange={setSpecificLocations}
         onCoverageAreasChange={setCoverageAreas}
         activityId={general.id}
+        canEdit={permissions?.canEditActivity ?? true}
+        onSubnationalDataChange={setSubnationalBreakdowns}
+        activityTitle={general.title}
+        activitySector={general.primarySector}
       />;
     case "finances":
       return <FinancesSection 
@@ -920,15 +925,16 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "tags":
       return <TagsSection activityId={general.id} tags={tags} onChange={setTags} />;
     case "working_groups":
-      return <WorkingGroupsSection activityId={general.id} workingGroups={workingGroups} onChange={setWorkingGroups} />;
+      return <WorkingGroupsSection activityId={general.id} workingGroups={workingGroups} onChange={setWorkingGroups} setHasUnsavedChanges={setHasUnsavedChanges} />;
     case "policy_markers":
-      return <PolicyMarkersSection activityId={general.id} policyMarkers={policyMarkers} onChange={setPolicyMarkers} />;
+      return <PolicyMarkersSection activityId={general.id} policyMarkers={policyMarkers} onChange={setPolicyMarkers} setHasUnsavedChanges={setHasUnsavedChanges} />;
     case "linked_activities":
       return <LinkedActivitiesEditorTab 
         activityId={general.id} 
         currentUserId={user?.id}
         canEdit={permissions?.canEditActivity ?? true}
       />;
+
     default:
       return null;
   }
@@ -1071,6 +1077,9 @@ function NewActivityPageContent() {
     isEnabled: false,
     syncStatus: 'pending' as 'live' | 'pending' | 'outdated'
   });
+
+  // State for Subnational Breakdown data
+  const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>({});
 
   const isEditing = !!searchParams?.get("id");
   
@@ -1227,6 +1236,22 @@ function NewActivityPageContent() {
           } catch (error) {
             console.warn('[AIMS] Failed to load planned disbursements for tab completion:', error);
           }
+
+          // Fetch subnational breakdown for tab completion status
+          try {
+            const subnationalResponse = await fetch(`/api/activities/${activityId}/subnational-breakdown`);
+            if (subnationalResponse.ok) {
+              const subnationalData = await subnationalResponse.json();
+              const breakdownsMap: Record<string, number> = {};
+              subnationalData.forEach((item: any) => {
+                breakdownsMap[item.region_name] = item.percentage;
+              });
+              setSubnationalBreakdowns(breakdownsMap);
+              console.log('[AIMS] Loaded subnational breakdown for tab completion:', Object.keys(breakdownsMap).length, 'regions');
+            }
+          } catch (error) {
+            console.warn('[AIMS] Failed to load subnational breakdown for tab completion:', error);
+          }
         } else {
           // New activity - just set some defaults
           console.log('[AIMS] Creating new activity');
@@ -1264,6 +1289,7 @@ function NewActivityPageContent() {
       iati: "IATI Sync",
       sectors: "Sectors",
       locations: "Activity Locations",
+      subnational_breakdown: "Subnational Breakdown",
       organisations: "Organisations",
       contributors: "Contributors",
       contacts: "Contacts",
@@ -1389,11 +1415,22 @@ function NewActivityPageContent() {
     // SDG tab: green check if at least one SDG goal is mapped
     const sdgComplete = sdgMappings && sdgMappings.length > 0;
 
-    // Locations tab: use the comprehensive locations completion check
-    const locationsCompletion = getTabCompletionStatus('locations', specificLocations);
+    // Locations tab: use the comprehensive locations completion check (includes subnational breakdown)
+    const locationsCompletion = getTabCompletionStatus('locations', { 
+      specificLocations, 
+      subnationalBreakdowns 
+    });
 
     // Tags tab: use the comprehensive tags completion check
     const tagsCompletion = getTabCompletionStatus('tags', tags);
+
+    // Working Groups tab: use the comprehensive working groups completion check
+    const workingGroupsCompletion = getTabCompletionStatus('working_groups', workingGroups);
+
+    // Policy Markers tab: use the comprehensive policy markers completion check
+    const policyMarkersCompletion = getTabCompletionStatus('policy_markers', policyMarkers);
+
+
 
     // IATI Sync tab completion logic
     const iatiSyncComplete = iatiSyncState.isEnabled && iatiSyncState.syncStatus === 'live';
@@ -1420,6 +1457,14 @@ function NewActivityPageContent() {
         isComplete: tagsCompletion.isComplete,
         isInProgress: tagsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
+      working_groups: workingGroupsCompletion ? { 
+        isComplete: workingGroupsCompletion.isComplete,
+        isInProgress: workingGroupsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      policy_markers: policyMarkersCompletion ? { 
+        isComplete: policyMarkersCompletion.isComplete,
+        isInProgress: policyMarkersCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
       finances: { isComplete: financesComplete, isInProgress: false },
       finances_defaults: financesDefaultsCompletion ? { 
         isComplete: financesDefaultsCompletion.isComplete,
@@ -1429,7 +1474,7 @@ function NewActivityPageContent() {
       "planned-disbursements": { isComplete: plannedDisbursementsComplete, isInProgress: false },
       sdg: { isComplete: sdgComplete, isInProgress: false }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState]);
+  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -1441,6 +1486,18 @@ function NewActivityPageContent() {
     
     const idx = sections.findIndex(s => s === currentId);
     return idx < sections.length - 1 ? sections[idx + 1] : null;
+  }, [showGovernmentInputs]);
+
+  // Helper to get previous section id
+  const getPreviousSection = useCallback((currentId: string) => {
+    const sections = [
+      "general", "iati", "sectors", "locations", "organisations", "contributors", "contacts", 
+      "linked_activities",
+      "finances", "budgets", "planned-disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
+    ].filter(id => id !== "government" || showGovernmentInputs);
+    
+    const idx = sections.findIndex(s => s === currentId);
+    return idx > 0 ? sections[idx - 1] : null;
   }, [showGovernmentInputs]);
 
   // Update transactions callback
@@ -1781,7 +1838,9 @@ function NewActivityPageContent() {
   const allSections = navigationGroups.flatMap(g => g.sections);
   const currentSectionIndex = allSections.findIndex(s => s.id === activeSection);
   const isLastSection = currentSectionIndex === allSections.length - 1;
+  const isFirstSection = currentSectionIndex === 0;
   const nextSection = !isLastSection ? allSections[currentSectionIndex + 1] : null;
+  const previousSection = !isFirstSection ? allSections[currentSectionIndex - 1] : null;
 
   if (loading) {
     return (
@@ -1952,18 +2011,7 @@ function NewActivityPageContent() {
               </Alert>
             )}
             
-            {/* Comments Toggle Button */}
-            {isEditing && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mb-6"
-                onClick={() => setIsCommentsDrawerOpen(true)}
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Comments
-              </Button>
-            )}
+
           </div>
           
           {error && (
@@ -2026,6 +2074,9 @@ function NewActivityPageContent() {
                     policyMarkers={policyMarkers}
                     setPolicyMarkers={setPolicyMarkers}
                     specificLocations={specificLocations}
+                    onSectionChange={setActiveSection}
+                    getNextSection={getNextSection}
+                    getPreviousSection={getPreviousSection}
                     setSpecificLocations={setSpecificLocations}
                     coverageAreas={coverageAreas}
                     setCoverageAreas={setCoverageAreas}
@@ -2047,14 +2098,61 @@ function NewActivityPageContent() {
                     plannedDisbursements={plannedDisbursements}
                     setPlannedDisbursements={setPlannedDisbursements}
                     setIatiSyncState={setIatiSyncState}
+                    setSubnationalBreakdowns={setSubnationalBreakdowns}
                   />
                 </div>
               )}
             </section>
-            {/* Next Button and Saved Status */}
-            <div className="fixed bottom-0 right-0 w-full flex justify-end items-center bg-white border-t border-gray-200 py-4 px-8 z-30">
+          </div>
+          
+          {/* Combined Footer with Navigation and Validation Actions */}
+          <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-4 px-8 z-[60] shadow-lg">
+            <div className="max-w-full flex items-center justify-between gap-4">
+              {/* Left side: Validation Actions */}
               <div className="flex items-center gap-4">
-                {/* Saved/Saving/Creating Status */}
+                {/* Validation Actions for Tier 1 Users */}
+                {canValidate && general.submissionStatus === 'submitted' && (
+                  <>
+                    <button
+                      className="bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                      type="button"
+                      onClick={() => console.log('Approve clicked')}
+                      disabled={submitting}
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Approve
+                    </button>
+                    <button
+                      className="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                      type="button"
+                      onClick={() => {
+                        const reason = window.prompt("Please provide a reason for rejection:");
+                        if (reason) console.log('Reject clicked:', reason);
+                      }}
+                      disabled={submitting}
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Reject
+                    </button>
+                  </>
+                )}
+
+                {/* Submit for Validation - For Tier 2 users with draft activities */}
+                {canSubmit && general.submissionStatus === 'draft' && general.id && (
+                  <button
+                    className="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                    type="button"
+                    onClick={() => console.log('Submit for validation')}
+                    disabled={submitting}
+                  >
+                    <Send className="h-4 w-4" />
+                    Submit for Validation
+                  </button>
+                )}
+              </div>
+
+              {/* Center: Saved Status */}
+              <div className="flex-1 text-center">
                 {(!activityId && titleAutosaveState.isSaving) ? (
                   <span className="text-orange-600 font-medium">Creating activity...</span>
                 ) : titleAutosaveState.isSaving ? (
@@ -2062,10 +2160,42 @@ function NewActivityPageContent() {
                 ) : (!titleAutosaveState.isSaving && !titleAutosaveState.hasUnsavedChanges && titleAutosaveState.lastSaved) ? (
                   <span className="text-green-700 font-medium">Saved</span>
                 ) : null}
+              </div>
+
+              {/* Right side: Comments + Back + Next Navigation Buttons */}
+              <div className="flex items-center gap-3">
+                {/* Comments Button */}
+                {isEditing && general.id && (
+                  <Button
+                    variant="outline"
+                    className="px-4 py-3 text-base font-semibold"
+                    onClick={() => setIsCommentsDrawerOpen(true)}
+                  >
+                    <MessageSquare className="mr-2 h-5 w-5" />
+                    Comments
+                    {comments.length > 0 && (
+                      <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-1">
+                        {comments.length}
+                      </span>
+                    )}
+                  </Button>
+                )}
+                
+                {/* Back Button */}
+                <Button
+                  variant="outline"
+                  className="px-6 py-3 text-base font-semibold"
+                  onClick={() => previousSection && handleTabChange(previousSection.id)}
+                  disabled={!previousSection || tabLoading}
+                >
+                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  Back
+                </Button>
+
                 {/* Next Button */}
                 <Button
                   variant="default"
-                  className="ml-4 px-8 py-3 text-base font-semibold"
+                  className="px-6 py-3 text-base font-semibold"
                   onClick={() => nextSection && handleTabChange(nextSection.id)}
                   disabled={isLastSection || tabLoading}
                 >
@@ -2073,55 +2203,6 @@ function NewActivityPageContent() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
-            </div>
-          </div>
-          
-          {/* Sticky Footer */}
-          <footer className="sticky bottom-0 bg-white border-t-2 border-gray-300 py-6 mt-8 flex justify-between gap-4 z-20 shadow-lg px-6">
-            <div className="flex gap-2">
-              {/* Validation Actions for Tier 1 Users */}
-              {canValidate && general.submissionStatus === 'submitted' && (
-                <>
-                  <button
-                    className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
-                    type="button"
-                    onClick={() => console.log('Approve clicked')}
-                    disabled={submitting}
-                  >
-                    <CheckCircle className="h-5 w-5" />
-                    Approve
-                  </button>
-                  <button
-                    className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
-                    type="button"
-                    onClick={() => {
-                      const reason = window.prompt("Please provide a reason for rejection:");
-                      if (reason) console.log('Reject clicked:', reason);
-                    }}
-                    disabled={submitting}
-                  >
-                    <XCircle className="h-5 w-5" />
-                    Reject
-                  </button>
-                </>
-              )}
-            </div>
-            
-            <div className="flex gap-4">
-              {/* Submit for Validation - For Tier 2 users with draft activities */}
-              {canSubmit && general.submissionStatus === 'draft' && general.id && (
-                <button
-                  className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
-                  type="button"
-                  onClick={() => console.log('Submit for validation')}
-                  disabled={submitting}
-                >
-                  <Send className="h-5 w-5" />
-                  Submit for Validation
-                </button>
-              )}
-              
-
             </div>
           </footer>
         </main>

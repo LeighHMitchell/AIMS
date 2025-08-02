@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import LocationSelector from './LocationSelectorDynamic';
+import SimpleMapSelector from './SimpleMapSelectorWrapper';
+import { Location } from './LocationSelector';
 import { useLocationsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -41,6 +42,55 @@ interface LocationsTabProps {
   onSpecificLocationsChange: (locations: SpecificLocation[]) => void;
   onCoverageAreasChange: (areas: CoverageArea[]) => void;
   activityId?: string;
+  activityTitle?: string;
+  activitySector?: string;
+}
+
+// Convert SpecificLocation to new Location format
+function convertSpecificLocationToLocation(specificLocation: SpecificLocation): Location {
+  console.log('🔄 Converting SpecificLocation to Location:', {
+    input: {
+      name: specificLocation.name,
+      lat: specificLocation.latitude,
+      lng: specificLocation.longitude,
+      coordTypes: {
+        lat: typeof specificLocation.latitude,
+        lng: typeof specificLocation.longitude
+      }
+    }
+  });
+  
+  const converted = {
+    id: specificLocation.id,
+    location_type: 'site' as const,
+    location_name: specificLocation.name,
+    description: specificLocation.notes,
+    latitude: specificLocation.latitude,
+    longitude: specificLocation.longitude,
+    address: specificLocation.address,
+    site_type: specificLocation.type || 'project_site'
+  };
+  
+  console.log('🔄 Converted result:', {
+    name: converted.location_name,
+    lat: converted.latitude,
+    lng: converted.longitude
+  });
+  
+  return converted;
+}
+
+// Convert new Location format back to SpecificLocation
+function convertLocationToSpecificLocation(location: Location): SpecificLocation {
+  return {
+    id: location.id || '',
+    name: location.location_name,
+    type: location.site_type || 'project_site',
+    latitude: location.latitude || 0,
+    longitude: location.longitude || 0,
+    address: location.address,
+    notes: location.description
+  };
 }
 
 export default function LocationsTab({
@@ -48,8 +98,11 @@ export default function LocationsTab({
   coverageAreas = [],
   onSpecificLocationsChange,
   onCoverageAreasChange,
-  activityId
+  activityId,
+  activityTitle,
+  activitySector
 }: LocationsTabProps) {
+  // Get user for autosave
   const { user } = useUser();
   
   // Debug logging for locations data
@@ -83,12 +136,36 @@ export default function LocationsTab({
     }
   }, [locationsAutosave.state.error]);
 
+  // Convert locations for the new LocationSelector
+  console.log('[LocationsTab] Converting specificLocations to Location format:', {
+    count: specificLocations.length,
+    firstLocation: specificLocations[0] ? {
+      name: specificLocations[0].name,
+      lat: specificLocations[0].latitude,
+      lng: specificLocations[0].longitude
+    } : null
+  });
+  
+  const locations: Location[] = specificLocations.map(convertSpecificLocationToLocation);
+  
+  console.log('[LocationsTab] Converted locations:', {
+    count: locations.length,
+    firstLocation: locations[0] ? {
+      name: locations[0].location_name,
+      lat: locations[0].latitude,
+      lng: locations[0].longitude
+    } : null
+  });
+
   // Enhanced onChange handlers that trigger autosave
-  const handleSpecificLocationsChange = (newLocations: SpecificLocation[]) => {
-    onSpecificLocationsChange(newLocations);
+  const handleLocationsChange = (newLocations: Location[]) => {
+    // Convert back to SpecificLocation format for parent component
+    const specificLocationsFormatted = newLocations.map(convertLocationToSpecificLocation);
+    onSpecificLocationsChange(specificLocationsFormatted);
+    
     if (activityId) {
       const locationsData = {
-        specificLocations: newLocations,
+        specificLocations: specificLocationsFormatted,
         coverageAreas: coverageAreas
       };
       locationsAutosave.triggerFieldSave(locationsData);
@@ -98,27 +175,26 @@ export default function LocationsTab({
   return (
     <div className="space-y-6">
       {/* Header with autosave status */}
-      <div className="flex items-center gap-3">
-        <h2 className="text-xl font-semibold text-gray-900">Activity Locations</h2>
-        {locationsAutosave.state.isSaving && (
-          <div className="flex items-center gap-1 text-blue-600">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Saving...</span>
-          </div>
-        )}
-        {locationsAutosave.state.lastSaved && !locationsAutosave.state.isSaving && !locationsAutosave.state.error && (
-          <div className="flex items-center gap-1 text-green-600">
-            <CheckCircle className="h-4 w-4" />
-            <span className="text-sm">Saved</span>
-          </div>
-        )}
-        {locationsAutosave.state.error && (
-          <div className="flex items-center gap-1 text-red-600">
-            <AlertCircle className="h-4 w-4" />
-            <span className="text-sm">Save failed</span>
-          </div>
-        )}
-      </div>
+        <div className="flex items-center gap-3">
+          {locationsAutosave.state.isSaving && (
+            <div className="flex items-center gap-1 text-blue-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Saving...</span>
+            </div>
+          )}
+          {locationsAutosave.state.lastSaved && !locationsAutosave.state.isSaving && !locationsAutosave.state.error && (
+            <div className="flex items-center gap-1 text-green-600">
+              <CheckCircle className="h-4 w-4" />
+              <span className="text-sm">Saved</span>
+            </div>
+          )}
+          {locationsAutosave.state.error && (
+            <div className="flex items-center gap-1 text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">Save failed</span>
+            </div>
+          )}
+        </div>
 
       {/* Autosave error details */}
       {locationsAutosave.state.error && (
@@ -134,22 +210,19 @@ export default function LocationsTab({
       <div className="max-w-4xl">
         {/* Location Selector */}
         <div className="flex flex-col h-full">
-          <LocationSelector
-            locations={specificLocations}
-            onLocationsChange={handleSpecificLocationsChange}
+          <SimpleMapSelector
+            locations={locations}
+            onLocationsChange={handleLocationsChange}
+            activityId={activityId}
+            userId={user?.id}
+            activityTitle={activityTitle}
+            activitySector={activitySector}
           />
         </div>
       </div>
 
       {/* Bottom Summary */}
-      <div className="text-center text-sm text-gray-600 py-4 border-t bg-gray-50 rounded-lg">
-        <p className="font-medium">
-          {specificLocations.length} physical location{specificLocations.length !== 1 ? 's' : ''} added
-        </p>
-        <p className="text-xs text-gray-500 mt-1">
-          All location data will be saved with IATI-compliant structure
-        </p>
-      </div>
+
     </div>
   );
 }

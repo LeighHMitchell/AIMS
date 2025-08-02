@@ -147,13 +147,13 @@ export function useComprehensiveAutosave(
           implementingPartners: (data.implementingPartners || []).slice(0, 10),
           governmentPartners: (data.governmentPartners || []).slice(0, 10),
           contacts: (data.contacts || []).slice(0, 15),
-          // Skip heavy optional data for autosave
+          // Skip heavy optional data for autosave (but keep essential ones)
           governmentInputs: [],
           contributors: [],
-          sdgMappings: [],
+          sdgMappings: data.sdgMappings || [], // Keep SDG mappings as they're important
           tags: [],
-          workingGroups: [],
-          policyMarkers: [],
+          workingGroups: data.workingGroups || [], // Keep working groups as they're lightweight and important
+          policyMarkers: data.policyMarkers || [], // Keep policy markers as they're lightweight and important
           locations: {
             specificLocations: (data.specificLocations || []).slice(0, 5),
             coverageAreas: (data.coverageAreas || []).slice(0, 5)
@@ -257,7 +257,7 @@ export function useComprehensiveAutosave(
             timestamp: new Date().toISOString()
           },
           
-          // Empty arrays to prevent API errors
+          // Empty arrays to prevent API errors (except important lightweight data)
           sectors: [],
           transactions: [],
           extendingPartners: [],
@@ -266,10 +266,10 @@ export function useComprehensiveAutosave(
           contacts: [],
           governmentInputs: [],
           contributors: [],
-          sdgMappings: [],
+          sdgMappings: data.sdgMappings || [], // Keep SDG mappings for minimal save
           tags: [],
-          workingGroups: [],
-          policyMarkers: [],
+          workingGroups: data.workingGroups || [], // Keep working groups for minimal save
+          policyMarkers: data.policyMarkers || [], // Keep policy markers for minimal save
           locations: {
             specificLocations: [],
             coverageAreas: []

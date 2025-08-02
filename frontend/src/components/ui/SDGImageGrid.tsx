@@ -66,11 +66,11 @@ function extractSDGNumber(code: string | number): number | null {
 }
 
 /**
- * Generates UN SDG icon URL for a given goal number
+ * Generates local SDG icon URL for a given goal number
  */
 function getSDGImageURL(goalNumber: number): string {
   const paddedNumber = goalNumber.toString().padStart(2, '0');
-  return `https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-${paddedNumber}.jpg`;
+  return `/images/sdg/E_SDG_Icons-${paddedNumber}.jpg`;
 }
 
 /**
@@ -125,7 +125,6 @@ export function SDGImageGrid({
           width={width}
           height={height}
           className="object-cover w-full h-full hover:scale-105 transition-transform duration-200"
-          unoptimized // Since these are external UN images
         />
       </div>
     );

@@ -61,6 +61,58 @@ export async function PATCH(
       
       console.log('[AIMS API] SDG mappings updated successfully');
     }
+
+    // Handle working groups update
+    if (body.workingGroups !== undefined) {
+      console.log('[AIMS API] Updating working groups for activity:', id);
+      
+      // First, delete existing working groups
+      const { error: deleteError } = await getSupabaseAdmin()
+        .from('activity_working_groups')
+        .delete()
+        .eq('activity_id', id);
+      
+      if (deleteError) {
+        console.error('[AIMS API] Error deleting existing working groups:', deleteError);
+        throw deleteError;
+      }
+      
+      // Then insert new working groups if any
+      if (body.workingGroups.length > 0) {
+        // Fetch working group IDs from database
+        const codes = body.workingGroups.map((wg: any) => wg.code);
+        const { data: dbWorkingGroups, error: wgFetchError } = await getSupabaseAdmin()
+          .from('working_groups')
+          .select('id, code')
+          .in('code', codes);
+
+        if (wgFetchError) {
+          console.error('[AIMS API] Error fetching working groups:', wgFetchError);
+          throw wgFetchError;
+        }
+        
+        if (dbWorkingGroups && dbWorkingGroups.length > 0) {
+          const workingGroupsData = dbWorkingGroups.map((dbWg: any) => ({
+            activity_id: id,
+            working_group_id: dbWg.id,
+            vocabulary: '99' // IATI custom vocabulary
+          }));
+
+          console.log('[AIMS API] Inserting working groups:', JSON.stringify(workingGroupsData, null, 2));
+
+          const { error: wgError } = await getSupabaseAdmin()
+            .from('activity_working_groups')
+            .insert(workingGroupsData);
+            
+          if (wgError) {
+            console.error('[AIMS API] Error inserting working groups:', wgError);
+            throw wgError;
+          }
+        }
+      }
+      
+      console.log('[AIMS API] Working groups updated successfully');
+    }
     
     // Update activity updated_at timestamp
     const { error: updateError } = await getSupabaseAdmin()
@@ -165,6 +217,24 @@ export async function GET(
         tags (id, name, created_by, created_at)
       `)
       .eq('activity_id', id);
+
+    // Fetch working groups
+    const { data: activityWorkingGroups } = await getSupabaseAdmin()
+      .from('activity_working_groups')
+      .select(`
+        working_group_id,
+        vocabulary,
+        working_groups (id, code, label, description)
+      `)
+      .eq('activity_id', id);
+
+    // Fetch policy markers
+    const { data: activityPolicyMarkers } = await getSupabaseAdmin()
+      .from('activity_policy_markers')
+      .select('*')
+      .eq('activity_id', id);
+    
+    console.log('[AIMS API] Policy markers fetched:', activityPolicyMarkers?.length || 0);
     
     // Transform to match frontend format
     const transformedActivity = {
@@ -256,6 +326,16 @@ export async function GET(
         notes: mapping.notes
       })) || [],
       tags: activityTags?.map((tagRelation: any) => tagRelation.tags) || [],
+      workingGroups: activityWorkingGroups?.map((wgRelation: any) => ({
+        code: wgRelation.working_groups.code,
+        label: wgRelation.working_groups.label,
+        vocabulary: wgRelation.vocabulary
+      })) || [],
+      policyMarkers: activityPolicyMarkers?.map((marker: any) => ({
+        policy_marker_id: marker.policy_marker_id,
+        score: marker.score,
+        rationale: marker.rationale
+      })) || [],
       locations: (() => {
         console.log('[AIMS API] Raw locations from DB:', locations);
         const specificLocations: any[] = [];
@@ -314,6 +394,7 @@ export async function GET(
     console.log('[AIMS API] Activity found:', transformedActivity.title);
     console.log('[AIMS API] Activity ID (UUID):', transformedActivity.id);
     console.log('[AIMS API] Transformed sectors being sent to frontend:', JSON.stringify(transformedActivity.sectors, null, 2));
+    console.log('[AIMS API] Policy markers being sent to frontend:', JSON.stringify(transformedActivity.policyMarkers, null, 2));
     
     return NextResponse.json(transformedActivity);
   } catch (error) {

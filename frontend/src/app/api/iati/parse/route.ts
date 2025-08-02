@@ -535,8 +535,8 @@ export async function POST(request: NextRequest) {
     // Fetch all existing activities for the dropdown
     const { data: allActivities } = await supabase
       .from('activities')
-      .select('id, iati_id, title')
-      .order('title');
+      .select('id, iati_identifier, title_narrative')
+      .order('title_narrative');
     
     if (allActivities) {
       result.existingActivities = allActivities;

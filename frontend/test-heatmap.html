@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaflet Heat Map Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.0/dist/leaflet.css" />
+    <style>
+        #map { height: 400px; width: 100%; }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Leaflet Heat Map Test</h1>
+    <div id="status" class="status">Loading...</div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.0/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    
+    <script>
+        const statusEl = document.getElementById('status');
+        
+        try {
+            // Initialize map
+            const map = L.map('map').setView([21.9, 95.9], 6);
+            
+            // Add tile layer
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            }).addTo(map);
+            
+            // Test data points (Myanmar locations)
+            const testLocations = [
+                [21.9162, 95.9560], // Yangon
+                [21.9588, 96.0891], // Mandalay  
+                [22.0000, 96.1000], // Near Mandalay
+                [21.8000, 95.8000], // Near Yangon
+                [22.5000, 96.5000], // North Myanmar
+                [21.5000, 95.5000], // South Myanmar
+            ];
+            
+            // Check if heat layer is available
+            if (typeof L.heatLayer === 'function') {
+                // Create heat layer
+                const heat = L.heatLayer(testLocations.map(point => [point[0], point[1], 1.0]), {
+                    radius: 25,
+                    blur: 15,
+                    minOpacity: 0.6,
+                    gradient: {
+                        0.0: 'rgba(0, 0, 255, 0)',
+                        0.2: 'rgba(59, 130, 246, 0.6)',
+                        0.4: 'rgba(34, 197, 94, 0.7)',
+                        0.6: 'rgba(245, 158, 11, 0.8)',
+                        0.8: 'rgba(239, 68, 68, 0.9)',
+                        1.0: 'rgba(220, 38, 38, 1.0)'
+                    }
+                }).addTo(map);
+                
+                // Add markers for reference
+                testLocations.forEach((point, index) => {
+                    L.marker(point).addTo(map)
+                        .bindPopup(`Test Location ${index + 1}<br>Lat: ${point[0]}<br>Lng: ${point[1]}`);
+                });
+                
+                statusEl.className = 'status success';
+                statusEl.textContent = '✅ Heat map loaded successfully! L.heatLayer is available.';
+                
+                console.log('Heat map test successful');
+                console.log('L.heatLayer type:', typeof L.heatLayer);
+                console.log('Heat layer object:', heat);
+                
+            } else {
+                throw new Error('L.heatLayer is not available');
+            }
+            
+        } catch (error) {
+            statusEl.className = 'status error';
+            statusEl.textContent = `❌ Error: ${error.message}`;
+            
+            console.error('Heat map test failed:', error);
+            console.log('L object:', L);
+            console.log('L.heatLayer:', L.heatLayer);
+            console.log('typeof L.heatLayer:', typeof L.heatLayer);
+        }
+    </script>
+</body>
+</html> 

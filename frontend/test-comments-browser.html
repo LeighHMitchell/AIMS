@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AIMS Comments System Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .loading { background-color: #e2e3e5; border-color: #d6d8db; }
+        button { margin: 5px; padding: 8px 16px; cursor: pointer; }
+        textarea { width: 100%; height: 60px; margin: 5px 0; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .status { font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 AIMS Comments System - Browser Test Suite</h1>
+    
+    <div class="test-section">
+        <h3>Server Status</h3>
+        <div id="server-status" class="status loading">Testing server connection...</div>
+        <div id="server-details"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Comments API Test</h3>
+        <div id="api-status" class="status loading">Testing comments API...</div>
+        <div id="api-details"></div>
+        <button onclick="testLoadComments()">🔄 Reload Comments</button>
+        <button onclick="testCreateComment()">💬 Test Create Comment</button>
+    </div>
+
+    <div class="test-section">
+        <h3>Interactive Comment Test</h3>
+        <div>
+            <select id="comment-type">
+                <option value="Feedback">Feedback</option>
+                <option value="Question">Question</option>
+            </select>
+            <br>
+            <textarea id="comment-content" placeholder="Enter your test comment here...">This is a test comment from the browser diagnostic tool.</textarea>
+            <br>
+            <button onclick="submitTestComment()">📝 Submit Test Comment</button>
+        </div>
+        <div id="submit-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Current Comments</h3>
+        <div id="comments-list">Loading...</div>
+    </div>
+
+    <div class="test-section">
+        <h3>System Diagnostics</h3>
+        <div id="diagnostics">Running diagnostics...</div>
+        <button onclick="runDiagnostics()">🔍 Re-run Diagnostics</button>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        const ACTIVITY_ID = '85b03f24-217e-4cbf-b8e4-79dca60dee1f';
+        
+        let serverOnline = false;
+        let apiWorking = false;
+        let comments = [];
+
+        function updateStatus(elementId, status, className) {
+            const element = document.getElementById(elementId);
+            element.textContent = status;
+            element.className = `status ${className}`;
+        }
+
+        function updateDetails(elementId, content) {
+            document.getElementById(elementId).innerHTML = content;
+        }
+
+        async function testServerConnection() {
+            try {
+                const response = await fetch(`${BASE_URL}/activities`);
+                if (response.ok) {
+                    serverOnline = true;
+                    updateStatus('server-status', '✅ Server Online', 'success');
+                    updateDetails('server-details', `Server responding on ${BASE_URL}`);
+                } else {
+                    updateStatus('server-status', `❌ Server Error (${response.status})`, 'error');
+                    updateDetails('server-details', `Server returned ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                updateStatus('server-status', '❌ Server Offline', 'error');
+                updateDetails('server-details', `Connection failed: ${error.message}`);
+            }
+        }
+
+        async function testLoadComments() {
+            updateStatus('api-status', '🔄 Testing API...', 'loading');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/activities/${ACTIVITY_ID}/comments`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    apiWorking = true;
+                    comments = Array.isArray(data) ? data : [];
+                    updateStatus('api-status', `✅ API Working - ${comments.length} comments loaded`, 'success');
+                    updateDetails('api-details', `<pre>${JSON.stringify(data, null, 2)}</pre>`);
+                    displayComments();
+                } else {
+                    updateStatus('api-status', `⚠️ API Error (${response.status})`, 'warning');
+                    updateDetails('api-details', `<pre>Error: ${JSON.stringify(data, null, 2)}</pre>`);
+                }
+            } catch (error) {
+                updateStatus('api-status', '❌ API Failed', 'error');
+                updateDetails('api-details', `API request failed: ${error.message}`);
+            }
+        }
+
+        async function testCreateComment() {
+            const testData = {
+                user: {
+                    id: '1',
+                    name: 'Browser Test User',
+                    role: 'dev_partner_tier_1'
+                },
+                content: 'This is an automated test comment from the browser diagnostic tool.',
+                type: 'Feedback'
+            };
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/activities/${ACTIVITY_ID}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStatus('api-status', '✅ Comment Created Successfully', 'success');
+                    updateDetails('api-details', `<pre>${JSON.stringify(data, null, 2)}</pre>`);
+                    comments = Array.isArray(data) ? data : [];
+                    displayComments();
+                } else {
+                    updateStatus('api-status', `⚠️ Comment Creation Failed (${response.status})`, 'warning');
+                    updateDetails('api-details', `<pre>Error: ${JSON.stringify(data, null, 2)}</pre>`);
+                }
+            } catch (error) {
+                updateStatus('api-status', '❌ Comment Creation Failed', 'error');
+                updateDetails('api-details', `Request failed: ${error.message}`);
+            }
+        }
+
+        async function submitTestComment() {
+            const content = document.getElementById('comment-content').value;
+            const type = document.getElementById('comment-type').value;
+            
+            if (!content.trim()) {
+                updateDetails('submit-status', '<div class="error">Please enter comment content</div>');
+                return;
+            }
+
+            updateDetails('submit-status', '<div class="loading">Submitting comment...</div>');
+
+            const testData = {
+                user: {
+                    id: '2',
+                    name: 'Interactive Test User',
+                    role: 'gov_partner_tier_1'
+                },
+                content: content,
+                type: type
+            };
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/activities/${ACTIVITY_ID}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateDetails('submit-status', '<div class="success">✅ Comment submitted successfully!</div>');
+                    comments = Array.isArray(data) ? data : [];
+                    displayComments();
+                    document.getElementById('comment-content').value = '';
+                } else {
+                    updateDetails('submit-status', `<div class="error">❌ Failed to submit: ${data.error || 'Unknown error'}</div>`);
+                }
+            } catch (error) {
+                updateDetails('submit-status', `<div class="error">❌ Submission failed: ${error.message}</div>`);
+            }
+        }
+
+        function displayComments() {
+            const container = document.getElementById('comments-list');
+            
+            if (comments.length === 0) {
+                container.innerHTML = '<div class="warning">No comments found</div>';
+                return;
+            }
+
+            let html = `<div class="success">Found ${comments.length} comments:</div>`;
+            comments.forEach(comment => {
+                html += `
+                    <div style="border: 1px solid #ddd; margin: 10px 0; padding: 10px; border-radius: 5px;">
+                        <strong>${comment.author?.name || 'Unknown'}</strong> 
+                        <em>(${comment.author?.role || 'unknown role'})</em>
+                        <span style="float: right; color: #666; font-size: 0.9em;">
+                            ${comment.type} • ${new Date(comment.createdAt).toLocaleString()}
+                        </span>
+                        <div style="margin-top: 5px;">${comment.message || 'No content'}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        async function runDiagnostics() {
+            updateDetails('diagnostics', 'Running comprehensive diagnostics...');
+            
+            let diagnosticsHtml = '<h4>Diagnostic Results:</h4>';
+            
+            // Test 1: Server connectivity
+            diagnosticsHtml += '<div>🔗 <strong>Server Connectivity:</strong> ';
+            try {
+                const response = await fetch(`${BASE_URL}/activities`);
+                diagnosticsHtml += response.ok ? '✅ Connected' : `❌ Error ${response.status}`;
+            } catch (error) {
+                diagnosticsHtml += `❌ Failed (${error.message})`;
+            }
+            diagnosticsHtml += '</div>';
+
+            // Test 2: Activity exists
+            diagnosticsHtml += '<div>📋 <strong>Test Activity:</strong> ';
+            try {
+                const response = await fetch(`${BASE_URL}/api/activities/${ACTIVITY_ID}`);
+                diagnosticsHtml += response.ok ? '✅ Found' : `❌ Not found (${response.status})`;
+            } catch (error) {
+                diagnosticsHtml += `❌ Failed (${error.message})`;
+            }
+            diagnosticsHtml += '</div>';
+
+            // Test 3: Comments API
+            diagnosticsHtml += '<div>💬 <strong>Comments API:</strong> ';
+            try {
+                const response = await fetch(`${BASE_URL}/api/activities/${ACTIVITY_ID}/comments`);
+                const data = await response.json();
+                if (response.ok) {
+                    diagnosticsHtml += `✅ Working (${Array.isArray(data) ? data.length : 0} comments)`;
+                } else {
+                    diagnosticsHtml += `⚠️ API Error: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                diagnosticsHtml += `❌ Failed (${error.message})`;
+            }
+            diagnosticsHtml += '</div>';
+
+            // Test 4: Browser capabilities
+            diagnosticsHtml += '<div>🌐 <strong>Browser:</strong> ';
+            diagnosticsHtml += `✅ ${navigator.userAgent.split(')')[0]})`;
+            diagnosticsHtml += '</div>';
+
+            // Test 5: Network info
+            diagnosticsHtml += '<div>🔧 <strong>Current URL:</strong> ';
+            diagnosticsHtml += `${window.location.href}`;
+            diagnosticsHtml += '</div>';
+
+            updateDetails('diagnostics', diagnosticsHtml);
+        }
+
+        // Initialize tests when page loads
+        window.addEventListener('load', async () => {
+            await testServerConnection();
+            await testLoadComments();
+            await runDiagnostics();
+        });
+    </script>
+</body>
+</html>

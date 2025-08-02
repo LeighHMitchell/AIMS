@@ -5,12 +5,116 @@
 /* Leaflet CSS for maps */
 @import 'leaflet/dist/leaflet.css';
 
+/* React DatePicker CSS */
+@import 'react-datepicker/dist/react-datepicker.css';
+
 /* Debug: Test if CSS is loading */
 .tailwind-test {
   background-color: #ff0000 !important;
   color: white !important;
   padding: 1rem !important;
   border-radius: 0.5rem !important;
+}
+
+/* Fix for search container clipping */
+.search-container {
+  position: relative;
+  z-index: 50;
+}
+
+/* Fix focus ring clipping issues */
+input:focus,
+textarea:focus,
+select:focus {
+  position: relative;
+  z-index: 10;
+}
+
+/* Fix for Leaflet map rendering and blur issues */
+.leaflet-container {
+  z-index: 1 !important;
+  /* Prevent any blur effects */
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  /* DON'T force transforms on container - let Leaflet handle it */
+}
+
+.leaflet-pane,
+.leaflet-tile-pane,
+.leaflet-marker-pane,
+.leaflet-tooltip-pane,
+.leaflet-popup-pane,
+.leaflet-shadow-pane,
+.leaflet-overlay-pane {
+  /* Ensure no blur is applied to any map panes */
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  /* Let Leaflet handle transforms naturally */
+}
+
+/* Specific fix for marker icons */
+.leaflet-marker-icon {
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: crisp-edges !important;
+  transform: translateZ(0) !important;
+  -webkit-transform: translateZ(0) !important;
+}
+
+/* Fix z-index hierarchy - let Leaflet handle transforms */
+.leaflet-tile-pane { z-index: 200 !important; }
+.leaflet-shadow-pane { z-index: 500 !important; }
+.leaflet-overlay-pane { z-index: 400 !important; }
+.leaflet-marker-pane { z-index: 600 !important; }
+.leaflet-tooltip-pane { z-index: 650 !important; }
+.leaflet-popup-pane { z-index: 700 !important; }
+
+/* Improved tile rendering to prevent grey flashing */
+.leaflet-tile {
+  image-rendering: auto !important;
+  /* Prevent tiles from disappearing during drag */
+  opacity: 1 !important;
+  transition: none !important;
+  /* Ensure tiles load smoothly */
+  background-color: transparent !important;
+}
+
+/* Prevent map from showing grey background during tile loading */
+.leaflet-container {
+  background-color: #f8f9fa !important; /* Light grey instead of pure grey */
+  cursor: crosshair !important; /* Crosshair cursor to indicate location dropping */
+  position: relative !important;
+  z-index: 1 !important;
+  touch-action: none !important; /* Allow Leaflet to handle all touch events */
+  pointer-events: auto !important; /* Ensure mouse events work */
+  user-select: none !important; /* Prevent text selection while dragging */
+  /* Remove conflicting transforms that prevent tile movement */
+  transform: none !important;
+  -webkit-transform: none !important;
+}
+
+/* Improve tile layer performance */
+.leaflet-tile-pane {
+  /* Ensure smooth tile transitions */
+  opacity: 1 !important;
+}
+
+/* Prevent tile fade effects that cause grey flashing */
+.leaflet-tile-container {
+  opacity: 1 !important;
+  transition: none !important;
+}
+
+/* Ensure map controls are above map but below modals */
+.leaflet-control {
+  z-index: 800 !important;
 }
  
 @layer base {
@@ -113,7 +217,7 @@
 /* Leaflet map fixes for modal containment */
 .leaflet-container {
   background: transparent;
-  z-index: 0 !important;
+  z-index: 1 !important;
 }
 
 /* Ensure Leaflet controls stay within modal bounds */
@@ -131,13 +235,87 @@
 }
 
 .leaflet-marker-pane {
-  z-index: 5 !important;
+  z-index: 10 !important;
 }
 
 /* Prevent map overflow in containers */
 .leaflet-container .leaflet-control-zoom {
   border: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Prevent blur effects on map elements */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-popup,
+.leaflet-tooltip {
+  filter: none !important;
+  backdrop-filter: none !important;
+  transform: none !important;
+}
+
+/* Enhanced map interactions - CRITICAL for scrolling/panning */
+.leaflet-container:active {
+  cursor: grabbing !important; /* Grabbing cursor when dragging */
+}
+
+/* Crosshair cursor for better location dropping UX */
+.leaflet-map-container .leaflet-container {
+  cursor: crosshair !important;
+}
+
+/* Specific fix for our map container */
+.leaflet-map-container {
+  touch-action: none !important;
+  pointer-events: auto !important;
+  overflow: hidden !important;
+  /* Ensure container doesn't have transform conflicts */
+  transform: none !important;
+}
+
+/* Allow multi-touch gestures */
+.leaflet-interactive {
+  touch-action: none !important;
+}
+
+/* Ensure no overlapping elements block map interaction */
+.leaflet-container * {
+  pointer-events: auto !important;
+}
+
+/* Force enable map panes to receive events */
+.leaflet-pane {
+  pointer-events: auto !important;
+}
+
+/* Ensure map controls work */
+.leaflet-control-container {
+  pointer-events: auto !important;
+}
+
+.leaflet-control-container * {
+  pointer-events: auto !important;
+}
+
+/* Enhanced administrative boundary visibility */
+.admin-boundaries {
+  filter: contrast(1.2) saturate(0.8);
+  mix-blend-mode: multiply;
+}
+
+/* Myanmar focus mode styling */
+.myanmar-focus .leaflet-tile-pane {
+  filter: grayscale(0.3) brightness(0.9);
+}
+
+.myanmar-focus .leaflet-overlay-pane {
+  position: relative;
+}
+
+/* Gray overlay for non-Myanmar areas */
+.world-overlay {
+  background-color: rgba(128, 128, 128, 0.3);
+  mix-blend-mode: multiply;
 }
 
 /* Modal dialog z-index higher than Leaflet */
@@ -287,4 +465,211 @@ body:has([data-radix-dialog-content]) {
 /* Remove any bottom borders on scroll containers */
 .overflow-y-auto::-webkit-scrollbar-track {
   border-bottom: none !important;
+}
+
+/* React Day Picker Calendar Overrides */
+.rdp {
+  --rdp-cell-size: 48px;
+  --rdp-accent-color: #000000;
+  font-family: inherit;
+}
+
+/* Force proper grid layout for calendar */
+.rdp-table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.rdp-head_row,
+.rdp-row {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  width: 100% !important;
+  gap: 0 !important;
+  margin: 0 !important;
+}
+
+.rdp-head_cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #6b7280 !important;
+  text-align: center !important;
+}
+
+.rdp-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: var(--rdp-cell-size) !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.rdp-day {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 9999px !important;
+  border: 0 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background-color 0.15s ease !important;
+  color: inherit !important;
+  margin: 0 auto !important;
+}
+
+.rdp-day:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.rdp-day_selected {
+  background-color: #000000 !important;
+  color: white !important;
+}
+
+.rdp-day_selected:hover {
+  background-color: #000000 !important;
+  color: white !important;
+}
+
+.rdp-day_today {
+  background-color: #e5e7eb !important;
+  font-weight: 600 !important;
+}
+
+.rdp-day_outside {
+  color: #9ca3af !important;
+  opacity: 0.5 !important;
+}
+
+.rdp-day_disabled {
+  color: #d1d5db !important;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* Ensure no default margins/padding interfere */
+.rdp-tbody {
+  border: 0 !important;
+}
+
+.rdp-head {
+  border: 0 !important;
+}
+
+/* Fix spacing between rows */
+.rdp-row {
+  margin-top: 2px !important;
+}
+
+.rdp-row:first-child {
+  margin-top: 0 !important;
+}
+
+.rdp-head_row {
+  margin-bottom: 8px !important;
+}
+
+/* Ensure weekday abbreviations are centered */
+.rdp-head_cell abbr[title] {
+  text-decoration: none !important;
+  cursor: default !important;
+}
+
+/* Additional alignment fixes for date picker */
+.rdp-caption {
+  display: none !important;
+}
+
+.rdp-nav {
+  display: none !important;
+}
+
+/* Ensure consistent cell sizing */
+.rdp-cell,
+.rdp-head_cell {
+  min-width: var(--rdp-cell-size) !important;
+  max-width: var(--rdp-cell-size) !important;
+}
+
+/* Force center alignment for all calendar content */
+.rdp th,
+.rdp td {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+/* Ensure the calendar grid is properly sized */
+.rdp-months {
+  display: flex !important;
+  justify-content: center !important;
+}
+
+.rdp-month {
+  width: 100% !important;
+}
+
+/* Override any conflicting styles */
+.rdp-button {
+  margin: 0 auto !important;
+}
+
+/* Force marker visibility */
+.leaflet-marker-pane {
+  z-index: 9999 !important;
+}
+
+.leaflet-marker-icon {
+  z-index: 9999 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  position: relative !important;
+}
+
+/* Only apply debug styles to non-SVG markers */
+.leaflet-marker-icon:not([src*="svg"]) {
+  background-color: red !important;
+  border: 3px solid yellow !important;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.8) !important;
+}
+
+/* Custom marker styles */
+.custom-pin-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.fallback-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Debug overlay for test marker - temporarily disabled */
+.leaflet-container.debug-mode::after {
+  content: "🎯 Looking for red pin at center" !important;
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  background: rgba(220, 38, 38, 0.9) !important;
+  color: white !important;
+  padding: 8px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  z-index: 10000 !important;
+  pointer-events: none !important;
 } 

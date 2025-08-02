@@ -261,13 +261,15 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
                 Planned Start Date
               </label>
               <input
-                id="planned_start_date"
                 type="date"
-                value={formData.planned_start_date}
-                onChange={(e) => handleFieldChange('planned_start_date', e.target.value)}
-                onBlur={(e) => handleFieldBlur('planned_start_date', e.target.value)}
+                id="planned_start_date"
+                value={formData.planned_start_date || ''}
+                onChange={(e) => {
+                  handleFieldChange('planned_start_date', e.target.value);
+                  handleFieldBlur('planned_start_date', e.target.value);
+                }}
                 disabled={saving.planned_start_date}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
               {saving.planned_start_date && (
                 <p className="text-xs text-blue-600">Saving...</p>
@@ -280,13 +282,15 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
                 Planned End Date
               </label>
               <input
-                id="planned_end_date"
                 type="date"
-                value={formData.planned_end_date}
-                onChange={(e) => handleFieldChange('planned_end_date', e.target.value)}
-                onBlur={(e) => handleFieldBlur('planned_end_date', e.target.value)}
+                id="planned_end_date"
+                value={formData.planned_end_date || ''}
+                onChange={(e) => {
+                  handleFieldChange('planned_end_date', e.target.value);
+                  handleFieldBlur('planned_end_date', e.target.value);
+                }}
                 disabled={saving.planned_end_date}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
               {saving.planned_end_date && (
                 <p className="text-xs text-blue-600">Saving...</p>
@@ -299,13 +303,15 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
                 Actual Start Date
               </label>
               <input
-                id="actual_start_date"
                 type="date"
-                value={formData.actual_start_date}
-                onChange={(e) => handleFieldChange('actual_start_date', e.target.value)}
-                onBlur={(e) => handleFieldBlur('actual_start_date', e.target.value)}
+                id="actual_start_date"
+                value={formData.actual_start_date || ''}
+                onChange={(e) => {
+                  handleFieldChange('actual_start_date', e.target.value);
+                  handleFieldBlur('actual_start_date', e.target.value);
+                }}
                 disabled={saving.actual_start_date}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
               {saving.actual_start_date && (
                 <p className="text-xs text-blue-600">Saving...</p>
@@ -318,13 +324,15 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
                 Actual End Date
               </label>
               <input
-                id="actual_end_date"
                 type="date"
-                value={formData.actual_end_date}
-                onChange={(e) => handleFieldChange('actual_end_date', e.target.value)}
-                onBlur={(e) => handleFieldBlur('actual_end_date', e.target.value)}
+                id="actual_end_date"
+                value={formData.actual_end_date || ''}
+                onChange={(e) => {
+                  handleFieldChange('actual_end_date', e.target.value);
+                  handleFieldBlur('actual_end_date', e.target.value);
+                }}
                 disabled={saving.actual_end_date}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
               {saving.actual_end_date && (
                 <p className="text-xs text-blue-600">Saving...</p>

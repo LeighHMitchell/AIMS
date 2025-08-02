@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Leaflet Test</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { 
+            height: 400px; 
+            width: 100%;
+            border: 2px solid #333;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .status {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗺️ Simple Leaflet Map Test</h1>
+    <div class="status">
+        <strong>Test Instructions:</strong><br>
+        1. Try to drag the map to pan around<br>
+        2. Use mouse wheel to zoom in/out<br>
+        3. Check the console for logs<br>
+        4. If it works here but not in your app, there's a React/CSS conflict
+    </div>
+    
+    <div id="map"></div>
+    
+    <div class="status" id="status">
+        Loading map...
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        function updateStatus(message) {
+            console.log(message);
+            statusDiv.innerHTML += '<br>' + message;
+        }
+        
+        // Create map
+        const map = L.map('map').setView([21.9162, 95.9560], 6);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        
+        updateStatus('✅ Map created');
+        
+        // Test interactions
+        map.on('dragstart', () => updateStatus('🚀 Drag started'));
+        map.on('drag', () => updateStatus('🚀 Dragging...'));
+        map.on('dragend', () => updateStatus('🚀 Drag ended'));
+        map.on('zoomstart', () => updateStatus('🔍 Zoom started'));
+        map.on('zoomend', () => updateStatus('🔍 Zoom ended'));
+        map.on('click', (e) => updateStatus(`🖱️ Clicked at: ${e.latlng.lat}, ${e.latlng.lng}`));
+        
+        // Check if interactions are enabled
+        setTimeout(() => {
+            updateStatus(`🔧 Dragging enabled: ${map.dragging.enabled()}`);
+            updateStatus(`🔧 Scroll wheel zoom enabled: ${map.scrollWheelZoom.enabled()}`);
+            updateStatus(`🔧 Touch zoom enabled: ${map.touchZoom.enabled()}`);
+            updateStatus('🎯 Try interacting with the map now!');
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useState } from 'react';
-import { X, Users, ChevronDown } from 'lucide-react';
+import { X, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { WORKING_GROUPS, groupWorkingGroupsBySector, WorkingGroup } from '@/lib/workingGroups';
+import { WORKING_GROUPS } from '@/lib/workingGroups';
+import { WorkingGroupsSearchableSelect } from '@/components/forms/WorkingGroupsSearchableSelect';
+import { useWorkingGroupsAutosave } from '@/hooks/use-working-groups-autosave';
+import { useUser } from '@/hooks/useUser';
 
 interface WorkingGroupMapping {
   code: string;
@@ -21,35 +21,18 @@ interface WorkingGroupsSectionProps {
   activityId?: string;
   workingGroups: WorkingGroupMapping[];
   onChange: (workingGroups: WorkingGroupMapping[]) => void;
+  setHasUnsavedChanges?: (hasChanges: boolean) => void;
 }
 
-export default function WorkingGroupsSection({ activityId, workingGroups, onChange }: WorkingGroupsSectionProps) {
-  const [selectedGroups, setSelectedGroups] = useState<string[]>(
-    workingGroups.map(wg => wg.code)
-  );
-  const [isMultiSelectOpen, setIsMultiSelectOpen] = useState(false);
-  const groupedWGs = groupWorkingGroupsBySector();
+export default function WorkingGroupsSection({ activityId, workingGroups, onChange, setHasUnsavedChanges }: WorkingGroupsSectionProps) {
+  const { user } = useUser();
+  const selectedCodes = workingGroups.map(wg => wg.code);
+  const workingGroupsAutosave = useWorkingGroupsAutosave(activityId, user?.id);
 
-  // Toggle a working group selection
-  const toggleWorkingGroup = (code: string) => {
-    const wg = WORKING_GROUPS.find(w => w.code === code);
-    if (!wg) return;
-
-    const isSelected = selectedGroups.includes(code);
-    let newSelection: string[];
-    
-    if (isSelected) {
-      newSelection = selectedGroups.filter(c => c !== code);
-      toast.success(`Removed from ${wg.label}`);
-    } else {
-      newSelection = [...selectedGroups, code];
-      toast.success(`Added to ${wg.label}`);
-    }
-    
-    setSelectedGroups(newSelection);
-    
+  // Handle working group selection changes
+  const handleWorkingGroupsChange = (codes: string[]) => {
     // Convert to WorkingGroupMapping format
-    const mappings: WorkingGroupMapping[] = newSelection.map(code => {
+    const mappings: WorkingGroupMapping[] = codes.map(code => {
       const wg = WORKING_GROUPS.find(w => w.code === code)!;
       return {
         code: wg.code,
@@ -59,27 +42,33 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
     });
     
     onChange(mappings);
+    setHasUnsavedChanges?.(true);
+    
+    // Trigger autosave
+    if (activityId && user?.id) {
+      workingGroupsAutosave.triggerFieldSave(mappings);
+    }
+    
+    // Show toast for user feedback
+    if (codes.length > selectedCodes.length) {
+      const addedCode = codes.find(code => !selectedCodes.includes(code));
+      const addedGroup = WORKING_GROUPS.find(wg => wg.code === addedCode);
+      if (addedGroup) {
+        toast.success(`Added to ${addedGroup.label}`);
+      }
+    } else if (codes.length < selectedCodes.length) {
+      const removedCode = selectedCodes.find(code => !codes.includes(code));
+      const removedGroup = WORKING_GROUPS.find(wg => wg.code === removedCode);
+      if (removedGroup) {
+        toast.success(`Removed from ${removedGroup.label}`);
+      }
+    }
   };
 
   // Remove a working group
   const removeWorkingGroup = (code: string) => {
-    const wg = WORKING_GROUPS.find(w => w.code === code);
-    if (!wg) return;
-    
-    const newSelection = selectedGroups.filter(c => c !== code);
-    setSelectedGroups(newSelection);
-    
-    const mappings: WorkingGroupMapping[] = newSelection.map(code => {
-      const wg = WORKING_GROUPS.find(w => w.code === code)!;
-      return {
-        code: wg.code,
-        label: wg.label,
-        vocabulary: "99"
-      };
-    });
-    
-    onChange(mappings);
-    toast.success(`Removed from ${wg.label}`);
+    const newCodes = selectedCodes.filter(c => c !== code);
+    handleWorkingGroupsChange(newCodes);
   };
 
   return (
@@ -94,76 +83,24 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
         </p>
       </div>
 
-      {/* Multi-select Dropdown */}
+      {/* Working Groups Searchable Select */}
       <div className="space-y-4">
         <Label htmlFor="working-groups">Select Working Groups</Label>
-        <div className="relative">
-          <Button
-            variant="outline"
-            className="w-full justify-between"
-            onClick={() => setIsMultiSelectOpen(!isMultiSelectOpen)}
-          >
-            <span className="text-left">
-              {selectedGroups.length === 0 
-                ? "Select working groups..." 
-                : `${selectedGroups.length} group${selectedGroups.length !== 1 ? 's' : ''} selected`}
-            </span>
-            <ChevronDown className={`h-4 w-4 transition-transform ${isMultiSelectOpen ? 'rotate-180' : ''}`} />
-          </Button>
-          
-          {isMultiSelectOpen && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-96 overflow-y-auto">
-              <div className="p-4">
-                {Object.entries(groupedWGs).map(([sector, groups]) => (
-                  <div key={sector} className="mb-4">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2">{sector}</h4>
-                    <div className="space-y-2 pl-4">
-                      {groups.map((wg) => (
-                        <label
-                          key={wg.code}
-                          className="flex items-start gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded"
-                        >
-                          <Checkbox
-                            checked={selectedGroups.includes(wg.code)}
-                            onCheckedChange={() => toggleWorkingGroup(wg.code)}
-                            className="mt-0.5"
-                          />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">{wg.label}</div>
-                            {wg.description && (
-                              <div className="text-xs text-gray-500 mt-0.5">{wg.description}</div>
-                            )}
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="border-t p-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => setIsMultiSelectOpen(false)}
-                >
-                  Done
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-        <p className="text-xs text-gray-500">
-          Select all relevant working groups. These will be stored as IATI tags with vocabulary="99"
-        </p>
+        <WorkingGroupsSearchableSelect
+          value={selectedCodes}
+          onValueChange={handleWorkingGroupsChange}
+          placeholder="Select working groups..."
+          disabled={false}
+        />
+
       </div>
 
       {/* Selected Working Groups */}
       <div className="space-y-4">
-        <Label>Selected Working Groups ({selectedGroups.length})</Label>
-        {selectedGroups.length > 0 ? (
+        <Label>Selected Working Groups ({selectedCodes.length})</Label>
+        {selectedCodes.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {selectedGroups.map((code) => {
+            {selectedCodes.map((code) => {
               const wg = WORKING_GROUPS.find(w => w.code === code);
               if (!wg) return null;
               
@@ -191,26 +128,9 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
         )}
       </div>
 
-      {/* IATI Compliance Notice */}
-      <Alert className="bg-blue-50 border-blue-200">
-        <AlertDescription className="text-sm">
-          <strong>IATI Compliance:</strong> Working groups are stored as custom tags with vocabulary="99" 
-          as per IATI standard 2.03. Each working group code (e.g., TWG-Health) serves as the tag code, 
-          with the label as the narrative text.
-        </AlertDescription>
-      </Alert>
 
-      {/* Working Group Guidelines */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-gray-900 mb-2">Working Group Guidelines</h4>
-        <ul className="text-xs text-gray-700 space-y-1">
-          <li>• Select all working groups relevant to this activity</li>
-          <li>• TWG = Technical Working Group (sector-wide coordination)</li>
-          <li>• SWG = Sub-Working Group (focused on specific themes)</li>
-          <li>• Working groups facilitate coordination between development partners</li>
-          <li>• This mapping helps with sector reporting and meeting invitations</li>
-        </ul>
-      </div>
+
+
     </div>
   );
 } 

@@ -191,15 +191,16 @@ export function checkFinancesTabCompletion(
  * Currently only implements General tab - can be extended for other tabs
  */
 /**
- * Check if the Locations tab is complete based on specific locations
+ * Check if the Combined Locations tab is complete based on specific locations and subnational breakdown
  */
-export function checkLocationsTabCompletion(specificLocations: any[]): TabCompletionStatus {
+export function checkLocationsTabCompletion(data: { specificLocations?: any[], subnationalBreakdowns?: Record<string, number> }): TabCompletionStatus {
   const completedFields: string[] = []
   const missingFields: string[] = []
   
-  if (specificLocations && specificLocations.length > 0) {
+  // Check specific locations
+  if (data.specificLocations && data.specificLocations.length > 0) {
     // Check if we have at least one valid location with name and coordinates
-    const hasValidLocations = specificLocations.some(location => 
+    const hasValidLocations = data.specificLocations.some(location => 
       location.name?.trim() && 
       typeof location.latitude === 'number' && 
       typeof location.longitude === 'number'
@@ -214,9 +215,23 @@ export function checkLocationsTabCompletion(specificLocations: any[]): TabComple
     missingFields.push('locations')
   }
   
+  // Check subnational breakdown
+  if (data.subnationalBreakdowns) {
+    const totalPercentage = Object.values(data.subnationalBreakdowns).reduce((sum, value) => sum + (value || 0), 0)
+    const isValidTotal = Math.abs(totalPercentage - 100) < 0.01 // Allow for floating point precision
+    const hasAnyValues = Object.values(data.subnationalBreakdowns).some(value => value > 0)
+    
+    if (isValidTotal && hasAnyValues) {
+      completedFields.push('subnational_breakdown')
+    } else if (hasAnyValues) {
+      missingFields.push('subnational_breakdown')
+    }
+    // If no values, we don't mark it as missing since it's optional
+  }
+  
   return {
     isComplete: missingFields.length === 0,
-    isInProgress: false, // Locations don't have an in-progress state
+    isInProgress: completedFields.length > 0 && missingFields.length > 0,
     completedFields,
     missingFields
   }
@@ -291,6 +306,68 @@ export function checkSectorsTabCompletion(sectors: any[]): TabCompletionStatus {
   }
 }
 
+/**
+ * Check if the Working Groups tab is complete based on assigned working groups
+ */
+export function checkWorkingGroupsTabCompletion(workingGroups: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  if (workingGroups && workingGroups.length > 0) {
+    // Check if we have at least one valid working group
+    const hasValidWorkingGroups = workingGroups.some(wg => 
+      wg && (wg.code?.trim() || wg.id)
+    );
+    
+    if (hasValidWorkingGroups) {
+      completedFields.push('working_groups')
+    } else {
+      missingFields.push('working_groups')
+    }
+  } else {
+    missingFields.push('working_groups')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false, // Working groups don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
+/**
+ * Check if the Policy Markers tab is complete based on assigned policy markers
+ */
+export function checkPolicyMarkersTabCompletion(policyMarkers: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  if (policyMarkers && policyMarkers.length > 0) {
+    // Check if we have at least one policy marker with a score > 0
+    const hasValidPolicyMarkers = policyMarkers.some(marker => 
+      marker && marker.score && marker.score > 0
+    );
+    
+    if (hasValidPolicyMarkers) {
+      completedFields.push('policy_markers')
+    } else {
+      missingFields.push('policy_markers')
+    }
+  } else {
+    missingFields.push('policy_markers')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false, // Policy markers don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
+
+
 export function getTabCompletionStatus(
   sectionId: string,
   data: any,
@@ -312,6 +389,10 @@ export function getTabCompletionStatus(
       return checkLocationsTabCompletion(data);
     case 'tags':
       return checkTagsTabCompletion(data);
+    case 'working_groups':
+      return checkWorkingGroupsTabCompletion(data);
+    case 'policy_markers':
+      return checkPolicyMarkersTabCompletion(data);
     // Add other tabs here as needed
     default:
       return null;

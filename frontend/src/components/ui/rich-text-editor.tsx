@@ -94,6 +94,19 @@ export function RichTextEditor({
     }
   }, [disabled, editor])
 
+  // Add click handler to make the entire editor area clickable
+  const handleEditorClick = useCallback((event: React.MouseEvent) => {
+    if (!editor || disabled) return;
+    
+    // If the editor is empty, ensure there's a paragraph to click into
+    if (editor.isEmpty) {
+      editor.commands.setContent("<p></p>");
+    }
+    
+    // Focus the editor at the end of content
+    editor.commands.focus("end");
+  }, [editor, disabled])
+
   const setLink = useCallback(() => {
     if (!editor) return
 
@@ -265,10 +278,15 @@ export function RichTextEditor({
       </div>
 
       {/* Editor Content */}
-      <EditorContent 
-        editor={editor} 
-        className="prose prose-sm max-w-none p-4 focus:outline-none min-h-[300px] relative [&_p]:my-2 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-600"
-      />
+      <div 
+        onClick={handleEditorClick}
+        className="cursor-text min-h-[300px] relative"
+      >
+        <EditorContent 
+          editor={editor} 
+          className="prose prose-sm max-w-none p-4 focus:outline-none [&_p]:my-2 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-600"
+        />
+      </div>
 
       <style jsx global>{`
         .ProseMirror {
@@ -278,6 +296,8 @@ export function RichTextEditor({
           box-shadow: none !important;
           -webkit-box-shadow: none !important;
           -moz-box-shadow: none !important;
+          min-height: 260px !important;
+          cursor: text !important;
         }
         
         .ProseMirror:focus {
@@ -357,6 +377,21 @@ export function RichTextEditor({
           opacity: 0.6;
           background-color: #f8f9fa;
           cursor: not-allowed;
+        }
+
+        /* Make the entire editor area clickable when empty */
+        .ProseMirror:empty::after {
+          content: attr(data-placeholder);
+          color: #adb5bd;
+          pointer-events: none;
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          padding: 1rem;
+          display: flex;
+          align-items: flex-start;
         }
       `}</style>
     </div>
