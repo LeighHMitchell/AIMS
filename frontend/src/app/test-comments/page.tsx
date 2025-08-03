@@ -80,7 +80,7 @@ export default function TestCommentsPage() {
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-medium mb-2">Results:</h4>
                 <div className="space-y-1 text-sm font-mono">
-                  {setupResult.results?.map((result, index) => (
+                  {setupResult.results?.map((result: string, index: number) => (
                     <div key={index}>{result}</div>
                   ))}
                 </div>
