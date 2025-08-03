@@ -43,8 +43,6 @@ export default function CombinedLocationsTab({
             onSpecificLocationsChange={onSpecificLocationsChange}
             onCoverageAreasChange={onCoverageAreasChange}
             activityId={activityId}
-            activityTitle={activityTitle}
-            activitySector={activitySector}
           />
         </TabsContent>
 
