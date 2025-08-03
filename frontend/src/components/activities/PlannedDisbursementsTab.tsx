@@ -414,7 +414,7 @@ export default function PlannedDisbursementsTab({
       try {
         const { data, error } = await supabase
           .from('organizations')
-          .select('id, name, code, acronym, type')
+          .select('id, name, code, acronym, type, logo')
           .order('name');
 
         if (error) throw error;

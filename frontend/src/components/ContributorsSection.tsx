@@ -1,16 +1,31 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, Plus, X, Check, AlertCircle, UserPlus } from "lucide-react";
+import { Plus, X, Check, AlertCircle, UserPlus, ChevronsUpDown, Building2 } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ActivityContributor } from "@/lib/activity-permissions";
 import { Partner } from "@/app/api/partners/route";
 import { useUser } from "@/hooks/useUser";
+import { useContributorsAutosave } from "@/hooks/use-field-autosave-new";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface ContributorsSectionProps {
   contributors: ActivityContributor[];
@@ -20,33 +35,100 @@ interface ContributorsSectionProps {
     canApproveJoinRequests: boolean;
   };
   activityId?: string;
+  availablePartners?: Partner[]; // Optional pre-loaded partners to avoid API call
 }
 
 export default function ContributorsSection({ 
   contributors, 
   onChange, 
   permissions,
-  activityId
+  activityId,
+  availablePartners
 }: ContributorsSectionProps) {
   const { user } = useUser();
   const [partners, setPartners] = useState<Partner[]>([]);
   const [selectedPartnerId, setSelectedPartnerId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  // Field-level autosave for contributors
+  // Pass 'NEW' if activityId is empty to trigger activity creation
+  const effectiveActivityId = activityId && activityId !== '' ? activityId : 'NEW';
+  const contributorsAutosave = useContributorsAutosave(effectiveActivityId, user?.id);
+
+  // Enhanced onChange that triggers autosave
+  const handleContributorsChange = (newContributors: ActivityContributor[]) => {
+    onChange(newContributors);
+    // Always trigger autosave - the hook will handle new activity creation if needed
+    contributorsAutosave.triggerFieldSave(newContributors);
+  };
 
   // Load partners for selection
   useEffect(() => {
-    loadPartners();
-  }, []);
+    if (availablePartners && availablePartners.length > 0) {
+      // Use pre-loaded partners if available (no loading needed)
+      setPartners(availablePartners);
+      setLoading(false);
+    } else {
+      // Fetch partners from API if not provided
+      loadPartners();
+    }
+  }, [availablePartners]);
 
   const loadPartners = async () => {
     try {
+      setLoading(true);
       const res = await fetch('/api/partners');
       const data = await res.json();
       setPartners(data);
     } catch (error) {
       console.error('Error loading partners:', error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Get display name for organization (e.g., "Asian Development Bank (ADB)")
+  const getOrganizationDisplay = (partner: Partner) => {
+    if (partner.name && partner.acronym && partner.name !== partner.acronym) {
+      return `${partner.name} (${partner.acronym})`;
+    }
+    return partner.name || partner.acronym || 'Unknown';
+  };
+
+  // Helper to get IATI identifier and country info
+  const getIatiCountryLine = (partner: Partner) => {
+    const iati = partner.iatiOrgId || partner.code;
+    const country = partner.countryRepresented;
+    if (iati && country) {
+      return `${iati} · ${country}`;
+    } else if (iati) {
+      return iati;
+    } else if (country) {
+      return country;
+    }
+    return null;
+  };
+
+  // Filter partners based on search
+  const filteredPartners = useMemo(() => {
+    const availablePartners = partners.filter(p => 
+      p.id !== user?.organizationId && 
+      !contributors.some(c => c.organizationId === p.id)
+    );
+    
+    if (!search) return availablePartners;
+    
+    const term = search.toLowerCase();
+    return availablePartners.filter(partner =>
+      partner.name.toLowerCase().includes(term) ||
+      (partner.acronym && partner.acronym.toLowerCase().includes(term)) ||
+      (partner.iatiOrgId && partner.iatiOrgId.toLowerCase().includes(term)) ||
+      (partner.code && partner.code.toLowerCase().includes(term)) ||
+      (partner.countryRepresented && partner.countryRepresented.toLowerCase().includes(term))
+    );
+  }, [partners, search, user?.organizationId, contributors]);
 
   const nominateContributor = () => {
     if (!selectedPartnerId || !user) return;
@@ -81,8 +163,10 @@ export default function ContributorsSection({
     const updatedContributors = [...contributors, newContributor];
     console.log('[CONTRIBUTORS DEBUG] Updated contributors:', updatedContributors);
     
-    onChange(updatedContributors);
+    handleContributorsChange(updatedContributors);
     setSelectedPartnerId("");
+    setSearch("");
+    setOpen(false);
     toast.success(`${partner.name} has been nominated as a contributor`);
     
     // Log contributor nomination
@@ -108,7 +192,7 @@ export default function ContributorsSection({
         return;
       }
     }
-    onChange(contributors.filter(c => c.id !== contributorId));
+    handleContributorsChange(contributors.filter(c => c.id !== contributorId));
   };
 
   const respondToNomination = async (contributorId: string, accept: boolean) => {
@@ -124,7 +208,7 @@ export default function ContributorsSection({
       updatedAt: new Date().toISOString()
     };
 
-    onChange(contributors.map(c => c.id === contributorId ? updatedContributor : c));
+    handleContributorsChange(contributors.map(c => c.id === contributorId ? updatedContributor : c));
     toast.success(accept ? "You are now a contributor to this activity" : "Nomination declined");
   };
 
@@ -137,7 +221,7 @@ export default function ContributorsSection({
     <Card className="max-w-4xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
+          <Building2 className="h-5 w-5" />
           Activity Contributors
         </CardTitle>
         <CardDescription>
@@ -145,12 +229,14 @@ export default function ContributorsSection({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Clarifying Alert */}
+        {/* Consolidated Help Text */}
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Contributors are organisations that can edit or add financial transactions, results, and implementation records. 
-            This does not change their official role in the activity — roles are defined in the Organisations tab.
+            This does not change their official role in the activity — roles are defined in the Organisations tab. 
+            Contributors can add and edit their own financial transactions, results, and implementation details. 
+            Only the activity creator and government validators can view all contributions.
           </AlertDescription>
         </Alert>
         {/* Pending Nomination Alert */}
@@ -184,32 +270,84 @@ export default function ContributorsSection({
 
         {/* Nominate New Contributor */}
         {permissions.canNominateContributors && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label className="text-sm font-medium">Nominate a Contributor</label>
-            <div className="flex gap-2">
-              <Select
-                value={selectedPartnerId}
-                onValueChange={setSelectedPartnerId}
-              >
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select an organization to nominate" />
-                </SelectTrigger>
-                <SelectContent>
-                  {partners
-                    .filter(p => 
-                      p.id !== user?.organizationId && 
-                      !contributors.some(c => c.organizationId === p.id)
-                    )
-                    .map((partner) => (
-                      <SelectItem key={partner.id} value={partner.id}>
-                        {partner.acronym || partner.code || partner.id} - {partner.name}{partner.countryRepresented ? ` (${partner.countryRepresented})` : ''}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-col gap-3">
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between font-normal h-auto px-3 py-2 text-left"
+                  >
+                    {(() => {
+                      const selected = partners.find((p) => p.id === selectedPartnerId);
+                      if (selected) {
+                        return (
+                          <span className="flex flex-col min-w-0 text-left">
+                            <span className="truncate font-medium">
+                              {getOrganizationDisplay(selected)}
+                            </span>
+                            {getIatiCountryLine(selected) && (
+                              <span className="text-xs text-gray-500 truncate">
+                                {getIatiCountryLine(selected)}
+                              </span>
+                            )}
+                          </span>
+                        );
+                      }
+                      return <span className="text-gray-400">Select an organization to nominate</span>;
+                    })()}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="p-0 w-full min-w-[400px]">
+                  <Command>
+                    <CommandInput
+                      placeholder="Search organizations..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                    <CommandList>
+                      {search && filteredPartners.length === 0 && (
+                        <CommandEmpty>No organization found.</CommandEmpty>
+                      )}
+                      {filteredPartners.length > 0 && (
+                        <ScrollArea className="max-h-60">
+                          <CommandGroup>
+                            {filteredPartners.map(partner => (
+                              <CommandItem
+                                key={partner.id}
+                                onSelect={() => {
+                                  setSelectedPartnerId(partner.id);
+                                  setOpen(false);
+                                }}
+                                className="py-3"
+                              >
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-gray-900">
+                                    {getOrganizationDisplay(partner)}
+                                  </span>
+                                  {getIatiCountryLine(partner) && (
+                                    <span className="text-xs text-gray-500 truncate">
+                                      {getIatiCountryLine(partner)}
+                                    </span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </ScrollArea>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <Button 
                 onClick={nominateContributor}
                 disabled={!selectedPartnerId}
+                className="w-full"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Nominate
@@ -233,23 +371,53 @@ export default function ContributorsSection({
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    {(() => {
+                      // Show loading placeholder while partners are being fetched
+                      if (loading) {
+                        return (
+                          <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
+                        );
+                      }
+                      
+                      const partner = partners.find(p => p.id === contributor.organizationId);
+                      if (partner?.logo) {
+                        return (
+                          <img 
+                            src={partner.logo} 
+                            alt={`${partner.name} logo`}
+                            className="h-8 w-8 object-contain rounded"
+                          />
+                        );
+                      }
+                      
+                      // Only show Building2 when loading is complete and no logo found
+                      return <Building2 className="h-5 w-5 text-gray-600" />;
+                    })()}
                     <div>
-                      <p className="font-medium">
-                        {(() => {
-                          // Find the partner details for formatting
-                          const partner = partners.find(p => p.id === contributor.organizationId);
-                          if (partner) {
-                            // Format: [Acronym/Code] - [Full Name] (Country)
-                            let display = `${partner.acronym || partner.code || partner.id} - ${partner.name}`;
-                            if (partner.countryRepresented) {
-                              display += ` (${partner.countryRepresented})`;
+                      <div className="flex flex-col">
+                        <p className="font-medium">
+                          {(() => {
+                            // Find the partner details for formatting
+                            const partner = partners.find(p => p.id === contributor.organizationId);
+                            if (partner) {
+                              return getOrganizationDisplay(partner);
                             }
-                            return display;
+                            return contributor.organizationName;
+                          })()}
+                        </p>
+                        {(() => {
+                          const partner = partners.find(p => p.id === contributor.organizationId);
+                          const iatiCountryLine = partner ? getIatiCountryLine(partner) : null;
+                          if (iatiCountryLine) {
+                            return (
+                              <p className="text-xs text-gray-500 truncate">
+                                {iatiCountryLine}
+                              </p>
+                            );
                           }
-                          return contributor.organizationName;
+                          return null;
                         })()}
-                      </p>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Nominated by {contributor.nominatedByName} on{' '}
                         {new Date(contributor.nominatedAt).toLocaleDateString()}
@@ -280,14 +448,7 @@ export default function ContributorsSection({
           )}
         </div>
 
-        {/* Info about contributor permissions */}
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Contributors can add and edit their own financial transactions, results, and implementation details. 
-            Only the activity creator and government validators can view all contributions.
-          </AlertDescription>
-        </Alert>
+
       </CardContent>
     </Card>
   );

@@ -8,6 +8,35 @@ import { v4 as uuidv4 } from 'uuid';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Helper function to transform database contacts to frontend format
+function transformContactFromDB(dbContact: any) {
+  return {
+    id: dbContact.id,
+    type: dbContact.type,
+    title: dbContact.title,
+    firstName: dbContact.first_name,
+    middleName: dbContact.middle_name,
+    lastName: dbContact.last_name,
+    position: dbContact.position,
+    organisationId: dbContact.organisation_id,
+    organisationName: dbContact.organisation_name || dbContact.organisation, // Fallback to old field
+    phone: dbContact.phone,
+    fax: dbContact.fax,
+    primaryEmail: dbContact.primary_email || dbContact.email, // Fallback to old field
+    secondaryEmail: dbContact.secondary_email,
+    profilePhoto: dbContact.profile_photo,
+    notes: dbContact.notes,
+    // Add organization details if available
+    organization: dbContact.organizations ? {
+      id: dbContact.organizations.id,
+      name: dbContact.organizations.name,
+      acronym: dbContact.organizations.acronym,
+      country: dbContact.organizations.country,
+      iati_org_id: dbContact.organizations.iati_org_id
+    } : null
+  };
+}
+
 // Helper function to clean date values (convert empty strings to null)
 function cleanDateValue(value: any): string | null {
   if (!value || value === '' || value === 'null') {
@@ -136,6 +165,9 @@ export async function POST(request: Request) {
           default_currency: body.defaultCurrency || null,
           default_tied_status: body.defaultTiedStatus || null,
           default_flow_type: body.defaultFlowType || null,
+          extending_partners: body.extendingPartners || [],
+          implementing_partners: body.implementingPartners || [],
+          government_partners: body.governmentPartners || [],
           last_edited_by: body.user?.id ? cleanUUIDValue(body.user.id) : null,
         };
       } catch (error: any) {
@@ -184,9 +216,67 @@ export async function POST(request: Request) {
         );
       }
 
+      // Handle contributors save to activity_contributors table
+      if (body.contributors && Array.isArray(body.contributors)) {
+        console.log('[AIMS API] Saving contributors to activity_contributors table');
+        
+        // Delete existing contributors for this activity
+        await getSupabaseAdmin()
+          .from('activity_contributors')
+          .delete()
+          .eq('activity_id', body.id);
+        
+        // Insert new contributors
+        if (body.contributors.length > 0) {
+                              const contributorsToInsert = body.contributors.map((contrib: any) => ({
+                      activity_id: body.id,
+                      organization_id: contrib.organizationId,
+                      status: contrib.status || 'nominated',
+                      nominated_by: contrib.nominatedBy,
+                      nominated_at: contrib.nominatedAt,
+                      responded_at: contrib.respondedAt,
+                      can_edit_own_data: contrib.canEditOwnData !== undefined ? contrib.canEditOwnData : true,
+                      can_view_other_drafts: contrib.canViewOtherDrafts !== undefined ? contrib.canViewOtherDrafts : false
+                    }));
+          
+          console.log('[AIMS API] Inserting contributors:', contributorsToInsert);
+          
+          const { error: contributorsError } = await getSupabaseAdmin()
+            .from('activity_contributors')
+            .insert(contributorsToInsert);
+          
+          if (contributorsError) {
+            console.error('[AIMS API] Error saving contributors:', contributorsError);
+          }
+        }
+      }
+
       // Skip complex operations for partial saves (autosave with large payload)
       if (body._isPartialSave) {
         console.log('[AIMS API] Partial save detected - skipping complex operations');
+        
+        // Fetch updated contributors data for response
+        const { data: contributorsData } = await getSupabaseAdmin()
+          .from('activity_contributors')
+          .select(`
+            id,
+            organization_id,
+            status,
+            nominated_by,
+            nominated_at,
+            responded_at,
+            can_edit_own_data,
+            can_view_other_drafts,
+            created_at,
+            updated_at,
+            organizations (
+              id,
+              name,
+              acronym
+            ),
+            
+          `)
+          .eq('activity_id', body.id);
         
         // Return minimal response for partial saves
         const responseData = {
@@ -213,6 +303,26 @@ export async function POST(request: Request) {
           defaultFinanceType: updatedActivity.default_finance_type,
           defaultTiedStatus: updatedActivity.default_tied_status,
           flowType: updatedActivity.default_flow_type,
+          extendingPartners: updatedActivity.extending_partners || [],
+          implementingPartners: updatedActivity.implementing_partners || [],
+          governmentPartners: updatedActivity.government_partners || [],
+                contributors: contributorsData?.map((contrib: any) => ({
+        id: contrib.id,
+        organizationId: contrib.organization_id,
+        organizationName: contrib.organizations?.name || 'Unknown',
+        organizationAcronym: contrib.organizations?.acronym || null,
+        status: contrib.status,
+        role: 'contributor', // Default role since field doesn't exist in current DB schema
+        nominatedBy: contrib.nominated_by,
+        nominatedByName: 'System', // Simplified for now, will fix with user lookup later
+        nominatedAt: contrib.nominated_at,
+        respondedAt: contrib.responded_at,
+        canEditOwnData: contrib.can_edit_own_data,
+        canViewOtherDrafts: contrib.can_view_other_drafts,
+        displayOrder: 0, // Default display order since field doesn't exist in current DB schema
+        createdAt: contrib.created_at,
+        updatedAt: contrib.updated_at
+      })) || [],
           createdAt: updatedActivity.created_at,
           updatedAt: updatedActivity.updated_at,
           _isPartialSave: true
@@ -640,12 +750,17 @@ export async function POST(request: Request) {
             middle_name: contact.middleName || null,
             last_name: contact.lastName,
             position: contact.position,
-            organisation: contact.organisation || null,
+            organisation_id: contact.organisationId || null,
+            organisation_name: contact.organisationName || contact.organisation || null,
             phone: contact.phone || null,
             fax: contact.fax || null,
-            email: contact.email || null,
+            primary_email: contact.primaryEmail || contact.email || null,
+            secondary_email: contact.secondaryEmail || null,
             profile_photo: contact.profilePhoto || null,
-            notes: contact.notes || null
+            notes: contact.notes || null,
+            // Keep backward compatibility fields
+            organisation: contact.organisationName || contact.organisation || null,
+            email: contact.primaryEmail || contact.email || null
           }));
 
           const { error: contactsError } = await getSupabaseAdmin()
@@ -764,6 +879,29 @@ export async function POST(request: Request) {
         .select('*')
         .eq('activity_id', body.id);
       
+      // Fetch updated contributors
+      const { data: contributorsData } = await getSupabaseAdmin()
+        .from('activity_contributors')
+        .select(`
+          id,
+          organization_id,
+          status,
+          nominated_by,
+          nominated_at,
+          responded_at,
+          can_edit_own_data,
+          can_view_other_drafts,
+          created_at,
+          updated_at,
+          organizations (
+            id,
+            name,
+            acronym
+          ),
+          
+        `)
+        .eq('activity_id', body.id);
+      
       // Transform response to match API format
       const responseData = {
         ...updatedActivity,
@@ -806,7 +944,27 @@ export async function POST(request: Request) {
         })) || [],
         policyMarkers: activityPolicyMarkers || [],
         transactions: transactions || [],
-      sectors: sectors?.map((sector: any) => ({
+        extendingPartners: updatedActivity.extending_partners || [],
+        implementingPartners: updatedActivity.implementing_partners || [],
+        governmentPartners: updatedActivity.government_partners || [],
+        contributors: contributorsData?.map((contrib: any) => ({
+          id: contrib.id,
+          organizationId: contrib.organization_id,
+          organizationName: contrib.organizations?.name || 'Unknown',
+          organizationAcronym: contrib.organizations?.acronym || null,
+          status: contrib.status,
+          role: 'contributor', // Default role since field doesn't exist in DB
+          nominatedBy: contrib.nominated_by,
+          nominatedByName: 'System', // Simplified for now, will fix with user lookup later
+          nominatedAt: contrib.nominated_at,
+          respondedAt: contrib.responded_at,
+          canEditOwnData: contrib.can_edit_own_data,
+          canViewOtherDrafts: contrib.can_view_other_drafts,
+          displayOrder: 0, // Default display order since field doesn't exist in DB
+          createdAt: contrib.created_at,
+          updatedAt: contrib.updated_at
+        })) || [],
+        sectors: sectors?.map((sector: any) => ({
         id: sector.id,
         code: sector.sector_code,
         name: sector.sector_name,
@@ -816,21 +974,7 @@ export async function POST(request: Request) {
         categoryName: sector.category_name,
         type: sector.type || 'secondary'
       })) || [],
-        contacts: contacts?.map((contact: any) => ({
-          id: contact.id,
-          type: contact.type,
-          title: contact.title,
-          firstName: contact.first_name,
-          middleName: contact.middle_name,
-          lastName: contact.last_name,
-          position: contact.position,
-          organisation: contact.organisation,
-          phone: contact.phone,
-          fax: contact.fax,
-          email: contact.email,
-          profilePhoto: contact.profile_photo,
-          notes: contact.notes
-        })) || [],
+        contacts: contacts?.map(transformContactFromDB) || [],
         locations: (() => {
           const siteLocations: any[] = [];
           const broadCoverageLocations: any[] = [];
@@ -975,6 +1119,9 @@ export async function POST(request: Request) {
         default_currency: body.defaultCurrency || null,
         default_tied_status: body.defaultTiedStatus || null,
         default_flow_type: body.defaultFlowType || null,
+        extending_partners: body.extendingPartners || [],
+        implementing_partners: body.implementingPartners || [],
+        government_partners: body.governmentPartners || [],
         created_by: cleanUUIDValue(body.user?.id),
         last_edited_by: cleanUUIDValue(body.user?.id),
         submitted_by: userOrgData.submitted_by,
@@ -1021,6 +1168,32 @@ export async function POST(request: Request) {
         { error: insertError.message || 'Failed to create activity' },
         { status: 500 }
       );
+    }
+
+    // Handle contributors for new activity
+    if (body.contributors && Array.isArray(body.contributors) && body.contributors.length > 0) {
+      console.log('[AIMS API] Saving contributors to activity_contributors table for new activity');
+      
+      const contributorsToInsert = body.contributors.map((contrib: any) => ({
+        activity_id: newActivity.id,
+        organization_id: contrib.organizationId,
+        status: contrib.status || 'nominated',
+        nominated_by: contrib.nominatedBy,
+        nominated_at: contrib.nominatedAt,
+        responded_at: contrib.respondedAt,
+        can_edit_own_data: contrib.canEditOwnData !== undefined ? contrib.canEditOwnData : true,
+        can_view_other_drafts: contrib.canViewOtherDrafts !== undefined ? contrib.canViewOtherDrafts : false
+      }));
+      
+      console.log('[AIMS API] Inserting contributors for new activity:', contributorsToInsert);
+      
+      const { error: contributorsError } = await getSupabaseAdmin()
+        .from('activity_contributors')
+        .insert(contributorsToInsert);
+      
+      if (contributorsError) {
+        console.error('[AIMS API] Error saving contributors for new activity:', contributorsError);
+      }
     }
 
     // Handle sectors
@@ -1345,12 +1518,17 @@ export async function POST(request: Request) {
         middle_name: contact.middleName || null,
         last_name: contact.lastName,
         position: contact.position,
-        organisation: contact.organisation || null,
+        organisation_id: contact.organisationId || null,
+        organisation_name: contact.organisationName || contact.organisation || null,
         phone: contact.phone || null,
         fax: contact.fax || null,
-        email: contact.email || null,
+        primary_email: contact.primaryEmail || contact.email || null,
+        secondary_email: contact.secondaryEmail || null,
         profile_photo: contact.profilePhoto || null,
-        notes: contact.notes || null
+        notes: contact.notes || null,
+        // Keep backward compatibility fields
+        organisation: contact.organisationName || contact.organisation || null,
+        email: contact.primaryEmail || contact.email || null
       }));
 
       const { error: contactsError } = await getSupabaseAdmin()
@@ -1431,6 +1609,32 @@ export async function POST(request: Request) {
       .select('*')
       .eq('activity_id', newActivity.id);
     
+    // Fetch created contributors
+    const { data: contributorsData, error: contributorsFetchError } = await getSupabaseAdmin()
+      .from('activity_contributors')
+      .select(`
+        id,
+        organization_id,
+        status,
+        nominated_by,
+        nominated_at,
+        responded_at,
+        can_edit_own_data,
+        can_view_other_drafts,
+        created_at,
+        updated_at,
+        organizations (
+          id,
+          name,
+          acronym
+        )
+      `)
+      .eq('activity_id', newActivity.id);
+    
+    if (contributorsFetchError) {
+      console.error('[AIMS API] Error fetching contributors for new activity response:', contributorsFetchError);
+    }
+    
     // Transform response to match API format
     const responseData = {
       ...newActivity,
@@ -1457,6 +1661,26 @@ export async function POST(request: Request) {
       defaultCurrency: newActivity.default_currency,
       defaultTiedStatus: newActivity.default_tied_status,
       defaultFlowType: newActivity.default_flow_type,
+      extendingPartners: newActivity.extending_partners || [],
+      implementingPartners: newActivity.implementing_partners || [],
+      governmentPartners: newActivity.government_partners || [],
+      contributors: contributorsData?.map((contrib: any) => ({
+        id: contrib.id,
+        organizationId: contrib.organization_id,
+        organizationName: contrib.organizations?.name || 'Unknown',
+        organizationAcronym: contrib.organizations?.acronym || null,
+        status: contrib.status,
+        role: 'contributor', // Default role since field doesn't exist in DB
+        nominatedBy: contrib.nominated_by,
+        nominatedByName: 'System', // Simplified for now, will fix with user lookup later
+        nominatedAt: contrib.nominated_at,
+        respondedAt: contrib.responded_at,
+        canEditOwnData: contrib.can_edit_own_data,
+        canViewOtherDrafts: contrib.can_view_other_drafts,
+        displayOrder: 0, // Default display order since field doesn't exist in DB
+        createdAt: contrib.created_at,
+        updatedAt: contrib.updated_at
+      })) || [],
       createdAt: newActivity.created_at,
       updatedAt: newActivity.updated_at,
       sdgMappings: sdgMappings?.map((mapping: any) => ({
@@ -1484,21 +1708,7 @@ export async function POST(request: Request) {
         categoryName: sector.category_name,
         type: sector.type || 'secondary'
       })) || [],
-      contacts: contacts?.map((contact: any) => ({
-        id: contact.id,
-        type: contact.type,
-        title: contact.title,
-        firstName: contact.first_name,
-        middleName: contact.middle_name,
-        lastName: contact.last_name,
-        position: contact.position,
-        organisation: contact.organisation,
-        phone: contact.phone,
-        fax: contact.fax,
-        email: contact.email,
-        profilePhoto: contact.profile_photo,
-        notes: contact.notes
-      })) || [],
+      contacts: contacts?.map(transformContactFromDB) || [],
       locations: (() => {
         const siteLocations: any[] = [];
         const broadCoverageLocations: any[] = [];
@@ -1765,10 +1975,19 @@ export async function GET(request: NextRequest) {
       .select('*')
       .in('activity_id', activityIds);
     
-    // Fetch contacts for all activities
+    // Fetch contacts for all activities with organization details
     const { data: allContacts } = await getSupabaseAdmin()
       .from('activity_contacts')
-      .select('*')
+      .select(`
+        *,
+        organizations (
+          id,
+          name,
+          acronym,
+          country,
+          iati_org_id
+        )
+      `)
       .in('activity_id', activityIds);
     
     // Fetch locations for all activities
@@ -1852,21 +2071,7 @@ export async function GET(request: NextRequest) {
         notes: sdg.notes
       })),
       // Transform contacts to match frontend format
-      contacts: (contactsMap.get(activity.id) || []).map((contact: any) => ({
-        id: contact.id,
-        type: contact.type,
-        title: contact.title,
-        firstName: contact.first_name,
-        middleName: contact.middle_name,
-        lastName: contact.last_name,
-        position: contact.position,
-        organisation: contact.organisation,
-        phone: contact.phone,
-        fax: contact.fax,
-        email: contact.email,
-        profilePhoto: contact.profile_photo,
-        notes: contact.notes
-      })),
+      contacts: (contactsMap.get(activity.id) || []).map(transformContactFromDB),
       // Transform locations to match frontend format
       locations: (() => {
         const activityLocations = locationsMap.get(activity.id) || [];

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, Building2 } from "lucide-react"
+import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -28,6 +28,7 @@ export interface Organization {
   type?: string
   country?: string
   iati_org_id?: string
+  logo?: string
 }
 
 interface OrganizationComboboxProps {
@@ -103,7 +104,7 @@ export function OrganizationCombobox({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between font-normal min-w-[320px] px-4 py-4 text-base h-auto",
+            "w-full justify-between font-normal px-3 py-2 text-sm h-auto",
             className
           )}
         >
@@ -111,12 +112,12 @@ export function OrganizationCombobox({
             const selected = organizations.find((o) => o.id === value);
             if (selected) {
               return (
-                <span className="flex flex-col min-w-0 text-left leading-relaxed">
-                  <span className="truncate font-medium text-base leading-relaxed">
+                <span className="flex flex-col min-w-0 text-left leading-tight">
+                  <span className="truncate font-medium text-sm leading-tight">
                     {getOrganizationDisplay(selected)}
                   </span>
                   {getIatiCountryLine(selected) && (
-                    <span className="text-sm text-gray-500 truncate mt-1 leading-relaxed">
+                    <span className="text-xs text-gray-500 truncate leading-tight">
                       {getIatiCountryLine(selected)}
                     </span>
                   )}
@@ -126,17 +127,17 @@ export function OrganizationCombobox({
             // Show fallback reference if no organization found but we have a ref
             if (fallbackRef && !selected) {
               return (
-                <span className="flex flex-col min-w-0 text-left leading-relaxed">
-                  <span className="truncate font-medium text-base text-yellow-600 leading-relaxed">
+                <span className="flex flex-col min-w-0 text-left leading-tight">
+                  <span className="truncate font-medium text-sm text-yellow-600 leading-tight">
                     {fallbackRef}
                   </span>
-                  <span className="text-sm text-yellow-500 truncate mt-1 leading-relaxed">
+                  <span className="text-xs text-yellow-500 truncate leading-tight">
                     Organization not found in list
                   </span>
                 </span>
               );
             }
-            return <span className="text-gray-400 text-base leading-relaxed">{placeholder}</span>;
+            return <span className="text-gray-400 text-sm leading-tight">{placeholder}</span>;
           })()}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>

@@ -403,7 +403,8 @@ export default function TransactionModal({
       acronym: partner.acronym,
       iati_org_id: partner.iatiOrgId,
       type: partner.type,
-      country: partner.countryRepresented
+      country: partner.countryRepresented,
+      logo: partner.logo
     }));
   }, [partners]);
 

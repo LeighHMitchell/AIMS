@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Building2, AlertCircle, LogIn } from "lucide-react";
+import { AlertCircle, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { GmailLogin } from "@/components/auth/GmailLogin";
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -64,17 +65,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-white p-4">
+      <Card className="w-full max-w-md bg-[#F8F6F5] border border-gray-200 shadow-lg">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Building2 className="h-12 w-12 text-blue-600" />
+            <div className="w-12 h-12 text-gray-900">
+              <Image 
+                src="/images/aether-logo.png" 
+                alt="æther logo"
+                width={48}
+                height={48}
+                className="w-full h-full"
+              />
+            </div>
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            Welcome to AIMS
+            Welcome to æther
           </CardTitle>
-          <CardDescription className="text-gray-600">
-            Aid Information Management System
+          <CardDescription className="text-gray-600 font-bold">
+            Development Finance Information, Simplified.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -119,7 +128,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold"
             >
               {loading ? (
                 <>
@@ -135,50 +144,11 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="relative mt-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
 
-          <div className="mt-6">
-            <GmailLogin redirectTo="/activities" />
-          </div>
 
-          <div className="relative mt-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Demo Credentials
-              </span>
-            </div>
-          </div>
 
-          <div className="space-y-2 text-sm mt-4">
-            <div 
-              className="p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
-              onClick={() => handleDemoLogin("testuser@aims.local", "TestPass123!")}
-            >
-              <p className="font-medium">Super User (Test Account)</p>
-              <p className="text-muted-foreground">testuser@aims.local / TestPass123!</p>
-              <p className="text-xs text-green-600 mt-1">Click to auto-fill</p>
-            </div>
-          </div>
         </CardContent>
-        <CardFooter className="text-center">
-          <div className="text-sm text-gray-600 space-y-1">
-            <p><strong>Test Login:</strong></p>
-            <p>Email: testuser@aims.local</p>
-            <p>Password: TestPass123!</p>
-          </div>
-        </CardFooter>
+
       </Card>
     </div>
   );

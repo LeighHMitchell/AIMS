@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Popup } from 'react-leaflet';
-import { Search, MapPin, X, Pencil, Trash2, Save, XCircle, CheckCircle, AlertCircle, Loader2, HelpCircle } from 'lucide-react';
+import { Search, MapPin, X, Pencil, Trash2, Save, XCircle, CheckCircle, AlertCircle, Loader2, HelpCircle, Layers, RotateCcw, Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,12 +41,12 @@ const createPinIcon = (color = '#ef4444', size = 32) => {
           display: flex;
           align-items: center;
           justify-content: center;
-          filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
-          z-index: 1000;
+          filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5));
+          z-index: 9999 !important;
         ">
           <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <!-- Outer shadow/border for better visibility -->
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="#000000" stroke="none" opacity="0.3" transform="translate(1,1)"/>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="#000000" stroke="none" opacity="0.4" transform="translate(1,1)"/>
             <!-- Main pin -->
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="${color}" stroke="#ffffff" stroke-width="3"/>
             <!-- Center circle with stronger contrast -->
@@ -74,18 +74,18 @@ const generateThumbnailMapUrl = (lat: number, lng: number, zoom: number = 13) =>
   return `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},${zoom}/${width}x${height}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.rJcFIG214AriISLbB6B5aw`;
 };
 
-// Simple tile-based thumbnail without attribution
+// Simple tile-based thumbnail without attribution - using satellite view
 const generateCleanThumbnailUrl = (lat: number, lng: number, zoom: number = 13) => {
   const width = 120;
   const height = 80;
-  // Using OpenStreetMap tiles directly to create a clean thumbnail
+  // Using satellite tiles to create a clean thumbnail
   const tileSize = 256;
   const scale = Math.pow(2, zoom);
   const worldCoordX = Math.floor((lng + 180) / 360 * scale);
   const worldCoordY = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * scale);
   
-  // Return a placeholder for now, we'll use CSS background image
-  return `https://tile.openstreetmap.org/${zoom}/${worldCoordX}/${worldCoordY}.png`;
+  // Return satellite tile URL
+  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${worldCoordY}/${worldCoordX}`;
 };
 
 // Types
@@ -165,10 +165,10 @@ function DraggableMarker({
   
   console.log('[DraggableMarker] Rendering at position:', position);
   
-  // Use fixed large size for better visibility
-  const icon = createPinIcon('#ef4444', 36); // Red color with fixed large size
+  // Use fixed large size for better visibility - memoized to prevent recreation
+  const icon = useMemo(() => createPinIcon('#ef4444', 36), []); // Red color with fixed large size
 
-  const eventHandlers = {
+  const eventHandlers = useMemo(() => ({
     dragend() {
       const marker = markerRef.current;
       if (marker != null) {
@@ -176,7 +176,7 @@ function DraggableMarker({
         onPositionChange(newPos.lat, newPos.lng);
       }
     },
-  };
+  }), [onPositionChange]);
 
   // Don't render marker if icon is not available (SSR)
   if (!icon) {
@@ -198,12 +198,129 @@ function DraggableMarker({
 // Map center controller
 function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
+  const lastCenterRef = useRef<[number, number]>(center);
+  const lastZoomRef = useRef<number>(zoom);
   
   useEffect(() => {
-    map.setView(center, zoom);
+    // Only update the map view if the center or zoom has actually changed
+    const centerChanged = center[0] !== lastCenterRef.current[0] || center[1] !== lastCenterRef.current[1];
+    const zoomChanged = zoom !== lastZoomRef.current;
+    
+    if (centerChanged || zoomChanged) {
+      map.setView(center, zoom);
+      lastCenterRef.current = center;
+      lastZoomRef.current = zoom;
+    }
   }, [map, center, zoom]);
   
   return null;
+}
+
+// Dynamic tile layer component
+function DynamicTileLayer({ layerType }: { layerType: string }) {
+  const layers = {
+    streets: {
+      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    },
+    satellite: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; <a href="https://www.esri.com/">Esri</a>'
+    },
+    topographic: {
+      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://opentopomap.org/">OpenTopoMap</a>'
+    },
+    terrain: {
+      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }
+  };
+
+  const layer = layers[layerType as keyof typeof layers] || layers.streets;
+
+  return (
+    <TileLayer
+      url={layer.url}
+      attribution={layer.attribution}
+      maxZoom={18}
+      minZoom={1}
+    />
+  );
+}
+
+// Map layer control component
+function MapLayerControl({ 
+  currentLayer, 
+  onLayerChange 
+}: { 
+  currentLayer: string;
+  onLayerChange: (layer: string) => void;
+}) {
+  const layers = [
+    { id: 'streets', name: 'Streets' },
+    { id: 'satellite', name: 'Satellite' },
+    { id: 'topographic', name: 'Topographic' },
+    { id: 'terrain', name: 'Terrain' }
+  ];
+
+  return (
+    <div className="absolute top-2 left-2 z-[1000] bg-white rounded-lg shadow-lg border border-gray-200 p-2">
+      <div className="flex items-center gap-2 mb-2">
+        <Layers className="h-4 w-4 text-gray-600" />
+        <span className="text-sm font-medium">Map Style</span>
+      </div>
+      <div className="space-y-1">
+        {layers.map((layer) => (
+          <button
+            key={layer.id}
+            onClick={() => onLayerChange(layer.id)}
+            className={`w-full text-left px-2 py-1 text-xs rounded hover:bg-gray-100 transition-colors ${
+              currentLayer === layer.id ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700'
+            }`}
+          >
+            {layer.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Map controls component
+function MapControls({ 
+  onResetView, 
+  onToggleHeatMap, 
+  showHeatMap 
+}: { 
+  onResetView: () => void;
+  onToggleHeatMap: () => void;
+  showHeatMap: boolean;
+}) {
+  return (
+    <div className="absolute top-2 right-2 z-[1000] bg-white rounded-lg shadow-lg border border-gray-200 p-2">
+      <div className="space-y-2">
+        <Button
+          onClick={onResetView}
+          variant="outline"
+          size="sm"
+          className="w-full"
+        >
+          <RotateCcw className="h-3 w-3 mr-1" />
+          Reset View
+        </Button>
+        <Button
+          onClick={onToggleHeatMap}
+          variant="outline"
+          size="sm"
+          className={`w-full ${showHeatMap ? 'bg-blue-100 text-blue-700' : ''}`}
+        >
+          {showHeatMap ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
+          {showHeatMap ? 'Hide' : 'Show'} Heat Map
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 // Saved locations markers component with drag-and-drop functionality
@@ -216,35 +333,35 @@ function SavedLocationMarkers({
   onLocationEdit: (location: SpecificLocation) => void;
   onLocationMove: (locationId: string, newLat: number, newLng: number) => void;
 }) {
-  if (!locations.length) return null;
+  const markers = useMemo(() => {
+    if (!locations.length) return null;
 
-  console.log('[SavedLocationMarkers] Rendering', locations.length, 'locations');
+    console.log('[SavedLocationMarkers] Rendering', locations.length, 'locations');
 
-  return (
-    <>
-      {locations.map((location) => {
-        console.log('[SavedLocationMarkers] Rendering location:', location.name, 'at', location.latitude, location.longitude);
-        
-        // Use a fixed, large size for better visibility
-        const savedIcon = createPinIcon('#22c55e', 36); // Green color with fixed large size
-        
-        if (!savedIcon) {
-          console.warn('[SavedLocationMarkers] Failed to create icon for location:', location.name);
-          return null;
-        }
-        
-        return (
-          <DraggableSavedMarker
-            key={location.id}
-            location={location}
-            icon={savedIcon}
-            onLocationEdit={onLocationEdit}
-            onLocationMove={onLocationMove}
-          />
-        );
-      })}
-    </>
-  );
+    return locations.map((location) => {
+      console.log('[SavedLocationMarkers] Rendering location:', location.name, 'at', location.latitude, location.longitude);
+      
+      // Use a fixed, large size for better visibility
+      const savedIcon = createPinIcon('#22c55e', 36); // Green color with fixed large size
+      
+      if (!savedIcon) {
+        console.warn('[SavedLocationMarkers] Failed to create icon for location:', location.name);
+        return null;
+      }
+      
+      return (
+        <DraggableSavedMarker
+          key={location.id}
+          location={location}
+          icon={savedIcon}
+          onLocationEdit={onLocationEdit}
+          onLocationMove={onLocationMove}
+        />
+      );
+    });
+  }, [locations, onLocationEdit, onLocationMove]);
+
+  return <>{markers}</>;
 }
 
 // Individual draggable saved location marker
@@ -604,7 +721,7 @@ export default function LocationSelector({ locations, onLocationsChange }: Locat
   });
 
   const [mapCenter, setMapCenter] = useState<[number, number]>([21.9, 95.9]);
-  const [mapZoom, setMapZoom] = useState(6);
+  const [mapZoom, setMapZoom] = useState(5); // Zoom level 5 shows the full map of Myanmar
   const [markerPosition, setMarkerPosition] = useState<[number, number]>([21.9, 95.9]);
   const [showMarker, setShowMarker] = useState(false);
   
@@ -617,6 +734,9 @@ export default function LocationSelector({ locations, onLocationsChange }: Locat
   const [mapSearchQuery, setMapSearchQuery] = useState('');
   const [mapSearchResults, setMapSearchResults] = useState<NominatimResult[]>([]);
   const [showMapSearchResults, setShowMapSearchResults] = useState(false);
+  
+  // Map layer state
+  const [currentMapLayer, setCurrentMapLayer] = useState('streets');
   
   // Save status state
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -689,6 +809,21 @@ export default function LocationSelector({ locations, onLocationsChange }: Locat
     }));
     setMapCenter([lat, lng]);
     setMapZoom(12);
+  }, []);
+
+  // Map layer functions
+  const handleMapLayerChange = useCallback((layerId: string) => {
+    setCurrentMapLayer(layerId);
+  }, []);
+
+  const handleResetView = useCallback(() => {
+    // Reset to show the full map of Myanmar
+    setMapCenter([21.9, 95.9]); // Myanmar center
+    setMapZoom(5); // Zoom level 5 shows the entire country better
+  }, []);
+
+  const handleToggleHeatMap = useCallback(() => {
+    setShowHeatMap(prev => !prev);
   }, []);
 
   // Handle marker drag with enhanced reverse geocoding
@@ -997,109 +1132,6 @@ export default function LocationSelector({ locations, onLocationsChange }: Locat
           <AddressSearch onLocationSelect={handleLocationSelect} />
         </div>
 
-        {/* Interactive Map */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              {locations.length > 1 && (
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <Switch
-                    checked={showHeatMap}
-                    onCheckedChange={setShowHeatMap}
-                    id="heat-map-toggle"
-                  />
-                  <Label htmlFor="heat-map-toggle" className="text-xs cursor-pointer">
-                    Heat Map
-                  </Label>
-                </div>
-              )}
-              
-              {/* Real-time Save Status */}
-              {saveStatus !== 'idle' && (
-                <div className={`flex items-center gap-1 text-xs ${
-                  saveStatus === 'saving' ? 'text-blue-600' :
-                  saveStatus === 'saved' ? 'text-green-600' :
-                  'text-red-600'
-                }`}>
-                  {saveStatus === 'saving' && <Loader2 className="h-3 w-3 animate-spin" />}
-                  {saveStatus === 'saved' && <CheckCircle className="h-3 w-3" />}
-                  {saveStatus === 'error' && <AlertCircle className="h-3 w-3" />}
-                  <span>{saveMessage}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="h-80 w-full border rounded-md overflow-hidden relative">
-
-            {/* Zoom Controls Overlay */}
-            <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0 bg-white/95 backdrop-blur-sm shadow-lg"
-                onClick={() => setMapZoom(Math.min(mapZoom + 1, 18))}
-              >
-                +
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0 bg-white/95 backdrop-blur-sm shadow-lg"
-                onClick={() => setMapZoom(Math.max(mapZoom - 1, 1))}
-              >
-                −
-              </Button>
-            </div>
-
-            <MapContainer
-              center={mapCenter}
-              zoom={mapZoom}
-              style={{ height: '100%', width: '100%' }}
-            >
-              <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-              />
-              <MapController center={mapCenter} zoom={mapZoom} />
-              <MapClickHandler onMapClick={handleMapClick} />
-              
-              {/* Saved locations markers */}
-              <SavedLocationMarkers 
-                locations={locations}
-                onLocationEdit={handleLocationEditFromMap}
-                onLocationMove={handleLocationMove}
-              />
-              
-              {/* Heat map layer */}
-              {showHeatMap && locations.length > 1 && (
-                <LocationHeatMap locations={locations} />
-              )}
-              
-              {/* New location marker (red, draggable) - show when user is adding a location */}
-              {(newLocation.name || showMarker || (newLocation.latitude !== 21.9 || newLocation.longitude !== 95.9)) && (
-                <DraggableMarker
-                  position={markerPosition}
-                  onPositionChange={handleMarkerDrag}
-                />
-              )}
-            </MapContainer>
-          </div>
-          <div className="flex justify-between items-center mt-1">
-            <div className="flex items-center gap-1">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Click anywhere on the map to add a new location</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          </div>
-        </div>
-
         {/* Coordinates */}
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -1129,6 +1161,126 @@ export default function LocationSelector({ locations, onLocationsChange }: Locat
               placeholder="e.g., 95.9560"
               className="h-10"
             />
+          </div>
+        </div>
+
+        {/* Interactive Map */}
+        <div>
+          {/* Map Controls Above Map */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-4">
+              {/* Map Style Dropdown */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">Map Style:</Label>
+                <Select value={currentMapLayer} onValueChange={handleMapLayerChange}>
+                  <SelectTrigger className="w-32 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="streets">Streets</SelectItem>
+                    <SelectItem value="satellite">Satellite</SelectItem>
+                    <SelectItem value="topographic">Topographic</SelectItem>
+                    <SelectItem value="terrain">Terrain</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Reset View Button */}
+              <Button
+                onClick={handleResetView}
+                variant="outline"
+                size="sm"
+                className="h-8"
+              >
+                <RotateCcw className="h-3 w-3 mr-1" />
+                Reset View
+              </Button>
+
+              {/* Real-time Save Status */}
+              {saveStatus !== 'idle' && (
+                <div className={`flex items-center gap-1 text-xs ${
+                  saveStatus === 'saving' ? 'text-blue-600' :
+                  saveStatus === 'saved' ? 'text-green-600' :
+                  'text-red-600'
+                }`}>
+                  {saveStatus === 'saving' && <Loader2 className="h-3 w-3 animate-spin" />}
+                  {saveStatus === 'saved' && <CheckCircle className="h-3 w-3" />}
+                  {saveStatus === 'error' && <AlertCircle className="h-3 w-3" />}
+                  <span>{saveMessage}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="h-80 w-full border rounded-md overflow-hidden relative">
+            {/* Zoom Controls Overlay */}
+            <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0 bg-white/95 backdrop-blur-sm shadow-lg"
+                onClick={() => setMapZoom(Math.min(mapZoom + 1, 18))}
+              >
+                +
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0 bg-white/95 backdrop-blur-sm shadow-lg"
+                onClick={() => setMapZoom(Math.max(mapZoom - 1, 1))}
+              >
+                −
+              </Button>
+            </div>
+
+            <MapContainer
+              center={mapCenter}
+              zoom={mapZoom}
+              style={{ height: '100%', width: '100%' }}
+              key="map-container"
+            >
+              <DynamicTileLayer layerType={currentMapLayer} key={`tile-layer-${currentMapLayer}`} />
+              <MapController center={mapCenter} zoom={mapZoom} />
+              <MapClickHandler onMapClick={handleMapClick} />
+              
+              {/* Saved locations markers */}
+              <SavedLocationMarkers 
+                locations={locations}
+                onLocationEdit={handleLocationEditFromMap}
+                onLocationMove={handleLocationMove}
+                key="saved-markers"
+              />
+              
+              {/* Heat map layer */}
+              {showHeatMap && locations.length > 1 && (
+                <LocationHeatMap locations={locations} key="heat-map" />
+              )}
+              
+              {/* New location marker (red, draggable) - show when user is adding a location */}
+              {(newLocation.name || showMarker || (newLocation.latitude !== 21.9 || newLocation.longitude !== 95.9)) && (
+                <DraggableMarker
+                  position={markerPosition}
+                  onPositionChange={handleMarkerDrag}
+                  key="draggable-marker"
+                />
+              )}
+            </MapContainer>
+          </div>
+          <div className="flex justify-between items-center mt-1">
+            <div className="flex items-center gap-1">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Click anywhere on the map to add a new location</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
         </div>
 
@@ -1225,8 +1377,9 @@ export default function LocationSelector({ locations, onLocationsChange }: Locat
                 {locations.length} location{locations.length !== 1 ? 's' : ''}
               </span>
             </div>
-            {locations.map((location) => (
-              <div key={location.id} id={`location-${location.id}`} className="h-[180px] bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="grid grid-cols-2 gap-4">
+              {locations.map((location) => (
+                <div key={location.id} id={`location-${location.id}`} className="h-[180px] bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                 {editingLocationId === location.id ? (
                   // Editing mode
                   <div className="h-full p-4 flex flex-col">
@@ -1346,6 +1499,7 @@ export default function LocationSelector({ locations, onLocationsChange }: Locat
                 )}
               </div>
             ))}
+            </div>
           </div>
         )}
       </CardContent>

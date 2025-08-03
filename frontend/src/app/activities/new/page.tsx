@@ -31,9 +31,10 @@ import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserP
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator, ActivityCompletionRating } from "@/components/ActivityFieldHelpers";
-import { CommentsDrawer } from "@/components/CommentsDrawer";
+import { EnhancedCommentsDrawer } from "@/components/EnhancedCommentsDrawer";
 import ActivityLocationEditorWrapper from "@/components/ActivityLocationEditorWrapper";
 import LocationsTab from "@/components/LocationsTab";
+import CombinedLocationsTab from "@/components/CombinedLocationsTab";
 import ActivityEditorNavigation from "@/components/ActivityEditorNavigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -764,7 +765,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, setIatiSyncState }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, setIatiSyncState, organizationsCache }: any) {
   switch (section) {
     case "general":
       return <GeneralSection 
@@ -819,11 +820,19 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         </div>
       );
     case "contributors":
+      // Combine all partner data for ContributorsSection
+      const allPartners = [
+        ...extendingPartners,
+        ...implementingPartners, 
+        ...governmentPartners
+      ];
+      
       return <ContributorsSection 
         contributors={contributors} 
         onChange={setContributors} 
         permissions={permissions}
         activityId={general.id}
+        availablePartners={allPartners}
       />;
     case "organisations":
       return <OrganisationsSection
@@ -850,12 +859,16 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         activityId={general.id}
       />;
     case "locations":
-      return <LocationsTab 
+      return <CombinedLocationsTab
         specificLocations={specificLocations}
         coverageAreas={coverageAreas}
         onSpecificLocationsChange={setSpecificLocations}
         onCoverageAreasChange={setCoverageAreas}
         activityId={general.id}
+        canEdit={permissions?.canEditActivity ?? true}
+        onSubnationalDataChange={() => {}}
+        activityTitle={general.title}
+        activitySector={general.primarySector}
       />;
     case "finances":
       return <FinancesSection 
@@ -908,7 +921,13 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "results":
       return <div className="bg-white rounded shadow p-8">[Results fields go here]</div>;
     case "contacts":
-      return <ContactsSection contacts={contacts} onChange={updateContacts} activityId={general.id} />;
+      return <ContactsSection 
+        contacts={contacts} 
+        onChange={updateContacts} 
+        activityId={general.id}
+        createdByOrgId={general.createdByOrg}
+        organizations={organizationsCache.data || []}
+      />;
     case "government":
       return <GovernmentInputsSection governmentInputs={governmentInputs} onChange={setGovernmentInputs} />;
     case "documents":
@@ -1035,7 +1054,6 @@ function NewActivityPageContent() {
   const [specificLocations, setSpecificLocations] = useState<any[]>([]);
   const [coverageAreas, setCoverageAreas] = useState<any[]>([]);
   const [activityScope, setActivityScope] = useState<string>("national");
-  const [showComments, setShowComments] = useState(false);
   const [isCommentsDrawerOpen, setIsCommentsDrawerOpen] = useState(false);
   const [similarActivities, setSimilarActivities] = useState<ActivityMatch[]>([]);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
@@ -1389,11 +1407,27 @@ function NewActivityPageContent() {
     // SDG tab: green check if at least one SDG goal is mapped
     const sdgComplete = sdgMappings && sdgMappings.length > 0;
 
-    // Locations tab: use the comprehensive locations completion check
-    const locationsCompletion = getTabCompletionStatus('locations', specificLocations);
+    // Locations tab: use the comprehensive locations completion check (includes subnational breakdown)
+    const locationsCompletion = getTabCompletionStatus('locations', {
+      specificLocations,
+      subnationalBreakdowns: {} // TODO: Add state for subnational breakdowns when needed
+    });
 
     // Tags tab: use the comprehensive tags completion check
     const tagsCompletion = getTabCompletionStatus('tags', tags);
+
+    // Organizations tab: use the comprehensive organizations completion check
+    const organisationsCompletion = getTabCompletionStatus('organisations', {
+      extendingPartners,
+      implementingPartners,
+      governmentPartners
+    });
+
+    // Contacts tab: use the comprehensive contacts completion check
+    const contactsCompletion = getTabCompletionStatus('contacts', contacts);
+
+    // Contributors tab: use the comprehensive contributors completion check
+    const contributorsCompletion = getTabCompletionStatus('contributors', contributors);
 
     // IATI Sync tab completion logic
     const iatiSyncComplete = iatiSyncState.isEnabled && iatiSyncState.syncStatus === 'live';
@@ -1416,6 +1450,18 @@ function NewActivityPageContent() {
         isComplete: locationsCompletion.isComplete,
         isInProgress: locationsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
+      organisations: organisationsCompletion ? { 
+        isComplete: organisationsCompletion.isComplete,
+        isInProgress: organisationsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      contacts: contactsCompletion ? { 
+        isComplete: contactsCompletion.isComplete,
+        isInProgress: contactsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      contributors: contributorsCompletion ? { 
+        isComplete: contributorsCompletion.isComplete,
+        isInProgress: contributorsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
       tags: tagsCompletion ? { 
         isComplete: tagsCompletion.isComplete,
         isInProgress: tagsCompletion.isInProgress 
@@ -1429,7 +1475,7 @@ function NewActivityPageContent() {
       "planned-disbursements": { isComplete: plannedDisbursementsComplete, isInProgress: false },
       sdg: { isComplete: sdgComplete, isInProgress: false }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState]);
+  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, extendingPartners, implementingPartners, governmentPartners, contacts, contributors]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -2047,6 +2093,7 @@ function NewActivityPageContent() {
                     plannedDisbursements={plannedDisbursements}
                     setPlannedDisbursements={setPlannedDisbursements}
                     setIatiSyncState={setIatiSyncState}
+                    organizationsCache={organizationsCache}
                   />
                 </div>
               )}
@@ -2191,13 +2238,6 @@ function NewActivityPageContent() {
         </DialogContent>
       </Dialog>
       
-      {/* Comments Drawer */}
-      <CommentsDrawer
-        activityId={general.id}
-        isOpen={isCommentsDrawerOpen}
-        onClose={() => setIsCommentsDrawerOpen(false)}
-      />
-      
       {/* Missing Required Fields Dialog */}
       <Dialog open={showMissingFieldsDialog} onOpenChange={setShowMissingFieldsDialog}>
         <DialogContent>
@@ -2229,6 +2269,13 @@ function NewActivityPageContent() {
       </Dialog>
       
       {/* Debug Panel - Disabled for field-level autosave */}
+      
+      {/* Enhanced Comments Drawer */}
+      <EnhancedCommentsDrawer
+        activityId={general.id}
+        isOpen={isCommentsDrawerOpen}
+        onClose={() => setIsCommentsDrawerOpen(false)}
+      />
       
       {/* Debug Panel */}
       <DebugPanel />

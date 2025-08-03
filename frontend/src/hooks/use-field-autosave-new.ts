@@ -448,6 +448,17 @@ export function useContactsAutosave(activityId?: string, userId?: string) {
   });
 }
 
+export function useContributorsAutosave(activityId?: string, userId?: string) {
+  return useFieldAutosave('contributors', { 
+    activityId,
+    userId,
+    debounceMs: 1000, // Quick debounce for contributor operations
+    onSuccess: () => {
+      toast.success('Contributors saved', { position: 'top-right' });
+    },
+  });
+}
+
 export function useDefaultModalityAutosave(activityId?: string, userId?: string) {
   return useFieldAutosave('defaultModality', {
     activityId,

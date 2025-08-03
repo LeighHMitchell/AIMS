@@ -1,16 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Phone, Mail, Printer, User, Building } from "lucide-react";
+import { X, Plus, Phone, Mail, Printer, User, Building, ChevronsUpDown, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { useContactsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { OrganizationCombobox, Organization } from '@/components/ui/organization-combobox';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 interface Contact {
   id?: string;
@@ -20,10 +24,12 @@ interface Contact {
   middleName?: string;
   lastName: string;
   position: string;
-  organisation?: string;
+  organisationId?: string; // Changed to ID for combobox
+  organisationName?: string; // Keep name for display/fallback
   phone?: string;
   fax?: string;
-  email?: string;
+  primaryEmail?: string;
+  secondaryEmail?: string;
   profilePhoto?: string;
   notes?: string;
 }
@@ -32,21 +38,150 @@ interface ContactsSectionProps {
   contacts: Contact[];
   onChange: (contacts: Contact[]) => void;
   activityId?: string;
+  createdByOrgId?: string; // Organization that created the activity
+  organizations?: Organization[]; // Available organizations for combobox
 }
 
 const CONTACT_TYPES = [
-  "Implementing Partner",
-  "Funding Agency",
-  "Government Liaison",
-  "Technical Advisor",
-  "Field Coordinator",
-  "M&E Officer",
-  "Other"
+  { code: "implementing_partner", name: "Implementing Partner", description: "Key personnel directly implementing activities" },
+  { code: "funding_agency", name: "Funding Agency", description: "Representatives from funding organizations" },
+  { code: "government_liaison", name: "Government Liaison", description: "Government officials and partners" },
+  { code: "technical_advisor", name: "Technical Advisor", description: "Subject matter experts and advisors" },
+  { code: "field_coordinator", name: "Field Coordinator", description: "On-site coordinators and field staff" },
+  { code: "me_officer", name: "M&E Officer", description: "Monitoring and evaluation specialists" },
+  { code: "other", name: "Other", description: "Other contact types not listed above" }
 ];
 
 const TITLES = ["Mr.", "Ms.", "Mrs.", "Dr.", "Prof.", "Eng."];
 
-export default function ContactsSection({ contacts, onChange, activityId }: ContactsSectionProps) {
+// Helper function to migrate old contact type values to new codes
+function migrateContactType(oldValue: string | undefined | null): string {
+  const migrationMap: Record<string, string> = {
+    'Implementing Partner': 'implementing_partner',
+    'Funding Agency': 'funding_agency', 
+    'Government Liaison': 'government_liaison',
+    'Technical Advisor': 'technical_advisor',
+    'Field Coordinator': 'field_coordinator',
+    'M&E Officer': 'me_officer',
+    'Other': 'other'
+  };
+  
+  if (!oldValue) return 'implementing_partner'; // Default
+  
+  // If it's already a valid code, return it
+  if (CONTACT_TYPES.some(type => type.code === oldValue)) {
+    return oldValue;
+  }
+  
+  // Otherwise, try to migrate from old format
+  return migrationMap[oldValue] || 'implementing_partner';
+}
+
+// Contact Type Select Component matching Collaboration Type style
+function ContactTypeSelect({
+  value,
+  onValueChange,
+  placeholder = "Select contact type...",
+  disabled = false,
+  className,
+}: {
+  value?: string;
+  onValueChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+  
+  // Migrate the value if it's in old format
+  const migratedValue = value ? migrateContactType(value) : '';
+  const selectedOption = CONTACT_TYPES.find(type => type.code === migratedValue);
+
+  return (
+    <div className={cn("", className)}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          className={cn(
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            !selectedOption && "text-muted-foreground"
+          )}
+          disabled={disabled}
+        >
+          <span className="truncate">
+            {selectedOption ? (
+              <span className="flex items-center gap-2">
+                <span className="font-medium">{selectedOption.name}</span>
+              </span>
+            ) : (
+              placeholder
+            )}
+          </span>
+          <div className="flex items-center gap-2">
+            {selectedOption && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onValueChange("");
+                }}
+                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                aria-label="Clear selection"
+              >
+                <span className="text-xs">×</span>
+              </button>
+            )}
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          </div>
+        </PopoverTrigger>
+        <PopoverContent 
+          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border"
+          align="start"
+          sideOffset={4}
+        >
+          <Command>
+            <CommandList>
+              <CommandGroup>
+                {CONTACT_TYPES.map((option) => (
+                  <CommandItem
+                    key={option.code}
+                    onSelect={() => {
+                      onValueChange(option.code);
+                      setOpen(false);
+                    }}
+                    className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        migratedValue === option.code ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">{option.name}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                        {option.description}
+                      </div>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+export default function ContactsSection({ 
+  contacts, 
+  onChange, 
+  activityId,
+  createdByOrgId,
+  organizations = []
+}: ContactsSectionProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const { user } = useUser();
@@ -74,11 +209,14 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
   const handleAddContact = () => {
     console.log('[CONTACTS DEBUG] handleAddContact called');
     const newContact: Contact = {
-      type: "Implementing Partner",
+      type: "implementing_partner",
       title: "Mr.",
       firstName: "",
       lastName: "",
       position: "",
+      organisationId: createdByOrgId || "", // Prefill with activity creator org
+      primaryEmail: "",
+      secondaryEmail: "",
     };
     console.log('[CONTACTS DEBUG] Creating new contact form with:', newContact);
     setEditingContact(newContact);
@@ -213,19 +351,18 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
     });
 
     return (
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Profile Photo</label>
+      <div className="w-full h-full">
         {photo ? (
-          <div className="relative w-32 h-32">
+          <div className="relative w-full h-full">
             <img
               src={photo}
               alt="Profile"
-              className="w-full h-full object-cover rounded-lg border"
+              className="w-full h-full object-cover rounded-lg border-2 border-gray-200"
             />
             <button
               type="button"
               onClick={() => onChange("")}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
             >
               <X className="h-3 w-3" />
             </button>
@@ -233,14 +370,14 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
         ) : (
           <div
             {...getRootProps()}
-            className={`w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors
+            className={`w-full h-full border-2 border-dashed rounded-lg cursor-pointer transition-colors
               ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"}
               flex items-center justify-center`}
           >
             <input {...getInputProps()} />
             <div className="text-center">
-              <User className="h-8 w-8 text-gray-400 mx-auto mb-1" />
-              <p className="text-xs text-gray-500">Drop photo or click</p>
+              <User className="h-6 w-6 text-gray-400 mx-auto mb-1" />
+              <p className="text-xs text-gray-500 px-1">Click or drop</p>
             </div>
           </div>
         )}
@@ -301,10 +438,13 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
                       {contact.title} {contact.firstName} {contact.middleName} {contact.lastName}
                     </h3>
                     <p className="text-sm text-gray-600">{contact.position}</p>
-                    {contact.organisation && (
+                    <p className="text-sm text-gray-500">
+                      {CONTACT_TYPES.find(type => type.code === migrateContactType(contact.type))?.name || contact.type}
+                    </p>
+                    {(contact.organisationId || contact.organisationName) && (
                       <p className="text-sm text-gray-500 flex items-center gap-1">
                         <Building className="h-3 w-3" />
-                        {contact.organisation}
+                        {organizations.find(org => org.id === contact.organisationId)?.name || contact.organisationName}
                       </p>
                     )}
                     <div className="flex flex-wrap gap-3 mt-2">
@@ -314,10 +454,16 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
                           {contact.phone}
                         </span>
                       )}
-                      {contact.email && (
+                      {contact.primaryEmail && (
                         <span className="text-sm text-gray-600 flex items-center gap-1">
                           <Mail className="h-3 w-3" />
-                          {contact.email}
+                          {contact.primaryEmail}
+                        </span>
+                      )}
+                      {contact.secondaryEmail && (
+                        <span className="text-sm text-gray-600 flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {contact.secondaryEmail}
                         </span>
                       )}
                       {contact.fax && (
@@ -382,182 +528,209 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-4">
-                {/* Contact Type */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Contact Type *</label>
+            {/* Profile Photo - Top Right */}
+            <div className="flex justify-end">
+              <div className="text-center">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Profile Photo</label>
+                <div className="w-48 h-48">
+                  <ProfilePhotoUpload
+                    photo={editingContact.profilePhoto}
+                    onChange={(photo) =>
+                      setEditingContact({ ...editingContact, profilePhoto: photo })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Name Fields */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Name</h3>
+              <div className="grid grid-cols-8 gap-3">
+                <div className="col-span-1">
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Title</label>
                   <Select
-                    value={editingContact.type}
+                    value={editingContact.title}
                     onValueChange={(value) =>
-                      setEditingContact({ ...editingContact, type: value })
+                      setEditingContact({ ...editingContact, title: value })
                     }
                   >
-                    <SelectTrigger>
-                      <SelectValue />
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Title" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CONTACT_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                      {TITLES.map((title) => (
+                        <SelectItem key={title} value={title}>
+                          {title}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Name Fields */}
-                <div className="grid grid-cols-4 gap-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Title</label>
-                    <Select
-                      value={editingContact.title}
-                      onValueChange={(value) =>
-                        setEditingContact({ ...editingContact, title: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TITLES.map((title) => (
-                          <SelectItem key={title} value={title}>
-                            {title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2 col-span-3">
-                    <label className="text-sm font-medium">First Name *</label>
-                    <Input
-                      value={editingContact.firstName}
-                      onChange={(e) =>
-                        setEditingContact({ ...editingContact, firstName: e.target.value })
-                      }
-                      placeholder="First name"
-                    />
-                  </div>
+                <div className="col-span-3">
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">First Name</label>
+                  <Input
+                    value={editingContact.firstName}
+                    onChange={(e) =>
+                      setEditingContact({ ...editingContact, firstName: e.target.value })
+                    }
+                    placeholder="First name"
+                    className="h-10"
+                  />
                 </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Middle Name</label>
-                    <Input
-                      value={editingContact.middleName || ""}
-                      onChange={(e) =>
-                        setEditingContact({ ...editingContact, middleName: e.target.value })
-                      }
-                      placeholder="Middle name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Last Name *</label>
-                    <Input
-                      value={editingContact.lastName}
-                      onChange={(e) =>
-                        setEditingContact({ ...editingContact, lastName: e.target.value })
-                      }
-                      placeholder="Last name"
-                    />
-                  </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Middle</label>
+                  <Input
+                    value={editingContact.middleName || ""}
+                    onChange={(e) =>
+                      setEditingContact({ ...editingContact, middleName: e.target.value })
+                    }
+                    placeholder="Middle name"
+                    className="h-10"
+                  />
                 </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Last Name</label>
+                  <Input
+                    value={editingContact.lastName}
+                    onChange={(e) =>
+                      setEditingContact({ ...editingContact, lastName: e.target.value })
+                    }
+                    placeholder="Last name"
+                    className="h-10"
+                  />
+                </div>
+              </div>
+            </div>
 
-                {/* Position */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Position/Role *</label>
+            {/* Professional Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Professional Information</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Position/Role</label>
                   <Input
                     value={editingContact.position}
                     onChange={(e) =>
                       setEditingContact({ ...editingContact, position: e.target.value })
                     }
-                    placeholder="e.g., Field Coordinator"
+                    placeholder="e.g., Project Manager"
+                    className="h-10"
                   />
                 </div>
-
-                {/* Organisation */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Organisation</label>
-                  <Input
-                    value={editingContact.organisation || ""}
-                    onChange={(e) =>
-                      setEditingContact({ ...editingContact, organisation: e.target.value })
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Contact Type</label>
+                  <ContactTypeSelect
+                    value={migrateContactType(editingContact.type)}
+                    onValueChange={(value) =>
+                      setEditingContact({ ...editingContact, type: value })
                     }
-                    placeholder="If different from main partner"
+                    placeholder="Select contact type"
+                    className=""
                   />
                 </div>
               </div>
-
-              {/* Right Column */}
-              <div className="space-y-4">
-                {/* Profile Photo */}
-                <ProfilePhotoUpload
-                  photo={editingContact.profilePhoto}
-                  onChange={(photo) =>
-                    setEditingContact({ ...editingContact, profilePhoto: photo })
+              
+              {/* Organisation on its own line */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Organisation</label>
+                <OrganizationCombobox
+                  organizations={organizations}
+                  value={editingContact.organisationId || ""}
+                  onValueChange={(value) =>
+                    setEditingContact({ ...editingContact, organisationId: value })
                   }
+                  placeholder="Select organisation"
+                  className="w-full h-10"
                 />
+              </div>
+            </div>
 
-                {/* Contact Details */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Phone Number</label>
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+              
+              {/* Email Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Primary Email</label>
+                  <Input
+                    type="email"
+                    value={editingContact.primaryEmail || ""}
+                    onChange={(e) =>
+                      setEditingContact({ ...editingContact, primaryEmail: e.target.value })
+                    }
+                    placeholder="primary@example.org"
+                    className="h-10"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Secondary Email</label>
+                  <Input
+                    type="email"
+                    value={editingContact.secondaryEmail || ""}
+                    onChange={(e) =>
+                      setEditingContact({ ...editingContact, secondaryEmail: e.target.value })
+                    }
+                    placeholder="secondary@example.org"
+                    className="h-10"
+                  />
+                </div>
+              </div>
+              
+              {/* Phone and Fax */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Phone Number</label>
                   <Input
                     value={editingContact.phone || ""}
                     onChange={(e) =>
                       setEditingContact({ ...editingContact, phone: e.target.value })
                     }
                     placeholder="+95 9 123 456 789"
+                    className="h-10"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Email Address</label>
-                  <Input
-                    type="email"
-                    value={editingContact.email || ""}
-                    onChange={(e) =>
-                      setEditingContact({ ...editingContact, email: e.target.value })
-                    }
-                    placeholder="email@example.org"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Fax Number</label>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Fax Number</label>
                   <Input
                     value={editingContact.fax || ""}
                     onChange={(e) =>
                       setEditingContact({ ...editingContact, fax: e.target.value })
                     }
                     placeholder="+95 1 234 5678"
-                  />
-                </div>
-
-                {/* Notes */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Notes</label>
-                  <Textarea
-                    value={editingContact.notes || ""}
-                    onChange={(e) =>
-                      setEditingContact({ ...editingContact, notes: e.target.value })
-                    }
-                    placeholder="Additional context or comments"
-                    rows={3}
+                    className="h-10"
                   />
                 </div>
               </div>
             </div>
 
+            {/* Notes */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Notes</h3>
+              <Textarea
+                value={editingContact.notes || ""}
+                onChange={(e) =>
+                  setEditingContact({ ...editingContact, notes: e.target.value })
+                }
+                placeholder="Add any additional context, special instructions, or relevant information about this contact..."
+                rows={4}
+                className="w-full resize-none"
+              />
+            </div>
+
             {/* Form Actions */}
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button variant="outline" onClick={handleCancelEdit}>
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+              <Button variant="outline" onClick={handleCancelEdit} className="px-6">
                 Cancel
               </Button>
-              <Button onClick={() => {
-                console.log('[CONTACTS DEBUG] Save button clicked');
-                handleSaveContact();
-              }}>
+              <Button 
+                onClick={() => {
+                  console.log('[CONTACTS DEBUG] Save button clicked');
+                  handleSaveContact();
+                }}
+                className="px-6"
+              >
                 {editingIndex === contacts.length ? "Add Contact" : "Save Changes"}
               </Button>
             </div>

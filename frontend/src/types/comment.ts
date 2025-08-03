@@ -4,12 +4,19 @@ export interface CommentAuthor {
   role: string;
 }
 
+export interface CommentLikes {
+  thumbsUp: number;
+  thumbsDown: number;
+  userLike: 'thumbs_up' | 'thumbs_down' | null;
+}
+
 export interface CommentReply {
   id: string;
   author: CommentAuthor;
   message: string;
   createdAt: string;
   type: 'Question' | 'Feedback';
+  likes?: CommentLikes;
   attachments?: CommentAttachment[];
 }
 
@@ -33,5 +40,6 @@ export interface ActivityComment {
   resolvedBy?: CommentAuthor;
   resolvedAt?: string;
   resolutionNote?: string;
+  likes?: CommentLikes;
   attachments?: CommentAttachment[];
-} 
+}

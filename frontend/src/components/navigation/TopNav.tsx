@@ -9,9 +9,10 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { FolderPlus, User, LogOut } from "lucide-react"
+import { FolderPlus, User, LogOut, Briefcase, Settings } from "lucide-react"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
 
@@ -66,6 +67,19 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
                     </Badge>
                   </div>
                 </DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <Link href="/portfolio">
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    <span>My Portfolio</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>

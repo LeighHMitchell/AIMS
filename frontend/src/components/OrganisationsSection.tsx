@@ -1,18 +1,42 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Plus, ChevronDown, UserPlus, Info } from "lucide-react";
+import { X, UserPlus, Info, HelpCircle, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { ActivityContributor } from "@/lib/activity-permissions";
 import { useExtendingPartnersAutosave, useImplementingPartnersAutosave, useGovernmentPartnersAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Partner {
   orgId: string;
   name: string;
+  acronym?: string;
+  iatiOrgId?: string;
+  code?: string;
+  logo?: string;
 }
 
 interface OrganisationsSectionProps {
@@ -24,6 +48,108 @@ interface OrganisationsSectionProps {
   onContributorAdd: (contributor: ActivityContributor) => void;
   canNominateContributors?: boolean;
   activityId?: string;
+}
+
+// Organization Combobox Component
+interface OrganizationComboboxProps {
+  partners: Partner[];
+  onSelect: (partner: Partner) => void;
+  placeholder: string;
+  disabled?: boolean;
+}
+
+function OrganizationCombobox({ partners, onSelect, placeholder, disabled = false }: OrganizationComboboxProps) {
+  const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+
+  // Filter partners based on search
+  const filteredPartners = React.useMemo(() => {
+    if (!search) return partners;
+    
+    const query = search.toLowerCase();
+    return partners.filter(partner => 
+      partner.name.toLowerCase().includes(query) ||
+      (partner.acronym && partner.acronym.toLowerCase().includes(query)) ||
+      (partner.iatiOrgId && partner.iatiOrgId.toLowerCase().includes(query)) ||
+      (partner.code && partner.code.toLowerCase().includes(query))
+    );
+  }, [partners, search]);
+
+  // Helper function to format organization name with acronym
+  const formatOrganizationName = (partner: Partner) => {
+    if (partner.acronym) {
+      return `${partner.name} (${partner.acronym})`;
+    }
+    return partner.name;
+  };
+
+  const handleSelect = (partner: Partner) => {
+    onSelect(partner);
+    setOpen(false);
+    setSearch("");
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className={cn(
+            "w-full justify-between font-normal px-4 py-2 text-sm h-auto",
+            disabled && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          <span className="text-muted-foreground">{placeholder}</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-full" align="start" sideOffset={4}>
+        <Command>
+          <CommandInput
+            placeholder="Search organizations by name, acronym, or IATI ID..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <CommandList>
+            {search && filteredPartners.length === 0 && (
+              <CommandEmpty>No organization found.</CommandEmpty>
+            )}
+            {filteredPartners.length > 0 && (
+              <ScrollArea className="max-h-60 overflow-x-hidden overflow-y-auto">
+                <CommandGroup>
+                  {filteredPartners.map(partner => (
+                    <CommandItem
+                      key={partner.orgId}
+                      onSelect={() => handleSelect(partner)}
+                      className="py-3"
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          {partner.code && (
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              {partner.code}
+                            </span>
+                          )}
+                          <span className="font-medium text-foreground">{formatOrganizationName(partner)}</span>
+                        </div>
+                        {partner.iatiOrgId && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            <span className="font-mono">{partner.iatiOrgId}</span>
+                          </div>
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </ScrollArea>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export default function OrganisationsSection({
@@ -80,10 +206,14 @@ export default function OrganisationsSection({
         const data = await res.json();
         console.log('[OrganisationsSection] Partners API response data:', data?.length || 0, 'partners');
         
-        // Format all partners for extending/implementing dropdowns
+        // Format all partners for extending/implementing dropdowns with enhanced data
         const formattedPartners = data.map((partner: any) => ({
           orgId: partner.id,
-          name: `${partner.name} ${partner.code || ''}`.trim()
+          name: partner.name,
+          acronym: partner.acronym,
+          iatiOrgId: partner.iatiOrgId,
+          code: partner.code,
+          logo: partner.logo
         }));
         setAvailablePartners(formattedPartners);
         
@@ -92,7 +222,11 @@ export default function OrganisationsSection({
           .filter((partner: any) => partner.type === 'partner_government')
           .map((partner: any) => ({
             orgId: partner.id,
-            name: `${partner.name} ${partner.code || ''}`.trim()
+            name: partner.name,
+            acronym: partner.acronym,
+            iatiOrgId: partner.iatiOrgId,
+            code: partner.code,
+            logo: partner.logo
           }));
         setGovernmentOnlyPartners(govPartners);
       } else {
@@ -116,10 +250,7 @@ export default function OrganisationsSection({
     }
   };
 
-  const addPartner = (type: 'extending' | 'implementing' | 'government', partnerId: string) => {
-    const partner = availablePartners.find(p => p.orgId === partnerId);
-    if (!partner) return;
-
+  const addPartner = (type: 'extending' | 'implementing' | 'government', partner: Partner) => {
     let currentPartners: Partner[] = [];
     let fieldName = '';
 
@@ -210,26 +341,42 @@ export default function OrganisationsSection({
     return contributors.some(c => c.organizationId === orgId);
   };
 
+  // Helper function to format organization name with acronym
+  const formatOrganizationName = (partner: Partner) => {
+    if (partner.acronym) {
+      return `${partner.name} (${partner.acronym})`;
+    }
+    return partner.name;
+  };
+
   return (
-    <div className="max-w-4xl space-y-8">
+    <TooltipProvider>
+      <div className="max-w-4xl space-y-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">PARTICIPATING ORGANISATIONS</h2>
+        <h2 className="text-2xl font-bold">Participating Organisations</h2>
       </div>
 
-      {/* Clarifying Alert */}
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
+      {/* Help Text */}
+      <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+        <p className="text-sm text-gray-700">
           Organisations listed here define their official roles in this activity for reporting purposes (e.g. implementing, extending, or government partner). 
           This does not affect who can contribute data in the system — that is managed in the Contributors tab.
-        </AlertDescription>
-      </Alert>
+        </p>
+      </div>
 
       {/* Extending Partners */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Extending Partners
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="font-normal">This is the government entity or development partner agency receiving funds from financing partner(s) for channeling to implementing partner(s).</p>
+              </TooltipContent>
+            </Tooltip>
             {extendingPartnersAutosave.state.isSaving && (
               <span className="text-xs text-blue-600">Saving...</span>
             )}
@@ -249,16 +396,34 @@ export default function OrganisationsSection({
               </AlertDescription>
             </Alert>
           )}
-          <p className="text-gray-600">
-            This is the government entity or development partner agency receiving funds from financing partner(s) for
-            channeling to implementing partner(s).
-          </p>
+
 
           <div className="space-y-3">
             {extendingPartners.map((partner) => (
-              <div key={partner.orgId} className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
+              <div key={partner.orgId} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+                {partner.logo ? (
+                  <img 
+                    src={partner.logo} 
+                    alt={`${partner.name} logo`}
+                    className="h-8 w-8 object-contain rounded"
+                  />
+                ) : (
+                  <Building2 className="h-5 w-5 text-gray-600" />
+                )}
                 <div className="flex-1">
-                  <p className="font-medium">{partner.name}</p>
+                  <div className="flex items-center gap-2">
+                    {partner.code && (
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        {partner.code}
+                      </span>
+                    )}
+                    <p className="font-medium">{formatOrganizationName(partner)}</p>
+                  </div>
+                  {partner.iatiOrgId && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      <span className="font-mono">{partner.iatiOrgId}</span>
+                    </div>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
@@ -278,38 +443,12 @@ export default function OrganisationsSection({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Select
-              onValueChange={(value) => addPartner('extending', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select an extending partner" />
-              </SelectTrigger>
-              <SelectContent>
-                {availablePartners
-                  .filter(p => !extendingPartners.some(ep => ep.orgId === p.orgId))
-                  .map((partner) => (
-                    <SelectItem key={partner.orgId} value={partner.orgId}>
-                      {partner.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            variant="link"
-            className="text-blue-600 p-0"
-            onClick={() => {
-              // Trigger the select dropdown
-              const selectTrigger = document.querySelector('[data-state="closed"]') as HTMLElement;
-              selectTrigger?.click();
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add another extending partner
-          </Button>
+          <OrganizationCombobox
+            partners={availablePartners.filter(p => !extendingPartners.some(ep => ep.orgId === p.orgId))}
+            onSelect={(partner) => addPartner('extending', partner)}
+            placeholder="Select an extending partner"
+            disabled={loading}
+          />
         </CardContent>
       </Card>
 
@@ -318,6 +457,14 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Implementing Partners
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="font-normal">The implementer of the activity is the organisation(s) which is/are principally responsible for delivering this activity.</p>
+              </TooltipContent>
+            </Tooltip>
             {implementingPartnersAutosave.state.isSaving && (
               <span className="text-xs text-blue-600">Saving...</span>
             )}
@@ -337,16 +484,34 @@ export default function OrganisationsSection({
               </AlertDescription>
             </Alert>
           )}
-          <p className="text-gray-600">
-            The implementer of the activity is the organisation(s) which is/are principally responsible for delivering this
-            activity.
-          </p>
+
 
           <div className="space-y-3">
             {implementingPartners.map((partner) => (
-              <div key={partner.orgId} className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
+              <div key={partner.orgId} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+                {partner.logo ? (
+                  <img 
+                    src={partner.logo} 
+                    alt={`${partner.name} logo`}
+                    className="h-8 w-8 object-contain rounded"
+                  />
+                ) : (
+                  <Building2 className="h-5 w-5 text-gray-600" />
+                )}
                 <div className="flex-1">
-                  <p className="font-medium">{partner.name}</p>
+                  <div className="flex items-center gap-2">
+                    {partner.code && (
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        {partner.code}
+                      </span>
+                    )}
+                    <p className="font-medium">{formatOrganizationName(partner)}</p>
+                  </div>
+                  {partner.iatiOrgId && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      <span className="font-mono">{partner.iatiOrgId}</span>
+                    </div>
+                  )}
                 </div>
                 {canNominateContributors && !isAlreadyContributor(partner.orgId) && (
                   <Button
@@ -362,7 +527,6 @@ export default function OrganisationsSection({
                 {isAlreadyContributor(partner.orgId) && (
                   <span className="text-xs text-green-600 font-medium">✓ Data Contributor</span>
                 )}
-                <ChevronDown className="h-4 w-4 text-gray-400" />
                 <Button
                   variant="ghost"
                   size="icon"
@@ -381,39 +545,12 @@ export default function OrganisationsSection({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Select
-              onValueChange={(value) => addPartner('implementing', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select an implementing partner" />
-              </SelectTrigger>
-              <SelectContent>
-                {availablePartners
-                  .filter(p => !implementingPartners.some(ip => ip.orgId === p.orgId))
-                  .map((partner) => (
-                    <SelectItem key={partner.orgId} value={partner.orgId}>
-                      {partner.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            variant="link"
-            className="text-blue-600 p-0"
-            onClick={() => {
-              // Trigger the select dropdown
-              const selectTriggers = document.querySelectorAll('[data-state="closed"]');
-              const targetTrigger = selectTriggers[1] as HTMLElement;
-              targetTrigger?.click();
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add another implementing partner
-          </Button>
+          <OrganizationCombobox
+            partners={availablePartners.filter(p => !implementingPartners.some(ip => ip.orgId === p.orgId))}
+            onSelect={(partner) => addPartner('implementing', partner)}
+            placeholder="Select an implementing partner"
+            disabled={loading}
+          />
         </CardContent>
       </Card>
 
@@ -422,6 +559,14 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Government Partners
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="font-normal">This is the government entity or development partner agency receiving funds from financing partner(s) for channeling to implementing partner(s).</p>
+              </TooltipContent>
+            </Tooltip>
             {governmentPartnersAutosave.state.isSaving && (
               <span className="text-xs text-blue-600">Saving...</span>
             )}
@@ -441,19 +586,35 @@ export default function OrganisationsSection({
               </AlertDescription>
             </Alert>
           )}
-          <p className="text-gray-600">
-            The government entity or entities responsible for oversight or maintenance of the activity. Often this will be
-            the government entity with which a MoU or similar agreement is signed. In many cases, the MoU will be
-            signed directly with the implementing partner.
-          </p>
+
 
           <div className="space-y-3">
             {governmentPartners.map((partner) => (
-              <div key={partner.orgId} className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
+              <div key={partner.orgId} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+                {partner.logo ? (
+                  <img 
+                    src={partner.logo} 
+                    alt={`${partner.name} logo`}
+                    className="h-8 w-8 object-contain rounded"
+                  />
+                ) : (
+                  <Building2 className="h-5 w-5 text-gray-600" />
+                )}
                 <div className="flex-1">
-                  <p className="font-medium">{partner.name}</p>
+                  <div className="flex items-center gap-2">
+                    {partner.code && (
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        {partner.code}
+                      </span>
+                    )}
+                    <p className="font-medium">{formatOrganizationName(partner)}</p>
+                  </div>
+                  {partner.iatiOrgId && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      <span className="font-mono">{partner.iatiOrgId}</span>
+                    </div>
+                  )}
                 </div>
-                <ChevronDown className="h-4 w-4 text-gray-400" />
                 <Button
                   variant="ghost"
                   size="icon"
@@ -472,39 +633,12 @@ export default function OrganisationsSection({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Select
-              onValueChange={(value) => addPartner('government', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select a government partner" />
-              </SelectTrigger>
-              <SelectContent>
-                {governmentOnlyPartners
-                  .filter(p => !governmentPartners.some(gp => gp.orgId === p.orgId))
-                  .map((partner) => (
-                    <SelectItem key={partner.orgId} value={partner.orgId}>
-                      {partner.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            variant="link"
-            className="text-blue-600 p-0"
-            onClick={() => {
-              // Trigger the select dropdown
-              const selectTriggers = document.querySelectorAll('[data-state="closed"]');
-              const targetTrigger = selectTriggers[2] as HTMLElement;
-              targetTrigger?.click();
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add another government partner
-          </Button>
+          <OrganizationCombobox
+            partners={governmentOnlyPartners.filter(p => !governmentPartners.some(gp => gp.orgId === p.orgId))}
+            onSelect={(partner) => addPartner('government', partner)}
+            placeholder="Select a government partner"
+            disabled={loading}
+          />
         </CardContent>
       </Card>
 
@@ -540,6 +674,7 @@ export default function OrganisationsSection({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 } 

@@ -193,30 +193,50 @@ export function checkFinancesTabCompletion(
 /**
  * Check if the Locations tab is complete based on specific locations
  */
-export function checkLocationsTabCompletion(specificLocations: any[]): TabCompletionStatus {
+export function checkLocationsTabCompletion(data: any): TabCompletionStatus {
   const completedFields: string[] = []
   const missingFields: string[] = []
   
+  // Handle both single locations array and combined data object
+  const specificLocations = Array.isArray(data) ? data : data?.specificLocations || [];
+  const subnationalBreakdowns = data?.subnationalBreakdowns || {};
+  
+  // Check Activity Locations
   if (specificLocations && specificLocations.length > 0) {
     // Check if we have at least one valid location with name and coordinates
-    const hasValidLocations = specificLocations.some(location => 
+    const hasValidLocations = specificLocations.some((location: any) => 
       location.name?.trim() && 
       typeof location.latitude === 'number' && 
       typeof location.longitude === 'number'
     );
     
     if (hasValidLocations) {
-      completedFields.push('locations')
+      completedFields.push('activity_locations')
     } else {
-      missingFields.push('locations')
+      missingFields.push('activity_locations')
     }
   } else {
-    missingFields.push('locations')
+    missingFields.push('activity_locations')
   }
   
+  // Check Subnational Breakdown (optional - only if user has entered data)
+  const hasSubnationalData = Object.keys(subnationalBreakdowns).length > 0;
+  if (hasSubnationalData) {
+    const totalPercentage = Object.values(subnationalBreakdowns).reduce((sum: number, value: any) => sum + (value || 0), 0);
+    if (Math.abs(totalPercentage - 100) < 0.1) {
+      completedFields.push('subnational_breakdown')
+    } else {
+      missingFields.push('subnational_breakdown')
+    }
+  }
+  
+  // Tab is complete if we have either valid activity locations OR valid subnational breakdown
+  const hasValidActivityLocations = completedFields.includes('activity_locations');
+  const hasValidSubnationalBreakdown = completedFields.includes('subnational_breakdown');
+  
   return {
-    isComplete: missingFields.length === 0,
-    isInProgress: false, // Locations don't have an in-progress state
+    isComplete: hasValidActivityLocations || hasValidSubnationalBreakdown,
+    isInProgress: completedFields.length > 0 && missingFields.length > 0,
     completedFields,
     missingFields
   }
@@ -291,6 +311,125 @@ export function checkSectorsTabCompletion(sectors: any[]): TabCompletionStatus {
   }
 }
 
+/**
+ * Check if the Organizations tab is complete based on partner data
+ */
+export function checkOrganizationsTabCompletion(data: {
+  extendingPartners?: any[]
+  implementingPartners?: any[]
+  governmentPartners?: any[]
+}): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  const extendingPartners = data.extendingPartners || []
+  const implementingPartners = data.implementingPartners || []
+  const governmentPartners = data.governmentPartners || []
+  
+  // Check if we have at least one partner of any type
+  const totalPartners = extendingPartners.length + implementingPartners.length + governmentPartners.length
+  
+  if (totalPartners > 0) {
+    completedFields.push('partners')
+    
+    // Add specific partner type fields if they exist
+    if (extendingPartners.length > 0) {
+      completedFields.push('extending_partners')
+    }
+    if (implementingPartners.length > 0) {
+      completedFields.push('implementing_partners')
+    }
+    if (governmentPartners.length > 0) {
+      completedFields.push('government_partners')
+    }
+  } else {
+    missingFields.push('partners')
+  }
+  
+  return {
+    isComplete: totalPartners > 0,
+    isInProgress: false, // Organizations don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
+/**
+ * Check if the Contributors tab is complete based on nominated contributors
+ */
+export function checkContactsTabCompletion(contacts: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  if (contacts && contacts.length > 0) {
+    // Check if we have at least one contact with required fields (firstName, lastName, position)
+    const hasValidContacts = contacts.some(contact => 
+      contact && 
+      contact.firstName?.trim() && 
+      contact.lastName?.trim() && 
+      contact.position?.trim()
+    );
+    
+    if (hasValidContacts) {
+      completedFields.push('contacts')
+    } else {
+      missingFields.push('contacts')
+    }
+  } else {
+    missingFields.push('contacts')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false,
+    completedFields,
+    missingFields
+  }
+}
+
+export function checkContributorsTabCompletion(contributors: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  if (contributors && contributors.length > 0) {
+    // Check if we have at least one contributor with any status (nominated, accepted, or requested)
+    const hasValidContributors = contributors.some(contributor => 
+      contributor && contributor.status && 
+      ['nominated', 'accepted', 'requested'].includes(contributor.status)
+    );
+    
+    if (hasValidContributors) {
+      completedFields.push('contributors')
+      
+      // Add more granular status tracking
+      const acceptedCount = contributors.filter(c => c.status === 'accepted').length
+      const nominatedCount = contributors.filter(c => c.status === 'nominated').length
+      const requestedCount = contributors.filter(c => c.status === 'requested').length
+      
+      if (acceptedCount > 0) {
+        completedFields.push('accepted_contributors')
+      }
+      if (nominatedCount > 0) {
+        completedFields.push('nominated_contributors')
+      }
+      if (requestedCount > 0) {
+        completedFields.push('requested_contributors')
+      }
+    } else {
+      missingFields.push('contributors')
+    }
+  } else {
+    missingFields.push('contributors')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false, // Contributors don't have an in-progress state currently
+    completedFields,
+    missingFields
+  }
+}
+
 export function getTabCompletionStatus(
   sectionId: string,
   data: any,
@@ -312,6 +451,12 @@ export function getTabCompletionStatus(
       return checkLocationsTabCompletion(data);
     case 'tags':
       return checkTagsTabCompletion(data);
+    case 'organisations':
+      return checkOrganizationsTabCompletion(data);
+    case 'contacts':
+      return checkContactsTabCompletion(data);
+    case 'contributors':
+      return checkContributorsTabCompletion(data);
     // Add other tabs here as needed
     default:
       return null;
@@ -323,11 +468,11 @@ export function getTabCompletionStatus(
  */
 export function TabCompletionIndicator({ isComplete, isInProgress }: { isComplete: boolean; isInProgress: boolean }) {
   if (isComplete) {
-    return <CheckCircle className="h-4 w-4 text-green-500" />
+    return <CheckCircle className="h-4 w-4 text-gray-900" />
   }
   
   if (isInProgress) {
-    return <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+    return <Loader2 className="h-4 w-4 text-gray-500 animate-spin" />
   }
   
   return null

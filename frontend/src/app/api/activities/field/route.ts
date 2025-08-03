@@ -358,7 +358,158 @@ export async function POST(request: Request) {
       case 'contacts':
         oldValue = existingActivity.contacts;
         newValue = body.value;
-        updateData.contacts = Array.isArray(body.value) ? body.value : [];
+        
+        try {
+          console.log('[Field API] Updating contacts for activity:', body.activityId);
+          console.log('[Field API] Contacts data:', JSON.stringify(body.value, null, 2));
+          
+          // Delete existing contacts for this activity
+          const { error: deleteError } = await getSupabaseAdmin()
+            .from('activity_contacts')
+            .delete()
+            .eq('activity_id', body.activityId);
+
+          if (deleteError) {
+            console.error('[Field API] Error deleting existing contacts:', deleteError);
+            
+            // Check if this is a "table doesn't exist" error
+            if (deleteError.message.includes('relation "activity_contacts" does not exist')) {
+              console.error('[Field API] activity_contacts table does not exist. Please run the SQL migration.');
+              return NextResponse.json(
+                { error: 'Contacts table not found. Please contact administrator to run database migration.' },
+                { status: 500 }
+              );
+            }
+            
+            return NextResponse.json(
+              { error: `Failed to delete existing contacts: ${deleteError.message}` },
+              { status: 500 }
+            );
+          }
+
+          // Insert new contacts
+          if (Array.isArray(body.value) && body.value.length > 0) {
+            const contactsToInsert = body.value.map((contact: any) => ({
+              activity_id: body.activityId,
+              type: contact.type,
+              title: contact.title,
+              first_name: contact.firstName,
+              middle_name: contact.middleName || null,
+              last_name: contact.lastName,
+              position: contact.position,
+              organisation_id: contact.organisationId || null,
+              organisation_name: contact.organisationName || contact.organisation || null,
+              phone: contact.phone || null,
+              fax: contact.fax || null,
+              primary_email: contact.primaryEmail || contact.email || null,
+              secondary_email: contact.secondaryEmail || null,
+              profile_photo: contact.profilePhoto || null,
+              notes: contact.notes || null,
+              // Keep backward compatibility fields
+              organisation: contact.organisationName || contact.organisation || null,
+              email: contact.primaryEmail || contact.email || null
+            }));
+            
+            console.log('[Field API] Inserting contacts:', contactsToInsert);
+            
+            const { error: insertError } = await getSupabaseAdmin()
+              .from('activity_contacts')
+              .insert(contactsToInsert);
+              
+            if (insertError) {
+              console.error('[Field API] Error inserting contacts:', insertError);
+              return NextResponse.json(
+                { error: `Failed to save contacts: ${insertError.message}` },
+                { status: 500 }
+              );
+            }
+            
+            console.log('[Field API] Successfully saved', contactsToInsert.length, 'contacts');
+          }
+          
+          // Don't add to updateData since we're handling contacts separately
+          
+        } catch (contactError) {
+          console.error('[Field API] Error handling contacts:', contactError);
+          return NextResponse.json(
+            { error: `Failed to process contacts: ${contactError}` },
+            { status: 500 }
+          );
+        }
+        break;
+        
+      case 'contributors':
+        oldValue = existingActivity.contributors;
+        newValue = body.value;
+        
+        try {
+          console.log('[Field API] Updating contributors for activity:', body.activityId);
+          console.log('[Field API] Contributors data:', JSON.stringify(body.value, null, 2));
+          
+          // Delete existing contributors for this activity
+          const { error: deleteError } = await getSupabaseAdmin()
+            .from('activity_contributors')
+            .delete()
+            .eq('activity_id', body.activityId);
+
+          if (deleteError) {
+            console.error('[Field API] Error deleting existing contributors:', deleteError);
+            
+            // Check if this is a "table doesn't exist" error
+            if (deleteError.message.includes('relation "activity_contributors" does not exist')) {
+              console.error('[Field API] activity_contributors table does not exist. Please run the SQL migration.');
+              return NextResponse.json(
+                { error: 'Contributors table not found. Please contact administrator to run database migration.' },
+                { status: 500 }
+              );
+            }
+            
+            return NextResponse.json(
+              { error: `Failed to delete existing contributors: ${deleteError.message}` },
+              { status: 500 }
+            );
+          }
+
+          // Insert new contributors
+          if (Array.isArray(body.value) && body.value.length > 0) {
+            const contributorsToInsert = body.value.map((contrib: any) => ({
+              activity_id: body.activityId,
+              organization_id: contrib.organizationId,
+              status: contrib.status || 'nominated',
+              nominated_by: contrib.nominatedBy,
+              nominated_at: contrib.nominatedAt,
+              responded_at: contrib.respondedAt,
+              can_edit_own_data: contrib.canEditOwnData !== undefined ? contrib.canEditOwnData : true,
+              can_view_other_drafts: contrib.canViewOtherDrafts !== undefined ? contrib.canViewOtherDrafts : false
+            }));
+            
+            console.log('[Field API] Inserting contributors:', contributorsToInsert);
+            
+            const { error: insertError } = await getSupabaseAdmin()
+              .from('activity_contributors')
+              .insert(contributorsToInsert);
+              
+            if (insertError) {
+              console.error('[Field API] Error inserting contributors:', insertError);
+              return NextResponse.json(
+                { error: `Failed to save contributors: ${insertError.message}` },
+                { status: 500 }
+              );
+            }
+            
+            console.log('[Field API] Successfully saved', contributorsToInsert.length, 'contributors to activity_contributors table');
+          } else {
+            console.log('[Field API] No contributors to save');
+          }
+          
+          // Don't add to updateData since we're handling contributors separately
+        } catch (contributorError) {
+          console.error('[Field API] Error updating contributors:', contributorError);
+          return NextResponse.json(
+            { error: `Failed to save contributors: ${contributorError instanceof Error ? contributorError.message : 'Unknown error'}` },
+            { status: 500 }
+          );
+        }
         break;
         
       case 'plannedStartDate':
@@ -425,7 +576,7 @@ export async function POST(request: Request) {
     // Update activity
     let updatedActivity;
     let updateError;
-    if (body.field !== 'sectors' && body.field !== 'locations') {
+    if (body.field !== 'sectors' && body.field !== 'locations' && body.field !== 'contributors' && body.field !== 'contacts') {
       console.log('[Field API] Updating field with data:', updateData);
       const updateResult = await getSupabaseAdmin()
         .from('activities')
@@ -444,7 +595,7 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // For sectors and locations, fetch the activity for response data
+      // For sectors, locations, contributors, and contacts, fetch the activity for response data
       const fetchResult = await getSupabaseAdmin()
         .from('activities')
         .select('*')
@@ -572,6 +723,61 @@ export async function POST(request: Request) {
       }
     }
 
+    // Fetch contributors from activity_contributors table if this was a contributors update
+    let contributorsData = updatedActivity.contributors; // Default to existing value
+    if (body.field === 'contributors') {
+      try {
+        const { data: contributors, error: contributorsError } = await getSupabaseAdmin()
+          .from('activity_contributors')
+          .select(`
+            id,
+            organization_id,
+            status,
+            nominated_by,
+            nominated_at,
+            responded_at,
+            can_edit_own_data,
+            can_view_other_drafts,
+            created_at,
+            updated_at,
+            organizations (
+              id,
+              name,
+              acronym
+            ),
+            
+          `)
+          .eq('activity_id', body.activityId);
+        
+        if (contributorsError) {
+          console.error('[Field API] Error fetching contributors for response:', contributorsError);
+          contributorsData = [];
+        } else {
+          // Transform contributors to match expected format
+          contributorsData = contributors?.map((contrib: any) => ({
+            id: contrib.id,
+            organizationId: contrib.organization_id,
+            organizationName: contrib.organizations?.name || 'Unknown',
+            organizationAcronym: contrib.organizations?.acronym || null,
+            status: contrib.status,
+            role: 'contributor', // Default role since field doesn't exist in current DB schema
+            nominatedBy: contrib.nominated_by,
+            nominatedByName: 'System', // Simplified for now, will fix with user lookup later
+            nominatedAt: contrib.nominated_at,
+            respondedAt: contrib.responded_at,
+            canEditOwnData: contrib.can_edit_own_data,
+            canViewOtherDrafts: contrib.can_view_other_drafts,
+            displayOrder: 0, // Default display order since field doesn't exist in current DB schema
+            createdAt: contrib.created_at,
+            updatedAt: contrib.updated_at
+          })) || [];
+        }
+      } catch (contributorsFetchError) {
+        console.error('[Field API] Error fetching contributors for response:', contributorsFetchError);
+        contributorsData = [];
+      }
+    }
+
     // Return the updated activity data
     const responseData = {
       id: updatedActivity.id,
@@ -590,6 +796,7 @@ export async function POST(request: Request) {
       defaultAidModalityOverride: updatedActivity.default_aid_modality_override,
       sectors: sectorsData,
       locations: locationsData,
+      contributors: contributorsData,
       plannedStartDate: updatedActivity.planned_start_date,
       plannedEndDate: updatedActivity.planned_end_date,
       actualStartDate: updatedActivity.actual_start_date,

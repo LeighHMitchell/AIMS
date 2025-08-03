@@ -1,6 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
+// Helper function to transform database contacts to frontend format
+function transformContactFromDB(dbContact: any) {
+  return {
+    id: dbContact.id,
+    type: dbContact.type,
+    title: dbContact.title,
+    firstName: dbContact.first_name,
+    middleName: dbContact.middle_name,
+    lastName: dbContact.last_name,
+    position: dbContact.position,
+    organisationId: dbContact.organisation_id,
+    organisationName: dbContact.organisation_name || dbContact.organisation, // Fallback to old field
+    phone: dbContact.phone,
+    fax: dbContact.fax,
+    primaryEmail: dbContact.primary_email || dbContact.email, // Fallback to old field
+    secondaryEmail: dbContact.secondary_email,
+    profilePhoto: dbContact.profile_photo,
+    notes: dbContact.notes,
+    // Add organization details if available
+    organization: dbContact.organizations ? {
+      id: dbContact.organizations.id,
+      name: dbContact.organizations.name,
+      acronym: dbContact.organizations.acronym,
+      country: dbContact.organizations.country,
+      iati_org_id: dbContact.organizations.iati_org_id
+    } : null
+  };
+}
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -134,8 +163,43 @@ export async function GET(
     
     const { data: contacts } = await getSupabaseAdmin()
       .from('activity_contacts')
-      .select('*')
+      .select(`
+        *,
+        organizations (
+          id,
+          name,
+          acronym,
+          country,
+          iati_org_id
+        )
+      `)
       .eq('activity_id', id);
+    
+    // Fetch contributors from activity_contributors table
+    const { data: contributorsData, error: contributorsError } = await getSupabaseAdmin()
+      .from('activity_contributors')
+      .select(`
+        id,
+        organization_id,
+        status,
+        nominated_by,
+        nominated_at,
+        responded_at,
+        can_edit_own_data,
+        can_view_other_drafts,
+        created_at,
+        updated_at,
+        organizations (
+          id,
+          name,
+          acronym
+        )
+      `)
+      .eq('activity_id', id);
+    
+    if (contributorsError) {
+      console.error('[AIMS API] Error fetching contributors for activity', id, ':', contributorsError);
+    }
     
     let { data: locations, error: locationsError } = await getSupabaseAdmin()
       .from('activity_locations')
@@ -166,6 +230,36 @@ export async function GET(
       `)
       .eq('activity_id', id);
     
+    // Enrich partner data with organization details including logos
+    const enrichPartners = async (partners: any[]) => {
+      if (!partners || partners.length === 0) return [];
+      
+      const partnerIds = partners.map((p: any) => p.orgId).filter(Boolean);
+      if (partnerIds.length === 0) return partners;
+      
+      const { data: orgData } = await getSupabaseAdmin()
+        .from('organizations')
+        .select('id, name, acronym, iati_org_id, code, logo')
+        .in('id', partnerIds);
+      
+      return partners.map((partner: any) => {
+        const orgInfo = orgData?.find((org: any) => org.id === partner.orgId);
+        return {
+          ...partner,
+          id: partner.orgId, // Map orgId to id for Partner interface compatibility
+          name: orgInfo?.name || partner.name,
+          acronym: orgInfo?.acronym || partner.acronym,
+          iatiOrgId: orgInfo?.iati_org_id || partner.iatiOrgId,
+          code: orgInfo?.code || partner.code,
+          logo: orgInfo?.logo
+        };
+      });
+    };
+
+    const enrichedExtendingPartners = await enrichPartners(activity.extending_partners || []);
+    const enrichedImplementingPartners = await enrichPartners(activity.implementing_partners || []);
+    const enrichedGovernmentPartners = await enrichPartners(activity.government_partners || []);
+
     // Transform to match frontend format
     const transformedActivity = {
       ...activity,
@@ -196,6 +290,26 @@ export async function GET(
       flowType: activity.default_flow_type, // (optional: keep for backward compatibility)
       defaultAidModality: activity.default_aid_modality,
       defaultAidModalityOverride: activity.default_aid_modality_override,
+      extendingPartners: enrichedExtendingPartners,
+      implementingPartners: enrichedImplementingPartners,
+      governmentPartners: enrichedGovernmentPartners,
+      contributors: contributorsData?.map((contrib: any) => ({
+        id: contrib.id,
+        organizationId: contrib.organization_id,
+        organizationName: contrib.organizations?.name || 'Unknown',
+        organizationAcronym: contrib.organizations?.acronym || null,
+        status: contrib.status,
+        role: 'contributor', // Default role since field doesn't exist in current DB schema
+        nominatedBy: contrib.nominated_by,
+        nominatedByName: 'System', // Simplified for now, will fix with user lookup later
+        nominatedAt: contrib.nominated_at,
+        respondedAt: contrib.responded_at,
+        canEditOwnData: contrib.can_edit_own_data,
+        canViewOtherDrafts: contrib.can_view_other_drafts,
+        displayOrder: 0, // Default display order since field doesn't exist in current DB schema
+        createdAt: contrib.created_at,
+        updatedAt: contrib.updated_at
+      })) || [],
       banner: activity.banner,
       icon: activity.icon,
       hierarchy: activity.hierarchy,
@@ -233,21 +347,7 @@ export async function GET(
         type: sector.type || 'secondary'
       })) || [],
       transactions: transactions || [],
-      contacts: contacts?.map((contact: any) => ({
-        id: contact.id,
-        type: contact.type,
-        title: contact.title,
-        firstName: contact.first_name,
-        middleName: contact.middle_name,
-        lastName: contact.last_name,
-        position: contact.position,
-        organisation: contact.organisation,
-        phone: contact.phone,
-        fax: contact.fax,
-        email: contact.email,
-        profilePhoto: contact.profile_photo,
-        notes: contact.notes
-      })) || [],
+      contacts: contacts?.map(transformContactFromDB) || [],
       sdgMappings: sdgMappings?.map((mapping: any) => ({
         id: mapping.id,
         sdgGoal: mapping.sdg_goal,

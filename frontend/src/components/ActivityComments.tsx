@@ -1,32 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { format, formatDistanceToNow } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ActivityComment, CommentReply } from '@/types/comment';
-import { useUser } from '@/hooks/useUser';
-import { toast } from 'sonner';
 import {
   MessageSquare,
+  HelpCircle, 
   Send,
-  Reply,
   CheckCircle,
-  Circle,
+  RotateCcw, 
   ChevronDown,
-  ChevronRight,
-  Paperclip,
-  Download,
-  AlertCircle,
-  HelpCircle,
+  ChevronUp, 
   Filter,
-  SortAsc,
+  AlertCircle,
   Clock,
-  RefreshCw,
+  User,
+  ThumbsUp,
+  ThumbsDown,
+  Archive
 } from 'lucide-react';
+import { useUser } from '@/hooks/useUser';
+import { toast } from 'sonner';
+import { ActivityComment, CommentLikes } from '@/types/comment';
 
 interface ActivityCommentsProps {
   activityId: string;
@@ -45,37 +45,8 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
   const [filterType, setFilterType] = useState<'all' | 'question' | 'feedback'>('all');
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
-
-  // Function to normalize old comment format to new format
-  const normalizeComment = (comment: any): ActivityComment => {
-    // Check if it's an old format comment
-    if (comment.userId && !comment.author) {
-      return {
-        id: comment.id,
-        activityId: activityId,
-        author: {
-          userId: comment.userId,
-          name: comment.userName || 'Unknown',
-          role: comment.userRole || 'user',
-        },
-        type: comment.type === 'response' ? 'Feedback' : (comment.type || 'Feedback'),
-        message: comment.content || comment.message || '',
-        createdAt: comment.createdAt,
-        replies: [],
-        status: 'Open',
-        attachments: [],
-      };
-    }
-    
-    // For new format, just ensure type is correct
-    return {
-      ...comment,
-      type: comment.type === 'response' ? 'Feedback' : (comment.type || 'Feedback'),
-      replies: comment.replies || [],
-      status: comment.status || 'Open',
-      attachments: comment.attachments || [],
-    };
-  };
+  const [resolutionNote, setResolutionNote] = useState('');
+  const [resolvingComment, setResolvingComment] = useState<string | null>(null);
 
   useEffect(() => {
     fetchComments();
@@ -85,14 +56,16 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
     try {
       setLoading(true);
       const res = await fetch(`/api/activities/${activityId}/comments`);
-      if (!res.ok) throw new Error('Failed to fetch comments');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to fetch comments');
+      }
       const data = await res.json();
-      // Normalize all comments before setting state
-      const normalizedComments = data.map(normalizeComment);
-      setComments(normalizedComments);
+      setComments(data);
     } catch (error) {
       console.error('Error fetching comments:', error);
-      toast.error('Failed to load comments');
+      toast.error(`Failed to load comments: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setComments([]); // Set empty array to avoid crashes
     } finally {
       setLoading(false);
     }
@@ -107,22 +80,22 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user,
-          content: newComment,
+          message: newComment,
           type: commentType,
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to add comment');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to add comment');
+      }
       
-      const updatedComments = await res.json();
-      // Normalize all comments before setting state
-      const normalizedComments = updatedComments.map(normalizeComment);
-      setComments(normalizedComments);
+      await fetchComments(); // Refresh comments list
       setNewComment('');
       toast.success('Comment added successfully');
     } catch (error) {
       console.error('Error adding comment:', error);
-      toast.error('Failed to add comment');
+      toast.error(`Failed to add comment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -135,24 +108,25 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user,
-          content: replyContent,
+          message: replyContent,
           type: replyType,
-          parentCommentId,
+          action: 'reply',
+          commentId: parentCommentId,
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to add reply');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to add reply');
+      }
       
-      const updatedComments = await res.json();
-      // Normalize all comments before setting state
-      const normalizedComments = updatedComments.map(normalizeComment);
-      setComments(normalizedComments);
+      await fetchComments(); // Refresh comments list
       setReplyContent('');
       setReplyingTo(null);
       toast.success('Reply added successfully');
     } catch (error) {
       console.error('Error adding reply:', error);
-      toast.error('Failed to add reply');
+      toast.error(`Failed to add reply: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -161,25 +135,28 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
 
     try {
       const res = await fetch(`/api/activities/${activityId}/comments`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user,
           commentId,
           action: 'resolve',
+          resolutionNote: resolutionNote || undefined,
         }),
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to resolve comment');
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to resolve comment');
       }
       
       await fetchComments();
-      toast.success('Comment resolved successfully');
+      setResolutionNote('');
+      setResolvingComment(null);
+      toast.success('Comment resolved and archived');
     } catch (error: any) {
       console.error('Error resolving comment:', error);
-      toast.error(error.message || 'Failed to resolve comment');
+      toast.error(`Failed to resolve comment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -188,7 +165,7 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
 
     try {
       const res = await fetch(`/api/activities/${activityId}/comments`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user,
@@ -197,17 +174,109 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to reopen comment');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to reopen comment');
+      }
       
       await fetchComments();
-      toast.success('Comment reopened successfully');
-    } catch (error) {
+      toast.success('Comment reopened from archive');
+    } catch (error: any) {
       console.error('Error reopening comment:', error);
-      toast.error('Failed to reopen comment');
+      toast.error(`Failed to reopen comment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
-  const toggleExpandComment = (commentId: string) => {
+  const handleLikeComment = async (commentId: string, likeType: 'thumbs_up' | 'thumbs_down', currentLike: string | null) => {
+    if (!user) return;
+
+    // Optimistic update - update UI immediately
+    setComments(prevComments => prevComments.map(comment => {
+      if (comment.id === commentId) {
+        const currentLikes = comment.likes || { thumbsUp: 0, thumbsDown: 0, userLike: null };
+        let newLikes = { ...currentLikes };
+        
+        // Remove previous like if exists
+        if (currentLike === 'thumbs_up') {
+          newLikes.thumbsUp = Math.max(0, newLikes.thumbsUp - 1);
+        } else if (currentLike === 'thumbs_down') {
+          newLikes.thumbsDown = Math.max(0, newLikes.thumbsDown - 1);
+        }
+        
+        // Add new like if different from current
+        if (currentLike !== likeType) {
+          if (likeType === 'thumbs_up') {
+            newLikes.thumbsUp = newLikes.thumbsUp + 1;
+          } else {
+            newLikes.thumbsDown = newLikes.thumbsDown + 1;
+          }
+          newLikes.userLike = likeType;
+        } else {
+          // User is removing their like
+          newLikes.userLike = null;
+        }
+        
+        return { ...comment, likes: newLikes };
+      }
+      return comment;
+    }));
+
+    try {
+      const action = currentLike === likeType ? 'unlike' : 'like';
+      
+      const res = await fetch(`/api/activities/${activityId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user,
+          commentId,
+          action,
+          likeType,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update like');
+      }
+    } catch (error: any) {
+      console.error('Error updating like:', error);
+      toast.error(`Failed to update like: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Revert optimistic update on error
+      await fetchComments();
+    }
+  };
+
+  const handleLikeReply = async (replyId: string, likeType: 'thumbs_up' | 'thumbs_down', currentLike: string | null) => {
+    if (!user) return;
+
+    try {
+      const action = currentLike === likeType ? 'unlike' : 'like';
+      
+      const res = await fetch(`/api/activities/${activityId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user,
+          replyId,
+          action,
+          likeType,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update like');
+      }
+      
+      await fetchComments(); // Refresh to get updated like counts
+    } catch (error: any) {
+      console.error('Error updating like:', error);
+      toast.error(`Failed to update like: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const toggleCommentExpansion = (commentId: string) => {
     const newExpanded = new Set(expandedComments);
     if (newExpanded.has(commentId)) {
       newExpanded.delete(commentId);
@@ -217,194 +286,197 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
     setExpandedComments(newExpanded);
   };
 
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString();
+  };
+
   // Filter and sort comments
   const filteredComments = comments.filter(comment => {
-    if (activeTab === 'open' && comment.status === 'Resolved') return false;
+    // Filter by status (tab)
+    if (activeTab === 'open' && comment.status !== 'Open') return false;
     if (activeTab === 'resolved' && comment.status !== 'Resolved') return false;
+    
+    // Filter by type
     if (filterType === 'question' && comment.type !== 'Question') return false;
     if (filterType === 'feedback' && comment.type !== 'Feedback') return false;
+    
     return true;
-  });
-
-  const sortedComments = [...filteredComments].sort((a, b) => {
+  }).sort((a, b) => {
     const dateA = new Date(a.createdAt).getTime();
     const dateB = new Date(b.createdAt).getTime();
     return sortBy === 'newest' ? dateB - dateA : dateA - dateB;
   });
 
-  const openCount = comments.filter(c => c.status === 'Open').length;
-  const resolvedCount = comments.filter(c => c.status === 'Resolved').length;
+  const renderLikeButtons = (likes: CommentLikes, onLike: (type: 'thumbs_up' | 'thumbs_down') => void) => (
+    <div className="flex items-center gap-2">
+      <Button
+        size="sm"
+        variant={likes.userLike === 'thumbs_up' ? 'default' : 'ghost'}
+        onClick={() => onLike('thumbs_up')}
+        className="h-6 px-2 text-xs"
+      >
+        <ThumbsUp className="h-3 w-3 mr-1" />
+        {likes.thumbsUp || 0}
+      </Button>
+      <Button
+        size="sm"
+        variant={likes.userLike === 'thumbs_down' ? 'destructive' : 'ghost'}
+        onClick={() => onLike('thumbs_down')}
+        className="h-6 px-2 text-xs"
+      >
+        <ThumbsDown className="h-3 w-3 mr-1" />
+        {likes.thumbsDown || 0}
+      </Button>
+    </div>
+  );
 
   const renderComment = (comment: ActivityComment) => {
-    const isExpanded = expandedComments.has(comment.id) || comment.status === 'Open';
-    const canResolve = user?.id === comment.author.userId && comment.status === 'Open';
-    const canReopen = user?.id === comment.author.userId && comment.status === 'Resolved';
+    const isQuestion = comment.type === 'Question';
+    const isResolved = comment.status === 'Resolved';
 
     return (
-      <div key={comment.id} className={`border rounded-lg ${comment.status === 'Resolved' ? 'bg-gray-50' : ''}`}>
-        <Collapsible open={isExpanded} onOpenChange={() => toggleExpandComment(comment.id)}>
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3 flex-1">
-                <CollapsibleTrigger className="mt-1">
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-gray-500" />
-                  )}
-                </CollapsibleTrigger>
-                
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{comment.author.name}</span>
-                    <Badge variant="outline" className="text-xs">
+      <div key={comment.id} className="space-y-2">
+        {/* Main Comment */}
+        <div className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+              {comment.author.name[0].toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="font-medium text-sm">{comment.author.name}</span>
+                <Badge variant="secondary" className="text-xs">
                       {comment.author.role}
                     </Badge>
                     <Badge 
-                      variant={comment.type === 'Question' ? 'default' : 'secondary'}
-                      className="text-xs"
+                  variant={isQuestion ? 'default' : 'secondary'} 
+                  className={`text-xs ${isQuestion ? 'bg-blue-100 text-blue-700' : ''}`}
                     >
-                      {comment.type === 'Question' ? (
-                        <HelpCircle className="h-3 w-3 mr-1" />
-                      ) : (
-                        <MessageSquare className="h-3 w-3 mr-1" />
-                      )}
                       {comment.type}
                     </Badge>
-                    {comment.status === 'Open' && comment.type === 'Question' && (
-                      <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700">
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Unresolved
-                      </Badge>
-                    )}
+                <span className="text-xs text-gray-500">
+                  {comment.createdAt ? formatRelativeTime(comment.createdAt) : 'Unknown date'}
+                </span>
                   </div>
-                  
-                  {comment.status === 'Resolved' && !isExpanded && comment.resolvedAt && (
-                    <div className="text-sm text-gray-600">
-                      <CheckCircle className="h-3 w-3 inline mr-1 text-green-600" />
-                      Resolved by {comment.resolvedBy?.name} • {formatDistanceToNow(new Date(comment.resolvedAt), { addSuffix: true })}
-                    </div>
-                  )}
-                </div>
+              <p className="text-sm text-gray-700 mb-2">{comment.message}</p>
+              
+              {/* Like buttons - simplified inline */}
+              <div className="flex items-center gap-4 text-xs mb-2">
+                <button 
+                  className="flex items-center gap-1 text-gray-500 hover:text-blue-600"
+                  onClick={() => handleLikeComment(comment.id, 'thumbs_up', comment.likes?.userLike || null)}
+                >
+                  <ThumbsUp className={`h-3 w-3 ${comment.likes?.userLike === 'thumbs_up' ? 'fill-blue-600 text-blue-600' : ''}`} />
+                  {comment.likes?.thumbsUp || 0}
+                </button>
+                <button 
+                  className="flex items-center gap-1 text-gray-500 hover:text-red-600"
+                  onClick={() => handleLikeComment(comment.id, 'thumbs_down', comment.likes?.userLike || null)}
+                >
+                  <ThumbsDown className={`h-3 w-3 ${comment.likes?.userLike === 'thumbs_down' ? 'fill-red-600 text-red-600' : ''}`} />
+                  {comment.likes?.thumbsDown || 0}
+                </button>
               </div>
               
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
-                  {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                </span>
-                {comment.status === 'Open' ? (
-                  <Circle className="h-4 w-4 text-gray-400" />
+              {/* Action buttons - simplified */}
+              <div className="flex items-center gap-4">
+                <button
+                  className="text-blue-600 text-sm font-medium hover:underline"
+                  onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                >
+                  Reply
+                </button>
+                
+                {!isResolved ? (
+                  <button
+                    className="text-gray-600 text-sm font-medium hover:underline"
+                    onClick={() => setResolvingComment(resolvingComment === comment.id ? null : comment.id)}
+                  >
+                    Resolve & Archive
+                  </button>
                 ) : (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <button
+                    className="text-gray-600 text-sm font-medium hover:underline"
+                    onClick={() => handleReopenComment(comment.id)}
+                  >
+                    Unarchive
+                  </button>
                 )}
               </div>
-            </div>
-          </div>
-          
-          <CollapsibleContent>
-            <div className="px-4 pb-4">
-              <div className="pl-10">
-                <p className="text-sm mb-3 whitespace-pre-wrap">{comment.message}</p>
-                
-                {/* Attachments */}
-                {comment.attachments && comment.attachments.length > 0 && (
-                  <div className="mb-3 space-y-1">
-                    {comment.attachments.map(attachment => (
-                      <a
-                        key={attachment.id}
-                        href={attachment.url}
-                        download={attachment.filename}
-                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
-                      >
-                        <Paperclip className="h-3 w-3" />
-                        {attachment.filename}
-                        <Download className="h-3 w-3" />
-                      </a>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Resolution info */}
-                {comment.status === 'Resolved' && comment.resolutionNote && comment.resolvedAt && (
-                  <div className="bg-green-50 border border-green-200 rounded p-3 mb-3">
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-green-800">Resolution</p>
-                        <p className="text-sm text-green-700 mt-1">{comment.resolutionNote}</p>
-                        <p className="text-xs text-green-600 mt-1">
-                          by {comment.resolvedBy?.name} • {format(new Date(comment.resolvedAt), 'MMM d, yyyy h:mm a')}
-                        </p>
                       </div>
                     </div>
                   </div>
-                )}
                 
                 {/* Replies */}
                 {comment.replies && comment.replies.length > 0 && (
-                  <div className="mt-3 space-y-2 border-l-2 border-gray-200 pl-4">
-                    {comment.replies.map(reply => (
-                      <div key={reply.id} className="text-sm">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">{reply.author.name}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {reply.author.role}
-                          </Badge>
-                          <Badge 
-                            variant={reply.type === 'Question' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
+          <div className="ml-11 space-y-2">
+            {comment.replies.map((reply) => (
+              <div key={reply.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0">
+                    {reply.author.name[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="font-medium text-sm">{reply.author.name}</span>
+                      <Badge variant="secondary" className="text-xs">
                             {reply.type}
                           </Badge>
                           <span className="text-xs text-gray-500">
-                            {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
+                        {reply.createdAt ? formatRelativeTime(reply.createdAt) : 'Unknown date'}
                           </span>
                         </div>
-                        <p className="text-gray-700 whitespace-pre-wrap">{reply.message}</p>
+                    <p className="text-sm text-gray-600">{reply.message}</p>
+                  </div>
+                </div>
                       </div>
                     ))}
                   </div>
                 )}
                 
-                {/* Actions */}
-                <div className="flex items-center gap-2 mt-3">
-                  {comment.status === 'Open' && (
+        {/* Resolution form */}
+        {resolvingComment === comment.id && (
+          <div className="ml-11 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <Textarea
+              placeholder="Add a resolution note (optional)..."
+              value={resolutionNote}
+              onChange={(e) => setResolutionNote(e.target.value)}
+              rows={2}
+              className="text-sm mb-2"
+            />
+            <div className="flex gap-2">
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setReplyingTo(comment.id)}
-                    >
-                      <Reply className="h-3 w-3 mr-1" />
-                      Reply
-                    </Button>
-                  )}
-                  
-                  {canResolve && (
-                    <Button
-                      variant="ghost"
                       size="sm"
                       onClick={() => handleResolveComment(comment.id)}
                     >
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Mark Resolved
+                Resolve & Archive
                     </Button>
-                  )}
-                  
-                  {canReopen && (
                     <Button
-                      variant="ghost"
                       size="sm"
-                      onClick={() => handleReopenComment(comment.id)}
-                    >
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                      Reopen
+                variant="outline"
+                onClick={() => {
+                  setResolvingComment(null);
+                  setResolutionNote('');
+                }}
+              >
+                Cancel
                     </Button>
+            </div>
+          </div>
                   )}
-                </div>
                 
                 {/* Reply form */}
                 {replyingTo === comment.id && (
-                  <div className="mt-3 space-y-2">
+          <div className="ml-11 space-y-2">
                     <div className="flex gap-2">
                       <Select value={replyType} onValueChange={(v: any) => setReplyType(v)}>
                         <SelectTrigger className="w-32">
@@ -420,8 +492,7 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
                       placeholder="Write your reply..."
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
-                      rows={2}
-                      className="text-sm"
+              rows={3}
                     />
                     <div className="flex gap-2">
                       <Button
@@ -430,7 +501,7 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
                         disabled={!replyContent.trim()}
                       >
                         <Send className="h-3 w-3 mr-1" />
-                        Send Reply
+                Reply
                       </Button>
                       <Button
                         size="sm"
@@ -444,11 +515,20 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
                       </Button>
                     </div>
                   </div>
+        )}
+
+        {/* Resolved indicator */}
+        {isResolved && comment.resolvedBy && (
+          <div className="ml-11 p-2 bg-gray-100 border border-gray-200 rounded text-sm">
+            <p className="text-gray-800">
+              <strong>Resolved by {comment.resolvedBy.name}</strong>
+              {comment.resolvedAt && ` on ${new Date(comment.resolvedAt).toLocaleDateString()}`}
+            </p>
+            {comment.resolutionNote && (
+              <p className="text-gray-700 mt-1">{comment.resolutionNote}</p>
                 )}
               </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        )}
       </div>
     );
   };
@@ -456,36 +536,119 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
   if (loading) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-gray-500">Loading comments...</div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Comments & Questions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="border rounded-lg p-4 animate-pulse">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                    <div className="h-3 bg-gray-200 rounded w-full"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Comments & Discussion
-            <Badge variant="outline" className="ml-2">
-              {comments.length} total
-            </Badge>
-          </CardTitle>
-          <Button variant="ghost" size="sm" onClick={fetchComments}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+    <div className="flex flex-col h-full space-y-4">
+      {/* Tab Navigation - Simplified */}
+      <div className="flex items-center justify-between border-b border-gray-200 flex-shrink-0">
+        <div className="flex">
+          <button
+            onClick={() => setActiveTab('open')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'open' 
+                ? 'border-blue-500 text-blue-600' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <MessageSquare className="h-4 w-4 inline mr-1" />
+            Comments ({comments.filter(c => c.status === 'Open').length})
+          </button>
+          <button
+            onClick={() => setActiveTab('resolved')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'resolved' 
+                ? 'border-blue-500 text-blue-600' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Archive className="h-4 w-4 inline mr-1" />
+            Archived ({comments.filter(c => c.status === 'Resolved').length})
+          </button>
         </div>
-      </CardHeader>
-      
-      <CardContent>
-        {/* New Comment Form */}
-        <div className="space-y-3 mb-6">
+        
+        <div className="flex items-center gap-2">
+          <Select value={filterType} onValueChange={(v: any) => setFilterType(v)}>
+            <SelectTrigger className="w-32 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="question">Questions</SelectItem>
+              <SelectItem value="feedback">Feedback</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+            <SelectTrigger className="w-32 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="oldest">Oldest</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Comments List */}
+      <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
+        {activeTab === 'open' && (
+          <>
+            {filteredComments.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No open comments yet</p>
+                <p className="text-sm">Be the first to leave feedback or ask a question!</p>
+              </div>
+            ) : (
+              filteredComments.map(renderComment)
+            )}
+          </>
+        )}
+        
+        {activeTab === 'resolved' && (
+          <>
+            {filteredComments.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No archived comments yet</p>
+                <p className="text-sm">Resolved comments will appear here</p>
+              </div>
+            ) : (
+              filteredComments.map(renderComment)
+            )}
+          </>
+        )}
+      </div>
+
+      {/* New Comment Form - Moved to bottom */}
+      <div className="border-t border-gray-200 pt-4 space-y-3 flex-shrink-0">
           <div className="flex gap-2">
             <Select value={commentType} onValueChange={(v: any) => setCommentType(v)}>
-              <SelectTrigger className="w-40">
+            <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -502,95 +665,33 @@ export function ActivityComments({ activityId }: ActivityCommentsProps) {
           </div>
           
           <Textarea
-            placeholder={commentType === 'Question' ? 'Ask a question about this activity...' : 'Leave feedback or comments...'}
+          placeholder="Leave feedback or comments..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             rows={3}
+          className="resize-none"
           />
           
           <div className="flex justify-between items-center">
-            <div className="text-xs text-gray-500">
-              {commentType === 'Question' && (
-                <span className="flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  Questions will be highlighted for quicker response
-                </span>
-              )}
-            </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-gray-500"
+            onClick={() => setNewComment('')}
+          >
+            Clear
+          </Button>
             <Button
               onClick={handleSubmitComment}
               disabled={!newComment.trim()}
+            size="sm"
+            className="bg-blue-500 hover:bg-blue-600"
             >
               <Send className="h-4 w-4 mr-2" />
               Post {commentType}
             </Button>
           </div>
         </div>
-        
-        {/* Tabs and Filters */}
-        <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)}>
-          <div className="flex items-center justify-between mb-4">
-            <TabsList>
-              <TabsTrigger value="open" className="flex items-center gap-1">
-                <Circle className="h-3 w-3" />
-                Open ({openCount})
-              </TabsTrigger>
-              <TabsTrigger value="resolved" className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3" />
-                Resolved ({resolvedCount})
-              </TabsTrigger>
-            </TabsList>
-            
-            <div className="flex items-center gap-2">
-              <Select value={filterType} onValueChange={(v: any) => setFilterType(v)}>
-                <SelectTrigger className="w-32">
-                  <Filter className="h-3 w-3 mr-1" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="question">Questions</SelectItem>
-                  <SelectItem value="feedback">Feedback</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-                <SelectTrigger className="w-32">
-                  <SortAsc className="h-3 w-3 mr-1" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <TabsContent value="open" className="space-y-3">
-            {sortedComments.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                <p>No open comments yet</p>
-                <p className="text-sm mt-1">Be the first to start a discussion!</p>
               </div>
-            ) : (
-              sortedComments.map(renderComment)
-            )}
-          </TabsContent>
-          
-          <TabsContent value="resolved" className="space-y-3">
-            {sortedComments.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <CheckCircle className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                <p>No resolved comments</p>
-              </div>
-            ) : (
-              sortedComments.map(renderComment)
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
   );
 } 
