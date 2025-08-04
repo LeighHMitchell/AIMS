@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/hooks/use-toast';
-import { getSupabaseClient } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 
 interface AddEventModalProps {
@@ -68,6 +68,7 @@ export default function AddEventModal({
   prefilledDate 
 }: AddEventModalProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -92,7 +93,6 @@ export default function AddEventModal({
     if (!isOpen) return;
 
     const fetchRelatedData = async () => {
-      const supabase = getSupabaseClient();
 
       try {
         // Fetch activities
@@ -160,11 +160,7 @@ export default function AddEventModal({
     
     if (!validateForm()) return;
     if (!user?.id) {
-      toast({
-        title: 'Error',
-        description: 'You must be logged in to create events',
-        variant: 'destructive'
-      });
+      toast.error('You must be logged in to create events');
       return;
     }
 
@@ -195,10 +191,7 @@ export default function AddEventModal({
 
       const data = await response.json();
       
-      toast({
-        title: 'Event Created!',
-        description: data.message || 'Event submitted for approval. You\'ll be notified once published.',
-      });
+      toast.success(data.message || 'Event submitted for approval. You\'ll be notified once published.');
 
       onEventCreated();
       onClose();
@@ -218,11 +211,7 @@ export default function AddEventModal({
 
     } catch (error) {
       console.error('Error creating event:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create event',
-        variant: 'destructive'
-      });
+      toast.error(error instanceof Error ? error.message : 'Failed to create event');
     } finally {
       setLoading(false);
     }

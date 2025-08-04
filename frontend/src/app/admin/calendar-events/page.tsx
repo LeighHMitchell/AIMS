@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 
 interface CalendarEvent {
@@ -40,6 +40,7 @@ export default function AdminCalendarEventsPage() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [stats, setStats] = useState<EventStats>({ total: 0, pending: 0, approved: 0, thisMonth: 0 });
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
   const fetchEvents = async () => {
     try {
@@ -71,11 +72,7 @@ export default function AdminCalendarEventsPage() {
       setStats(stats);
     } catch (error) {
       console.error('Error fetching events:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch calendar events',
-        variant: 'destructive'
-      });
+      toast.error('Failed to fetch calendar events');
     } finally {
       setLoading(false);
     }
@@ -102,19 +99,12 @@ export default function AdminCalendarEventsPage() {
         throw new Error('Failed to approve event');
       }
 
-      toast({
-        title: 'Event Approved',
-        description: 'The event has been approved and is now visible to users.',
-      });
+      toast.success('The event has been approved and is now visible to users.');
 
       fetchEvents(); // Refresh the list
     } catch (error) {
       console.error('Error approving event:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to approve event',
-        variant: 'destructive'
-      });
+      toast.error('Failed to approve event');
     }
   };
 
@@ -128,19 +118,12 @@ export default function AdminCalendarEventsPage() {
         throw new Error('Failed to reject event');
       }
 
-      toast({
-        title: 'Event Rejected',
-        description: 'The event has been rejected and removed.',
-      });
+      toast.success('The event has been rejected and removed.');
 
       fetchEvents(); // Refresh the list
     } catch (error) {
       console.error('Error rejecting event:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to reject event',
-        variant: 'destructive'
-      });
+      toast.error('Failed to reject event');
     }
   };
 
