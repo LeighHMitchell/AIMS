@@ -58,14 +58,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 bg-white"
+      style={{ 
+        fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
+      }}
+    >
       <Card className="w-full max-w-md" style={{ backgroundColor: '#F6F5F4' }}>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <img 
-              src="/images/aether-logo.png" 
+              src="/images/Logo - No Text 2.jpeg" 
               alt="æther logo" 
-              className="h-12 w-12 object-contain"
+              className="h-24 w-24 object-contain"
             />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
@@ -117,7 +122,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full bg-gray-900 hover:bg-black text-white border-0"
             >
               {loading ? (
                 <>

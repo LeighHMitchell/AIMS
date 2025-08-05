@@ -84,6 +84,7 @@ import { IATISyncPanel } from "@/components/activities/IATISyncPanel";
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab";
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab";
 import { AidTypeSelect } from "@/components/forms/AidTypeSelect";
+import { ResultsTab } from "@/components/activities/ResultsTab";
 
 // Separate component for General section to properly use hooks
 function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState }: any) {
@@ -913,7 +914,15 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         onDisbursementsChange={setPlannedDisbursements}
       />;
     case "results":
-      return <div className="bg-white rounded shadow p-8">[Results fields go here]</div>;
+      return <ResultsTab 
+        activityId={general.id} 
+        readOnly={!permissions?.canEditActivity}
+        onResultsChange={(results) => {
+          // Optional: Update any parent state if needed
+          console.log('Results updated:', results);
+        }}
+        defaultLanguage="en"
+      />;
     case "contacts":
       return <ContactsSection contacts={contacts} onChange={updateContacts} activityId={general.id} />;
     case "government":

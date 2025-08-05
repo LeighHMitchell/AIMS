@@ -13,6 +13,7 @@ jest.mock('next/link', () => {
 describe('ActivityCard', () => {
   const mockActivity = {
     id: '1',
+    partner_id: 'ACT-2024-001',
     title: 'Test Activity Title',
     iati_id: 'TEST-001',
     description: 'Test activity description',
@@ -20,7 +21,13 @@ describe('ActivityCard', () => {
     publication_status: 'published',
     planned_start_date: '2024-01-01',
     planned_end_date: '2024-12-31',
-    updated_at: '2024-01-15T10:00:00Z'
+    updated_at: '2024-01-15T10:00:00Z',
+    default_aid_type: 'C01',
+    default_flow_type: '10',
+    default_tied_status: '3',
+    created_by_org_name: 'Test Organization',
+    totalBudget: 100000,
+    totalDisbursed: 50000
   };
 
   test('renders activity card with title', () => {
@@ -28,14 +35,38 @@ describe('ActivityCard', () => {
     expect(screen.getByText('Test Activity Title')).toBeInTheDocument();
   });
 
+  test('renders Activity ID when provided', () => {
+    render(<ActivityCard activity={mockActivity} />);
+    expect(screen.getByText('Activity ID:')).toBeInTheDocument();
+    expect(screen.getByText('ACT-2024-001')).toBeInTheDocument();
+  });
+
   test('renders IATI ID when provided', () => {
     render(<ActivityCard activity={mockActivity} />);
-    expect(screen.getByText('IATI: TEST-001')).toBeInTheDocument();
+    expect(screen.getByText('IATI Identifier:')).toBeInTheDocument();
+    expect(screen.getByText('TEST-001')).toBeInTheDocument();
   });
 
   test('renders description when provided', () => {
     render(<ActivityCard activity={mockActivity} />);
     expect(screen.getByText('Test activity description')).toBeInTheDocument();
+  });
+
+  test('renders aid modality information when provided', () => {
+    render(<ActivityCard activity={mockActivity} />);
+    expect(screen.getByText('Activity Details')).toBeInTheDocument();
+    expect(screen.getByText('Project-type interventions')).toBeInTheDocument();
+    expect(screen.getByText('ODA')).toBeInTheDocument();
+    expect(screen.getByText('Untied')).toBeInTheDocument();
+  });
+
+  test('renders financial and reporting information when provided', () => {
+    render(<ActivityCard activity={mockActivity} />);
+    expect(screen.getByText('Financial Summary')).toBeInTheDocument();
+    expect(screen.getByText('Test Organization')).toBeInTheDocument();
+    expect(screen.getByText('$100,000')).toBeInTheDocument();
+    expect(screen.getByText('$50,000')).toBeInTheDocument();
+    expect(screen.getByText('Activity Details')).toBeInTheDocument();
   });
 
   test('renders status badges', () => {

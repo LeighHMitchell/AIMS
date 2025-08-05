@@ -530,7 +530,8 @@ function ActivitiesPageContent() {
       const sectors = activity.sectors?.map(s => `${s.name} (${s.percentage}%)`).join("; ") || "";
       
       return {
-        "Activity ID": activity.id,
+        "Activity ID": activity.partnerId || "",
+        "UUID": activity.id,
         "IATI ID": activity.iatiId || "",
         "Partner ID": activity.partnerId || "",
         "Title": activity.title,

@@ -46,7 +46,7 @@ import { toast } from "sonner";
 import { 
   Plus, Download, Edit2, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { Transaction } from "@/types/transaction";
@@ -262,6 +262,7 @@ function ActivitiesPageContent() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [pageLimit, setPageLimit] = useState<number>(20);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   
   const router = useRouter();
   const { user, isLoading: userLoading } = useUser();
@@ -294,6 +295,14 @@ function ActivitiesPageContent() {
   const setFilterType = usingOptimization ? optimizedData.filters.setPublicationStatus : () => {};
   const filterValidation = usingOptimization ? optimizedData.filters.submissionStatus : 'all';
   const setFilterValidation = usingOptimization ? optimizedData.filters.setSubmissionStatus : () => {};
+
+  // Copy ID to clipboard
+  const copyToClipboard = (text: string, type: 'partnerId' | 'iatiIdentifier', activityId: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(`${activityId}-${type}`);
+    setTimeout(() => setCopiedId(null), 2000);
+    toast.success(`${type === 'partnerId' ? 'Activity ID' : 'IATI Identifier'} copied to clipboard`);
+  };
 
   const fetchOrganizations = async () => {
     try {
@@ -488,9 +497,15 @@ function ActivitiesPageContent() {
     const MAX_RETRIES = 3;
     
     try {
-      // Only close dialog on first attempt
+      // Immediately remove the activity from the UI (optimistic update)
       if (retryCount === 0) {
         setDeleteActivityId(null);
+        
+        if (usingOptimization) {
+          optimizedData.removeActivity(id);
+        } else {
+          setLegacyActivities(prev => prev.filter(activity => activity.id !== id));
+        }
       }
       
       const res = await fetch("/api/activities", {
@@ -509,33 +524,30 @@ function ActivitiesPageContent() {
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
         
-        // If it's a 404, the activity is already gone
+        // If it's a 404, the activity is already gone - that's fine
         if (res.status === 404) {
           console.log("[AIMS] Activity already deleted:", id);
           toast.success("Activity deleted successfully");
-          
-          // Remove from list even if 404
-          if (usingOptimization) {
-            optimizedData.refetch();
-          } else {
-            setLegacyActivities(prev => prev.filter(activity => activity.id !== id));
-          }
           return;
+        }
+        
+        // For other errors, we need to revert the optimistic update or refetch
+        if (retryCount === 0) {
+          console.error("[AIMS] Delete failed, reverting optimistic update");
+          if (usingOptimization) {
+            optimizedData.refetch(); // Refetch to get current state
+          } else {
+            // For legacy mode, we'd need to restore the activity or refetch
+            // For now, just refetch by calling the fetch function
+            window.location.reload(); // Simple fallback
+          }
         }
         
         throw new Error(errorData.error || "Failed to delete activity");
       }
       
       toast.success("Activity deleted successfully");
-      
-      // Immediately remove the activity from the list
-      if (usingOptimization) {
-        // For optimized mode, refetch to get updated data
-        optimizedData.refetch();
-      } else {
-        // For legacy mode, remove from local state
-        setLegacyActivities(prev => prev.filter(activity => activity.id !== id));
-      }
+      // Activity already removed optimistically, no need to do anything else
       
     } catch (error) {
       console.error(`[AIMS] Error deleting activity (attempt ${retryCount + 1}):`, error);
@@ -589,9 +601,9 @@ function ActivitiesPageContent() {
       const sectors = activity.sectors?.map((s: any) => `${s.name} (${s.percentage}%)`).join("; ") || "";
       
       return {
-        "Activity ID": activity.id,
+        "Activity ID": activity.partnerId || "",
         "IATI ID": activity.iatiId || "",
-        "Partner ID": activity.partnerId || "",
+        "UUID": activity.id,
         "Title": activity.title,
         "Description": activity.description || "",
         "Activity Status": activity.activityStatus || activity.status || "",
@@ -1004,7 +1016,7 @@ function ActivitiesPageContent() {
                     return (
                       <tr
                         key={activity.id}
-                        className="hover:bg-muted transition-colors"
+                        className="group hover:bg-muted transition-colors"
                       >
                         <td className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
                           <div 
@@ -1016,10 +1028,46 @@ function ActivitiesPageContent() {
                                 {activity.title}
                               </h3>
                               {(activity.partnerId || activity.iatiIdentifier) && (
-                                <div className="text-xs text-muted-foreground line-clamp-1">
-                                  {activity.partnerId}
-                                  {activity.partnerId && activity.iatiIdentifier && '  •  '}
-                                  <span className="text-slate-400">{activity.iatiIdentifier}</span>
+                                <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
+                                  {activity.partnerId && (
+                                    <>
+                                      <span>{activity.partnerId}</span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                        title="Copy Activity ID"
+                                      >
+                                        {copiedId === `${activity.id}-partnerId` ? (
+                                          <Check className="w-3 h-3 text-green-500" />
+                                        ) : (
+                                          <Copy className="w-3 h-3" />
+                                        )}
+                                      </button>
+                                    </>
+                                  )}
+                                  {activity.partnerId && activity.iatiIdentifier && <span className="mx-1">•</span>}
+                                  {activity.iatiIdentifier && (
+                                    <>
+                                      <span className="text-slate-400 ml-2">{activity.iatiIdentifier}</span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copyToClipboard(activity.iatiIdentifier!, 'iatiIdentifier', activity.id);
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                        title="Copy IATI Identifier"
+                                      >
+                                        {copiedId === `${activity.id}-iatiIdentifier` ? (
+                                          <Check className="w-3 h-3 text-green-500" />
+                                        ) : (
+                                          <Copy className="w-3 h-3" />
+                                        )}
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -1167,6 +1215,15 @@ function ActivitiesPageContent() {
               partner_id: activity.partnerId,
               banner: activity.banner,
               icon: (activity as any).icon,
+              // Add aid modality fields
+              default_aid_type: activity.default_aid_type,
+              default_finance_type: activity.default_finance_type,
+              default_flow_type: activity.default_flow_type,
+              default_tied_status: activity.default_tied_status,
+              // Add financial and reporting fields
+              created_by_org_name: activity.created_by_org_name,
+              totalBudget: (activity as any).totalBudget || 0,
+              totalDisbursed: (activity as any).totalDisbursed || 0,
               sdgMappings: (activity as any).sdgMappings || []
             }))}
             loading={loading}

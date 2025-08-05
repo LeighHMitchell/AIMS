@@ -276,6 +276,79 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['projects']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['projects']['Insert']>
       }
+      activity_results: {
+        Row: {
+          id: string
+          activity_id: string
+          type: string
+          aggregation_status: boolean
+          title: any
+          description: any | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['activity_results']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['activity_results']['Insert']>
+      }
+      result_indicators: {
+        Row: {
+          id: string
+          result_id: string
+          measure: string
+          ascending: boolean
+          aggregation_status: boolean
+          title: any
+          description: any | null
+          reference_vocab: string | null
+          reference_code: string | null
+          reference_uri: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['result_indicators']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['result_indicators']['Insert']>
+      }
+      indicator_baselines: {
+        Row: {
+          id: string
+          indicator_id: string
+          baseline_year: number | null
+          iso_date: string | null
+          value: number | null
+          comment: string | null
+          location_ref: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['indicator_baselines']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['indicator_baselines']['Insert']>
+      }
+      indicator_periods: {
+        Row: {
+          id: string
+          indicator_id: string
+          period_start: string
+          period_end: string
+          target_value: number | null
+          target_comment: string | null
+          target_location_ref: string | null
+          actual_value: number | null
+          actual_comment: string | null
+          actual_location_ref: string | null
+          facet: string
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['indicator_periods']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['indicator_periods']['Insert']>
+      }
     }
   }
 } 

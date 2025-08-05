@@ -7,7 +7,7 @@ import { AuthGuard } from "@/components/AuthGuard"
 import { useUser } from "@/hooks/useUser"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { SidebarNav } from "@/components/navigation/SidebarNav"
-import { SidebarUserMenu } from "@/components/navigation/SidebarUserMenu"
+
 import { TopNav } from "@/components/navigation/TopNav"
 import { useSmartPreCache } from "@/hooks/use-pre-cached-data"
 
@@ -30,14 +30,14 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
   const content = (
     <div className="flex h-screen overflow-hidden bg-background border-0">
       {/* Fixed Sidebar */}
-      <aside className="w-72 flex-shrink-0 bg-gray-100 border-r h-full fixed z-40 flex flex-col">
+      <aside className="w-72 flex-shrink-0 border-r h-full fixed z-40 flex flex-col" style={{ backgroundColor: '#F6F5F4' }}>
         {/* Logo Section */}
-        <div className="h-16 border-b bg-white flex items-center px-4 flex-shrink-0">
+        <div className="h-16 flex items-center px-4 flex-shrink-0" style={{ backgroundColor: '#F6F5F4' }}>
           <Link href="/" className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
             <img 
-              src="/images/Aether Logo.001.jpeg" 
+              src="/images/Logo - No Text 2.jpeg" 
               alt="æther logo" 
-              className="h-6 w-6 object-contain"
+              className="h-12 w-12 object-contain"
             />
             <span className="text-xl font-bold">æther</span>
           </Link>
@@ -52,8 +52,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
           />
         </div>
 
-        {/* User Menu - pinned to bottom */}
-        <SidebarUserMenu />
+
       </aside>
 
       {/* Main Content Area with left margin */}

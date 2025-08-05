@@ -432,7 +432,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                         <div className="flex-1">
                           <h4 className="font-medium text-sm">{la.activityTitle}</h4>
                           <p className="text-xs text-gray-600 mt-1">
-                            IATI: {la.iatiIdentifier}
+                            <span className="font-semibold">IATI Identifier:</span> {la.iatiIdentifier}
                           </p>
                         </div>
                         <ExternalLink className="w-4 h-4 text-gray-400" />
@@ -579,7 +579,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                                 )}
                                 {activity.iati_id && (
                                   <p className="text-xs text-gray-600 font-medium">
-                                    IATI: {activity.iati_id}
+                                    <span className="font-semibold">IATI Identifier:</span> {activity.iati_id}
                                   </p>
                                 )}
                                 {activity.partner_id && (

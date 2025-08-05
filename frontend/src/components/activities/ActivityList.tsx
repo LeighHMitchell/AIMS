@@ -24,6 +24,15 @@ interface Activity {
   partner_id?: string;
   banner?: string;
   icon?: string;
+  // Default aid modality fields
+  default_aid_type?: string;
+  default_finance_type?: string;
+  default_flow_type?: string;
+  default_tied_status?: string;
+  // Financial and reporting fields
+  created_by_org_name?: string;
+  totalBudget?: number;
+  totalDisbursed?: number;
   sdgMappings?: SDGMapping[];
 }
 

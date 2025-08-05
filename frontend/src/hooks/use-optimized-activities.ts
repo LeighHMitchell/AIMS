@@ -52,6 +52,7 @@ interface UseOptimizedActivitiesReturn {
   setSearchQuery: (query: string) => void;
   setPage: (page: number) => void;
   refetch: () => void;
+  removeActivity: (id: string) => void;
   filters: {
     activityStatus: string;
     publicationStatus: string;
@@ -289,6 +290,15 @@ export function useOptimizedActivities(
     ? queryTimesRef.current.reduce((a, b) => a + b, 0) / queryTimesRef.current.length
     : 0;
 
+  // Optimistic remove function for immediate UI updates
+  const removeActivity = useCallback((id: string) => {
+    setActivities(prev => prev.filter(activity => activity.id !== id));
+    setTotalCount(prev => prev - 1);
+    
+    // Clear cache to ensure fresh data on next refetch
+    cacheRef.current.clear();
+  }, []);
+
   return {
     activities,
     loading,
@@ -300,6 +310,7 @@ export function useOptimizedActivities(
     setSearchQuery,
     setPage: setCurrentPage,
     refetch: fetchActivities,
+    removeActivity,
     filters: {
       activityStatus,
       publicationStatus,
