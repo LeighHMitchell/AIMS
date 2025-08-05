@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+interface DatabaseEvent {
+  id: string
+  title: string
+  description?: string
+  start: string
+  end?: string
+  location?: string
+  type: string
+  status: string
+  organizer_id: string
+  organizer_name: string
+  attendees?: string[]
+  created_at: string
+  updated_at: string
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Fetch events from Supabase
@@ -15,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the data to match the expected format
-    const transformedEvents = events?.map(event => ({
+    const transformedEvents = events?.map((event: DatabaseEvent) => ({
       id: event.id,
       title: event.title,
       description: event.description,
