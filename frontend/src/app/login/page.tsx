@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Building2, AlertCircle, LogIn } from "lucide-react";
+import { AlertCircle, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
-import { GmailLogin } from "@/components/auth/GmailLogin";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,23 +57,22 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+      <Card className="w-full max-w-md" style={{ backgroundColor: '#F6F5F4' }}>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Building2 className="h-12 w-12 text-blue-600" />
+            <img 
+              src="/images/aether-logo.png" 
+              alt="æther logo" 
+              className="h-12 w-12 object-contain"
+            />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            Welcome to AIMS
+            <span className="font-bold">æther</span>
           </CardTitle>
           <CardDescription className="text-gray-600">
-            Aid Information Management System
+            Development Finance Information, Simplified.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -135,50 +133,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="relative mt-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <GmailLogin redirectTo="/activities" />
-          </div>
-
-          <div className="relative mt-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Demo Credentials
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-2 text-sm mt-4">
-            <div 
-              className="p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
-              onClick={() => handleDemoLogin("testuser@aims.local", "TestPass123!")}
-            >
-              <p className="font-medium">Super User (Test Account)</p>
-              <p className="text-muted-foreground">testuser@aims.local / TestPass123!</p>
-              <p className="text-xs text-green-600 mt-1">Click to auto-fill</p>
-            </div>
-          </div>
         </CardContent>
-        <CardFooter className="text-center">
-          <div className="text-sm text-gray-600 space-y-1">
-            <p><strong>Test Login:</strong></p>
-            <p>Email: testuser@aims.local</p>
-            <p>Password: TestPass123!</p>
-          </div>
-        </CardFooter>
       </Card>
     </div>
   );

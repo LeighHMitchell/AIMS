@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MainLayout } from '@/components/layout/main-layout'
+import { EventCreateModal } from '@/components/calendar/EventCreateModal'
 import { supabase } from '@/lib/supabase'
 
 // Dynamic import for FullCalendar to avoid SSR issues
@@ -15,6 +17,7 @@ const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false }
 // Import plugins directly (they're not React components)
 import dayGridPlugin from '@fullcalendar/daygrid'
 import listPlugin from '@fullcalendar/list'
+import interactionPlugin from '@fullcalendar/interaction'
 
 interface CalendarEvent {
   id: string
@@ -104,16 +107,19 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <MainLayout>
+        <div className="container mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <MainLayout>
+      <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
@@ -162,7 +168,7 @@ export default function CalendarPage() {
             <CardContent className="p-6">
               {typeof window !== 'undefined' && (
                 <FullCalendar
-                  plugins={[dayGridPlugin, listPlugin]}
+                  plugins={[dayGridPlugin, listPlugin, interactionPlugin]}
                   initialView={view === 'month' ? 'dayGridMonth' : 'listWeek'}
                   headerToolbar={{
                     left: 'prev,next today',
@@ -174,6 +180,9 @@ export default function CalendarPage() {
                   firstDay={1}
                   weekNumbers={true}
                   eventDisplay="block"
+                  dateClick={handleDateClick}
+                  eventClick={handleEventClick}
+                  selectable={true}
                 />
               )}
             </CardContent>
@@ -225,32 +234,14 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Placeholder Add Event Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Add New Event</CardTitle>
-              <CardDescription>
-                Submit an event for community approval
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Event creation form would go here. This feature will be enhanced once the database tables are set up.
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setShowAddModal(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => setShowAddModal(false)}>
-                  Submit for Approval
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
+      {/* Event Creation Modal */}
+      <EventCreateModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        selectedDate={selectedDate}
+        onEventCreated={fetchEvents}
+      />
+      </div>
+    </MainLayout>
   )
 } 

@@ -68,7 +68,7 @@ export function GmailLoginCard({ redirectTo = '/' }: { redirectTo?: string }) {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
-        <CardTitle>Welcome to AIMS</CardTitle>
+        <CardTitle>Welcome to æther</CardTitle>
         <CardDescription>
           Sign in to your account to access the Aid Information Management System
         </CardDescription>

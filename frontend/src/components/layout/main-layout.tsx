@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-import { Building2 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AuthGuard } from "@/components/AuthGuard"
@@ -35,8 +34,12 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         {/* Logo Section */}
         <div className="h-16 border-b bg-white flex items-center px-4 flex-shrink-0">
           <Link href="/" className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
-            <Building2 className="h-6 w-6" />
-            <span className="text-xl font-bold">AIMS</span>
+            <img 
+              src="/images/Aether Logo.001.jpeg" 
+              alt="æther logo" 
+              className="h-6 w-6 object-contain"
+            />
+            <span className="text-xl font-bold">æther</span>
           </Link>
         </div>
         

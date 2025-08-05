@@ -3,52 +3,35 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
-    // For now, return mock data until database tables are set up
-    const mockEvents = [
-      {
-        id: '1',
-        title: 'Monthly Development Partners Meeting',
-        description: 'Regular coordination meeting for all development partners',
-        start: '2025-01-20T10:00:00Z',
-        end: '2025-01-20T12:00:00Z',
-        location: 'UNRC Conference Room',
-        type: 'meeting',
-        status: 'approved',
-        organizerId: '1',
-        organizerName: 'Development Coordination Unit',
-        createdAt: '2025-01-15T08:00:00Z',
-        updatedAt: '2025-01-15T08:00:00Z'
-      },
-      {
-        id: '2',
-        title: 'Activity Reporting Deadline',
-        description: 'Quarterly activity reports due',
-        start: '2025-01-25T23:59:59Z',
-        location: 'Online',
-        type: 'deadline',
-        status: 'approved',
-        organizerId: '2',
-        organizerName: 'AIMS Administrator',
-        createdAt: '2025-01-10T09:00:00Z',
-        updatedAt: '2025-01-10T09:00:00Z'
-      },
-      {
-        id: '3',
-        title: 'Data Quality Workshop',
-        description: 'Training session on improving data quality in AIMS',
-        start: '2025-01-30T14:00:00Z',
-        end: '2025-01-30T17:00:00Z',
-        location: 'Ministry of Planning Training Center',
-        type: 'workshop',
-        status: 'approved',
-        organizerId: '3',
-        organizerName: 'AIMS Training Team',
-        createdAt: '2025-01-12T10:00:00Z',
-        updatedAt: '2025-01-12T10:00:00Z'
-      }
-    ]
+    // Fetch events from Supabase
+    const { data: events, error } = await supabase
+      .from('calendar_events')
+      .select('*')
+      .order('start', { ascending: true })
 
-    return NextResponse.json({ events: mockEvents })
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
+    }
+
+    // Transform the data to match the expected format
+    const transformedEvents = events?.map(event => ({
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      start: event.start,
+      end: event.end,
+      location: event.location,
+      type: event.type,
+      status: event.status,
+      organizerId: event.organizer_id,
+      organizerName: event.organizer_name,
+      attendees: event.attendees,
+      createdAt: event.created_at,
+      updatedAt: event.updated_at
+    })) || []
+
+    return NextResponse.json({ events: transformedEvents })
   } catch (error) {
     console.error('Error in calendar events API:', error)
     return NextResponse.json({ 
@@ -61,29 +44,77 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, start, end, location, type, organizerId, organizerName } = body
+    const { title, description, start, end, location, type, organizerId, organizerName, attendees } = body
 
     if (!title || !start || !organizerId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // For now, return a success message - will implement database creation later
-    return NextResponse.json({ 
-      message: 'Event submitted for approval. Database setup required for full functionality.',
-      event: {
-        id: Date.now().toString(),
+    // Validate event type
+    const validTypes = ['meeting', 'deadline', 'workshop', 'conference', 'other']
+    if (type && !validTypes.includes(type)) {
+      return NextResponse.json({ error: 'Invalid event type' }, { status: 400 })
+    }
+
+    // Validate dates
+    const startDate = new Date(start)
+    const endDate = end ? new Date(end) : null
+    
+    if (isNaN(startDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid start date' }, { status: 400 })
+    }
+    
+    if (endDate && isNaN(endDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid end date' }, { status: 400 })
+    }
+    
+    if (endDate && endDate <= startDate) {
+      return NextResponse.json({ error: 'End date must be after start date' }, { status: 400 })
+    }
+
+    // Insert event into Supabase
+    const { data: event, error } = await supabase
+      .from('calendar_events')
+      .insert({
         title,
         description,
-        start,
-        end,
+        start: startDate.toISOString(),
+        end: endDate?.toISOString(),
         location,
         type: type || 'other',
-        status: 'pending',
-        organizerId,
-        organizerName,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+        organizer_id: organizerId,
+        organizer_name: organizerName,
+        attendees: attendees || [],
+        status: 'pending' // All new events start as pending
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Supabase insert error:', error)
+      throw error
+    }
+
+    // Transform response to match expected format
+    const transformedEvent = {
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      start: event.start,
+      end: event.end,
+      location: event.location,
+      type: event.type,
+      status: event.status,
+      organizerId: event.organizer_id,
+      organizerName: event.organizer_name,
+      attendees: event.attendees,
+      createdAt: event.created_at,
+      updatedAt: event.updated_at
+    }
+
+    return NextResponse.json({ 
+      message: 'Event created successfully and submitted for approval.',
+      event: transformedEvent
     })
   } catch (error) {
     console.error('Error in calendar events creation:', error)
