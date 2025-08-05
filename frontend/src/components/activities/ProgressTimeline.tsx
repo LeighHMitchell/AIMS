@@ -173,7 +173,7 @@ export function ProgressTimeline({
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span>Off track (<60%)</span>
+              <span>Off track (&lt;60%)</span>
             </div>
           </div>
         </div>
