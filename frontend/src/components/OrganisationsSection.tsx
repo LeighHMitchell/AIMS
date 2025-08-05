@@ -1,29 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Plus, ChevronDown, UserPlus, Info } from "lucide-react";
+import { X, Plus, ChevronDown, UserPlus, Info, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ActivityContributor } from "@/lib/activity-permissions";
-import { useExtendingPartnersAutosave, useImplementingPartnersAutosave, useGovernmentPartnersAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
-
-interface Partner {
-  orgId: string;
-  name: string;
-}
+import { OrganizationSearchableSelect, Organization } from "@/components/ui/organization-searchable-select";
+import { useParticipatingOrganizations } from "@/hooks/use-participating-organizations";
+import { useOrganizations } from "@/hooks/use-organizations";
+import Image from "next/image";
 
 interface OrganisationsSectionProps {
-  extendingPartners: Partner[];
-  implementingPartners: Partner[];
-  governmentPartners: Partner[];
-  onChange: (field: string, value: Partner[]) => void;
+  extendingPartners: any[];
+  implementingPartners: any[];
+  governmentPartners: any[];
+  onChange: (field: string, value: any[]) => void;
   contributors: ActivityContributor[];
   onContributorAdd: (contributor: ActivityContributor) => void;
   canNominateContributors?: boolean;
   activityId?: string;
+  onParticipatingOrganizationsChange?: (count: number) => void;
 }
 
 export default function OrganisationsSection({
@@ -35,161 +33,122 @@ export default function OrganisationsSection({
   onContributorAdd,
   canNominateContributors = false,
   activityId,
+  onParticipatingOrganizationsChange,
 }: OrganisationsSectionProps) {
-  const [availablePartners, setAvailablePartners] = useState<Partner[]>([]);
-  const [governmentOnlyPartners, setGovernmentOnlyPartners] = useState<Partner[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [nominationModal, setNominationModal] = useState<{open: boolean, partner: Partner | null}>({open: false, partner: null});
+  // Early return if no activityId to prevent errors
+  if (!activityId) {
+    return (
+      <div className="max-w-4xl space-y-8 bg-white border border-gray-200 rounded-lg p-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-600">Participating Organisations</h2>
+        </div>
+        <div className="text-center text-gray-500">
+          Loading activity data...
+        </div>
+      </div>
+    );
+  }
+
   const { user } = useUser();
+  const [nominationModal, setNominationModal] = useState<{open: boolean, organization: Organization | null}>({open: false, organization: null});
 
-  // Field-level autosave hooks
-  const extendingPartnersAutosave = useExtendingPartnersAutosave(activityId, user?.id);
-  const implementingPartnersAutosave = useImplementingPartnersAutosave(activityId, user?.id);
-  const governmentPartnersAutosave = useGovernmentPartnersAutosave(activityId, user?.id);
+  // Use the new hooks
+  const { organizations, loading: organizationsLoading } = useOrganizations({
+    onError: (error) => toast.error(`Failed to load organizations: ${error}`)
+  });
 
-  // Enhanced onChange that triggers autosave
-  const handleChange = (field: string, value: Partner[]) => {
-    onChange(field, value);
-    if (activityId) {
-      switch (field) {
-        case 'extendingPartners':
-          extendingPartnersAutosave.triggerFieldSave(value);
-          break;
-        case 'implementingPartners':
-          implementingPartnersAutosave.triggerFieldSave(value);
-          break;
-        case 'governmentPartners':
-          governmentPartnersAutosave.triggerFieldSave(value);
-          break;
-      }
+  const {
+    participatingOrganizations,
+    loading: participatingLoading,
+    addParticipatingOrganization,
+    removeParticipatingOrganization,
+    getOrganizationsByRole,
+    isOrganizationParticipating,
+  } = useParticipatingOrganizations({
+    activityId,
+    onError: (error) => toast.error(`Failed to manage participating organizations: ${error}`)
+  });
+
+  // Debug logging (after all hooks are defined)
+  console.log('[OrganisationsSection] organizationsLoading:', organizationsLoading, 'organizations:', organizations.length);
+  console.log('[OrganisationsSection] activityId:', activityId);
+  console.log('[OrganisationsSection] participatingOrganizations:', participatingOrganizations.length);
+
+  // Notify parent of participating organizations count changes
+  React.useEffect(() => {
+    if (onParticipatingOrganizationsChange) {
+      console.log('[OrganisationsSection] Notifying parent of count change:', participatingOrganizations.length);
+      onParticipatingOrganizationsChange(participatingOrganizations.length);
     }
+  }, [participatingOrganizations.length, onParticipatingOrganizationsChange]);
+
+  // Get organizations by role type
+  const extendingOrgs = getOrganizationsByRole('extending');
+  const implementingOrgs = getOrganizationsByRole('implementing');
+  const governmentOrgs = getOrganizationsByRole('government');
+
+  // Filter organizations that are not already participating in each role
+  const getAvailableOrganizations = (roleType: 'extending' | 'implementing' | 'government') => {
+    let filteredOrgs = organizations;
+    
+    // For government partners, only show organizations with government organization type
+    if (roleType === 'government') {
+      filteredOrgs = organizations.filter(org => 
+        org.organisation_type?.toLowerCase().includes('government') ||
+        org.organisation_type?.toLowerCase().includes('ministry') ||
+        org.organisation_type?.toLowerCase().includes('agency') ||
+        org.organisation_type?.toLowerCase().includes('public') ||
+        org.organisation_type?.toLowerCase().includes('state') ||
+        org.organisation_type?.toLowerCase().includes('local authority') ||
+        org.organisation_type?.toLowerCase().includes('municipal')
+      );
+    }
+    
+    return filteredOrgs.filter(org => !isOrganizationParticipating(org.id, roleType));
   };
 
-  // Fetch partners from API
-  useEffect(() => {
-    fetchPartners();
-  }, []);
-
-  const fetchPartners = async () => {
+  const handleAddOrganization = async (organizationId: string, roleType: 'extending' | 'implementing' | 'government') => {
     try {
-      console.log('[OrganisationsSection] Fetching partners...');
-      const res = await fetch("/api/partners");
-      console.log('[OrganisationsSection] Partners API response status:', res.status);
-      
-      if (res.ok) {
-        const data = await res.json();
-        console.log('[OrganisationsSection] Partners API response data:', data?.length || 0, 'partners');
-        
-        // Format all partners for extending/implementing dropdowns
-        const formattedPartners = data.map((partner: any) => ({
-          orgId: partner.id,
-          name: `${partner.name} ${partner.code || ''}`.trim()
-        }));
-        setAvailablePartners(formattedPartners);
-        
-        // Filter only government partners for government dropdown
-        const govPartners = data
-          .filter((partner: any) => partner.type === 'partner_government')
-          .map((partner: any) => ({
-            orgId: partner.id,
-            name: `${partner.name} ${partner.code || ''}`.trim()
-          }));
-        setGovernmentOnlyPartners(govPartners);
-      } else {
-        console.error('[OrganisationsSection] Partners API error:', res.status, res.statusText);
-        // Retry once after a delay
-        setTimeout(() => {
-          console.log('[OrganisationsSection] Retrying partners fetch...');
-          fetchPartners();
-        }, 1000);
-      }
+      console.log('[OrganisationsSection] Adding organization:', organizationId, 'role:', roleType);
+      console.log('[OrganisationsSection] Activity ID for add:', activityId);
+      const result = await addParticipatingOrganization(organizationId, roleType);
+      console.log('[OrganisationsSection] Add result:', result);
+      toast.success('Organization added successfully');
     } catch (error) {
-      console.error('[OrganisationsSection] Error fetching partners:', error);
-      toast.error("Failed to load partners - retrying...");
-      // Retry once after a delay
-      setTimeout(() => {
-        console.log('[OrganisationsSection] Retrying partners fetch after error...');
-        fetchPartners();
-      }, 2000);
-    } finally {
-      setLoading(false);
+      console.error('[OrganisationsSection] Error adding organization:', error);
+      toast.error('Failed to add organization');
     }
   };
 
-  const addPartner = (type: 'extending' | 'implementing' | 'government', partnerId: string) => {
-    const partner = availablePartners.find(p => p.orgId === partnerId);
-    if (!partner) return;
-
-    let currentPartners: Partner[] = [];
-    let fieldName = '';
-
-    switch (type) {
-      case 'extending':
-        currentPartners = [...extendingPartners];
-        fieldName = 'extendingPartners';
-        break;
-      case 'implementing':
-        currentPartners = [...implementingPartners];
-        fieldName = 'implementingPartners';
-        break;
-      case 'government':
-        currentPartners = [...governmentPartners];
-        fieldName = 'governmentPartners';
-        break;
+  const handleRemoveOrganization = async (organizationId: string, roleType: 'extending' | 'implementing' | 'government') => {
+    try {
+      await removeParticipatingOrganization(organizationId, roleType);
+      toast.success('Organization removed successfully');
+    } catch (error) {
+      toast.error('Failed to remove organization');
     }
-
-    // Check if partner already exists
-    if (currentPartners.some(p => p.orgId === partner.orgId)) {
-      toast.error("Partner already added");
-      return;
-    }
-
-    currentPartners.push(partner);
-    handleChange(fieldName, currentPartners);
   };
 
-  const removePartner = (type: 'extending' | 'implementing' | 'government', orgId: string) => {
-    let currentPartners: Partner[] = [];
-    let fieldName = '';
-
-    switch (type) {
-      case 'extending':
-        currentPartners = extendingPartners.filter(p => p.orgId !== orgId);
-        fieldName = 'extendingPartners';
-        break;
-      case 'implementing':
-        currentPartners = implementingPartners.filter(p => p.orgId !== orgId);
-        fieldName = 'implementingPartners';
-        break;
-      case 'government':
-        currentPartners = governmentPartners.filter(p => p.orgId !== orgId);
-        fieldName = 'governmentPartners';
-        break;
-    }
-
-    handleChange(fieldName, currentPartners);
-  };
-
-  const nominateAsContributor = (partner: Partner) => {
-    setNominationModal({open: true, partner});
+  const nominateAsContributor = (organization: Organization) => {
+    setNominationModal({open: true, organization});
   };
 
   const confirmNomination = () => {
-    if (!nominationModal.partner) return;
+    if (!nominationModal.organization) return;
     
-    const partner = nominationModal.partner;
+    const organization = nominationModal.organization;
     
     // Check if already a contributor
-    if (contributors.some(c => c.organizationId === partner.orgId)) {
+    if (contributors.some(c => c.organizationId === organization.id)) {
       toast.error("This organization is already a contributor");
-      setNominationModal({open: false, partner: null});
+      setNominationModal({open: false, organization: null});
       return;
     }
 
     const newContributor: ActivityContributor = {
       id: `contrib_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      organizationId: partner.orgId,
-      organizationName: partner.name,
+      organizationId: organization.id,
+      organizationName: organization.name,
       status: 'nominated',
       role: 'partner', // Default role for nominated contributors
       nominatedBy: 'current-user', // Would be actual user ID
@@ -202,18 +161,93 @@ export default function OrganisationsSection({
     };
 
     onContributorAdd(newContributor);
-    setNominationModal({open: false, partner: null});
-    toast.success(`${partner.name} has been nominated as a contributor`);
+    setNominationModal({open: false, organization: null});
+    toast.success(`${organization.name} has been nominated as a contributor`);
   };
 
   const isAlreadyContributor = (orgId: string) => {
     return contributors.some(c => c.organizationId === orgId);
   };
 
+  const renderOrganizationCard = (participatingOrg: any, roleType: 'extending' | 'implementing' | 'government') => {
+    const org = participatingOrg.organization;
+    if (!org) return null;
+
+    return (
+      <div key={participatingOrg.id} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+        {org.logo && (
+          <div className="flex-shrink-0">
+            <Image
+              src={org.logo}
+              alt={`${org.name} logo`}
+              width={32}
+              height={32}
+              className="rounded-sm object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-foreground truncate">
+              {org.name}
+            </span>
+                         {org.acronym && (
+               <span className="font-medium text-foreground">
+                 ({org.acronym})
+               </span>
+             )}
+          </div>
+          {(org.iati_org_id || org.country) && (
+            <div className="flex items-center gap-1 mt-0.5">
+              {org.iati_org_id && (
+                <span className="text-xs text-muted-foreground">
+                  {org.iati_org_id}
+                </span>
+              )}
+              {org.iati_org_id && org.country && (
+                <span className="text-xs text-muted-foreground">•</span>
+              )}
+              {org.country && (
+                <span className="text-xs text-muted-foreground">
+                  {org.country}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        {roleType === 'implementing' && canNominateContributors && !isAlreadyContributor(org.id) && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => nominateAsContributor(org)}
+            className="text-xs"
+          >
+            <UserPlus className="h-3 w-3 mr-1" />
+            Nominate as Data Contributor
+          </Button>
+        )}
+        {roleType === 'implementing' && isAlreadyContributor(org.id) && (
+          <span className="text-xs text-green-600 font-medium">✓ Data Contributor</span>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => handleRemoveOrganization(org.id, roleType)}
+          className="h-8 w-8"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  };
+
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-4xl space-y-8 bg-white border border-gray-200 rounded-lg p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">PARTICIPATING ORGANISATIONS</h2>
+        <h2 className="text-2xl font-bold text-gray-600">Participating Organisations</h2>
       </div>
 
       {/* Clarifying Alert */}
@@ -230,86 +264,46 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Extending Partners
-            {extendingPartnersAutosave.state.isSaving && (
-              <span className="text-xs text-blue-600">Saving...</span>
+            {extendingOrgs.length > 0 && (
+              <CheckCircle className="h-4 w-4 text-green-500" />
             )}
-            {extendingPartnersAutosave.state.lastSaved && !extendingPartnersAutosave.state.isSaving && (
-              <span className="text-xs text-green-600">Saved</span>
-            )}
-            {extendingPartnersAutosave.state.error && (
-              <span className="text-xs text-red-600">Save failed</span>
+            {participatingLoading && (
+              <span className="text-xs text-blue-600">Loading...</span>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {extendingPartnersAutosave.state.error && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                Failed to save extending partners: {extendingPartnersAutosave.state.error.message}
-              </AlertDescription>
-            </Alert>
-          )}
           <p className="text-gray-600">
             This is the government entity or development partner agency receiving funds from financing partner(s) for
             channeling to implementing partner(s).
           </p>
 
           <div className="space-y-3">
-            {extendingPartners.map((partner) => (
-              <div key={partner.orgId} className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-medium">{partner.name}</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removePartner('extending', partner.orgId)}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+            {extendingOrgs.map((participatingOrg) => 
+              renderOrganizationCard(participatingOrg, 'extending')
+            )}
 
-            {extendingPartners.length === 0 && (
+            {extendingOrgs.length === 0 && (
               <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
                 <p className="text-gray-500 text-center">No extending partners added</p>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Select
-              onValueChange={(value) => addPartner('extending', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select an extending partner" />
-              </SelectTrigger>
-              <SelectContent>
-                {availablePartners
-                  .filter(p => !extendingPartners.some(ep => ep.orgId === p.orgId))
-                  .map((partner) => (
-                    <SelectItem key={partner.orgId} value={partner.orgId}>
-                      {partner.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            variant="link"
-            className="text-blue-600 p-0"
-            onClick={() => {
-              // Trigger the select dropdown
-              const selectTrigger = document.querySelector('[data-state="closed"]') as HTMLElement;
-              selectTrigger?.click();
+          <OrganizationSearchableSelect
+            organizations={getAvailableOrganizations('extending')}
+            value=""
+            onValueChange={(organizationId) => {
+              console.log('[OrganisationsSection] Extending partner selected:', organizationId);
+              if (organizationId) {
+                handleAddOrganization(organizationId, 'extending');
+              }
             }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add another extending partner
-          </Button>
+            placeholder="Select an extending partner"
+            searchPlaceholder="Search extending partners..."
+            disabled={organizationsLoading}
+            className="w-full"
+          />
         </CardContent>
       </Card>
 
@@ -318,102 +312,46 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Implementing Partners
-            {implementingPartnersAutosave.state.isSaving && (
-              <span className="text-xs text-blue-600">Saving...</span>
+            {implementingOrgs.length > 0 && (
+              <CheckCircle className="h-4 w-4 text-green-500" />
             )}
-            {implementingPartnersAutosave.state.lastSaved && !implementingPartnersAutosave.state.isSaving && (
-              <span className="text-xs text-green-600">Saved</span>
-            )}
-            {implementingPartnersAutosave.state.error && (
-              <span className="text-xs text-red-600">Save failed</span>
+            {participatingLoading && (
+              <span className="text-xs text-blue-600">Loading...</span>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {implementingPartnersAutosave.state.error && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                Failed to save implementing partners: {implementingPartnersAutosave.state.error.message}
-              </AlertDescription>
-            </Alert>
-          )}
           <p className="text-gray-600">
             The implementer of the activity is the organisation(s) which is/are principally responsible for delivering this
             activity.
           </p>
 
           <div className="space-y-3">
-            {implementingPartners.map((partner) => (
-              <div key={partner.orgId} className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-medium">{partner.name}</p>
-                </div>
-                {canNominateContributors && !isAlreadyContributor(partner.orgId) && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => nominateAsContributor(partner)}
-                    className="text-xs"
-                  >
-                    <UserPlus className="h-3 w-3 mr-1" />
-                    Nominate as Data Contributor
-                  </Button>
-                )}
-                {isAlreadyContributor(partner.orgId) && (
-                  <span className="text-xs text-green-600 font-medium">✓ Data Contributor</span>
-                )}
-                <ChevronDown className="h-4 w-4 text-gray-400" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removePartner('implementing', partner.orgId)}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+            {implementingOrgs.map((participatingOrg) => 
+              renderOrganizationCard(participatingOrg, 'implementing')
+            )}
 
-            {implementingPartners.length === 0 && (
+            {implementingOrgs.length === 0 && (
               <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
                 <p className="text-gray-500 text-center">No implementing partners added</p>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Select
-              onValueChange={(value) => addPartner('implementing', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select an implementing partner" />
-              </SelectTrigger>
-              <SelectContent>
-                {availablePartners
-                  .filter(p => !implementingPartners.some(ip => ip.orgId === p.orgId))
-                  .map((partner) => (
-                    <SelectItem key={partner.orgId} value={partner.orgId}>
-                      {partner.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            variant="link"
-            className="text-blue-600 p-0"
-            onClick={() => {
-              // Trigger the select dropdown
-              const selectTriggers = document.querySelectorAll('[data-state="closed"]');
-              const targetTrigger = selectTriggers[1] as HTMLElement;
-              targetTrigger?.click();
+          <OrganizationSearchableSelect
+            organizations={getAvailableOrganizations('implementing')}
+            value=""
+            onValueChange={(organizationId) => {
+              console.log('[OrganisationsSection] Implementing partner selected:', organizationId);
+              if (organizationId) {
+                handleAddOrganization(organizationId, 'implementing');
+              }
             }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add another implementing partner
-          </Button>
+            placeholder="Select an implementing partner"
+            searchPlaceholder="Search implementing partners..."
+            disabled={organizationsLoading}
+            className="w-full"
+          />
         </CardContent>
       </Card>
 
@@ -422,25 +360,15 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Government Partners
-            {governmentPartnersAutosave.state.isSaving && (
-              <span className="text-xs text-blue-600">Saving...</span>
+            {governmentOrgs.length > 0 && (
+              <CheckCircle className="h-4 w-4 text-green-500" />
             )}
-            {governmentPartnersAutosave.state.lastSaved && !governmentPartnersAutosave.state.isSaving && (
-              <span className="text-xs text-green-600">Saved</span>
-            )}
-            {governmentPartnersAutosave.state.error && (
-              <span className="text-xs text-red-600">Save failed</span>
+            {participatingLoading && (
+              <span className="text-xs text-blue-600">Loading...</span>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {governmentPartnersAutosave.state.error && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                Failed to save government partners: {governmentPartnersAutosave.state.error.message}
-              </AlertDescription>
-            </Alert>
-          )}
           <p className="text-gray-600">
             The government entity or entities responsible for oversight or maintenance of the activity. Often this will be
             the government entity with which a MoU or similar agreement is signed. In many cases, the MoU will be
@@ -448,73 +376,41 @@ export default function OrganisationsSection({
           </p>
 
           <div className="space-y-3">
-            {governmentPartners.map((partner) => (
-              <div key={partner.orgId} className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-medium">{partner.name}</p>
-                </div>
-                <ChevronDown className="h-4 w-4 text-gray-400" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removePartner('government', partner.orgId)}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+            {governmentOrgs.map((participatingOrg) => 
+              renderOrganizationCard(participatingOrg, 'government')
+            )}
 
-            {governmentPartners.length === 0 && (
+            {governmentOrgs.length === 0 && (
               <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
                 <p className="text-gray-500 text-center">No government partners added</p>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Select
-              onValueChange={(value) => addPartner('government', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select a government partner" />
-              </SelectTrigger>
-              <SelectContent>
-                {governmentOnlyPartners
-                  .filter(p => !governmentPartners.some(gp => gp.orgId === p.orgId))
-                  .map((partner) => (
-                    <SelectItem key={partner.orgId} value={partner.orgId}>
-                      {partner.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            variant="link"
-            className="text-blue-600 p-0"
-            onClick={() => {
-              // Trigger the select dropdown
-              const selectTriggers = document.querySelectorAll('[data-state="closed"]');
-              const targetTrigger = selectTriggers[2] as HTMLElement;
-              targetTrigger?.click();
+          <OrganizationSearchableSelect
+            organizations={getAvailableOrganizations('government')}
+            value=""
+            onValueChange={(organizationId) => {
+              console.log('[OrganisationsSection] Government partner selected:', organizationId);
+              if (organizationId) {
+                handleAddOrganization(organizationId, 'government');
+              }
             }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add another government partner
-          </Button>
+            placeholder="Select a government partner"
+            searchPlaceholder="Search government partners..."
+            disabled={organizationsLoading}
+            className="w-full"
+          />
         </CardContent>
       </Card>
 
       {/* Nomination Confirmation Modal */}
-      <Dialog open={nominationModal.open} onOpenChange={(open) => setNominationModal({open, partner: nominationModal.partner})}>
+      <Dialog open={nominationModal.open} onOpenChange={(open) => setNominationModal({open, organization: nominationModal.organization})}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nominate as Data Contributor</DialogTitle>
             <DialogDescription>
-              Do you want to allow <strong>{nominationModal.partner?.name}</strong> to contribute transactions, results, or implementation data?
+              Do you want to allow <strong>{nominationModal.organization?.name}</strong> to contribute transactions, results, or implementation data?
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -529,7 +425,7 @@ export default function OrganisationsSection({
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => setNominationModal({open: false, partner: null})}
+              onClick={() => setNominationModal({open: false, organization: null})}
             >
               Cancel
             </Button>

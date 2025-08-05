@@ -314,7 +314,7 @@ export function SubnationalBreakdownTab({
     }
     
     const remaining = 100 - totalPercentage
-    return { isValid: false, message: `Total: ${totalPercentage.toFixed(1)}% — Add ${remaining.toFixed(1)}% more to reach 100%`, variant: "warning" as const }
+    return { isValid: false, message: `Total: ${totalPercentage.toFixed(1)}% — Add ${remaining.toFixed(1)}% more to reach 100%`, variant: "default" as const }
   }
 
   const validationStatus = getValidationStatus()
@@ -428,11 +428,11 @@ export function SubnationalBreakdownTab({
                         onChange={(e) => handlePercentageChange(region.name, e.target.value)}
                         onBlur={(e) => handlePercentageBlur(region.name, e.target.value)}
                         onFocus={(e) => {
-                          e.target.select()
+                          (e.target as HTMLInputElement).select()
                           // Ensure selection works on mobile/touch devices
-                          setTimeout(() => e.target.select(), 10)
+                          setTimeout(() => (e.target as HTMLInputElement).select(), 10)
                         }}
-                        onClick={(e) => e.target.select()}
+                        onClick={(e) => (e.target as HTMLInputElement).select()}
                         placeholder="0.00"
                         className={`w-32 text-right text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                           isNationwide ? 'bg-gray-100 text-gray-600' : ''

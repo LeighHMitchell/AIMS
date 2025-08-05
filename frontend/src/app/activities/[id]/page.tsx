@@ -1289,8 +1289,8 @@ export default function ActivityDetailPage() {
                 )}
                 
                 <ContributorsSection
-                  contributors={activity.contributors || []}
-                  onChange={updateContributors}
+                  contributors={[]}
+                  onChange={() => {}}
                   permissions={permissions}
                   activityId={activity.id}
                 />

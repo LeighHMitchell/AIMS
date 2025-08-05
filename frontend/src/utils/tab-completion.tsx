@@ -366,6 +366,50 @@ export function checkPolicyMarkersTabCompletion(policyMarkers: any[]): TabComple
   }
 }
 
+/**
+ * Check if the Organizations tab is complete based on participating organizations
+ */
+export function checkOrganizationsTabCompletion(participatingOrganizations: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  // Check if we have at least one participating organization
+  if (participatingOrganizations && participatingOrganizations.length > 0) {
+    completedFields.push('participating_organizations')
+  } else {
+    missingFields.push('participating_organizations')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false, // Organizations don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
+/**
+ * Check if the Contributors tab is complete based on nominated contributors
+ */
+export function checkContributorsTabCompletion(contributors: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  // Check if we have at least one contributor
+  if (contributors && contributors.length > 0) {
+    completedFields.push('contributors')
+  } else {
+    missingFields.push('contributors')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false, // Contributors don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
 
 
 export function getTabCompletionStatus(
@@ -393,6 +437,10 @@ export function getTabCompletionStatus(
       return checkWorkingGroupsTabCompletion(data);
     case 'policy_markers':
       return checkPolicyMarkersTabCompletion(data);
+    case 'organisations':
+      return checkOrganizationsTabCompletion(data);
+    case 'contributors':
+      return checkContributorsTabCompletion(data);
     // Add other tabs here as needed
     default:
       return null;

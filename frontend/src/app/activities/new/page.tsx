@@ -765,7 +765,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, setIatiSyncState, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, setIatiSyncState, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount }: any) {
   switch (section) {
     case "general":
       return <GeneralSection 
@@ -825,13 +825,16 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         onChange={setContributors} 
         permissions={permissions}
         activityId={general.id}
+        onContributorsChange={setContributorsCount}
       />;
     case "organisations":
       return <OrganisationsSection
+        activityId={general.id}
         extendingPartners={extendingPartners}
         implementingPartners={implementingPartners}
         governmentPartners={governmentPartners}
         contributors={contributors}
+        onParticipatingOrganizationsChange={setParticipatingOrgsCount}
         onContributorAdd={(contributor) => {
           setContributors((prev: ActivityContributor[]) => [...prev, contributor]);
         }}
@@ -848,7 +851,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
               break;
           }
         }}
-        activityId={general.id}
       />;
     case "locations":
       return <CombinedLocationsTab 
@@ -1038,6 +1040,68 @@ function NewActivityPageContent() {
   const [tags, setTags] = useState<any[]>([]);
   const [workingGroups, setWorkingGroups] = useState<any[]>([]);
   const [policyMarkers, setPolicyMarkers] = useState<any[]>([]);
+  const [participatingOrgsCount, setParticipatingOrgsCount] = useState<number>(0);
+  const [contributorsCount, setContributorsCount] = useState<number>(0);
+  
+  // Debug the participatingOrgsCount changes
+  React.useEffect(() => {
+    console.log('[NewActivityPage] participatingOrgsCount changed to:', participatingOrgsCount);
+  }, [participatingOrgsCount]);
+
+  // Debug the contributorsCount changes
+  React.useEffect(() => {
+    console.log('[NewActivityPage] contributorsCount changed to:', contributorsCount);
+  }, [contributorsCount]);
+
+  // Fetch participating organizations count on page load for tab completion
+  React.useEffect(() => {
+    const fetchParticipatingOrgsCount = async () => {
+      if (!general.id) return;
+      
+      try {
+        console.log('[NewActivityPage] Fetching participating orgs count for tab completion...');
+        const response = await fetch(`/api/activities/${general.id}/participating-organizations`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const count = data.length || 0;
+          console.log('[NewActivityPage] Found', count, 'participating organizations for tab completion');
+          setParticipatingOrgsCount(count);
+        } else {
+          console.log('[NewActivityPage] Failed to fetch participating orgs for tab completion');
+        }
+      } catch (error) {
+        console.error('[NewActivityPage] Error fetching participating orgs for tab completion:', error);
+      }
+    };
+
+    fetchParticipatingOrgsCount();
+  }, [general.id]);
+
+  // Fetch contributors count on page load for tab completion
+  React.useEffect(() => {
+    const fetchContributorsCount = async () => {
+      if (!general.id) return;
+      
+      try {
+        console.log('[NewActivityPage] Fetching contributors count for tab completion...');
+        const response = await fetch(`/api/activities/${general.id}/contributors`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const count = data.length || 0;
+          console.log('[NewActivityPage] Found', count, 'contributors for tab completion');
+          setContributorsCount(count);
+        } else {
+          console.log('[NewActivityPage] Failed to fetch contributors for tab completion');
+        }
+      } catch (error) {
+        console.error('[NewActivityPage] Error fetching contributors for tab completion:', error);
+      }
+    };
+
+    fetchContributorsCount();
+  }, [general.id]);
   const [specificLocations, setSpecificLocations] = useState<any[]>([]);
   const [coverageAreas, setCoverageAreas] = useState<any[]>([]);
   const [activityScope, setActivityScope] = useState<string>("national");
@@ -1430,7 +1494,33 @@ function NewActivityPageContent() {
     // Policy Markers tab: use the comprehensive policy markers completion check
     const policyMarkersCompletion = getTabCompletionStatus('policy_markers', policyMarkers);
 
-
+    // Organizations tab: check if we have participating organizations
+    // Use the actual participating organizations count from the OrganisationsSection
+    console.log('[TabCompletion] participatingOrgsCount:', participatingOrgsCount);
+    
+    // Also check the old partner arrays as a fallback for debugging
+    const legacyOrgCount = (extendingPartners?.length || 0) + (implementingPartners?.length || 0) + (governmentPartners?.length || 0);
+    console.log('[TabCompletion] Legacy org count (extending + implementing + government):', legacyOrgCount);
+    
+    const organizationsCompletion = getTabCompletionStatus('organisations', 
+      // Create a mock array with the actual count from the participating organizations
+      Array(participatingOrgsCount).fill({})
+    );
+    console.log('[TabCompletion] organizationsCompletion:', organizationsCompletion);
+    
+    // Contributors tab: check if we have contributors
+    console.log('[TabCompletion] contributorsCount:', contributorsCount);
+    const contributorsCompletion = getTabCompletionStatus('contributors', 
+      // Create a mock array with the actual count from the contributors
+      Array(contributorsCount).fill({})
+    );
+    console.log('[TabCompletion] contributorsCompletion:', contributorsCompletion);
+    
+    // TEMPORARY: Force completion for testing - remove this later
+    // if (participatingOrgsCount === 0) {
+    //   console.log('[TabCompletion] TESTING: Forcing organizations completion to true');
+    //   organizationsCompletion = { isComplete: true, isInProgress: false, completedFields: ['test'], missingFields: [] };
+    // }
 
     // IATI Sync tab completion logic
     const iatiSyncComplete = iatiSyncState.isEnabled && iatiSyncState.syncStatus === 'live';
@@ -1465,6 +1555,14 @@ function NewActivityPageContent() {
         isComplete: policyMarkersCompletion.isComplete,
         isInProgress: policyMarkersCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
+      organisations: organizationsCompletion ? { 
+        isComplete: organizationsCompletion.isComplete,
+        isInProgress: organizationsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      contributors: contributorsCompletion ? { 
+        isComplete: contributorsCompletion.isComplete,
+        isInProgress: contributorsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
       finances: { isComplete: financesComplete, isInProgress: false },
       finances_defaults: financesDefaultsCompletion ? { 
         isComplete: financesDefaultsCompletion.isComplete,
@@ -1474,7 +1572,7 @@ function NewActivityPageContent() {
       "planned-disbursements": { isComplete: plannedDisbursementsComplete, isInProgress: false },
       sdg: { isComplete: sdgComplete, isInProgress: false }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns]);
+  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, contributorsCount]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -2099,6 +2197,8 @@ function NewActivityPageContent() {
                     setPlannedDisbursements={setPlannedDisbursements}
                     setIatiSyncState={setIatiSyncState}
                     setSubnationalBreakdowns={setSubnationalBreakdowns}
+                    setParticipatingOrgsCount={setParticipatingOrgsCount}
+                    setContributorsCount={setContributorsCount}
                   />
                 </div>
               )}

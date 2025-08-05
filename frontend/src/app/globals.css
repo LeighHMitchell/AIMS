@@ -5,8 +5,7 @@
 /* Leaflet CSS for maps */
 @import 'leaflet/dist/leaflet.css';
 
-/* React DatePicker CSS */
-@import 'react-datepicker/dist/react-datepicker.css';
+/* React DatePicker CSS - imported in components as needed */
 
 /* Debug: Test if CSS is loading */
 .tailwind-test {

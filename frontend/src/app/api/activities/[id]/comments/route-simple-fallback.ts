@@ -88,7 +88,7 @@ export async function GET(
       return NextResponse.json(transformedComments);
       
     } catch (tableError) {
-      console.log('[AIMS Comments API FALLBACK] Table access error, returning empty comments:', tableError.message);
+      console.log('[AIMS Comments API FALLBACK] Table access error, returning empty comments:', tableError instanceof Error ? tableError.message : String(tableError));
       return NextResponse.json([]);
     }
     
@@ -184,12 +184,12 @@ export async function POST(
         }
         
       } catch (insertError) {
-        console.log('[AIMS Comments API FALLBACK] Insert failed:', insertError.message);
+        console.log('[AIMS Comments API FALLBACK] Insert failed:', insertError instanceof Error ? insertError.message : String(insertError));
         return NextResponse.json({ error: 'Comments feature not available - database setup required' }, { status: 503 });
       }
       
     } catch (tableError) {
-      console.log('[AIMS Comments API FALLBACK] Comments table not available:', tableError.message);
+      console.log('[AIMS Comments API FALLBACK] Comments table not available:', tableError instanceof Error ? tableError.message : String(tableError));
       return NextResponse.json({ error: 'Comments feature not available - please set up database tables' }, { status: 503 });
     }
     

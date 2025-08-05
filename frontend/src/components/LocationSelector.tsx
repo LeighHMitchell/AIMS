@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
 // Import gesture handling plugin and CSS
-import 'leaflet-gesture-handling/dist/leaflet-gesture-handling.css';
+// Note: Gesture handling CSS is not needed - the plugin works without it
 
 // Dynamic import for map components to avoid SSR issues
 const MapContainer = dynamic(
@@ -707,19 +707,19 @@ export default function LocationSelector({
                         }
                         
                         // Add event listeners to test interaction
-                        leafletMap.on('mousedown', function(e) {
+                        leafletMap.on('mousedown', function(e: any) {
                           console.log('🖱️ Mouse down detected');
                         });
                         
-                        leafletMap.on('wheel', function(e) {
+                        leafletMap.on('wheel', function(e: any) {
                           console.log('🎡 Wheel event detected');
                         });
                         
-                        leafletMap.on('drag', function(e) {
+                        leafletMap.on('drag', function(e: any) {
                           console.log('🚀 Map dragging!');
                         });
                         
-                        leafletMap.on('zoom', function(e) {
+                        leafletMap.on('zoom', function(e: any) {
                           console.log('🔍 Map zooming!');
                         });
                         

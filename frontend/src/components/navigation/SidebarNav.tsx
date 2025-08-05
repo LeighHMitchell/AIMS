@@ -15,7 +15,9 @@ import {
   CreditCard,
   PieChart,
   UsersRound,
-  Stethoscope
+  Stethoscope,
+  Calendar,
+  Briefcase
 } from "lucide-react"
 
 interface SidebarNavProps {
@@ -30,6 +32,18 @@ const getNavItems = (userRole?: string, canManageUsers?: boolean) => [
     href: "/dashboard",
     label: "Dashboard",
     icon: <Home className="h-4 w-4" strokeWidth={2} />,
+    show: true
+  },
+  {
+    href: "/my-portfolio",
+    label: "My Portfolio",
+    icon: <Briefcase className="h-4 w-4" strokeWidth={2} />,
+    show: true
+  },
+  {
+    href: "/calendar",
+    label: "Calendar",
+    icon: <Calendar className="h-4 w-4" strokeWidth={2} />,
     show: true
   },
   {
@@ -99,6 +113,12 @@ const getNavItems = (userRole?: string, canManageUsers?: boolean) => [
     show: userRole === 'gov_partner_tier_1' || userRole === 'super_user' || userRole === 'admin'
   },
   {
+    href: "/admin/calendar-events",
+    label: "Calendar Management",
+    icon: <Calendar className="h-4 w-4" strokeWidth={2} />,
+    show: userRole === 'admin'
+  },
+  {
     href: "/admin/users",
     label: "User Management",
     icon: <Users className="h-4 w-4" strokeWidth={2} />,
@@ -119,7 +139,7 @@ export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavPr
     if (isLoading) {
       // During loading, show all items that would be visible to any user
       // Hide only admin-specific items
-      return item.href !== '/admin/users' && item.href !== '/validations' && item.href !== '/data-clinic';
+      return !item.href.startsWith('/admin/') && item.href !== '/validations' && item.href !== '/data-clinic';
     }
     return item.show;
   };

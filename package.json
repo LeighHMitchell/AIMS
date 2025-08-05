@@ -9,6 +9,11 @@
     "lint": "cd frontend && npm run lint"
   },
   "dependencies": {
+    "@fullcalendar/daygrid": "^6.1.18",
+    "@fullcalendar/interaction": "^6.1.18",
+    "@fullcalendar/list": "^6.1.18",
+    "@fullcalendar/react": "^6.1.18",
+    "@fullcalendar/timegrid": "^6.1.18",
     "@radix-ui/react-label": "^2.1.7",
     "date-fns": "^4.1.0",
     "leaflet": "^1.9.4",

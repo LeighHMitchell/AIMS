@@ -13,8 +13,7 @@ import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 // Note: Leaflet is imported dynamically to avoid SSR issues
 
-// Import gesture handling plugin and CSS
-import 'leaflet-gesture-handling/dist/leaflet-gesture-handling.css';
+// Note: Gesture handling CSS is not needed - the plugin works without it
 
 // Dynamic import for map components to avoid SSR issues
 const MapContainer = dynamic(
@@ -680,6 +679,7 @@ export default function SimpleMapSelector({
     const tolerance = 0.0001;
     const existingLocationWithSameCoords = locations.find(loc => 
       loc.id !== editingLocation && // Exclude current location when editing
+      loc.latitude && loc.longitude && // Ensure coordinates exist
       Math.abs(loc.latitude - selectedLocation.latitude!) < tolerance &&
       Math.abs(loc.longitude - selectedLocation.longitude!) < tolerance
     );
@@ -707,11 +707,11 @@ export default function SimpleMapSelector({
         loc.id === editingLocation 
           ? {
               ...loc,
-              location_name: selectedLocation.location_name,
+              location_name: selectedLocation.location_name || '',
               location_type: selectedLocation.location_type || loc.location_type,
               site_type: selectedLocation.site_type || loc.site_type,
-              latitude: selectedLocation.latitude,
-              longitude: selectedLocation.longitude,
+              latitude: selectedLocation.latitude || 0,
+              longitude: selectedLocation.longitude || 0,
               address: selectedLocation.address || '',
               description: selectedLocation.description || '',
               state_region_code: selectedLocation.state_region_code,
@@ -730,11 +730,11 @@ export default function SimpleMapSelector({
       // Add new location
       const newLocation: Location = {
         id: Date.now().toString(),
-        location_name: selectedLocation.location_name,
+        location_name: selectedLocation.location_name || '',
         location_type: selectedLocation.location_type || 'site',
         site_type: selectedLocation.site_type || 'project_site',
-        latitude: selectedLocation.latitude,
-        longitude: selectedLocation.longitude,
+        latitude: selectedLocation.latitude || 0,
+        longitude: selectedLocation.longitude || 0,
         address: selectedLocation.address || '',
         description: selectedLocation.description || '',
         state_region_code: selectedLocation.state_region_code,
@@ -766,6 +766,8 @@ export default function SimpleMapSelector({
 
     locations.forEach(location => {
       const isDuplicate = uniqueLocations.some(unique => 
+        unique.latitude !== undefined && location.latitude !== undefined &&
+        unique.longitude !== undefined && location.longitude !== undefined &&
         Math.abs(unique.latitude - location.latitude) < tolerance &&
         Math.abs(unique.longitude - location.longitude) < tolerance
       );
@@ -994,7 +996,6 @@ export default function SimpleMapSelector({
                 doubleClickZoom={true}
                 boxZoom={true}
                 keyboard={true}
-                tap={true}
                 zoomControl={true}
                 attributionControl={true}
                 // Don't use gestureHandling for now to debug
@@ -1048,16 +1049,10 @@ export default function SimpleMapSelector({
                 <TileLayer
                   attribution={MAP_LAYERS[mapLayer].attribution}
                   url={MAP_LAYERS[mapLayer].url}
-                  // Disable fade animations to prevent grey flashing
-                  fadeAnimation={false}
-                  // Increase tile loading buffer for smoother experience
                   keepBuffer={2}
-                  // Update tiles more frequently during drag
                   updateWhenIdle={false}
                   updateWhenZooming={true}
-                  // Set tile size for better performance
                   tileSize={256}
-                  // Higher zoom for better quality
                   maxZoom={19}
                   minZoom={1}
                 />
@@ -1070,18 +1065,20 @@ export default function SimpleMapSelector({
                   const processed = new Set<string>();
                   
                   locations.forEach(location => {
-                    if (processed.has(location.id)) return;
+                    if (!location.id || processed.has(location.id)) return;
                     
                     const duplicates = locations.filter(loc => 
+                      loc.latitude !== undefined && location.latitude !== undefined &&
+                      loc.longitude !== undefined && location.longitude !== undefined &&
                       Math.abs(loc.latitude - location.latitude) < tolerance &&
                       Math.abs(loc.longitude - location.longitude) < tolerance
                     );
                     
                     if (duplicates.length > 1) {
                       duplicateGroups.push(duplicates);
-                      duplicates.forEach(dup => processed.add(dup.id));
+                      duplicates.forEach(dup => dup.id && processed.add(dup.id));
                     } else {
-                      processed.add(location.id);
+                      location.id && processed.add(location.id);
                     }
                   });
                   
@@ -1202,9 +1199,9 @@ export default function SimpleMapSelector({
               )}
               {/* Debug: Show coordinate ranges */}
               {locations?.length > 1 && (() => {
-                const validLocs = locations.filter(l => l.latitude && l.longitude);
-                const lats = validLocs.map(l => l.latitude);
-                const lngs = validLocs.map(l => l.longitude);
+                const validLocs = locations.filter(l => l.latitude !== undefined && l.longitude !== undefined);
+                const lats = validLocs.map(l => l.latitude!);
+                const lngs = validLocs.map(l => l.longitude!);
                 return (
                   <div className="mt-2 pt-2 border-t border-gray-300">
                     <div className="font-semibold">Debug Info:</div>
