@@ -319,7 +319,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                       <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">{activity.partner_id}</span>
                     </div>
                     <button
-                      onClick={(e) => handleCopy(activity.partner_id, e)}
+                      onClick={(e) => handleCopy(activity.partner_id!, e)}
                       className="opacity-0 group-hover/id:opacity-100 transition-opacity duration-200 hover:text-gray-700 p-1 rounded hover:bg-gray-100"
                       title="Copy Activity ID"
                     >
