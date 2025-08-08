@@ -652,7 +652,7 @@ export function EnhancedActivityComments({
             </div>
             
             {allowContextSwitch && (
-              <Select value={selectedContextSection} onValueChange={setSelectedContextSection}>
+              <Select value={selectedContextSection} onValueChange={(value) => setSelectedContextSection(value)}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="All sections" />
                 </SelectTrigger>
@@ -666,7 +666,7 @@ export function EnhancedActivityComments({
               </Select>
             )}
             
-            <Select value={filterType} onValueChange={setFilterType}>
+            <Select value={filterType} onValueChange={(value) => setFilterType(value as 'all' | 'question' | 'feedback')}>
               <SelectTrigger className="w-36">
                 <SelectValue />
               </SelectTrigger>
@@ -677,7 +677,7 @@ export function EnhancedActivityComments({
               </SelectContent>
             </Select>
             
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'newest' | 'oldest')}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -690,7 +690,7 @@ export function EnhancedActivityComments({
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'open' | 'resolved' | 'archived')}>
           <TabsList>
             <TabsTrigger value="open">
               Open ({comments.filter(c => c.status !== 'Resolved' && !c.isArchived).length})
@@ -710,7 +710,7 @@ export function EnhancedActivityComments({
                 <CardContent className="pt-6">
                   <div className="space-y-4">
                     <div className="flex gap-2">
-                      <Select value={commentType} onValueChange={setCommentType}>
+                      <Select value={commentType} onValueChange={(value) => setCommentType(value as 'Question' | 'Feedback')}>
                         <SelectTrigger className="w-32">
                           <SelectValue />
                         </SelectTrigger>
@@ -1162,7 +1162,7 @@ function CommentCard({
           {replyingTo === comment.id && (
             <div className="ml-6 border-l-2 border-blue-200 pl-4 space-y-3">
               <div className="flex gap-2">
-                <Select value={replyType} onValueChange={setReplyType}>
+                <Select value={replyType} onValueChange={(value) => setReplyType(value as 'Question' | 'Feedback')}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
