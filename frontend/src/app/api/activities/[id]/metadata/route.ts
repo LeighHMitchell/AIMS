@@ -221,7 +221,7 @@ export async function GET(
     };
 
     // Transform logs data
-    const logs: ActivityLog[] = (logsData || []).map(log => ({
+    const logs: ActivityLog[] = (logsData || []).map((log: any) => ({
       id: log.id,
       action: log.action,
       user_id: log.user_id,
@@ -232,11 +232,11 @@ export async function GET(
     }));
 
     // Process contacts data for focal points
-    const governmentFocalPoints = contactsData?.filter(contact => 
+    const governmentFocalPoints = contactsData?.filter((contact: any) => 
       contact.type === 'government_focal_point' || contact.type === 'government' || contact.type === 'recipient_government'
     ) || [];
     
-    const developmentPartnerFocalPoints = contactsData?.filter(contact => 
+    const developmentPartnerFocalPoints = contactsData?.filter((contact: any) => 
       contact.type === 'development_partner_focal_point' || contact.type === 'development_partner' || contact.type === 'extending_organisation'
     ) || [];
 
