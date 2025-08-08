@@ -612,11 +612,9 @@ export function EnhancedActivityComments({
             
             {notifications.length > 0 && (
               <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Bell className="h-4 w-4" />
-                    {unreadCount > 0 && <Badge variant="destructive" className="ml-1">{unreadCount}</Badge>}
-                  </Button>
+                <PopoverTrigger className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50">
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && <Badge variant="destructive" className="ml-1">{unreadCount}</Badge>}
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
                   <div className="space-y-2">
