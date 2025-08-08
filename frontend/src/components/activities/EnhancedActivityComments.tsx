@@ -271,8 +271,8 @@ export function EnhancedActivityComments({
       activityId: comment.activity_id || comment.activityId || '',
       author: {
         userId: comment.user_id || comment.userId || '',
-        name: comment.user_name || comment.userName || 'Unknown User',
-        role: comment.user_role || comment.userRole || 'user'
+        name: comment.author.name || comment.userName || 'Unknown User',
+        role: comment.author.role || comment.userRole || 'user'
       },
       message: comment.message || comment.content || '',
       type: comment.type || 'Feedback' as 'Feedback' | 'Question',
@@ -285,9 +285,9 @@ export function EnhancedActivityComments({
                    (typeof comment.attachments === 'string' ? JSON.parse(comment.attachments || '[]') : []),
       isRead: typeof comment.is_read === 'object' ? comment.is_read :
                (typeof comment.is_read === 'string' ? JSON.parse(comment.is_read || '{}') : {}),
-      resolvedBy: comment.resolved_by_name ? {
+      resolvedBy: comment.resolvedBy?.name ? {
         userId: comment.resolved_by_id || '',
-        name: comment.resolved_by_name,
+        name: comment.resolvedBy?.name,
         role: 'user'
       } : undefined,
       resolvedAt: comment.resolved_at,
@@ -300,13 +300,13 @@ export function EnhancedActivityComments({
       } : undefined,
       archivedAt: comment.archived_at,
       archiveReason: comment.archiveReason,
-      createdAt: comment.created_at || comment.createdAt || new Date().toISOString(),
+      createdAt: comment.createdAt || comment.createdAt || new Date().toISOString(),
       replies: (comment.replies || []).map((reply: any) => ({
         id: reply.id,
         author: {
           userId: reply.user_id || reply.userId || '',
-          name: reply.user_name || reply.userName || 'Unknown User',
-          role: reply.user_role || reply.userRole || 'user'
+          name: reply.author.name || reply.userName || 'Unknown User',
+          role: reply.author.role || reply.userRole || 'user'
         },
         message: reply.message || reply.content || '',
         type: reply.type || 'Feedback' as 'Feedback' | 'Question',
@@ -316,7 +316,7 @@ export function EnhancedActivityComments({
                      (typeof reply.attachments === 'string' ? JSON.parse(reply.attachments || '[]') : []),
         isRead: typeof reply.is_read === 'object' ? reply.is_read :
                  (typeof reply.is_read === 'string' ? JSON.parse(reply.is_read || '{}') : {}),
-        createdAt: reply.created_at || reply.createdAt || new Date().toISOString()
+        createdAt: reply.createdAt || reply.createdAt || new Date().toISOString()
       }))
     };
   };
@@ -568,8 +568,8 @@ export function EnhancedActivityComments({
 
   const sortComments = (comments: ActivityComment[]) => {
     return [...comments].sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
       return sortBy === 'newest' ? dateB - dateA : dateA - dateB;
     });
   };
@@ -626,7 +626,7 @@ export function EnhancedActivityComments({
                         <p className="font-medium">{notification.title}</p>
                         <p className="text-gray-600">{notification.message}</p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                         </p>
                       </div>
                     ))}
@@ -971,10 +971,10 @@ function CommentCard({
               </div>
               
               <div className="text-sm">
-                <span className="font-medium">{comment.user_name}</span>
-                <span className="text-gray-500 ml-2">({comment.user_role})</span>
+                <span className="font-medium">{comment.author.name}</span>
+                <span className="text-gray-500 ml-2">({comment.author.role})</span>
                 <span className="text-gray-500 ml-2">
-                  {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                 </span>
               </div>
             </div>
@@ -1018,7 +1018,7 @@ function CommentCard({
               )}
               
               {/* Delete button - only show for comment author or admin */}
-              {user && (comment.user_name === user.name || ['super_user', 'admin'].includes(user.role)) && (
+              {user && (comment.author.name === user.name || ['super_user', 'admin'].includes(user.role)) && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -1115,7 +1115,7 @@ function CommentCard({
             <div className="bg-green-50 border border-green-200 rounded p-3">
               <div className="flex items-center gap-2 text-green-800 font-medium text-sm">
                 <CheckCircle className="h-4 w-4" />
-                Resolved by {comment.resolved_by_name}
+                Resolved by {comment.resolvedBy?.name}
               </div>
               <p className="text-green-700 text-sm mt-1">{comment.resolution_note}</p>
             </div>
@@ -1222,10 +1222,10 @@ function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
           <Badge variant={reply.type === 'Question' ? 'default' : 'secondary'} className="text-xs">
             {reply.type}
           </Badge>
-          <span className="text-sm font-medium">{reply.user_name}</span>
-          <span className="text-xs text-gray-500">({reply.user_role})</span>
+          <span className="text-sm font-medium">{reply.author.name}</span>
+          <span className="text-xs text-gray-500">({reply.author.role})</span>
           <span className="text-xs text-gray-500">
-            {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+            {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
           </span>
         </div>
       </div>
