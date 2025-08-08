@@ -166,7 +166,7 @@ export async function GET(
     let totalDisbursed = 0;
 
     if (transactionsData) {
-      transactionsData.forEach(transaction => {
+      transactionsData.forEach((transaction: any) => {
         const value = transaction.value || 0;
         switch (transaction.transaction_type) {
           case '1': // Incoming Funds

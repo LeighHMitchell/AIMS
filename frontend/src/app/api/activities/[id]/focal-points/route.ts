@@ -49,8 +49,8 @@ export async function GET(
     }
 
     // Group by type
-    const governmentFocalPoints = assignments?.filter(a => a.type === 'government_focal_point') || [];
-    const developmentPartnerFocalPoints = assignments?.filter(a => a.type === 'development_partner_focal_point') || [];
+    const governmentFocalPoints = assignments?.filter((a: any) => a.type === 'government_focal_point') || [];
+    const developmentPartnerFocalPoints = assignments?.filter((a: any) => a.type === 'development_partner_focal_point') || [];
 
     return NextResponse.json({
       government_focal_points: governmentFocalPoints,
