@@ -292,14 +292,14 @@ export function EnhancedActivityComments({
       } : undefined,
       resolvedAt: comment.resolved_at,
       resolutionNote: comment.resolution_note,
-      isArchived: comment.is_archived || false,
-      archivedBy: comment.archived_by_name ? {
+      isArchived: comment.isArchived || false,
+      archivedBy: comment.archivedBy?.name ? {
         userId: comment.archived_by_id || '',
-        name: comment.archived_by_name,
+        name: comment.archivedBy?.name,
         role: 'user'
       } : undefined,
       archivedAt: comment.archived_at,
-      archiveReason: comment.archive_reason,
+      archiveReason: comment.archiveReason,
       createdAt: comment.created_at || comment.createdAt || new Date().toISOString(),
       replies: (comment.replies || []).map((reply: any) => ({
         id: reply.id,
@@ -552,9 +552,9 @@ export function EnhancedActivityComments({
   const filterComments = (comments: ActivityComment[]) => {
     return comments.filter(comment => {
       // Filter by tab
-      if (activeTab === 'open' && (comment.status === 'Resolved' || comment.is_archived)) return false;
+      if (activeTab === 'open' && (comment.status === 'Resolved' || comment.isArchived)) return false;
       if (activeTab === 'resolved' && comment.status !== 'Resolved') return false;
-      if (activeTab === 'archived' && !comment.is_archived) return false;
+      if (activeTab === 'archived' && !comment.isArchived) return false;
       
       // Filter by type
       if (filterType !== 'all' && comment.type.toLowerCase() !== filterType) return false;
@@ -695,13 +695,13 @@ export function EnhancedActivityComments({
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="open">
-              Open ({comments.filter(c => c.status !== 'Resolved' && !c.is_archived).length})
+              Open ({comments.filter(c => c.status !== 'Resolved' && !c.isArchived).length})
             </TabsTrigger>
             <TabsTrigger value="resolved">
               Resolved ({comments.filter(c => c.status === 'Resolved').length})
             </TabsTrigger>
             <TabsTrigger value="archived">
-              Archived ({comments.filter(c => c.is_archived).length})
+              Archived ({comments.filter(c => c.isArchived).length})
             </TabsTrigger>
           </TabsList>
 
@@ -943,7 +943,7 @@ function CommentCard({
   onToggleExpanded,
 }: CommentCardProps) {
   return (
-    <Card className={`transition-all ${comment.status === 'Resolved' ? 'bg-green-50 border-green-200' : ''} ${comment.is_archived ? 'opacity-60' : ''}`}>
+    <Card className={`transition-all ${comment.status === 'Resolved' ? 'bg-green-50 border-green-200' : ''} ${comment.isArchived ? 'opacity-60' : ''}`}>
       <CardContent className="pt-6">
         <div className="space-y-4">
           {/* Comment Header */}
@@ -962,7 +962,7 @@ function CommentCard({
                   </Badge>
                 )}
                 
-                {comment.is_archived && (
+                {comment.isArchived && (
                   <Badge variant="outline" className="text-gray-600">
                     <Archive className="h-3 w-3 mr-1" />
                     Archived
@@ -987,7 +987,7 @@ function CommentCard({
                 </Badge>
               )}
               
-              {user && comment.status !== 'Resolved' && !comment.is_archived && (
+              {user && comment.status !== 'Resolved' && !comment.isArchived && (
                 <div className="flex items-center gap-1">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -1122,13 +1122,13 @@ function CommentCard({
           )}
           
           {/* Archive Info */}
-          {comment.is_archived && comment.archive_reason && (
+          {comment.isArchived && comment.archiveReason && (
             <div className="bg-gray-50 border border-gray-200 rounded p-3">
               <div className="flex items-center gap-2 text-gray-800 font-medium text-sm">
                 <Archive className="h-4 w-4" />
-                Archived by {comment.archived_by_name}
+                Archived by {comment.archivedBy?.name}
               </div>
-              <p className="text-gray-700 text-sm mt-1">{comment.archive_reason}</p>
+              <p className="text-gray-700 text-sm mt-1">{comment.archiveReason}</p>
             </div>
           )}
           
