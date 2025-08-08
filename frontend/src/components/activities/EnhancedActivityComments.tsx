@@ -268,43 +268,55 @@ export function EnhancedActivityComments({
   const normalizeComment = (comment: any): ActivityComment => {
     return {
       id: comment.id,
-      user_name: comment.user_name || comment.userName || 'Unknown User',
-      user_role: comment.user_role || comment.userRole || 'user',
+      activityId: comment.activity_id || comment.activityId || '',
+      author: {
+        userId: comment.user_id || comment.userId || '',
+        name: comment.user_name || comment.userName || 'Unknown User',
+        role: comment.user_role || comment.userRole || 'user'
+      },
       message: comment.message || comment.content || '',
-      type: comment.type || 'Feedback',
-      status: comment.status || 'Open',
-      context_section: comment.context_section || comment.contextSection,
-      context_field: comment.context_field || comment.contextField,
+      type: comment.type || 'Feedback' as 'Feedback' | 'Question',
+      status: comment.status || 'Open' as 'Open' | 'Resolved',
+      contextSection: comment.context_section || comment.contextSection,
+      contextField: comment.context_field || comment.contextField,
       mentions: Array.isArray(comment.mentions) ? comment.mentions : 
                 (typeof comment.mentions === 'string' ? JSON.parse(comment.mentions || '[]') : []),
       attachments: Array.isArray(comment.attachments) ? comment.attachments :
                    (typeof comment.attachments === 'string' ? JSON.parse(comment.attachments || '[]') : []),
-      is_read: typeof comment.is_read === 'object' ? comment.is_read :
+      isRead: typeof comment.is_read === 'object' ? comment.is_read :
                (typeof comment.is_read === 'string' ? JSON.parse(comment.is_read || '{}') : {}),
-      resolved_by_id: comment.resolved_by_id,
-      resolved_by_name: comment.resolved_by_name,
-      resolved_at: comment.resolved_at,
-      resolution_note: comment.resolution_note,
-      is_archived: comment.is_archived || false,
-      archived_by_name: comment.archived_by_name,
-      archived_at: comment.archived_at,
-      archive_reason: comment.archive_reason,
-      created_at: comment.created_at || comment.createdAt,
-      updated_at: comment.updated_at || comment.updatedAt,
+      resolvedBy: comment.resolved_by_name ? {
+        userId: comment.resolved_by_id || '',
+        name: comment.resolved_by_name,
+        role: 'user'
+      } : undefined,
+      resolvedAt: comment.resolved_at,
+      resolutionNote: comment.resolution_note,
+      isArchived: comment.is_archived || false,
+      archivedBy: comment.archived_by_name ? {
+        userId: comment.archived_by_id || '',
+        name: comment.archived_by_name,
+        role: 'user'
+      } : undefined,
+      archivedAt: comment.archived_at,
+      archiveReason: comment.archive_reason,
+      createdAt: comment.created_at || comment.createdAt || new Date().toISOString(),
       replies: (comment.replies || []).map((reply: any) => ({
         id: reply.id,
-        user_name: reply.user_name || reply.userName || 'Unknown User',
-        user_role: reply.user_role || reply.userRole || 'user',
+        author: {
+          userId: reply.user_id || reply.userId || '',
+          name: reply.user_name || reply.userName || 'Unknown User',
+          role: reply.user_role || reply.userRole || 'user'
+        },
         message: reply.message || reply.content || '',
-        type: reply.type || 'Feedback',
+        type: reply.type || 'Feedback' as 'Feedback' | 'Question',
         mentions: Array.isArray(reply.mentions) ? reply.mentions :
                   (typeof reply.mentions === 'string' ? JSON.parse(reply.mentions || '[]') : []),
         attachments: Array.isArray(reply.attachments) ? reply.attachments :
                      (typeof reply.attachments === 'string' ? JSON.parse(reply.attachments || '[]') : []),
-        is_read: typeof reply.is_read === 'object' ? reply.is_read :
+        isRead: typeof reply.is_read === 'object' ? reply.is_read :
                  (typeof reply.is_read === 'string' ? JSON.parse(reply.is_read || '{}') : {}),
-        created_at: reply.created_at || reply.createdAt,
-        updated_at: reply.updated_at || reply.updatedAt,
+        createdAt: reply.created_at || reply.createdAt || new Date().toISOString()
       }))
     };
   };

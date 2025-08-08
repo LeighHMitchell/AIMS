@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Format user data with proper name, organization, and avatar
-    const formattedUsers = (users || []).map(user => {
+    const formattedUsers = (users || []).map((user: any) => {
       // Build full name from first_name and last_name
       let fullName = '';
       if (user.first_name || user.last_name) {
