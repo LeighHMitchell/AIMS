@@ -9,8 +9,6 @@ import {
   FileText, 
   Database, 
   Activity, 
-  GitBranch,
-  CheckCircle,
   AlertCircle,
   Edit,
   Trash,
@@ -23,7 +21,6 @@ import {
   DollarSign,
   Hash,
   Globe,
-  Sync,
   History
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -139,7 +136,7 @@ const getActionIcon = (action: string) => {
       return <Download className="h-4 w-4 text-gray-600" />;
     case 'sync':
     case 'synced':
-      return <Sync className="h-4 w-4 text-gray-600" />;
+      return <RefreshCw className="h-4 w-4 text-gray-600" />;
     case 'view':
     case 'viewed':
       return <Eye className="h-4 w-4 text-gray-500" />;

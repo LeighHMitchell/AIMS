@@ -458,7 +458,7 @@ function ActivitiesPageContent() {
     if (usingOptimization) {
       // Use optimized hook's refetch instead
       console.log('[AIMS] Using optimized refetch');
-      optimizedData.refetch();
+      optimizedData?.refetch();
       return;
     }
     
