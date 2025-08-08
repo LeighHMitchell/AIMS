@@ -41,6 +41,7 @@ export default function ActivityEditorNavigation({
     {
       title: "Activity Overview",
       sections: [
+        { id: "metadata", label: "Administration" },
         { id: "general", label: "General" },
         { id: "iati", label: "IATI Sync" },
         { id: "sectors", label: "Sectors" },

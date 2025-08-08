@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 500); // Cap at 500
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100); // Smaller default, cap at 100
     const offset = (page - 1) * limit;
 
     const supabase = getSupabaseAdmin();
@@ -29,23 +29,21 @@ export async function GET(request: NextRequest) {
 
     console.log('[AIMS-SIMPLE] Database URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...');
 
-    // Get count first with a simple query
-    let count = null;
+    // Avoid exact count(*) which can be expensive. Use a light approximate count via a small window.
+    // Frontend can operate without total count or with a best-effort estimate.
+    let count: number | null = null;
     try {
-      const { count: totalCount, error: countError } = await supabase
+      const { data: sample, error: sampleError } = await supabase
         .from('activities')
-        .select('*', { count: 'exact', head: true });
-        
-      if (countError) {
-        console.error('[AIMS-SIMPLE] Error getting count:', countError);
-      } else {
-        count = totalCount;
+        .select('id')
+        .range(0, 999);
+      if (!sampleError) {
+        // If we got a full 1000 rows, the real count is >= 1000; otherwise it equals sample length.
+        count = (sample?.length || 0) >= 1000 ? 1000 : (sample?.length || 0);
       }
-    } catch (error) {
-      console.error('[AIMS-SIMPLE] Error getting count:', { message: error instanceof Error ? error.message : '' });
+    } catch (_) {
+      // ignore
     }
-    
-    console.log('[AIMS-SIMPLE] Total activities in database:', count);
 
     // Use the simplest possible query without any joins
     console.log('[AIMS-SIMPLE] Executing simple query without joins...');
@@ -87,7 +85,7 @@ export async function GET(request: NextRequest) {
           notes
         )
       `)
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (error) {
@@ -259,8 +257,9 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit)
+        // Provide best-effort total; if null, omit it to avoid forcing UI to use it
+        total: count ?? undefined,
+        totalPages: count ? Math.ceil(count / limit) : undefined
       }
     }, {
       headers: {

@@ -805,39 +805,7 @@ export default function TransactionModal({
     </Label>
   );
 
-  // Add missing select components - these should import from existing components
-  const AidTypeSelect = ({ value, onValueChange, placeholder, id }: any) => (
-    <Input 
-      value={value || ''} 
-      onChange={(e) => onValueChange(e.target.value)}
-      placeholder={placeholder}
-      id={id}
-    />
-  );
-
-  const FlowTypeSelect = ({ value, onValueChange, placeholder }: any) => (
-    <Input 
-      value={value || ''} 
-      onChange={(e) => onValueChange(e.target.value)}
-      placeholder={placeholder}
-    />
-  );
-
-  const FinanceTypeSelect = ({ value, onChange, placeholder }: any) => (
-    <Input 
-      value={value || ''} 
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-    />
-  );
-
-  const TiedStatusSelect = ({ value, onValueChange, placeholder }: any) => (
-    <Input 
-      value={value || ''} 
-      onChange={(e) => onValueChange(e.target.value)}
-      placeholder={placeholder}
-    />
-  );
+  // Removed local component overrides - using proper imported dropdown components
 
   const CopyField = ({ label, value, placeholder }: any) => (
     <div className="space-y-2">
@@ -1559,8 +1527,8 @@ export default function TransactionModal({
                     <InfoTooltip text="Financial instrument used" />
                   </LabelSaveIndicator>
                   <FinanceTypeSelect
-                    value={(formData.finance_type as any) as string | undefined}
-                    onChange={(v: string | null) => {
+                    value={formData.finance_type as string | undefined}
+                    onChange={(v: string) => {
                       const newValue = v as FinanceType || undefined;
                       setFormData({...formData, finance_type: newValue});
                       financeTypeAutosave.triggerFieldSave(newValue);

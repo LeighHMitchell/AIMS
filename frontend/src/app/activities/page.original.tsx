@@ -207,7 +207,7 @@ function ActivitiesPageContent() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterType, setFilterType] = useState<string>('all');
+
   const [filterValidation, setFilterValidation] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('updated');
   const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
@@ -592,7 +592,7 @@ function ActivitiesPageContent() {
     const matchesActivityStatus = filterStatus === "all" || activityStatus === filterStatus;
     
     // Filter by publication status  
-    const matchesPublicationStatus = filterType === "all" || publicationStatus === filterType;
+
     
     // Filter by validation status
     const matchesValidationStatus = filterValidation === "all" || 
@@ -600,7 +600,7 @@ function ActivitiesPageContent() {
       (filterValidation === "rejected" && submissionStatus === "rejected") ||
       (filterValidation === "pending" && !["validated", "rejected"].includes(submissionStatus));
     
-    return matchesSearch && matchesActivityStatus && matchesPublicationStatus && matchesValidationStatus;
+    return matchesSearch && matchesActivityStatus && matchesValidationStatus;
   });
 
   // Sort activities
@@ -662,7 +662,7 @@ function ActivitiesPageContent() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterStatus, filterType, filterValidation]);
+  }, [searchQuery, filterStatus, filterValidation]);
 
   // Handle page limit change
   const handlePageLimitChange = (newLimit: number) => {
@@ -745,19 +745,10 @@ function ActivitiesPageContent() {
               <ActivityStatusFilterSelect
                 value={filterStatus}
                 onValueChange={setFilterStatus}
-                placeholder="Activity Status"
+                placeholder="Status"
                 className="w-[140px]"
               />
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Publication" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                </SelectContent>
-              </Select>
+
               <Select value={filterValidation} onValueChange={setFilterValidation}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Validation" />
@@ -769,6 +760,8 @@ function ActivitiesPageContent() {
                   <SelectItem value="pending">Not Validated</SelectItem>
                 </SelectContent>
               </Select>
+
+
               
               {/* Page Size Selector */}
               <div className="flex items-center gap-2">
@@ -847,7 +840,7 @@ function ActivitiesPageContent() {
                   </Button>
                 </div>
               </div>
-            ) : searchQuery || filterStatus !== "all" || filterType !== "all" ? (
+            ) : searchQuery || filterStatus !== "all" || filterValidation !== "all" ? (
               <div className="text-slate-500">No matching activities found</div>
             ) : (
               <div className="space-y-4">
@@ -983,15 +976,15 @@ function ActivitiesPageContent() {
                                 <div className="space-y-2 p-1">
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <FileCheck className="h-4 w-4" />
-                                    <span className="text-sm">Published: {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <ShieldCheck className="h-4 w-4" />
-                                    <span className="text-sm">Validation: {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Globe className="h-4 w-4" />
-                                    <span className="text-sm">IATI: {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
+                                    <span className="text-sm"><span className="font-semibold">IATI:</span> {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
                                   </div>
                                 </div>
                               </TooltipContent>
@@ -1041,15 +1034,15 @@ function ActivitiesPageContent() {
                                 <div className="space-y-2 p-1">
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Handshake className="h-4 w-4" />
-                                    <span className="text-sm">Aid Type: {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Shuffle className="h-4 w-4" />
-                                    <span className="text-sm">Flow Type: {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Link2 className="h-4 w-4" />
-                                    <span className="text-sm">Tied Status: {activity.tied_status ? TIED_STATUS_LABELS[activity.tied_status] || activity.tied_status : 'Not specified'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.tied_status ? TIED_STATUS_LABELS[activity.tied_status] || activity.tied_status : 'Not specified'}</span>
                                   </div>
                                 </div>
                               </TooltipContent>

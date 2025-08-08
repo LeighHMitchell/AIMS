@@ -315,6 +315,7 @@ export async function GET(
         phone: contact.phone,
         fax: contact.fax,
         email: contact.email,
+        secondaryEmail: contact.secondary_email,
         profilePhoto: contact.profile_photo,
         notes: contact.notes
       })) || [],

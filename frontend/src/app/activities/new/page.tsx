@@ -18,6 +18,8 @@ import { Transaction } from "@/types/transaction";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ActivityStatusSelect } from "@/components/forms/ActivityStatusSelect";
 import { CollaborationTypeSelect } from "@/components/forms/CollaborationTypeSelect";
+import { DropdownProvider } from "@/contexts/DropdownContext";
+import { LinkedActivityTitle } from "@/components/ui/linked-activity-title";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,7 +70,7 @@ import { DebugPanel } from '@/components/DebugPanel';
 // import { AutosaveFormWrapper } from "@/components/forms/AutosaveFormWrapper";
 // import { AutosaveDebugPanel } from "@/components/debug/AutosaveDebugPanel";
 // import { useActivityAutosave } from "@/hooks/use-activity-autosave";
-import { AutosaveStatus } from "@/components/AutosaveStatus";
+// AutosaveStatus removed from sidebar title area per UX request
 import { ActivityEditorFieldAutosave } from '@/components/activities/ActivityEditorFieldAutosave';
 import { useDescriptionAutosave, useDateFieldAutosave, useFieldAutosave } from '@/hooks/use-field-autosave-new';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
@@ -85,6 +87,7 @@ import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab";
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab";
 import { AidTypeSelect } from "@/components/forms/AidTypeSelect";
 import { ResultsTab } from "@/components/activities/ResultsTab";
+import MetadataTab from "@/components/activities/MetadataTab";
 
 // Separate component for General section to properly use hooks
 function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState }: any) {
@@ -391,7 +394,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 Universally Unique Identifier
               </span>
               <HelpTextTooltip>
-                A system-generated identifier automatically assigned when an activity is created. Ensures global uniqueness within the database.
+                This field is auto-generated and locked. Every activity has a unique identifier (UUID) assigned automatically by the system. It cannot be edited to ensure data consistency across systems and during IATI exports.
               </HelpTextTooltip>
             </div>
           </LabelSaveIndicator>
@@ -533,6 +536,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }}
                 placeholder="Select Collaboration Type"
                 disabled={fieldLockStatus.isLocked}
+                dropdownId="general-collaboration-type"
               />
             </div>
             {collaborationTypeAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {collaborationTypeAutosave.state.error.message}</p>}
@@ -578,6 +582,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   );
                 }}
                 showOnlyStatus={true}
+                dropdownId="general-activity-status"
                 additionalData={{
                   banner: general.banner || null,
                   icon: general.icon || null,
@@ -768,6 +773,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
 function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, setIatiSyncState, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount }: any) {
   switch (section) {
+    case "metadata":
+      return <MetadataTab activityId={general.id} />;
     case "general":
       return <GeneralSection 
         general={general}
@@ -1358,6 +1365,7 @@ function NewActivityPageContent() {
   
   const getSectionLabel = (sectionId: string): string => {
     const sectionLabels: Record<string, string> = {
+      metadata: "Administration",
       general: "General Information",
       iati: "IATI Sync",
       sectors: "Sectors",
@@ -1876,6 +1884,8 @@ function NewActivityPageContent() {
   // Add a function to get the appropriate skeleton for each tab
   const getTabSkeleton = (section: string) => {
     switch (section) {
+      case 'metadata':
+        return <GenericTabSkeleton />;
       case 'sectors':
         return <SectorAllocationSkeleton />;
       case 'organisations':
@@ -1959,8 +1969,9 @@ function NewActivityPageContent() {
 
   return (
     <MainLayout>
-      {/* Field-level autosave system - no wrapper needed */}
-      <div>
+      <DropdownProvider>
+        {/* Field-level autosave system - no wrapper needed */}
+        <div>
         {/* 3-Column Layout: Main Sidebar (fixed by MainLayout) | Editor Nav | Main Panel */}
         <div className="flex h-[calc(100vh-6rem)] overflow-hidden gap-x-6 lg:gap-x-8">
         {/* Activity Editor Navigation Panel */}
@@ -1970,15 +1981,13 @@ function NewActivityPageContent() {
             <div className="bg-white border-b border-gray-200 p-4">
               <div className="space-y-2 text-sm">
                 <div className="mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">{general.title || 'Untitled Activity'}</h3>
-                  {/* Autosave Status Indicator */}
-                  <AutosaveStatus
-                    isAutoSaving={autosaveState.isSaving}
-                    hasUnsavedChanges={hasUnsavedChanges || autosaveState.hasUnsavedChanges}
-                    lastSaved={autosaveState.lastSaved}
-                    lastError={autosaveState.error}
-                    className="mt-2"
+                  <LinkedActivityTitle
+                    title={general.title || 'Untitled Activity'}
+                    activityId={general.id}
+                    className="text-lg font-semibold text-gray-900"
+                    fallbackElement="h3"
                   />
+                  {/* Autosave Status Indicator removed per UX request */}
                   {/* Validation Status Badge */}
                   {general.submissionStatus && general.submissionStatus !== 'draft' && (
                     <div className="mt-2 flex items-center gap-2">
@@ -2005,28 +2014,31 @@ function NewActivityPageContent() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <div>
-                    <span className="text-gray-500">Reported by:</span>
-                    <span className="ml-2 font-medium block break-words">
+                                    <div className="space-y-1">
+                    <div className="text-gray-500">Reported by:</div>
+                    <div className="font-medium break-words">
                       {(() => {
                         if (general.created_by_org_name && general.created_by_org_acronym) {
                           return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
                         }
-                        return general.created_by_org_name || general.created_by_org_acronym || 'Unknown';
+                        return general.created_by_org_name || general.created_by_org_acronym || "Unknown";
                       })()}
-                    </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-gray-500">Date created:</span>
-                    <span className="ml-2 font-medium block">
-                      {general.createdAt ? format(new Date(general.createdAt), 'dd MMM yyyy') : 'Unknown'}
-                    </span>
+                                    <div className="space-y-3 text-sm">
+                    <div className="space-y-1">
+                      <div className="text-gray-500">Date created:</div>
+                      <div className="font-medium">
+                        {general.createdAt ? format(new Date(general.createdAt), "dd MMM yyyy") : "Unknown"}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-gray-500">Last updated:</div>
+                      <div className="font-medium">
+                        {general.updatedAt ? format(new Date(general.updatedAt), "dd MMM yyyy") : "Unknown"}
+                      </div>
                   </div>
-                  <div>
-                    <span className="text-gray-500">Last updated:</span>
-                    <span className="ml-2 font-medium block">
-                      {general.updatedAt ? format(new Date(general.updatedAt), 'dd MMM yyyy') : 'Unknown'}
-                    </span>
+                    
                   </div>
                   {contributors.filter(c => c.status === 'accepted').length > 0 && (
                     <div>
@@ -2066,7 +2078,12 @@ function NewActivityPageContent() {
         <main className="flex-1 min-w-0 overflow-y-auto bg-white">
           <div className="activity-editor pl-0 pr-6 md:pr-8 py-6">
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">Edit Activity</h1>
+              <LinkedActivityTitle
+                title={general.title || (general.id ? 'Untitled Activity' : 'New Activity')}
+                activityId={general.id}
+                className="text-3xl font-bold text-gray-900"
+                fallbackElement="h1"
+              />
               <div className="flex items-center gap-6">
                 {/* Publish Toggle */}
                 {(canPublish || !isEditing) && (
@@ -2422,7 +2439,8 @@ function NewActivityPageContent() {
       
       {/* Debug Panel */}
       <DebugPanel />
-      </div>
+        </div>
+      </DropdownProvider>
     </MainLayout>
   );
 }

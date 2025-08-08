@@ -2,12 +2,12 @@
 
 import React from "react"
 import {
-  EnhancedSelect,
-  EnhancedSelectContent,
-  EnhancedSelectItem,
-  EnhancedSelectTrigger,
-  EnhancedSelectValue,
-} from "@/components/ui/enhanced-select"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface ActivityStatusFilterOption {
   value: string
@@ -18,7 +18,7 @@ interface ActivityStatusFilterOption {
 const activityStatusFilterOptions: ActivityStatusFilterOption[] = [
   {
     value: "all",
-    label: "All Activity Status",
+    label: "All Status Types",
     description: "Show activities with any status",
   },
   {
@@ -68,27 +68,22 @@ export function ActivityStatusFilterSelect({
   disabled = false,
   className,
 }: ActivityStatusFilterSelectProps) {
-  // Find the selected option to display its label in the trigger
-  const selectedOption = activityStatusFilterOptions.find(option => option.value === value)
-  
   return (
-    <EnhancedSelect value={value} onValueChange={onValueChange} disabled={disabled}>
-      <EnhancedSelectTrigger className={className}>
-        <EnhancedSelectValue placeholder={placeholder}>
-          {selectedOption?.label || placeholder}
-        </EnhancedSelectValue>
-      </EnhancedSelectTrigger>
-      <EnhancedSelectContent>
+    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+      <SelectTrigger className={className}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
         {activityStatusFilterOptions.map((option) => (
-          <EnhancedSelectItem
+          <SelectItem
             key={option.value}
             value={option.value}
-            label={option.label}
-            description={option.description}
-          />
+          >
+            {option.label}
+          </SelectItem>
         ))}
-      </EnhancedSelectContent>
-    </EnhancedSelect>
+      </SelectContent>
+    </Select>
   )
 }
 

@@ -102,35 +102,57 @@ export function useResults(activityId: string) {
     }
   }, [fetchResults]);
 
-  // Update a result - will need API endpoint later
+  // Update a result
   const updateResult = useCallback(async (resultId: string, data: UpdateResultData): Promise<boolean> => {
     try {
-      // For now, just log and refresh - implement API endpoint later if needed
-      console.log('[Results Hook] Update result:', resultId, data);
+      const response = await fetch(`/api/activities/${activityId}/results/${resultId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to update result');
+      }
+
       toast.success('Result updated successfully');
       await fetchResults(); // Refresh the list
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update result';
+      console.error('[Results Hook] Update error:', errorMessage);
       toast.error(errorMessage);
       return false;
     }
-  }, [fetchResults]);
+  }, [activityId, fetchResults]);
 
-  // Delete a result - will need API endpoint later
+  // Delete a result
   const deleteResult = useCallback(async (resultId: string): Promise<boolean> => {
     try {
-      // For now, just log and refresh - implement API endpoint later if needed
-      console.log('[Results Hook] Delete result:', resultId);
+      const response = await fetch(`/api/activities/${activityId}/results/${resultId}`, {
+        method: 'DELETE',
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to delete result');
+      }
+
       toast.success('Result deleted successfully');
       await fetchResults(); // Refresh the list
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete result';
+      console.error('[Results Hook] Delete error:', errorMessage);
       toast.error(errorMessage);
       return false;
     }
-  }, [fetchResults]);
+  }, [activityId, fetchResults]);
 
   // Initialize data on mount
   useEffect(() => {

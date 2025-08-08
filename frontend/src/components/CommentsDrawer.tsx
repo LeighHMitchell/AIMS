@@ -1,14 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, MessageSquare, Send, Loader2, AlertCircle, Archive, ArchiveRestore } from 'lucide-react';
+import { X, MessageSquare, Send, Loader2, AlertCircle, Archive, ArchiveRestore, Trash, ChevronsUpDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+
+// Comment type options
+const COMMENT_TYPE_OPTIONS = [
+  { value: 'Feedback', label: 'Feedback', description: 'General feedback or comment' },
+  { value: 'Question', label: 'Question', description: 'Ask a question' },
+] as const;
 
 interface Comment {
   id: string;
@@ -64,9 +72,11 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [commentType, setCommentType] = useState<'Question' | 'Feedback'>('Feedback');
+  const [commentTypeOpen, setCommentTypeOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [replyType, setReplyType] = useState<'Question' | 'Feedback'>('Feedback');
+  const [replyTypeOpen, setReplyTypeOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
@@ -82,7 +92,9 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
     setError(null);
     
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`);
+      const params = new URLSearchParams();
+      params.append('includeArchived', showArchived ? 'true' : 'false');
+      const res = await fetch(`/api/activities/${activityId}/comments?${params}`);
       
       if (!res.ok) {
         if (res.status === 404) {
@@ -94,7 +106,43 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       }
       
       const data = await res.json();
-      setComments(Array.isArray(data) ? data : []);
+      let fetchedComments = Array.isArray(data) ? data : [];
+      
+      // Transform API response to match expected structure
+      fetchedComments = fetchedComments.map((comment: any) => {
+        // Ensure author object exists with proper fallbacks
+        const author = {
+          userId: comment.user_id || comment.userId || '',
+          name: comment.user_name || comment.userName || 'Unknown User',
+          role: comment.user_role || comment.userRole || 'user'
+        };
+
+        // Transform replies with proper author objects
+        const replies = (comment.replies || []).map((reply: any) => ({
+          ...reply,
+          createdAt: reply.created_at || reply.createdAt,
+          message: reply.message || reply.content || '',
+          author: {
+            userId: reply.user_id || reply.userId || '',
+            name: reply.user_name || reply.userName || 'Unknown User',
+            role: reply.user_role || reply.userRole || 'user'
+          }
+        }));
+
+        return {
+          ...comment,
+          activityId: comment.activity_id || activityId,
+          createdAt: comment.created_at || comment.createdAt,
+          message: comment.message || comment.content || '',
+          author,
+          replies,
+          contextSection: comment.context_section || comment.contextSection,
+          contextField: comment.context_field || comment.contextField,
+          isArchived: comment.is_archived || comment.isArchived || false
+        };
+      });
+      
+      setComments(fetchedComments);
     } catch (err) {
       console.error('Error fetching comments:', err);
       setError('Failed to load comments. Please try again.');
@@ -252,6 +300,37 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user) return;
+    
+    // Show confirmation dialog
+    if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/activities/${activityId}/comments`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user,
+          commentId,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete comment');
+      }
+      
+      await fetchComments();
+      toast.success('Comment deleted successfully');
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete comment');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'MMM d, yyyy h:mm a');
@@ -338,8 +417,8 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       <div>
-                        <p className="font-medium text-sm">{comment.author.name}</p>
-                        <p className="text-xs text-gray-500">{comment.author.role}</p>
+                        <p className="font-medium text-sm">{comment.author?.name || 'Unknown User'}</p>
+                        <p className="text-xs text-gray-500">{comment.author?.role || 'user'}</p>
                       </div>
                       <span className={`text-xs px-2 py-1 rounded ${comment.type === 'Question' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
                         {comment.type}
@@ -365,7 +444,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                         <div key={reply.id} className="bg-gray-50 p-2 rounded">
                           <div className="flex items-start justify-between mb-1">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-xs">{reply.author.name}</p>
+                              <p className="font-medium text-xs">{reply.author?.name || 'Unknown User'}</p>
                               <span className="text-xs px-1 py-0.5 rounded bg-gray-200 text-gray-700">{reply.type}</span>
                             </div>
                             <p className="text-xs text-gray-400">{formatDate(reply.createdAt)}</p>
@@ -404,20 +483,71 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                         Unarchive
                       </button>
                     )}
+                    {/* Delete button - only show for comment author or admin */}
+                    {user && (comment.author?.userId === user.id || ['super_user', 'admin'].includes(user.role)) && (
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="text-xs text-red-600 hover:text-red-800"
+                      >
+                        <Trash className="h-3 w-3 inline mr-1" />
+                        Delete
+                      </button>
+                    )}
                   </div>
                   
                   {/* Reply form */}
                   {replyingTo === comment.id && (
                     <div className="mt-3 space-y-2 bg-gray-50 p-3 rounded">
                       <div className="flex gap-2">
-                        <select
-                          value={replyType}
-                          onChange={(e) => setReplyType(e.target.value as 'Question' | 'Feedback')}
-                          className="text-xs border rounded px-2 py-1"
-                        >
-                          <option value="Question">Question</option>
-                          <option value="Feedback">Feedback</option>
-                        </select>
+                        <Popover open={replyTypeOpen} onOpenChange={setReplyTypeOpen}>
+                          <PopoverTrigger
+                            className={cn(
+                              "flex h-8 w-32 items-center justify-between rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+                            )}
+                          >
+                            <span className="truncate">
+                              {(() => {
+                                const selectedOption = COMMENT_TYPE_OPTIONS.find(option => option.value === replyType);
+                                return selectedOption ? (
+                                  <span className="font-medium">{selectedOption.label}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">Select type...</span>
+                                );
+                              })()}
+                            </span>
+                            <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" />
+                          </PopoverTrigger>
+                          <PopoverContent 
+                            className="w-[var(--radix-popover-trigger-width)] min-w-[180px] p-0 shadow-lg border"
+                            align="start"
+                            sideOffset={4}
+                          >
+                            <Command>
+                              <CommandList>
+                                <CommandGroup>
+                                  {COMMENT_TYPE_OPTIONS.map((option) => (
+                                    <CommandItem
+                                      key={option.value}
+                                      onSelect={() => {
+                                        setReplyType(option.value);
+                                        setReplyTypeOpen(false);
+                                      }}
+                                      className="flex items-center gap-2 py-1.5 px-2 cursor-pointer hover:bg-accent text-xs"
+                                    >
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{option.label}</span>
+                                        <span className="text-xs text-muted-foreground">{option.description}</span>
+                                      </div>
+                                      {replyType === option.value && (
+                                        <Check className="ml-auto h-3 w-3" />
+                                      )}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                       <textarea
                         value={replyContent}
@@ -455,14 +585,55 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
           {!showArchived && (
             <div className="border-t p-4 space-y-3 pb-24">
             <div className="flex gap-2">
-              <select
-                value={commentType}
-                onChange={(e) => setCommentType(e.target.value as 'Question' | 'Feedback')}
-                className="text-sm border rounded px-3 py-2"
-              >
-                <option value="Question">Question</option>
-                <option value="Feedback">Feedback</option>
-              </select>
+              <Popover open={commentTypeOpen} onOpenChange={setCommentTypeOpen}>
+                <PopoverTrigger
+                  className={cn(
+                    "flex h-10 w-40 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+                  )}
+                >
+                  <span className="truncate">
+                    {(() => {
+                      const selectedOption = COMMENT_TYPE_OPTIONS.find(option => option.value === commentType);
+                      return selectedOption ? (
+                        <span className="font-medium">{selectedOption.label}</span>
+                      ) : (
+                        <span className="text-muted-foreground">Select type...</span>
+                      );
+                    })()}
+                  </span>
+                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-[var(--radix-popover-trigger-width)] min-w-[200px] p-0 shadow-lg border"
+                  align="start"
+                  sideOffset={4}
+                >
+                  <Command>
+                    <CommandList>
+                      <CommandGroup>
+                        {COMMENT_TYPE_OPTIONS.map((option) => (
+                          <CommandItem
+                            key={option.value}
+                            onSelect={() => {
+                              setCommentType(option.value);
+                              setCommentTypeOpen(false);
+                            }}
+                            className="flex items-center gap-3 py-2 px-3 cursor-pointer hover:bg-accent"
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">{option.label}</span>
+                              <span className="text-xs text-muted-foreground">{option.description}</span>
+                            </div>
+                            {commentType === option.value && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <Textarea
               value={newComment}

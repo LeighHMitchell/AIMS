@@ -97,7 +97,8 @@ const TIED_STATUS_LABELS: Record<string, string> = {
   '1': 'Tied',
   '2': 'Partially tied',
   '3': 'Untied',
-  '4': 'Not reported'
+  '4': 'Not reported',
+  '5': 'Not reported'
 };
 
 type Organization = {
@@ -171,7 +172,7 @@ type Activity = {
   tied_status?: string; // Legacy field
 };
 
-type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'createdAt' | 'updatedAt';
+type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'createdAt' | 'updatedAt' | 'activityStatus';
 type SortOrder = 'asc' | 'desc';
 
 
@@ -233,22 +234,23 @@ const canUserEditActivity = (user: any, activity: Activity): boolean => {
 };
 
 function ActivitiesPageContent() {
-  // Check if optimizations are enabled via environment variable
-  const enableOptimization = true; // Force enable for debugging
+  // Enable optimized fetching by default; can be disabled via env
+  const enableOptimization = process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION !== 'false';
   
   console.log('[Activities Page] Environment variable NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION:', process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION);
   console.log('[Activities Page] enableOptimization:', enableOptimization);
   console.log('[Activities Page] typeof env var:', typeof process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION);
   
-  // Use optimized hook if enabled, otherwise fall back to original implementation
-  const optimizedData = useOptimizedActivities({
-    pageSize: 20,
-    enableOptimization,
-    onError: (error) => {
-      console.error('[Activities Page] Optimization error:', error);
-      // Could fall back to original implementation here if needed
-    }
-  });
+  // Use optimized hook only when enabled
+  const optimizedData = enableOptimization
+    ? useOptimizedActivities({
+        pageSize: 20,
+        enableOptimization,
+        onError: (error) => {
+          console.error('[Activities Page] Optimization error:', error);
+        }
+      })
+    : undefined;
   
   // Legacy state for backward compatibility when optimizations are disabled
   const [legacyActivities, setLegacyActivities] = useState<Activity[]>([]);
@@ -257,12 +259,14 @@ function ActivitiesPageContent() {
   
   // Common state regardless of optimization
   const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<SortField>('updatedAt');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [pageLimit, setPageLimit] = useState<number>(20);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  
+  // Legacy sorting state for non-optimized version
+  const [legacySortField, setLegacySortField] = useState<SortField>('updatedAt');
+  const [legacySortOrder, setLegacySortOrder] = useState<SortOrder>('desc');
   
   const router = useRouter();
   const { user, isLoading: userLoading } = useUser();
@@ -270,31 +274,95 @@ function ActivitiesPageContent() {
   // Track if we've ever successfully loaded data to prevent flash of empty state
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   
-  // Determine which data source to use
+  // Use optimized data path when enabled
   const usingOptimization = enableOptimization;
-  const activities = usingOptimization ? optimizedData.activities : legacyActivities;
+  
+  // Safely extract optimized data with fallbacks
+  const safeOptimizedData = {
+    activities: optimizedData?.activities || [],
+    loading: optimizedData?.loading || false,
+    error: optimizedData?.error || null,
+    searchQuery: optimizedData?.searchQuery || '',
+    setSearchQuery: optimizedData?.setSearchQuery || (() => {}),
+    currentPage: optimizedData?.currentPage || 1,
+    totalCount: optimizedData?.totalCount || 0,
+    totalPages: optimizedData?.totalPages || 1,
+    setPage: optimizedData?.setPage || (() => {}),
+    refetch: optimizedData?.refetch || (() => {}),
+    removeActivity: optimizedData?.removeActivity || (() => {}),
+    sorting: {
+      sortField: optimizedData?.sorting?.sortField || 'updatedAt',
+      sortOrder: optimizedData?.sorting?.sortOrder || 'desc',
+      handleSort: optimizedData?.sorting?.handleSort || (() => {})
+    },
+    filters: {
+      activityStatus: optimizedData?.filters?.activityStatus || 'all',
+      setActivityStatus: optimizedData?.filters?.setActivityStatus || (() => {}),
+      submissionStatus: optimizedData?.filters?.submissionStatus || 'all',
+      setSubmissionStatus: optimizedData?.filters?.setSubmissionStatus || (() => {}),
+      reportedBy: optimizedData?.filters?.reportedBy || 'all',
+      setReportedBy: optimizedData?.filters?.setReportedBy || (() => {}),
+      aidType: optimizedData?.filters?.aidType || 'all',
+      setAidType: optimizedData?.filters?.setAidType || (() => {}),
+      flowType: optimizedData?.filters?.flowType || 'all',
+      setFlowType: optimizedData?.filters?.setFlowType || (() => {}),
+      tiedStatus: optimizedData?.filters?.tiedStatus || 'all',
+      setTiedStatus: optimizedData?.filters?.setTiedStatus || (() => {})
+    }
+  };
+  
+  const activities = usingOptimization ? safeOptimizedData.activities : legacyActivities;
+  const sortField = usingOptimization ? safeOptimizedData.sorting.sortField : legacySortField;
+  const sortOrder = usingOptimization ? safeOptimizedData.sorting.sortOrder : legacySortOrder;
   
   console.log('[Activities Page] usingOptimization:', usingOptimization);
-  console.log('[Activities Page] optimizedData.activities length:', optimizedData.activities.length);
-  console.log('[Activities Page] optimizedData.loading:', optimizedData.loading);
-  console.log('[Activities Page] optimizedData.error:', optimizedData.error);
-  console.log('[Activities Page] activities length:', activities.length);
-  console.log('[Activities Page] First activity data:', activities[0]);
-  const loading = usingOptimization ? optimizedData.loading : legacyLoading;
-  const error = usingOptimization ? optimizedData.error : legacyError;
-  const searchQuery = usingOptimization ? optimizedData.searchQuery : '';
-  const setSearchQuery = usingOptimization ? optimizedData.setSearchQuery : () => {};
-  const currentPage = usingOptimization ? optimizedData.currentPage : 1;
-  const totalActivitiesCount = usingOptimization ? optimizedData.totalCount : legacyActivities.length;
-  const setCurrentPage = usingOptimization ? optimizedData.setPage : () => {};
+  console.log('[Activities Page] optimizedData.activities length:', safeOptimizedData.activities.length);
+  console.log('[Activities Page] optimizedData.loading:', safeOptimizedData.loading);
+  console.log('[Activities Page] optimizedData.error:', safeOptimizedData.error);
+  console.log('[Activities Page] activities length:', activities?.length || 0);
+  if (activities?.length > 0) {
+    console.log('[Activities Page] First activity data:', activities[0]);
+  }
+  const loading = usingOptimization ? safeOptimizedData.loading : legacyLoading;
+  const error = usingOptimization ? safeOptimizedData.error : legacyError;
+  const searchQuery = usingOptimization ? safeOptimizedData.searchQuery : '';
+  const setSearchQuery = usingOptimization ? safeOptimizedData.setSearchQuery : () => {};
+  const currentPage = usingOptimization ? safeOptimizedData.currentPage : 1;
+  const totalActivitiesCount = usingOptimization ? safeOptimizedData.totalCount : legacyActivities.length;
+  const setCurrentPage = usingOptimization ? safeOptimizedData.setPage : () => {};
   
-  // Filter states - use optimized filters if available
-  const filterStatus = usingOptimization ? optimizedData.filters.activityStatus : 'all';
-  const setFilterStatus = usingOptimization ? optimizedData.filters.setActivityStatus : () => {};
-  const filterType = usingOptimization ? optimizedData.filters.publicationStatus : 'all';
-  const setFilterType = usingOptimization ? optimizedData.filters.setPublicationStatus : () => {};
-  const filterValidation = usingOptimization ? optimizedData.filters.submissionStatus : 'all';
-  const setFilterValidation = usingOptimization ? optimizedData.filters.setSubmissionStatus : () => {};
+  // Filter states - use safe optimized filters
+  const filterStatus = usingOptimization ? safeOptimizedData.filters.activityStatus : 'all';
+  const setFilterStatus = usingOptimization ? safeOptimizedData.filters.setActivityStatus : () => {};
+
+  const filterValidation = usingOptimization ? safeOptimizedData.filters.submissionStatus : 'all';
+  const setFilterValidation = usingOptimization ? safeOptimizedData.filters.setSubmissionStatus : () => {};
+  
+  // Additional filters
+  const filterReportedBy = usingOptimization ? safeOptimizedData.filters.reportedBy : 'all';
+  const setFilterReportedBy = usingOptimization ? safeOptimizedData.filters.setReportedBy : () => {};
+  const filterAidType = usingOptimization ? safeOptimizedData.filters.aidType : 'all';
+  const setFilterAidType = usingOptimization ? safeOptimizedData.filters.setAidType : () => {};
+  const filterFlowType = usingOptimization ? safeOptimizedData.filters.flowType : 'all';
+  const setFilterFlowType = usingOptimization ? safeOptimizedData.filters.setFlowType : () => {};
+  const filterTiedStatus = usingOptimization ? safeOptimizedData.filters.tiedStatus : 'all';
+  const setFilterTiedStatus = usingOptimization ? safeOptimizedData.filters.setTiedStatus : () => {};
+
+  // Memoized helper functions - must be defined before use in other memos
+  const getCreatorOrganization = useCallback((activity: Activity): string => {
+    if (activity.created_by_org_acronym) {
+      return activity.created_by_org_acronym;
+    }
+    if (activity.createdByOrg) {
+      const org = organizations.find(o => o.id === activity.createdByOrg);
+      if (org && org.acronym) return org.acronym;
+      if (org && org.name) return org.name;
+    }
+    if (activity.created_by_org_name) {
+      return activity.created_by_org_name;
+    }
+    return "Unknown";
+  }, [organizations]);
 
   // Copy ID to clipboard
   const copyToClipboard = (text: string, type: 'partnerId' | 'iatiIdentifier', activityId: string) => {
@@ -457,7 +525,11 @@ function ActivitiesPageContent() {
   // Fetch organizations and legacy activities if needed
   useEffect(() => {
     const fetchData = async () => {
+      console.log('[AIMS] fetchData called - usingOptimization:', usingOptimization);
+      console.log('[AIMS] enableOptimization:', enableOptimization);
+      
       if (!usingOptimization) {
+        console.log('[AIMS] Setting legacy loading to true');
         setLegacyLoading(true);
       }
       
@@ -466,12 +538,14 @@ function ActivitiesPageContent() {
         
         // Only fetch activities if not using optimization
         if (!usingOptimization) {
-          promises.push(fetchActivities());
+          console.log('[AIMS] Adding legacy activities fetch to promises');
+          promises.push(fetchActivities(1, false));
         }
         
         await Promise.all(promises);
       } finally {
         if (!usingOptimization) {
+          console.log('[AIMS] Setting legacy loading to false');
           setLegacyLoading(false);
         }
       }
@@ -502,7 +576,7 @@ function ActivitiesPageContent() {
         setDeleteActivityId(null);
         
         if (usingOptimization) {
-          optimizedData.removeActivity(id);
+          safeOptimizedData.removeActivity(id);
         } else {
           setLegacyActivities(prev => prev.filter(activity => activity.id !== id));
         }
@@ -534,9 +608,9 @@ function ActivitiesPageContent() {
         // For other errors, we need to revert the optimistic update or refetch
         if (retryCount === 0) {
           console.error("[AIMS] Delete failed, reverting optimistic update");
-          if (usingOptimization) {
-            optimizedData.refetch(); // Refetch to get current state
-          } else {
+                  if (usingOptimization) {
+          safeOptimizedData.refetch(); // Refetch to get current state
+        } else {
             // For legacy mode, we'd need to restore the activity or refetch
             // For now, just refetch by calling the fetch function
             window.location.reload(); // Simple fallback
@@ -579,11 +653,15 @@ function ActivitiesPageContent() {
   }
 
   const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    if (usingOptimization) {
+      safeOptimizedData.sorting.handleSort(field);
     } else {
-      setSortField(field);
-      setSortOrder('asc');
+      if (legacySortField === field) {
+        setLegacySortOrder(legacySortOrder === 'asc' ? 'desc' : 'asc');
+      } else {
+        setLegacySortField(field);
+        setLegacySortOrder('asc');
+      }
     }
   };
 
@@ -664,15 +742,14 @@ function ActivitiesPageContent() {
       const submissionStatus = activity.submissionStatus || 'draft';
       
       const matchesActivityStatus = filterStatus === "all" || activityStatus === filterStatus;
-      const matchesPublicationStatus = filterType === "all" || publicationStatus === filterType;
       const matchesValidationStatus = filterValidation === "all" || 
         (filterValidation === "validated" && submissionStatus === "validated") ||
         (filterValidation === "rejected" && submissionStatus === "rejected") ||
         (filterValidation === "pending" && !["validated", "rejected"].includes(submissionStatus));
       
-      return matchesActivityStatus && matchesPublicationStatus && matchesValidationStatus;
+      return matchesActivityStatus && matchesValidationStatus;
     });
-  }, [usingOptimization, activities, filterStatus, filterType, filterValidation]);
+  }, [usingOptimization, activities, filterStatus, filterValidation]);
 
   // Client-side sorting for legacy implementation only
   const sortedActivities = useMemo(() => {
@@ -685,7 +762,7 @@ function ActivitiesPageContent() {
     return [...filteredActivities].sort((a, b) => {
       let aValue: any, bValue: any;
       
-      switch (sortField) {
+      switch (legacySortField) {
         case 'title':
           aValue = a.title.toLowerCase();
           bValue = b.title.toLowerCase();
@@ -714,21 +791,25 @@ function ActivitiesPageContent() {
           aValue = getCreatorOrganization(a).toLowerCase();
           bValue = getCreatorOrganization(b).toLowerCase();
           break;
+        case 'activityStatus':
+          aValue = getActivityStatusLabel(a.activityStatus || a.status || '1').toLowerCase();
+          bValue = getActivityStatusLabel(b.activityStatus || b.status || '1').toLowerCase();
+          break;
         default:
           return 0;
       }
       
-      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      if (aValue < bValue) return legacySortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return legacySortOrder === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [filteredActivities, sortField, sortOrder, usingOptimization]);
+  }, [filteredActivities, legacySortField, legacySortOrder, usingOptimization, getCreatorOrganization]);
 
   // Pagination logic - use server-side pagination for optimized, client-side for legacy
   const totalActivities = usingOptimization ? totalActivitiesCount : filteredActivities.length;
   const isShowingAll = false;
   const effectiveLimit = pageLimit;
-  const totalPages = usingOptimization ? optimizedData.totalPages : Math.ceil(totalActivities / pageLimit);
+  const totalPages = usingOptimization ? safeOptimizedData.totalPages : Math.ceil(totalActivities / pageLimit);
   
   let paginatedActivities, startIndex, endIndex;
   
@@ -749,12 +830,12 @@ function ActivitiesPageContent() {
     setPageLimit(newLimit);
     if (usingOptimization) {
       // This will be handled by the optimized hook
-      optimizedData.setPage(1);
+      safeOptimizedData.setPage(1);
     } else {
       setCurrentPage(1);
     }
     localStorage.setItem('activities-page-limit', newLimit.toString());
-  }, [usingOptimization, optimizedData]);
+  }, [usingOptimization, safeOptimizedData]);
   
   // Legacy effects for non-optimized version
   useEffect(() => {
@@ -763,21 +844,7 @@ function ActivitiesPageContent() {
     }
   }, [pageLimit, usingOptimization]);
 
-  // Memoized helper functions for better performance
-  const getCreatorOrganization = useCallback((activity: Activity): string => {
-    if (activity.created_by_org_acronym) {
-      return activity.created_by_org_acronym;
-    }
-    if (activity.createdByOrg) {
-      const org = organizations.find(o => o.id === activity.createdByOrg);
-      if (org && org.acronym) return org.acronym;
-      if (org && org.name) return org.name;
-    }
-    if (activity.created_by_org_name) {
-      return activity.created_by_org_name;
-    }
-    return "Unknown";
-  }, [organizations]);
+
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -819,28 +886,82 @@ function ActivitiesPageContent() {
               <ActivityStatusFilterSelect
                 value={filterStatus}
                 onValueChange={setFilterStatus}
-                placeholder="Activity Status"
+                placeholder="Status"
                 className="w-[140px]"
               />
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Publication" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                </SelectContent>
-              </Select>
+
               <Select value={filterValidation} onValueChange={setFilterValidation}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Validation" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Validation</SelectItem>
+                  <SelectItem value="all">All Validation Types</SelectItem>
                   <SelectItem value="validated">Validated</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                   <SelectItem value="pending">Not Validated</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Reported By Filter */}
+              <Select value={filterReportedBy} onValueChange={setFilterReportedBy}>
+                <SelectTrigger className="w-[140px] pl-0">
+                  <SelectValue placeholder="Organisation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Organisations</SelectItem>
+                  {organizations.map((org) => (
+                    <SelectItem key={org.id} value={org.id}>
+                      {org.acronym || org.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Aid Type Filter */}
+              <Select value={filterAidType} onValueChange={setFilterAidType}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Aid Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Aid Types</SelectItem>
+                  {Object.entries(AID_TYPE_LABELS).map(([code, label]) => (
+                    <SelectItem key={code} value={code}>
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Flow Type Filter */}
+              <Select value={filterFlowType} onValueChange={setFilterFlowType}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Flow Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Flow Types</SelectItem>
+                  {Object.entries(FLOW_TYPE_LABELS).map(([code, label]) => (
+                    <SelectItem key={code} value={code}>
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Tied Status Filter */}
+              <Select value={filterTiedStatus} onValueChange={setFilterTiedStatus}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Tied Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tied Status Types</SelectItem>
+                  {Object.entries(TIED_STATUS_LABELS).map(([code, label]) => (
+                    <SelectItem key={code} value={code}>
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               
@@ -913,14 +1034,14 @@ function ActivitiesPageContent() {
                   <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Activities</h3>
                   <p className="text-slate-500 mb-4">{error}</p>
                   <Button 
-                    onClick={() => usingOptimization ? optimizedData.refetch() : fetchActivities(1, true)} 
+                    onClick={() => usingOptimization ? safeOptimizedData.refetch() : fetchActivities(1, true)} 
                     variant="outline"
                   >
                     Try Again
                   </Button>
                 </div>
               </div>
-            ) : filterStatus !== "all" || filterType !== "all" || filterValidation !== "all" ? (
+            ) : filterStatus !== "all" || filterValidation !== "all" ? (
               <div className="text-slate-500">No matching activities found</div>
             ) : (
               <div className="space-y-4">
@@ -943,15 +1064,21 @@ function ActivitiesPageContent() {
                       onClick={() => handleSort('title')}
                     >
                       <div className="flex items-center gap-1">
-                        Activity
+                        Activity Title
                         {getSortIcon('title')}
                       </div>
                     </th>
-                    <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left w-[120px]">
-                      Status
+                    <th 
+                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left cursor-pointer hover:bg-gray-200 w-[120px]"
+                      onClick={() => handleSort('activityStatus')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Activity Status
+                        {getSortIcon('activityStatus')}
+                      </div>
                     </th>
                     <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-center w-[120px]">
-                      Data Source & Review
+                      Publication Status
                     </th>
                     <th 
                       className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left min-w-[140px] cursor-pointer hover:bg-gray-200"
@@ -968,9 +1095,18 @@ function ActivitiesPageContent() {
                     >
                       <div className="flex items-center justify-end gap-1">
                         Total Budgeted
-                        <InfoIconTooltip content="Total budget amount across all budget entries for this activity. All values are displayed in USD.">
-                          <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
-                        </InfoIconTooltip>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="inline h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <div className="p-2">
+                                <span className="text-sm font-normal text-muted-foreground">Total budget amount across all budget entries for this activity. All values are displayed in USD.</span>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         {getSortIcon('commitments')}
                       </div>
                     </th>
@@ -980,9 +1116,18 @@ function ActivitiesPageContent() {
                     >
                       <div className="flex items-center justify-end gap-1">
                         Total Disbursed
-                        <InfoIconTooltip content="Sum of all disbursement (type 3) and expenditure (type 4) transactions for this activity. All values are displayed in USD.">
-                          <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
-                        </InfoIconTooltip>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="inline h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <div className="p-2">
+                                <span className="text-sm font-normal text-muted-foreground">Sum of all disbursement (type 3) and expenditure (type 4) transactions for this activity. All values are displayed in USD.</span>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         {getSortIcon('disbursements')}
                       </div>
                     </th>
@@ -1037,7 +1182,7 @@ function ActivitiesPageContent() {
                                           e.stopPropagation();
                                           copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
                                         }}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
                                         title="Copy Activity ID"
                                       >
                                         {copiedId === `${activity.id}-partnerId` ? (
@@ -1048,7 +1193,7 @@ function ActivitiesPageContent() {
                                       </button>
                                     </>
                                   )}
-                                  {activity.partnerId && activity.iatiIdentifier && <span className="mx-1">•</span>}
+
                                   {activity.iatiIdentifier && (
                                     <>
                                       <span className="text-slate-400 ml-2">{activity.iatiIdentifier}</span>
@@ -1057,7 +1202,7 @@ function ActivitiesPageContent() {
                                           e.stopPropagation();
                                           copyToClipboard(activity.iatiIdentifier!, 'iatiIdentifier', activity.id);
                                         }}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
                                         title="Copy IATI Identifier"
                                       >
                                         {copiedId === `${activity.id}-iatiIdentifier` ? (
@@ -1086,15 +1231,15 @@ function ActivitiesPageContent() {
                                 <div className="space-y-2 p-1">
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <FileCheck className="h-4 w-4" />
-                                    <span className="text-sm">Published: {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <ShieldCheck className="h-4 w-4" />
-                                    <span className="text-sm">Validation: {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Globe className="h-4 w-4" />
-                                    <span className="text-sm">IATI: {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
+                                    <span className="text-sm"><span className="font-semibold">IATI:</span> {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
                                   </div>
                                 </div>
                               </TooltipContent>
@@ -1109,26 +1254,46 @@ function ActivitiesPageContent() {
                                   {creatorOrg}
                                 </div>
                               </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="space-y-1">
-                                  <div className="font-medium">
+                              <TooltipContent className="max-w-xs">
+                                <div className="p-2">
+                                  <span className="text-sm font-normal text-muted-foreground">
                                     Reported by {activity.created_by_org_name || "Unknown Organization"}
-                                  </div>
-                                  {activity.createdBy?.name && (
-                                    <div className="text-xs text-muted-foreground">
-                                      Submitted by {activity.createdBy.name} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
-                                    </div>
-                                  )}
+                                    {activity.createdBy?.name && (
+                                      <>. Submitted by {activity.createdBy.name} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}</>
+                                    )}
+                                  </span>
                                 </div>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </td>
                         <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
-                          {formatCurrency((activity as any).totalBudget || 0)}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger className="cursor-help">
+                                {formatCurrency((activity as any).totalBudget || 0)}
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="p-2">
+                                  <span className="text-sm font-normal text-muted-foreground">Total budget amount across all budget entries for this activity. All values are displayed in USD for consistency across different currencies.</span>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </td>
                         <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
-                          {formatCurrency((activity as any).totalDisbursed || 0)}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger className="cursor-help">
+                                {formatCurrency((activity as any).totalDisbursed || 0)}
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="p-2">
+                                  <span className="text-sm font-normal text-muted-foreground">Sum of all disbursement (type 3) and expenditure (type 4) transactions for this activity. All values are displayed in USD for consistency across different currencies.</span>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </td>
 
                         <td className="px-4 py-2 text-sm text-foreground whitespace-nowrap text-right">
@@ -1144,15 +1309,15 @@ function ActivitiesPageContent() {
                                 <div className="space-y-2 p-1">
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Handshake className="h-4 w-4" />
-                                    <span className="text-sm">Aid Type: {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Shuffle className="h-4 w-4" />
-                                    <span className="text-sm">Flow Type: {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Link2 className="h-4 w-4" />
-                                    <span className="text-sm">Tied Status: {activity.tied_status ? TIED_STATUS_LABELS[activity.tied_status] || activity.tied_status : 'Not specified'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.tied_status ? TIED_STATUS_LABELS[activity.tied_status] || activity.tied_status : 'Not specified'}</span>
                                   </div>
                                 </div>
                               </TooltipContent>
@@ -1241,7 +1406,7 @@ function ActivitiesPageContent() {
               size="sm"
               onClick={() => {
                 const newPage = Math.max(1, currentPage - 1);
-                usingOptimization ? optimizedData.setPage(newPage) : setCurrentPage(newPage);
+                usingOptimization ? safeOptimizedData.setPage(newPage) : setCurrentPage(newPage);
               }}
               disabled={currentPage === 1}
             >
@@ -1265,7 +1430,7 @@ function ActivitiesPageContent() {
                     variant={currentPage === pageNum ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
-                      usingOptimization ? optimizedData.setPage(pageNum) : setCurrentPage(pageNum);
+                      usingOptimization ? safeOptimizedData.setPage(pageNum) : setCurrentPage(pageNum);
                     }}
                     className="w-10"
                   >
@@ -1279,7 +1444,7 @@ function ActivitiesPageContent() {
               size="sm"
               onClick={() => {
                 const newPage = Math.min(totalPages, currentPage + 1);
-                usingOptimization ? optimizedData.setPage(newPage) : setCurrentPage(newPage);
+                usingOptimization ? safeOptimizedData.setPage(newPage) : setCurrentPage(newPage);
               }}
               disabled={currentPage === totalPages}
             >

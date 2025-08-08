@@ -35,6 +35,7 @@ interface CollaborationTypeSelectProps {
   placeholder?: string
   disabled?: boolean
   className?: string
+  dropdownId?: string // Unique identifier for this dropdown instance
 }
 
 export function CollaborationTypeSelect({
@@ -43,6 +44,7 @@ export function CollaborationTypeSelect({
   placeholder = "Select Collaboration Type",
   disabled = false,
   className,
+  dropdownId = "collaboration-type-select",
 }: CollaborationTypeSelectProps) {
   return (
     <CollaborationTypeSearchableSelect
@@ -51,6 +53,7 @@ export function CollaborationTypeSelect({
       placeholder={placeholder}
       disabled={disabled}
       className={className}
+      dropdownId={dropdownId}
     />
   )
 }

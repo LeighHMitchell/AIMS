@@ -10,8 +10,11 @@ import { Toaster } from "sonner"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "AIMS - Aid Information Management System",
-  description: "Streamlining aid coordination and transparency",
+  title: "æther",
+  description: "Development Finance Information, Simplified.",
+  icons: {
+    icon: '/images/Aether Logo.001.jpeg',
+  },
 }
 
 export default function RootLayout({

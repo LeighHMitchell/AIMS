@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
+import { CommentsDrawer } from './activities/CommentsDrawer';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -343,9 +344,16 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
 
         {/* Footer */}
         <div className="border-t border-gray-200 pt-4">
-          <p className="text-xs text-gray-500">
-            Changes are automatically saved when you finish editing each field.
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500">
+              Changes are automatically saved when you finish editing each field.
+            </p>
+            <CommentsDrawer activityId={activityId}>
+              <button className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                💬 Comments
+              </button>
+            </CommentsDrawer>
+          </div>
         </div>
       </div>
     </div>

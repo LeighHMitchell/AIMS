@@ -89,7 +89,7 @@ export const IconUpload: React.FC<IconUploadProps> = ({
             alt="Activity icon"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
             <div {...getRootProps()}>
               <input {...getInputProps()} />
               <Button
@@ -128,13 +128,13 @@ export const IconUpload: React.FC<IconUploadProps> = ({
         `}
       >
         <input {...getInputProps()} />
-        <div className="flex flex-col items-center justify-center text-gray-500">
+        <div className="h-full flex flex-col items-center justify-center text-gray-500">
           <ImageIcon className="h-16 w-16 text-gray-400 mb-3" />
           <p className="text-sm font-medium">
             {isDragActive ? "Drop the icon here" : "Drag & drop an icon here"}
           </p>
           <p className="text-xs mt-1">or click to select</p>
-          <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 2MB (Recommended: 512x512px)</p>
+          <p className="text-xs mt-2 text-gray-400 text-center">PNG, JPG, GIF up to 2MB (Recommended: 512x512px)</p>
         </div>
       </div>
 

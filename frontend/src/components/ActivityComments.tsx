@@ -37,6 +37,7 @@ import {
   Eye,
   Archive,
   ArchiveRestore,
+  Trash,
 } from 'lucide-react';
 
 interface ActivityCommentsProps {
@@ -73,9 +74,41 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Function to normalize old comment format to new format
+  // Function to normalize comment format to expected structure
   const normalizeComment = (comment: any): ActivityComment => {
-    // Check if it's an old format comment
+    // Handle database format (user_name, user_role, etc.)
+    if (comment.user_name && !comment.author) {
+      return {
+        id: comment.id,
+        activityId: comment.activity_id || activityId,
+        author: {
+          userId: comment.user_id || '',
+          name: comment.user_name || 'Unknown User',
+          role: comment.user_role || 'user',
+        },
+        type: comment.type === 'response' ? 'Feedback' : (comment.type || 'Feedback'),
+        message: comment.message || comment.content || '',
+        createdAt: comment.created_at || comment.createdAt,
+        replies: (comment.replies || []).map((reply: any) => ({
+          ...reply,
+          id: reply.id,
+          createdAt: reply.created_at || reply.createdAt,
+          message: reply.message || reply.content || '',
+          author: {
+            userId: reply.user_id || '',
+            name: reply.user_name || 'Unknown User',
+            role: reply.user_role || 'user',
+          }
+        })),
+        status: comment.status || 'Open',
+        contextSection: comment.context_section || comment.contextSection,
+        contextField: comment.context_field || comment.contextField,
+        isArchived: comment.is_archived || false,
+        attachments: comment.attachments || [],
+      };
+    }
+    
+    // Check if it's an old format comment (userId format)
     if (comment.userId && !comment.author) {
       return {
         id: comment.id,
@@ -94,7 +127,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
       };
     }
     
-    // For new format, just ensure type is correct
+    // For already normalized format, just ensure type is correct
     return {
       ...comment,
       type: comment.type === 'response' ? 'Feedback' : (comment.type || 'Feedback'),
@@ -180,7 +213,9 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
       if (selectedContextSection) params.append('section', selectedContextSection);
       if (filterType !== 'all') params.append('type', filterType === 'question' ? 'Question' : 'Feedback');
       if (activeTab !== 'open') params.append('status', 'Resolved');
-      if (showArchived) params.append('includeArchived', 'true');
+      
+      // Always explicitly set includeArchived parameter
+      params.append('includeArchived', showArchived ? 'true' : 'false');
       
       const url = `/api/activities/${activityId}/comments${params.toString() ? '?' + params.toString() : ''}`;
       const res = await fetch(url);
@@ -406,6 +441,37 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user) return;
+    
+    // Show confirmation dialog
+    if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/activities/${activityId}/comments`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user,
+          commentId,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete comment');
+      }
+      
+      await fetchComments();
+      toast.success('Comment deleted successfully');
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete comment');
+    }
+  };
+
   const handleUnarchiveComment = async (commentId: string) => {
     if (!user) return;
     
@@ -482,8 +548,8 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
 
   const renderComment = (comment: ActivityComment) => {
     const isExpanded = expandedComments.has(comment.id) || comment.status === 'Open';
-    const canResolve = user?.id === comment.author.userId && comment.status === 'Open';
-    const canReopen = user?.id === comment.author.userId && comment.status === 'Resolved';
+    const canResolve = user?.id === comment.author?.userId && comment.status === 'Open';
+    const canReopen = user?.id === comment.author?.userId && comment.status === 'Resolved';
 
     return (
       <div key={comment.id} className={`border rounded-lg ${
@@ -503,9 +569,9 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                 
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{comment.author.name}</span>
+                    <span className="font-medium">{comment.author?.name || 'Unknown User'}</span>
                     <Badge variant="outline" className="text-xs">
-                      {comment.author.role}
+                      {comment.author?.role || 'user'}
                     </Badge>
                     <Badge 
                       variant={comment.type === 'Question' ? 'default' : 'secondary'}
@@ -605,9 +671,9 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                     {comment.replies.map(reply => (
                       <div key={reply.id} className="text-sm">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">{reply.author.name}</span>
+                          <span className="font-medium">{reply.author?.name || 'Unknown User'}</span>
                           <Badge variant="outline" className="text-xs">
-                            {reply.author.role}
+                            {reply.author?.role || 'user'}
                           </Badge>
                           <Badge 
                             variant={reply.type === 'Question' ? 'default' : 'secondary'}
@@ -679,6 +745,19 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                     >
                       <ArchiveRestore className="h-3 w-3 mr-1" />
                       Unarchive
+                    </Button>
+                  )}
+                  
+                  {/* Delete button - only show for comment author or admin */}
+                  {user && (comment.author?.userId === user.id || ['super_user', 'admin'].includes(user.role)) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash className="h-3 w-3 mr-1" />
+                      Delete
                     </Button>
                   )}
                 </div>

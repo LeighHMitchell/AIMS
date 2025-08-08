@@ -10,6 +10,7 @@ interface ActivityStatusSelectProps {
   placeholder?: string
   disabled?: boolean
   id?: string
+  dropdownId?: string // Unique identifier for this dropdown instance
 }
 
 export function ActivityStatusSelect({
@@ -18,6 +19,7 @@ export function ActivityStatusSelect({
   placeholder = "Select Activity Status",
   disabled = false,
   id,
+  dropdownId = "activity-status-select",
 }: ActivityStatusSelectProps) {
   return (
     <EnhancedSearchableSelect
@@ -28,6 +30,7 @@ export function ActivityStatusSelect({
       searchPlaceholder="Search status..."
       disabled={disabled}
       className="w-full"
+      dropdownId={dropdownId}
     />
   )
 }

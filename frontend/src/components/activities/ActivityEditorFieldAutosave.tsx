@@ -27,6 +27,7 @@ interface ActivityEditorFieldAutosaveProps {
     tooltipMessage: string;
   };
   saveOnBlur?: boolean; // New prop for save on blur functionality
+  dropdownId?: string; // Unique identifier for dropdown instances
 }
 
 export function ActivityEditorFieldAutosave({
@@ -40,7 +41,8 @@ export function ActivityEditorFieldAutosave({
   showOnlyAidType = false,
   additionalData = {},
   fieldLockStatus,
-  saveOnBlur
+  saveOnBlur,
+  dropdownId
 }: ActivityEditorFieldAutosaveProps) {
   
   // Initialize field autosave hooks with success callbacks
@@ -170,6 +172,7 @@ export function ActivityEditorFieldAutosave({
               }}
               placeholder="Select activity status"
               disabled={fieldLockStatus?.isLocked}
+              dropdownId={dropdownId ? `${dropdownId}-status` : 'activity-status-select'}
             />
             {statusAutosave.state.error && (
               <p className="text-xs text-red-600 mt-1">{statusAutosave.state.error.toString()}</p>

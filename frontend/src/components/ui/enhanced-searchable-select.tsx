@@ -4,6 +4,8 @@ import * as React from "react";
 import { ChevronsUpDown, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { Command, CommandGroup, CommandItem, CommandList } from "./command";
+import { useDropdownState } from "@/contexts/DropdownContext";
 
 export interface EnhancedSelectOption {
   code: string;
@@ -26,6 +28,7 @@ interface EnhancedSearchableSelectProps {
   className?: string;
   emptyStateMessage?: string;
   emptyStateSubMessage?: string;
+  dropdownId?: string; // Unique identifier for this dropdown instance
 }
 
 export function EnhancedSearchableSelect({
@@ -38,8 +41,10 @@ export function EnhancedSearchableSelect({
   className,
   emptyStateMessage = "No options found.",
   emptyStateSubMessage = "Try adjusting your search terms",
+  dropdownId = "enhanced-searchable-select",
 }: EnhancedSearchableSelectProps) {
-  const [open, setOpen] = React.useState(false);
+  // Use shared dropdown state if dropdownId is provided
+  const { isOpen, setOpen } = useDropdownState(dropdownId);
   const [search, setSearch] = React.useState("");
 
   // Flatten all options for search and selection
@@ -93,7 +98,7 @@ export function EnhancedSearchableSelect({
 
   return (
     <div className={cn("pb-6", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={isOpen} onOpenChange={setOpen}>
         <PopoverTrigger
           data-popover-trigger
           className={cn(
@@ -134,87 +139,81 @@ export function EnhancedSearchableSelect({
           align="start"
           sideOffset={4}
         >
-          {/* Search Input */}
-          <div className="flex items-center border-b px-3 py-2">
-            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-            <input
-              placeholder={searchPlaceholder}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
-              autoFocus
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={handleSearchClear}
-                className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                aria-label="Clear search"
-                tabIndex={-1}
-              >
-                <span className="text-xs">×</span>
-              </button>
-            )}
-          </div>
+          <Command>
+            {/* Search Input */}
+            <div className="flex items-center border-b px-3 py-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <input
+                placeholder={searchPlaceholder}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                autoFocus
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={handleSearchClear}
+                  className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                  aria-label="Clear search"
+                  tabIndex={-1}
+                >
+                  <span className="text-xs">×</span>
+                </button>
+              )}
+            </div>
 
-          {/* Options List */}
-          <div className="max-h-[300px] overflow-y-auto">
-            {filteredGroups.length === 0 ? (
-              <div className="py-8 text-center">
-                <div className="text-sm text-muted-foreground">
-                  {emptyStateMessage}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {emptyStateSubMessage}
-                </div>
-              </div>
-            ) : (
-              filteredGroups.map((group) => (
-                <div key={group.label}>
-                  {/* Group Header */}
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                    {group.label}
+            <CommandList>
+              {filteredGroups.length === 0 ? (
+                <div className="py-8 text-center">
+                  <div className="text-sm text-muted-foreground">
+                    {emptyStateMessage}
                   </div>
-                  
-                  {/* Group Options */}
-                  {group.options.map((option) => (
-                    <button
-                      key={option.code}
-                      type="button"
-                      onClick={() => handleSelect(option.code)}
-                      className={cn(
-                        "pl-6 pr-3 py-3 w-full text-left cursor-pointer transition-colors flex items-start gap-2 hover:bg-accent/50 focus:bg-accent focus:outline-none",
-                        value === option.code && "bg-accent"
-                      )}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4 mt-1 flex-shrink-0",
-                          value === option.code ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
-                            {option.code}
-                          </span>
-                          <span className="font-medium text-foreground truncate">
-                            {option.name.replace(new RegExp(`^${option.code}\\s*-?\\s*`), "")}
-                          </span>
-                        </div>
-                        {option.description && (
-                          <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                            {option.description}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {emptyStateSubMessage}
+                  </div>
                 </div>
-              ))
-            )}
-          </div>
+              ) : (
+                filteredGroups.map((group) => (
+                  <CommandGroup key={group.label}>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                      {group.label}
+                    </div>
+                    {group.options.map((option) => (
+                      <CommandItem
+                        key={option.code}
+                        onSelect={() => handleSelect(option.code)}
+                        className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            value === option.code ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              {option.code}
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {option.name.replace(new RegExp(`^${option.code}\\s*-?\\s*`), "")}
+                            </span>
+                          </div>
+                          {option.description && (
+                            <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                              {option.description}
+                            </div>
+                          )}
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                ))
+              )}
+            </CommandList>
+          </Command>
         </PopoverContent>
       </Popover>
     </div>

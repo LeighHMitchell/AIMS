@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { useContactsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { OrganizationCombobox, type Organization } from "@/components/ui/organization-combobox";
 
 interface Contact {
   id?: string;
@@ -21,9 +22,11 @@ interface Contact {
   lastName: string;
   position: string;
   organisation?: string;
+  organisationId?: string;
   phone?: string;
   fax?: string;
   email?: string;
+  secondaryEmail?: string;
   profilePhoto?: string;
   notes?: string;
 }
@@ -49,10 +52,33 @@ const TITLES = ["Mr.", "Ms.", "Mrs.", "Dr.", "Prof.", "Eng."];
 export default function ContactsSection({ contacts, onChange, activityId }: ContactsSectionProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(true);
   const { user } = useUser();
 
   // Field-level autosave for contacts
   const contactsAutosave = useContactsAutosave(activityId, user?.id);
+
+  // Fetch organizations on component mount
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        const response = await fetch('/api/organizations');
+        if (response.ok) {
+          const data = await response.json();
+          setOrganizations(data);
+        } else {
+          console.error('Failed to fetch organizations');
+        }
+      } catch (error) {
+        console.error('Error fetching organizations:', error);
+      } finally {
+        setLoadingOrgs(false);
+      }
+    };
+
+    fetchOrganizations();
+  }, []);
 
   // Enhanced onChange that triggers autosave
   const handleContactsChange = (newContacts: Contact[]) => {
@@ -234,7 +260,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
           <div
             {...getRootProps()}
             className={`w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors
-              ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"}
+              ${isDragActive ? "border-gray-500 bg-gray-50" : "border-gray-300 hover:border-gray-400"}
               flex items-center justify-center`}
           >
             <input {...getInputProps()} />
@@ -281,6 +307,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
       {/* Contact List */}
       <div className="space-y-4">
         {contacts.map((contact, index) => (
+          (editingContact && editingIndex === index) ? null : (
           <Card key={contact.id || index}>
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
@@ -353,6 +380,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
               )}
             </CardContent>
           </Card>
+          )
         ))}
 
         {contacts.length === 0 && !editingContact && (
@@ -362,7 +390,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
               <p className="text-gray-500">No contacts added yet</p>
               <Button
                 variant="outline"
-                className="mt-4"
+                className="mt-4 border-gray-300 text-gray-700 hover:bg-gray-100"
                 onClick={handleAddContact}
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -375,189 +403,202 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
 
       {/* Add/Edit Contact Form */}
       {editingContact && (
-        <Card>
-          <CardHeader>
+        <Card className="border border-gray-200 shadow-none">
+          <CardHeader className="border-b border-gray-200 bg-gray-50">
             <CardTitle>
               {editingIndex === contacts.length ? "Add New Contact" : "Edit Contact"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-4">
-                {/* Contact Type */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Contact Type *</label>
-                  <Select
-                    value={editingContact.type}
-                    onValueChange={(value) =>
-                      setEditingContact({ ...editingContact, type: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CONTACT_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* Profile Photo at top left */}
+            <div className="flex justify-start">
+              <ProfilePhotoUpload
+                photo={editingContact.profilePhoto}
+                onChange={(photo) =>
+                  setEditingContact({ ...editingContact, profilePhoto: photo })
+                }
+              />
+            </div>
 
-                {/* Name Fields */}
-                <div className="grid grid-cols-4 gap-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Title</label>
-                    <Select
-                      value={editingContact.title}
-                      onValueChange={(value) =>
-                        setEditingContact({ ...editingContact, title: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TITLES.map((title) => (
-                          <SelectItem key={title} value={title}>
-                            {title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2 col-span-3">
-                    <label className="text-sm font-medium">First Name *</label>
-                    <Input
-                      value={editingContact.firstName}
-                      onChange={(e) =>
-                        setEditingContact({ ...editingContact, firstName: e.target.value })
-                      }
-                      placeholder="First name"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Middle Name</label>
-                    <Input
-                      value={editingContact.middleName || ""}
-                      onChange={(e) =>
-                        setEditingContact({ ...editingContact, middleName: e.target.value })
-                      }
-                      placeholder="Middle name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Last Name *</label>
-                    <Input
-                      value={editingContact.lastName}
-                      onChange={(e) =>
-                        setEditingContact({ ...editingContact, lastName: e.target.value })
-                      }
-                      placeholder="Last name"
-                    />
-                  </div>
-                </div>
-
-                {/* Position */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Position/Role *</label>
-                  <Input
-                    value={editingContact.position}
-                    onChange={(e) =>
-                      setEditingContact({ ...editingContact, position: e.target.value })
-                    }
-                    placeholder="e.g., Field Coordinator"
-                  />
-                </div>
-
-                {/* Organisation */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Organisation</label>
-                  <Input
-                    value={editingContact.organisation || ""}
-                    onChange={(e) =>
-                      setEditingContact({ ...editingContact, organisation: e.target.value })
-                    }
-                    placeholder="If different from main partner"
-                  />
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-4">
-                {/* Profile Photo */}
-                <ProfilePhotoUpload
-                  photo={editingContact.profilePhoto}
-                  onChange={(photo) =>
-                    setEditingContact({ ...editingContact, profilePhoto: photo })
+            {/* Name fields - all on one line */}
+            <div className="grid grid-cols-12 gap-2">
+              <div className="col-span-2">
+                <label className="text-sm font-medium">Title</label>
+                <Select
+                  value={editingContact.title}
+                  onValueChange={(value) =>
+                    setEditingContact({ ...editingContact, title: value })
                   }
-                />
-
-                {/* Contact Details */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Phone Number</label>
-                  <Input
-                    value={editingContact.phone || ""}
-                    onChange={(e) =>
-                      setEditingContact({ ...editingContact, phone: e.target.value })
-                    }
-                    placeholder="+95 9 123 456 789"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Email Address</label>
-                  <Input
-                    type="email"
-                    value={editingContact.email || ""}
-                    onChange={(e) =>
-                      setEditingContact({ ...editingContact, email: e.target.value })
-                    }
-                    placeholder="email@example.org"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Fax Number</label>
-                  <Input
-                    value={editingContact.fax || ""}
-                    onChange={(e) =>
-                      setEditingContact({ ...editingContact, fax: e.target.value })
-                    }
-                    placeholder="+95 1 234 5678"
-                  />
-                </div>
-
-                {/* Notes */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Notes</label>
-                  <Textarea
-                    value={editingContact.notes || ""}
-                    onChange={(e) =>
-                      setEditingContact({ ...editingContact, notes: e.target.value })
-                    }
-                    placeholder="Additional context or comments"
-                    rows={3}
-                  />
-                </div>
+                >
+                  <SelectTrigger className="bg-white border-gray-300 focus:ring-0 focus:border-gray-500">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TITLES.map((title) => (
+                      <SelectItem key={title} value={title}>
+                        {title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+              <div className="col-span-3">
+                <label className="text-sm font-medium">First Name *</label>
+                <Input
+                  value={editingContact.firstName}
+                  onChange={(e) =>
+                    setEditingContact({ ...editingContact, firstName: e.target.value })
+                  }
+                  placeholder="First name"
+                />
+              </div>
+              <div className="col-span-3">
+                <label className="text-sm font-medium">Middle Name</label>
+                <Input
+                  value={editingContact.middleName || ""}
+                  onChange={(e) =>
+                    setEditingContact({ ...editingContact, middleName: e.target.value })
+                  }
+                  placeholder="Middle name"
+                />
+              </div>
+              <div className="col-span-4">
+                <label className="text-sm font-medium">Last Name *</label>
+                <Input
+                  value={editingContact.lastName}
+                  onChange={(e) =>
+                    setEditingContact({ ...editingContact, lastName: e.target.value })
+                  }
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+
+            {/* Position/Role - full width */}
+            <div>
+              <label className="text-sm font-medium">Position/Role *</label>
+              <Input
+                value={editingContact.position}
+                onChange={(e) =>
+                  setEditingContact({ ...editingContact, position: e.target.value })
+                }
+                placeholder="e.g., Field Coordinator"
+              />
+            </div>
+
+            {/* Contact Type - full width */}
+            <div>
+              <label className="text-sm font-medium">Contact Type *</label>
+              <Select
+                value={editingContact.type}
+                onValueChange={(value) =>
+                  setEditingContact({ ...editingContact, type: value })
+                }
+              >
+                <SelectTrigger className="bg-white border-gray-300 focus:ring-0 focus:border-gray-500">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTACT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Organisation - full width */}
+            <div>
+              <label className="text-sm font-medium">Organisation</label>
+              <OrganizationCombobox
+                organizations={organizations}
+                value={editingContact.organisationId || ""}
+                onValueChange={(value) => {
+                  const selectedOrg = organizations.find(org => org.id === value);
+                  setEditingContact({ 
+                    ...editingContact, 
+                    organisationId: value,
+                    organisation: selectedOrg ? selectedOrg.name : ""
+                  });
+                }}
+                placeholder="Select organisation..."
+                className="bg-white border-gray-300 focus:ring-0 focus:border-gray-500"
+              />
+            </div>
+
+            {/* Primary Email and Secondary Email - on one line */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Primary Email</label>
+                <Input
+                  type="email"
+                  value={editingContact.email || ""}
+                  onChange={(e) =>
+                    setEditingContact({ ...editingContact, email: e.target.value })
+                  }
+                  placeholder="primary@example.org"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Secondary Email</label>
+                <Input
+                  type="email"
+                  value={editingContact.secondaryEmail || ""}
+                  onChange={(e) =>
+                    setEditingContact({ ...editingContact, secondaryEmail: e.target.value })
+                  }
+                  placeholder="secondary@example.org"
+                />
+              </div>
+            </div>
+
+            {/* Phone and Fax - on one line */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Phone Number</label>
+                <Input
+                  value={editingContact.phone || ""}
+                  onChange={(e) =>
+                    setEditingContact({ ...editingContact, phone: e.target.value })
+                  }
+                  placeholder="+95 9 123 456 789"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Fax Number</label>
+                <Input
+                  value={editingContact.fax || ""}
+                  onChange={(e) =>
+                    setEditingContact({ ...editingContact, fax: e.target.value })
+                  }
+                  placeholder="+95 1 234 5678"
+                />
+              </div>
+            </div>
+
+            {/* Notes spanning both columns */}
+            <div>
+              <label className="text-sm font-medium">Notes</label>
+              <Textarea
+                value={editingContact.notes || ""}
+                onChange={(e) =>
+                  setEditingContact({ ...editingContact, notes: e.target.value })
+                }
+                placeholder="Additional context or comments"
+                rows={3}
+              />
             </div>
 
             {/* Form Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button variant="outline" onClick={handleCancelEdit}>
+              <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100" onClick={handleCancelEdit}>
                 Cancel
               </Button>
               <Button onClick={() => {
                 console.log('[CONTACTS DEBUG] Save button clicked');
                 handleSaveContact();
-              }}>
+              }} className="bg-gray-900 text-white hover:bg-gray-800">
                 {editingIndex === contacts.length ? "Add Contact" : "Save Changes"}
               </Button>
             </div>
@@ -567,7 +608,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
 
       {/* Add Contact Button */}
       {!editingContact && contacts.length > 0 && (
-        <Button onClick={handleAddContact} variant="outline">
+        <Button onClick={handleAddContact} variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
           <Plus className="h-4 w-4 mr-2" />
           Add Another Contact
         </Button>

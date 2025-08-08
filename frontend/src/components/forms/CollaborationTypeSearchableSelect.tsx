@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { IATI_COLLABORATION_TYPES } from "@/data/iati-collaboration-types";
+import { useDropdownState } from "@/contexts/DropdownContext";
 
 type Option = {
   code: string;
@@ -27,6 +28,7 @@ interface CollaborationTypeSearchableSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  dropdownId?: string; // Unique identifier for this dropdown instance
 }
 
 export function CollaborationTypeSearchableSelect({
@@ -35,8 +37,10 @@ export function CollaborationTypeSearchableSelect({
   placeholder = "Select collaboration type...",
   disabled = false,
   className,
+  dropdownId = "collaboration-type-select",
 }: CollaborationTypeSearchableSelectProps) {
-  const [open, setOpen] = React.useState(false);
+  // Use shared dropdown state if dropdownId is provided
+  const { isOpen, setOpen } = useDropdownState(dropdownId);
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const selectedOption = allOptions.find(option => option.code === value);
@@ -66,7 +70,7 @@ export function CollaborationTypeSearchableSelect({
 
   return (
     <div className={cn("pb-6", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={isOpen} onOpenChange={setOpen}>
         <PopoverTrigger
           className={cn(
             "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",

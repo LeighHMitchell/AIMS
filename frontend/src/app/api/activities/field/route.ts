@@ -356,9 +356,66 @@ export async function POST(request: Request) {
         break;
         
       case 'contacts':
-        oldValue = existingActivity.contacts;
+        // Handle contacts using the activity_contacts table instead of a direct column
+        oldValue = existingActivity.contacts; // Keep for logging purposes
         newValue = body.value;
-        updateData.contacts = Array.isArray(body.value) ? body.value : [];
+        
+        try {
+          console.log('[Field API] Processing contacts update for activity:', body.activityId);
+          console.log('[Field API] Contacts data:', JSON.stringify(body.value, null, 2));
+          
+          // Delete existing contacts for this activity
+          const { error: deleteError } = await getSupabaseAdmin()
+            .from('activity_contacts')
+            .delete()
+            .eq('activity_id', body.activityId);
+
+          if (deleteError) {
+            console.error('[Field API] Error deleting existing contacts:', deleteError);
+            throw deleteError;
+          }
+
+          // Insert new contacts if any
+          if (Array.isArray(body.value) && body.value.length > 0) {
+            const contactsData = body.value.map((contact: any) => ({
+              activity_id: body.activityId,
+              type: contact.type,
+              title: contact.title,
+              first_name: contact.firstName,
+              middle_name: contact.middleName || null,
+              last_name: contact.lastName,
+              position: contact.position,
+              organisation: contact.organisation || null,
+              organisation_id: contact.organisationId || null,
+              phone: contact.phone || null,
+              fax: contact.fax || null,
+              email: contact.email || null,
+              secondary_email: contact.secondaryEmail || null,
+              profile_photo: contact.profilePhoto || null,
+              notes: contact.notes || null,
+              display_on_web: contact.displayOnWeb || false
+            }));
+
+            const { error: insertError } = await getSupabaseAdmin()
+              .from('activity_contacts')
+              .insert(contactsData);
+              
+            if (insertError) {
+              console.error('[Field API] Error inserting contacts:', insertError);
+              throw insertError;
+            }
+            
+            console.log('[Field API] Successfully updated', contactsData.length, 'contacts');
+          }
+          
+          // Don't add contacts to updateData since we're handling it separately
+        } catch (contactError) {
+          console.error('[Field API] Error updating contacts:', contactError);
+          return NextResponse.json(
+            { error: `Failed to save contacts: ${contactError instanceof Error ? contactError.message : 'Unknown error'}` },
+            { status: 500 }
+          );
+        }
         break;
         
       case 'plannedStartDate':
@@ -544,6 +601,18 @@ export async function POST(request: Request) {
         }
         break;
         
+      case 'icon':
+        oldValue = existingActivity.icon;
+        newValue = body.value;
+        updateData.icon = body.value;
+        break;
+        
+      case 'banner':
+        oldValue = existingActivity.banner;
+        newValue = body.value;
+        updateData.banner = body.value;
+        break;
+        
       default:
         return NextResponse.json(
           { error: `Unsupported field: ${body.field}` },
@@ -566,7 +635,7 @@ export async function POST(request: Request) {
     // Update activity
     let updatedActivity;
     let updateError;
-    if (body.field !== 'sectors' && body.field !== 'locations' && body.field !== 'policyMarkers' && body.field !== 'workingGroups') {
+    if (body.field !== 'sectors' && body.field !== 'locations' && body.field !== 'policyMarkers' && body.field !== 'workingGroups' && body.field !== 'contacts') {
       console.log('[Field API] Updating field with data:', updateData);
       const updateResult = await getSupabaseAdmin()
         .from('activities')
@@ -585,7 +654,7 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // For sectors, locations, policy markers, and working groups, fetch the activity for response data
+      // For sectors, locations, policy markers, working groups, and contacts, fetch the activity for response data
       const fetchResult = await getSupabaseAdmin()
         .from('activities')
         .select('*')
@@ -764,6 +833,46 @@ export async function POST(request: Request) {
       }
     }
 
+    // Fetch contacts from activity_contacts table if this was a contacts update
+    let contactsData = updatedActivity.contacts; // Default to existing value
+    if (body.field === 'contacts') {
+      try {
+        const { data: contacts, error: contactsError } = await getSupabaseAdmin()
+          .from('activity_contacts')
+          .select('*')
+          .eq('activity_id', body.activityId)
+          .order('created_at', { ascending: true });
+        
+        if (contactsError) {
+          console.error('[Field API] Error fetching contacts for response:', contactsError);
+          contactsData = [];
+        } else {
+          // Transform contacts to match expected format
+          contactsData = contacts?.map((contact: any) => ({
+            id: contact.id,
+            type: contact.type,
+            title: contact.title,
+            firstName: contact.first_name,
+            middleName: contact.middle_name,
+            lastName: contact.last_name,
+            position: contact.position,
+            organisation: contact.organisation,
+            organisationId: contact.organisation_id,
+            phone: contact.phone,
+            fax: contact.fax,
+            email: contact.email,
+            secondaryEmail: contact.secondary_email,
+            profilePhoto: contact.profile_photo,
+            notes: contact.notes,
+            displayOnWeb: contact.display_on_web
+          })) || [];
+        }
+      } catch (contactsFetchError) {
+        console.error('[Field API] Error fetching contacts for response:', contactsFetchError);
+        contactsData = [];
+      }
+    }
+
     // Return the updated activity data
     const responseData = {
       id: updatedActivity.id,
@@ -784,6 +893,8 @@ export async function POST(request: Request) {
       locations: locationsData,
       policyMarkers: policyMarkersData,
       workingGroups: workingGroupsData,
+      contacts: contactsData,
+      governmentPartners: updatedActivity.government_partners,
       plannedStartDate: updatedActivity.planned_start_date,
       plannedEndDate: updatedActivity.planned_end_date,
       actualStartDate: updatedActivity.actual_start_date,

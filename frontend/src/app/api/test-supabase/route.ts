@@ -35,7 +35,7 @@ export async function GET() {
     // Test a simple query to activities table
     const { data: activities, error: activitiesError } = await getSupabaseAdmin()
       .from('activities')
-      .select('id, title')
+      .select('id, title_narrative')
       .limit(1);
     
     if (activitiesError) {

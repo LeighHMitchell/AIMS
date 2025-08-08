@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/table"
 import { useUser } from "@/hooks/useUser"
 import { ActivityComments } from "@/components/ActivityComments"
+import { CommentsDrawer } from "@/components/activities/CommentsDrawer"
 import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
 import TransactionTab from "@/components/activities/TransactionTab"
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions"
@@ -565,6 +566,15 @@ export default function ActivityDetailPage() {
                   Add Banner
                 </Button>
               )}
+              <CommentsDrawer activityId={activity.id}>
+                <Button 
+                  variant="outline"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Comments
+                </Button>
+              </CommentsDrawer>
               <Button 
                 variant="outline"
                 className="border-slate-300 text-slate-700 hover:bg-slate-100"
@@ -692,9 +702,9 @@ export default function ActivityDetailPage() {
 
                   {/* Metadata Grid */}
                   <div className="grid grid-cols-2 gap-4 mt-6 text-sm">
-                    <div className="space-y-1">
-                      <div className="text-slate-500">Reported by:</div>
-                      <div className="text-slate-900 font-medium break-words">
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <span className="text-slate-500 shrink-0">Reported by:</span>
+                      <span className="text-slate-900 font-medium break-words min-w-0 flex-1">
                         {(() => {
                           const creatorOrg = partners.find(p => p.id === activity.createdByOrg);
                           if (creatorOrg) {
@@ -702,19 +712,21 @@ export default function ActivityDetailPage() {
                           }
                           return activity.created_by_org_acronym || activity.created_by_org_name || 'Unknown Organization';
                         })()}
-                      </div>
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-slate-500">Created:</span>
-                      <span className="ml-2 text-slate-900">{formatDate(activity.createdAt)}</span>
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      <div className="flex items-center">
+                        <span className="text-slate-500">Created:</span>
+                        <span className="ml-1 text-slate-900">{formatDate(activity.createdAt)}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-slate-500">Updated:</span>
+                        <span className="ml-1 text-slate-900">{formatDate(activity.updatedAt)}</span>
+                      </div>
                     </div>
                     <div>
                       <span className="text-slate-500">Creator:</span>
                       <span className="ml-2 text-slate-900">{activity.createdBy?.name || 'Unknown'}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Updated:</span>
-                      <span className="ml-2 text-slate-900">{formatDate(activity.updatedAt)}</span>
                     </div>
                   </div>
 

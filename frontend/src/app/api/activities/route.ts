@@ -644,6 +644,7 @@ export async function POST(request: Request) {
             phone: contact.phone || null,
             fax: contact.fax || null,
             email: contact.email || null,
+            secondary_email: contact.secondaryEmail || null,
             profile_photo: contact.profilePhoto || null,
             notes: contact.notes || null
           }));
@@ -828,6 +829,7 @@ export async function POST(request: Request) {
           phone: contact.phone,
           fax: contact.fax,
           email: contact.email,
+          secondaryEmail: contact.secondary_email,
           profilePhoto: contact.profile_photo,
           notes: contact.notes
         })) || [],
@@ -1349,6 +1351,7 @@ export async function POST(request: Request) {
         phone: contact.phone || null,
         fax: contact.fax || null,
         email: contact.email || null,
+        secondary_email: contact.secondaryEmail || null,
         profile_photo: contact.profilePhoto || null,
         notes: contact.notes || null
       }));
@@ -1496,6 +1499,7 @@ export async function POST(request: Request) {
         phone: contact.phone,
         fax: contact.fax,
         email: contact.email,
+        secondaryEmail: contact.secondary_email,
         profilePhoto: contact.profile_photo,
         notes: contact.notes
       })) || [],
@@ -1864,6 +1868,7 @@ export async function GET(request: NextRequest) {
         phone: contact.phone,
         fax: contact.fax,
         email: contact.email,
+        secondaryEmail: contact.secondary_email,
         profilePhoto: contact.profile_photo,
         notes: contact.notes
       })),

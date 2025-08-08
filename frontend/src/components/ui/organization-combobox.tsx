@@ -103,7 +103,7 @@ export function OrganizationCombobox({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between font-normal min-w-[320px] px-4 py-4 text-base h-auto",
+            "w-full justify-between font-normal min-w-[320px] px-4 py-2 text-base h-auto border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400",
             className
           )}
         >
@@ -154,6 +154,7 @@ export function OrganizationCombobox({
             placeholder="Search organizations..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            className="border-0 focus:ring-0"
           />
           <CommandList>
             {search && filteredOrgs.length === 0 && (

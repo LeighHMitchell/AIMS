@@ -94,186 +94,55 @@ export async function GET(
     
     console.log('[AIMS Comments API] Activity found, fetching comments...');
     
-    // Build query with filtering
-    let query = supabase
-      .from('activity_comments')
-      .select(`
-        id,
-        activity_id,
-        user_id,
-        user_name,
-        user_role,
-        message,
-        type,
-        status,
-        context_section,
-        context_field,
-        resolved_by_id,
-        resolved_by_name,
-        resolved_at,
-        resolution_note,
-        mentions,
-        attachments,
-        is_read,
-        is_archived,
-        archived_by_id,
-        archived_by_name,
-        archived_at,
-        archive_reason,
-        created_at,
-        updated_at
-      `)
-      .eq('activity_id', params.id);
-    
-    // Apply archive filtering
-    if (includeArchived) {
-      // When includeArchived is true, only show archived comments
-      query = query.eq('is_archived', true);
-    } else {
-      // Default: only show non-archived comments
-      query = query.or('is_archived.is.null,is_archived.eq.false');
-    }
-    
-    // Apply other filters
-    if (contextSection) {
-      query = query.eq('context_section', contextSection);
-    }
-    if (type) {
-      query = query.eq('type', type);
-    }
-    if (status) {
-      query = query.eq('status', status);
-    }
-    if (searchTerm) {
-      query = query.ilike('message', `%${searchTerm}%`);
-    }
-    
-    // Get comments with all filters applied
-    const { data: comments, error: commentsError } = await query
-      .order('created_at', { ascending: false });
-    
-    if (commentsError) {
-      console.error('[AIMS Comments API] Error fetching comments:', commentsError);
-      return NextResponse.json(
-        { error: 'Failed to fetch comments' },
-        { status: 500 }
-      );
-    }
-    
-    console.log('[AIMS Comments API] Found', comments?.length || 0, 'comments');
-    
-    // Get replies for these comments
-    const commentIds = (comments || []).map((c: any) => c.id);
-    let replies: any[] = [];
-    
-    if (commentIds.length > 0) {
-      const { data: repliesData, error: repliesError } = await supabase
-        .from('activity_comment_replies')
+    // Check if comments table exists by trying to query it
+    try {
+      let query = supabase
+        .from('activity_comments')
         .select(`
-          id,
-          comment_id,
-          user_id,
-          user_name,
-          user_role,
-          message,
-          type,
-          mentions,
-          attachments,
-          is_read,
-          created_at,
-          updated_at
+          *,
+          replies:activity_comment_replies(*)
         `)
-        .in('comment_id', commentIds)
-        .order('created_at', { ascending: true });
-      
-      if (repliesData && !repliesError) {
-        replies = repliesData;
+        .eq('activity_id', params.id);
+        
+      // Filter archived comments unless specifically requested
+      if (!includeArchived) {
+        query = query.eq('is_archived', false);
       }
-    }
-    
-    // Transform comments to match expected format
-    const transformedComments = (comments || []).map((comment: any) => {
-      const commentReplies = replies
-        .filter(r => r.comment_id === comment.id)
-        .map(reply => ({
-          id: reply.id,
-          author: {
-            userId: reply.user_id,
-            name: reply.user_name || 'Unknown User',
-            role: reply.user_role || 'user',
-          },
-          message: reply.message,
-          createdAt: reply.created_at,
-          type: reply.type || 'Feedback',
-          mentions: reply.mentions ? JSON.parse(reply.mentions) : [],
-          attachments: reply.attachments ? JSON.parse(reply.attachments) : [],
-          isRead: reply.is_read ? JSON.parse(reply.is_read) : {}
-        }));
       
-      return {
-        id: comment.id,
-        activityId: comment.activity_id,
-        author: {
-          userId: comment.user_id,
-          name: comment.user_name || 'Unknown User',
-          role: comment.user_role || 'user',
-        },
-        type: comment.type || 'Feedback',
-        message: comment.message,
-        createdAt: comment.created_at,
-        status: comment.status || 'Open',
-        contextSection: comment.context_section,
-        contextField: comment.context_field,
-        resolvedBy: comment.resolved_by_name ? {
-          userId: comment.resolved_by_id,
-          name: comment.resolved_by_name,
-          role: 'user'
-        } : undefined,
-        resolvedAt: comment.resolved_at,
-        resolutionNote: comment.resolution_note,
-        mentions: comment.mentions ? JSON.parse(comment.mentions) : [],
-        attachments: comment.attachments ? JSON.parse(comment.attachments) : [],
-        isRead: comment.is_read ? JSON.parse(comment.is_read) : {},
-        isArchived: comment.is_archived || false,
-        archivedBy: comment.archived_by_name ? {
-          userId: comment.archived_by_id,
-          name: comment.archived_by_name,
-          role: 'user'
-        } : undefined,
-        archivedAt: comment.archived_at,
-        archiveReason: comment.archive_reason,
-        replies: commentReplies
-      };
-    });
-    
-    // Apply filters if provided
-    let filteredComments = transformedComments;
-    
-    if (searchTerm) {
-      filteredComments = filteredComments.filter((comment: any) => 
-        comment.message.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      query = query.order('created_at', { ascending: false });
+      
+      const { data: comments, error: commentsError } = await query;
+
+      if (commentsError) {
+        console.error('[AIMS Comments API] Comments table error:', commentsError);
+        
+        // If table doesn't exist, return empty array with helpful message
+        if (commentsError.code === '42P01') { // Table doesn't exist
+          console.log('[AIMS Comments API] Comments table not found - database setup required');
+          return NextResponse.json([], { 
+            headers: { 
+              'X-Comments-Status': 'Database setup required. Run activate-advanced-comments.sql in Supabase.' 
+            }
+          });
+        }
+        
+        throw commentsError;
+      }
+      
+      console.log(`[AIMS Comments API] Found ${comments?.length || 0} comments`);
+      return NextResponse.json(comments || []);
+      
+    } catch (tableError) {
+      console.error('[AIMS Comments API] Table access error:', tableError);
+      
+      // Return empty array with setup instructions
+      return NextResponse.json([], { 
+        headers: { 
+          'X-Comments-Status': 'Database setup required. Run activate-advanced-comments.sql in Supabase.' 
+        }
+      });
     }
     
-    if (contextSection) {
-      filteredComments = filteredComments.filter((comment: any) => 
-        comment.contextSection === contextSection
-      );
-    }
-    
-    if (type) {
-      filteredComments = filteredComments.filter((comment: any) => 
-        comment.type === type
-      );
-    }
-    
-    if (status) {
-      filteredComments = filteredComments.filter((comment: any) => 
-        comment.status === status
-      );
-    }
-    
-    return NextResponse.json(filteredComments);
   } catch (error) {
     console.error('[AIMS Comments API] Unexpected error:', error);
     return NextResponse.json(
@@ -337,77 +206,107 @@ export async function POST(
 
     // Check if this is a reply to an existing comment
     if (parentCommentId) {
-      // Insert reply
-      const replyData = {
-        comment_id: parentCommentId,
-        user_id: userId,
-        user_name: user.name || 'Unknown User',
-        user_role: user.role || 'user',
-        message: content,
-        type: type || 'Feedback',
-        mentions: JSON.stringify(mentions),
-        attachments: JSON.stringify([]),
-        is_read: JSON.stringify({}),
-      };
-      
-      console.log('[AIMS Comments API] Inserting reply with data:', replyData);
-      
-      const { data: newReply, error: replyError } = await supabase
-        .from('activity_comment_replies')
-        .insert(replyData)
-        .select()
-        .single();
-      
-      if (replyError) {
-        console.error('[AIMS Comments API] Error adding reply:', replyError);
-        return NextResponse.json(
-          { error: `Failed to add reply: ${replyError.message}` },
-          { status: 500 }
-        );
+      // Try to insert reply
+      try {
+        const replyData = {
+          comment_id: parentCommentId,
+          user_id: userId,
+          user_name: user.name || 'Unknown User',
+          user_role: user.role || 'user',
+          message: content,
+          type: type || 'Feedback',
+          mentions: JSON.stringify(mentions),
+          attachments: JSON.stringify([]),
+          is_read: JSON.stringify({}),
+        };
+        
+        console.log('[AIMS Comments API] Inserting reply with data:', replyData);
+        
+        const { data: newReply, error: replyError } = await supabase
+          .from('activity_comment_replies')
+          .insert(replyData)
+          .select()
+          .single();
+        
+        if (replyError) {
+          console.error('[AIMS Comments API] Error adding reply:', replyError);
+          
+          // Check if table doesn't exist
+          if (replyError.code === '42P01') {
+            return NextResponse.json({ 
+              error: 'Comments feature not available - database setup required. Run activate-advanced-comments.sql in Supabase.' 
+            }, { status: 503 });
+          }
+          
+          return NextResponse.json(
+            { error: `Failed to add reply: ${replyError.message}` },
+            { status: 500 }
+          );
+        }
+        
+        console.log(`[AIMS Comments API] Reply added successfully:`, newReply);
+      } catch (tableError) {
+        console.error('[AIMS Comments API] Table access error for replies:', tableError);
+        return NextResponse.json({ 
+          error: 'Comments feature not available - database setup required. Run activate-advanced-comments.sql in Supabase.' 
+        }, { status: 503 });
       }
-      
-      console.log(`[AIMS Comments API] Reply added successfully:`, newReply);
     } else {
-      // Insert new comment
-      const commentData = {
-        activity_id: params.id,
-        user_id: userId,
-        user_name: user.name || 'Unknown User',
-        user_role: user.role || 'user',
-        content: content, // Original field (required for backward compatibility)
-        message: content, // New field (for enhanced features)
-        type: type || 'Feedback',
-        status: 'Open',
-        context_section: contextSection || null,
-        context_field: contextField || null,
-        mentions: JSON.stringify(mentions),
-        attachments: JSON.stringify([]),
-        is_read: JSON.stringify({}),
-      };
-      
-      console.log('[AIMS Comments API] Inserting comment with data:', commentData);
-      
-      const { data: newComment, error: commentError } = await supabase
-        .from('activity_comments')
-        .insert(commentData)
-        .select()
-        .single();
-      
-      if (commentError) {
-        console.error('[AIMS Comments API] Error adding comment:', commentError);
-        console.error('[AIMS Comments API] Error details:', {
-          code: commentError.code,
-          message: commentError.message,
-          details: commentError.details,
-          hint: commentError.hint
-        });
-        return NextResponse.json(
-          { error: `Failed to add comment: ${commentError.message}` },
-          { status: 500 }
-        );
+      // Try to insert new comment
+      try {
+        const commentData = {
+          activity_id: params.id,
+          user_id: userId,
+          user_name: user.name || 'Unknown User',
+          user_role: user.role || 'user',
+          content: content, // Original field (required for backward compatibility)
+          message: content, // New field (for enhanced features)
+          type: type || 'Feedback',
+          status: 'Open',
+          context_section: contextSection || null,
+          context_field: contextField || null,
+          mentions: JSON.stringify(mentions),
+          attachments: JSON.stringify([]),
+          is_read: JSON.stringify({}),
+        };
+        
+        console.log('[AIMS Comments API] Inserting comment with data:', commentData);
+        
+        const { data: newComment, error: commentError } = await supabase
+          .from('activity_comments')
+          .insert(commentData)
+          .select()
+          .single();
+        
+        if (commentError) {
+          console.error('[AIMS Comments API] Error adding comment:', commentError);
+          
+          // Check if table doesn't exist
+          if (commentError.code === '42P01') {
+            return NextResponse.json({ 
+              error: 'Comments feature not available - database setup required. Run activate-advanced-comments.sql in Supabase.' 
+            }, { status: 503 });
+          }
+          
+          console.error('[AIMS Comments API] Error details:', {
+            code: commentError.code,
+            message: commentError.message,
+            details: commentError.details,
+            hint: commentError.hint
+          });
+          return NextResponse.json(
+            { error: `Failed to add comment: ${commentError.message}` },
+            { status: 500 }
+          );
+        }
+        
+        console.log(`[AIMS Comments API] Comment added successfully:`, newComment);
+      } catch (tableError) {
+        console.error('[AIMS Comments API] Table access error for comments:', tableError);
+        return NextResponse.json({ 
+          error: 'Comments feature not available - database setup required. Run activate-advanced-comments.sql in Supabase.' 
+        }, { status: 503 });
       }
-      
-      console.log(`[AIMS Comments API] Comment added successfully:`, newComment);
     }
     
     // Return all comments for the activity
@@ -522,6 +421,90 @@ export async function PATCH(
     console.error('[AIMS Comments API] Error updating comment:', error);
     return NextResponse.json(
       { error: 'Failed to update comment' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE comment with enhanced features and permission checks
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = await request.json();
+    const { commentId, user } = body;
+    
+    console.log('[AIMS Comments API] DELETE request for comment:', commentId, 'by user:', user);
+    
+    if (!commentId) {
+      return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
+    }
+    
+    if (!user || !user.id) {
+      return NextResponse.json({ error: 'User authentication required' }, { status: 401 });
+    }
+    
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      console.error('[AIMS Comments API] Supabase admin client is null');
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
+    // First check if the comment exists and get its details
+    const { data: comment, error: fetchError } = await supabase
+      .from('activity_comments')
+      .select('id, user_id, user_name, activity_id')
+      .eq('id', commentId)
+      .single();
+    
+    if (fetchError || !comment) {
+      console.error('[AIMS Comments API] Comment not found:', commentId, fetchError);
+      return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+    }
+    
+    // Verify the comment belongs to the current activity
+    if (comment.activity_id !== params.id) {
+      return NextResponse.json({ error: 'Comment does not belong to this activity' }, { status: 403 });
+    }
+    
+    // Convert user ID if needed (support for test user mapping)
+    let userId = user.id;
+    if (!isValidUUID(userId)) {
+      userId = USER_ID_MAP[userId] || userId;
+    }
+    
+    // Permission check: Only the comment author or admin can delete
+    const isAuthor = comment.user_id === userId;
+    const isAdmin = user.role && ['super_user', 'admin'].includes(user.role);
+    
+    if (!isAuthor && !isAdmin) {
+      return NextResponse.json({ 
+        error: 'Permission denied. Only the comment author or an admin can delete comments.' 
+      }, { status: 403 });
+    }
+    
+    // Delete the comment (this will cascade delete replies due to foreign key constraints)
+    const { error: deleteError } = await supabase
+      .from('activity_comments')
+      .delete()
+      .eq('id', commentId);
+    
+    if (deleteError) {
+      console.error('[AIMS Comments API] Error deleting comment:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete comment' }, { status: 500 });
+    }
+    
+    console.log('[AIMS Comments API] Comment deleted successfully:', commentId);
+    
+    return NextResponse.json(
+      { message: 'Comment deleted successfully' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('[AIMS Comments API] Error deleting comment:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete comment' },
       { status: 500 }
     );
   }

@@ -48,10 +48,12 @@ export async function GET(request: NextRequest) {
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    // Build optimized query using CTE for better performance
-    let countQuery = supabase
-      .from('activities')
-      .select('id', { count: 'exact', head: true });
+    // Build optimized query
+    // Avoid expensive exact count unless explicitly requested
+    const wantCount = searchParams.get('withCount') === 'true';
+    let countQuery = wantCount
+      ? supabase.from('activities').select('id', { count: 'exact', head: true })
+      : null;
 
     let dataQuery = supabase
       .from('activities')
@@ -87,7 +89,7 @@ export async function GET(request: NextRequest) {
       `)
       .range(offset, offset + limit - 1);
 
-    // Apply filters to both queries
+    // Apply filters
     if (search) {
       const searchConditions = [];
       
@@ -99,39 +101,50 @@ export async function GET(request: NextRequest) {
       searchConditions.push(`title_narrative.ilike.%${search}%`);
       
       const orCondition = searchConditions.join(',');
-      countQuery = countQuery.or(orCondition);
+      if (countQuery) countQuery = countQuery.or(orCondition);
       dataQuery = dataQuery.or(orCondition);
     }
 
     if (activityStatus && activityStatus !== 'all') {
-      countQuery = countQuery.eq('activity_status', activityStatus);
+      if (countQuery) countQuery = countQuery.eq('activity_status', activityStatus);
       dataQuery = dataQuery.eq('activity_status', activityStatus);
     }
 
     if (publicationStatus && publicationStatus !== 'all') {
-      countQuery = countQuery.eq('publication_status', publicationStatus);
+      if (countQuery) countQuery = countQuery.eq('publication_status', publicationStatus);
       dataQuery = dataQuery.eq('publication_status', publicationStatus);
     }
 
     if (submissionStatus && submissionStatus !== 'all') {
-      countQuery = countQuery.eq('submission_status', submissionStatus);
+      if (countQuery) countQuery = countQuery.eq('submission_status', submissionStatus);
       dataQuery = dataQuery.eq('submission_status', submissionStatus);
     }
 
-    // Apply sorting
-    const validSortFields = ['title_narrative', 'created_at', 'updated_at', 'other_identifier'];
-    if (validSortFields.includes(sortField)) {
-      dataQuery = dataQuery.order(sortField, { ascending: sortOrder === 'asc' });
-    } else {
-      dataQuery = dataQuery.order('updated_at', { ascending: false });
-    }
+    // Apply sorting with field mapping
+    const sortFieldMap: Record<string, string> = {
+      'title': 'title_narrative',
+      'title_narrative': 'title_narrative',
+      'created_at': 'created_at',
+      'updated_at': 'updated_at',
+      'updatedAt': 'updated_at',
+      'createdAt': 'created_at',
+      'partnerId': 'other_identifier',
+      'other_identifier': 'other_identifier',
+      'activityStatus': 'activity_status',
+      'activity_status': 'activity_status',
+      'createdBy': 'created_by_org_acronym'
+    };
+    
+    const mappedSortField = sortFieldMap[sortField] || 'updated_at';
+    console.log(`[AIMS Optimized] Sorting by ${sortField} -> ${mappedSortField}, order: ${sortOrder}`);
+    dataQuery = dataQuery.order(mappedSortField, { ascending: sortOrder === 'asc' });
     
     // Note: Budget and disbursement sorting will be handled client-side after data aggregation
     // since these are calculated fields from multiple tables
 
-    // Execute queries in parallel
+    // Execute queries (run count only if requested)
     const [countResult, dataResult] = await Promise.all([
-      countQuery,
+      countQuery ? countQuery : Promise.resolve({ count: null, error: null }),
       dataQuery
     ]);
 
@@ -145,7 +158,7 @@ export async function GET(request: NextRequest) {
       throw dataResult.error;
     }
 
-    const totalCount = countResult.count || 0;
+    const totalCount = countResult.count ?? null;
     const activities = dataResult.data || [];
 
     // Fetch transaction summaries and budget data
@@ -377,8 +390,8 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
+        total: totalCount ?? undefined,
+        totalPages: totalCount ? Math.ceil(totalCount / limit) : undefined
       },
       performance: {
         executionTimeMs: executionTime

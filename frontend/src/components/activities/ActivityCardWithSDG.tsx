@@ -2,8 +2,8 @@
 
 import React, { useRef, useState } from 'react';
 import Link from 'next/link';
-import html2canvas from 'html2canvas';
-import { Calendar, MoreVertical, Edit3, Trash2, Clock, Copy, Download } from 'lucide-react';
+
+import { Calendar, MoreVertical, Edit3, Trash2, Clock, Copy } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatActivityDate, formatDateRange, formatRelativeTime, calculateDuration } from '@/lib/date-utils';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
 import { SDGImageGrid } from '@/components/ui/SDGImageGrid';
-import { ActivityExportModal } from './ActivityExportModal';
+
 
 // Aid modality label mappings
 const AID_TYPE_LABELS: Record<string, string> = {
@@ -58,7 +58,8 @@ const TIED_STATUS_LABELS: Record<string, string> = {
   '1': 'Tied',
   '2': 'Partially tied',
   '3': 'Untied',
-  '4': 'Not reported'
+  '4': 'Not reported',
+  '5': 'Not reported'
 };
 
 interface SDGMapping {
@@ -114,7 +115,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
   maxSDGDisplay = 5
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [showExportModal, setShowExportModal] = useState(false);
+
 
   // Currency formatting utility
   const formatCurrency = (value: number) => {
@@ -126,12 +127,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
     }).format(value);
   };
 
-  // Show enhanced export modal
-  const handleExport = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowExportModal(true);
-  };
+
   const statusColors = {
     'pipeline': 'outline',
     'planned': 'default',
@@ -224,7 +220,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
       overflow-hidden relative group shadow-sm
       ${className}
     `}>
-      {/* Action Menu - Moved to bottom right */}
+      {/* Action Menu - Bottom right */}
       <div className="absolute bottom-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -238,10 +234,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={handleExport} className="cursor-pointer">
-              <Download className="mr-2 h-4 w-4" />
-              Image Export
-            </DropdownMenuItem>
+
             {onEdit && (
               <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
                 <Edit3 className="mr-2 h-4 w-4" />
@@ -260,6 +253,19 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* SDG Display Section - Bottom left */}
+      {hasSDGs && (
+        <div className="absolute bottom-3 left-3 z-10">
+          <SDGImageGrid 
+            sdgCodes={sdgGoals} 
+            size="sm" 
+            maxDisplay={maxSDGDisplay}
+            showTooltips={true}
+            className="flex-shrink-0"
+          />
+        </div>
+      )}
 
       <Link href={`/activities/${activity.id}`} className="block">
         {/* Banner Image */}
@@ -302,47 +308,43 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
         </div>
         
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 pb-16">
           <div className="space-y-4">
             {/* Title and IDs Section */}
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold leading-tight line-clamp-2 text-gray-900 tracking-tight">
+              <h3 className="font-medium text-foreground leading-tight line-clamp-2">
                 {activity.title}
               </h3>
               
-              {/* Activity ID and IATI ID with improved styling */}
-              <div className="space-y-2">
-                {activity.partner_id && (
-                  <div className="flex items-center justify-between group/id">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Activity ID</span>
-                      <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">{activity.partner_id}</span>
-                    </div>
-                    <button
-                      onClick={(e) => handleCopy(activity.partner_id!, e)}
-                      className="opacity-0 group-hover/id:opacity-100 transition-opacity duration-200 hover:text-gray-700 p-1 rounded hover:bg-gray-100"
-                      title="Copy Activity ID"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-                {activity.iati_id && (
-                  <div className="flex items-center justify-between group/iati">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">IATI ID</span>
-                      <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">{activity.iati_id}</span>
-                    </div>
-                    <button
-                      onClick={(e) => handleCopy(activity.iati_id!, e)}
-                      className="opacity-0 group-hover/iati:opacity-100 transition-opacity duration-200 hover:text-gray-700 p-1 rounded hover:bg-gray-100"
-                      title="Copy IATI Identifier"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
+              {/* Activity ID and IATI ID - matching table view style */}
+              {(activity.partner_id || activity.iati_id) && (
+                <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
+                  {activity.partner_id && (
+                    <>
+                      <span>{activity.partner_id}</span>
+                      <button
+                        onClick={(e) => handleCopy(activity.partner_id!, e)}
+                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                        title="Copy Activity ID"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </>
+                  )}
+                  {activity.iati_id && (
+                    <>
+                      <span className="text-slate-400 ml-2">{activity.iati_id}</span>
+                      <button
+                        onClick={(e) => handleCopy(activity.iati_id!, e)}
+                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                        title="Copy IATI Identifier"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Status Pills Section */}
@@ -393,82 +395,58 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               )}
             </div>
 
-            {/* Financial Summary Section */}
-            {(activity.totalBudget !== undefined && activity.totalBudget > 0) || (activity.totalDisbursed !== undefined && activity.totalDisbursed > 0) ? (
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Financial Summary</h4>
-                <div className="space-y-2">
-                  {activity.totalBudget !== undefined && activity.totalBudget > 0 && (
-                    <div className="flex justify-between items-center">
-                      <div className="text-xs text-gray-600 uppercase tracking-wide">Total Budgeted</div>
-                      <div className="text-lg font-semibold text-gray-900">{formatCurrency(activity.totalBudget)}</div>
-                    </div>
-                  )}
-                  {activity.totalDisbursed !== undefined && activity.totalDisbursed > 0 && (
-                    <div className="flex justify-between items-center">
-                      <div className="text-xs text-gray-600 uppercase tracking-wide">Total Disbursed</div>
-                      <div className="text-lg font-semibold text-gray-900">{formatCurrency(activity.totalDisbursed)}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : null}
-
-            {/* Aid Modality & Reporting Section */}
-            {(activity.default_aid_type || activity.default_flow_type || activity.default_tied_status || activity.created_by_org_name) && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Activity Details</h4>
-                <div className="space-y-2">
-                  {activity.created_by_org_name && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reported by</span>
-                      <span className="text-sm text-gray-700 font-medium">{activity.created_by_org_name}</span>
-                    </div>
-                  )}
-                  {activity.default_aid_type && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Aid Type</span>
-                      <span className="text-sm text-gray-700">{AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type}</span>
-                    </div>
-                  )}
-                  {activity.default_flow_type && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Flow Type</span>
-                      <span className="text-sm text-gray-700">{FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type}</span>
-                    </div>
-                  )}
-                  {activity.default_tied_status && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tied Status</span>
-                      <span className="text-sm text-gray-700">{TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status}</span>
-                    </div>
-                  )}
-                </div>
+            {/* Financial Information */}
+            {((activity.totalBudget !== undefined && activity.totalBudget > 0) || (activity.totalDisbursed !== undefined && activity.totalDisbursed > 0)) && (
+              <div className="space-y-2">
+                {activity.totalBudget !== undefined && activity.totalBudget > 0 && (
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm font-medium text-gray-700">Total Budgeted</div>
+                    <div className="text-sm text-gray-900">{formatCurrency(activity.totalBudget)}</div>
+                  </div>
+                )}
+                {activity.totalDisbursed !== undefined && activity.totalDisbursed > 0 && (
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm font-medium text-gray-700">Total Disbursed</div>
+                    <div className="text-sm text-gray-900">{formatCurrency(activity.totalDisbursed)}</div>
+                  </div>
+                )}
               </div>
             )}
 
-                     {/* SDG Display Section - Bottom Left */}
-         {hasSDGs && (
-           <div className="flex justify-start">
-             <SDGImageGrid 
-               sdgCodes={sdgGoals} 
-               size="sm" 
-               maxDisplay={maxSDGDisplay}
-               showTooltips={true}
-               className="flex-shrink-0"
-             />
-           </div>
-         )}
+            {/* Activity Details */}
+            {(activity.default_aid_type || activity.default_flow_type || activity.default_tied_status || activity.created_by_org_name) && (
+              <div className="space-y-2">
+                {activity.created_by_org_name && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Reported by</span>
+                    <span className="text-sm text-gray-900">{activity.created_by_org_name}</span>
+                  </div>
+                )}
+                {activity.default_aid_type && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Aid Type</span>
+                    <span className="text-sm text-gray-900">{AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type}</span>
+                  </div>
+                )}
+                {activity.default_flow_type && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Flow Type</span>
+                    <span className="text-sm text-gray-900">{FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type}</span>
+                  </div>
+                )}
+                {activity.default_tied_status && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Tied Status</span>
+                    <span className="text-sm text-gray-900">{TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </Link>
 
-      {/* Enhanced Export Modal */}
-      <ActivityExportModal
-        activity={activity}
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-      />
+
     </div>
   );
 };
