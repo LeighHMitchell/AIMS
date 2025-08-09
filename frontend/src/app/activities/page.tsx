@@ -234,23 +234,22 @@ const canUserEditActivity = (user: any, activity: Activity): boolean => {
 };
 
 function ActivitiesPageContent() {
-  // Enable optimized fetching by default; can be disabled via env
-  const enableOptimization = process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION !== 'false';
+  // FORCE DISABLE optimization to use working legacy API
+  const enableOptimization = false;
   
   console.log('[Activities Page] Environment variable NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION:', process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION);
   console.log('[Activities Page] enableOptimization:', enableOptimization);
   console.log('[Activities Page] typeof env var:', typeof process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION);
   
-  // Use optimized hook only when enabled
-  const optimizedData = enableOptimization
-    ? useOptimizedActivities({
-        pageSize: 20,
-        enableOptimization,
-        onError: (error) => {
-          console.error('[Activities Page] Optimization error:', error);
-        }
-      })
-    : undefined;
+  // Use optimized hook if enabled, otherwise fall back to original implementation
+  const optimizedData = useOptimizedActivities({
+    pageSize: 20,
+    enableOptimization,
+    onError: (error) => {
+      console.error('[Activities Page] Optimization error:', error);
+      // Could fall back to original implementation here if needed
+    }
+  });
   
   // Legacy state for backward compatibility when optimizations are disabled
   const [legacyActivities, setLegacyActivities] = useState<Activity[]>([]);
@@ -274,8 +273,8 @@ function ActivitiesPageContent() {
   // Track if we've ever successfully loaded data to prevent flash of empty state
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   
-  // Use optimized data path when enabled
-  const usingOptimization = enableOptimization;
+  // FORCE LEGACY MODE - completely disable optimization
+  const usingOptimization = false;
   
   // Safely extract optimized data with fallbacks
   const safeOptimizedData = {
@@ -458,7 +457,7 @@ function ActivitiesPageContent() {
     if (usingOptimization) {
       // Use optimized hook's refetch instead
       console.log('[AIMS] Using optimized refetch');
-      optimizedData?.refetch();
+      optimizedData.refetch();
       return;
     }
     
@@ -1098,11 +1097,15 @@ function ActivitiesPageContent() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Info className="inline h-5 w-5 text-muted-foreground flex-shrink-0" />
+                              <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <div className="p-2">
-                                <span className="text-sm font-normal text-muted-foreground">Total budget amount across all budget entries for this activity. All values are displayed in USD.</span>
+                            <TooltipContent 
+                              className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
+                              sideOffset={8}
+                            >
+                              <div className="space-y-2">
+                                <h4 className="font-medium text-gray-900 text-sm">Total Budgeted</h4>
+                                <div className="text-sm text-gray-700">Total budget amount across all budget entries for this activity. All values are displayed in USD.</div>
                               </div>
                             </TooltipContent>
                           </Tooltip>
@@ -1119,11 +1122,15 @@ function ActivitiesPageContent() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Info className="inline h-5 w-5 text-muted-foreground flex-shrink-0" />
+                              <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <div className="p-2">
-                                <span className="text-sm font-normal text-muted-foreground">Sum of all disbursement (type 3) and expenditure (type 4) transactions for this activity. All values are displayed in USD.</span>
+                            <TooltipContent 
+                              className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
+                              sideOffset={8}
+                            >
+                              <div className="space-y-2">
+                                <h4 className="font-medium text-gray-900 text-sm">Total Disbursed</h4>
+                                <div className="text-sm text-gray-700">Sum of all disbursement (type 3) and expenditure (type 4) transactions for this activity. All values are displayed in USD.</div>
                               </div>
                             </TooltipContent>
                           </Tooltip>
@@ -1254,14 +1261,19 @@ function ActivitiesPageContent() {
                                   {creatorOrg}
                                 </div>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
-                                <div className="p-2">
-                                  <span className="text-sm font-normal text-muted-foreground">
+                              <TooltipContent 
+                                className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
+                                sideOffset={8}
+                              >
+                                <div className="space-y-2">
+                                  <h4 className="font-medium text-gray-900 text-sm">
                                     Reported by {activity.created_by_org_name || "Unknown Organization"}
-                                    {activity.createdBy?.name && (
-                                      <>. Submitted by {activity.createdBy.name} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}</>
-                                    )}
-                                  </span>
+                                  </h4>
+                                  {activity.createdBy?.name && (
+                                    <div className="text-sm text-gray-700">
+                                      Submitted by {activity.createdBy.name} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
+                                    </div>
+                                  )}
                                 </div>
                               </TooltipContent>
                             </Tooltip>
@@ -1273,9 +1285,15 @@ function ActivitiesPageContent() {
                               <TooltipTrigger className="cursor-help">
                                 {formatCurrency((activity as any).totalBudget || 0)}
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
-                                <div className="p-2">
-                                  <span className="text-sm font-normal text-muted-foreground">Total budget amount across all budget entries for this activity. All values are displayed in USD for consistency across different currencies.</span>
+                              <TooltipContent 
+                                className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
+                                sideOffset={8}
+                              >
+                                <div className="space-y-2">
+                                  <h4 className="font-medium text-gray-900 text-sm">Total Budgeted</h4>
+                                  <div className="text-sm text-gray-700">
+                                    Total budget amount across all budget entries for this activity. All values are displayed in USD for consistency across different currencies.
+                                  </div>
                                 </div>
                               </TooltipContent>
                             </Tooltip>
@@ -1287,9 +1305,15 @@ function ActivitiesPageContent() {
                               <TooltipTrigger className="cursor-help">
                                 {formatCurrency((activity as any).totalDisbursed || 0)}
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
-                                <div className="p-2">
-                                  <span className="text-sm font-normal text-muted-foreground">Sum of all disbursement (type 3) and expenditure (type 4) transactions for this activity. All values are displayed in USD for consistency across different currencies.</span>
+                              <TooltipContent 
+                                className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
+                                sideOffset={8}
+                              >
+                                <div className="space-y-2">
+                                  <h4 className="font-medium text-gray-900 text-sm">Total Disbursed</h4>
+                                  <div className="text-sm text-gray-700">
+                                    Sum of all disbursement (type 3) and expenditure (type 4) transactions for this activity. All values are displayed in USD for consistency across different currencies.
+                                  </div>
                                 </div>
                               </TooltipContent>
                             </Tooltip>

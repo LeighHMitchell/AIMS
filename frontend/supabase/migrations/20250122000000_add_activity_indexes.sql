@@ -15,3 +15,4 @@ create index if not exists idx_activities_reporting_org_id on activities (report
 create index if not exists idx_activity_budgets_activity_id on activity_budgets (activity_id);
 create index if not exists idx_transactions_activity_id on transactions (activity_id);
 
+

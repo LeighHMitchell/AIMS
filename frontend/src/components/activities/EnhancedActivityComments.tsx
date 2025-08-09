@@ -743,13 +743,13 @@ export function EnhancedActivityComments({
                             <CommandInput
                               placeholder="Search users and organizations..."
                               value={mentionSearch}
-                              onValueChange={setMentionSearch}
+                              onChange={(e) => setMentionSearch(e.target.value)}
                             />
                             <CommandList>
                               <CommandEmpty>No users or organizations found.</CommandEmpty>
                               
                               {availableUsers.length > 0 && (
-                                <CommandGroup heading="Users">
+                                <CommandGroup>
                                   {availableUsers
                                     .filter(user => 
                                       user.name.toLowerCase().includes(mentionSearch.toLowerCase())
@@ -768,7 +768,7 @@ export function EnhancedActivityComments({
                               )}
                               
                               {availableOrgs.length > 0 && (
-                                <CommandGroup heading="Organizations">
+                                <CommandGroup>
                                   {availableOrgs
                                     .filter(org => 
                                       org.name.toLowerCase().includes(mentionSearch.toLowerCase())
@@ -978,10 +978,10 @@ function CommentCard({
             </div>
             
             <div className="flex items-center gap-2">
-              {comment.context_section && (
+              {comment.contextSection && (
                 <Badge variant="outline" className="text-xs">
-                  {comment.context_section}
-                  {comment.context_field && ` → ${comment.context_field}`}
+                  {comment.contextSection}
+                  {comment.contextField && ` → ${comment.contextField}`}
                 </Badge>
               )}
               
@@ -1109,13 +1109,13 @@ function CommentCard({
           </div>
           
           {/* Resolution Note */}
-          {comment.status === 'Resolved' && comment.resolution_note && (
+          {comment.status === 'Resolved' && comment.resolutionNote && (
             <div className="bg-green-50 border border-green-200 rounded p-3">
               <div className="flex items-center gap-2 text-green-800 font-medium text-sm">
                 <CheckCircle className="h-4 w-4" />
                 Resolved by {comment.resolvedBy?.name}
               </div>
-              <p className="text-green-700 text-sm mt-1">{comment.resolution_note}</p>
+              <p className="text-green-700 text-sm mt-1">{comment.resolutionNote}</p>
             </div>
           )}
           
@@ -1150,7 +1150,7 @@ function CommentCard({
                       key={reply.id}
                       reply={reply}
                       onReaction={(reactionType) => onReaction(comment.id, reply.id, reactionType)}
-                      reactionDisplay={reactionDisplay[reply.id] || {}}
+                      reactionDisplay={reactionDisplay[reply.id] || { count: 0, users: [], hasUserReacted: false }}
                     />
                   ))}
                 </CollapsibleContent>
@@ -1209,7 +1209,7 @@ function CommentCard({
 interface ReplyCardProps {
   reply: CommentReply;
   onReaction: (reactionType: string) => void;
-  reactionDisplay: Record<string, { count: number; users: string[]; hasUserReacted: boolean }>;
+  reactionDisplay: { count: number; users: string[]; hasUserReacted: boolean } | Record<string, { count: number; users: string[]; hasUserReacted: boolean }>;
 }
 
 function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
@@ -1253,9 +1253,13 @@ function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
       {/* Reply Reactions */}
       <div className="flex items-center gap-1 flex-wrap">
         {REACTION_TYPES.map(({ type, icon: Icon, label, color }) => {
-          const reaction = reactionDisplay[type];
+          const isSimpleObject = typeof reactionDisplay === 'object' && 'count' in reactionDisplay && !('type' in reactionDisplay);
+          const reaction = isSimpleObject 
+            ? (reactionDisplay as { count: number; users: string[]; hasUserReacted: boolean })
+            : (reactionDisplay as Record<string, { count: number; users: string[]; hasUserReacted: boolean }>)[type];
           const count = reaction?.count || 0;
           const hasUserReacted = reaction?.hasUserReacted || false;
+          const users = reaction?.users || [];
           
           return (
             <Tooltip key={type}>
@@ -1273,10 +1277,10 @@ function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
               <TooltipContent>
                 <div>
                   <p>{label}</p>
-                  {reaction?.users && reaction.users.length > 0 && (
+                  {users && users.length > 0 && (
                     <p className="text-xs">
-                      {reaction.users.slice(0, 3).join(', ')}
-                      {reaction.users.length > 3 && ` and ${reaction.users.length - 3} more`}
+                      {users.slice(0, 3).join(', ')}
+                      {users.length > 3 && ` and ${users.length - 3} more`}
                     </p>
                   )}
                 </div>

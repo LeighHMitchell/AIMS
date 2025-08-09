@@ -106,7 +106,8 @@ class SupabaseConnectionManager {
   // Clean expired cache entries
   private cleanCache() {
     const now = Date.now()
-    for (const [key, value] of this.queryCache.entries()) {
+    const entries = Array.from(this.queryCache.entries())
+    for (const [key, value] of entries) {
       if (now - value.timestamp > value.ttl) {
         this.queryCache.delete(key)
       }

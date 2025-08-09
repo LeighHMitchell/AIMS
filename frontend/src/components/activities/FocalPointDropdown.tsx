@@ -285,7 +285,6 @@ export function FocalPointDropdown({
                       key={user.id}
                       onSelect={() => handleAssignUser(user)}
                       className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
-                      disabled={assigning === user.id}
                     >
                       <Check className="mr-2 h-4 w-4 opacity-0" />
                       <UserAvatar user={user} size="sm" />

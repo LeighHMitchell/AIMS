@@ -28,15 +28,11 @@ interface OptimizedActivityListProps {
       totalPages: number;
       setPage: (page: number) => void;
     };
-    performanceMetrics?: {
-      lastQueryTime: number;
-      averageQueryTime: number;
-    };
   }) => React.ReactNode;
   enableVirtualization?: boolean;
   pageSize?: number;
   enableOptimization?: boolean;
-  onError?: (error: Error) => void;
+  onError?: (error: string) => void;
 }
 
 // Memoized Activity Item Component
@@ -130,8 +126,7 @@ export const OptimizedActivityList = memo<OptimizedActivityListProps>(({
     currentPage,
     totalPages,
     setPage,
-    filters,
-    performanceMetrics
+    filters
   } = useOptimizedActivities({
     pageSize,
     enableOptimization,
@@ -153,8 +148,7 @@ export const OptimizedActivityList = memo<OptimizedActivityListProps>(({
     searchQuery,
     setSearchQuery,
     filters,
-    pagination,
-    performanceMetrics
+    pagination
   }), [
     activities,
     loading,
@@ -162,8 +156,7 @@ export const OptimizedActivityList = memo<OptimizedActivityListProps>(({
     searchQuery,
     setSearchQuery,
     filters,
-    pagination,
-    performanceMetrics
+    pagination
   ]);
 
   return <>{children(childProps)}</>;
