@@ -150,8 +150,18 @@ export async function GET(
     
     console.log('[AIMS API] GET /api/activities/[id] - Fetching activity:', id);
     
+    const supabase = getSupabaseAdmin();
+    
+    if (!supabase) {
+      console.error('[AIMS API] Supabase client is null');
+      return NextResponse.json(
+        { error: 'Database connection not configured' },
+        { status: 503 }
+      );
+    }
+    
     // Fetch the activity
-    const { data: activity, error } = await getSupabaseAdmin()
+    const { data: activity, error } = await supabase
       .from('activities')
       .select('*')
       .eq('id', id)

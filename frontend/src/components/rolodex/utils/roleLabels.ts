@@ -36,10 +36,35 @@ export const ROLE_LABELS: Record<string, { label: string; color: string; categor
 };
 
 export const SOURCE_LABELS: Record<string, { label: string; color: string; icon: string }> = {
-  'user': { label: 'System User', color: 'bg-blue-100 text-blue-800', icon: '👤' },
-  'activity_contact': { label: 'Activity Contact', color: 'bg-purple-100 text-purple-800', icon: '📋' },
-  'organization_contact': { label: 'Organization Contact', color: 'bg-green-100 text-green-800', icon: '🏢' },
+  'user': { label: 'System User', color: 'bg-blue-100 text-blue-800', icon: '' },
+  'activity_contact': { label: 'Activity Contact', color: 'bg-purple-100 text-purple-800', icon: '' },
+  'organization_contact': { label: 'Organization Contact', color: 'bg-green-100 text-green-800', icon: '' },
 };
+
+// Contact type categories for better filtering
+export const CONTACT_TYPE_CATEGORIES = {
+  SYSTEM_USERS: {
+    key: 'system_users',
+    label: 'System Users',
+    description: 'Users with system access',
+    icon: '',
+    color: 'bg-blue-100 text-blue-800'
+  },
+  ACTIVITY_CONTACTS: {
+    key: 'activity_contacts', 
+    label: 'Activity Contacts',
+    description: 'Contacts from activity reporting',
+    icon: '',
+    color: 'bg-purple-100 text-purple-800'
+  },
+  ORGANIZATION_CONTACTS: {
+    key: 'organization_contacts',
+    label: 'Organization Contacts', 
+    description: 'Organization-level contacts',
+    icon: '',
+    color: 'bg-green-100 text-green-800'
+  }
+} as const;
 
 export function getRoleLabel(role: string): { label: string; color: string; category: string } {
   const normalizedRole = role?.toLowerCase().replace(/\s+/g, '_') || 'default';
@@ -101,4 +126,22 @@ export const COUNTRY_NAMES: Record<string, string> = {
 
 export function getCountryName(countryCode: string): string {
   return COUNTRY_NAMES[countryCode?.toUpperCase()] || countryCode;
+}
+
+// Utility functions for contact type categories
+export function getContactTypeCategories(): Array<{ key: string; label: string; description: string; icon: string; color: string }> {
+  return Object.values(CONTACT_TYPE_CATEGORIES);
+}
+
+export function getContactTypeCategoryBySource(source: string): { key: string; label: string; description: string; icon: string; color: string } {
+  switch (source) {
+    case 'user':
+      return CONTACT_TYPE_CATEGORIES.SYSTEM_USERS;
+    case 'activity_contact':
+      return CONTACT_TYPE_CATEGORIES.ACTIVITY_CONTACTS;
+    case 'organization_contact':
+      return CONTACT_TYPE_CATEGORIES.ORGANIZATION_CONTACTS;
+    default:
+      return CONTACT_TYPE_CATEGORIES.ACTIVITY_CONTACTS; // Default fallback
+  }
 }

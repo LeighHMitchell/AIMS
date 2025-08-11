@@ -410,7 +410,160 @@ export function checkContributorsTabCompletion(contributors: any[]): TabCompleti
   }
 }
 
+/**
+ * Check if the Contacts tab is complete based on contacts
+ */
+export function checkContactsTabCompletion(contacts: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  if (contacts && contacts.length > 0) {
+    // Check if we have at least one valid contact with required fields
+    const hasValidContacts = contacts.some(contact => 
+      contact && 
+      contact.firstName?.trim() && 
+      contact.lastName?.trim() &&
+      contact.type &&
+      contact.position?.trim()
+    );
+    
+    if (hasValidContacts) {
+      completedFields.push('contacts')
+    } else {
+      missingFields.push('contacts')
+    }
+  } else {
+    missingFields.push('contacts')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false,
+    completedFields,
+    missingFields
+  }
+}
 
+/**
+ * Check if the Linked Activities tab is complete based on linked activities
+ */
+export function checkLinkedActivitiesTabCompletion(linkedActivities: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  if (linkedActivities && linkedActivities.length > 0) {
+    // If we have at least one linked activity, the tab is complete
+    completedFields.push('linkedActivities')
+  } else {
+    missingFields.push('linkedActivities')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false, // Linked activities don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
+/**
+ * Check if the Results tab is complete based on results
+ */
+export function checkResultsTabCompletion(results: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  if (results && results.length > 0) {
+    // If we have at least one result, the tab is complete
+    completedFields.push('results')
+  } else {
+    missingFields.push('results')
+  }
+  
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false, // Results don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
+/**
+ * Check if the Documents & Images tab is complete based on documents
+ */
+export function checkDocumentsTabCompletion(documents: any[]): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  // Check if we have at least one document or image
+  if (documents && documents.length > 0) {
+    completedFields.push('documents')
+  } else {
+    missingFields.push('documents')
+  }
+
+  return {
+    isComplete: missingFields.length === 0,
+    isInProgress: false, // Documents don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
+/**
+ * Check if the Focal Points tab is complete based on assigned focal points
+ */
+export function checkFocalPointsTabCompletion(focalPointsData: any): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  // Check if there's any focal points data
+  if (!focalPointsData) {
+    missingFields.push('focal_points')
+    return {
+      isComplete: false,
+      isInProgress: false,
+      completedFields,
+      missingFields
+    }
+  }
+  
+  let hasAnyFocalPoints = false
+  
+  // Check government focal points
+  if (focalPointsData.government_focal_points && focalPointsData.government_focal_points.length > 0) {
+    const validGovernmentFocalPoints = focalPointsData.government_focal_points.filter((fp: any) => 
+      fp && fp.name?.trim() && fp.email?.trim()
+    )
+    if (validGovernmentFocalPoints.length > 0) {
+      completedFields.push('government_focal_points')
+      hasAnyFocalPoints = true
+    }
+  }
+  
+  // Check development partner focal points
+  if (focalPointsData.development_partner_focal_points && focalPointsData.development_partner_focal_points.length > 0) {
+    const validDevelopmentFocalPoints = focalPointsData.development_partner_focal_points.filter((fp: any) => 
+      fp && fp.name?.trim() && fp.email?.trim()
+    )
+    if (validDevelopmentFocalPoints.length > 0) {
+      completedFields.push('development_partner_focal_points')
+      hasAnyFocalPoints = true
+    }
+  }
+  
+  // If no focal points are assigned, mark as missing
+  if (!hasAnyFocalPoints) {
+    missingFields.push('focal_points')
+  }
+
+  return {
+    isComplete: hasAnyFocalPoints && missingFields.length === 0,
+    isInProgress: false,
+    completedFields,
+    missingFields
+  }
+}
 
 export function getTabCompletionStatus(
   sectionId: string,
@@ -441,6 +594,16 @@ export function getTabCompletionStatus(
       return checkOrganizationsTabCompletion(data);
     case 'contributors':
       return checkContributorsTabCompletion(data);
+    case 'contacts':
+      return checkContactsTabCompletion(data);
+    case 'linked-activities':
+      return checkLinkedActivitiesTabCompletion(data);
+    case 'results':
+      return checkResultsTabCompletion(data);
+    case 'documents':
+      return checkDocumentsTabCompletion(data);
+    case 'focal_points':
+      return checkFocalPointsTabCompletion(data);
     // Add other tabs here as needed
     default:
       return null;

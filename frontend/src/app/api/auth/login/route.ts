@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
       organizationId: userData.organization_id,
       organisation: organization?.name || '',
       organization: organization,
+      profilePicture: userData.avatar_url, // Map avatar_url to profilePicture
       phone: userData.phone || '',
       telephone: userData.telephone || userData.phone || '',
       isActive: userData.is_active !== false,

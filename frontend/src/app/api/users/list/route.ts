@@ -15,11 +15,22 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
     const role = searchParams.get('role') || '';
+    const roles = searchParams.get('roles') || '';
 
-    // Build query with all the fields we need
+    // Build query with all the fields we need including organization details
     let query = supabase
       .from('users')
-      .select('id, email, role, first_name, last_name, organisation, department, job_title, avatar_url, bio, phone, telephone, website')
+      .select(`
+        id, email, role, first_name, last_name, organisation, department, job_title, avatar_url, bio, phone, telephone, website,
+        organization_id,
+        organizations:organization_id (
+          id,
+          name,
+          acronym,
+          iati_org_id,
+          country
+        )
+      `)
       .order('first_name', { ascending: true, nullsFirst: false });
 
     // Add search filter if provided
@@ -30,6 +41,10 @@ export async function GET(request: NextRequest) {
     // Add role filter if provided
     if (role) {
       query = query.eq('role', role);
+    } else if (roles) {
+      // Support multiple roles filter
+      const roleList = roles.split(',').map(r => r.trim());
+      query = query.in('role', roleList);
     }
 
     const { data: users, error } = await query;
@@ -53,20 +68,28 @@ export async function GET(request: NextRequest) {
         fullName = user.email; // Fallback to email if no name
       }
 
-      // Get organization info
-      const organization = user.organisation || user.department || null;
+      // Get organization info - prefer related organization over simple text field
+      const organization = user.organizations || null;
+      const organisationFallback = user.organisation || user.department || null;
 
       return {
         id: user.id,
         name: fullName,
         email: user.email,
         role: user.role,
-        organisation: organization,
+        organisation: organisationFallback, // Keep for backward compatibility
         job_title: user.job_title,
         avatar_url: user.avatar_url,
         phone: user.phone || user.telephone,
         website: user.website,
-        bio: user.bio
+        bio: user.bio,
+        organization: organization ? {
+          id: organization.id,
+          name: organization.name,
+          acronym: organization.acronym,
+          iati_org_id: organization.iati_org_id,
+          country: organization.country
+        } : null
       };
     });
 

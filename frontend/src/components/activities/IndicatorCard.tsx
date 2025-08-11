@@ -30,6 +30,8 @@ import {
   Clock,
   BarChart3
 } from 'lucide-react';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { ResponsiveContainer, LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from 'recharts';
 import { cn } from '@/lib/utils';
 import { useIndicators, useBaselines, usePeriods } from '@/hooks/use-results';
 import { 
@@ -60,7 +62,7 @@ export function IndicatorCard({
   const { createPeriod } = usePeriods();
 
   // Local state
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showAddPeriod, setShowAddPeriod] = useState(false);
   const [showBaselineForm, setShowBaselineForm] = useState(false);
@@ -191,22 +193,14 @@ export function IndicatorCard({
   };
 
   return (
-    <Card className="border border-gray-100">
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+    <Card className="border border-gray-200 bg-white">
+      <Collapsible open={true}>
+          <CardHeader className="hover:bg-gray-50 transition-colors">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-gray-500" />
-                )}
-                
-                <div className="flex-1">
+              <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     {getStatusIcon()}
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs text-gray-800">
                       {MEASURE_TYPE_LABELS[indicator.measure]}
                     </Badge>
                     {indicator.ascending && (
@@ -240,15 +234,14 @@ export function IndicatorCard({
                         value={indicator.status.percentage} 
                         className={cn(
                           "h-1",
-                          indicator.status.color === 'green' && "[&>div]:bg-green-600",
-                          indicator.status.color === 'yellow' && "[&>div]:bg-yellow-600",
-                          indicator.status.color === 'red' && "[&>div]:bg-red-600"
+                          indicator.status.color === 'green' && "[&>div]:bg-gray-800",
+                          indicator.status.color === 'yellow' && "[&>div]:bg-gray-500",
+                          indicator.status.color === 'red' && "[&>div]:bg-gray-400"
                         )}
                       />
                     </div>
                   )}
                 </div>
-              </div>
 
               {!readOnly && (
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -256,6 +249,7 @@ export function IndicatorCard({
                     variant="ghost" 
                     size="sm"
                     onClick={() => setIsEditing(true)}
+                    className="text-gray-800 hover:bg-gray-100"
                   >
                     <Edit3 className="h-3 w-3" />
                   </Button>
@@ -263,7 +257,7 @@ export function IndicatorCard({
                     variant="ghost" 
                     size="sm"
                     onClick={handleDeleteIndicator}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-gray-800 hover:bg-gray-100"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -271,8 +265,6 @@ export function IndicatorCard({
               )}
             </div>
           </CardHeader>
-        </CollapsibleTrigger>
-
         <CollapsibleContent>
           <CardContent className="pt-0">
             <Separator className="mb-4" />
@@ -284,7 +276,12 @@ export function IndicatorCard({
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Measure Type</Label>
+                    <Label className="flex items-center gap-2 text-gray-800">
+                      Measure Type
+                      <HelpTextTooltip>
+                        The unit or way this indicator is measured.
+                      </HelpTextTooltip>
+                    </Label>
                     <Select 
                       value={editForm.measure} 
                       onValueChange={(value: MeasureType) => 
@@ -318,7 +315,12 @@ export function IndicatorCard({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Title</Label>
+                  <Label className="flex items-center gap-2 text-gray-800">
+                    Indicator Title
+                    <HelpTextTooltip>
+                      How you will measure this result, e.g., “% of girls completing secondary school”.
+                    </HelpTextTooltip>
+                  </Label>
                   <Input
                     value={editForm.title[defaultLanguage] || ''}
                     onChange={(e) => 
@@ -331,7 +333,12 @@ export function IndicatorCard({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Description</Label>
+                  <Label className="flex items-center gap-2 text-gray-800">
+                    Description
+                    <HelpTextTooltip>
+                      Brief narrative describing what this indicator captures.
+                    </HelpTextTooltip>
+                  </Label>
                   <Textarea
                     value={editForm.description[defaultLanguage] || ''}
                     onChange={(e) => 
@@ -384,7 +391,12 @@ export function IndicatorCard({
             {/* Baseline Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium">Baseline</h4>
+                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                  Baseline
+                  <HelpTextTooltip>
+                    The starting point before the project began.
+                  </HelpTextTooltip>
+                </h4>
                 {!readOnly && !indicator.baseline && (
                   <Button 
                     variant="outline" 
@@ -499,7 +511,12 @@ export function IndicatorCard({
             {/* Periods Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium">Periods & Targets</h4>
+                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                  Periods & Targets
+                  <HelpTextTooltip>
+                    Define targets and record actuals for each reporting period.
+                  </HelpTextTooltip>
+                </h4>
                 {!readOnly && (
                   <Button 
                     variant="outline" 
@@ -602,6 +619,24 @@ export function IndicatorCard({
                       onUpdate={onUpdate}
                     />
                   ))}
+
+                  {/* Inline mini chart for progress over time */}
+                  <div className="h-36 mt-3">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsLineChart data={indicator.periods.map(p => ({
+                        date: new Date(p.period_end).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                        target: p.target_value || 0,
+                        actual: p.actual_value || 0
+                      }))} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} />
+                        <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} />
+                        <RechartsTooltip />
+                        <Line type="monotone" dataKey="target" stroke="#9ca3af" strokeWidth={2} dot={{ r: 2 }} />
+                        <Line type="monotone" dataKey="actual" stroke="#111827" strokeWidth={2} dot={{ r: 2 }} />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">

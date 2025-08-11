@@ -136,6 +136,7 @@ export async function POST(request: Request) {
           default_currency: body.defaultCurrency || null,
           default_tied_status: body.defaultTiedStatus || null,
           default_flow_type: body.defaultFlowType || null,
+          documents: body.documents ? JSON.stringify(body.documents) : existingActivity.documents,
           last_edited_by: body.user?.id ? cleanUUIDValue(body.user.id) : null,
         };
       } catch (error: any) {
@@ -790,6 +791,7 @@ export async function POST(request: Request) {
         defaultFinanceType: updatedActivity.default_finance_type,
         defaultTiedStatus: updatedActivity.default_tied_status,
         flowType: updatedActivity.default_flow_type,
+        documents: updatedActivity.documents ? JSON.parse(updatedActivity.documents) : [],
         createdAt: updatedActivity.created_at,
         updatedAt: updatedActivity.updated_at,
         sdgMappings: sdgMappings?.map((mapping: any) => ({
@@ -977,6 +979,7 @@ export async function POST(request: Request) {
         default_currency: body.defaultCurrency || null,
         default_tied_status: body.defaultTiedStatus || null,
         default_flow_type: body.defaultFlowType || null,
+        documents: body.documents ? JSON.stringify(body.documents) : '[]',
         created_by: cleanUUIDValue(body.user?.id),
         last_edited_by: cleanUUIDValue(body.user?.id),
         submitted_by: userOrgData.submitted_by,
@@ -1460,6 +1463,7 @@ export async function POST(request: Request) {
       defaultCurrency: newActivity.default_currency,
       defaultTiedStatus: newActivity.default_tied_status,
       defaultFlowType: newActivity.default_flow_type,
+      documents: newActivity.documents ? JSON.parse(newActivity.documents) : [],
       createdAt: newActivity.created_at,
       updatedAt: newActivity.updated_at,
       sdgMappings: sdgMappings?.map((mapping: any) => ({
@@ -1929,6 +1933,7 @@ export async function GET(request: NextRequest) {
       plannedEndDate: activity.planned_end_date,
       actualStartDate: activity.actual_start_date,
       actualEndDate: activity.actual_end_date,
+      documents: activity.documents ? JSON.parse(activity.documents) : [],
       createdAt: activity.created_at,
       updatedAt: activity.updated_at,
     }));

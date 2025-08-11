@@ -32,6 +32,8 @@ let _supabaseAdmin: any = null
 function createAdminClient() {
   if (!supabaseUrl || !supabaseServiceRoleKey || !isValidUrl(supabaseUrl)) {
     console.error('[Supabase] Missing or invalid environment variables for admin client')
+    console.error('- URL:', supabaseUrl ? 'Present' : 'Missing', supabaseUrl && !isValidUrl(supabaseUrl) ? '(Invalid format)' : '')
+    console.error('- Service Key:', supabaseServiceRoleKey ? 'Present' : 'Missing')
     return null
   }
 
@@ -175,6 +177,23 @@ export type Database = {
           name: string
           role: string
           organization_id: string | null
+          first_name: string | null
+          last_name: string | null
+          job_title: string | null
+          department: string | null
+          telephone: string | null
+          website: string | null
+          mailing_address: string | null
+          address_line_1: string | null
+          address_line_2: string | null
+          city: string | null
+          state_province: string | null
+          country: string | null
+          postal_code: string | null
+          bio: string | null
+          preferred_language: string | null
+          timezone: string | null
+          avatar_url: string | null
           created_at: string
           updated_at: string
         }

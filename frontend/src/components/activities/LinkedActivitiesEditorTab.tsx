@@ -1,14 +1,23 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Copy, Check, ChevronDown } from 'lucide-react';
-import ActivityCard from './ActivityCard';
-import LinkedActivityModal from './LinkedActivityModal';
+import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Edit2, Trash2, ArrowRight, ArrowLeft, ArrowUpDown } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { IATI_RELATIONSHIP_TYPES, getRelationshipTypeName } from '@/data/iati-relationship-types';
+import LinkedActivitiesGraph from './LinkedActivitiesGraph';
+import { cn } from '@/lib/utils';
+import { CreateRelationshipsTableGuide } from './CreateRelationshipsTableGuide';
 
 interface LinkedActivity {
   id: string;
@@ -17,38 +26,86 @@ interface LinkedActivity {
   iatiIdentifier: string;
   relationshipType: string;
   relationshipTypeLabel: string;
+  narrative?: string;
   isExternal: boolean;
   createdBy: string;
   createdByEmail: string;
   createdAt: string;
   direction: 'incoming' | 'outgoing';
+  organizationName?: string;
+  status?: string;
+}
+
+interface Activity {
+  id: string;
+  title: string;
+  iatiIdentifier: string;
+  status: string;
+  organizationName?: string;
+  organizationAcronym?: string;
 }
 
 interface LinkedActivitiesEditorTabProps {
   activityId: string;
   currentUserId?: string;
   canEdit: boolean;
+  onCountChange?: (count: number) => void;
 }
 
 const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({ 
   activityId, 
   currentUserId,
-  canEdit 
+  canEdit,
+  onCountChange
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<Activity[]>([]);
   const [searching, setSearching] = useState(false);
   const [linkedActivities, setLinkedActivities] = useState<LinkedActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [editingActivity, setEditingActivity] = useState<LinkedActivity | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [relationshipType, setRelationshipType] = useState('');
+  const [narrative, setNarrative] = useState('');
+  const [currentActivity, setCurrentActivity] = useState<Activity | null>(null);
+  const [tableMissing, setTableMissing] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch current activity details
+  const fetchCurrentActivity = useCallback(async () => {
+    if (!activityId) {
+      console.log('No activityId provided');
+      return;
+    }
+    
+    try {
+      console.log('Fetching activity:', activityId);
+      const response = await fetch(`/api/activities/${activityId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Activity fetch error:', errorData);
+        throw new Error('Failed to fetch activity');
+      }
+      
+      const data = await response.json();
+      console.log('Activity data:', data);
+      
+      setCurrentActivity({
+        id: data.id,
+        title: data.title_narrative || data.title || 'Untitled Activity',
+        iatiIdentifier: data.iati_identifier || data.iatiIdentifier || '',
+        status: data.activity_status || data.activityStatus || '',
+        organizationName: data.created_by_org_name || data.organizationName || ''
+      });
+    } catch (error) {
+      console.error('Error fetching current activity:', error);
+      toast.error('Failed to load activity details');
+    }
+  }, [activityId]);
+
+  // Remove the fetch all activities function - we'll only search on demand
 
   // Fetch linked activities
   const fetchLinkedActivities = useCallback(async () => {
@@ -60,635 +117,438 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
       if (!response.ok) throw new Error('Failed to fetch linked activities');
       
       const data = await response.json();
-      // Ensure data is always an array
-      setLinkedActivities(Array.isArray(data) ? data : []);
-    } catch (error) {
+      const items = Array.isArray(data) ? data : [];
+      setLinkedActivities(items);
+      onCountChange?.(items.length);
+    } catch (error: any) {
       console.error('Error fetching linked activities:', error);
-      toast.error('Failed to load linked activities');
-      // Set empty array on error
+      // Don't show error if it's just that the table doesn't exist
+      if (!error.message?.includes('does not exist')) {
+        toast.error('Failed to load linked activities');
+      }
       setLinkedActivities([]);
+      onCountChange?.(0);
     } finally {
       setLoading(false);
     }
   }, [activityId]);
 
   useEffect(() => {
+    fetchCurrentActivity();
     fetchLinkedActivities();
-  }, [fetchLinkedActivities]);
+  }, [fetchCurrentActivity, fetchLinkedActivities]);
 
-  // Handle click outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-        setSelectedIndex(-1);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // Cleanup debounce timeout on unmount
-  useEffect(() => {
-    return () => {
+  // Search activities with debounce
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
-    };
-  }, []);
 
-  // Debounced search for activities
-  const performSearch = useCallback(async (query: string) => {
-    if (!query.trim() || query.length < 2) {
+    if (!query.trim()) {
       setSearchResults([]);
-      setShowDropdown(false);
       return;
     }
     
+    debounceRef.current = setTimeout(async () => {
     setSearching(true);
     try {
-      const response = await fetch(`/api/search-activities?q=${encodeURIComponent(query)}&exclude=${activityId || ''}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to search activities');
-      }
-      
-      const activities = await response.json();
-      
-      // Ensure activities is an array
-      const allResults = Array.isArray(activities) ? activities : [];
-      
-      // Only filter out already linked activities if we have linked activities
-      let filteredResults = allResults;
-      let filteredCount = 0;
-      
-      if (Array.isArray(linkedActivities) && linkedActivities.length > 0) {
-        const linkedIds = new Set(linkedActivities.map(la => la.activityId).filter(Boolean));
-        filteredResults = allResults.filter((a: any) => !linkedIds.has(a.id));
-        filteredCount = allResults.length - filteredResults.length;
-      }
-      
-      setSearchResults(filteredResults);
-      setShowDropdown(true); // Always show dropdown to display messages
-      setSelectedIndex(-1);
-      
-      // Store filtered count for display
-      (window as any).__filteredCount = filteredCount;
-      (window as any).__totalFound = allResults.length;
-      
-      console.log(`[LinkedActivities] Search results: ${allResults.length} found, ${filteredResults.length} after filtering`);
+        const response = await fetch(`/api/activities/search?q=${encodeURIComponent(query)}&limit=20`);
+        if (!response.ok) throw new Error('Search failed');
+        
+        const data = await response.json();
+        // Map the database field names to component field names
+        const mappedActivities = (data.activities || []).map((activity: any) => ({
+          id: activity.id,
+          title: activity.title_narrative || activity.title || 'Untitled Activity',
+          iatiIdentifier: activity.iati_identifier || activity.iatiIdentifier || '',
+          status: activity.activity_status || activity.status || '',
+          organizationName: activity.created_by_org_name || activity.organizationName || '',
+          organizationAcronym: activity.created_by_org_acronym || activity.organizationAcronym || ''
+        }));
+        setSearchResults(mappedActivities.filter((a: Activity) => a.id !== activityId));
     } catch (error) {
-      console.error('Error searching activities:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to search activities');
-      setSearchResults([]);
-      setShowDropdown(true); // Show dropdown to display error
+        console.error('Search error:', error);
+        toast.error('Search failed');
     } finally {
       setSearching(false);
     }
-  }, [activityId, linkedActivities]);
+    }, 300);
+  }, [activityId]);
 
-  // Handle search input change with debouncing
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
-    
-    // Clear previous debounce timeout
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    
-    // Set new debounce timeout
-    debounceRef.current = setTimeout(() => {
-      performSearch(value);
-    }, 300); // 300ms debounce
-  }, [performSearch]);
+  // Use search results when searching, otherwise empty
+  const displayActivities = searchQuery.trim() ? searchResults : [];
 
-  // Handle keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showDropdown || searchResults.length === 0) {
-      if (e.key === 'Enter' && searchQuery.trim()) {
-        performSearch(searchQuery);
-      }
+  // Handle activity selection from the list
+  const handleActivitySelect = (activity: Activity) => {
+    setSelectedActivity(activity);
+    setRelationshipType('');
+    setNarrative('');
+    setEditingActivity(null);
+    setShowModal(true);
+  };
+
+  // Handle edit
+  const handleEdit = (linkedActivity: LinkedActivity) => {
+    setEditingActivity(linkedActivity);
+    setRelationshipType(linkedActivity.relationshipType);
+    setNarrative(linkedActivity.narrative || '');
+    setShowModal(true);
+  };
+
+    // Handle save (create or update)
+  const handleSave = async () => {
+    if (!editingActivity && !selectedActivity) return;
+    if (!relationshipType) {
+      toast.error('Please select a relationship type');
       return;
     }
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex(prev => 
-          prev < searchResults.length - 1 ? prev + 1 : prev
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < searchResults.length) {
-          selectActivity(searchResults[selectedIndex]);
-        }
-        break;
-      case 'Escape':
-        setShowDropdown(false);
-        setSelectedIndex(-1);
-        break;
-    }
-  };
-
-  // Select activity for linking
-  const selectActivity = (activity: any) => {
-    setSelectedActivity(activity);
-    setShowModal(true);
-    setShowDropdown(false);
-    setSelectedIndex(-1);
-    setSearchQuery('');
-    setSearchResults([]);
-  };
-
-  // Handle linking confirmation
-  const handleLinkActivity = async (relationshipType: string) => {
-    if (!selectedActivity || !activityId) return;
-    
     try {
+      if (editingActivity) {
+        // Update existing link
+        const response = await fetch(`/api/activities/${activityId}/linked/${editingActivity.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            relationshipType,
+            narrative
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update link');
+        }
+        toast.success('Link updated successfully');
+      } else if (selectedActivity) {
+        // Create new link
       const response = await fetch(`/api/activities/${activityId}/linked`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           linkedActivityId: selectedActivity.id,
-          relationshipType
+            relationshipType,
+            narrative
         })
       });
       
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to link activity');
+          const errorData = await response.json();
+          console.error('Create link error:', errorData);
+          if (errorData.error === 'Database table not found' || errorData.details?.includes('does not exist')) {
+            setTableMissing(true);
+            throw new Error('The activity_relationships table needs to be created in your database.');
+          }
+          throw new Error(errorData.error || 'Failed to create link');
+        }
+        toast.success('Activity linked successfully');
       }
+
+      // Refresh data
+      await fetchLinkedActivities();
       
-      toast.success('Activity linked successfully');
+      // Reset modal
       setShowModal(false);
       setSelectedActivity(null);
-      setSearchQuery('');
-      setSearchResults([]);
-      setShowDropdown(false);
-      setSelectedIndex(-1);
-      fetchLinkedActivities();
+      setEditingActivity(null);
+      setRelationshipType('');
+      setNarrative('');
     } catch (error: any) {
-      console.error('Error linking activity:', error);
-      toast.error(error.message || 'Failed to link activity');
+      console.error('Error saving link:', error);
+      toast.error(error.message || 'Failed to save link');
     }
   };
 
-  // Delete linked activity
-  const handleDeleteLink = async (linkId: string) => {
+  // Handle delete
+  const handleDelete = async (linkedActivityId: string) => {
     if (!confirm('Are you sure you want to remove this link?')) return;
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/linked/${linkId}`, {
+      const response = await fetch(`/api/activities/${activityId}/linked/${linkedActivityId}`, {
         method: 'DELETE'
       });
       
       if (!response.ok) throw new Error('Failed to delete link');
       
       toast.success('Link removed successfully');
-      fetchLinkedActivities();
+      await fetchLinkedActivities();
     } catch (error) {
       console.error('Error deleting link:', error);
       toast.error('Failed to remove link');
     }
   };
 
-  // Copy IATI ID to clipboard
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-    toast.success('IATI ID copied to clipboard');
+  // Get icon for relationship type
+  const getRelationshipIcon = (type: string) => {
+    switch (type) {
+      case '1': return <ArrowRight className="h-4 w-4" />; // Parent
+      case '2': return <ArrowLeft className="h-4 w-4" />; // Child
+      case '3': return <ArrowUpDown className="h-4 w-4" />; // Sibling
+      default: return <Link2 className="h-4 w-4" />;
+    }
   };
 
-  // Relationship type labels
-  const relationshipTypeLabels: Record<string, string> = {
-    '1': 'Parent',
-    '2': 'Child', 
-    '3': 'Sibling',
-    '4': 'Co-funded',
-    '5': 'Third-party'
-  };
-
-  // Render linked activities
-  const renderLinkedActivities = () => {
-    if (loading) {
       return (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map(j => (
-                  <div key={j} className="h-32 bg-gray-100 rounded-lg"></div>
+    <div className="h-[calc(100vh-16rem)] overflow-y-auto">
+      <div className="space-y-6">
+        {/* Search & Link Activities - Full Width */}
+        <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Search & Link Activities</h3>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search by title, IATI ID, or organisation..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10 border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+              disabled={!canEdit}
+            />
+            </div>
+        </div>
+
+          {/* Search Results */}
+          {searchQuery.trim() && (
+            <div className="mt-4 max-h-60 overflow-y-auto">
+              <div className="space-y-2">
+                            {searching ? (
+                <>
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </>
+              ) : displayActivities.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">
+                    No activities found for "{searchQuery}"
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Try a different search term
+                  </p>
+                            </div>
+                          ) : (
+                displayActivities.map((activity) => (
+                  <Card
+                    key={activity.id}
+                    className={cn(
+                      "cursor-pointer transition-all hover:shadow-md hover:border-gray-400",
+                      "border-gray-200"
+                    )}
+                    onClick={() => canEdit && handleActivitySelect(activity)}
+                  >
+                    <CardContent className="p-4">
+                      <h4 className="font-medium text-gray-900 line-clamp-1">
+                        {activity.title}
+                      </h4>
+                      <div className="mt-1 space-y-1">
+                        <p className="text-xs text-gray-600">
+                          {activity.iatiIdentifier}
+                        </p>
+                        {activity.organizationName && (
+                          <p className="text-xs text-gray-500">
+                            {activity.organizationName}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+            </div>
+          )}
+        </div>
+
+        {/* Linked Activities - Full Width */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Linked Activities</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Activities linked to this one through IATI relationship types
+            </p>
+          </div>
+
+          {tableMissing && (
+            <CreateRelationshipsTableGuide />
+          )}
+
+          {!canEdit && !tableMissing && (
+            <Alert className="mb-4 border-gray-300">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You don't have permission to edit linked activities.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Linked Activities List */}
+          <div className="max-h-96 overflow-y-auto">
+            {loading ? (
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    
-    // Ensure linkedActivities is an array before checking length
-    if (!Array.isArray(linkedActivities) || linkedActivities.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray-500">
-          No linked activities yet. Use the search above to find and link related activities.
-        </div>
-      );
-    }
-    
-    // Group by relationship type - ensure we're working with valid data
-    const grouped = linkedActivities.reduce((acc, la) => {
-      const type = la.relationshipTypeLabel || 'Unknown';
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(la);
-      return acc;
-    }, {} as Record<string, LinkedActivity[]>);
-    
-    if (viewMode === 'list') {
-      return (
-        <div className="space-y-6">
-          {Object.entries(grouped).map(([type, activities]) => (
-            <div key={type}>
-              <h3 className="font-medium text-lg mb-3 flex items-center gap-2">
-                <Link2 className="w-4 h-4" />
-                {type} Activities ({activities.length})
-              </h3>
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Activity Title
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        IATI Identifier
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Direction
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created
-                      </th>
+            ) : linkedActivities.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Link2 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-sm">No linked activities yet</p>
+                {canEdit && (
+                  <p className="text-xs mt-1">Search for activities above to create a link</p>
+                      )}
+                    </div>
+            ) : (
+              <div className="space-y-2">
+                {linkedActivities.map((link) => (
+                  <div
+                    key={link.id}
+                    className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          {getRelationshipIcon(link.relationshipType)}
+                          <h4 className="font-medium text-gray-900">
+                            {link.activityTitle}
+                          </h4>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-4 text-xs text-gray-600">
+                            <span>{link.iatiIdentifier}</span>
+                            <Badge variant="outline" className="border-gray-300 text-gray-700">
+                              {getRelationshipTypeName(link.relationshipType)}
+                            </Badge>
+                              </div>
+                          {link.narrative && (
+                            <p className="text-sm text-gray-600 mt-2">{link.narrative}</p>
+                                )}
+                              </div>
+                            </div>
                       {canEdit && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {activities.map((la) => (
-                      <tr key={la.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {la.isExternal ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm">{la.activityTitle}</span>
-                              <ExternalLink className="w-3 h-3 text-gray-400" />
-                            </div>
-                          ) : (
-                            <a
-                              href={`/activities/${la.activityId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:underline"
-                            >
-                              {la.activityTitle}
-                            </a>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">{la.iatiIdentifier}</span>
-                            <button
-                              onClick={() => copyToClipboard(la.iatiIdentifier, la.id)}
-                              className="text-gray-400 hover:text-gray-600 transition-colors"
-                              title="Copy IATI ID"
-                            >
-                              {copiedId === la.id ? (
-                                <Check className="w-4 h-4 text-green-500" />
-                              ) : (
-                                <Copy className="w-4 h-4" />
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            la.direction === 'outgoing' 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : 'bg-green-100 text-green-800'
-                          }`}>
-                            {la.direction}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(la.createdAt).toLocaleDateString()}
-                        </td>
-                        {canEdit && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button
-                              onClick={() => handleDeleteLink(la.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    
-    // Card view
-    return (
-      <div className="space-y-6">
-        {Object.entries(grouped).map(([type, activities]) => (
-          <div key={type}>
-            <h3 className="font-medium text-lg mb-3 flex items-center gap-2">
-              <Link2 className="w-4 h-4" />
-              {type} Activities ({activities.length})
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {activities.map((la) => (
-                <div key={la.id} className="relative">
-                  {la.isExternal ? (
-                    <div className="p-4 border rounded-lg bg-gray-50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm">{la.activityTitle}</h4>
-                          <p className="text-xs text-gray-600 mt-1">
-                            <span className="font-semibold">IATI Identifier:</span> {la.iatiIdentifier}
-                          </p>
-                        </div>
-                        <ExternalLink className="w-4 h-4 text-gray-400" />
-                      </div>
-                      <div className="mt-2 flex justify-between items-center">
-                        <span className="text-xs text-gray-500">External Activity</span>
-                        {canEdit && (
-                          <button
-                            onClick={() => handleDeleteLink(la.id)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
-                            title="Remove link"
+                        <div className="flex items-center gap-1 ml-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(link)}
+                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900"
                           >
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <ActivityCard
-                      activity={{
-                        id: la.activityId!,
-                        title: la.activityTitle,
-                        iati_id: la.iatiIdentifier,
-                        activity_status: 'active',
-                        publication_status: 'published'
-                      } as any}
-                    />
-                  )}
-                  <div className="absolute top-2 right-2 flex items-center gap-2">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      la.direction === 'outgoing' 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {la.direction}
-                    </span>
-                    {canEdit && !la.isExternal && (
-                      <button
-                        onClick={() => handleDeleteLink(la.id)}
-                        className="bg-white rounded-full p-1 shadow-sm hover:shadow-md transition-shadow text-red-500 hover:text-red-700"
-                        title="Remove link"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
-      <div>
-        <h3 className="text-xl font-semibold text-gray-900">Linked Activities</h3>
-        <p className="text-sm text-gray-600 mt-1">
-          Link this activity to other related activities using IATI standard relationship types.
-        </p>
-      </div>
-
-      {!canEdit && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            You don't have permission to edit linked activities. Contact the activity owner or your administrator.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Search Section */}
-      {canEdit && (
-        <div className="space-y-4">
-          <Label htmlFor="activity-search">Search and Link Activities</Label>
-          <div className="relative" ref={dropdownRef}>
-            <div className="flex gap-2 items-center">
-              <div className="relative flex-1">
-                <Input
-                  ref={searchInputRef}
-                  id="activity-search"
-                  type="text"
-                  placeholder="Type to search by ID, Title, or IATI Identifier..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onFocus={() => {
-                    if (searchResults.length > 0) {
-                      setShowDropdown(true);
-                    }
-                  }}
-                  disabled={!activityId}
-                  className="flex-1 min-w-[480px] pr-10"
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  {searching ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
-                  ) : (
-                    <Search className="w-4 h-4 text-gray-400" />
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Live Search Dropdown */}
-            {showDropdown && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-y-auto" style={{ zIndex: 9999 }}>
-                {searchResults.length > 0 ? (
-                  <div className="p-2">
-                    <div className="flex items-center justify-between mb-2 px-2">
-                      <p className="text-xs text-gray-600 font-medium">
-                        Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
-                      </p>
-                      {(window as any).__filteredCount > 0 && (
-                        <p className="text-xs text-amber-600">
-                          {(window as any).__filteredCount} already linked
-                        </p>
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(link.id)}
+                            className="h-8 w-8 p-0 text-gray-600 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       )}
                     </div>
-                    <div className="max-h-64 overflow-y-auto">
-                      {searchResults.map((activity, index) => (
-                        <div
-                          key={activity.id}
-                          className={`p-3 mx-1 mb-1 rounded-md cursor-pointer transition-all duration-150 ${
-                            index === selectedIndex 
-                              ? 'bg-blue-50 border-2 border-blue-300 shadow-sm' 
-                              : 'hover:bg-gray-50 border-2 border-transparent'
-                          }`}
-                          onClick={() => selectActivity(activity)}
-                          onMouseEnter={() => setSelectedIndex(index)}
-                        >
-                          <div className="flex justify-between items-start gap-2">
-                            <div className="flex-1 min-w-0">
-                              <h5 className="font-semibold text-sm text-gray-900 line-clamp-1">
-                                {activity.title || 'Untitled Activity'}
-                              </h5>
-                              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                {activity.id && (
-                                  <p className="text-xs text-gray-500 font-mono">
-                                    ID: {activity.id.slice(0, 8)}...
-                                  </p>
-                                )}
-                                {activity.iati_id && (
-                                  <p className="text-xs text-gray-600 font-medium">
-                                    <span className="font-semibold">IATI Identifier:</span> {activity.iati_id}
-                                  </p>
-                                )}
-                                {activity.partner_id && (
-                                  <p className="text-xs text-gray-600">
-                                    Partner: {activity.partner_id}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                  activity.publication_status === 'published' 
-                                    ? 'bg-green-100 text-green-700' 
-                                    : activity.publication_status === 'draft'
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : 'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {activity.publication_status || 'unknown'}
-                                </span>
-                                {activity.activity_status && (
-                                  <span className="text-xs text-gray-500 capitalize">
-                                    {activity.activity_status}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex-shrink-0 pl-2">
-                              <Plus className="w-5 h-5 text-blue-500" />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
-                ) : (
-                  <div className="p-6">
-                    {!searching && searchQuery.length >= 2 ? (
-                      <div className="text-center">
-                        <p className="text-sm text-gray-600 font-medium">
-                          {(window as any).__totalFound > 0 ? (
-                            <>
-                              All {(window as any).__totalFound} matching activit{(window as any).__totalFound === 1 ? 'y is' : 'ies are'} already linked
-                            </>
-                          ) : (
-                            <>No activities found matching "{searchQuery}"</>
-                          )}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Try searching by: Activity ID, Title, IATI ID, or Partner ID
-                        </p>
-                      </div>
-                    ) : searching ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
-                        <p className="text-sm text-gray-600">Searching...</p>
-                      </div>
-                    ) : null}
-                  </div>
-                )}
+                ))}
               </div>
             )}
-            
-            {/* Info message for minimum search length */}
-            {searchQuery.length > 0 && searchQuery.length < 2 && (
-              <div className="absolute z-50 w-full mt-1 bg-yellow-50 border border-yellow-200 rounded-lg p-3" style={{ zIndex: 9999 }}>
-                <p className="text-xs text-yellow-800 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  Please type at least 2 characters to search
+          </div>
+        </div>
+
+        {/* Relationship Visualization - Full Width */}
+        {currentActivity && (
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Relationship Visualization</h3>
+            <div className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden" style={{ height: '400px' }}>
+              <LinkedActivitiesGraph
+                currentActivity={currentActivity}
+                linkedActivities={linkedActivities}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Add/Edit Modal */}
+        <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">
+              {editingActivity ? 'Edit Link' : 'Link Activity'}
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              {editingActivity 
+                ? 'Update the relationship type and narrative for this link.'
+                : 'Define the relationship between these activities.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Selected Activity Info */}
+            {(selectedActivity || editingActivity) && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <h4 className="font-medium text-gray-900">
+                  {editingActivity ? editingActivity.activityTitle : selectedActivity?.title}
+                </h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  {editingActivity ? editingActivity.iatiIdentifier : selectedActivity?.iatiIdentifier}
                 </p>
               </div>
             )}
+
+            {/* Relationship Type */}
+            <div className="space-y-2">
+              <Label htmlFor="relationship-type">Relationship Type *</Label>
+              <Select value={relationshipType} onValueChange={setRelationshipType}>
+                <SelectTrigger className="border-gray-300 focus:border-gray-500">
+                  <SelectValue placeholder="Select relationship type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {IATI_RELATIONSHIP_TYPES.map((type) => (
+                    <SelectItem key={type.code} value={type.code}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{type.name}</span>
+                        <span className="text-xs text-gray-500">({type.code})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">{type.description}</p>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Narrative */}
+            <div className="space-y-2">
+              <Label htmlFor="narrative">Narrative (Optional)</Label>
+              <Textarea
+                id="narrative"
+                value={narrative}
+                onChange={(e) => setNarrative(e.target.value)}
+                placeholder="Add additional context about this relationship..."
+                className="resize-none border-gray-300 focus:border-gray-500"
+                rows={3}
+              />
+            </div>
           </div>
-        </div>
-      )}
       
-      {/* View Mode Toggle */}
-      <div className="flex justify-between items-center">
-        <h4 className="font-medium">Linked Activities</h4>
-        <div className="flex gap-2">
+          <DialogFooter>
           <Button
-            variant={viewMode === 'card' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('card')}
-          >
-            Card View
+              variant="outline"
+              onClick={() => setShowModal(false)}
+              className="border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
+              Cancel
           </Button>
           <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-          >
-            List View
+              onClick={handleSave}
+              disabled={!relationshipType}
+              className="bg-gray-900 text-white hover:bg-gray-800"
+            >
+              {editingActivity ? 'Update' : 'Create'} Link
           </Button>
-        </div>
+          </DialogFooter>
+        </DialogContent>
+        </Dialog>
       </div>
-      
-      {/* Linked Activities Display */}
-      {renderLinkedActivities()}
-      
-      {/* Link Activity Modal */}
-      {showModal && selectedActivity && (
-        <LinkedActivityModal
-          activity={selectedActivity}
-          onConfirm={handleLinkActivity}
-          onCancel={() => {
-            setShowModal(false);
-            setSelectedActivity(null);
-          }}
-        />
-      )}
     </div>
   );
 };

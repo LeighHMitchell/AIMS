@@ -54,6 +54,7 @@ export default function ActivityEditorNavigation({
         { id: "organisations", label: "Organisations" },
         { id: "contributors", label: "Contributors" },
         { id: "contacts", label: "Contacts" },
+        { id: "focal_points", label: "Focal Points" },
         { id: "linked_activities", label: "Linked Activities" }
       ]
     },

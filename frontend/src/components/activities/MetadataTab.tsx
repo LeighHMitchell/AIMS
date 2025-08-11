@@ -30,7 +30,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { FocalPointDropdown } from './FocalPointDropdown';
 
 interface MetadataTabProps {
   activityId: string;
@@ -104,8 +103,6 @@ interface MetadataResponse {
   metadata: ActivityMetadata;
   logs: ActivityLog[];
   contacts: {
-    government_focal_points: Contact[];
-    development_partner_focal_points: Contact[];
     all_contacts: Contact[];
   };
   stats: {
@@ -377,48 +374,6 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
         </Card>
       </div>
 
-      {/* Focal Points */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Government Focal Points */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="mb-3">
-              <h3 className="text-lg font-medium flex items-center gap-2">
-                <User className="h-5 w-5 text-gray-600" />
-                Recipient Government Focal Point(s)
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">The government official(s) responsible for reviewing or endorsing this activity.</p>
-            </div>
-            <FocalPointDropdown
-              activityId={activityId}
-              type="government_focal_point"
-              currentAssignments={data.contacts.government_focal_points}
-              onAssignmentChange={fetchMetadata}
-              placeholder="Select government focal point..."
-            />
-          </CardContent>
-        </Card>
-        
-        {/* Development Partner Focal Points */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="mb-3">
-              <h3 className="text-lg font-medium flex items-center gap-2">
-                <User className="h-5 w-5 text-gray-600" />
-                Development Partner Focal Point(s)
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">The main contact(s) responsible for maintaining or updating this activity on behalf of the development partner organisation(s).</p>
-            </div>
-            <FocalPointDropdown
-              activityId={activityId}
-              type="development_partner_focal_point"
-              currentAssignments={data.contacts.development_partner_focal_points}
-              onAssignmentChange={fetchMetadata}
-              placeholder="Select development partner focal point..."
-            />
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Technical Details */}
       <div className="grid grid-cols-1 gap-6">

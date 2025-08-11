@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { FilterPanel } from '@/components/rolodex/FilterPanel';
 import { PersonCard } from '@/components/rolodex/PersonCard';
+import { RolodexStats } from '@/components/rolodex/RolodexStats';
 import { useRolodexData } from '@/components/rolodex/useRolodexData';
 import { useRouter } from 'next/navigation';
 import { RolodexSkeleton } from '@/components/skeletons';
@@ -40,9 +41,16 @@ export default function RolodexPage() {
     initialFilters: {
       page: 1,
       limit: 24 // Good for grid layout (4x6)
-    }
+    },
+    autoFetch: false // Temporarily disable auto-fetch to debug
   });
   
+  // Manual initial fetch to avoid infinite loops
+  useEffect(() => {
+    console.log('[RolodexPage] Initial fetch on mount');
+    refetch();
+  }, []); // Only run once on mount
+
   // Debug logging
   console.log('[RolodexPage] State:', { 
     peopleCount: people.length, 
@@ -202,14 +210,17 @@ export default function RolodexPage() {
           </div>
         </div>
 
-        {/* Filters */}
-        <FilterPanel
-          filters={filters}
-          onFiltersChange={setFilters}
-          onClearFilters={clearFilters}
-          loading={loading}
-          totalCount={pagination.total}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Filters */}
+            <FilterPanel
+              filters={filters}
+              onFiltersChange={setFilters}
+              onClearFilters={clearFilters}
+              loading={loading}
+              totalCount={pagination.total}
+            />
 
         {/* Content */}
         {error ? (
@@ -245,7 +256,7 @@ export default function RolodexPage() {
           <>
             {/* People Grid/List */}
             {viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-8">
                 {people.map((person) => (
                   <PersonCard
                     key={person.id}
@@ -292,6 +303,16 @@ export default function RolodexPage() {
             )}
           </>
         )}
+          </div>
+          
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <RolodexStats 
+              totalCount={pagination.total}
+              filters={filters}
+            />
+          </div>
+        </div>
       </div>
     </div>
     </MainLayout>

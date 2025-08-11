@@ -24,18 +24,32 @@ export async function GET(
       );
     }
 
-    // Fetch current focal point assignments
+    // Fetch current focal point assignments with enhanced organization data
     const { data: assignments, error } = await supabase
       .from('activity_contacts')
       .select(`
         id,
-        user_id,
         type,
-        name,
+        first_name,
+        last_name,
         email,
         organisation,
-        role,
-        users!inner(id, name, first_name, last_name, email, role, organisation)
+        position,
+        profile_photo,
+        user_id,
+        users:user_id (
+          id,
+          role,
+          job_title,
+          organization_id,
+          organizations:organization_id (
+            id,
+            name,
+            acronym,
+            iati_org_id,
+            country
+          )
+        )
       `)
       .eq('activity_id', id)
       .in('type', ['government_focal_point', 'development_partner_focal_point']);
@@ -48,9 +62,33 @@ export async function GET(
       );
     }
 
+    // Format assignments with enhanced organization information
+    const formattedAssignments = assignments?.map((a: any) => {
+      const user = a.users;
+      const organization = user?.organizations;
+      
+      return {
+        id: a.id,
+        name: `${a.first_name || ''} ${a.last_name || ''}`.trim() || a.email,
+        email: a.email,
+        organisation: a.organisation, // Keep for backward compatibility
+        role: user?.role || a.position || 'Focal Point',
+        job_title: user?.job_title,
+        type: a.type,
+        avatar_url: a.profile_photo,
+        organization: organization ? {
+          id: organization.id,
+          name: organization.name,
+          acronym: organization.acronym,
+          iati_org_id: organization.iati_org_id,
+          country: organization.country
+        } : null
+      };
+    }) || [];
+
     // Group by type
-    const governmentFocalPoints = assignments?.filter((a: any) => a.type === 'government_focal_point') || [];
-    const developmentPartnerFocalPoints = assignments?.filter((a: any) => a.type === 'development_partner_focal_point') || [];
+    const governmentFocalPoints = formattedAssignments.filter((a: any) => a.type === 'government_focal_point');
+    const developmentPartnerFocalPoints = formattedAssignments.filter((a: any) => a.type === 'development_partner_focal_point');
 
     return NextResponse.json({
       government_focal_points: governmentFocalPoints,
@@ -106,14 +144,28 @@ export async function POST(
       );
     }
 
+    // Check if activity exists before proceeding
+    const { data: activity, error: activityError } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (activityError || !activity) {
+      console.error('[AIMS] Activity not found:', id, activityError);
+      return NextResponse.json(
+        { error: 'Activity not found' },
+        { status: 404 }
+      );
+    }
+
     if (action === 'remove') {
-      // Remove assignment
+      // Remove assignment by contact_id (passed as user_id for now)
+      const contact_id = user_id; // The frontend sends contact_id as user_id for removal
       const { error } = await supabase
         .from('activity_contacts')
         .delete()
-        .eq('activity_id', id)
-        .eq('user_id', user_id)
-        .eq('type', type);
+        .eq('id', contact_id);
 
       if (error) {
         console.error('[AIMS] Error removing focal point assignment:', error);
@@ -128,7 +180,7 @@ export async function POST(
       // Assign user - first get user details
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('id, name, first_name, last_name, email, role, organisation')
+        .select('id, first_name, last_name, email, role, organisation, avatar_url')
         .eq('id', user_id)
         .single();
 
@@ -140,12 +192,12 @@ export async function POST(
         );
       }
 
-      // Check if assignment already exists
+      // Check if assignment already exists (by email + type)
       const { data: existing } = await supabase
         .from('activity_contacts')
         .select('id')
         .eq('activity_id', id)
-        .eq('user_id', user_id)
+        .eq('email', user.email)
         .eq('type', type)
         .single();
 
@@ -159,14 +211,14 @@ export async function POST(
       // Create new assignment
       const contactData = {
         activity_id: id,
-        user_id: user_id,
         type: type,
-        name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim(),
+        user_id: user.id, // Store user_id to enable enhanced data retrieval
+        first_name: user.first_name || user.email.split('@')[0], // Use email username as fallback
+        last_name: user.last_name || 'User', // Required field - use generic fallback
+        position: user.role || 'Focal Point', // Required field - use descriptive fallback
         email: user.email,
         organisation: user.organisation,
-        role: user.role,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        profile_photo: user.avatar_url
       };
 
       const { data: newAssignment, error } = await supabase
@@ -198,4 +250,6 @@ export async function POST(
     );
   }
 }
+
+
 

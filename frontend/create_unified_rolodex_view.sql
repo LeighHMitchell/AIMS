@@ -8,7 +8,7 @@ CREATE OR REPLACE VIEW person_unified_view AS
 SELECT 
   users.id::text AS id,
   'user'::text AS source_type,
-  users.name AS name,
+  COALESCE(NULLIF(TRIM(CONCAT(COALESCE(users.first_name, ''), ' ', COALESCE(users.last_name, ''))), ''), users.email) AS name,
   users.email AS email,
   users.role AS role,
   users.organization_id AS organization_id,
@@ -17,7 +17,7 @@ SELECT
   NULL::text AS fax,
   NULL::uuid AS activity_id,
   NULL::text AS notes,
-  NULL::text AS profile_photo,
+  users.avatar_url AS profile_photo,
   users.created_at AS created_at,
   users.updated_at AS updated_at,
   -- Derived fields for display

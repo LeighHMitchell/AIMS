@@ -55,8 +55,21 @@ export async function GET(request: NextRequest) {
       );
     }
     
+    // Transform data to match frontend User type expectations
+    const transformUser = (user: any) => ({
+      ...user,
+      name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+      profilePicture: user.avatar_url, // Map avatar_url to profilePicture
+      organisation: user.organisation || user.organizations?.name,
+      organization: user.organizations
+    });
+    
+    const transformedData = Array.isArray(data) 
+      ? data.map(transformUser)
+      : transformUser(data);
+    
     console.log('[AIMS] Successfully fetched from Supabase');
-    return NextResponse.json(data);
+    return NextResponse.json(transformedData);
     
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
@@ -159,7 +172,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, ...updateData } = body;
+    const { id, profile_picture, ...updateData } = body;
     
     if (!id) {
       return NextResponse.json(
@@ -168,13 +181,21 @@ export async function PUT(request: NextRequest) {
       );
     }
     
+    // Map frontend field names to database column names
+    const dbUpdateData = {
+      ...updateData,
+      updated_at: new Date().toISOString()
+    };
+    
+    // Handle profile picture mapping
+    if (profile_picture !== undefined) {
+      dbUpdateData.avatar_url = profile_picture;
+    }
+    
     // Update user profile
     const { data, error } = await supabase
       .from('users')
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString()
-      })
+      .update(dbUpdateData)
       .eq('id', id)
       .select()
       .single();

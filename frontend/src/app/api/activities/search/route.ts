@@ -6,18 +6,35 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const search = searchParams.get('search') || '';
+    const search = searchParams.get('q') || searchParams.get('search') || '';
     const limit = parseInt(searchParams.get('limit') || '100', 10);
 
-    let query = getSupabaseAdmin()
+    const supabase = getSupabaseAdmin();
+    
+    if (!supabase) {
+      console.error('[Activities Search] Supabase client is null');
+      return NextResponse.json(
+        { error: 'Database connection not configured' },
+        { status: 503 }
+      );
+    }
+
+    let query = supabase
       .from('activities')
-      .select('id, title, iati_id')
+      .select(`
+        id, 
+        title_narrative, 
+        iati_identifier,
+        activity_status,
+        created_by_org_name,
+        created_by_org_acronym
+      `)
       .order('created_at', { ascending: false })
       .limit(limit);
 
     // Add search filter if provided
     if (search) {
-      query = query.or(`title.ilike.%${search}%,iati_id.ilike.%${search}%`);
+      query = query.or(`title_narrative.ilike.%${search}%,iati_identifier.ilike.%${search}%,created_by_org_name.ilike.%${search}%`);
     }
 
     const { data, error } = await query;

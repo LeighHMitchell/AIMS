@@ -33,10 +33,12 @@ import {
   Zap,
   Settings,
   Eye,
-  Table as TableIcon
+  Table as TableIcon,
+  Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useResults } from '@/hooks/use-results';
+import { useResults, useBaselines, useIndicators } from '@/hooks/use-results';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { 
   ActivityResult, 
@@ -48,7 +50,7 @@ import {
   MeasureType,
   MEASURE_TYPE_LABELS
 } from '@/types/results';
-import { IndicatorCard } from './IndicatorCard';
+
 import { AddIndicatorForm } from './AddIndicatorForm';
 import { 
   Bar, 
@@ -61,18 +63,20 @@ import {
   Pie, 
   PieChart as RechartsPieChart, 
   ResponsiveContainer, 
-  Tooltip, 
+  Tooltip as RechartsTooltip, 
   XAxis, 
   YAxis 
 } from 'recharts';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 
-// Chart colors
+// Monochrome chart colors
 const CHART_COLORS = {
-  primary: '#3b82f6',
-  success: '#10b981',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  gray: '#6b7280'
+  primary: '#111827',   // gray-900
+  secondary: '#374151', // gray-700
+  tertiary: '#6b7280',  // gray-500
+  light: '#9ca3af',     // gray-400
+  lighter: '#d1d5db',   // gray-300
+  background: '#f9fafb' // gray-50
 };
 
 // Format value based on measure type
@@ -91,6 +95,239 @@ const formatValue = (value: number | undefined, measure: MeasureType): string =>
   }
 };
 
+// Type for dummy data - includes all required fields
+type DummyResult = ActivityResult & {
+  indicators?: (ResultIndicator & {
+    status?: { label: string; color: string; percentage: number };
+  })[];
+};
+
+// Dummy data for demonstration
+const DUMMY_RESULTS_DATA: DummyResult[] = [
+  {
+    id: 'dummy-1',
+    activity_id: 'activity-1',
+    type: 'outcome' as ResultType,
+    title: { en: 'Improved access to clean water in rural areas' },
+    description: { en: 'This outcome focuses on increasing the availability and quality of water resources for rural communities through sustainable infrastructure development.' },
+    aggregation_status: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    created_by: 'user-1',
+    indicators: [
+      {
+        id: 'dummy-ind-1',
+        result_id: 'dummy-1',
+        title: { en: 'Percentage of rural households with access to clean water' },
+        description: undefined,
+        measure: 'percentage' as MeasureType,
+        ascending: true,
+        aggregation_status: true,
+        reference_vocab: undefined,
+        reference_code: undefined,
+        reference_uri: undefined,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'user-1',
+        baseline: {
+          id: 'baseline-1',
+          indicator_id: 'dummy-ind-1',
+          baseline_year: 2023,
+          iso_date: undefined,
+          value: 45,
+          comment: undefined,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        periods: [
+          {
+            id: 'period-1',
+            indicator_id: 'dummy-ind-1',
+            period_start: '2024-01-01',
+            period_end: '2024-06-30',
+            target_value: 55,
+            target_comment: undefined,
+            actual_value: 52,
+            actual_comment: undefined,
+            facet: 'Total',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 'user-1'
+          },
+          {
+            id: 'period-2',
+            indicator_id: 'dummy-ind-1',
+            period_start: '2024-07-01',
+            period_end: '2024-12-31',
+            target_value: 65,
+            target_comment: undefined,
+            actual_value: 61,
+            actual_comment: undefined,
+            facet: 'Total',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 'user-1'
+          }
+        ],
+        status: { label: 'On Track', color: 'green', percentage: 93.8 }
+      },
+      {
+        id: 'dummy-ind-2',
+        result_id: 'dummy-1',
+        title: { en: 'Number of water quality tests meeting WHO standards' },
+        description: undefined,
+        measure: 'unit' as MeasureType,
+        ascending: true,
+        aggregation_status: true,
+        reference_vocab: undefined,
+        reference_code: undefined,
+        reference_uri: undefined,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'user-1',
+        baseline: {
+          id: 'baseline-2',
+          indicator_id: 'dummy-ind-2',
+          baseline_year: 2023,
+          iso_date: undefined,
+          value: 120,
+          comment: undefined,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        periods: [
+          {
+            id: 'period-3',
+            indicator_id: 'dummy-ind-2',
+            period_start: '2024-01-01',
+            period_end: '2024-06-30',
+            target_value: 180,
+            target_comment: undefined,
+            actual_value: 175,
+            actual_comment: undefined,
+            facet: 'Total',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 'user-1'
+          },
+          {
+            id: 'period-4',
+            indicator_id: 'dummy-ind-2',
+            period_start: '2024-07-01',
+            period_end: '2024-12-31',
+            target_value: 240,
+            target_comment: undefined,
+            actual_value: 0,
+            actual_comment: undefined,
+            facet: 'Total',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 'user-1'
+          }
+        ],
+        status: { label: 'Attention Needed', color: 'yellow', percentage: 72.9 }
+      }
+    ]
+  },
+  {
+    id: 'dummy-2',
+    activity_id: 'activity-1',
+    type: 'output' as ResultType,
+    title: { en: 'Constructed community water points' },
+    description: { en: 'Building and installing water infrastructure including wells, pumps, and distribution systems in underserved rural communities.' },
+    aggregation_status: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    created_by: 'user-1',
+    indicators: [
+      {
+        id: 'dummy-ind-3',
+        result_id: 'dummy-2',
+        title: { en: 'Number of water points constructed' },
+        description: undefined,
+        measure: 'unit' as MeasureType,
+        ascending: true,
+        aggregation_status: true,
+        reference_vocab: undefined,
+        reference_code: undefined,
+        reference_uri: undefined,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'user-1',
+        baseline: {
+          id: 'baseline-3',
+          indicator_id: 'dummy-ind-3',
+          baseline_year: 2023,
+          iso_date: undefined,
+          value: 0,
+          comment: undefined,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        periods: [
+          {
+            id: 'period-5',
+            indicator_id: 'dummy-ind-3',
+            period_start: '2024-01-01',
+            period_end: '2024-03-31',
+            target_value: 10,
+            target_comment: undefined,
+            actual_value: 12,
+            actual_comment: undefined,
+            facet: 'Total',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 'user-1'
+          },
+          {
+            id: 'period-6',
+            indicator_id: 'dummy-ind-3',
+            period_start: '2024-04-01',
+            period_end: '2024-06-30',
+            target_value: 15,
+            target_comment: undefined,
+            actual_value: 14,
+            actual_comment: undefined,
+            facet: 'Total',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 'user-1'
+          },
+          {
+            id: 'period-7',
+            indicator_id: 'dummy-ind-3',
+            period_start: '2024-07-01',
+            period_end: '2024-09-30',
+            target_value: 20,
+            target_comment: undefined,
+            actual_value: 18,
+            actual_comment: undefined,
+            facet: 'Total',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 'user-1'
+          },
+          {
+            id: 'period-8',
+            indicator_id: 'dummy-ind-3',
+            period_start: '2024-10-01',
+            period_end: '2024-12-31',
+            target_value: 25,
+            target_comment: undefined,
+            actual_value: 0,
+            actual_comment: undefined,
+            facet: 'Total',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 'user-1'
+          }
+        ],
+        status: { label: 'On Track', color: 'green', percentage: 90 }
+      }
+    ]
+  }
+];
+
 export function ResultsTab({ 
   activityId, 
   readOnly = false, 
@@ -99,15 +336,33 @@ export function ResultsTab({
   className 
 }: ResultsTabProps) {
   const { results, loading, error, createResult, updateResult, deleteResult, fetchResults } = useResults(activityId);
+  const { upsertBaseline } = useBaselines();
   
   // Local state
   const [showAddResult, setShowAddResult] = useState(false);
   const [expandedResults, setExpandedResults] = useState<string[]>([]);
   const [editingResult, setEditingResult] = useState<string | null>(null);
+  const [editingResultData, setEditingResultData] = useState<Record<string, any>>({});
+  const [editingIndicator, setEditingIndicator] = useState<string | null>(null);
+  const [editingIndicatorValues, setEditingIndicatorValues] = useState<{
+    title?: string;
+    baseline?: number;
+    target?: number;
+    actual?: number;
+  }>({});
+  const [showAddPeriod, setShowAddPeriod] = useState<string | null>(null);
+  const [newPeriod, setNewPeriod] = useState({
+    period_start: '',
+    period_end: '',
+    target_value: '',
+    actual_value: '',
+    comment: ''
+  });
   const [showAddIndicator, setShowAddIndicator] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<string>('overview');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [selectedResult, setSelectedResult] = useState<string | null>(null);
+  const [showDummyData, setShowDummyData] = useState(false);
 
   // Add result form state
   const [newResult, setNewResult] = useState<Partial<CreateResultData>>({
@@ -157,23 +412,53 @@ export function ResultsTab({
     }
   };
 
-  // Handle updating a single field of a result
+  // Handle deleting an indicator
+  const handleDeleteIndicator = async (indicatorId: string) => {
+    if (window.confirm('Are you sure you want to delete this indicator? This will also delete all its periods and baseline data.')) {
+      try {
+        // Use direct Supabase call for now since we need a more flexible approach
+        const { error } = await supabase
+          .from('result_indicators')
+          .delete()
+          .eq('id', indicatorId);
+
+        if (error) {
+          console.error('Error deleting indicator:', error);
+          toast.error('Failed to delete indicator: ' + error.message);
+          return;
+        }
+
+        toast.success('Indicator deleted successfully');
+        fetchResults(); // Refresh to update the UI
+      } catch (err) {
+        console.error('Unexpected error deleting indicator:', err);
+        toast.error('Failed to delete indicator');
+      }
+    }
+  };
+
+  // Handle updating a single field of a result (local state only)
   const handleUpdateResultField = (resultId: string, field: string, value: any) => {
-    const resultToUpdate = results.find(r => r.id === resultId);
-    if (!resultToUpdate) return;
-    
-    updateResult(resultId, {
-      ...resultToUpdate,
+    setEditingResultData(prev => ({
+      ...prev,
+      [resultId]: {
+        ...prev[resultId],
       [field]: value
-    });
+      }
+    }));
   };
 
   // Handle saving result edit
   const handleSaveResultEdit = async (resultId: string) => {
     const resultToUpdate = results.find(r => r.id === resultId);
+    const editedData = editingResultData[resultId] || {};
     if (!resultToUpdate) return;
 
-    if (!resultToUpdate.title?.[defaultLanguage]?.trim()) {
+    // Use edited data or fallback to original
+    const finalTitle = editedData.title || resultToUpdate.title;
+    const finalDescription = editedData.description || resultToUpdate.description;
+
+    if (!finalTitle?.[defaultLanguage]?.trim()) {
       toast.error('Please provide a result title');
       return;
     }
@@ -181,15 +466,23 @@ export function ResultsTab({
     const success = await updateResult(resultId, {
       type: resultToUpdate.type,
       aggregation_status: resultToUpdate.aggregation_status,
-      title: resultToUpdate.title,
-      description: resultToUpdate.description
+      title: finalTitle,
+      description: finalDescription
     });
 
     if (success) {
       setEditingResult(null);
+      setEditingResultData(prev => {
+        const newData = { ...prev };
+        delete newData[resultId];
+        return newData;
+      });
       onResultsChange?.(results);
     }
   };
+
+  // Use dummy data if enabled and no real results
+  const displayResults = showDummyData && results.length === 0 ? DUMMY_RESULTS_DATA as any : results;
 
   // Get status counts for overview
   const getStatusCounts = () => {
@@ -197,8 +490,8 @@ export function ResultsTab({
     let offTrack = 0;
     let noData = 0;
     
-    results.forEach(result => {
-      result.indicators?.forEach(indicator => {
+    displayResults.forEach((result: ActivityResult) => {
+      result.indicators?.forEach((indicator: ResultIndicator) => {
         if (!indicator.status) {
           noData++;
         } else if (indicator.status.color === 'green') {
@@ -216,8 +509,8 @@ export function ResultsTab({
 
   // Filter results by type
   const getFilteredResults = () => {
-    if (activeSubTab === 'overview' || activeSubTab === 'table' || activeSubTab === 'charts') return results;
-    return results.filter(result => result.type === activeSubTab);
+    if (activeSubTab === 'overview' || activeSubTab === 'table' || activeSubTab === 'charts') return displayResults;
+    return displayResults.filter((result: ActivityResult) => result.type === activeSubTab);
   };
 
   // Get counts for each result type
@@ -229,7 +522,7 @@ export function ResultsTab({
       other: 0
     };
     
-    results.forEach(result => {
+    displayResults.forEach((result: ActivityResult) => {
       counts[result.type]++;
     });
     
@@ -248,16 +541,16 @@ export function ResultsTab({
     // Status distribution data
     const statusCounts = getStatusCounts();
     const statusDistribution = [
-      { name: 'On Track', value: statusCounts.onTrack, color: CHART_COLORS.success },
-      { name: 'Need Attention', value: statusCounts.offTrack, color: CHART_COLORS.warning },
-      { name: 'No Data', value: statusCounts.noData, color: CHART_COLORS.gray }
+      { name: 'On Track', value: statusCounts.onTrack, color: CHART_COLORS.primary },
+      { name: 'Need Attention', value: statusCounts.offTrack, color: CHART_COLORS.tertiary },
+      { name: 'No Data', value: statusCounts.noData, color: CHART_COLORS.lighter }
     ];
 
     // Progress over time data (for line chart)
     const progressData: any[] = [];
-    results.forEach(result => {
-      result.indicators?.forEach(indicator => {
-        indicator.periods?.forEach(period => {
+    displayResults.forEach((result: ActivityResult) => {
+      result.indicators?.forEach((indicator: any) => {
+        indicator.periods?.forEach((period: any) => {
           const date = new Date(period.period_end).toLocaleDateString('en-US', { 
             month: 'short', 
             year: 'numeric' 
@@ -282,7 +575,7 @@ export function ResultsTab({
     progressData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return { typeDistribution, statusDistribution, progressData };
-  }, [results]);
+  }, [displayResults]);
 
   const statusCounts = getStatusCounts();
   const resultTypeCounts = getResultTypeCounts();
@@ -292,7 +585,7 @@ export function ResultsTab({
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Results & Indicators</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Results & Indicators</h3>
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
@@ -319,147 +612,41 @@ export function ResultsTab({
 
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Header */}
+      {/* Simple Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Results & Indicators</h3>
+          <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            Results
+                          <HelpTextTooltip>
+                Results define what your activity aims to achieve. They are organized into three levels: Outputs (immediate deliverables), Outcomes (medium-term changes), and Impacts (long-term effects).
+              </HelpTextTooltip>
+          </h3>
           <p className="text-sm text-gray-600 mt-1">
-            Track outputs, outcomes, and impact indicators for this activity
+            What changes will this activity achieve?
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-md">
-            <Button
-              size="sm"
-              variant={viewMode === 'cards' ? 'default' : 'ghost'}
-              onClick={() => setViewMode('cards')}
-              className="h-8 px-3"
-            >
-              <Eye className="h-3 w-3 mr-1" />
-              Cards
-            </Button>
-            <Button
-              size="sm"
-              variant={viewMode === 'table' ? 'default' : 'ghost'}
-              onClick={() => setViewMode('table')}
-              className="h-8 px-3"
-            >
-              <TableIcon className="h-3 w-3 mr-1" />
-              Table
-            </Button>
-          </div>
-          
           {!readOnly && (
             <Button 
               onClick={() => setShowAddResult(true)} 
-              className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
             >
               <Plus className="h-4 w-4" />
               Add Result
             </Button>
           )}
-        </div>
       </div>
 
-      {/* Overview Stats */}
-      {results.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <Target className="h-4 w-4 text-blue-600" />
-                <div>
-                  <p className="text-sm font-medium">Total Results</p>
-                  <p className="text-2xl font-bold">{results.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <BarChart3 className="h-4 w-4 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium">Total Indicators</p>
-                  <p className="text-2xl font-bold">
-                    {results.reduce((sum, r) => sum + (r.indicators?.length || 0), 0)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium">On Track</p>
-                  <p className="text-2xl font-bold text-green-600">{statusCounts.onTrack}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <XCircle className="h-4 w-4 text-red-600" />
-                <div>
-                  <p className="text-sm font-medium">Need Attention</p>
-                  <p className="text-2xl font-bold text-red-600">{statusCounts.offTrack}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Add New Result Form */}
+      {/* Simple Add Result Form */}
       {showAddResult && !readOnly && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Add New Result</CardTitle>
+        <Card className="border-2 border-gray-400 bg-gray-50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg text-gray-900">What result do you want to achieve?</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="result-type">Result Type</Label>
-                <Select 
-                  value={newResult.type} 
-                  onValueChange={(value: ResultType) => 
-                    setNewResult(prev => ({ ...prev, type: value }))
-                  }
-                >
-                  <SelectTrigger id="result-type">
-                    <SelectValue placeholder="Select result type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(RESULT_TYPE_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="aggregation-status"
-                  checked={newResult.aggregation_status || false}
-                  onCheckedChange={(checked) => 
-                    setNewResult(prev => ({ ...prev, aggregation_status: checked }))
-                  }
-                />
-                <Label htmlFor="aggregation-status">Aggregation Status</Label>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="result-title">Result Title</Label>
+              <Label htmlFor="result-title" className="text-base font-medium text-gray-900">
+                Result name *
+              </Label>
               <Input
                 id="result-title"
                 value={newResult.title?.[defaultLanguage] || ''}
@@ -469,13 +656,50 @@ export function ResultsTab({
                     title: { ...prev.title, [defaultLanguage]: e.target.value }
                   }))
                 }
-                placeholder="Enter result title..."
-                className="w-full"
+                placeholder="What change will happen? (e.g., More children can read)"
+                className="w-full text-base"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="result-description">Result Description</Label>
+              <Label htmlFor="result-type" className="text-base font-medium text-gray-900">
+                What kind of result is this?
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant={newResult.type === 'output' ? 'default' : 'outline'}
+                  onClick={() => setNewResult(prev => ({ ...prev, type: 'output' }))}
+                  className={newResult.type === 'output' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-gray-300'}
+                >
+                  Output
+                  <HelpTextTooltip>Things you deliver (e.g., schools built)</HelpTextTooltip>
+                </Button>
+                <Button
+                  type="button"
+                  variant={newResult.type === 'outcome' ? 'default' : 'outline'}
+                  onClick={() => setNewResult(prev => ({ ...prev, type: 'outcome' }))}
+                  className={newResult.type === 'outcome' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-gray-300'}
+                >
+                  Outcome
+                  <HelpTextTooltip>Changes that happen (e.g., literacy improved)</HelpTextTooltip>
+                </Button>
+                <Button
+                  type="button"
+                  variant={newResult.type === 'impact' ? 'default' : 'outline'}
+                  onClick={() => setNewResult(prev => ({ ...prev, type: 'impact' }))}
+                  className={newResult.type === 'impact' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-gray-300'}
+                >
+                  Impact
+                  <HelpTextTooltip>Long-term effects (e.g., poverty reduced)</HelpTextTooltip>
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="result-description" className="text-base font-medium text-gray-900">
+                Add more details (optional)
+              </Label>
               <Textarea
                 id="result-description"
                 value={newResult.description?.[defaultLanguage] || ''}
@@ -485,22 +709,24 @@ export function ResultsTab({
                     description: { ...prev.description, [defaultLanguage]: e.target.value }
                   }))
                 }
-                placeholder="Describe what this result aims to achieve..."
-                rows={3}
-                className="w-full"
+                placeholder="Explain how this result will be achieved..."
+                rows={2}
+                className="w-full text-base"
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 pt-2">
               <Button 
                 onClick={handleCreateResult}
                 disabled={!newResult.title?.[defaultLanguage]?.trim()}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400 px-6"
               >
-                Create Result
+                Save Result
               </Button>
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 onClick={() => setShowAddResult(false)}
+                className="text-gray-600"
               >
                 Cancel
               </Button>
@@ -509,240 +735,159 @@ export function ResultsTab({
         </Card>
       )}
 
-      {/* Main Content */}
-      {results.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
+      {/* Main Content - Simple List */}
+      {displayResults.length === 0 && !showDummyData ? (
+        <div className="bg-gray-50 rounded-lg p-8 text-center">
               <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-gray-900 mb-2">No Results Yet</h4>
+          <h4 className="text-lg font-medium text-gray-900 mb-2">No results yet</h4>
               <p className="text-gray-600 mb-4">
-                Add your first result to start tracking progress and indicators for this activity.
+            Start by adding what changes you want this activity to achieve
               </p>
               {!readOnly && (
-                <Button onClick={() => setShowAddResult(true)} className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add First Result
+            <Button 
+              onClick={() => setShowAddResult(true)} 
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Your First Result
                 </Button>
               )}
             </div>
-          </CardContent>
-        </Card>
       ) : (
-        <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <Activity className="h-3 w-3" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="table" className="flex items-center gap-2">
-              <TableIcon className="h-3 w-3" />
-              Table View
-            </TabsTrigger>
-            <TabsTrigger value="charts" className="flex items-center gap-2">
-              <PieChart className="h-3 w-3" />
-              Charts
-            </TabsTrigger>
-            <TabsTrigger value="output" className="flex items-center gap-2">
-              <Target className="h-3 w-3" />
-              Outputs ({resultTypeCounts.output})
-            </TabsTrigger>
-            <TabsTrigger value="outcome" className="flex items-center gap-2">
-              <TrendingUp className="h-3 w-3" />
-              Outcomes ({resultTypeCounts.outcome})
-            </TabsTrigger>
-            <TabsTrigger value="impact" className="flex items-center gap-2">
-              <Zap className="h-3 w-3" />
-              Impacts ({resultTypeCounts.impact})
-            </TabsTrigger>
-            <TabsTrigger value="other" className="flex items-center gap-2">
-              <Settings className="h-3 w-3" />
-              Other ({resultTypeCounts.other})
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          {/* Enhanced Tabs for Different Views */}
+          <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="timeline">Timeline View</TabsTrigger>
+              <TabsTrigger value="charts">Progress Charts</TabsTrigger>
+              <TabsTrigger value="table">Data Table</TabsTrigger>
+            </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4 mt-6">
-            {viewMode === 'cards' ? (
-              // Card View
-              filteredResults.map((result) => (
-                <Card key={result.id} className="border border-gray-200">
-                  <Collapsible 
-                    open={expandedResults.includes(result.id)}
-                    onOpenChange={() => toggleResult(result.id)}
-                  >
-                    <CollapsibleTrigger asChild>
-                      <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            {expandedResults.includes(result.id) ? (
-                              <ChevronDown className="h-4 w-4 text-gray-500" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-gray-500" />
-                            )}
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs">
+            {/* Overview Tab - Default View */}
+            <TabsContent value="overview" className="space-y-6">
+          {/* Simple Results List */}
+              {filteredResults.map((result: ActivityResult, index: number) => (
+            <div key={result.id} className="bg-white rounded-lg border-2 border-gray-200 p-6">
+              {/* Result Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl font-bold text-gray-900">{index + 1}.</span>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {(result.title as any)[defaultLanguage] || Object.values(result.title)[0]}
+                    </h3>
+                    <Badge variant="outline" className={`${
+                      result.type === 'output' ? 'bg-gray-200 text-gray-700 border-gray-400' :
+                      result.type === 'outcome' ? 'bg-gray-100 text-gray-800 border-gray-400' :
+                      'bg-gray-50 text-gray-900 border-gray-500'
+                    }`}>
                                   {RESULT_TYPE_LABELS[result.type]}
                                 </Badge>
-                                {result.aggregation_status && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    Aggregated
-                                  </Badge>
-                                )}
-                                <span className="text-xs text-gray-500">
-                                  {result.indicators?.length || 0} indicators
-                                </span>
                               </div>
-                              <CardTitle className="text-base mt-1">
-                                {result.title[defaultLanguage] || Object.values(result.title)[0]}
-                              </CardTitle>
                               {result.description && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {result.description[defaultLanguage] || Object.values(result.description)[0]}
+                    <p className="text-gray-600 ml-10">
+                      {(result.description as any)[defaultLanguage] || Object.values(result.description)[0]}
                                 </p>
                               )}
-                            </div>
                           </div>
                           
                           {!readOnly && (
-                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-2">
                               <Button 
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => setEditingResult(editingResult === result.id ? null : result.id)}
+                      className="text-gray-600"
                               >
-                                <Edit3 className="h-3 w-3" />
+                      <Edit3 className="h-4 w-4" />
                               </Button>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => handleDeleteResult(result.id)}
-                                className="text-red-600 hover:text-red-700"
+                      className="text-gray-600"
                               >
-                                <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           )}
                         </div>
-                      </CardHeader>
-                    </CollapsibleTrigger>
 
-                    <CollapsibleContent>
-                      <CardContent className="pt-0">
-                        <Separator className="mb-6" />
-                        
-                        {/* Edit Result Form */}
+              {/* Simple Edit Form */}
                         {editingResult === result.id && !readOnly && (
-                          <Card className="border-2 border-blue-200 bg-blue-50/30 mb-6">
-                            <CardHeader className="pb-4">
-                              <CardTitle className="text-lg">Edit Result</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-result-type">Result Type</Label>
-                                  <Select 
-                                    value={result.type} 
-                                    onValueChange={(value: ResultType) => 
-                                      handleUpdateResultField(result.id, 'type', value)
-                                    }
-                                  >
-                                    <SelectTrigger id="edit-result-type">
-                                      <SelectValue placeholder="Select result type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {Object.entries(RESULT_TYPE_LABELS).map(([value, label]) => (
-                                        <SelectItem key={value} value={value}>
-                                          {label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div className="flex items-center space-x-2">
-                                  <Switch
-                                    id="edit-aggregation-status"
-                                    checked={result.aggregation_status || false}
-                                    onCheckedChange={(checked) => 
-                                      handleUpdateResultField(result.id, 'aggregation_status', checked)
-                                    }
-                                  />
-                                  <Label htmlFor="edit-aggregation-status">Aggregation Status</Label>
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label htmlFor="edit-result-title">Title *</Label>
+                <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
                                 <Input
-                                  id="edit-result-title"
-                                  value={result.title[defaultLanguage] || ''}
+                    value={
+                      editingResultData[result.id]?.title?.[defaultLanguage] ?? 
+                      (result.title as any)[defaultLanguage] ?? ''
+                    }
                                   onChange={(e) => 
                                     handleUpdateResultField(result.id, 'title', {
-                                      ...result.title,
+                                      ...(editingResultData[result.id]?.title || result.title),
                                       [defaultLanguage]: e.target.value
                                     })
                                   }
-                                  placeholder="Enter result title"
-                                  className="w-full"
+                    placeholder="Result name"
+                    className="text-lg font-medium"
                                 />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label htmlFor="edit-result-description">Description</Label>
                                 <Textarea
-                                  id="edit-result-description"
-                                  value={result.description?.[defaultLanguage] || ''}
+                    value={
+                      editingResultData[result.id]?.description?.[defaultLanguage] ?? 
+                      ((result.description as any)?.[defaultLanguage]) ?? ''
+                    }
                                   onChange={(e) => 
                                     handleUpdateResultField(result.id, 'description', {
-                                      ...result.description,
+                                      ...(editingResultData[result.id]?.description || result.description),
                                       [defaultLanguage]: e.target.value
                                     })
                                   }
-                                  placeholder="Describe what this result aims to achieve..."
-                                  rows={3}
+                    placeholder="Add details..."
+                    rows={2}
                                   className="w-full"
                                 />
-                              </div>
-
                               <div className="flex items-center gap-2">
                                 <Button 
                                   onClick={() => handleSaveResultEdit(result.id)}
-                                  className="flex items-center gap-2"
+                      size="sm"
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
                                 >
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  Save Changes
+                      Save
                                 </Button>
                                 <Button 
-                                  variant="outline" 
-                                  onClick={() => setEditingResult(null)}
+                      variant="ghost" 
+                      size="sm"
+                                  onClick={() => {
+                                    setEditingResult(null);
+                                    setEditingResultData(prev => {
+                                      const newData = { ...prev };
+                                      delete newData[result.id];
+                                      return newData;
+                                    });
+                                  }}
                                 >
                                   Cancel
                                 </Button>
                               </div>
-                            </CardContent>
-                          </Card>
-                        )}
-                        
-                        {/* Indicators */}
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium">Indicators</h4>
+                </div>
+              )}
+              {/* Indicators Section - Simplified */}
+              <div className="ml-10 mt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-lg font-medium text-gray-900">How will we measure this?</h4>
                             {!readOnly && (
                               <Button 
-                                variant="outline" 
                                 size="sm"
                                 onClick={() => setShowAddIndicator(result.id)}
-                                className="flex items-center gap-2"
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
                               >
-                                <Plus className="h-3 w-3" />
-                                Add Indicator
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Measure
                               </Button>
                             )}
                           </div>
 
-                          {/* Add Indicator Form */}
+                {/* Simple Add Indicator Form */}
                           {showAddIndicator === result.id && !readOnly && (
                             <AddIndicatorForm
                               resultId={result.id}
@@ -757,657 +902,905 @@ export function ResultsTab({
                           )}
 
                           {result.indicators && result.indicators.length > 0 ? (
-                            result.indicators.map((indicator) => (
-                              <IndicatorCard
-                                key={indicator.id}
-                                indicator={indicator}
-                                readOnly={readOnly}
-                                defaultLanguage={defaultLanguage}
-                                onUpdate={fetchResults}
-                              />
-                            ))
-                          ) : (
-                            <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
-                              <BarChart3 className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                              <p className="text-sm text-gray-600">No indicators yet</p>
-                              {!readOnly && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Click "Add Indicator" to start tracking progress toward this result
+                  <div className="space-y-3">
+                    {result.indicators.map((indicator, idx) => (
+                      <div key={indicator.id} className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h5 className="font-medium text-gray-900 mb-2">
+                              {idx + 1}. {(indicator.title as any)[defaultLanguage] || Object.values(indicator.title)[0]}
+                            </h5>
+                            
+                            {/* Simple progress display */}
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-600 flex items-center gap-1">
+                                  Start:
+                                  <HelpTextTooltip>
+                                    Baseline value - the starting point before the activity began
+                                  </HelpTextTooltip>
+                                </span>
+                                <p className="font-medium">{indicator.baseline?.value || 'Not set'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-600 flex items-center gap-1">
+                                  Target:
+                                  <HelpTextTooltip>
+                                    Target value to achieve by the end of the period
+                                  </HelpTextTooltip>
+                                </span>
+                                <p className="font-medium">
+                                  {indicator.periods?.[indicator.periods.length - 1]?.target_value || 'Not set'}
                                 </p>
-                              )}
+                              </div>
+                              <div>
+                                <span className="text-gray-600 flex items-center gap-1">
+                                  Current:
+                                  <HelpTextTooltip>
+                                    Current/actual value achieved so far
+                                  </HelpTextTooltip>
+                                </span>
+                                <p className="font-medium">
+                                  {indicator.periods?.[indicator.periods.length - 1]?.actual_value || 'Not set'}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Simple Progress Chart */}
+                            {(indicator.baseline?.value || (indicator.periods && indicator.periods.length > 0)) && (
+                              <div className="mt-3">
+                                <div className="h-24 bg-gray-50 rounded p-2">
+                                  <svg viewBox="0 0 300 80" className="w-full h-full">
+                                    {/* Grid lines */}
+                                    <line x1="0" y1="60" x2="300" y2="60" stroke="#e5e7eb" strokeWidth="1" />
+                                    <line x1="0" y1="40" x2="300" y2="40" stroke="#e5e7eb" strokeWidth="1" />
+                                    <line x1="0" y1="20" x2="300" y2="20" stroke="#e5e7eb" strokeWidth="1" />
+                                    
+                                    {/* Progress line */}
+                                    {(() => {
+                                      const baseline = indicator.baseline?.value || 0;
+                                      const target = indicator.periods && indicator.periods.length > 0 
+                                        ? indicator.periods[indicator.periods.length - 1]?.target_value || baseline
+                                        : baseline;
+                                      const actual = indicator.periods && indicator.periods.length > 0
+                                        ? indicator.periods[indicator.periods.length - 1]?.actual_value || baseline
+                                        : baseline;
+                                      const max = Math.max(baseline, target, actual) * 1.1;
+                                      const min = 0;
+                                      
+                                      const scaleY = (value: number) => 60 - ((value - min) / (max - min)) * 50;
+                                      
+                                      const points = [
+                                        { x: 50, y: scaleY(baseline), label: 'Start' },
+                                        { x: 150, y: scaleY(target), label: 'Target' },
+                                        { x: 250, y: scaleY(actual), label: 'Current' }
+                                      ];
+                                      
+                                      return (
+                                        <>
+                                          {/* Line path */}
+                                          <polyline
+                                            points={points.map(p => `${p.x},${p.y}`).join(' ')}
+                                            fill="none"
+                                            stroke="#6b7280"
+                                            strokeWidth="2"
+                                          />
+                                          
+                                          {/* Points and labels */}
+                                          {points.map((point, i) => (
+                                            <g key={i}>
+                                              <circle cx={point.x} cy={point.y} r="4" fill="#374151" />
+                                              <text x={point.x} y="75" textAnchor="middle" className="text-xs fill-gray-600">
+                                                {point.label}
+                                              </text>
+                                            </g>
+                                          ))}
+                                        </>
+                                      );
+                                    })()}
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Inline Indicator Editing */}
+                          {editingIndicator === indicator.id && !readOnly && (
+                            <div className="mt-3 space-y-4">
+                              {/* Inline Title Editing */}
+                              <div className="flex items-center gap-2">
+                              <Input
+                                value={editingIndicatorValues.title || ''}
+                                onChange={(e) => {
+                                  setEditingIndicatorValues(prev => ({
+                                    ...prev,
+                                    title: e.target.value
+                                  }));
+                                }}
+                                  placeholder="Indicator name"
+                                  className="font-medium"
+                                />
+                                <Button 
+                                  size="sm"
+                                  onClick={async () => {
+                                    if (!editingIndicatorValues.title?.trim()) {
+                                      toast.error('Please provide an indicator name');
+                                      return;
+                                    }
+
+                                    try {
+                                      // Save indicator title if changed
+                                      if (editingIndicatorValues.title !== (indicator.title as any)[defaultLanguage]) {
+                                        const { error: titleError } = await supabase
+                                          .from('result_indicators')
+                                          .update({
+                                            title: { [defaultLanguage]: editingIndicatorValues.title },
+                                            updated_at: new Date().toISOString()
+                                          })
+                                          .eq('id', indicator.id);
+
+                                        if (titleError) {
+                                          toast.error('Failed to update indicator title');
+                                          return;
+                                        }
+                                      }
+
+                                      // Save baseline if provided
+                                      if (editingIndicatorValues.baseline !== undefined) {
+                                        const baselineData = {
+                                          indicator_id: indicator.id,
+                                          baseline_year: new Date().getFullYear(),
+                                          value: editingIndicatorValues.baseline
+                                        };
+                                        
+                                        await upsertBaseline(baselineData);
+                                      }
+                                      
+                                      toast.success('Indicator updated');
+                                      setEditingIndicator(null);
+                                      setEditingIndicatorValues({});
+                                      await fetchResults();
+                                    } catch (err) {
+                                      console.error('Error saving indicator:', err);
+                                      toast.error('Failed to save indicator');
+                                    }
+                                  }}
+                                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
+                                >
+                                  Save
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingIndicator(null);
+                                    setEditingIndicatorValues({});
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+
+                              {/* Baseline Input */}
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-medium text-gray-700 w-20">Baseline:</Label>
+                                  <Input
+                                    type="number"
+                                    step="any"
+                                    value={editingIndicatorValues.baseline || ''}
+                                    onChange={(e) => {
+                                      setEditingIndicatorValues(prev => ({
+                                        ...prev,
+                                      baseline: parseFloat(e.target.value) || undefined
+                                      }));
+                                    }}
+                                  placeholder="Starting value"
+                                  className="flex-1 max-w-xs"
+                                  />
+                                <HelpTextTooltip>
+                                  The starting value before your activity began
+                                </HelpTextTooltip>
+                                </div>
+
+                              {/* Progress Chart */}
+                              {(editingIndicatorValues.baseline !== undefined || indicator.baseline?.value) && 
+                               indicator.periods && indicator.periods.length > 0 && (
+                                <div className="bg-white p-3 rounded border space-y-2">
+                                  <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4" />
+                                    Progress Over Time
+                                  </Label>
+                                  
+                                  {(() => {
+                                    const baseline = editingIndicatorValues.baseline || indicator.baseline?.value || 0;
+                                    
+                                    // Create timeline data including baseline
+                                    const timelineData = [];
+                                    
+                                    // Add baseline point
+                                    if (baseline > 0) {
+                                      timelineData.push({
+                                        date: 'Baseline',
+                                        value: baseline,
+                                        type: 'baseline'
+                                      });
+                                    }
+                                    
+                                    // Add period data
+                                    indicator.periods?.forEach((period: any) => {
+                                      const date = new Date(period.period_end).toLocaleDateString('en-US', { 
+                                        month: 'short', 
+                                        year: 'numeric' 
+                                      });
+                                      
+                                      timelineData.push({
+                                        date,
+                                        target: period.target_value,
+                                        actual: period.actual_value,
+                                        type: 'period'
+                                      });
+                                    });
+                                    
+                                    return (
+                                      <ResponsiveContainer width="100%" height={200}>
+                                        <RechartsLineChart data={timelineData}>
+                                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                          <XAxis dataKey="date" stroke="#6B7280" fontSize={11} />
+                                          <YAxis stroke="#6B7280" fontSize={11} />
+                                          <RechartsTooltip />
+                                          <Line 
+                                            type="monotone" 
+                                            dataKey="value" 
+                                            stroke={CHART_COLORS.tertiary}
+                                            strokeWidth={2}
+                                            name="Baseline"
+                                            connectNulls={false}
+                                            dot={{ fill: CHART_COLORS.tertiary, strokeWidth: 2, r: 4 }}
+                                          />
+                                          <Line 
+                                            type="monotone" 
+                                            dataKey="target" 
+                                            stroke={CHART_COLORS.secondary}
+                                            strokeWidth={2}
+                                            strokeDasharray="5 5"
+                                            name="Target"
+                                            connectNulls={false}
+                                            dot={{ fill: CHART_COLORS.secondary, strokeWidth: 2, r: 3 }}
+                                          />
+                                          <Line 
+                                            type="monotone" 
+                                            dataKey="actual" 
+                                            stroke={CHART_COLORS.primary}
+                                            strokeWidth={3}
+                                            name="Actual"
+                                            connectNulls={false}
+                                            dot={{ fill: CHART_COLORS.primary, strokeWidth: 2, r: 5 }}
+                                          />
+                                        </RechartsLineChart>
+                                      </ResponsiveContainer>
+                                    );
+                                                                     })()}
+                                 </div>
+                               )}
+
+                               {/* Period Management */}
+                               <div className="space-y-3">
+                                 <div className="flex items-center justify-between">
+                                   <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                     <Clock className="h-4 w-4" />
+                                     Progress Tracking Periods
+                                    <HelpTextTooltip>
+                                       Add multiple time periods to track progress monthly, quarterly, or at custom intervals
+                                    </HelpTextTooltip>
+                                  </Label>
+                                   <Button
+                                     size="sm"
+                                     variant="outline"
+                                     onClick={() => setShowAddPeriod(indicator.id)}
+                                     className="text-xs"
+                                   >
+                                     <Plus className="h-3 w-3 mr-1" />
+                                     Add Period
+                                   </Button>
+                                 </div>
+
+                                 {/* Add New Period Form */}
+                                 {showAddPeriod === indicator.id && (
+                                   <div className="bg-gray-50 p-3 rounded border space-y-3">
+                                     <div className="grid grid-cols-2 gap-3">
+                                       <div>
+                                         <Label className="text-xs text-gray-600">Period Start</Label>
+                                         <Input
+                                           type="date"
+                                           value={newPeriod.period_start}
+                                           onChange={(e) => setNewPeriod(prev => ({ ...prev, period_start: e.target.value }))}
+                                           className="text-xs"
+                                         />
+                                       </div>
+                                       <div>
+                                         <Label className="text-xs text-gray-600">Period End</Label>
+                                         <Input
+                                           type="date"
+                                           value={newPeriod.period_end}
+                                           onChange={(e) => setNewPeriod(prev => ({ ...prev, period_end: e.target.value }))}
+                                           className="text-xs"
+                                         />
+                                       </div>
+                                     </div>
+                                     
+                                     <div className="grid grid-cols-2 gap-3">
+                                       <div>
+                                         <Label className="text-xs text-gray-600">Target Value</Label>
+                                  <Input
+                                    type="number"
+                                    step="any"
+                                           value={newPeriod.target_value}
+                                           onChange={(e) => setNewPeriod(prev => ({ ...prev, target_value: e.target.value }))}
+                                           placeholder="Target for this period"
+                                           className="text-xs"
+                                  />
+                                </div>
+                                <div>
+                                         <Label className="text-xs text-gray-600">Actual Value</Label>
+                                  <Input
+                                    type="number"
+                                    step="any"
+                                           value={newPeriod.actual_value}
+                                           onChange={(e) => setNewPeriod(prev => ({ ...prev, actual_value: e.target.value }))}
+                                           placeholder="Actual achieved"
+                                           className="text-xs"
+                                  />
+                                </div>
+                              </div>
+
+                                     <div>
+                                       <Label className="text-xs text-gray-600">Notes (optional)</Label>
+                                       <Input
+                                         value={newPeriod.comment}
+                                         onChange={(e) => setNewPeriod(prev => ({ ...prev, comment: e.target.value }))}
+                                         placeholder="Notes about this period"
+                                         className="text-xs"
+                                       />
+                                     </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  size="sm"
+                                  onClick={async () => {
+                                           if (!newPeriod.period_start || !newPeriod.period_end) {
+                                             toast.error('Please provide period start and end dates');
+                                             return;
+                                           }
+
+                                           try {
+                                             const { error } = await supabase
+                                               .from('indicator_periods')
+                                               .insert({
+                                        indicator_id: indicator.id,
+                                                 period_start: newPeriod.period_start,
+                                                 period_end: newPeriod.period_end,
+                                                 target_value: newPeriod.target_value ? parseFloat(newPeriod.target_value) : null,
+                                                 actual_value: newPeriod.actual_value ? parseFloat(newPeriod.actual_value) : null,
+                                                 target_comment: newPeriod.comment || null,
+                                                 facet: 'Total'
+                                               });
+
+                                             if (error) {
+                                               console.error('Error adding period:', error);
+                                               toast.error('Failed to add period');
+                                               return;
+                                             }
+
+                                             toast.success('Period added successfully');
+                                             setNewPeriod({
+                                               period_start: '',
+                                               period_end: '',
+                                               target_value: '',
+                                               actual_value: '',
+                                               comment: ''
+                                             });
+                                             setShowAddPeriod(null);
+                                        await fetchResults();
+                                           } catch (err) {
+                                             console.error('Unexpected error:', err);
+                                             toast.error('Failed to add period');
+                                           }
+                                         }}
+                                         className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
+                                       >
+                                         Add Period
+                                       </Button>
+                                       <Button
+                                         size="sm"
+                                         variant="ghost"
+                                         onClick={() => {
+                                           setShowAddPeriod(null);
+                                           setNewPeriod({
+                                             period_start: '',
+                                             period_end: '',
+                                             target_value: '',
+                                             actual_value: '',
+                                             comment: ''
+                                           });
+                                         }}
+                                       >
+                                         Cancel
+                                       </Button>
+                                     </div>
+                                   </div>
+                                 )}
+
+                                 {/* Existing Periods List */}
+                                 {indicator.periods && indicator.periods.length > 0 && (
+                                   <div className="space-y-2">
+                                     {indicator.periods.map((period: any, index: number) => (
+                                       <div key={period.id || index} className="flex items-center justify-between bg-white p-2 rounded border text-xs">
+                                         <div className="flex-1">
+                                           <div className="font-medium">
+                                             {new Date(period.period_start).toLocaleDateString()} - {new Date(period.period_end).toLocaleDateString()}
+                                           </div>
+                                           <div className="text-gray-600">
+                                             Target: {period.target_value?.toLocaleString() || 'Not set'} | 
+                                             Actual: {period.actual_value?.toLocaleString() || 'Not set'}
+                                             {period.target_value && period.actual_value && (
+                                               <span className="ml-2 font-medium">
+                                                 ({Math.round((period.actual_value / period.target_value) * 100)}%)
+                                               </span>
+                                             )}
+                                           </div>
+                                         </div>
+                                         <Button
+                                           size="sm"
+                                           variant="ghost"
+                                           onClick={async () => {
+                                             if (window.confirm('Delete this period?')) {
+                                               try {
+                                                 const { error } = await supabase
+                                                   .from('indicator_periods')
+                                                   .delete()
+                                                   .eq('id', period.id);
+
+                                                 if (error) {
+                                                   toast.error('Failed to delete period');
+                                                   return;
+                                                 }
+
+                                                 toast.success('Period deleted');
+                                                 await fetchResults();
+                                               } catch (err) {
+                                                 toast.error('Failed to delete period');
+                                               }
+                                             }
+                                           }}
+                                           className="text-red-600 hover:text-red-800"
+                                         >
+                                           <Trash2 className="h-3 w-3" />
+                                         </Button>
+                                       </div>
+                                     ))}
+                                   </div>
+                                 )}
+
+                                 {/* Quick Add Buttons */}
+                                 <div className="flex gap-2">
+                                   <Button
+                                     size="sm"
+                                     variant="outline"
+                                     onClick={() => {
+                                       const now = new Date();
+                                       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                                       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                                       
+                                       setNewPeriod({
+                                         period_start: monthStart.toISOString().split('T')[0],
+                                         period_end: monthEnd.toISOString().split('T')[0],
+                                         target_value: '',
+                                         actual_value: '',
+                                         comment: `${monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                                       });
+                                       setShowAddPeriod(indicator.id);
+                                     }}
+                                     className="text-xs"
+                                   >
+                                     + This Month
+                                </Button>
+                                <Button 
+                                  size="sm"
+                                     variant="outline"
+                                     onClick={() => {
+                                       const now = new Date();
+                                       const quarter = Math.floor(now.getMonth() / 3);
+                                       const quarterStart = new Date(now.getFullYear(), quarter * 3, 1);
+                                       const quarterEnd = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
+                                       
+                                       setNewPeriod({
+                                         period_start: quarterStart.toISOString().split('T')[0],
+                                         period_end: quarterEnd.toISOString().split('T')[0],
+                                         target_value: '',
+                                         actual_value: '',
+                                         comment: `Q${quarter + 1} ${now.getFullYear()}`
+                                       });
+                                       setShowAddPeriod(indicator.id);
+                                     }}
+                                     className="text-xs"
+                                   >
+                                     + This Quarter
+                                </Button>
+                                 </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {!readOnly && (
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => {
+                                  if (editingIndicator === indicator.id) {
+                                    setEditingIndicator(null);
+                                    setEditingIndicatorValues({});
+                                  } else {
+                                    setEditingIndicator(indicator.id);
+                                    setEditingIndicatorValues({
+                                      title: (indicator.title as any)[defaultLanguage] || '',
+                                      baseline: indicator.baseline?.value,
+                                      target: indicator.periods?.[indicator.periods.length - 1]?.target_value,
+                                      actual: indicator.periods?.[indicator.periods.length - 1]?.actual_value
+                                    });
+                                  }
+                                }}
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleDeleteIndicator(indicator.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
                             </div>
                           )}
                         </div>
-                      </CardContent>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </Card>
-              ))
-            ) : (
-              // Table View - Simplified for now
-              <Card>
-                <CardContent className="p-0">
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No measures added yet</p>
+                )}
+              </div>
+            </div>
+          ))}
+            </TabsContent>
+
+            {/* Timeline View Tab */}
+            <TabsContent value="timeline" className="space-y-6">
+              <div className="bg-white rounded-lg border p-6">
+                <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Results Progress Over Time
+                  <HelpTextTooltip>
+                    This timeline shows how your results have progressed throughout the activity lifecycle, displaying actual achievements against targets for each time period.
+                  </HelpTextTooltip>
+                </h4>
+                
+                {chartData.progressData.length > 0 ? (
+                  <div className="space-y-6">
+                    {/* Overall Progress Chart */}
+                    <ResponsiveContainer width="100%" height={400}>
+                      <RechartsLineChart data={chartData.progressData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis 
+                          dataKey="date" 
+                          stroke="#6B7280"
+                          fontSize={12}
+                        />
+                        <YAxis 
+                          stroke="#6B7280"
+                          fontSize={12}
+                          label={{ value: 'Value', angle: -90, position: 'insideLeft' }}
+                        />
+                        <RechartsTooltip 
+                          contentStyle={{
+                            backgroundColor: '#fff',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '8px'
+                          }}
+                        />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="target" 
+                          stroke={CHART_COLORS.secondary}
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          name="Target"
+                          dot={{ fill: CHART_COLORS.secondary, strokeWidth: 2, r: 4 }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="actual" 
+                          stroke={CHART_COLORS.primary}
+                          strokeWidth={3}
+                          name="Actual"
+                          dot={{ fill: CHART_COLORS.primary, strokeWidth: 2, r: 5 }}
+                        />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+
+                    {/* Individual Indicator Progress Charts */}
+                    <div className="space-y-4">
+                      <h5 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        Individual Indicator Progress
+                        <HelpTextTooltip>
+                          Each chart shows how a specific indicator has progressed over time toward its target.
+                        </HelpTextTooltip>
+                      </h5>
+                      
+                      {filteredResults.map((result: ActivityResult) => 
+                        result.indicators?.map((indicator: ResultIndicator) => {
+                          // Create time series data for this specific indicator
+                          const indicatorData: any[] = [];
+                          
+                          // Add baseline point if available
+                          if (indicator.baseline?.value) {
+                            indicatorData.push({
+                              date: `Baseline`,
+                              value: indicator.baseline.value,
+                              type: 'baseline'
+                            });
+                          }
+                          
+                          // Add period data points
+                          indicator.periods?.forEach((period: any) => {
+                            const date = new Date(period.period_end).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              year: 'numeric' 
+                            });
+                            
+                            if (period.target_value) {
+                              indicatorData.push({
+                                date,
+                                target: period.target_value,
+                                actual: period.actual_value || 0,
+                                type: 'period'
+                              });
+                            }
+                          });
+                          
+                          // Sort by date
+                          indicatorData.sort((a, b) => {
+                            if (a.type === 'baseline') return -1;
+                            if (b.type === 'baseline') return 1;
+                            return new Date(a.date).getTime() - new Date(b.date).getTime();
+                          });
+                          
+                          if (indicatorData.length === 0) return null;
+                          
+                          const latestTarget = indicator.periods?.[indicator.periods.length - 1]?.target_value || 0;
+                          const latestActual = indicator.periods?.[indicator.periods.length - 1]?.actual_value || 0;
+                          const achievementRate = latestTarget > 0 ? Math.round((latestActual / latestTarget) * 100) : 0;
+                          
+                          return (
+                            <div key={indicator.id} className="bg-white p-4 rounded-lg border">
+                              <div className="flex items-center justify-between mb-3">
+                                <div>
+                                  <h6 className="font-medium text-gray-900">
+                                    {(indicator.title as any)[defaultLanguage] || Object.values(indicator.title)[0]}
+                                  </h6>
+                                  <p className="text-sm text-gray-600">
+                                    Result: {(result.title as any)[defaultLanguage] || Object.values(result.title)[0]}
+                                  </p>
+        </div>
+                                <div className="text-right">
+                                  <div className="text-lg font-semibold text-gray-900">{achievementRate}%</div>
+                                  <div className="text-sm text-gray-500">Achievement</div>
+                                </div>
+                              </div>
+                              
+                              <ResponsiveContainer width="100%" height={200}>
+                                <RechartsLineChart data={indicatorData}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                  <XAxis 
+                                    dataKey="date" 
+                                    stroke="#6B7280"
+                                    fontSize={11}
+                                  />
+                                  <YAxis 
+                                    stroke="#6B7280"
+                                    fontSize={11}
+                                  />
+                                  <RechartsTooltip 
+                                    contentStyle={{
+                                      backgroundColor: '#fff',
+                                      border: '1px solid #E5E7EB',
+                                      borderRadius: '8px'
+                                    }}
+                                  />
+                                  {indicatorData.some(d => d.target) && (
+                                    <Line 
+                                      type="monotone" 
+                                      dataKey="target" 
+                                      stroke={CHART_COLORS.secondary}
+                                      strokeWidth={2}
+                                      strokeDasharray="3 3"
+                                      name="Target"
+                                      dot={{ fill: CHART_COLORS.secondary, strokeWidth: 2, r: 3 }}
+                                    />
+                                  )}
+                                  {indicatorData.some(d => d.actual !== undefined) && (
+                                    <Line 
+                                      type="monotone" 
+                                      dataKey="actual" 
+                                      stroke={CHART_COLORS.primary}
+                                      strokeWidth={2}
+                                      name="Actual"
+                                      dot={{ fill: CHART_COLORS.primary, strokeWidth: 2, r: 4 }}
+                                    />
+                                  )}
+                                  {indicatorData.some(d => d.value !== undefined) && (
+                                    <Line 
+                                      type="monotone" 
+                                      dataKey="value" 
+                                      stroke={CHART_COLORS.tertiary}
+                                      strokeWidth={2}
+                                      name="Baseline"
+                                      dot={{ fill: CHART_COLORS.tertiary, strokeWidth: 2, r: 3 }}
+                                    />
+                                  )}
+                                </RechartsLineChart>
+                              </ResponsiveContainer>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                    <p>No time series data available yet</p>
+                    <p className="text-sm">Add indicator periods with dates to see progress over time</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Charts Tab */}
+            <TabsContent value="charts" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Status Distribution */}
+                <div className="bg-white rounded-lg border p-6">
+                  <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <PieChart className="h-5 w-5" />
+                    Results Status Distribution
+                  </h4>
+                  {chartData.statusDistribution.some(d => d.value > 0) ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <RechartsPieChart>
+                        <Pie
+                          data={chartData.statusDistribution}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={100}
+                          dataKey="value"
+                          label={({ name, value }) => value > 0 ? `${name}: ${value}` : ''}
+                        >
+                          {chartData.statusDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip />
+                        <Legend />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Activity className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                      <p>No indicators to analyze yet</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Result Type Distribution */}
+                <div className="bg-white rounded-lg border p-6">
+                  <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Result Types
+                  </h4>
+                  {chartData.typeDistribution.some(d => d.value > 0) ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={chartData.typeDistribution}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="name" stroke="#6B7280" fontSize={12} />
+                        <YAxis stroke="#6B7280" fontSize={12} />
+                        <RechartsTooltip />
+                        <Bar dataKey="value" fill={CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Target className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                      <p>No results to categorize yet</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Data Table Tab */}
+            <TabsContent value="table" className="space-y-6">
+              <div className="bg-white rounded-lg border">
+                <div className="p-6 border-b">
+                  <h4 className="text-lg font-semibold flex items-center gap-2">
+                    <TableIcon className="h-5 w-5" />
+                    Results & Indicators Data
+                  </h4>
+                </div>
+                <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Result</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead>Indicators</TableHead>
-                        <TableHead>Progress</TableHead>
+                        <TableHead>Latest Target</TableHead>
+                        <TableHead>Latest Actual</TableHead>
+                        <TableHead>Achievement Rate</TableHead>
                         <TableHead>Status</TableHead>
-                        {!readOnly && <TableHead>Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredResults.map((result) => {
-                        const indicatorCount = result.indicators?.length || 0;
-                        const onTrackCount = result.indicators?.filter(i => i.status?.color === 'green').length || 0;
-                        const progress = indicatorCount > 0 ? Math.round((onTrackCount / indicatorCount) * 100) : 0;
-                        
-                        return (
-                          <TableRow key={result.id}>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">
-                                  {result.title[defaultLanguage] || Object.values(result.title)[0]}
-                                </p>
-                                {result.description && (
-                                  <p className="text-sm text-gray-600 mt-1">
-                                    {result.description[defaultLanguage] || Object.values(result.description)[0]}
-                                  </p>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">
-                                {RESULT_TYPE_LABELS[result.type]}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{indicatorCount}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Progress value={progress} className="w-20" />
-                                <span className="text-sm">{progress}%</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {indicatorCount === 0 ? (
-                                <Badge variant="secondary">No Data</Badge>
-                              ) : progress >= 85 ? (
-                                <Badge className="bg-green-100 text-green-800">On Track</Badge>
-                              ) : progress >= 60 ? (
-                                <Badge className="bg-yellow-100 text-yellow-800">Attention</Badge>
-                              ) : (
-                                <Badge className="bg-red-100 text-red-800">Off Track</Badge>
-                              )}
-                            </TableCell>
-                            {!readOnly && (
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedResult(result.id);
-                                      setViewMode('cards');
-                                      setExpandedResults([result.id]);
-                                    }}
-                                  >
-                                    <Eye className="h-3 w-3" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => handleDeleteResult(result.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Table View Tab */}
-          <TabsContent value="table" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Results Table View</CardTitle>
-                <p className="text-sm text-gray-600">
-                  Complete overview of all results and their indicators in table format
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[250px]">Result</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Aggregated</TableHead>
-                        <TableHead>Indicators</TableHead>
-                        <TableHead>Baseline</TableHead>
-                        <TableHead>Target</TableHead>
-                        <TableHead>Actual</TableHead>
-                        <TableHead>Progress</TableHead>
-                        <TableHead>Status</TableHead>
-                        {!readOnly && <TableHead>Actions</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {results.map((result) => (
-                        <React.Fragment key={result.id}>
-                          {/* Result Row */}
-                          <TableRow className="font-medium bg-gray-50">
-                            <TableCell colSpan={10}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline">
-                                    {RESULT_TYPE_LABELS[result.type]}
-                                  </Badge>
-                                  <span>{result.title[defaultLanguage] || Object.values(result.title)[0]}</span>
-                                </div>
-                                {!readOnly && (
-                                  <div className="flex items-center gap-2">
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => setShowAddIndicator(result.id)}
-                                    >
-                                      <Plus className="h-3 w-3 mr-1" />
-                                      Add Indicator
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleDeleteResult(result.id)}
-                                      className="text-red-600 hover:text-red-700"
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                          
-                          {/* Indicator Rows */}
-                          {result.indicators?.map((indicator) => {
-                            const latestPeriod = indicator.periods?.[indicator.periods.length - 1];
-                            const baseline = indicator.baseline?.value;
-                            const target = latestPeriod?.target_value;
-                            const actual = latestPeriod?.actual_value;
-                            const progress = target ? Math.round((actual || 0) / target * 100) : 0;
-                            
-                            return (
-                              <TableRow key={indicator.id}>
-                                <TableCell className="pl-8">
-                                  {indicator.title[defaultLanguage] || Object.values(indicator.title)[0]}
-                                </TableCell>
-                                <TableCell>—</TableCell>
-                                <TableCell>
-                                  {indicator.aggregation_status ? (
-                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                  ) : (
-                                    <XCircle className="h-4 w-4 text-gray-400" />
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {MEASURE_TYPE_LABELS[indicator.measure]}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{formatValue(baseline, indicator.measure)}</TableCell>
-                                <TableCell>{formatValue(target, indicator.measure)}</TableCell>
-                                <TableCell>{formatValue(actual, indicator.measure)}</TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <Progress value={progress} className="w-16 h-2" />
-                                    <span className="text-xs">{progress}%</span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  {!indicator.status ? (
-                                    <Badge variant="secondary">No Data</Badge>
-                                  ) : indicator.status.color === 'green' ? (
-                                    <Badge className="bg-green-100 text-green-800">On Track</Badge>
-                                  ) : indicator.status.color === 'yellow' ? (
-                                    <Badge className="bg-yellow-100 text-yellow-800">Attention</Badge>
-                                  ) : (
-                                    <Badge className="bg-red-100 text-red-800">Off Track</Badge>
-                                  )}
-                                </TableCell>
-                                {!readOnly && (
-                                  <TableCell>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => {
-                                        setActiveSubTab('overview');
-                                        setViewMode('cards');
-                                        setExpandedResults([result.id]);
-                                      }}
-                                    >
-                                      <Eye className="h-3 w-3" />
-                                    </Button>
-                                  </TableCell>
-                                )}
-                              </TableRow>
-                            );
-                          })}
-                          
-                          {/* Empty indicator row */}
-                          {(!result.indicators || result.indicators.length === 0) && (
-                            <TableRow>
-                              <TableCell colSpan={10} className="text-center text-gray-500 italic">
-                                No indicators defined for this result
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </React.Fragment>
+                      {filteredResults.map((result: ActivityResult) => (
+                        <TableRow key={result.id}>
+                          <TableCell className="font-medium">
+                            {(result.title as any)[defaultLanguage] || Object.values(result.title)[0]}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{RESULT_TYPE_LABELS[result.type as ResultType]}</Badge>
+                          </TableCell>
+                          <TableCell>{result.indicators?.length || 0}</TableCell>
+                          <TableCell>
+                            {result.indicators?.reduce((sum: number, ind: ResultIndicator) => sum + (ind.totalTarget || 0), 0) || '-'}
+                          </TableCell>
+                          <TableCell>
+                            {result.indicators?.reduce((sum: number, ind: ResultIndicator) => sum + (ind.latestActual || 0), 0) || '-'}
+                          </TableCell>
+                          <TableCell>
+                            {result.indicators && result.indicators.length > 0 ? (
+                              (() => {
+                                const totalTarget = result.indicators!.reduce((sum: number, ind: ResultIndicator) => sum + (ind.totalTarget || 0), 0);
+                                const totalActual = result.indicators!.reduce((sum: number, ind: ResultIndicator) => sum + (ind.latestActual || 0), 0);
+                                const rate = totalTarget > 0 ? Math.round((totalActual / totalTarget) * 100) : 0;
+                                return `${rate}%`;
+                              })()
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {result.indicators && result.indicators.length > 0 ? (
+                              (() => {
+                                const totalTarget = result.indicators!.reduce((sum: number, ind: ResultIndicator) => sum + (ind.totalTarget || 0), 0);
+                                const totalActual = result.indicators!.reduce((sum: number, ind: ResultIndicator) => sum + (ind.latestActual || 0), 0);
+                                const rate = totalTarget > 0 ? Math.round((totalActual / totalTarget) * 100) : 0;
+                                
+                                if (rate >= 80) return <Badge className="bg-gray-900 text-white">On Track</Badge>;
+                                if (rate >= 50) return <Badge className="bg-gray-600 text-white">Attention Needed</Badge>;
+                                if (rate > 0) return <Badge className="bg-gray-400 text-white">Off Track</Badge>;
+                                return <Badge variant="outline">No Data</Badge>;
+                              })()
+                            ) : <Badge variant="outline">No Data</Badge>}
+                          </TableCell>
+                        </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Charts Tab */}
-          <TabsContent value="charts" className="space-y-6 mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Result Type Distribution */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Result Type Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <RechartsPieChart>
-                      <Pie
-                        data={chartData.typeDistribution}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={(entry) => `${entry.name}: ${entry.value}`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {chartData.typeDistribution.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={
-                              entry.type === 'output' ? CHART_COLORS.primary :
-                              entry.type === 'outcome' ? CHART_COLORS.success :
-                              entry.type === 'impact' ? CHART_COLORS.warning :
-                              CHART_COLORS.gray
-                            } 
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Indicator Status Distribution */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Indicator Status Overview</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <RechartsPieChart>
-                      <Pie
-                        data={chartData.statusDistribution}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={(entry) => `${entry.name}: ${entry.value}`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {chartData.statusDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Progress Over Time */}
-            {chartData.progressData.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Progress Over Time</CardTitle>
-                  <p className="text-sm text-gray-600">
-                    Aggregated target vs actual values across all indicators
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={400}>
-                    <RechartsLineChart data={chartData.progressData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="target" 
-                        stroke={CHART_COLORS.primary} 
-                        name="Target"
-                        strokeWidth={2}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="actual" 
-                        stroke={CHART_COLORS.success} 
-                        name="Actual"
-                        strokeWidth={2}
-                      />
-                    </RechartsLineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Indicator Progress by Result */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Indicator Progress by Result</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart
-                    data={results.map(result => ({
-                      name: result.title[defaultLanguage] || Object.values(result.title)[0],
-                      indicators: result.indicators?.length || 0,
-                      onTrack: result.indicators?.filter(i => i.status?.color === 'green').length || 0,
-                      offTrack: result.indicators?.filter(i => i.status?.color === 'red' || i.status?.color === 'yellow').length || 0,
-                      noData: result.indicators?.filter(i => !i.status).length || 0
-                    }))}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="onTrack" stackId="a" fill={CHART_COLORS.success} name="On Track" />
-                    <Bar dataKey="offTrack" stackId="a" fill={CHART_COLORS.warning} name="Off Track" />
-                    <Bar dataKey="noData" stackId="a" fill={CHART_COLORS.gray} name="No Data" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Result Type Tabs (Output, Outcome, Impact, Other) */}
-          {['output', 'outcome', 'impact', 'other'].map((type) => (
-            <TabsContent key={type} value={type} className="space-y-4 mt-6">
-              {filteredResults.length === 0 ? (
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-center py-8">
-                      <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h4 className="text-lg font-medium text-gray-900 mb-2">
-                        No {RESULT_TYPE_LABELS[type as ResultType]} Results
-                      </h4>
-                      <p className="text-gray-600 mb-4">
-                        Add {type} results to track progress for this activity.
-                      </p>
-                      {!readOnly && (
-                        <Button 
-                          onClick={() => {
-                            setNewResult(prev => ({ ...prev, type: type as ResultType }));
-                            setShowAddResult(true);
-                          }} 
-                          className="flex items-center gap-2"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add {RESULT_TYPE_LABELS[type as ResultType]} Result
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                filteredResults.map((result) => (
-                  <Card key={result.id} className="border border-gray-200">
-                    <Collapsible 
-                      open={expandedResults.includes(result.id)}
-                      onOpenChange={() => toggleResult(result.id)}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              {expandedResults.includes(result.id) ? (
-                                <ChevronDown className="h-4 w-4 text-gray-500" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4 text-gray-500" />
-                              )}
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {RESULT_TYPE_LABELS[result.type]}
-                                  </Badge>
-                                  {result.aggregation_status && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      Aggregated
-                                    </Badge>
-                                  )}
-                                  <span className="text-xs text-gray-500">
-                                    {result.indicators?.length || 0} indicators
-                                  </span>
-                                </div>
-                                <CardTitle className="text-base mt-1">
-                                  {result.title[defaultLanguage] || Object.values(result.title)[0]}
-                                </CardTitle>
-                                {result.description && (
-                                  <p className="text-sm text-gray-600 mt-1">
-                                    {result.description[defaultLanguage] || Object.values(result.description)[0]}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {!readOnly && (
-                              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => setEditingResult(editingResult === result.id ? null : result.id)}
-                                >
-                                  <Edit3 className="h-3 w-3" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleDeleteResult(result.id)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </CardHeader>
-                      </CollapsibleTrigger>
-
-                      <CollapsibleContent>
-                        <CardContent className="pt-0">
-                          <Separator className="mb-6" />
-                          
-                          {/* Edit Result Form */}
-                          {editingResult === result.id && !readOnly && (
-                            <Card className="border-2 border-blue-200 bg-blue-50/30 mb-6">
-                              <CardHeader className="pb-4">
-                                <CardTitle className="text-lg">Edit Result</CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="edit-result-type">Result Type</Label>
-                                    <Select 
-                                      value={result.type} 
-                                      onValueChange={(value: ResultType) => 
-                                        handleUpdateResultField(result.id, 'type', value)
-                                      }
-                                    >
-                                      <SelectTrigger id="edit-result-type">
-                                        <SelectValue placeholder="Select result type" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {Object.entries(RESULT_TYPE_LABELS).map(([value, label]) => (
-                                          <SelectItem key={value} value={value}>
-                                            {label}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-
-                                  <div className="flex items-center space-x-2">
-                                    <Switch
-                                      id="edit-aggregation-status"
-                                      checked={result.aggregation_status || false}
-                                      onCheckedChange={(checked) => 
-                                        handleUpdateResultField(result.id, 'aggregation_status', checked)
-                                      }
-                                    />
-                                    <Label htmlFor="edit-aggregation-status">Aggregation Status</Label>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-result-title">Title *</Label>
-                                  <Input
-                                    id="edit-result-title"
-                                    value={result.title[defaultLanguage] || ''}
-                                    onChange={(e) => 
-                                      handleUpdateResultField(result.id, 'title', {
-                                        ...result.title,
-                                        [defaultLanguage]: e.target.value
-                                      })
-                                    }
-                                    placeholder="Enter result title"
-                                    className="w-full"
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-result-description">Description</Label>
-                                  <Textarea
-                                    id="edit-result-description"
-                                    value={result.description?.[defaultLanguage] || ''}
-                                    onChange={(e) => 
-                                      handleUpdateResultField(result.id, 'description', {
-                                        ...result.description,
-                                        [defaultLanguage]: e.target.value
-                                      })
-                                    }
-                                    placeholder="Describe what this result aims to achieve..."
-                                    rows={3}
-                                    className="w-full"
-                                  />
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  <Button 
-                                    onClick={() => handleSaveResultEdit(result.id)}
-                                    className="flex items-center gap-2"
-                                  >
-                                    <CheckCircle2 className="h-3 w-3" />
-                                    Save Changes
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    onClick={() => setEditingResult(null)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
-                          
-                          {/* Indicators */}
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium">Indicators</h4>
-                              {!readOnly && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => setShowAddIndicator(result.id)}
-                                  className="flex items-center gap-2"
-                                >
-                                  <Plus className="h-3 w-3" />
-                                  Add Indicator
-                                </Button>
-                              )}
-                            </div>
-
-                            {/* Add Indicator Form */}
-                            {showAddIndicator === result.id && !readOnly && (
-                              <AddIndicatorForm
-                                resultId={result.id}
-                                activityId={activityId}
-                                defaultLanguage={defaultLanguage}
-                                onCancel={() => setShowAddIndicator(null)}
-                                onSuccess={() => {
-                                  setShowAddIndicator(null);
-                                  fetchResults();
-                                }}
-                              />
-                            )}
-
-                            {result.indicators && result.indicators.length > 0 ? (
-                              result.indicators.map((indicator) => (
-                                <IndicatorCard
-                                  key={indicator.id}
-                                  indicator={indicator}
-                                  readOnly={readOnly}
-                                  defaultLanguage={defaultLanguage}
-                                  onUpdate={fetchResults}
-                                />
-                              ))
-                            ) : (
-                              <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
-                                <BarChart3 className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                <p className="text-sm text-gray-600">No indicators yet</p>
-                                {!readOnly && (
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Click "Add Indicator" to start tracking progress toward this result
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </Card>
-                ))
-              )}
+              </div>
             </TabsContent>
-          ))}
-        </Tabs>
+          </Tabs>
+        </div>
       )}
     </div>
   );

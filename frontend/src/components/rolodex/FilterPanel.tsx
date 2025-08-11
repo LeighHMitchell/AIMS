@@ -25,7 +25,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { RolodexFilters } from '@/app/api/rolodex/route';
-import { COUNTRY_NAMES, getAllRoles, SOURCE_LABELS } from './utils/roleLabels';
+import { COUNTRY_NAMES, getAllRoles, SOURCE_LABELS, getContactTypeCategories, CONTACT_TYPE_CATEGORIES, ROLE_CATEGORIES, getRolesByCategory } from './utils/roleLabels';
 
 interface FilterPanelProps {
   filters: RolodexFilters;
@@ -124,27 +124,62 @@ export function FilterPanel({
           <span>Filters:</span>
         </div>
 
-        {/* Source Filter */}
-        <Select
-          value={filters.source || 'all'}
-          onValueChange={(value) => onFiltersChange({ source: value === 'all' ? undefined : value })}
-        >
-          <SelectTrigger className="w-[160px]">
-            <Users className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Source" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Sources</SelectItem>
-            {Object.entries(SOURCE_LABELS).map(([key, config]) => (
-              <SelectItem key={key} value={key}>
-                <span className="flex items-center gap-2">
-                  <span>{config.icon}</span>
-                  {config.label}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Contact Type Filter */}
+        <Popover>
+          <PopoverTrigger className="inline-flex items-center justify-between whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 min-w-[180px]">
+            <span className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              {filters.source ? SOURCE_LABELS[filters.source]?.label || 'Contact Type' : 'All Contact Types'}
+            </span>
+            <ChevronDown className="h-4 w-4" />
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-3" align="start">
+            <div className="space-y-3">
+              <div className="font-medium text-sm">Filter by Contact Type</div>
+              <div className="space-y-2">
+                <Button
+                  variant={!filters.source ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => onFiltersChange({ source: undefined })}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>🌐</span>
+                    <div className="text-left">
+                      <div className="font-medium">All Contact Types</div>
+                      <div className="text-xs text-slate-500">Show all users and contacts</div>
+                    </div>
+                  </span>
+                </Button>
+                
+                {getContactTypeCategories().map((category) => {
+                  const sourceKey = category.key === 'system_users' ? 'user' : 
+                                   category.key === 'activity_contacts' ? 'activity_contact' :
+                                   'organization_contact';
+                  const isSelected = filters.source === sourceKey;
+                  
+                  return (
+                    <Button
+                      key={category.key}
+                      variant={isSelected ? "secondary" : "ghost"}
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => onFiltersChange({ source: sourceKey })}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>{category.icon}</span>
+                        <div className="text-left">
+                          <div className="font-medium">{category.label}</div>
+                          <div className="text-xs text-slate-500">{category.description}</div>
+                        </div>
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {/* Role Filter */}
         <Popover>
@@ -155,36 +190,83 @@ export function FilterPanel({
             </span>
             <ChevronDown className="h-4 w-4" />
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-3" align="start">
-            <div className="space-y-2">
+          <PopoverContent className="w-80 p-3" align="start">
+            <div className="space-y-3">
               <div className="font-medium text-sm">Filter by Role</div>
               <Input
                 placeholder="Search roles..."
                 value={filters.role || ''}
                 onChange={(e) => onFiltersChange({ role: e.target.value || undefined })}
               />
-              <div className="max-h-32 overflow-y-auto space-y-1">
+              <div className="max-h-64 overflow-y-auto space-y-3">
                 <Button
-                  variant="ghost"
+                  variant={!filters.role ? "secondary" : "ghost"}
                   size="sm"
                   className="w-full justify-start"
                   onClick={() => onFiltersChange({ role: undefined })}
                 >
                   All Roles
                 </Button>
-                {roles.slice(0, 20).map((role) => (
-                  <Button
-                    key={role.key}
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={() => onFiltersChange({ role: role.label })}
-                  >
-                    <Badge variant="secondary" className="mr-2 text-xs">
-                      {role.label}
-                    </Badge>
-                  </Button>
-                ))}
+                
+                {/* System Roles */}
+                <div>
+                  <div className="text-xs font-medium text-slate-500 mb-1">SYSTEM ROLES</div>
+                  <div className="space-y-1">
+                    {getRolesByCategory(ROLE_CATEGORIES.SYSTEM).map((role) => (
+                      <Button
+                        key={role.key}
+                        variant={filters.role === role.label ? "secondary" : "ghost"}
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => onFiltersChange({ role: role.label })}
+                      >
+                        <Badge variant="secondary" className="mr-2 text-xs">
+                          {role.label}
+                        </Badge>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Organization Roles */}
+                <div>
+                  <div className="text-xs font-medium text-slate-500 mb-1">ORGANIZATION ROLES</div>
+                  <div className="space-y-1">
+                    {getRolesByCategory(ROLE_CATEGORIES.ORGANIZATION).map((role) => (
+                      <Button
+                        key={role.key}
+                        variant={filters.role === role.label ? "secondary" : "ghost"}
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => onFiltersChange({ role: role.label })}
+                      >
+                        <Badge variant="secondary" className="mr-2 text-xs">
+                          {role.label}
+                        </Badge>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Activity Roles */}
+                <div>
+                  <div className="text-xs font-medium text-slate-500 mb-1">ACTIVITY ROLES</div>
+                  <div className="space-y-1">
+                    {getRolesByCategory(ROLE_CATEGORIES.ACTIVITY).map((role) => (
+                      <Button
+                        key={role.key}
+                        variant={filters.role === role.label ? "secondary" : "ghost"}
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => onFiltersChange({ role: role.label })}
+                      >
+                        <Badge variant="secondary" className="mr-2 text-xs">
+                          {role.label}
+                        </Badge>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </PopoverContent>

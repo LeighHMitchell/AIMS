@@ -9,7 +9,7 @@ import FinancesSection from "@/components/FinancesSection";
 import ImprovedSectorAllocationForm from "@/components/activities/ImprovedSectorAllocationForm";
 import OrganisationsSection from "@/components/OrganisationsSection";
 import ContactsSection from "@/components/ContactsSection";
-import GovernmentInputsSection from "@/components/GovernmentInputsSection";
+import GovernmentInputsSectionEnhanced from "@/components/GovernmentInputsSectionEnhanced";
 import ContributorsSection from "@/components/ContributorsSection";
 import { BannerUpload } from "@/components/BannerUpload";
 import { IconUpload } from "@/components/IconUpload";
@@ -88,6 +88,9 @@ import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursement
 import { AidTypeSelect } from "@/components/forms/AidTypeSelect";
 import { ResultsTab } from "@/components/activities/ResultsTab";
 import MetadataTab from "@/components/activities/MetadataTab";
+import FocalPointsTab from "@/components/activities/FocalPointsTab";
+import { DocumentsAndImagesTabInline } from "@/components/activities/DocumentsAndImagesTabInline";
+import { IatiDocumentLink } from "@/lib/iatiDocumentLink";
 
 // Separate component for General section to properly use hooks
 function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState }: any) {
@@ -771,7 +774,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, setIatiSyncState, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount }: any) {
   switch (section) {
     case "metadata":
       return <MetadataTab activityId={general.id} />;
@@ -925,17 +928,29 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         activityId={general.id} 
         readOnly={!permissions?.canEditActivity}
         onResultsChange={(results) => {
-          // Optional: Update any parent state if needed
-          console.log('Results updated:', results);
+          setResultsCount(Array.isArray(results) ? results.length : 0);
         }}
         defaultLanguage="en"
       />;
     case "contacts":
       return <ContactsSection contacts={contacts} onChange={updateContacts} activityId={general.id} />;
+    case "focal_points":
+      return <FocalPointsTab 
+        activityId={general.id} 
+        onFocalPointsChange={setFocalPoints}
+      />;
     case "government":
-      return <GovernmentInputsSection governmentInputs={governmentInputs} onChange={setGovernmentInputs} />;
+      return <GovernmentInputsSectionEnhanced governmentInputs={governmentInputs} onChange={setGovernmentInputs} />;
     case "documents":
-      return <div className="bg-white rounded shadow p-8">[Documents & Images fields go here]</div>;
+      return <DocumentsAndImagesTabInline
+        documents={documents}
+        onChange={(newDocuments) => {
+          setDocuments(newDocuments);
+          documentsAutosave.saveNow(newDocuments);
+        }}
+        activityId={general.id}
+        locale="en"
+      />;
     case "aid_effectiveness":
       return <AidEffectivenessForm general={general} onUpdate={setGeneral} />;
     case "sdg":
@@ -951,6 +966,10 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         activityId={general.id} 
         currentUserId={user?.id}
         canEdit={permissions?.canEditActivity ?? true}
+        onCountChange={(count: number) => {
+          // Mirror other tabs’ pattern: feed count into tab completion calculation via memo deps
+          setLinkedActivitiesCount(count);
+        }}
       />;
 
     default:
@@ -1058,6 +1077,8 @@ function NewActivityPageContent() {
   const [policyMarkers, setPolicyMarkers] = useState<any[]>([]);
   const [participatingOrgsCount, setParticipatingOrgsCount] = useState<number>(0);
   const [contributorsCount, setContributorsCount] = useState<number>(0);
+  const [linkedActivitiesCount, setLinkedActivitiesCount] = useState<number>(0);
+  const [resultsCount, setResultsCount] = useState<number>(0);
   
   // Debug the participatingOrgsCount changes
   React.useEffect(() => {
@@ -1118,6 +1139,49 @@ function NewActivityPageContent() {
 
     fetchContributorsCount();
   }, [general.id]);
+
+  // Fetch linked activities count on page load for tab completion
+  React.useEffect(() => {
+    const fetchLinkedActivitiesCount = async () => {
+      if (!general.id) return;
+      try {
+        const response = await fetch(`/api/activities/${general.id}/linked`);
+        if (response.ok) {
+          const data = await response.json();
+          const count = Array.isArray(data) ? data.length : 0;
+          setLinkedActivitiesCount(count);
+        } else {
+          setLinkedActivitiesCount(0);
+        }
+      } catch (error) {
+        // If table missing or any error, treat as zero
+        setLinkedActivitiesCount(0);
+      }
+    };
+
+    fetchLinkedActivitiesCount();
+  }, [general.id]);
+
+  // Fetch results count on page load for tab completion
+  React.useEffect(() => {
+    const fetchResultsCount = async () => {
+      if (!general.id) return;
+      try {
+        const response = await fetch(`/api/activities/${general.id}/results`);
+        if (response.ok) {
+          const data = await response.json();
+          const count = Array.isArray(data?.results) ? data.results.length : 0;
+          setResultsCount(count);
+        } else {
+          setResultsCount(0);
+        }
+      } catch (error) {
+        setResultsCount(0);
+      }
+    };
+
+    fetchResultsCount();
+  }, [general.id]);
   const [specificLocations, setSpecificLocations] = useState<any[]>([]);
   const [coverageAreas, setCoverageAreas] = useState<any[]>([]);
   const [activityScope, setActivityScope] = useState<string>("national");
@@ -1151,6 +1215,19 @@ function NewActivityPageContent() {
   const [budgetNotProvided, setBudgetNotProvided] = useState(false);
   // Add state to track planned disbursements for Planned Disbursements tab completion
   const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([]);
+  // Add state to track documents for Documents & Images tab
+  const [documents, setDocuments] = useState<IatiDocumentLink[]>([]);
+  // Add state to track focal points for Focal Points tab completion
+  const [focalPoints, setFocalPoints] = useState<any>(null);
+  
+  // Add autosave for documents
+  const documentsAutosave = useFieldAutosave('documents', {
+    activityId: general.id,
+    userId: user?.id,
+    onSuccess: () => {
+      toast.success('Documents saved', { position: 'top-right' });
+    },
+  });
 
   // State for IATI Sync status
   const [iatiSyncState, setIatiSyncState] = useState({
@@ -1533,6 +1610,21 @@ function NewActivityPageContent() {
     );
     console.log('[TabCompletion] contributorsCompletion:', contributorsCompletion);
     
+    // Contacts tab: check if we have contacts
+    const contactsCompletion = getTabCompletionStatus('contacts', contacts);
+    
+    // Linked Activities tab: complete when there is at least one linked activity
+    const linkedActivitiesCompletion = getTabCompletionStatus('linked-activities', Array(linkedActivitiesCount).fill({}));
+    
+    // Results tab: green check if at least one result exists
+    const resultsCompletion = getTabCompletionStatus('results', Array(resultsCount).fill({}));
+    
+    // Documents & Images tab: green check if at least one document exists
+    const documentsCompletion = getTabCompletionStatus('documents', documents);
+    
+    // Focal Points tab: green check if at least one focal point is assigned
+    const focalPointsCompletion = getTabCompletionStatus('focal_points', focalPoints);
+    
     // TEMPORARY: Force completion for testing - remove this later
     // if (participatingOrgsCount === 0) {
     //   console.log('[TabCompletion] TESTING: Forcing organizations completion to true');
@@ -1580,6 +1672,14 @@ function NewActivityPageContent() {
         isComplete: contributorsCompletion.isComplete,
         isInProgress: contributorsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
+      contacts: contactsCompletion ? { 
+        isComplete: contactsCompletion.isComplete,
+        isInProgress: contactsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      linked_activities: linkedActivitiesCompletion ? { 
+        isComplete: linkedActivitiesCompletion.isComplete,
+        isInProgress: linkedActivitiesCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
       finances: { isComplete: financesComplete, isInProgress: false },
       finances_defaults: financesDefaultsCompletion ? { 
         isComplete: financesDefaultsCompletion.isComplete,
@@ -1587,15 +1687,27 @@ function NewActivityPageContent() {
       } : { isComplete: false, isInProgress: false },
       budgets: { isComplete: budgetsComplete, isInProgress: false },
       "planned-disbursements": { isComplete: plannedDisbursementsComplete, isInProgress: false },
+      results: resultsCompletion ? { 
+        isComplete: resultsCompletion.isComplete,
+        isInProgress: resultsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      documents: documentsCompletion ? { 
+        isComplete: documentsCompletion.isComplete,
+        isInProgress: documentsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      focal_points: focalPointsCompletion ? { 
+        isComplete: focalPointsCompletion.isComplete,
+        isInProgress: focalPointsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
       sdg: { isComplete: sdgComplete, isInProgress: false }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, contributorsCount]);
+  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, contributorsCount, linkedActivitiesCount, resultsCount, documents, focalPoints]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
     const sections = [
       "general", "iati", "sectors", "locations", "organisations", "contributors", "contacts", 
-      "linked_activities",
+      "focal_points", "linked_activities",
       "finances", "budgets", "planned-disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
     ].filter(id => id !== "government" || showGovernmentInputs);
     
@@ -1607,7 +1719,7 @@ function NewActivityPageContent() {
   const getPreviousSection = useCallback((currentId: string) => {
     const sections = [
       "general", "iati", "sectors", "locations", "organisations", "contributors", "contacts", 
-      "linked_activities",
+      "focal_points", "linked_activities",
       "finances", "budgets", "planned-disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
     ].filter(id => id !== "government" || showGovernmentInputs);
     
@@ -1689,6 +1801,7 @@ function NewActivityPageContent() {
           coverageAreas
         },
         activityScope,
+        documents,
         // Handle status fields
         activityStatus: general.activityStatus || "1",
         publicationStatus: publish ? "published" : (general.publicationStatus || "draft"),
@@ -1898,6 +2011,8 @@ function NewActivityPageContent() {
         return <GenericTabSkeleton />;
       case 'locations':
         return <LocationsSkeleton />;
+      case 'focal_points':
+        return <GenericTabSkeleton />;
       case 'linked_activities':
         return <LinkedActivitiesSkeleton />;
       default:
@@ -1922,6 +2037,7 @@ function NewActivityPageContent() {
         { id: "organisations", label: "Organisations" },
         { id: "contributors", label: "Contributors" },
         { id: "contacts", label: "Contacts" },
+        { id: "focal_points", label: "Focal Points" },
         { id: "linked_activities", label: "Linked Activities" }
       ]
     },
@@ -2077,13 +2193,7 @@ function NewActivityPageContent() {
         {/* Main Content Panel */}
         <main className="flex-1 min-w-0 overflow-y-auto bg-white">
           <div className="activity-editor pl-0 pr-6 md:pr-8 py-6">
-            <div className="flex items-center justify-between mb-6">
-              <LinkedActivityTitle
-                title={general.title || (general.id ? 'Untitled Activity' : 'New Activity')}
-                activityId={general.id}
-                className="text-3xl font-bold text-gray-900"
-                fallbackElement="h1"
-              />
+            <div className="flex items-center justify-end mb-6">
               <div className="flex items-center gap-6">
                 {/* Publish Toggle */}
                 {(canPublish || !isEditing) && (
@@ -2221,10 +2331,16 @@ function NewActivityPageContent() {
                     setBudgetNotProvided={setBudgetNotProvided}
                     plannedDisbursements={plannedDisbursements}
                     setPlannedDisbursements={setPlannedDisbursements}
+                    documents={documents}
+                    setDocuments={setDocuments}
+                    documentsAutosave={documentsAutosave}
+                    focalPoints={focalPoints}
+                    setFocalPoints={setFocalPoints}
                     setIatiSyncState={setIatiSyncState}
                     setSubnationalBreakdowns={setSubnationalBreakdowns}
                     setParticipatingOrgsCount={setParticipatingOrgsCount}
                     setContributorsCount={setContributorsCount}
+                    setLinkedActivitiesCount={setLinkedActivitiesCount}
                   />
                 </div>
               )}

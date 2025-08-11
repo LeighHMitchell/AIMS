@@ -23,14 +23,10 @@ import {
   FileText, 
   ExternalLink, 
   MoreVertical,
-  MapPin,
-  Calendar,
-  User,
   Briefcase,
-  StickyNote
+  Fax
 } from 'lucide-react';
-import { getRoleLabel, getSourceLabel, getCountryName } from './utils/roleLabels';
-import { format } from 'date-fns';
+import { getRoleLabel } from './utils/roleLabels';
 
 interface PersonCardProps {
   person: RolodexPerson;
@@ -46,10 +42,10 @@ export function PersonCard({
   compact = false 
 }: PersonCardProps) {
   const roleInfo = getRoleLabel(person.role_label || '');
-  const sourceInfo = getSourceLabel(person.source);
   
   // Generate initials for avatar
   const getInitials = (name: string) => {
+    if (!name) return 'U';
     return name
       .split(' ')
       .map(word => word[0])
@@ -58,15 +54,21 @@ export function PersonCard({
       .slice(0, 2);
   };
 
-  const handleEmailClick = () => {
-    if (person.email) {
-      window.location.href = `mailto:${person.email}`;
+  const handleEmailClick = (email?: string) => {
+    if (email) {
+      window.location.href = `mailto:${email}`;
     }
   };
 
   const handlePhoneClick = () => {
     if (person.phone) {
       window.location.href = `tel:${person.phone}`;
+    }
+  };
+
+  const handleFaxClick = () => {
+    if (person.fax) {
+      window.location.href = `tel:${person.fax}`;
     }
   };
 
@@ -82,35 +84,73 @@ export function PersonCard({
     }
   };
 
+  // Helper functions for display formatting
+  const getDisplayName = () => {
+    if (person.source === 'activity_contact') {
+      // For Activity Contacts: Title, First Name, Middle Name, Last Name
+      const nameParts = [
+        person.title,
+        person.first_name,
+        person.middle_name,
+        person.last_name
+      ].filter(Boolean);
+      return nameParts.length > 0 ? nameParts.join(' ') : person.email || 'Unknown Contact';
+    } else {
+      // For Users: First Name, Last Name
+      const nameParts = [person.first_name, person.last_name].filter(Boolean);
+      return nameParts.length > 0 ? nameParts.join(' ') : person.email || 'Unknown User';
+    }
+  };
+
+  const getJobInfo = () => {
+    if (person.source === 'activity_contact') {
+      // For Activity Contacts: Position/Role
+      return person.position || person.role;
+    } else {
+      // For Users: Job Title, Department
+      const jobParts = [person.job_title, person.department].filter(Boolean);
+      return jobParts.join(', ') || person.position;
+    }
+  };
+
+  const getOrganizationInfo = () => {
+    if (person.organization_name && person.organization_acronym) {
+      return `${person.organization_name}, ${person.organization_acronym}`;
+    }
+    return person.organization_name || '';
+  };
+
+  const displayName = getDisplayName();
+  const jobInfo = getJobInfo();
+  const organizationInfo = getOrganizationInfo();
+
   if (compact) {
     return (
       <div className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
         <div className="flex items-center space-x-3">
           <Avatar className="h-8 w-8">
             {person.profile_photo && (
-              <AvatarImage src={person.profile_photo} alt={person.name} />
+              <AvatarImage src={person.profile_photo} alt={displayName} />
             )}
             <AvatarFallback className="text-xs font-medium">
-              {getInitials(person.name)}
+              {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
           
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-slate-900 truncate">
-              {person.name}
+              {displayName}
             </p>
             <div className="flex items-center space-x-2">
-              <Badge variant="secondary" className="text-xs">
-                {roleInfo.label}
-              </Badge>
-              {person.position && (
+              {jobInfo && (
                 <span className="text-xs text-slate-500 truncate">
-                  {person.position}
+                  {jobInfo}
                 </span>
               )}
-              {person.organization_name && (
+              
+              {organizationInfo && (
                 <span className="text-xs text-slate-500 truncate">
-                  @ {person.organization_name}
+                  • {organizationInfo}
                 </span>
               )}
             </div>
@@ -126,7 +166,7 @@ export function PersonCard({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    onClick={handleEmailClick}
+                    onClick={() => handleEmailClick(person.email)}
                   >
                     <Mail className="h-4 w-4" />
                   </Button>
@@ -158,7 +198,7 @@ export function PersonCard({
                 </DropdownMenuItem>
               )}
               {person.email && (
-                <DropdownMenuItem onClick={handleEmailClick}>
+                <DropdownMenuItem onClick={() => handleEmailClick(person.email)}>
                   <Mail className="mr-2 h-4 w-4" />
                   Send Email
                 </DropdownMenuItem>
@@ -175,33 +215,54 @@ export function PersonCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-12 w-12">
               {person.profile_photo && (
-                <AvatarImage src={person.profile_photo} alt={person.name} />
+                <AvatarImage src={person.profile_photo} alt={displayName} />
               )}
               <AvatarFallback className="text-sm font-medium bg-slate-100">
-                {getInitials(person.name)}
+                {getInitials(displayName)}
               </AvatarFallback>
             </Avatar>
             
             <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-semibold text-slate-900 truncate">
-                {person.name}
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                {displayName}
               </h3>
-              <div className="flex items-center space-x-2 mt-1">
+              
+              {/* Job/Position Info */}
+              {jobInfo && (
+                <div className="flex items-center space-x-2 text-sm text-slate-600 mb-1">
+                  <Briefcase className="h-4 w-4 text-slate-400" />
+                  <span>{jobInfo}</span>
+                </div>
+              )}
+
+              {/* Organization Info */}
+              {organizationInfo && (
+                <div className="flex items-center space-x-2 text-sm text-slate-600 mb-2">
+                  <Building2 className="h-4 w-4 text-slate-400" />
+                  <button
+                    onClick={handleOrganizationClick}
+                    className="hover:text-blue-600 transition-colors truncate"
+                    disabled={!person.organization_id}
+                  >
+                    {organizationInfo}
+                  </button>
+                  {person.organization_id && (
+                    <ExternalLink className="h-3 w-3 text-slate-400" />
+                  )}
+                </div>
+              )}
+
+              {/* User Role Badge for System Users */}
+              {person.source === 'user' && person.role && (
                 <Badge 
-                  variant="secondary" 
+                  variant="outline" 
                   className={`text-xs ${roleInfo.color}`}
                 >
                   {roleInfo.label}
                 </Badge>
-                <Badge 
-                  variant="outline" 
-                  className="text-xs"
-                >
-                  {sourceInfo.icon} {sourceInfo.label}
-                </Badge>
-              </div>
+              )}
             </div>
           </div>
 
@@ -225,7 +286,7 @@ export function PersonCard({
                 </DropdownMenuItem>
               )}
               {person.email && (
-                <DropdownMenuItem onClick={handleEmailClick}>
+                <DropdownMenuItem onClick={() => handleEmailClick(person.email)}>
                   <Mail className="mr-2 h-4 w-4" />
                   Send Email
                 </DropdownMenuItem>
@@ -236,71 +297,61 @@ export function PersonCard({
       </CardHeader>
 
       <CardContent className="pt-0 space-y-3">
-        {/* Position if available */}
-        {person.position && (
-          <div className="flex items-center space-x-2 text-sm">
-            <Briefcase className="h-4 w-4 text-slate-400" />
-            <span className="text-slate-600">{person.position}</span>
-          </div>
-        )}
-
         {/* Contact Information */}
         <div className="space-y-2">
-          {person.email && (
-            <div className="flex items-center space-x-2 text-sm">
-              <Mail className="h-4 w-4 text-slate-400" />
-              <button
-                onClick={handleEmailClick}
-                className="text-slate-600 hover:text-blue-600 transition-colors truncate"
-              >
-                {person.email}
-              </button>
-            </div>
-          )}
-          
-          {person.phone && (
-            <div className="flex items-center space-x-2 text-sm">
-              <Phone className="h-4 w-4 text-slate-400" />
-              <button
-                onClick={handlePhoneClick}
-                className="text-slate-600 hover:text-blue-600 transition-colors"
-              >
-                {person.phone}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Organization/Activity Links */}
-        <div className="space-y-2">
-          {person.organization_name && (
-            <div className="flex items-center space-x-2 text-sm">
-              <Building2 className="h-4 w-4 text-slate-400" />
-              <button
-                onClick={handleOrganizationClick}
-                className="text-slate-600 hover:text-blue-600 transition-colors truncate flex-1 text-left"
-                disabled={!person.organization_id}
-              >
-                {person.organization_name}
-              </button>
-              {person.organization_id && (
-                <ExternalLink className="h-3 w-3 text-slate-400" />
+          {/* Email Section */}
+          {(person.email || person.secondary_email) && (
+            <div className="space-y-1">
+              {person.email && (
+                <div className="flex items-center space-x-2 text-sm">
+                  <Mail className="h-4 w-4 text-slate-400" />
+                  <button
+                    onClick={() => handleEmailClick(person.email)}
+                    className="text-slate-600 hover:text-blue-600 transition-colors truncate"
+                  >
+                    {person.email}
+                  </button>
+                </div>
+              )}
+              {person.secondary_email && (
+                <div className="flex items-center space-x-2 text-sm ml-6">
+                  <span className="text-slate-400">|</span>
+                  <button
+                    onClick={() => handleEmailClick(person.secondary_email)}
+                    className="text-slate-600 hover:text-blue-600 transition-colors truncate"
+                  >
+                    {person.secondary_email}
+                  </button>
+                </div>
               )}
             </div>
           )}
-
-          {person.activity_title && (
-            <div className="flex items-center space-x-2 text-sm">
-              <FileText className="h-4 w-4 text-slate-400" />
-              <button
-                onClick={handleActivityClick}
-                className="text-slate-600 hover:text-blue-600 transition-colors truncate flex-1 text-left"
-                disabled={!person.activity_id}
-              >
-                {person.activity_title}
-              </button>
-              {person.activity_id && (
-                <ExternalLink className="h-3 w-3 text-slate-400" />
+          
+          {/* Phone Section */}
+          {(person.phone || person.fax) && (
+            <div className="space-y-1">
+              {person.phone && (
+                <div className="flex items-center space-x-2 text-sm">
+                  <Phone className="h-4 w-4 text-slate-400" />
+                  <button
+                    onClick={handlePhoneClick}
+                    className="text-slate-600 hover:text-blue-600 transition-colors"
+                  >
+                    {person.phone}
+                  </button>
+                </div>
+              )}
+              {person.fax && (
+                <div className="flex items-center space-x-2 text-sm ml-6">
+                  <span className="text-slate-400">|</span>
+                  <button
+                    onClick={handleFaxClick}
+                    className="text-slate-600 hover:text-blue-600 transition-colors"
+                  >
+                    <Fax className="h-3 w-3 mr-1 inline" />
+                    {person.fax}
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -309,27 +360,11 @@ export function PersonCard({
         {/* Notes if available */}
         {person.notes && (
           <div className="pt-2 border-t border-slate-100">
-            <div className="flex items-start space-x-2 text-sm">
-              <StickyNote className="h-4 w-4 text-slate-400 mt-0.5" />
+            <div className="text-sm">
               <p className="text-slate-600 text-xs leading-relaxed">{person.notes}</p>
             </div>
           </div>
         )}
-
-        {/* Metadata */}
-        <div className="pt-2 border-t border-slate-100 space-y-1">
-          {person.country_code && (
-            <div className="flex items-center space-x-2 text-xs text-slate-500">
-              <MapPin className="h-3 w-3" />
-              <span>{getCountryName(person.country_code)}</span>
-            </div>
-          )}
-          
-          <div className="flex items-center space-x-2 text-xs text-slate-500">
-            <Calendar className="h-3 w-3" />
-            <span>Added {format(new Date(person.created_at), 'MMM dd, yyyy')}</span>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

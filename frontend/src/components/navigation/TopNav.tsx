@@ -55,7 +55,7 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.profilePicture} />
+                    <AvatarImage src={user.profilePicture} key={user.profilePicture} />
                     <AvatarFallback>
                       {user.firstName?.[0] || user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                       {user.lastName?.[0] || (user.name?.split(' ')[1]?.[0] || '')}
@@ -69,7 +69,7 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
                   <div className="flex flex-col space-y-1">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.profilePicture} />
+                        <AvatarImage src={user.profilePicture} key={user.profilePicture} />
                         <AvatarFallback>
                           {user.firstName?.[0] || user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                           {user.lastName?.[0] || (user.name?.split(' ')[1]?.[0] || '')}

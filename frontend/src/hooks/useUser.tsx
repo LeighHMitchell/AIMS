@@ -47,28 +47,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
         console.log('[useUser] Supabase auth event:', event);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Create user object from Supabase user data
-          const supabaseUser: User = {
-            id: session.user.id,
-            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-            firstName: session.user.user_metadata?.given_name || '',
-            lastName: session.user.user_metadata?.family_name || '',
-            email: session.user.email || '',
-            title: session.user.user_metadata?.title || 'User',
-            jobTitle: session.user.user_metadata?.job_title || '',
-            role: USER_ROLES.DEV_PARTNER_TIER_2, // Default role for OAuth users
-            organizationId: "1", // Default organization
-            organisation: "External User",
-            profilePicture: session.user.user_metadata?.avatar_url,
-            phone: session.user.user_metadata?.phone,
-            isActive: true,
-            lastLogin: new Date().toISOString(),
-            createdAt: session.user.created_at || new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-          
-          console.log('[useUser] Setting Supabase user:', supabaseUser);
-          handleSetUser(supabaseUser);
+          // Don't override user data if we already have it loaded
+          // The login API provides complete user data including profilePicture
+          console.log('[useUser] Supabase SIGNED_IN event - skipping user override to preserve login API data');
         }
         
         if (event === 'SIGNED_OUT') {

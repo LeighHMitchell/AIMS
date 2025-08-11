@@ -30,6 +30,26 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
       .slice(0, 2)
   }
 
+  // Upload file to the profile photo endpoint
+  const uploadProfileFile = async (file: File): Promise<string> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', 'profile')
+
+    const response = await fetch('/api/profile/photo/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to upload photo')
+    }
+
+    const data = await response.json()
+    return data.url
+  }
+
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -85,23 +105,29 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
           canvas.height = height
           ctx?.drawImage(img, 0, 0, width, height)
           
-          // Convert to compressed JPEG data URL with lower quality for smaller size
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5)
-          
-          // Check final size
-          const finalSize = compressedDataUrl.length * 0.75 // Approximate size in bytes
-          console.log(`[AvatarUploader] Compressed image size: ${(finalSize / 1024).toFixed(2)} KB`)
-          
-          if (finalSize > 500 * 1024) { // Reduced to 500KB to ensure it fits in request
-            toast.error("Image is still too large after compression. Please choose a smaller image.")
-            setIsUploading(false)
-            return
-          }
-          
-          setPreviewUrl(compressedDataUrl)
-          onUpload(compressedDataUrl)
-          toast.success("Profile picture updated")
-          setIsUploading(false)
+          // Convert to blob for file upload
+          canvas.toBlob(async (blob) => {
+            if (!blob) {
+              toast.error("Failed to process image")
+              setIsUploading(false)
+              return
+            }
+
+            try {
+              // Upload the compressed blob as a file
+              const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' })
+              const uploadedUrl = await uploadProfileFile(file)
+              
+              setPreviewUrl(null)
+              onUpload(uploadedUrl)
+              toast.success("Profile picture updated")
+            } catch (error) {
+              console.error('Upload failed:', error)
+              toast.error("Failed to upload profile picture")
+            } finally {
+              setIsUploading(false)
+            }
+          }, 'image/jpeg', 0.7) // Higher quality since we're compressing the dimensions
         }
         
         img.onerror = () => {

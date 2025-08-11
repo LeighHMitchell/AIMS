@@ -273,25 +273,50 @@ export function useBaselines() {
   const upsertBaseline = useCallback(async (data: CreateBaselineData): Promise<IndicatorBaseline | null> => {
     try {
       setLoading(true);
-      const { data: baseline, error } = await supabase
-        .from('indicator_baselines')
-        .upsert([{
-          ...data,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
-          updated_at: new Date().toISOString()
-        }], {
-          onConflict: 'indicator_id'
-        })
-        .select()
-        .single();
+      
+      console.log('[useBaselines] Saving baseline for indicator:', data.indicator_id);
+      console.log('[useBaselines] Data:', data);
+      
+      // Use the database function for a simpler approach
+      const { data: result, error } = await supabase.rpc('save_baseline', {
+        p_indicator_id: data.indicator_id,
+        p_year: data.baseline_year || new Date().getFullYear(),
+        p_value: data.value || 0
+      });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useBaselines] RPC error:', error);
+        throw error;
+      }
 
+      if (result?.error) {
+        console.error('[useBaselines] Function error:', result.error);
+        throw new Error(result.error);
+      }
+
+      console.log('[useBaselines] Baseline saved successfully:', result);
       toast.success('Baseline saved successfully');
-      return baseline;
+      
+      // Return a properly formatted baseline object
+      return {
+        id: result.id,
+        indicator_id: result.indicator_id,
+        baseline_year: result.baseline_year,
+        value: result.value,
+        created_at: result.created_at,
+        updated_at: result.created_at,
+        iso_date: null,
+        comment: null,
+        location_ref: null
+      } as IndicatorBaseline;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to save baseline';
-      toast.error(errorMessage);
+      console.error('[useBaselines] Save baseline error:', err);
+      console.error('[useBaselines] Error details:', {
+        error: err,
+        data: data
+      });
+      toast.error(`Failed to save baseline: ${errorMessage}`);
       return null;
     } finally {
       setLoading(false);

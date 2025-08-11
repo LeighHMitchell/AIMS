@@ -1,62 +1,89 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
-export const dynamic = 'force-dynamic';
-
-// DELETE /api/activities/[id]/linked/[linkId] - Remove an activity link
-export async function DELETE(
+export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string; linkId: string } }
 ) {
+  const { linkId } = params;
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    );
+  }
+
   try {
-    const { id: activityId, linkId } = params;
-    
-    console.log('[AIMS] DELETE /api/activities/[id]/linked/[linkId] - Removing link:', linkId);
-    
-    // Verify the link belongs to the activity (security check)
-    const { data: existingLink, error: verifyError } = await getSupabaseAdmin()
-      .from('related_activities')
-      .select('source_activity_id, linked_activity_id')
+    const body = await request.json();
+    const { relationshipType, narrative } = body;
+
+    if (!relationshipType) {
+      return NextResponse.json(
+        { error: 'Relationship type is required' },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabase
+      .from('activity_relationships')
+      .update({
+        relationship_type: relationshipType,
+        narrative: narrative || null,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', linkId)
+      .select()
       .single();
-      
-    if (verifyError || !existingLink) {
+
+    if (error) throw error;
+
+    if (!data) {
       return NextResponse.json(
         { error: 'Link not found' },
         { status: 404 }
       );
     }
-    
-    // Ensure the link is related to the specified activity
-    if (existingLink.source_activity_id !== activityId && existingLink.linked_activity_id !== activityId) {
-      return NextResponse.json(
-        { error: 'Link does not belong to this activity' },
-        { status: 403 }
-      );
-    }
-    
-    // Delete the link
-    const { error } = await getSupabaseAdmin()
-      .from('related_activities')
-      .delete()
-      .eq('id', linkId);
-      
-    if (error) {
-      console.error('[AIMS] Error deleting related activity:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete activity link' },
-        { status: 500 }
-      );
-    }
-    
-    console.log('[AIMS] Successfully deleted link:', linkId);
-    return NextResponse.json({ success: true });
-    
-  } catch (error) {
-    console.error('[AIMS] Unexpected error in DELETE linked activities:', error);
+
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.error('Error updating linked activity:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to update link' },
       { status: 500 }
     );
   }
-} 
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string; linkId: string } }
+) {
+  const { linkId } = params;
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    );
+  }
+
+  try {
+    const { error } = await supabase
+      .from('activity_relationships')
+      .delete()
+      .eq('id', linkId);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Error deleting linked activity:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete link' },
+      { status: 500 }
+    );
+  }
+}

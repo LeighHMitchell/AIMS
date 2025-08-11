@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ContactTypeSearchableSelect } from "@/components/forms/ContactTypeSearchableSelect";
+import { CONTACT_TYPES } from "@/data/contact-types";
 import { X, Plus, Phone, Mail, Printer, User, Building } from "lucide-react";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
@@ -11,7 +13,7 @@ import { useContactsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { OrganizationCombobox, type Organization } from "@/components/ui/organization-combobox";
+import { OrganizationSearchableSelect, type Organization } from "@/components/ui/organization-searchable-select";
 
 interface Contact {
   id?: string;
@@ -37,17 +39,15 @@ interface ContactsSectionProps {
   activityId?: string;
 }
 
-const CONTACT_TYPES = [
-  "Implementing Partner",
-  "Funding Agency",
-  "Government Liaison",
-  "Technical Advisor",
-  "Field Coordinator",
-  "M&E Officer",
-  "Other"
-];
+// Remove this as we now use the data from contact-types.ts
 
 const TITLES = ["Mr.", "Ms.", "Mrs.", "Dr.", "Prof.", "Eng."];
+
+// Helper function to get contact type name by code
+const getContactTypeName = (code: string): string => {
+  const contactType = CONTACT_TYPES.find(type => type.code === code);
+  return contactType?.name || code;
+};
 
 export default function ContactsSection({ contacts, onChange, activityId }: ContactsSectionProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -55,6 +55,10 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
   const { user } = useUser();
+  const [emailErrors, setEmailErrors] = useState({
+    primary: "",
+    secondary: ""
+  });
 
   // Field-level autosave for contacts
   const contactsAutosave = useContactsAutosave(activityId, user?.id);
@@ -97,10 +101,36 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
     console.log('[CONTACTS DEBUG] onChange function exists:', !!onChange);
   }, [contacts, onChange]);
 
+  // Email validation function
+  const validateEmail = (email: string): boolean => {
+    if (!email) return true; // Empty is valid (optional field)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate emails on change
+  const handleEmailChange = (field: 'email' | 'secondaryEmail', value: string) => {
+    const errorField = field === 'email' ? 'primary' : 'secondary';
+    
+    if (value && !validateEmail(value)) {
+      setEmailErrors(prev => ({
+        ...prev,
+        [errorField]: "Please enter a valid email address"
+      }));
+    } else {
+      setEmailErrors(prev => ({
+        ...prev,
+        [errorField]: ""
+      }));
+    }
+    
+    setEditingContact(prev => prev ? { ...prev, [field]: value } : prev);
+  };
+
   const handleAddContact = () => {
     console.log('[CONTACTS DEBUG] handleAddContact called');
     const newContact: Contact = {
-      type: "Implementing Partner",
+      type: "1", // Default to "General Enquiries"
       title: "Mr.",
       firstName: "",
       lastName: "",
@@ -109,6 +139,8 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
     console.log('[CONTACTS DEBUG] Creating new contact form with:', newContact);
     setEditingContact(newContact);
     setEditingIndex(contacts.length);
+    // Reset email errors when adding new contact
+    setEmailErrors({ primary: "", secondary: "" });
   };
 
   const handleSaveContact = () => {
@@ -124,6 +156,12 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
 
     if (!editingContact.position.trim()) {
       toast.error("Position/Role is required");
+      return;
+    }
+
+    // Check for email validation errors
+    if (emailErrors.primary || emailErrors.secondary) {
+      toast.error("Please fix email validation errors before saving");
       return;
     }
 
@@ -208,11 +246,15 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
   const handleEditContact = (index: number) => {
     setEditingContact({ ...contacts[index] });
     setEditingIndex(index);
+    // Reset email errors when editing
+    setEmailErrors({ primary: "", secondary: "" });
   };
 
   const handleCancelEdit = () => {
     setEditingContact(null);
     setEditingIndex(null);
+    // Reset email errors when canceling
+    setEmailErrors({ primary: "", secondary: "" });
   };
 
   const ProfilePhotoUpload = ({ photo, onChange }: { photo?: string; onChange: (photo: string) => void }) => {
@@ -328,6 +370,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
                       {contact.title} {contact.firstName} {contact.middleName} {contact.lastName}
                     </h3>
                     <p className="text-sm text-gray-600">{contact.position}</p>
+                    <p className="text-sm text-gray-500">{getContactTypeName(contact.type)}</p>
                     {contact.organisation && (
                       <p className="text-sm text-gray-500 flex items-center gap-1">
                         <Building className="h-3 w-3" />
@@ -489,29 +532,21 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
             {/* Contact Type - full width */}
             <div>
               <label className="text-sm font-medium">Contact Type *</label>
-              <Select
+              <ContactTypeSearchableSelect
                 value={editingContact.type}
                 onValueChange={(value) =>
                   setEditingContact({ ...editingContact, type: value })
                 }
-              >
-                <SelectTrigger className="bg-white border-gray-300 focus:ring-0 focus:border-gray-500">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONTACT_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select contact type..."
+                className="mt-1"
+                dropdownId={`contact-type-select-${editingIndex}`}
+              />
             </div>
 
             {/* Organisation - full width */}
             <div>
               <label className="text-sm font-medium">Organisation</label>
-              <OrganizationCombobox
+              <OrganizationSearchableSelect
                 organizations={organizations}
                 value={editingContact.organisationId || ""}
                 onValueChange={(value) => {
@@ -522,8 +557,10 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
                     organisation: selectedOrg ? selectedOrg.name : ""
                   });
                 }}
-                placeholder="Select organisation..."
-                className="bg-white border-gray-300 focus:ring-0 focus:border-gray-500"
+                placeholder="Search organisation..."
+                searchPlaceholder="Type to search organisations..."
+                className="mt-1"
+                disabled={loadingOrgs}
               />
             </div>
 
@@ -531,25 +568,33 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Primary Email</label>
-                <Input
-                  type="email"
-                  value={editingContact.email || ""}
-                  onChange={(e) =>
-                    setEditingContact({ ...editingContact, email: e.target.value })
-                  }
-                  placeholder="primary@example.org"
-                />
+                <div className="space-y-1">
+                  <Input
+                    type="email"
+                    value={editingContact.email || ""}
+                    onChange={(e) => handleEmailChange('email', e.target.value)}
+                    placeholder="primary@example.org"
+                    className={emailErrors.primary ? "border-red-500" : ""}
+                  />
+                  {emailErrors.primary && (
+                    <p className="text-xs text-red-500">{emailErrors.primary}</p>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="text-sm font-medium">Secondary Email</label>
-                <Input
-                  type="email"
-                  value={editingContact.secondaryEmail || ""}
-                  onChange={(e) =>
-                    setEditingContact({ ...editingContact, secondaryEmail: e.target.value })
-                  }
-                  placeholder="secondary@example.org"
-                />
+                <div className="space-y-1">
+                  <Input
+                    type="email"
+                    value={editingContact.secondaryEmail || ""}
+                    onChange={(e) => handleEmailChange('secondaryEmail', e.target.value)}
+                    placeholder="secondary@example.org"
+                    className={emailErrors.secondary ? "border-red-500" : ""}
+                  />
+                  {emailErrors.secondary && (
+                    <p className="text-xs text-red-500">{emailErrors.secondary}</p>
+                  )}
+                </div>
               </div>
             </div>
 

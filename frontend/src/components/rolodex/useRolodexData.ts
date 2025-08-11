@@ -109,17 +109,17 @@ export function useRolodexData(options: UseRolodexDataOptions = {}): UseRolodexD
     } finally {
       setLoading(false);
     }
-  }, [debouncedFilters]);
+  }, []);
 
   // Auto-fetch on filter changes
   useEffect(() => {
     console.log('[useRolodexData] Effect triggered:', { autoFetch, filters: debouncedFilters });
     if (autoFetch) {
-      fetchData();
+      fetchData(debouncedFilters);
     }
-  }, [fetchData, autoFetch]);
+  }, [debouncedFilters, autoFetch]);
 
-  const refetch = useCallback(() => fetchData(), [fetchData]);
+  const refetch = useCallback(() => fetchData(debouncedFilters), [fetchData, debouncedFilters]);
 
   const setFilters = useCallback((newFilters: Partial<RolodexFilters>) => {
     setInternalFilters(prev => ({

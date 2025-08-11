@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@/hooks/useUser";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,6 +16,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ROLE_LABELS, USER_ROLES } from "@/types/user";
+import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
+import { PhoneFields } from "@/components/ui/phone-fields";
+import { AddressSearch, AddressComponents } from "@/components/ui/address-search";
 import { 
   Building2, 
   User, 
@@ -44,26 +47,154 @@ import {
   EyeOff
 } from "lucide-react";
 
+// Helper function to split telephone into country code and phone number
+const splitTelephone = (telephone: string) => {
+  if (!telephone) return { countryCode: "+95", phoneNumber: "" };
+  
+  // Import countries from the data file
+  const countries = [
+    { code: "+95", name: "Myanmar" },
+    { code: "+1", name: "US/Canada" },
+    { code: "+44", name: "UK" },
+    { code: "+33", name: "France" },
+    { code: "+49", name: "Germany" },
+    { code: "+81", name: "Japan" },
+    { code: "+86", name: "China" },
+    { code: "+91", name: "India" },
+    { code: "+61", name: "Australia" },
+    { code: "+55", name: "Brazil" }
+  ];
+  
+  for (const country of countries) {
+    if (telephone.startsWith(country.code)) {
+      return {
+        countryCode: country.code,
+        phoneNumber: telephone.substring(country.code.length)
+      };
+    }
+  }
+  
+  // If no country code found, default to Myanmar and use full number as phone
+  return { countryCode: "+95", phoneNumber: telephone };
+};
+
+// Helper function to convert mailing address string to address components
+const parseMailingAddress = (mailingAddress: string): AddressComponents => {
+  if (!mailingAddress) return {};
+  
+  // Try to parse common address formats
+  // This is a simple parser - in production you might want a more sophisticated one
+  const parts = mailingAddress.split(',').map(part => part.trim());
+  
+  if (parts.length >= 4) {
+    return {
+      addressLine1: parts[0] || '',
+      addressLine2: parts[1] || '',
+      street: parts[0] || '', // Keep for backward compatibility
+      city: parts[2] || '',
+      state: parts[3] || '',
+      country: parts[4] || '',
+      postalCode: parts[5] || '',
+      fullAddress: mailingAddress
+    };
+  } else if (parts.length >= 2) {
+    return {
+      addressLine1: parts[0] || '',
+      addressLine2: '',
+      street: parts[0] || '', // Keep for backward compatibility
+      city: parts[1] || '',
+      state: parts[2] || '',
+      country: parts[3] || '',
+      fullAddress: mailingAddress
+    };
+  } else {
+    return {
+      addressLine1: mailingAddress,
+      street: mailingAddress, // Keep for backward compatibility
+      fullAddress: mailingAddress
+    };
+  }
+};
+
+// Helper function to convert address components back to mailing address string
+const formatMailingAddress = (address: AddressComponents): string => {
+  const parts = [
+    address.addressLine1,
+    address.addressLine2,
+    address.city,
+    address.state,
+    address.country,
+    address.postalCode
+  ].filter(Boolean);
+  
+  return parts.length > 0 ? parts.join(', ') : '';
+};
+
 export default function ProfilePage() {
   const { user, setUser } = useUser();
   const [activeTab, setActiveTab] = useState("personal");
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Function to enter edit mode and refresh data
+  const handleEditClick = async () => {
+    console.log('[Profile] Entering edit mode, refreshing data...');
+    setIsEditing(true);
+    
+    // Refresh form data when entering edit mode
+    if (user?.email) {
+      try {
+        const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`);
+        if (response.ok) {
+          const freshData = await response.json();
+          console.log('[Profile] Fresh data for edit mode:', freshData);
+          
+          setFormData(prev => ({
+            ...prev,
+            firstName: freshData.first_name || "",
+            lastName: freshData.last_name || "",
+            email: prev.email, // Keep current email in edit mode
+            jobTitle: freshData.job_title || "",
+            department: freshData.department || "",
+            ...splitTelephone(freshData.telephone || ""),
+            website: freshData.website || "",
+            mailingAddress: freshData.mailing_address || "",
+            addressComponents: parseMailingAddress(freshData.mailing_address || ""),
+            bio: freshData.bio || "",
+            preferredLanguage: freshData.preferred_language || "en",
+            timezone: freshData.timezone || "UTC",
+            role: freshData.role || ""
+          }));
+          
+          // Preserve profile photo when entering edit mode
+          if (freshData.avatar_url && freshData.avatar_url !== profilePhoto) {
+            setProfilePhoto(freshData.avatar_url);
+            console.log('[Profile] Updated profile photo for edit mode:', freshData.avatar_url);
+          }
+        }
+      } catch (error) {
+        console.log('[Profile] Could not refresh data for edit mode:', error);
+      }
+    }
+  };
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Form data for editing
   const [formData, setFormData] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    email: user?.email || "",
-    jobTitle: user?.jobTitle || user?.title || "",
-    department: user?.department || "",
-    telephone: user?.telephone || user?.phone || "",
-    website: user?.website || "",
-    mailingAddress: user?.mailingAddress || "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    jobTitle: "",
+    department: "",
+    countryCode: "+95",
+    phoneNumber: "",
+    website: "",
+    mailingAddress: "",
+    addressComponents: {} as AddressComponents,
     bio: "",
     preferredLanguage: "en",
     timezone: "UTC",
+    role: "",
     notifications: {
       email: true,
       browser: true,
@@ -72,6 +203,132 @@ export default function ProfilePage() {
       security: true
     }
   });
+
+  // Load fresh profile data when component mounts or user changes
+  useEffect(() => {
+    const loadProfileData = async () => {
+      if (!user?.email) return;
+      
+      try {
+        console.log('[Profile] Loading fresh profile data for:', user.email);
+        
+        // Fetch fresh data from API
+        const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`);
+        
+        if (response.ok) {
+          const freshData = await response.json();
+          console.log('[Profile] Fresh data loaded:', freshData);
+          
+          // Update form data with fresh database values
+          setFormData(prev => ({
+            ...prev,
+            firstName: freshData.first_name || user.firstName || "",
+            lastName: freshData.last_name || user.lastName || "",
+            email: user.email || "",
+            jobTitle: freshData.job_title || user.jobTitle || user.title || "",
+            department: freshData.department || user.department || "",
+            ...splitTelephone(freshData.telephone || user.telephone || user.phone || ""),
+            website: freshData.website || user.website || "",
+            mailingAddress: freshData.mailing_address || user.mailingAddress || "",
+            addressComponents: parseMailingAddress(freshData.mailing_address || user.mailingAddress || ""),
+            bio: freshData.bio || "",
+            preferredLanguage: freshData.preferred_language || "en",
+            timezone: freshData.timezone || "UTC",
+            role: freshData.role || user.role || ""
+          }));
+          
+          // Also update profile photo state if available in fresh data
+          if (freshData.avatar_url) {
+            setProfilePhoto(freshData.avatar_url);
+            console.log('[Profile] Updated profile photo from fresh data:', freshData.avatar_url);
+          }
+        } else {
+          console.warn('[Profile] Failed to load fresh data, using user context');
+          // Fallback to user context data
+          setFormData(prev => ({
+            ...prev,
+            firstName: user.firstName || "",
+            lastName: user.lastName || "",
+            email: user.email || "",
+            jobTitle: user.jobTitle || user.title || "",
+            department: user.department || "",
+            ...splitTelephone(user.telephone || user.phone || ""),
+            website: user.website || "",
+            mailingAddress: user.mailingAddress || "",
+          addressComponents: parseMailingAddress(user.mailingAddress || ""),
+            role: user.role || ""
+          }));
+        }
+      } catch (error) {
+        console.error('[Profile] Error loading profile data:', error);
+        // Fallback to user context data
+        setFormData(prev => ({
+          ...prev,
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          email: user.email || "",
+          jobTitle: user.jobTitle || user.title || "",
+          department: user.department || "",
+          ...splitTelephone(user.telephone || user.phone || ""),
+          website: user.website || "",
+          mailingAddress: user.mailingAddress || "",
+          addressComponents: parseMailingAddress(user.mailingAddress || ""),
+          role: user.role || ""
+        }));
+      }
+    };
+
+    loadProfileData();
+  }, [user?.email, user?.firstName, user?.lastName]); // Re-run when user data changes
+
+  // Profile photo state
+  const [profilePhoto, setProfilePhoto] = useState(user?.profilePicture || "");
+  
+  // Sync profile photo state with user context
+  useEffect(() => {
+    if (user?.profilePicture && user.profilePicture !== profilePhoto) {
+      console.log('[Profile] Syncing profile photo from user context:', user.profilePicture);
+      setProfilePhoto(user.profilePicture);
+    }
+  }, [user?.profilePicture, profilePhoto]);
+
+  // Handle profile photo change
+  const handlePhotoChange = async (photoUrl: string) => {
+    setProfilePhoto(photoUrl);
+    
+    // Save to database immediately
+    if (user) {
+      try {
+        const response = await fetch('/api/users', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: user.id,
+            profile_picture: photoUrl
+          }),
+        });
+
+        if (response.ok) {
+          // Update the user context after successful database save
+          const updatedUser = {
+            ...user,
+            profilePicture: photoUrl,
+          };
+          setUser(updatedUser);
+          console.log('[Profile] Updated user context with new profile picture:', photoUrl);
+          console.log('[Profile] Updated user object:', updatedUser);
+          toast.success('Profile picture updated successfully!');
+        } else {
+          toast.error('Failed to save profile picture');
+        }
+      } catch (error) {
+        console.error('Error saving profile picture:', error);
+        toast.error('Failed to save profile picture');
+      }
+    }
+  };
 
   // Password change form
   const [passwordData, setPasswordData] = useState({
@@ -85,24 +342,48 @@ export default function ProfilePage() {
     setIsLoading(true);
 
     try {
+      console.log('[Profile] Saving profile with photo:', profilePhoto || user?.profilePicture);
+      
+      // Prepare update data - preserve existing profile picture if current state is empty
+      const updateData: any = {
+        id: user?.id,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        job_title: formData.jobTitle,
+        department: formData.department,
+        telephone: formData.countryCode + formData.phoneNumber,
+        website: formData.website,
+        mailing_address: formatMailingAddress(formData.addressComponents),
+        preferred_language: formData.preferredLanguage,
+        timezone: formData.timezone,
+      };
+      
+      // Super users can change their email and role
+      if (user?.role === 'super_user') {
+        if (formData.email !== user.email) {
+          updateData.email = formData.email;
+          console.log('[Profile] Super user changing email to:', formData.email);
+        }
+        if (formData.role !== user.role) {
+          updateData.role = formData.role;
+          console.log('[Profile] Super user changing role to:', formData.role);
+        }
+      }
+      
+      // Only include profile_picture in the update if we have a value
+      // This prevents overwriting existing photos with empty values
+      const currentPhoto = profilePhoto || user?.profilePicture;
+      if (currentPhoto) {
+        updateData.profile_picture = currentPhoto;
+      }
+      
       // Update user data via API
       const response = await fetch('/api/users', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: user?.id,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          job_title: formData.jobTitle,
-          department: formData.department,
-          telephone: formData.telephone,
-          website: formData.website,
-          mailing_address: formData.mailingAddress,
-          preferred_language: formData.preferredLanguage,
-          timezone: formData.timezone,
-        }),
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
@@ -116,20 +397,40 @@ export default function ProfilePage() {
           name: `${formData.firstName} ${formData.lastName}`.trim(),
           firstName: formData.firstName,
           lastName: formData.lastName,
+          email: formData.email, // Update email if changed
           jobTitle: formData.jobTitle,
           title: formData.jobTitle, // For backward compatibility
           department: formData.department,
-          telephone: formData.telephone,
-          phone: formData.telephone, // For backward compatibility
+          telephone: formData.countryCode + formData.phoneNumber,
+          phone: formData.countryCode + formData.phoneNumber, // For backward compatibility
           website: formData.website,
-          mailingAddress: formData.mailingAddress,
+          mailingAddress: formatMailingAddress(formData.addressComponents),
+          role: formData.role as any, // Update role if changed
+          // Preserve existing profile picture if current state is empty
+          profilePicture: profilePhoto || user.profilePicture,
           updatedAt: new Date().toISOString(),
         };
 
         setUser(updatedUser);
+        console.log('[Profile] User context updated after save:', updatedUser);
       }
+      
       toast.success("Profile updated successfully!");
       setIsEditing(false);
+      
+      // Optionally reload fresh data from database to ensure sync
+      // This ensures the form will have the latest data next time
+      try {
+        if (user?.email) {
+          const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`);
+          if (response.ok) {
+            const freshData = await response.json();
+            console.log('[Profile] Reloaded fresh data after save:', freshData);
+          }
+        }
+      } catch (error) {
+        console.log('[Profile] Could not reload fresh data after save:', error);
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error("Failed to update profile. Please try again.");
@@ -209,12 +510,12 @@ export default function ProfilePage() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center space-y-4">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={user.profilePicture} />
-                    <AvatarFallback className="text-lg">
-                      {user.firstName?.[0]}{user.lastName?.[0] || user.name?.[0]}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ProfilePhotoUpload
+                    currentPhoto={profilePhoto || user.profilePicture}
+                    userInitials={`${user.firstName?.[0] || ''}${user.lastName?.[0] || user.name?.[0] || 'U'}`}
+                    onPhotoChange={handlePhotoChange}
+                    className="mb-2"
+                  />
                   
                   <div>
                     <h3 className="text-lg font-semibold">{user.name}</h3>
@@ -230,7 +531,34 @@ export default function ProfilePage() {
                   {user.organization && (
                     <div className="w-full pt-4 border-t">
                       <p className="text-sm font-medium text-muted-foreground">Organization</p>
-                      <p className="text-sm">{user.organization.name}</p>
+                      <div className="flex flex-col items-center space-y-2 mt-2">
+                        {/* Organization Logo */}
+                        {(user.organization as any).logo ? (
+                          <img
+                            src={(user.organization as any).logo}
+                            alt={`${user.organization.name} logo`}
+                            className="w-12 h-12 object-contain rounded-lg border border-gray-200"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                            <Building2 className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
+                        
+                        {/* Organization Name and Acronym */}
+                        <div className="text-center">
+                          <p className="text-sm font-medium">{user.organization.name}</p>
+                          {(user.organization as any).acronym && (
+                            <Badge variant="outline" className="text-xs mt-1">
+                              {(user.organization as any).acronym}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -269,7 +597,7 @@ export default function ProfilePage() {
                         </CardDescription>
                       </div>
                       {!isEditing && (
-                        <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                        <Button onClick={handleEditClick} variant="outline" size="sm">
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </Button>
@@ -304,12 +632,17 @@ export default function ProfilePage() {
                           <Label htmlFor="email">Email Address</Label>
                           <Input
                             id="email"
+                            type="email"
                             value={formData.email}
-                            disabled
-                            className="bg-muted"
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            disabled={user?.role !== 'super_user'}
+                            className={user?.role !== 'super_user' ? "bg-muted" : ""}
                           />
                           <p className="text-xs text-muted-foreground mt-1">
-                            Contact your administrator to change your email address
+                            {user?.role === 'super_user' 
+                              ? "As a super user, you can change your email address" 
+                              : "Contact your administrator to change your email address"
+                            }
                           </p>
                         </div>
 
@@ -334,16 +667,16 @@ export default function ProfilePage() {
                           </div>
                         </div>
 
+                        <div className="space-y-4">
+                          <PhoneFields
+                            countryCode={formData.countryCode}
+                            phoneNumber={formData.phoneNumber}
+                            onCountryCodeChange={(code) => setFormData({ ...formData, countryCode: code })}
+                            onPhoneNumberChange={(number) => setFormData({ ...formData, phoneNumber: number })}
+                          />
+                        </div>
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="telephone">Phone Number</Label>
-                            <Input
-                              id="telephone"
-                              value={formData.telephone}
-                              onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                              placeholder="+1 234 567 8900"
-                            />
-                          </div>
                           <div>
                             <Label htmlFor="website">Website</Label>
                             <Input
@@ -356,13 +689,13 @@ export default function ProfilePage() {
                         </div>
 
                         <div>
-                          <Label htmlFor="mailingAddress">Mailing Address</Label>
-                          <Textarea
-                            id="mailingAddress"
-                            value={formData.mailingAddress}
-                            onChange={(e) => setFormData({ ...formData, mailingAddress: e.target.value })}
-                            placeholder="Enter your mailing address"
-                            rows={3}
+                          <AddressSearch
+                            value={formData.addressComponents}
+                            onChange={(address) => setFormData({ 
+                              ...formData, 
+                              addressComponents: address,
+                              mailingAddress: formatMailingAddress(address)
+                            })}
                           />
                         </div>
 
@@ -381,12 +714,14 @@ export default function ProfilePage() {
                                 email: user.email || "",
                                 jobTitle: user.jobTitle || user.title || "",
                                 department: user.department || "",
-                                telephone: user.telephone || user.phone || "",
+                                ...splitTelephone(user.telephone || user.phone || ""),
                                 website: user.website || "",
                                 mailingAddress: user.mailingAddress || "",
+          addressComponents: parseMailingAddress(user.mailingAddress || ""),
                                 bio: "",
                                 preferredLanguage: "en",
                                 timezone: "UTC",
+                                role: user.role || "",
                                 notifications: {
                                   email: true,
                                   browser: true,
@@ -456,11 +791,43 @@ export default function ProfilePage() {
                   <CardContent>
                     {user.organization ? (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Organization</p>
-                            <p className="mt-1">{user.organization.name}</p>
+                        <div className="flex items-start gap-4">
+                          {/* Organization Logo */}
+                          <div className="flex-shrink-0">
+                            {(user.organization as any).logo ? (
+                              <img
+                                src={(user.organization as any).logo}
+                                alt={`${user.organization.name} logo`}
+                                className="w-16 h-16 object-contain rounded-lg border border-gray-200"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                                <Building2 className="h-8 w-8 text-gray-400" />
+                              </div>
+                            )}
                           </div>
+                          
+                          {/* Organization Info */}
+                          <div className="flex-1 space-y-3">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Organization</p>
+                              <div className="mt-1 flex items-center gap-2">
+                                <p className="font-medium">{user.organization.name}</p>
+                                {(user.organization as any).acronym && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {(user.organization as any).acronym}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Type</p>
                             <Badge variant="secondary">
@@ -496,6 +863,66 @@ export default function ProfilePage() {
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Super User Role Management */}
+                {user?.role === 'super_user' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Shield className="h-5 w-5" />
+                        Role Management
+                      </CardTitle>
+                      <CardDescription>
+                        As a super user, you can change your own role assignment
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="role">Your Role</Label>
+                          <Select 
+                            value={formData.role} 
+                            onValueChange={(value) => setFormData({ ...formData, role: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select your role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="super_user">Super User</SelectItem>
+                              <SelectItem value="gov_partner_tier_1">Government Partner (Tier 1)</SelectItem>
+                              <SelectItem value="gov_partner_tier_2">Government Partner (Tier 2)</SelectItem>
+                              <SelectItem value="dev_partner_tier_1">Development Partner (Tier 1)</SelectItem>
+                              <SelectItem value="dev_partner_tier_2">Development Partner (Tier 2)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Current: <Badge variant={formData.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"}>
+                              {ROLE_LABELS[formData.role as keyof typeof ROLE_LABELS] || formData.role}
+                            </Badge>
+                          </p>
+                        </div>
+                        
+                        {formData.role !== user.role && (
+                          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-sm text-yellow-800">
+                              <strong>Warning:</strong> Changing your role will affect your permissions. 
+                              Make sure you understand the implications before saving.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Save Button for Super User Changes */}
+                {user?.role === 'super_user' && (formData.role !== user.role || formData.email !== user.email) && (
+                  <div className="flex justify-end">
+                    <Button onClick={handleSubmit} disabled={isLoading}>
+                      {isLoading ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
 
               {/* Security Tab */}

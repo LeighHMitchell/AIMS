@@ -59,6 +59,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
       <main className="flex-1 ml-72 overflow-y-auto relative scrollbar-thin">
         {/* Hydration-safe Top Navigation */}
         <TopNav 
+          key={user?.profilePicture || 'no-profile-pic'} 
           user={user}
           canCreateActivities={permissions.canCreateActivities}
           onLogout={logout}
