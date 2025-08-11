@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/tooltip"
 
 interface HelpTextTooltipProps {
-  children: React.ReactNode
+  children?: React.ReactNode
+  content?: string
   className?: string
 }
 
-export function HelpTextTooltip({ children, className = "" }: HelpTextTooltipProps) {
+export function HelpTextTooltip({ children, content, className = "" }: HelpTextTooltipProps) {
   return (
     <TooltipProvider>
       <Tooltip>
@@ -22,7 +23,7 @@ export function HelpTextTooltip({ children, className = "" }: HelpTextTooltipPro
           <HelpCircle className={`w-4 h-4 text-gray-500 hover:text-gray-700 ${className}`} />
         </TooltipTrigger>
         <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">
-          <p className="text-sm text-gray-600 font-normal">{children}</p>
+          <p className="text-sm text-gray-600 font-normal">{content || children}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

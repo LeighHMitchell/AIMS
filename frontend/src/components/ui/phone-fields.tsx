@@ -75,7 +75,7 @@ export function PhoneFields({
           Country Code
         </label>
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
+          <PopoverTrigger>
             <Button
               type="button"
               variant="outline"
@@ -112,7 +112,6 @@ export function PhoneFields({
                   {countries.map((country) => (
                     <CommandItem
                       key={country.code}
-                      value={`${country.name} ${country.dialCode} ${country.code}`}
                       onSelect={() => handleCountrySelect(country)}
                       className="flex items-center gap-2"
                     >

@@ -91,7 +91,7 @@ export function SimplePhoneInput({
     <div className={cn("flex w-full items-stretch", className)}>
       {/* Country Selector */}
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+        <PopoverTrigger>
           <button
             type="button"
             role="combobox"
@@ -125,7 +125,7 @@ export function SimplePhoneInput({
             <CommandInput
               placeholder="Search countries..."
               value={searchValue}
-              onValueChange={setSearchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
             />
             <CommandEmpty>No country found.</CommandEmpty>
             <CommandList className="max-h-[200px]">
@@ -133,7 +133,6 @@ export function SimplePhoneInput({
                 {filteredCountries.map((country) => (
                   <CommandItem
                     key={country.code}
-                    value={`${country.name} ${country.dialCode} ${country.code}`}
                     onSelect={() => handleCountrySelect(country)}
                     className="flex items-center gap-2"
                   >

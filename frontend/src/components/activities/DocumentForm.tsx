@@ -238,7 +238,7 @@ export function DocumentForm({
                   <Label htmlFor="url">
                     URL
                     <Popover>
-                      <PopoverTrigger asChild>
+                      <PopoverTrigger>
                         <button className="ml-1">
                           <HelpCircle className="w-3 h-3 text-gray-400" />
                         </button>
@@ -271,7 +271,7 @@ export function DocumentForm({
                   <Label htmlFor="format">
                     Format (MIME Type)
                     <Popover>
-                      <PopoverTrigger asChild>
+                      <PopoverTrigger>
                         <button className="ml-1">
                           <HelpCircle className="w-3 h-3 text-gray-400" />
                         </button>

@@ -112,9 +112,9 @@ export function PeriodRowEnhanced({
       return { color: 'gray', label: 'Not reported', icon: Clock };
     }
     
-    if (rate >= STATUS_THRESHOLDS.good) {
+    if (rate >= STATUS_THRESHOLDS.GREEN) {
       return { color: 'gray-900', label: 'On track', icon: CheckCircle2 };
-    } else if (rate >= STATUS_THRESHOLDS.fair) {
+    } else if (rate >= STATUS_THRESHOLDS.YELLOW) {
       return { color: 'gray-600', label: 'Needs attention', icon: AlertCircle };
     } else {
       return { color: 'gray-500', label: 'Off track', icon: XCircle };
@@ -292,13 +292,13 @@ export function PeriodRowEnhanced({
         <div className="font-medium text-gray-900 flex items-center gap-1">
           {formatValue(period.actual_value, indicator.measure)}
           {progress && (
-            <HelpTextTooltip content={`${progress.isPositive ? 'Increased' : 'Decreased'} from baseline value`}>
+            <>
               {progress.isPositive ? (
                 <TrendingUp className="h-3 w-3 text-gray-700" />
               ) : (
                 <TrendingDown className="h-3 w-3 text-gray-500" />
               )}
-            </HelpTextTooltip>
+            </>
           )}
         </div>
         {period.actual_comment && (
@@ -307,7 +307,7 @@ export function PeriodRowEnhanced({
           </div>
         )}
         {progress && (
-          <HelpTextTooltip content="Change compared to the baseline value">
+          <HelpTextTooltip>
             <div className={cn(
               "text-xs",
               progress.isPositive ? "text-gray-700" : "text-gray-600"
@@ -320,8 +320,7 @@ export function PeriodRowEnhanced({
 
       {/* Achievement Percentage */}
       <div className="flex flex-col items-start gap-1">
-        <HelpTextTooltip content="Achievement rate calculated as (actual/target) × 100%. For descending indicators, the calculation is inverted.">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             {React.createElement(status.icon, { 
               className: cn(
                 "h-4 w-4",
@@ -341,7 +340,6 @@ export function PeriodRowEnhanced({
               {achievementRate > 0 ? `${achievementRate}%` : '—'}
             </span>
           </div>
-        </HelpTextTooltip>
         <Progress 
           value={achievementRate} 
           className={cn(

@@ -305,9 +305,9 @@ export function useBaselines() {
         value: result.value,
         created_at: result.created_at,
         updated_at: result.created_at,
-        iso_date: null,
-        comment: null,
-        location_ref: null
+        iso_date: undefined,
+        comment: undefined,
+        location_ref: undefined
       } as IndicatorBaseline;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to save baseline';

@@ -26,7 +26,7 @@ export const debugProfileUpdate = async () => {
     });
     
     console.log('📥 Response status:', response.status);
-    console.log('📥 Response headers:', [...response.headers.entries()]);
+    console.log('📥 Response headers:', Array.from(response.headers.entries()));
     
     const responseText = await response.text();
     console.log('📥 Raw response:', responseText);

@@ -708,7 +708,6 @@ export function DocumentCardInline({
                     </ul>
                   </div>
                 )}
-                </div>
 
                 {/* Save/Cancel Actions */}
                 <div className="flex gap-2 pt-2">
@@ -729,6 +728,7 @@ export function DocumentCardInline({
                     Cancel
                   </Button>
                 </div>
+              </div>
             ) : (
               <div className="space-y-4">
                 {/* Extended metadata display */}

@@ -317,7 +317,8 @@ export default function GovernmentInputsSectionEnhanced({
     helpText: string; 
     field: string;
   }) => {
-    const value = governmentInputs.onBudgetClassification?.[field as keyof typeof governmentInputs.onBudgetClassification] || "";
+    const rawValue = governmentInputs.onBudgetClassification?.[field as keyof typeof governmentInputs.onBudgetClassification];
+    const value = typeof rawValue === 'string' ? rawValue : "";
     const getStatusIcon = () => {
       switch (value) {
         case 'Yes': return <CheckCircle2 className="h-4 w-4 text-green-600" />;

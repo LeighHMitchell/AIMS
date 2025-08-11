@@ -291,7 +291,7 @@ export function DocumentFormEnhanced({
                 <div>
                   <Label>Format (MIME Type)</Label>
                   <Popover open={formatOpen} onOpenChange={setFormatOpen}>
-                    <PopoverTrigger asChild>
+                    <PopoverTrigger>
                       <Button
                         variant="outline"
                         role="combobox"
@@ -307,18 +307,14 @@ export function DocumentFormEnhanced({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[600px] p-0" align="start">
-                      <Command filter={(value, search) => {
-                        if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                        return 0;
-                      }}>
+                      <Command>
                         <CommandInput placeholder="Search formats..." className="h-9" />
                         <CommandEmpty>No format found.</CommandEmpty>
                         <CommandList>
-                          <CommandGroup heading="File Formats">
+                          <CommandGroup>
                             {Object.entries(FILE_FORMATS).map(([mime, label]) => (
                               <CommandItem
                                 key={mime}
-                                value={`${label} ${mime}`}
                                 onSelect={() => {
                                   setFormData(prev => ({ ...prev, format: mime }));
                                   setFormatOpen(false);
@@ -367,7 +363,7 @@ export function DocumentFormEnhanced({
                   <div className="mt-2">
                     <Label className="text-xs text-muted-foreground">Title Language</Label>
                     <Popover open={titleLangOpen} onOpenChange={setTitleLangOpen}>
-                      <PopoverTrigger asChild>
+                      <PopoverTrigger>
                         <Button
                           variant="outline"
                           role="combobox"
@@ -378,18 +374,14 @@ export function DocumentFormEnhanced({
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[400px] p-0" align="start">
-                        <Command filter={(value, search) => {
-                          if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                          return 0;
-                        }}>
+                        <Command>
                           <CommandInput placeholder="Search languages..." className="h-9" />
                           <CommandEmpty>No language found.</CommandEmpty>
                           <CommandList>
-                            <CommandGroup heading="Languages">
+                            <CommandGroup>
                               {LANGUAGES_WITH_NAMES.map(lang => (
                                 <CommandItem
                                   key={lang.code}
-                                  value={`${lang.name} ${lang.code}`}
                                   onSelect={() => {
                                     updateNarrative('title', 0, { lang: lang.code });
                                     setTitleLangOpen(false);
@@ -426,7 +418,7 @@ export function DocumentFormEnhanced({
                   <div className="mt-2">
                     <Label className="text-xs text-muted-foreground">Description Language</Label>
                     <Popover open={descLangOpen} onOpenChange={setDescLangOpen}>
-                      <PopoverTrigger asChild>
+                      <PopoverTrigger>
                         <Button
                           variant="outline"
                           role="combobox"
@@ -437,18 +429,14 @@ export function DocumentFormEnhanced({
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[400px] p-0" align="start">
-                        <Command filter={(value, search) => {
-                          if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                          return 0;
-                        }}>
+                        <Command>
                           <CommandInput placeholder="Search languages..." className="h-9" />
                           <CommandEmpty>No language found.</CommandEmpty>
                           <CommandList>
-                            <CommandGroup heading="Languages">
+                            <CommandGroup>
                               {LANGUAGES_WITH_NAMES.map(lang => (
                                 <CommandItem
                                   key={lang.code}
-                                  value={`${lang.name} ${lang.code}`}
                                   onSelect={() => {
                                     updateNarrative('description', 0, { lang: lang.code });
                                     setDescLangOpen(false);
@@ -476,7 +464,7 @@ export function DocumentFormEnhanced({
                 <div>
                   <Label>Document Category</Label>
                   <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
-                    <PopoverTrigger asChild>
+                    <PopoverTrigger>
                       <Button
                         variant="outline"
                         role="combobox"
@@ -492,16 +480,12 @@ export function DocumentFormEnhanced({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[600px] p-0" align="start">
-                      <Command filter={(value, search) => {
-                        if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                        return 0;
-                      }}>
+                      <Command>
                         <CommandInput placeholder="Search categories..." className="h-9" />
                         <CommandEmpty>No category found.</CommandEmpty>
                         <CommandList>
-                          <CommandGroup heading="Document Categories">
+                          <CommandGroup>
                             <CommandItem
-                              value="none"
                               onSelect={() => {
                                 setFormData(prev => ({ ...prev, categoryCode: undefined }));
                                 setCategoryOpen(false);
@@ -518,7 +502,6 @@ export function DocumentFormEnhanced({
                             {DOCUMENT_CATEGORIES.map(cat => (
                               <CommandItem
                                 key={cat.code}
-                                value={`${cat.code} ${cat.name} ${cat.description}`}
                                 onSelect={() => {
                                   setFormData(prev => ({ ...prev, categoryCode: cat.code }));
                                   setCategoryOpen(false);
@@ -548,7 +531,7 @@ export function DocumentFormEnhanced({
                 <div>
                   <Label>Document Languages</Label>
                   <Popover open={languagesOpen} onOpenChange={setLanguagesOpen}>
-                    <PopoverTrigger asChild>
+                    <PopoverTrigger>
                       <Button
                         variant="outline"
                         role="combobox"
@@ -568,11 +551,10 @@ export function DocumentFormEnhanced({
                         <CommandInput placeholder="Search languages..." className="h-9" />
                         <CommandEmpty>No language found.</CommandEmpty>
                         <CommandList>
-                          <CommandGroup heading="Languages">
+                          <CommandGroup>
                             {LANGUAGES_WITH_NAMES.map(lang => (
                               <CommandItem
                                 key={lang.code}
-                                value={`${lang.name} ${lang.code}`}
                                 onSelect={() => {
                                   const currentLangs = formData.languageCodes || [];
                                   const updated = currentLangs.includes(lang.code)
