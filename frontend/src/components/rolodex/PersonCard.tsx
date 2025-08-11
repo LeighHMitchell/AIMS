@@ -24,7 +24,7 @@ import {
   ExternalLink, 
   MoreVertical,
   Briefcase,
-  Fax
+  Printer
 } from 'lucide-react';
 import { getRoleLabel } from './utils/roleLabels';
 
@@ -348,7 +348,7 @@ export function PersonCard({
                     onClick={handleFaxClick}
                     className="text-slate-600 hover:text-blue-600 transition-colors"
                   >
-                    <Fax className="h-3 w-3 mr-1 inline" />
+                    <Printer className="h-3 w-3 mr-1 inline" />
                     {person.fax}
                   </button>
                 </div>

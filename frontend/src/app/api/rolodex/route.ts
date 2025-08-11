@@ -202,14 +202,14 @@ export async function GET(request: NextRequest) {
           organization_id: user.organization_id,
           organization_name: orgData.name || null,
           organization_acronym: orgData.acronym || null,
-          activity_id: null,
+          activity_id: undefined,
           position: user.job_title,
           phone: user.telephone,
           created_at: user.created_at,
           updated_at: user.updated_at,
           role_label: user.role || 'User',
-          activity_title: null,
-          country_code: null,
+          activity_title: undefined,
+          country_code: undefined,
           source_label: 'System User',
           profile_photo: user.avatar_url || null,
         });
@@ -246,8 +246,8 @@ export async function GET(request: NextRequest) {
           created_at: contact.created_at,
           updated_at: contact.updated_at,
           role_label: contact.type || contact.position || 'Contact',
-          activity_title: null, // Will fetch separately if needed
-          country_code: null, // Will fetch separately if needed
+          activity_title: undefined, // Will fetch separately if needed
+          country_code: undefined, // Will fetch separately if needed
           source_label: 'Activity Contact',
           profile_photo: contact.profile_photo || null,
           notes: contact.notes,
