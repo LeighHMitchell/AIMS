@@ -43,6 +43,8 @@ export interface RolodexFilters {
   country?: string;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export async function OPTIONS() {
@@ -60,7 +62,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
-    // Parse filters from query parameters
+    // Parse filters from query parameters - handle empty strings as undefined
     const filters: RolodexFilters = {
       search: searchParams.get('search') || undefined,
       source: searchParams.get('source') || undefined,
@@ -70,9 +72,20 @@ export async function GET(request: NextRequest) {
       country: searchParams.get('country') || undefined,
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '24'),
+      sortBy: searchParams.get('sortBy') || 'name',
+      sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc',
     };
 
+    // Clean up empty string values to undefined
+    Object.keys(filters).forEach(key => {
+      if (filters[key as keyof RolodexFilters] === '') {
+        filters[key as keyof RolodexFilters] = undefined as any;
+      }
+    });
+
     console.log('[AIMS Rolodex] Fetching people with filters:', filters);
+    console.log('[AIMS Rolodex] Query URL:', request.url);
+    console.log('[AIMS Rolodex] Source filter value:', filters.source, 'Type:', typeof filters.source);
 
     // Calculate offset for pagination
     const offset = ((filters.page || 1) - 1) * (filters.limit || 24);
@@ -88,7 +101,7 @@ export async function GET(request: NextRequest) {
     // Start with a direct approach - get users and activity contacts separately
     console.log('[AIMS Rolodex] Using direct table queries...');
     
-    // Get users data with organization details
+    // Get users data - simplified query first
     let usersQuery = supabase
             .from('users')
             .select(`
@@ -103,30 +116,31 @@ export async function GET(request: NextRequest) {
               department,
               telephone,
               created_at,
-              updated_at,
-              organizations!inner (
-                name,
-                acronym
-              )
+              updated_at
       `);
 
-        // Apply user filters
-          if (filters.search) {
+    // Apply user filters
+    if (filters.search) {
       usersQuery = usersQuery.or(`email.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%`);
-          }
-          if (filters.role) {
-            usersQuery = usersQuery.ilike('role', `%${filters.role}%`);
-          }
+    }
+    if (filters.role) {
+      usersQuery = usersQuery.ilike('role', `%${filters.role}%`);
+    }
+    if (filters.organization) {
+      usersQuery = usersQuery.eq('organization_id', filters.organization);
+    }
+    // Only exclude users if specifically filtering for a different source
     if (filters.source && filters.source !== 'user') {
       // If filtering for non-user sources, return empty users
       usersQuery = usersQuery.eq('id', '00000000-0000-0000-0000-000000000000'); // No matches
-          }
+    }
 
     const { data: users, error: usersError } = await usersQuery;
 
     console.log('[AIMS Rolodex] Users query result:', { users: users?.length, error: usersError });
+    console.log('[AIMS Rolodex] Sample user data:', users?.[0]);
 
-          if (usersError) {
+    if (usersError) {
       console.error('[AIMS Rolodex] Users query error:', usersError);
       // Don't fail completely, just proceed without users data
     }
@@ -160,11 +174,14 @@ export async function GET(request: NextRequest) {
       `);
 
     // Apply contact filters
-          if (filters.search) {
+    if (filters.search) {
       contactsQuery = contactsQuery.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,position.ilike.%${filters.search}%`);
     }
-          if (filters.role) {
+    if (filters.role) {
       contactsQuery = contactsQuery.or(`position.ilike.%${filters.role}%,type.ilike.%${filters.role}%`);
+    }
+    if (filters.organization) {
+      contactsQuery = contactsQuery.eq('organisation_id', filters.organization);
     }
     if (filters.source && filters.source !== 'activity_contact') {
       // If filtering for non-contact sources, return empty contacts
@@ -186,7 +203,6 @@ export async function GET(request: NextRequest) {
     // Transform users
     if (users) {
       users.forEach((user: any) => {
-        const orgData = user.organizations || {};
         transformedPeople.push({
           id: user.id,
           source: 'user' as const,
@@ -200,8 +216,8 @@ export async function GET(request: NextRequest) {
           job_title: user.job_title,
           department: user.department,
           organization_id: user.organization_id,
-          organization_name: orgData.name || null,
-          organization_acronym: orgData.acronym || null,
+          organization_name: undefined, // Will be populated later if needed
+          organization_acronym: undefined, // Will be populated later if needed
           activity_id: undefined,
           position: user.job_title,
           phone: user.telephone,
@@ -255,16 +271,44 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Sort by source type and name
+    // Apply sorting
     transformedPeople.sort((a, b) => {
-      if (a.source !== b.source) {
-        return a.source === 'user' ? -1 : 1; // Users first
+      const { sortBy = 'name', sortOrder = 'asc' } = filters;
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'firstName':
+          comparison = (a.first_name || '').localeCompare(b.first_name || '');
+          break;
+        case 'lastName':
+          comparison = (a.last_name || '').localeCompare(b.last_name || '');
+          break;
+        case 'email':
+          comparison = (a.email || '').localeCompare(b.email || '');
+          break;
+        case 'organization':
+          comparison = (a.organization_name || '').localeCompare(b.organization_name || '');
+          break;
+        case 'role':
+          comparison = (a.role_label || '').localeCompare(b.role_label || '');
+          break;
+        case 'source':
+          comparison = a.source.localeCompare(b.source);
+          break;
+        case 'name':
+        default:
+          comparison = (a.name || '').localeCompare(b.name || '');
+          break;
       }
-      return a.name.localeCompare(b.name);
+
+      return sortOrder === 'desc' ? -comparison : comparison;
     });
 
     // Apply pagination
     const total = transformedPeople.length;
+    console.log('[AIMS Rolodex] Total transformed people:', total);
+    console.log('[AIMS Rolodex] First few people:', transformedPeople.slice(0, 3).map(p => ({ name: p.name, source: p.source })));
+    
     const paginatedPeople = transformedPeople.slice(offset, offset + (filters.limit || 24));
 
     const response = {

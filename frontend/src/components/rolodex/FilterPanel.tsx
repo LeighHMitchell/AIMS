@@ -126,7 +126,7 @@ export function FilterPanel({
 
         {/* Contact Type Filter */}
         <Popover>
-          <PopoverTrigger className="inline-flex items-center justify-between whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 min-w-[180px]">
+          <PopoverTrigger className="min-w-[180px] justify-between border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2">
             <span className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               {filters.source ? SOURCE_LABELS[filters.source]?.label || 'Contact Type' : 'All Contact Types'}
@@ -141,7 +141,10 @@ export function FilterPanel({
                   variant={!filters.source ? "secondary" : "ghost"}
                   size="sm"
                   className="w-full justify-start"
-                  onClick={() => onFiltersChange({ source: undefined })}
+                  onClick={() => {
+                    console.log('[FilterPanel] All Contact Types clicked');
+                    onFiltersChange({ source: undefined });
+                  }}
                 >
                   <span className="flex items-center gap-2">
                     <span>🌐</span>
@@ -164,7 +167,10 @@ export function FilterPanel({
                       variant={isSelected ? "secondary" : "ghost"}
                       size="sm"
                       className="w-full justify-start"
-                      onClick={() => onFiltersChange({ source: sourceKey })}
+                      onClick={() => {
+                        console.log('[FilterPanel] Contact type clicked:', sourceKey);
+                        onFiltersChange({ source: sourceKey });
+                      }}
                     >
                       <span className="flex items-center gap-2">
                         <span>{category.icon}</span>
@@ -183,7 +189,7 @@ export function FilterPanel({
 
         {/* Role Filter */}
         <Popover>
-          <PopoverTrigger className="inline-flex items-center justify-between whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 min-w-[140px]">
+          <PopoverTrigger className="min-w-[140px] justify-between border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2">
             <span className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               {filters.role ? `Role: ${filters.role}` : 'Any Role'}
@@ -203,7 +209,10 @@ export function FilterPanel({
                   variant={!filters.role ? "secondary" : "ghost"}
                   size="sm"
                   className="w-full justify-start"
-                  onClick={() => onFiltersChange({ role: undefined })}
+                  onClick={() => {
+                    console.log('[FilterPanel] All Roles clicked');
+                    onFiltersChange({ role: undefined });
+                  }}
                 >
                   All Roles
                 </Button>
@@ -274,7 +283,7 @@ export function FilterPanel({
 
         {/* Organization Filter */}
         <Popover>
-          <PopoverTrigger className="inline-flex items-center justify-between whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 min-w-[160px]">
+          <PopoverTrigger className="min-w-[160px] justify-between border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2">
             <span className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               {filters.organization ? 'Organization Set' : 'Any Organization'}
@@ -294,7 +303,10 @@ export function FilterPanel({
                   variant="ghost"
                   size="sm"
                   className="w-full justify-start"
-                  onClick={() => onFiltersChange({ organization: undefined })}
+                  onClick={() => {
+                    console.log('[FilterPanel] All Organizations clicked');
+                    onFiltersChange({ organization: undefined });
+                  }}
                 >
                   All Organizations
                 </Button>
