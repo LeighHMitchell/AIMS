@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/useUser";
 import { usePartners } from "@/hooks/usePartners";
+import { useOrganizations } from "@/hooks/use-organizations";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { User, UserRole, USER_ROLES, ROLE_LABELS } from "@/types/user";
 import { 
@@ -35,6 +36,7 @@ import { Separator } from "@/components/ui/separator";
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 import { PhoneFields } from "@/components/ui/phone-fields";
 import { AddressSearch, AddressComponents } from "@/components/ui/address-search";
+import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { UserManagementSkeleton } from "@/components/skeletons";
@@ -138,6 +140,7 @@ const getRoleBadgeVariant = (role: UserRole | 'admin'): "default" | "secondary" 
 export default function UserManagement() {
   const { user: currentUser, permissions } = useUser();
   const { partners, getDevelopmentPartners, loading: partnersLoading } = usePartners();
+  const { organizations, loading: organizationsLoading } = useOrganizations();
   const [users, setUsers] = useState<User[]>([]);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
@@ -513,7 +516,7 @@ export default function UserManagement() {
     }
   };
 
-  if (loading || partnersLoading) {
+  if (loading || partnersLoading || organizationsLoading) {
     return (
       <ProtectedRoute allowedRoles={[USER_ROLES.SUPER_USER]}>
         <MainLayout>
@@ -586,11 +589,11 @@ export default function UserManagement() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Organizations</SelectItem>
-                          {partners.map((org) => (
+                          {organizations.map((org) => (
                             <SelectItem key={org.id} value={org.id}>
-                              {org.fullName && org.name && org.fullName !== org.name 
-                                ? `${org.fullName} (${org.name})` 
-                                : org.fullName || org.name}
+                              {org.name && org.acronym && org.name !== org.acronym 
+                                ? `${org.name} (${org.acronym})` 
+                                : org.name || org.acronym}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -807,6 +810,7 @@ export default function UserManagement() {
                   <UserEditor 
                     user={editingUser} 
                     partners={developmentPartners}
+                    organizations={organizations}
                     currentUser={currentUser}
                     onSave={editingUser.id ? handleUserUpdate : handleUserCreate}
                     onClose={() => setEditingUser(null)}
@@ -848,6 +852,7 @@ export default function UserManagement() {
 function UserEditor({ 
   user, 
   partners,
+  organizations,
   currentUser,
   onSave, 
   onClose,
@@ -855,6 +860,7 @@ function UserEditor({
 }: { 
   user: User; 
   partners: any[];
+  organizations: any[];
   currentUser: User | null;
   onSave: (user: User) => void;
   onClose: () => void;
@@ -886,6 +892,28 @@ function UserEditor({
 
   const handlePhotoChange = async (photoUrl: string) => {
     setProfilePhoto(photoUrl);
+    
+    // Auto-save the profile photo immediately
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: user.id,
+          profile_picture: photoUrl,
+        }),
+      });
+      
+      if (response.ok) {
+        toast.success("Profile picture updated!");
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile picture');
+      }
+    } catch (error) {
+      console.error("Failed to save profile picture:", error);
+      toast.error("Failed to save profile picture");
+    }
   };
 
   const handleEmailChangeClick = () => {
@@ -1123,24 +1151,18 @@ function UserEditor({
 
           <div>
             <Label htmlFor="organization">Organization</Label>
-            <Select 
-              value={formData.organizationId || "none"} 
-              onValueChange={(v) => setFormData({ ...formData, organizationId: v === "none" ? "" : v })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select organization" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No Organization (Orphan)</SelectItem>
-                {partners.map((org) => (
-                  <SelectItem key={org.id} value={org.id}>
-                    {org.fullName && org.name && org.fullName !== org.name 
-                      ? `${org.fullName} (${org.name})` 
-                      : org.fullName || org.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <OrganizationCombobox
+              organizations={organizations}
+              value={formData.organizationId || ""}
+              onValueChange={(v) => setFormData({ ...formData, organizationId: v })}
+              placeholder="Select organization..."
+              className="w-full"
+            />
+            {!formData.organizationId && (
+              <p className="text-xs text-muted-foreground mt-1">
+                No organization selected (Orphan user)
+              </p>
+            )}
           </div>
 
           <Separator />

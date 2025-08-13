@@ -1,14 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin();
+    // Create a regular Supabase client for authentication
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
-    if (!supabase) {
-      console.error('[Auth Login] Supabase client not initialized');
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('[Auth Login] Missing Supabase environment variables');
+      return NextResponse.json(
+        { error: 'Authentication service not configured' },
+        { status: 503 }
+      );
+    }
+    
+    // Create client for authentication (uses anon key)
+    const authClient = createClient(supabaseUrl, supabaseAnonKey);
+    
+    // Get admin client for database queries (uses service role key)
+    const adminClient = getSupabaseAdmin();
+    
+    if (!adminClient) {
+      console.error('[Auth Login] Admin client not initialized');
       return NextResponse.json(
         { error: 'Database connection not available' },
         { status: 503 }
@@ -19,8 +36,8 @@ export async function POST(request: NextRequest) {
     
     console.log(`[Auth Login] Attempting login for: ${email}`);
     
-    // Authenticate with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    // Authenticate with Supabase Auth using regular client
+    const { data: authData, error: authError } = await authClient.auth.signInWithPassword({
       email,
       password,
     });
@@ -30,8 +47,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
     
-    // Get user profile data from our users table
-    const { data: userData, error: userError } = await supabase
+    // Get user profile data from our users table using admin client
+    const { data: userData, error: userError } = await adminClient
       .from('users')
       .select('*')
       .eq('id', authData.user.id)
@@ -45,7 +62,7 @@ export async function POST(request: NextRequest) {
     // Get organization data if user has one
     let organization = null;
     if (userData.organization_id) {
-      const { data: orgData } = await supabase
+      const { data: orgData } = await adminClient
         .from('organizations')
         .select('*')
         .eq('id', userData.organization_id)

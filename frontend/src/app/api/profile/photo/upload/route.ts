@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
@@ -34,25 +33,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate environment variable
+    const VERCEL_BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!VERCEL_BLOB_TOKEN) {
+      return NextResponse.json(
+        { error: 'Cloud storage not configured' },
+        { status: 500 }
+      );
+    }
+
     // Create a unique filename
     const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const uniqueFilename = `${uuidv4()}.${fileExtension}`;
     
-    // Define upload directory for profile photos
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'profiles');
+    // Upload to Vercel Blob storage
+    const blob = await put(`profiles/${uniqueFilename}`, file, {
+      access: 'public',
+      token: VERCEL_BLOB_TOKEN,
+    });
     
-    // Ensure upload directory exists
-    await mkdir(uploadDir, { recursive: true });
-    
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    
-    const filePath = join(uploadDir, uniqueFilename);
-    await writeFile(filePath, buffer);
-    
-    // Generate public URL
-    const publicUrl = `/uploads/profiles/${uniqueFilename}`;
+    // Use the cloud URL
+    const publicUrl = blob.url;
     
     return NextResponse.json({
       url: publicUrl,
