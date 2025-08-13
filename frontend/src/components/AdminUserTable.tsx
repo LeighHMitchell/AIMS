@@ -169,19 +169,25 @@ export function AdminUserTable() {
     setFilteredUsers(filtered)
   }, [searchQuery, roleFilter, orgFilter, users])
 
-  const getRoleBadgeVariant = (role: string): any => {
+  const getRoleBadgeVariant = (role: string): "default" | "secondary" | "destructive" | "outline" | "dark-blue" | "light-blue" | "dark-green" | "light-green" => {
     switch (role) {
       case USER_ROLES.SUPER_USER:
         return "destructive"
+      
+      // Development Partner colors (blue shades)
       case USER_ROLES.DEV_PARTNER_TIER_1:
-      case USER_ROLES.GOV_PARTNER_TIER_1:
-        return "default"
+        return "dark-blue"
       case USER_ROLES.DEV_PARTNER_TIER_2:
+        return "light-blue"
+      
+      // Government Partner colors (green shades)
+      case USER_ROLES.GOV_PARTNER_TIER_1:
+        return "dark-green"
       case USER_ROLES.GOV_PARTNER_TIER_2:
-        return "secondary"
+        return "light-green"
 
       default:
-        return "secondary"
+        return "outline"
     }
   }
 
@@ -321,7 +327,11 @@ export function AdminUserTable() {
                   <TableRow key={user.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{user.name}</p>
+                        <p className="font-medium">
+                          {user.firstName && user.lastName 
+                            ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}` 
+                            : user.name}
+                        </p>
                         <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                           <span className="flex items-center gap-1">
                             <Mail className="h-3 w-3" />

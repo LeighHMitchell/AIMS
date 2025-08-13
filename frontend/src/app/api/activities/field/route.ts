@@ -387,8 +387,12 @@ export async function POST(request: Request) {
               position: contact.position,
               organisation: contact.organisation || null,
               organisation_id: contact.organisationId || null,
-              phone: contact.phone || null,
-              fax: contact.fax || null,
+              phone: contact.phone || null, // Legacy field
+              country_code: contact.countryCode || null,
+              phone_number: contact.phoneNumber || null,
+              fax: contact.fax || null, // Legacy field
+              fax_country_code: contact.faxCountryCode || null,
+              fax_number: contact.faxNumber || null,
               email: contact.email || null,
               secondary_email: contact.secondaryEmail || null,
               profile_photo: contact.profilePhoto || null,
@@ -858,8 +862,12 @@ export async function POST(request: Request) {
             position: contact.position,
             organisation: contact.organisation,
             organisationId: contact.organisation_id,
-            phone: contact.phone,
-            fax: contact.fax,
+            phone: contact.phone, // Legacy field
+            countryCode: contact.country_code,
+            phoneNumber: contact.phone_number,
+            fax: contact.fax, // Legacy field
+            faxCountryCode: contact.fax_country_code,
+            faxNumber: contact.fax_number,
             email: contact.email,
             secondaryEmail: contact.secondary_email,
             profilePhoto: contact.profile_photo,

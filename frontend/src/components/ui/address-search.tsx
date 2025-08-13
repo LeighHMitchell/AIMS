@@ -115,8 +115,8 @@ export function AddressSearch({
   const handleAddressSelect = (result: SearchResult) => {
     const streetInfo = [result.address.house_number, result.address.road].filter(Boolean).join(' ');
     const newAddress: AddressComponents = {
-      addressLine1: streetInfo,
-      addressLine2: '',
+      addressLine1: '', // Leave blank for user to enter building name/office
+      addressLine2: streetInfo, // Put search result street info in address line 2
       street: streetInfo, // Keep for backward compatibility
       city: result.address.city || result.address.town || result.address.village || '',
       state: result.address.state || '',
@@ -216,7 +216,7 @@ export function AddressSearch({
             type="text"
             value={addressComponents.addressLine1 || ''}
             onChange={(e) => handleFieldUpdate('addressLine1', e.target.value)}
-            placeholder="123 Main Street"
+            placeholder="Building name, office, etc."
             disabled={disabled}
             className="mt-1"
           />
@@ -232,7 +232,7 @@ export function AddressSearch({
             type="text"
             value={addressComponents.addressLine2 || ''}
             onChange={(e) => handleFieldUpdate('addressLine2', e.target.value)}
-            placeholder="Apartment, suite, etc. (optional)"
+            placeholder="Street address (populated from search)"
             disabled={disabled}
             className="mt-1"
           />

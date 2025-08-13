@@ -58,7 +58,11 @@ export async function GET(request: NextRequest) {
     // Transform data to match frontend User type expectations
     const transformUser = (user: any) => ({
       ...user,
-      name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+      name: user.name || `${user.first_name || ''} ${user.middle_name ? user.middle_name + ' ' : ''}${user.last_name || ''}`.trim() || user.email,
+      firstName: user.first_name,
+      middleName: user.middle_name,
+      lastName: user.last_name,
+      gender: user.gender,
       profilePicture: user.avatar_url, // Map avatar_url to profilePicture
       organisation: user.organisation || user.organizations?.name,
       organization: user.organizations
@@ -172,6 +176,8 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('[AIMS] PUT /api/users - Received body:', body);
+    
     const { id, profile_picture, ...updateData } = body;
     
     if (!id) {
@@ -181,11 +187,16 @@ export async function PUT(request: NextRequest) {
       );
     }
     
+    console.log('[AIMS] PUT /api/users - updateData after destructuring:', updateData);
+    console.log('[AIMS] PUT /api/users - department in updateData:', updateData.department);
+    
     // Map frontend field names to database column names
     const dbUpdateData = {
       ...updateData,
       updated_at: new Date().toISOString()
     };
+    
+    console.log('[AIMS] PUT /api/users - dbUpdateData being sent to database:', dbUpdateData);
     
     // Handle profile picture mapping
     if (profile_picture !== undefined) {
@@ -208,7 +219,8 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    console.log('[AIMS] Updated user in Supabase');
+    console.log('[AIMS] Updated user in Supabase - returned data:', data);
+    console.log('[AIMS] Department in returned data:', data?.department);
     return NextResponse.json(data);
     
   } catch (error) {

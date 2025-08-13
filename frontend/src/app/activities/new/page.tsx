@@ -1409,6 +1409,18 @@ function NewActivityPageContent() {
           } catch (error) {
             console.warn('[AIMS] Failed to load subnational breakdown for tab completion:', error);
           }
+
+          // Fetch focal points for tab completion status
+          try {
+            const focalPointsResponse = await fetch(`/api/activities/${activityId}/focal-points`);
+            if (focalPointsResponse.ok) {
+              const focalPointsData = await focalPointsResponse.json();
+              setFocalPoints(focalPointsData);
+              console.log('[AIMS] Loaded focal points for tab completion:', focalPointsData);
+            }
+          } catch (error) {
+            console.warn('[AIMS] Failed to load focal points for tab completion:', error);
+          }
         } else {
           // New activity - just set some defaults
           console.log('[AIMS] Creating new activity');

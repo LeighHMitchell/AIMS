@@ -5,6 +5,12 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   Grid3X3, 
   List, 
@@ -13,9 +19,13 @@ import {
   Users, 
   ChevronLeft, 
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronDown
 } from 'lucide-react';
-import { FilterPanel } from '@/components/rolodex/FilterPanel';
+
 import { PersonCard } from '@/components/rolodex/PersonCard';
 import { RolodexStats } from '@/components/rolodex/RolodexStats';
 import { useRolodexData } from '@/components/rolodex/useRolodexData';
@@ -28,13 +38,23 @@ export default function RolodexPage() {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   
+  // Define sort options
+  const sortOptions = [
+    { value: 'name', label: 'Name (A-Z)', icon: ArrowUpDown },
+    { value: 'firstName', label: 'First Name', icon: ArrowUpDown },
+    { value: 'lastName', label: 'Last Name', icon: ArrowUpDown },
+    { value: 'email', label: 'Email', icon: ArrowUpDown },
+    { value: 'organization', label: 'Organization', icon: ArrowUpDown },
+    { value: 'role', label: 'Role', icon: ArrowUpDown },
+    { value: 'source', label: 'Type (Users/Contacts)', icon: ArrowUpDown },
+  ];
+  
   const {
     people,
     loading,
     error,
     filters,
     setFilters,
-    clearFilters,
     refetch,
     pagination
   } = useRolodexData({
@@ -42,7 +62,7 @@ export default function RolodexPage() {
       page: 1,
       limit: 24 // Good for grid layout (4x6)
     },
-    autoFetch: false // Temporarily disable auto-fetch to debug
+    autoFetch: true // Enable auto-fetch for filters and sorting
   });
   
   // Manual initial fetch to avoid infinite loops
@@ -92,6 +112,26 @@ export default function RolodexPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleSortChange = (sortBy: string) => {
+    const currentSortBy = filters.sortBy || 'name';
+    const currentSortOrder = filters.sortOrder || 'asc';
+    
+    // If clicking the same sort field, toggle the order
+    const newSortOrder = sortBy === currentSortBy && currentSortOrder === 'asc' ? 'desc' : 'asc';
+    
+    setFilters({ 
+      sortBy, 
+      sortOrder: newSortOrder,
+      page: 1 // Reset to first page when sorting changes
+    });
+  };
+
+  const getCurrentSortLabel = () => {
+    const currentSort = sortOptions.find(option => option.value === (filters.sortBy || 'name'));
+    const order = filters.sortOrder === 'desc' ? ' (Z-A)' : ' (A-Z)';
+    return currentSort ? currentSort.label + order : 'Name (A-Z)';
   };
 
   const renderPaginationControls = () => (
@@ -169,6 +209,51 @@ export default function RolodexPage() {
           </div>
           
           <div className="flex items-center space-x-3">
+            {/* Sort Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-w-[160px] justify-between"
+                >
+                  <span className="flex items-center">
+                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                    Sort: {getCurrentSortLabel().split(' (')[0]}
+                  </span>
+                  <div className="flex items-center ml-2">
+                    {filters.sortOrder === 'desc' ? (
+                      <ArrowDown className="h-3 w-3" />
+                    ) : (
+                      <ArrowUp className="h-3 w-3" />
+                    )}
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {sortOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => handleSortChange(option.value)}
+                    className="flex items-center justify-between"
+                  >
+                    <span className="flex items-center">
+                      <option.icon className="h-4 w-4 mr-2" />
+                      {option.label}
+                    </span>
+                    {(filters.sortBy || 'name') === option.value && (
+                      filters.sortOrder === 'desc' ? (
+                        <ArrowDown className="h-3 w-3" />
+                      ) : (
+                        <ArrowUp className="h-3 w-3" />
+                      )
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button
               variant="outline"
               size="sm"
@@ -213,16 +298,7 @@ export default function RolodexPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Filters */}
-            <FilterPanel
-              filters={filters}
-              onFiltersChange={setFilters}
-              onClearFilters={clearFilters}
-              loading={loading}
-              totalCount={pagination.total}
-            />
-
-        {/* Content */}
+            {/* Content */}
         {error ? (
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-6">
@@ -241,15 +317,8 @@ export default function RolodexPage() {
               <Users className="h-12 w-12 text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-900 mb-2">No people found</h3>
               <p className="text-slate-600 mb-4">
-                {Object.keys(filters).filter(key => filters[key as keyof typeof filters] && !['page', 'limit'].includes(key)).length > 0
-                  ? 'Try adjusting your search criteria or clearing filters.'
-                  : 'No people are currently in the system.'}
+                No people are currently in the system.
               </p>
-              {Object.keys(filters).filter(key => filters[key as keyof typeof filters] && !['page', 'limit'].includes(key)).length > 0 && (
-                <Button variant="outline" onClick={clearFilters}>
-                  Clear all filters
-                </Button>
-              )}
             </CardContent>
           </Card>
         ) : (

@@ -89,6 +89,7 @@ export function useRolodexData(options: UseRolodexDataOptions = {}): UseRolodexD
       });
 
       console.log('[useRolodexData] Fetching with params:', params.toString());
+      console.log('[useRolodexData] Full filters object:', filtersToUse);
 
       const response = await fetch(`/api/rolodex?${params.toString()}`);
       
@@ -122,12 +123,17 @@ export function useRolodexData(options: UseRolodexDataOptions = {}): UseRolodexD
   const refetch = useCallback(() => fetchData(debouncedFilters), [fetchData, debouncedFilters]);
 
   const setFilters = useCallback((newFilters: Partial<RolodexFilters>) => {
-    setInternalFilters(prev => ({
-      ...prev,
-      ...newFilters,
-      // Reset to page 1 when filters change (except when explicitly setting page)
-      page: newFilters.page !== undefined ? newFilters.page : 1,
-    }));
+    console.log('[useRolodexData] Setting filters:', newFilters);
+    setInternalFilters(prev => {
+      const updated = {
+        ...prev,
+        ...newFilters,
+        // Reset to page 1 when filters change (except when explicitly setting page)
+        page: newFilters.page !== undefined ? newFilters.page : 1,
+      };
+      console.log('[useRolodexData] Updated filters:', updated);
+      return updated;
+    });
   }, []);
 
   const updateFilter = useCallback((key: keyof RolodexFilters, value: any) => {

@@ -98,11 +98,13 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
   // Split user.name into first and last name if not available
   const nameParts = user.name?.split(' ') || []
   const defaultFirstName = user.firstName || nameParts[0] || ''
+  const defaultMiddleName = user.middleName || ''
   const defaultLastName = user.lastName || nameParts.slice(1).join(' ') || ''
   
   const [formData, setFormData] = useState<UserProfile>({
     ...user,
     firstName: defaultFirstName,
+    middleName: defaultMiddleName,
     lastName: defaultLastName,
     organisation: user.organisation || '',
     department: user.department || '',

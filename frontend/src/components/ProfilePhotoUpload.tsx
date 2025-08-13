@@ -169,7 +169,7 @@ export function ProfilePhotoUpload({
               isUploading && "opacity-50"
             )}
           />
-          <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+          <AvatarFallback className="text-2xl bg-gray-600 text-white">
             {userInitials}
           </AvatarFallback>
         </Avatar>

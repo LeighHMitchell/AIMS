@@ -16,6 +16,8 @@ interface PhoneFieldsProps {
   onPhoneNumberChange?: (number: string) => void;
   disabled?: boolean;
   className?: string;
+  phoneLabel?: string;
+  phonePlaceholder?: string;
 }
 
 export function PhoneFields({
@@ -25,6 +27,8 @@ export function PhoneFields({
   onPhoneNumberChange,
   disabled = false,
   className,
+  phoneLabel = "Phone Number",
+  phonePlaceholder = "Enter your phone number",
 }: PhoneFieldsProps) {
   const [open, setOpen] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(() => {
@@ -83,7 +87,7 @@ export function PhoneFields({
               aria-expanded={open}
               aria-label="Select country code"
               className={cn(
-                "w-[160px] justify-between",
+                "w-[120px] justify-between",
                 disabled && "cursor-not-allowed opacity-50"
               )}
               disabled={disabled}
@@ -145,13 +149,13 @@ export function PhoneFields({
       {/* Phone Number Field */}
       <div className="flex flex-col space-y-2 flex-1">
         <label className="text-sm font-medium text-gray-700">
-          Phone Number
+          {phoneLabel}
         </label>
         <Input
           type="tel"
           value={phoneNumber}
           onChange={handlePhoneNumberChange}
-          placeholder="Enter your phone number"
+          placeholder={phonePlaceholder}
           disabled={disabled}
           className="w-full"
         />

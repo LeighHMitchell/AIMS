@@ -32,6 +32,12 @@ const badgeVariants = cva(
         sky: "bg-sky-200 text-slate-900 border border-sky-300 hover:bg-sky-300",
         violet: "bg-violet-200 text-slate-900 border border-violet-300 hover:bg-violet-300",
         fuchsia: "bg-fuchsia-200 text-slate-900 border border-fuchsia-300 hover:bg-fuchsia-300",
+        
+        // Dark variants for role badges
+        "dark-blue": "bg-blue-700 text-white border border-blue-800 hover:bg-blue-800",
+        "light-blue": "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200",
+        "dark-green": "bg-green-700 text-white border border-green-800 hover:bg-green-800",
+        "light-green": "bg-green-100 text-green-700 border border-green-200 hover:bg-green-200",
       },
     },
     defaultVariants: {

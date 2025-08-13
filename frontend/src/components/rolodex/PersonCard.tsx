@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RolodexPerson } from '@/app/api/rolodex/route';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -24,9 +25,15 @@ import {
   ExternalLink, 
   MoreVertical,
   Briefcase,
-  Printer
+  Printer,
+  Edit,
+  User
 } from 'lucide-react';
 import { getRoleLabel } from './utils/roleLabels';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useRouter } from 'next/navigation';
+import { EditContactModal } from './EditContactModal';
+import { UserEditModal } from './UserEditModal';
 
 interface PersonCardProps {
   person: RolodexPerson;
@@ -41,6 +48,10 @@ export function PersonCard({
   onActivityClick,
   compact = false 
 }: PersonCardProps) {
+  const { isSuperUser } = useUserRole();
+  const router = useRouter();
+  const [isContactEditModalOpen, setIsContactEditModalOpen] = useState(false);
+  const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false);
   const roleInfo = getRoleLabel(person.role_label || '');
   
   // Generate initials for avatar
@@ -84,6 +95,31 @@ export function PersonCard({
     }
   };
 
+  const handleEditContact = () => {
+    if (person.source === 'activity_contact' && person.activity_id) {
+      // Navigate to Activity Editor's Contact tab
+      router.push(`/activities/${person.activity_id}/edit?tab=contacts`);
+    } else if (person.source === 'user') {
+      // Open edit modal for users
+      setIsUserEditModalOpen(true);
+    }
+  };
+
+  const handleUpdateUser = (updatedPerson: RolodexPerson) => {
+    // This would typically trigger a refresh of the rolodex data
+    // For now, we'll just close the modal
+    setIsUserEditModalOpen(false);
+    // You might want to call a parent function to refresh the data
+    // In a real app, you'd probably want to update the local state or refetch
+  };
+
+  const handleUpdateContact = (updatedPerson: RolodexPerson) => {
+    // This would typically trigger a refresh of the rolodex data
+    // For now, we'll just close the modal
+    setIsContactEditModalOpen(false);
+    // You might want to call a parent function to refresh the data
+  };
+
   // Helper functions for display formatting
   const getDisplayName = () => {
     if (person.source === 'activity_contact') {
@@ -115,7 +151,7 @@ export function PersonCard({
 
   const getOrganizationInfo = () => {
     if (person.organization_name && person.organization_acronym) {
-      return `${person.organization_name}, ${person.organization_acronym}`;
+      return `${person.organization_name} (${person.organization_acronym})`;
     }
     return person.organization_name || '';
   };
@@ -141,7 +177,29 @@ export function PersonCard({
             <p className="text-sm font-medium text-slate-900 truncate">
               {displayName}
             </p>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-wrap">
+              {/* Contact Type Pill */}
+              <Badge 
+                variant={person.source === 'user' ? 'default' : 'secondary'}
+                className={`text-xs font-medium ${
+                  person.source === 'user' 
+                    ? 'bg-blue-100 text-blue-800' 
+                    : 'bg-green-100 text-green-800'
+                }`}
+              >
+                {person.source === 'user' ? 'User' : 'Contact'}
+              </Badge>
+              
+              {/* Role Pill - only for Users */}
+              {person.source === 'user' && person.role && (
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${roleInfo.color}`}
+                >
+                  {roleInfo.label}
+                </Badge>
+              )}
+              
               {jobInfo && (
                 <span className="text-xs text-slate-500 truncate">
                   {jobInfo}
@@ -254,15 +312,30 @@ export function PersonCard({
                 </div>
               )}
 
-              {/* User Role Badge for System Users */}
-              {person.source === 'user' && person.role && (
+              {/* Contact Type and Role Badges */}
+              <div className="flex items-center space-x-2 flex-wrap">
+                {/* Contact Type Badge */}
                 <Badge 
-                  variant="outline" 
-                  className={`text-xs ${roleInfo.color}`}
+                  variant={person.source === 'user' ? 'default' : 'secondary'}
+                  className={`text-xs font-medium ${
+                    person.source === 'user' 
+                      ? 'bg-blue-100 text-blue-800' 
+                      : 'bg-green-100 text-green-800'
+                  }`}
                 >
-                  {roleInfo.label}
+                  {person.source === 'user' ? 'User' : 'Contact'}
                 </Badge>
-              )}
+                
+                {/* Role Badge - only for Users */}
+                {person.source === 'user' && person.role && (
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs ${roleInfo.color}`}
+                  >
+                    {roleInfo.label}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
 

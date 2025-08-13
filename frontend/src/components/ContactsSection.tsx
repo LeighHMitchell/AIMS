@@ -14,6 +14,7 @@ import { useUser } from '@/hooks/useUser';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { OrganizationSearchableSelect, type Organization } from "@/components/ui/organization-searchable-select";
+import { PhoneFields } from "@/components/ui/phone-fields";
 
 interface Contact {
   id?: string;
@@ -25,8 +26,12 @@ interface Contact {
   position: string;
   organisation?: string;
   organisationId?: string;
-  phone?: string;
-  fax?: string;
+  phone?: string; // Legacy field - will be deprecated
+  countryCode?: string;
+  phoneNumber?: string;
+  fax?: string; // Legacy field - will be deprecated
+  faxCountryCode?: string;
+  faxNumber?: string;
   email?: string;
   secondaryEmail?: string;
   profilePhoto?: string;
@@ -41,12 +46,42 @@ interface ContactsSectionProps {
 
 // Remove this as we now use the data from contact-types.ts
 
-const TITLES = ["Mr.", "Ms.", "Mrs.", "Dr.", "Prof.", "Eng."];
+const TITLES = ["Mr.", "Ms.", "Mrs.", "Dr.", "Prof.", "Eng.", "Daw", "U"];
 
 // Helper function to get contact type name by code
 const getContactTypeName = (code: string): string => {
   const contactType = CONTACT_TYPES.find(type => type.code === code);
   return contactType?.name || code;
+};
+
+// Helper function to split legacy phone number into country code and local number
+const splitPhoneNumber = (phone: string) => {
+  if (!phone) return { countryCode: "+95", phoneNumber: "" };
+  
+  const countries = [
+    { code: "+95", pattern: /^\+95/ },
+    { code: "+1", pattern: /^\+1/ },
+    { code: "+44", pattern: /^\+44/ },
+    { code: "+33", pattern: /^\+33/ },
+    { code: "+49", pattern: /^\+49/ },
+    { code: "+81", pattern: /^\+81/ },
+    { code: "+86", pattern: /^\+86/ },
+    { code: "+91", pattern: /^\+91/ },
+    { code: "+61", pattern: /^\+61/ },
+    { code: "+55", pattern: /^\+55/ }
+  ];
+  
+  for (const country of countries) {
+    if (country.pattern.test(phone)) {
+      return {
+        countryCode: country.code,
+        phoneNumber: phone.replace(country.pattern, '').trim()
+      };
+    }
+  }
+  
+  // If no country code found, default to Myanmar and use full number as phone
+  return { countryCode: "+95", phoneNumber: phone };
 };
 
 export default function ContactsSection({ contacts, onChange, activityId }: ContactsSectionProps) {
@@ -135,6 +170,10 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
       firstName: "",
       lastName: "",
       position: "",
+      countryCode: "+95", // Default to Myanmar
+      phoneNumber: "",
+      faxCountryCode: "+95", // Default to Myanmar
+      faxNumber: "",
     };
     console.log('[CONTACTS DEBUG] Creating new contact form with:', newContact);
     setEditingContact(newContact);
@@ -244,7 +283,23 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
   };
 
   const handleEditContact = (index: number) => {
-    setEditingContact({ ...contacts[index] });
+    const contact = { ...contacts[index] };
+    
+    // Migrate legacy phone number to new format if needed
+    if (contact.phone && !contact.countryCode && !contact.phoneNumber) {
+      const { countryCode, phoneNumber } = splitPhoneNumber(contact.phone);
+      contact.countryCode = countryCode;
+      contact.phoneNumber = phoneNumber;
+    }
+    
+    // Migrate legacy fax number to new format if needed
+    if (contact.fax && !contact.faxCountryCode && !contact.faxNumber) {
+      const { countryCode, phoneNumber } = splitPhoneNumber(contact.fax);
+      contact.faxCountryCode = countryCode;
+      contact.faxNumber = phoneNumber;
+    }
+    
+    setEditingContact(contact);
     setEditingIndex(index);
     // Reset email errors when editing
     setEmailErrors({ primary: "", secondary: "" });
@@ -517,30 +572,30 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
               </div>
             </div>
 
-            {/* Position/Role - full width */}
-            <div>
-              <label className="text-sm font-medium">Position/Role *</label>
-              <Input
-                value={editingContact.position}
-                onChange={(e) =>
-                  setEditingContact({ ...editingContact, position: e.target.value })
-                }
-                placeholder="e.g., Field Coordinator"
-              />
-            </div>
-
-            {/* Contact Type - full width */}
-            <div>
-              <label className="text-sm font-medium">Contact Type *</label>
-              <ContactTypeSearchableSelect
-                value={editingContact.type}
-                onValueChange={(value) =>
-                  setEditingContact({ ...editingContact, type: value })
-                }
-                placeholder="Select contact type..."
-                className="mt-1"
-                dropdownId={`contact-type-select-${editingIndex}`}
-              />
+            {/* Position/Role and Contact Type - on one line */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Position/Role *</label>
+                <Input
+                  value={editingContact.position}
+                  onChange={(e) =>
+                    setEditingContact({ ...editingContact, position: e.target.value })
+                  }
+                  placeholder="e.g., Field Coordinator"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Contact Type *</label>
+                <ContactTypeSearchableSelect
+                  value={editingContact.type}
+                  onValueChange={(value) =>
+                    setEditingContact({ ...editingContact, type: value })
+                  }
+                  placeholder="Select contact type..."
+                  className="mt-1"
+                  dropdownId={`contact-type-select-${editingIndex}`}
+                />
+              </div>
             </div>
 
             {/* Organisation - full width */}
@@ -559,7 +614,6 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
                 }}
                 placeholder="Search organisation..."
                 searchPlaceholder="Type to search organisations..."
-                className="mt-1"
                 disabled={loadingOrgs}
               />
             </div>
@@ -598,26 +652,34 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
               </div>
             </div>
 
-            {/* Phone and Fax - on one line */}
+            {/* Phone and Fax Numbers with Country Codes - on one line */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Phone Number</label>
-                <Input
-                  value={editingContact.phone || ""}
-                  onChange={(e) =>
-                    setEditingContact({ ...editingContact, phone: e.target.value })
+                <PhoneFields
+                  countryCode={editingContact.countryCode || "+95"}
+                  phoneNumber={editingContact.phoneNumber || ""}
+                  onCountryCodeChange={(code) =>
+                    setEditingContact({ ...editingContact, countryCode: code })
                   }
-                  placeholder="+95 9 123 456 789"
+                  onPhoneNumberChange={(number) =>
+                    setEditingContact({ ...editingContact, phoneNumber: number })
+                  }
+                  phoneLabel="Phone Number"
+                  phonePlaceholder="Enter phone number"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Fax Number</label>
-                <Input
-                  value={editingContact.fax || ""}
-                  onChange={(e) =>
-                    setEditingContact({ ...editingContact, fax: e.target.value })
+                <PhoneFields
+                  countryCode={editingContact.faxCountryCode || "+95"}
+                  phoneNumber={editingContact.faxNumber || ""}
+                  onCountryCodeChange={(code) =>
+                    setEditingContact({ ...editingContact, faxCountryCode: code })
                   }
-                  placeholder="+95 1 234 5678"
+                  onPhoneNumberChange={(number) =>
+                    setEditingContact({ ...editingContact, faxNumber: number })
+                  }
+                  phoneLabel="Fax Number"
+                  phonePlaceholder="Enter fax number"
                 />
               </div>
             </div>

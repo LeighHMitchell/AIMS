@@ -178,7 +178,9 @@ export type Database = {
           role: string
           organization_id: string | null
           first_name: string | null
+          middle_name: string | null
           last_name: string | null
+          gender: string | null
           job_title: string | null
           department: string | null
           telephone: string | null
@@ -194,6 +196,7 @@ export type Database = {
           preferred_language: string | null
           timezone: string | null
           avatar_url: string | null
+          title: string | null
           created_at: string
           updated_at: string
         }

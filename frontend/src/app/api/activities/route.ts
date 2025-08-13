@@ -1869,12 +1869,18 @@ export async function GET(request: NextRequest) {
         lastName: contact.last_name,
         position: contact.position,
         organisation: contact.organisation,
-        phone: contact.phone,
-        fax: contact.fax,
+        organisationId: contact.organisation_id,
+        phone: contact.phone, // Legacy field
+        countryCode: contact.country_code,
+        phoneNumber: contact.phone_number,
+        fax: contact.fax, // Legacy field
+        faxCountryCode: contact.fax_country_code,
+        faxNumber: contact.fax_number,
         email: contact.email,
         secondaryEmail: contact.secondary_email,
         profilePhoto: contact.profile_photo,
-        notes: contact.notes
+        notes: contact.notes,
+        displayOnWeb: contact.display_on_web
       })),
       // Transform locations to match frontend format
       locations: (() => {

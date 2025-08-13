@@ -9,8 +9,8 @@ export const ROLE_LABELS: Record<string, { label: string; color: string; categor
   'super_user': { label: 'Super User', color: 'bg-purple-100 text-purple-800', category: ROLE_CATEGORIES.SYSTEM },
   'government_partner_tier_1': { label: 'Government Partner T1', color: 'bg-blue-100 text-blue-800', category: ROLE_CATEGORIES.SYSTEM },
   'government_partner_tier_2': { label: 'Government Partner T2', color: 'bg-blue-100 text-blue-600', category: ROLE_CATEGORIES.SYSTEM },
-  'development_partner_tier_1': { label: 'Development Partner T1', color: 'bg-green-100 text-green-800', category: ROLE_CATEGORIES.SYSTEM },
-  'development_partner_tier_2': { label: 'Development Partner T2', color: 'bg-green-100 text-green-600', category: ROLE_CATEGORIES.SYSTEM },
+  'development_partner_tier_1': { label: 'Data Submission', color: 'bg-green-100 text-green-800', category: ROLE_CATEGORIES.SYSTEM },
+  'development_partner_tier_2': { label: 'Review & Approval', color: 'bg-green-100 text-green-600', category: ROLE_CATEGORIES.SYSTEM },
   'orphan': { label: 'Unassigned User', color: 'bg-gray-100 text-gray-800', category: ROLE_CATEGORIES.SYSTEM },
 
   // Organization roles
@@ -45,14 +45,14 @@ export const SOURCE_LABELS: Record<string, { label: string; color: string; icon:
 export const CONTACT_TYPE_CATEGORIES = {
   SYSTEM_USERS: {
     key: 'system_users',
-    label: 'System Users',
+    label: 'Users',
     description: 'Users with system access',
     icon: '',
     color: 'bg-blue-100 text-blue-800'
   },
   ACTIVITY_CONTACTS: {
     key: 'activity_contacts', 
-    label: 'Activity Contacts',
+    label: 'Contacts',
     description: 'Contacts from activity reporting',
     icon: '',
     color: 'bg-purple-100 text-purple-800'

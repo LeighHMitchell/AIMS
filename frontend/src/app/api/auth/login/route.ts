@@ -19,25 +19,27 @@ export async function POST(request: NextRequest) {
     
     console.log(`[Auth Login] Attempting login for: ${email}`);
     
-    // First check if user exists in our users table
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
+    // Authenticate with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     
-    if (userError || !userData) {
-      console.error('[Auth Login] User not found:', userError);
+    if (authError || !authData.user) {
+      console.error('[Auth Login] Authentication failed:', authError?.message);
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
     
-    // For simplicity, we'll just check if the password matches the expected test password
-    // In a real system, you'd use proper password hashing
-    const isValidPassword = password === 'TestPass123!';
+    // Get user profile data from our users table
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authData.user.id)
+      .single();
     
-    if (!isValidPassword) {
-      console.error('[Auth Login] Invalid password');
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+    if (userError || !userData) {
+      console.error('[Auth Login] User profile not found:', userError);
+      return NextResponse.json({ error: 'User profile not found' }, { status: 401 });
     }
     
     // Get organization data if user has one

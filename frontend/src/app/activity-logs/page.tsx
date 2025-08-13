@@ -131,8 +131,15 @@ const getActionDescription = (log: ActivityLog) => {
 // Get role badge variant
 const getRoleBadgeVariant = (role: string) => {
   if (role === 'super_user') return 'destructive';
-  if (role.includes('tier_1')) return 'default';
-  if (role.includes('tier_2')) return 'secondary';
+  
+  // Development Partner colors (blue shades)
+  if (role === 'dev_partner_tier_1') return 'dark-blue';
+  if (role === 'dev_partner_tier_2') return 'light-blue';
+  
+  // Government Partner colors (green shades)
+  if (role === 'gov_partner_tier_1') return 'dark-green';
+  if (role === 'gov_partner_tier_2') return 'light-green';
+  
   return 'outline';
 };
 
@@ -140,8 +147,8 @@ const getRoleBadgeVariant = (role: string) => {
 const formatRole = (role: string) => {
   const roleMap: Record<string, string> = {
     super_user: 'Super User',
-    dev_partner_tier_1: 'Dev Partner T1',
-    dev_partner_tier_2: 'Dev Partner T2',
+    dev_partner_tier_1: 'Data Submission',
+    dev_partner_tier_2: 'Review & Approval',
     gov_partner_tier_1: 'Gov Partner T1',
     gov_partner_tier_2: 'Gov Partner T2',
     orphan: 'Orphan User',

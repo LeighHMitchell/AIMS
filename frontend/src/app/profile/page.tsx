@@ -19,6 +19,7 @@ import { ROLE_LABELS, USER_ROLES } from "@/types/user";
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 import { PhoneFields } from "@/components/ui/phone-fields";
 import { AddressSearch, AddressComponents } from "@/components/ui/address-search";
+import { EmailChangeConfirmDialog } from "@/components/EmailChangeConfirmDialog";
 import { 
   Building2, 
   User, 
@@ -51,7 +52,6 @@ import {
 const splitTelephone = (telephone: string) => {
   if (!telephone) return { countryCode: "+95", phoneNumber: "" };
   
-  // Import countries from the data file
   const countries = [
     { code: "+95", name: "Myanmar" },
     { code: "+1", name: "US/Canada" },
@@ -74,7 +74,6 @@ const splitTelephone = (telephone: string) => {
     }
   }
   
-  // If no country code found, default to Myanmar and use full number as phone
   return { countryCode: "+95", phoneNumber: telephone };
 };
 
@@ -82,15 +81,13 @@ const splitTelephone = (telephone: string) => {
 const parseMailingAddress = (mailingAddress: string): AddressComponents => {
   if (!mailingAddress) return {};
   
-  // Try to parse common address formats
-  // This is a simple parser - in production you might want a more sophisticated one
   const parts = mailingAddress.split(',').map(part => part.trim());
   
   if (parts.length >= 4) {
     return {
       addressLine1: parts[0] || '',
       addressLine2: parts[1] || '',
-      street: parts[0] || '', // Keep for backward compatibility
+      street: parts[0] || '',
       city: parts[2] || '',
       state: parts[3] || '',
       country: parts[4] || '',
@@ -101,7 +98,7 @@ const parseMailingAddress = (mailingAddress: string): AddressComponents => {
     return {
       addressLine1: parts[0] || '',
       addressLine2: '',
-      street: parts[0] || '', // Keep for backward compatibility
+      street: parts[0] || '',
       city: parts[1] || '',
       state: parts[2] || '',
       country: parts[3] || '',
@@ -110,7 +107,7 @@ const parseMailingAddress = (mailingAddress: string): AddressComponents => {
   } else {
     return {
       addressLine1: mailingAddress,
-      street: mailingAddress, // Keep for backward compatibility
+      street: mailingAddress,
       fullAddress: mailingAddress
     };
   }
@@ -134,6 +131,7 @@ export default function ProfilePage() {
   const { user, setUser } = useUser();
   const [activeTab, setActiveTab] = useState("personal");
   const [isEditing, setIsEditing] = useState(false);
+  const [emailChangeDialogOpen, setEmailChangeDialogOpen] = useState(false);
   
   // Function to enter edit mode and refresh data
   const handleEditClick = async () => {
@@ -150,7 +148,9 @@ export default function ProfilePage() {
           
           setFormData(prev => ({
             ...prev,
+            title: freshData.title || "",
             firstName: freshData.first_name || "",
+            middleName: freshData.middle_name || "",
             lastName: freshData.last_name || "",
             email: prev.email, // Keep current email in edit mode
             jobTitle: freshData.job_title || "",
@@ -177,311 +177,195 @@ export default function ProfilePage() {
     }
   };
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Form data for editing
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    jobTitle: "",
-    department: "",
-    countryCode: "+95",
-    phoneNumber: "",
-    website: "",
-    mailingAddress: "",
-    addressComponents: {} as AddressComponents,
-    bio: "",
-    preferredLanguage: "en",
-    timezone: "UTC",
-    role: "",
-    notifications: {
-      email: true,
-      browser: true,
-      activities: true,
-      reports: true,
-      security: true
-    }
-  });
-
-  // Load fresh profile data when component mounts or user changes
-  useEffect(() => {
-    const loadProfileData = async () => {
-      if (!user?.email) return;
-      
-      try {
-        console.log('[Profile] Loading fresh profile data for:', user.email);
-        
-        // Fetch fresh data from API
-        const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`);
-        
-        if (response.ok) {
-          const freshData = await response.json();
-          console.log('[Profile] Fresh data loaded:', freshData);
-          
-          // Update form data with fresh database values
-          setFormData(prev => ({
-            ...prev,
-            firstName: freshData.first_name || user.firstName || "",
-            lastName: freshData.last_name || user.lastName || "",
-            email: user.email || "",
-            jobTitle: freshData.job_title || user.jobTitle || user.title || "",
-            department: freshData.department || user.department || "",
-            ...splitTelephone(freshData.telephone || user.telephone || user.phone || ""),
-            website: freshData.website || user.website || "",
-            mailingAddress: freshData.mailing_address || user.mailingAddress || "",
-            addressComponents: parseMailingAddress(freshData.mailing_address || user.mailingAddress || ""),
-            bio: freshData.bio || "",
-            preferredLanguage: freshData.preferred_language || "en",
-            timezone: freshData.timezone || "UTC",
-            role: freshData.role || user.role || ""
-          }));
-          
-          // Also update profile photo state if available in fresh data
-          if (freshData.avatar_url) {
-            setProfilePhoto(freshData.avatar_url);
-            console.log('[Profile] Updated profile photo from fresh data:', freshData.avatar_url);
-          }
-        } else {
-          console.warn('[Profile] Failed to load fresh data, using user context');
-          // Fallback to user context data
-          setFormData(prev => ({
-            ...prev,
-            firstName: user.firstName || "",
-            lastName: user.lastName || "",
-            email: user.email || "",
-            jobTitle: user.jobTitle || user.title || "",
-            department: user.department || "",
-            ...splitTelephone(user.telephone || user.phone || ""),
-            website: user.website || "",
-            mailingAddress: user.mailingAddress || "",
-          addressComponents: parseMailingAddress(user.mailingAddress || ""),
-            role: user.role || ""
-          }));
-        }
-      } catch (error) {
-        console.error('[Profile] Error loading profile data:', error);
-        // Fallback to user context data
-        setFormData(prev => ({
-          ...prev,
-          firstName: user.firstName || "",
-          lastName: user.lastName || "",
-          email: user.email || "",
-          jobTitle: user.jobTitle || user.title || "",
-          department: user.department || "",
-          ...splitTelephone(user.telephone || user.phone || ""),
-          website: user.website || "",
-          mailingAddress: user.mailingAddress || "",
-          addressComponents: parseMailingAddress(user.mailingAddress || ""),
-          role: user.role || ""
-        }));
-      }
-    };
-
-    loadProfileData();
-  }, [user?.email, user?.firstName, user?.lastName]); // Re-run when user data changes
-
-  // Profile photo state
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePicture || "");
   
-  // Sync profile photo state with user context
-  useEffect(() => {
-    if (user?.profilePicture && user.profilePicture !== profilePhoto) {
-      console.log('[Profile] Syncing profile photo from user context:', user.profilePicture);
-      setProfilePhoto(user.profilePicture);
-    }
-  }, [user?.profilePicture, profilePhoto]);
-
-  // Handle profile photo change
-  const handlePhotoChange = async (photoUrl: string) => {
-    setProfilePhoto(photoUrl);
-    
-    // Save to database immediately
-    if (user) {
-      try {
-        const response = await fetch('/api/users', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: user.id,
-            profile_picture: photoUrl
-          }),
-        });
-
-        if (response.ok) {
-          // Update the user context after successful database save
-          const updatedUser = {
-            ...user,
-            profilePicture: photoUrl,
-          };
-          setUser(updatedUser);
-          console.log('[Profile] Updated user context with new profile picture:', photoUrl);
-          console.log('[Profile] Updated user object:', updatedUser);
-          toast.success('Profile picture updated successfully!');
-        } else {
-          toast.error('Failed to save profile picture');
-        }
-      } catch (error) {
-        console.error('Error saving profile picture:', error);
-        toast.error('Failed to save profile picture');
-      }
-    }
-  };
-
-  // Password change form
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
+  // Form state
+  const [formData, setFormData] = useState({
+    title: user?.title || "",
+    firstName: user?.firstName || "",
+    middleName: user?.middleName || "",
+    lastName: user?.lastName || "",
+    email: user?.email || "",
+    jobTitle: user?.jobTitle || "",
+    department: user?.department || "",
+    ...splitTelephone(user?.telephone || user?.phone || ""),
+    website: user?.website || "",
+    mailingAddress: user?.mailingAddress || "",
+    addressComponents: parseMailingAddress(user?.mailingAddress || ""),
+    bio: user?.bio || "",
+    preferredLanguage: user?.preferredLanguage || "en",
+    timezone: user?.timezone || "UTC",
+    role: user?.role || "",
+    organization: user?.organization || null,
+    password: "",
     newPassword: "",
     confirmPassword: ""
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // Refresh form data when user prop changes
+  useEffect(() => {
+    if (user) {
+      console.log('[Profile] User data changed, updating form data');
+      setFormData(prev => ({
+        ...prev,
+        title: user.title || "",
+        firstName: user.firstName || "",
+        middleName: user.middleName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        jobTitle: user.jobTitle || "",
+        department: user.department || "",
+        ...splitTelephone(user.telephone || user.phone || ""),
+        website: user.website || "",
+        mailingAddress: user.mailingAddress || "",
+        addressComponents: parseMailingAddress(user.mailingAddress || ""),
+        bio: user.bio || "",
+        preferredLanguage: user.preferredLanguage || "en",
+        timezone: user.timezone || "UTC",
+        role: user.role || "",
+        organization: user.organization || null
+      }));
+      
+      if (user.profilePicture) {
+        setProfilePhoto(user.profilePicture);
+      }
+    }
+  }, [user]);
+
+  const handlePhotoChange = async (photoUrl: string) => {
+    setProfilePhoto(photoUrl);
+  };
+
+  const handleEmailChange = async (newEmail: string) => {
+    if (!user) {
+      throw new Error("User not found");
+    }
 
     try {
-      console.log('[Profile] Saving profile with photo:', profilePhoto || user?.profilePicture);
+      const response = await fetch('/api/users/change-email', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          newEmail: newEmail,
+          currentUserRole: user.role
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to change email address");
+      }
+
+      // Update the form data and user
+      setFormData(prev => ({ ...prev, email: newEmail }));
+      setUser({ ...user, email: newEmail });
       
-      // Prepare update data - preserve existing profile picture if current state is empty
-      const updateData: any = {
-        id: user?.id,
+    } catch (error) {
+      console.error('Error changing email:', error);
+      throw error; // Re-throw to be handled by the dialog
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+
+    try {
+      console.log('[Profile] Saving profile changes...');
+      
+      // Prepare data for API
+      const apiData = {
+        id: user.id,
+        title: formData.title,
         first_name: formData.firstName,
+        middle_name: formData.middleName,
         last_name: formData.lastName,
         job_title: formData.jobTitle,
         department: formData.department,
         telephone: formData.countryCode + formData.phoneNumber,
         website: formData.website,
         mailing_address: formatMailingAddress(formData.addressComponents),
+        bio: formData.bio,
         preferred_language: formData.preferredLanguage,
         timezone: formData.timezone,
+        avatar_url: profilePhoto,
       };
-      
-      // Super users can change their email and role
-      if (user?.role === 'super_user') {
-        if (formData.email !== user.email) {
-          updateData.email = formData.email;
-          console.log('[Profile] Super user changing email to:', formData.email);
-        }
-        if (formData.role !== user.role) {
-          updateData.role = formData.role;
-          console.log('[Profile] Super user changing role to:', formData.role);
-        }
-      }
-      
-      // Only include profile_picture in the update if we have a value
-      // This prevents overwriting existing photos with empty values
-      const currentPhoto = profilePhoto || user?.profilePicture;
-      if (currentPhoto) {
-        updateData.profile_picture = currentPhoto;
-      }
-      
-      // Update user data via API
+
+      console.log('[Profile] Sending API data:', apiData);
+
       const response = await fetch('/api/users', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updateData),
+        body: JSON.stringify(apiData),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
-
-      // Update local user state
-      if (user) {
+      if (response.ok) {
+        const updatedData = await response.json();
+        console.log('[Profile] Profile updated successfully:', updatedData);
+        
+        // Update user context with the new data
         const updatedUser = {
           ...user,
-          name: `${formData.firstName} ${formData.lastName}`.trim(),
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email, // Update email if changed
-          jobTitle: formData.jobTitle,
-          title: formData.jobTitle, // For backward compatibility
-          department: formData.department,
-          telephone: formData.countryCode + formData.phoneNumber,
-          phone: formData.countryCode + formData.phoneNumber, // For backward compatibility
-          website: formData.website,
-          mailingAddress: formatMailingAddress(formData.addressComponents),
-          role: formData.role as any, // Update role if changed
-          // Preserve existing profile picture if current state is empty
-          profilePicture: profilePhoto || user.profilePicture,
-          updatedAt: new Date().toISOString(),
+          title: updatedData.title || "",
+          firstName: updatedData.first_name || "",
+          middleName: updatedData.middle_name || "",
+          lastName: updatedData.last_name || "",
+          name: updatedData.name || `${updatedData.first_name || ''} ${updatedData.last_name || ''}`.trim(),
+          jobTitle: updatedData.job_title || "",
+          department: updatedData.department || "",
+          telephone: updatedData.telephone || "",
+          phone: updatedData.telephone || "",
+          website: updatedData.website || "",
+          mailingAddress: updatedData.mailing_address || "",
+          bio: updatedData.bio || "",
+          preferredLanguage: updatedData.preferred_language || "en",
+          timezone: updatedData.timezone || "UTC",
+          profilePicture: updatedData.avatar_url,
         };
-
+        
         setUser(updatedUser);
-        console.log('[Profile] User context updated after save:', updatedUser);
-      }
-      
-      toast.success("Profile updated successfully!");
-      setIsEditing(false);
-      
-      // Optionally reload fresh data from database to ensure sync
-      // This ensures the form will have the latest data next time
-      try {
-        if (user?.email) {
-          const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`);
-          if (response.ok) {
-            const freshData = await response.json();
-            console.log('[Profile] Reloaded fresh data after save:', freshData);
-          }
-        }
-      } catch (error) {
-        console.log('[Profile] Could not reload fresh data after save:', error);
+        setIsEditing(false);
+        toast.success("Profile updated successfully");
+      } else {
+        const errorData = await response.json();
+        console.error('[Profile] Error updating profile:', errorData);
+        toast.error(errorData.error || "Failed to update profile");
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error("Failed to update profile. Please try again.");
-    } finally {
-      setIsLoading(false);
+      console.error('[Profile] Error updating profile:', error);
+      toast.error("Failed to update profile");
     }
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("New passwords don't match");
-      return;
-    }
-
-    if (passwordData.newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters long");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to change password');
-      }
-
-      toast.success("Password changed successfully!");
-      setPasswordData({
-        currentPassword: "",
+  const handleCancel = () => {
+    if (user) {
+      // Reset form data to current user data
+      setFormData({
+        title: user.title || "",
+        firstName: user.firstName || "",
+        middleName: user.middleName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        jobTitle: user.jobTitle || "",
+        department: user.department || "",
+        ...splitTelephone(user.telephone || user.phone || ""),
+        website: user.website || "",
+        mailingAddress: user.mailingAddress || "",
+        addressComponents: parseMailingAddress(user.mailingAddress || ""),
+        bio: user.bio || "",
+        preferredLanguage: user.preferredLanguage || "en",
+        timezone: user.timezone || "UTC",
+        role: user.role || "",
+        organization: user.organization || null,
+        password: "",
         newPassword: "",
         confirmPassword: ""
       });
-    } catch (error) {
-      console.error('Error changing password:', error);
-      toast.error("Failed to change password. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setProfilePhoto(user.profilePicture || "");
     }
+    setIsEditing(false);
   };
 
   if (!user) {
@@ -496,556 +380,384 @@ export default function ProfilePage() {
 
   return (
     <MainLayout>
-      <div className="max-w-6xl mx-auto p-8">
+      <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Profile</h1>
-          <p className="text-muted-foreground">
-            Manage your account settings, personal information, and preferences
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">My Profile</h1>
+              <p className="text-muted-foreground mt-1">Manage your account settings and information</p>
+            </div>
+            {!isEditing ? (
+              <Button onClick={handleEditClick}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Profile
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleCancel}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button onClick={handleSave}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Profile Summary Card */}
-          <div className="lg:col-span-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="personal" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Personal Info
+            </TabsTrigger>
+            <TabsTrigger value="contact" className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              Contact & Address
+            </TabsTrigger>
+            <TabsTrigger value="system" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              System & Security
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Personal Information Tab */}
+          <TabsContent value="personal" className="space-y-6">
             <Card>
-              <CardContent className="p-6">
-                <div className="flex flex-col items-center text-center space-y-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Personal Information
+                </CardTitle>
+                <CardDescription>
+                  Your basic profile information
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Profile Picture Section */}
+                <div className="flex flex-col items-center space-y-4">
                   <ProfilePhotoUpload
-                    currentPhoto={profilePhoto || user.profilePicture}
-                    userInitials={`${user.firstName?.[0] || ''}${user.lastName?.[0] || user.name?.[0] || 'U'}`}
+                    currentPhoto={profilePhoto}
+                    userInitials={`${formData.firstName?.[0] || ''}${formData.lastName?.[0] || user.name?.[0] || 'U'}`}
                     onPhotoChange={handlePhotoChange}
                     className="mb-2"
+                    disabled={!isEditing}
                   />
-                  
-                  <div>
-                    <h3 className="text-lg font-semibold">{user.name}</h3>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                    <Badge 
-                      variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"}
-                      className="mt-2"
-                    >
-                      {ROLE_LABELS[user.role]}
-                    </Badge>
-                  </div>
-
-                  {user.organization && (
-                    <div className="w-full pt-4 border-t">
-                      <p className="text-sm font-medium text-muted-foreground">Organization</p>
-                      <div className="flex flex-col items-center space-y-2 mt-2">
-                        {/* Organization Logo */}
-                        {(user.organization as any).logo ? (
-                          <img
-                            src={(user.organization as any).logo}
-                            alt={`${user.organization.name} logo`}
-                            className="w-12 h-12 object-contain rounded-lg border border-gray-200"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
-                            <Building2 className="h-6 w-6 text-gray-400" />
-                          </div>
-                        )}
-                        
-                        {/* Organization Name and Acronym */}
-                        <div className="text-center">
-                          <p className="text-sm font-medium">{user.organization.name}</p>
-                          {(user.organization as any).acronym && (
-                            <Badge variant="outline" className="text-xs mt-1">
-                              {(user.organization as any).acronym}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="w-full pt-4 border-t">
-                    <p className="text-sm font-medium text-muted-foreground">Member Since</p>
-                    <p className="text-sm">{new Date(user.createdAt).toLocaleDateString()}</p>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="personal">Personal</TabsTrigger>
-                <TabsTrigger value="organization">Organization</TabsTrigger>
-                <TabsTrigger value="security">Security</TabsTrigger>
-                <TabsTrigger value="preferences">Preferences</TabsTrigger>
-                <TabsTrigger value="activity">Activity</TabsTrigger>
-              </TabsList>
+                {/* Role Badge */}
+                <div className="flex justify-center">
+                  <Badge variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"}>
+                    <Shield className="h-3 w-3 mr-1" />
+                    {ROLE_LABELS[user.role] || user.role}
+                  </Badge>
+                </div>
 
-              {/* Personal Information Tab */}
-              <TabsContent value="personal" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <User className="h-5 w-5" />
-                          Personal Information
-                        </CardTitle>
-                        <CardDescription>
-                          Update your personal details and contact information
-                        </CardDescription>
-                      </div>
-                      {!isEditing && (
-                        <Button onClick={handleEditClick} variant="outline" size="sm">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {isEditing ? (
-                      <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="firstName">First Name</Label>
-                            <Input
-                              id="firstName"
-                              value={formData.firstName}
-                              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="lastName">Last Name</Label>
-                            <Input
-                              id="lastName"
-                              value={formData.lastName}
-                              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                              required
-                            />
-                          </div>
-                        </div>
-
+                {isEditing ? (
+                  <>
+                    {/* Editing Mode */}
+                    <div className="space-y-4">
+                      {/* Title and Name fields */}
+                      <div className="grid grid-cols-4 gap-4">
                         <div>
-                          <Label htmlFor="email">Email Address</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            disabled={user?.role !== 'super_user'}
-                            className={user?.role !== 'super_user' ? "bg-muted" : ""}
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {user?.role === 'super_user' 
-                              ? "As a super user, you can change your email address" 
-                              : "Contact your administrator to change your email address"
-                            }
-                          </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="jobTitle">Job Title</Label>
-                            <Input
-                              id="jobTitle"
-                              value={formData.jobTitle}
-                              onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                              placeholder="e.g., Aid Coordinator"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="department">Department</Label>
-                            <Input
-                              id="department"
-                              value={formData.department}
-                              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                              placeholder="e.g., International Development"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-4">
-                          <PhoneFields
-                            countryCode={formData.countryCode}
-                            phoneNumber={formData.phoneNumber}
-                            onCountryCodeChange={(code) => setFormData({ ...formData, countryCode: code })}
-                            onPhoneNumberChange={(number) => setFormData({ ...formData, phoneNumber: number })}
-                          />
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="website">Website</Label>
-                            <Input
-                              id="website"
-                              value={formData.website}
-                              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                              placeholder="https://example.com"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <AddressSearch
-                            value={formData.addressComponents}
-                            onChange={(address) => setFormData({ 
-                              ...formData, 
-                              addressComponents: address,
-                              mailingAddress: formatMailingAddress(address)
-                            })}
-                          />
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Saving..." : "Save Changes"}
-                          </Button>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => {
-                              setIsEditing(false);
-                              setFormData({
-                                firstName: user.firstName || "",
-                                lastName: user.lastName || "",
-                                email: user.email || "",
-                                jobTitle: user.jobTitle || user.title || "",
-                                department: user.department || "",
-                                ...splitTelephone(user.telephone || user.phone || ""),
-                                website: user.website || "",
-                                mailingAddress: user.mailingAddress || "",
-          addressComponents: parseMailingAddress(user.mailingAddress || ""),
-                                bio: "",
-                                preferredLanguage: "en",
-                                timezone: "UTC",
-                                role: user.role || "",
-                                notifications: {
-                                  email: true,
-                                  browser: true,
-                                  activities: true,
-                                  reports: true,
-                                  security: true
-                                }
-                              });
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </form>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                            <p className="mt-1">{user.name}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Email</p>
-                            <p className="mt-1">{user.email}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Job Title</p>
-                            <p className="mt-1">{user.jobTitle || user.title || "Not specified"}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Department</p>
-                            <p className="mt-1">{user.department || "Not specified"}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Phone</p>
-                            <p className="mt-1">{user.telephone || user.phone || "Not specified"}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Website</p>
-                            <p className="mt-1">{user.website || "Not specified"}</p>
-                          </div>
-                        </div>
-                        {user.mailingAddress && (
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Mailing Address</p>
-                            <p className="mt-1">{user.mailingAddress}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Organization Tab */}
-              <TabsContent value="organization" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Building2 className="h-5 w-5" />
-                      Organization & Role
-                    </CardTitle>
-                    <CardDescription>
-                      Your organization assignment and role information
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {user.organization ? (
-                      <div className="space-y-4">
-                        <div className="flex items-start gap-4">
-                          {/* Organization Logo */}
-                          <div className="flex-shrink-0">
-                            {(user.organization as any).logo ? (
-                              <img
-                                src={(user.organization as any).logo}
-                                alt={`${user.organization.name} logo`}
-                                className="w-16 h-16 object-contain rounded-lg border border-gray-200"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
-                                <Building2 className="h-8 w-8 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Organization Info */}
-                          <div className="flex-1 space-y-3">
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Organization</p>
-                              <div className="mt-1 flex items-center gap-2">
-                                <p className="font-medium">{user.organization.name}</p>
-                                {(user.organization as any).acronym && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {(user.organization as any).acronym}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Type</p>
-                            <Badge variant="secondary">
-                              {user.organization.type === "development_partner" 
-                                ? "Development Partner" 
-                                : user.organization.type === "partner_government"
-                                ? "Partner Government"
-                                : "Other"}
-                            </Badge>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Your Role</p>
-                            <Badge variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"}>
-                              {ROLE_LABELS[user.role]}
-                            </Badge>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Member Since</p>
-                            <p className="mt-1">{new Date(user.createdAt).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <AlertCircle className="h-5 w-5 text-orange-600" />
-                          <p className="text-sm font-medium text-orange-800">Organization Assignment Pending</p>
-                        </div>
-                        <p className="text-sm text-orange-700 mt-1">
-                          Contact your administrator to be assigned to an organization.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Super User Role Management */}
-                {user?.role === 'super_user' && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Shield className="h-5 w-5" />
-                        Role Management
-                      </CardTitle>
-                      <CardDescription>
-                        As a super user, you can change your own role assignment
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="role">Your Role</Label>
+                          <Label htmlFor="title">Title</Label>
                           <Select 
-                            value={formData.role} 
-                            onValueChange={(value) => setFormData({ ...formData, role: value })}
+                            value={formData.title} 
+                            onValueChange={(value) => setFormData({ ...formData, title: value })}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select your role" />
+                              <SelectValue placeholder="Select" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="super_user">Super User</SelectItem>
-                              <SelectItem value="gov_partner_tier_1">Government Partner (Tier 1)</SelectItem>
-                              <SelectItem value="gov_partner_tier_2">Government Partner (Tier 2)</SelectItem>
-                              <SelectItem value="dev_partner_tier_1">Development Partner (Tier 1)</SelectItem>
-                              <SelectItem value="dev_partner_tier_2">Development Partner (Tier 2)</SelectItem>
+                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="Mr.">Mr.</SelectItem>
+                              <SelectItem value="Ms.">Ms.</SelectItem>
+                              <SelectItem value="Mrs.">Mrs.</SelectItem>
+                              <SelectItem value="Dr.">Dr.</SelectItem>
+                              <SelectItem value="Prof.">Prof.</SelectItem>
+                              <SelectItem value="Eng.">Eng.</SelectItem>
+                              <SelectItem value="Daw">Daw</SelectItem>
+                              <SelectItem value="U">U</SelectItem>
                             </SelectContent>
                           </Select>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Current: <Badge variant={formData.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"}>
-                              {ROLE_LABELS[formData.role as keyof typeof ROLE_LABELS] || formData.role}
-                            </Badge>
-                          </p>
                         </div>
-                        
-                        {formData.role !== user.role && (
-                          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <p className="text-sm text-yellow-800">
-                              <strong>Warning:</strong> Changing your role will affect your permissions. 
-                              Make sure you understand the implications before saving.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Save Button for Super User Changes */}
-                {user?.role === 'super_user' && (formData.role !== user.role || formData.email !== user.email) && (
-                  <div className="flex justify-end">
-                    <Button onClick={handleSubmit} disabled={isLoading}>
-                      {isLoading ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Security Tab */}
-              <TabsContent value="security" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lock className="h-5 w-5" />
-                      Password & Security
-                    </CardTitle>
-                    <CardDescription>
-                      Change your password and manage security settings
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handlePasswordChange} className="space-y-4">
-                      <div>
-                        <Label htmlFor="currentPassword">Current Password</Label>
-                        <div className="relative">
+                        <div>
+                          <Label htmlFor="firstName">First Name</Label>
                           <Input
-                            id="currentPassword"
-                            type={showPassword ? "text" : "password"}
-                            value={passwordData.currentPassword}
-                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                            id="firstName"
+                            value={formData.firstName}
+                            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                             required
                           />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
+                        </div>
+                        <div>
+                          <Label htmlFor="middleName">Middle Name</Label>
+                          <Input
+                            id="middleName"
+                            value={formData.middleName}
+                            onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+                            placeholder="Optional"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName">Last Name</Label>
+                          <Input
+                            id="lastName"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                            required
+                          />
                         </div>
                       </div>
 
                       <div>
-                        <Label htmlFor="newPassword">New Password</Label>
-                        <Input
-                          id="newPassword"
-                          type={showPassword ? "text" : "password"}
-                          value={passwordData.newPassword}
-                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                        <Input
-                          id="confirmPassword"
-                          type={showPassword ? "text" : "password"}
-                          value={passwordData.confirmPassword}
-                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                          required
-                        />
-                      </div>
-
-                      <Button type="submit" disabled={isLoading}>
-                        {isLoading ? "Changing Password..." : "Change Password"}
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Account Security</CardTitle>
-                    <CardDescription>
-                      Additional security settings for your account
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">Two-Factor Authentication</p>
-                          <p className="text-sm text-muted-foreground">
-                            Add an extra layer of security to your account
-                          </p>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="email">Email Address</Label>
+                          {user.role === 'super_user' && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEmailChangeDialogOpen(true)}
+                              className="text-orange-600 hover:text-orange-700"
+                            >
+                              Change Email
+                            </Button>
+                          )}
                         </div>
-                        <Button variant="outline" size="sm">
-                          Enable 2FA
-                        </Button>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          disabled
+                          className="bg-muted"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {user.role === 'super_user' 
+                            ? "Use the 'Change Email' button to safely update your email address" 
+                            : "Contact your administrator to change your email address"
+                          }
+                        </p>
                       </div>
 
-                      <Separator />
-
-                      <div className="flex items-center justify-between">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <p className="text-sm font-medium">Active Sessions</p>
-                          <p className="text-sm text-muted-foreground">
-                            Manage your active login sessions
-                          </p>
+                          <Label htmlFor="jobTitle">Job Title</Label>
+                          <Input
+                            id="jobTitle"
+                            value={formData.jobTitle}
+                            onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                            placeholder="e.g., Aid Coordinator"
+                          />
                         </div>
-                        <Button variant="outline" size="sm">
-                          View Sessions
-                        </Button>
+                        <div>
+                          <Label htmlFor="department">Department</Label>
+                          <Input
+                            id="department"
+                            value={formData.department}
+                            onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                            placeholder="e.g., International Development"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="bio">Bio / Description</Label>
+                          <Textarea
+                            id="bio"
+                            value={formData.bio}
+                            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                            placeholder="Brief description about yourself..."
+                            rows={4}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  </>
+                ) : (
+                  <>
+                    {/* View Mode */}
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Full Name</Label>
+                          <p className="text-lg">
+                            {user.title && user.title !== "none" ? `${user.title} ` : ""}
+                            {user.firstName && user.lastName 
+                              ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}` 
+                              : user.name || "Not specified"}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Email Address</Label>
+                          <p className="text-lg">{user.email}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Job Title</Label>
+                          <p className="text-lg">{user.jobTitle || "Not specified"}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Department</Label>
+                          <p className="text-lg">{user.department || "Not specified"}</p>
+                        </div>
+                      </div>
 
-              {/* Preferences Tab */}
-              <TabsContent value="preferences" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Settings className="h-5 w-5" />
-                      Preferences
-                    </CardTitle>
-                    <CardDescription>
-                      Customize your experience and notification settings
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
+                      {user.bio && (
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Bio</Label>
+                          <p className="text-lg mt-1">{user.bio}</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Organization Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Organization
+                </CardTitle>
+                <CardDescription>
+                  Your organization affiliation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {user.organization ? (
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Building2 className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.organization.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user.organization.type === 'development_partner' ? 'Development Partner' : 
+                         user.organization.type === 'partner_government' ? 'Government Partner' : 
+                         user.organization.type === 'bilateral' ? 'Bilateral Partner' :
+                         'Other Organization'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No organization assigned</p>
+                    <p className="text-sm text-muted-foreground">Contact your administrator for organization assignment</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Contact & Address Tab */}
+          <TabsContent value="contact" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Phone className="h-5 w-5" />
+                  Contact Information
+                </CardTitle>
+                <CardDescription>
+                  Your contact details and address
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {isEditing ? (
+                  <>
+                    {/* Editing Mode */}
+                    <div className="space-y-4">
+                      <PhoneFields
+                        countryCode={formData.countryCode}
+                        phoneNumber={formData.phoneNumber}
+                        onCountryCodeChange={(code) => setFormData({ ...formData, countryCode: code })}
+                        onPhoneNumberChange={(number) => setFormData({ ...formData, phoneNumber: number })}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        value={formData.website}
+                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                        placeholder="https://example.com"
+                      />
+                    </div>
+
+                    <div>
+                      <AddressSearch
+                        value={formData.addressComponents}
+                        onChange={(address) => setFormData({ 
+                          ...formData, 
+                          addressComponents: address,
+                          mailingAddress: formatMailingAddress(address)
+                        })}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* View Mode */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <Label htmlFor="language">Language</Label>
-                        <Select value={formData.preferredLanguage} onValueChange={(value) => setFormData({ ...formData, preferredLanguage: value })}>
+                        <Label className="text-sm font-medium text-muted-foreground">Phone Number</Label>
+                        <p className="text-lg">{user.telephone || user.phone || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Website</Label>
+                        <p className="text-lg">
+                          {user.website ? (
+                            <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                              {user.website}
+                            </a>
+                          ) : (
+                            "Not specified"
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    {user.mailingAddress && (
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Mailing Address</Label>
+                        <p className="text-lg mt-1">{user.mailingAddress}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* System & Security Tab */}
+          <TabsContent value="system" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  System Preferences
+                </CardTitle>
+                <CardDescription>
+                  Language, timezone, and other system settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {isEditing ? (
+                  <>
+                    {/* Editing Mode */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="language">Preferred Language</Label>
+                        <Select 
+                          value={formData.preferredLanguage} 
+                          onValueChange={(value) => setFormData({ ...formData, preferredLanguage: value })}
+                        >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -1053,18 +765,23 @@ export default function ProfilePage() {
                             <SelectItem value="en">English</SelectItem>
                             <SelectItem value="es">Español</SelectItem>
                             <SelectItem value="fr">Français</SelectItem>
+                            <SelectItem value="my">Myanmar</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div>
                         <Label htmlFor="timezone">Timezone</Label>
-                        <Select value={formData.timezone} onValueChange={(value) => setFormData({ ...formData, timezone: value })}>
+                        <Select 
+                          value={formData.timezone} 
+                          onValueChange={(value) => setFormData({ ...formData, timezone: value })}
+                        >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="UTC">UTC</SelectItem>
+                            <SelectItem value="Asia/Yangon">Myanmar Time</SelectItem>
                             <SelectItem value="America/New_York">Eastern Time</SelectItem>
                             <SelectItem value="America/Chicago">Central Time</SelectItem>
                             <SelectItem value="America/Denver">Mountain Time</SelectItem>
@@ -1072,124 +789,101 @@ export default function ProfilePage() {
                           </SelectContent>
                         </Select>
                       </div>
-
-                      <Separator />
-
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* View Mode */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="text-sm font-medium mb-4">Notification Preferences</h4>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium">Email Notifications</p>
-                              <p className="text-sm text-muted-foreground">Receive notifications via email</p>
-                            </div>
-                            <Switch checked={formData.notifications.email} onCheckedChange={(checked) => setFormData({ ...formData, notifications: { ...formData.notifications, email: checked } })} />
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium">Browser Notifications</p>
-                              <p className="text-sm text-muted-foreground">Receive notifications in your browser</p>
-                            </div>
-                            <Switch checked={formData.notifications.browser} onCheckedChange={(checked) => setFormData({ ...formData, notifications: { ...formData.notifications, browser: checked } })} />
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium">Activity Updates</p>
-                              <p className="text-sm text-muted-foreground">Notifications about activity changes</p>
-                            </div>
-                            <Switch checked={formData.notifications.activities} onCheckedChange={(checked) => setFormData({ ...formData, notifications: { ...formData.notifications, activities: checked } })} />
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium">Security Alerts</p>
-                              <p className="text-sm text-muted-foreground">Important security notifications</p>
-                            </div>
-                            <Switch checked={formData.notifications.security} onCheckedChange={(checked) => setFormData({ ...formData, notifications: { ...formData.notifications, security: checked } })} />
-                          </div>
-                        </div>
+                        <Label className="text-sm font-medium text-muted-foreground">Preferred Language</Label>
+                        <p className="text-lg">
+                          {user.preferredLanguage === 'en' ? 'English' :
+                           user.preferredLanguage === 'es' ? 'Español' :
+                           user.preferredLanguage === 'fr' ? 'Français' :
+                           user.preferredLanguage === 'my' ? 'Myanmar' :
+                           'English'}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Timezone</Label>
+                        <p className="text-lg">
+                          {user.timezone === 'UTC' ? 'UTC' :
+                           user.timezone === 'Asia/Yangon' ? 'Myanmar Time' :
+                           user.timezone === 'America/New_York' ? 'Eastern Time' :
+                           user.timezone === 'America/Chicago' ? 'Central Time' :
+                           user.timezone === 'America/Denver' ? 'Mountain Time' :
+                           user.timezone === 'America/Los_Angeles' ? 'Pacific Time' :
+                           user.timezone || 'UTC'}
+                        </p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  </>
+                )}
+              </CardContent>
+            </Card>
 
-              {/* Activity Tab */}
-              <TabsContent value="activity" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5" />
-                      Recent Activity
-                    </CardTitle>
-                    <CardDescription>
-                      Your recent actions and system activity
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                        <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">Profile Updated</p>
-                          <p className="text-xs text-muted-foreground">Just now</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                        <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">Logged In</p>
-                          <p className="text-xs text-muted-foreground">2 hours ago</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                        <div className="h-2 w-2 bg-gray-500 rounded-full"></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">Activity Created</p>
-                          <p className="text-xs text-muted-foreground">Yesterday</p>
-                        </div>
-                      </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Account Security
+                </CardTitle>
+                <CardDescription>
+                  Manage your account security settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Key className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Password</p>
+                      <p className="text-sm text-muted-foreground">Change your account password</p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <Button variant="outline">
+                    Change Password
+                  </Button>
+                </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Account Statistics</CardTitle>
-                    <CardDescription>
-                      Overview of your account usage
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold">12</p>
-                        <p className="text-xs text-muted-foreground">Activities Created</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold">45</p>
-                        <p className="text-xs text-muted-foreground">Days Active</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold">8</p>
-                        <p className="text-xs text-muted-foreground">Reports Generated</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold">156</p>
-                        <p className="text-xs text-muted-foreground">API Calls</p>
-                      </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Email Address</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user.role === 'super_user' 
+                          ? "Update your login email address" 
+                          : "Contact administrator to change email"
+                        }
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
+                  </div>
+                  {user.role === 'super_user' && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => setEmailChangeDialogOpen(true)}
+                    >
+                      Change Email
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Email Change Dialog */}
+        <EmailChangeConfirmDialog
+          isOpen={emailChangeDialogOpen}
+          onClose={() => setEmailChangeDialogOpen(false)}
+          onConfirm={handleEmailChange}
+          currentEmail={user.email}
+          userName={user.name || user.email}
+          userId={user.id}
+        />
       </div>
     </MainLayout>
   );
-} 
+}

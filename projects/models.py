@@ -429,6 +429,8 @@ class UserProfile(models.Model):
         ('dr', 'Dr.'),
         ('prof', 'Prof.'),
         ('hon', 'Hon.'),
+        ('daw', 'Daw'),
+        ('u', 'U'),
         ('', 'No Title'),
     ]
     
