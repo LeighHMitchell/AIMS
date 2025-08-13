@@ -121,7 +121,7 @@ async function main() {
           usersUpdated = users.length;
           
           // Log affected users
-          users.forEach((user) => {
+          users.forEach((user: any) => {
             const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
             console.log(`     • ${name}`);
           });
