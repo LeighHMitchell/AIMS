@@ -8,8 +8,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const activityId = params.id;
+  
   try {
-    const activityId = params.id;
     
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
@@ -95,9 +96,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const activityId = params.id;
+  let body: any;
+  
   try {
-    const activityId = params.id;
-    const body = await request.json();
+    body = await request.json();
     
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
