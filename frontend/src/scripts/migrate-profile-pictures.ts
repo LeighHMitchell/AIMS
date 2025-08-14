@@ -16,6 +16,7 @@ import { getSupabaseAdmin } from '../lib/supabase';
 
 // Configuration
 const UPLOADS_DIR = join(process.cwd(), 'public', 'uploads', 'profiles');
+console.log('📁 Looking for profiles in:', UPLOADS_DIR);
 
 interface MigrationResult {
   filename: string;
