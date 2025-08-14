@@ -67,8 +67,11 @@ export const CONTACT_TYPE_CATEGORIES = {
 } as const;
 
 export function getRoleLabel(role: string): { label: string; color: string; category: string } {
-  const normalizedRole = role?.toLowerCase().replace(/\s+/g, '_') || 'default';
-  return ROLE_LABELS[normalizedRole] || ROLE_LABELS['default'];
+  if (!role || role === '') {
+    return { label: '', color: '', category: '' };
+  }
+  const normalizedRole = role.toLowerCase().replace(/\s+/g, '_');
+  return ROLE_LABELS[normalizedRole] || { label: '', color: '', category: '' };
 }
 
 export function getSourceLabel(source: string): { label: string; color: string; icon: string } {

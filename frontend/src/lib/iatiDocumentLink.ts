@@ -171,7 +171,12 @@ export const EXT_TO_MIME: Record<string, string> = {
 
 // Validation schemas
 const narrativeSchema = z.object({
-  text: z.string().min(1, 'Text is required'),
+  text: z.string().min(1, 'Document title is required'),
+  lang: z.string().length(2, 'Language must be 2-letter ISO 639-1 code'),
+});
+
+const descriptionNarrativeSchema = z.object({
+  text: z.string(), // Allow empty descriptions
   lang: z.string().length(2, 'Language must be 2-letter ISO 639-1 code'),
 });
 
@@ -186,15 +191,15 @@ const recipientRegionSchema = z.object({
 
 export const documentLinkSchema = z.object({
   url: z.string().url('Must be a valid URL').refine(
-    (url) => url.startsWith('https://'),
-    { message: 'URL must use HTTPS' }
+    (url) => url.startsWith('http://') || url.startsWith('https://'),
+    { message: 'URL must start with http:// or https://' }
   ),
   format: z.string().refine(
     (format) => Object.keys(FILE_FORMATS).includes(format),
     { message: 'Format must be a valid IANA MIME type from IATI FileFormat codelist' }
   ),
   title: z.array(narrativeSchema).min(1, 'At least one title is required'),
-  description: z.array(narrativeSchema).optional(),
+  description: z.array(descriptionNarrativeSchema).optional(),
   categoryCode: z.string().refine(
     (code) => DOCUMENT_CATEGORIES.some(cat => cat.code === code),
     { message: 'Invalid document category code' }

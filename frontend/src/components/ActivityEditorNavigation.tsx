@@ -174,22 +174,7 @@ export default function ActivityEditorNavigation({
             </div>
           </div>
         ))}
-        
-        {/* Progress indicator */}
-        <div className="mt-auto pt-4">
-          <div className="text-xs text-gray-500 px-1">
-            <div className="mb-1 font-medium">Progress</div>
-            <div className="w-full bg-gray-200 rounded-full h-1">
-              <div 
-                className="bg-blue-600 h-1 rounded-full transition-all duration-300 ease-out" 
-                style={{ 
-                  width: `${((navigationGroups.flatMap(g => g.sections).findIndex(s => s.id === activeSection) + 1) / navigationGroups.flatMap(g => g.sections).length) * 100}%` 
-                }}
-                aria-hidden="true"
-              />
-            </div>
-          </div>
-        </div>
+
       </nav>
     </TooltipProvider>
   )

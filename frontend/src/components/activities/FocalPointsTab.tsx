@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FocalPointDropdown } from './FocalPointDropdown';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 
 interface FocalPointsTabProps {
   activityId: string;
@@ -117,6 +118,7 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
               <h3 className="text-lg font-medium flex items-center gap-2">
                 <User className="h-5 w-5 text-gray-600" />
                 Recipient Government Focal Point(s)
+                <HelpTextTooltip content="Government focal points are responsible for reviewing, endorsing, and validating activity data. Multiple focal points can be assigned as needed and will receive notifications about activity updates and changes." />
               </h3>
               <p className="text-sm text-gray-500 mt-1">
                 The government official(s) responsible for reviewing or endorsing this activity.
@@ -139,6 +141,7 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
               <h3 className="text-lg font-medium flex items-center gap-2">
                 <User className="h-5 w-5 text-gray-600" />
                 Development Partner Focal Point(s)
+                <HelpTextTooltip content="Development partner focal points maintain and update activity information for their organizations. Both types of focal points ensure data accuracy and keep activity information current. Multiple focal points can be assigned as needed." />
               </h3>
               <p className="text-sm text-gray-500 mt-1">
                 The main contact(s) responsible for maintaining or updating this activity on behalf of the development partner organisation(s).
@@ -153,27 +156,6 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
             />
           </CardContent>
         </Card>
-      </div>
-
-      {/* Additional Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <User className="h-5 w-5 text-blue-400" />
-          </div>
-          <div className="ml-3">
-            <h4 className="text-sm font-medium text-blue-800">About Focal Points</h4>
-            <div className="mt-2 text-sm text-blue-700">
-              <ul className="list-disc list-inside space-y-1">
-                <li>Government focal points are responsible for reviewing, endorsing, and validating activity data</li>
-                <li>Development partner focal points maintain and update activity information for their organizations</li>
-                <li>Both types of focal points ensure data accuracy and keep activity information current</li>
-                <li>Multiple focal points can be assigned to each category as needed</li>
-                <li>Focal points receive notifications about activity updates and changes</li>
-              </ul>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ import {
   Languages,
   Calendar,
   MapPin,
+  Globe,
 } from 'lucide-react';
 import { DocumentFormatSelect } from '@/components/forms/DocumentFormatSelect';
 import { DocumentCategorySelect } from '@/components/forms/DocumentCategorySelect';
@@ -67,6 +68,7 @@ interface DocumentCardInlineProps {
   document: IatiDocumentLink;
   onSave: (document: IatiDocumentLink) => void;
   onDelete: (url: string) => void;
+  onEdit?: () => void; // New prop for triggering external edit
   fetchHead?: (url: string) => Promise<{ format?: string; size?: number } | null>;
   locale?: string;
   isNew?: boolean;
@@ -77,13 +79,13 @@ export function DocumentCardInlineFixed({
   document, 
   onSave, 
   onDelete,
+  onEdit,
   fetchHead,
   locale = 'en',
   isNew = false,
   isUploaded = false
 }: DocumentCardInlineProps) {
   const [isEditing, setIsEditing] = React.useState(isNew);
-  const [isExpanded, setIsExpanded] = React.useState(isNew);
   const [formData, setFormData] = React.useState<IatiDocumentLink>(() => ({
     ...document,
     description: document.description?.length ? document.description : [{ text: '', lang: locale }]
@@ -105,7 +107,24 @@ export function DocumentCardInlineFixed({
 
   const validation = React.useMemo(() => {
     try {
-      return validateIatiDocument(formData);
+      const result = validateIatiDocument(formData);
+      if (!result.ok) {
+        console.log('[DocumentCardInlineFixed] Validation issues for document:', formData.url);
+        result.issues.forEach((issue, index) => {
+          console.log(`[DocumentCardInlineFixed] Issue ${index + 1}: ${issue.path} - ${issue.message}`);
+        });
+        console.log('[DocumentCardInlineFixed] Document data:', {
+          url: formData.url,
+          format: formData.format,
+          title: formData.title,
+          description: formData.description,
+          categoryCode: formData.categoryCode,
+          languageCodes: formData.languageCodes,
+          documentDate: formData.documentDate,
+          recipientCountries: formData.recipientCountries
+        });
+      }
+      return result;
     } catch (error) {
       console.error('Validation error in DocumentCardInlineFixed:', error);
       return { ok: true, issues: [] };
@@ -120,6 +139,14 @@ export function DocumentCardInlineFixed({
   
   // Get category label
   const category = DOCUMENT_CATEGORIES.find(c => c.code === formData.categoryCode);
+  
+  // Get language names from codes
+  const getLanguageNames = (languageCodes: string[]) => {
+    return languageCodes.map(code => {
+      const lang = COMMON_LANGUAGES.find(l => l.code === code);
+      return lang ? lang.name : code.toUpperCase();
+    });
+  };
   
   // Get file type icon
   const getFileIcon = () => {
@@ -142,111 +169,6 @@ export function DocumentCardInlineFixed({
     setSelectedLanguages(document.languageCodes || []);
     setSelectedCountries(document.recipientCountries || []);
   }, [document, locale]);
-
-  const handleUrlBlur = async () => {
-    if (!formData.url) return;
-    
-    // Try to infer MIME from URL extension
-    const inferredMime = inferMimeFromUrl(formData.url);
-    if (inferredMime && !formData.format) {
-      setFormData(prev => ({ ...prev, format: inferredMime }));
-    }
-    
-    // Try to fetch HEAD if provided
-    if (fetchHead) {
-      try {
-        setUrlMetadata({ error: undefined });
-        const metadata = await fetchHead(formData.url);
-        if (metadata) {
-          setUrlMetadata(metadata);
-          if (metadata.format && !formData.format) {
-            setFormData(prev => ({ ...prev, format: metadata.format! }));
-          }
-        }
-      } catch (error) {
-        setUrlMetadata({ error: 'Unable to fetch URL metadata' });
-      }
-    }
-  };
-
-  const addNarrative = (field: 'title' | 'description') => {
-    const narratives = field === 'title' ? formData.title : (formData.description || []);
-    const newNarrative: Narrative = { text: '', lang: locale };
-    
-    setFormData(prev => ({
-      ...prev,
-      [field]: [...narratives, newNarrative],
-    }));
-  };
-
-  const updateNarrative = (
-    field: 'title' | 'description',
-    index: number,
-    updates: Partial<Narrative>
-  ) => {
-    const narratives = field === 'title' ? formData.title : (formData.description || []);
-    const updated = [...narratives];
-    updated[index] = { ...updated[index], ...updates };
-    
-    setFormData(prev => ({
-      ...prev,
-      [field]: updated,
-    }));
-  };
-
-  const removeNarrative = (field: 'title' | 'description', index: number) => {
-    const narratives = field === 'title' ? formData.title : (formData.description || []);
-    const updated = narratives.filter((_, i) => i !== index);
-    
-    setFormData(prev => ({
-      ...prev,
-      [field]: updated,
-    }));
-  };
-
-
-
-  const addCountry = () => {
-    const code = countryInput.trim().toUpperCase();
-    if (code.length === 2 && !selectedCountries.includes(code)) {
-      const updated = [...selectedCountries, code];
-      setSelectedCountries(updated);
-      setFormData(prev => ({ ...prev, recipientCountries: updated }));
-      setCountryInput('');
-    }
-  };
-
-  const removeCountry = (code: string) => {
-    const updated = selectedCountries.filter(c => c !== code);
-    setSelectedCountries(updated);
-    setFormData(prev => ({ ...prev, recipientCountries: updated }));
-  };
-
-  const handleSave = () => {
-    setShowValidation(true);
-    if (validation.ok) {
-      onSave(formData);
-      setIsEditing(false);
-      setShowValidation(false);
-      if (isNew) {
-        setIsExpanded(false);
-      }
-    }
-  };
-
-  const handleCancel = () => {
-    setFormData(document);
-    setSelectedLanguages(document.languageCodes || []);
-    setSelectedCountries(document.recipientCountries || []);
-    setIsEditing(false);
-    setShowValidation(false);
-    setIsExpanded(false);
-  };
-
-  const handleEdit = () => {
-    setIsEditing(true);
-    setIsExpanded(true);
-  };
 
   const handleCopyXml = async () => {
     const xml = toIatiXml(formData);
@@ -272,41 +194,32 @@ export function DocumentCardInlineFixed({
 
   return (
     <Card className={cn(
-      "group relative overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-all duration-200",
-      isEditing && "ring-2 ring-blue-500/20 shadow-lg"
+      "group relative overflow-hidden transition-all duration-200",
+      "bg-white hover:shadow-md border border-gray-200"
     )}>
       <CardContent className="p-4">
-        {/* Header Section - Always Visible */}
-        <div className="flex gap-4">
-          {/* Thumbnail/Icon - Container spanning Title to URL field bottom */}
-          <div className="flex-shrink-0 flex items-start">
-            {formData.url ? (
-              (isImage || formData.thumbnailUrl) ? (
-                <div className="w-32 h-36 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                  <img
-                    src={formData.thumbnailUrl || formData.url}
-                    alt={primaryTitle?.text || 'Document'}
+        <div className="flex gap-3">
+          {/* Thumbnail/Icon */}
+          <div className="flex-shrink-0">
+            {formData.thumbnailUrl ? (
+              <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                <img
+                  src={formData.thumbnailUrl}
+                  alt={primaryTitle?.text || 'Document thumbnail'}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement!.innerHTML = `
-                        <div class="w-32 h-36 flex items-center justify-center">
-                          <svg class="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                      `;
-                    }}
-                  />
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <div className="hidden w-full h-full flex items-center justify-center">
+                  <FileIcon className="w-8 h-8 text-gray-500" />
                 </div>
-              ) : (
-                <div className="w-32 h-36 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
-                  <FileIcon className="w-12 h-12 text-gray-500" />
                 </div>
-              )
             ) : (
-              <div className="w-32 h-36 rounded-lg bg-gray-50 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                <FileIcon className="w-12 h-12 text-gray-300" />
+              <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center">
+                <FileIcon className="w-8 h-8 text-gray-500" />
               </div>
             )}
           </div>
@@ -315,53 +228,13 @@ export function DocumentCardInlineFixed({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                {isEditing ? (
-                  <div className="space-y-3">
-                                    <div>
-                  <Label htmlFor="title-0" className="text-sm font-medium">Title</Label>
-                  <Input
-                    id="title-0"
-                    value={formData.title[0]?.text || ''}
-                    onChange={(e) => updateNarrative('title', 0, { text: e.target.value })}
-                    placeholder="Document title"
-                    className="mt-1 h-10"
-                  />
-                </div>
-                    {/* Only show URL field for non-uploaded documents */}
-                    {!isUploaded && (
-                      <div>
-                        <Label htmlFor="url" className="text-sm font-medium">URL</Label>
-                        <Input
-                          id="url"
-                          type="url"
-                          value={formData.url}
-                          onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                          onBlur={handleUrlBlur}
-                          placeholder="https://example.org/document.pdf"
-                          className="mt-1 h-10"
-                        />
-                        {urlMetadata.error && (
-                          <p className="text-xs text-amber-600 mt-1">{urlMetadata.error}</p>
-                        )}
-                        {urlMetadata.size && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <>
                     <h3 className="font-medium text-gray-900 truncate">
                       {primaryTitle?.text || 'Untitled Document'}
                     </h3>
-                    {primaryDescription && (
+                {primaryDescription && primaryDescription.text && (
                       <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                         {primaryDescription.text}
                       </p>
-                    )}
-                  </>
                 )}
               </div>
               
@@ -387,28 +260,14 @@ export function DocumentCardInlineFixed({
                     </Tooltip>
                   </TooltipProvider>
                 )}
-
-                {/* Expand/Collapse toggle */}
-                {!isEditing && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                  >
-                    {isExpanded ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </Button>
-                )}
               </div>
             </div>
             
-            {/* Basic Badges - Always visible when not editing */}
+            {/* Compact Info Grid - Always visible when not editing */}
             {!isEditing && (
-              <div className="flex flex-wrap gap-2 mt-3">
+              <div className="mt-3 space-y-2">
+                {/* First row: Format, Category, Language */}
+                <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary" className="text-xs">
                   {getFormatLabel(formData.format)}
                 </Badge>
@@ -418,12 +277,12 @@ export function DocumentCardInlineFixed({
                     <Tooltip>
                       <TooltipTrigger>
                         <Badge variant="outline" className="text-xs">
-                          {category.code}
+                            {category.name}
                         </Badge>
                       </TooltipTrigger>
                       <TooltipContent>
                         <div className="max-w-xs">
-                          <p className="font-medium">{category.name}</p>
+                            <p className="font-medium">{category.name} ({category.code})</p>
                           <p className="text-sm">{category.description}</p>
                         </div>
                       </TooltipContent>
@@ -434,7 +293,7 @@ export function DocumentCardInlineFixed({
                 {formData.languageCodes && formData.languageCodes.length > 0 && (
                   <Badge variant="outline" className="text-xs gap-1">
                     <Languages className="w-3 h-3" />
-                    {formData.languageCodes.join(', ')}
+                      {getLanguageNames(formData.languageCodes).join(', ')}
                   </Badge>
                 )}
                 
@@ -444,273 +303,21 @@ export function DocumentCardInlineFixed({
                     {format(new Date(formData.documentDate), 'MMM d, yyyy')}
                   </Badge>
                 )}
-                
-                {(formData.recipientCountries?.length || formData.recipientRegion) && (
-                  <Badge variant="outline" className="text-xs gap-1">
-                    <MapPin className="w-3 h-3" />
-                    {formData.recipientCountries?.length
-                      ? `${formData.recipientCountries.length} countries`
-                      : 'Region'}
-                  </Badge>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Expanded Content */}
-        {isExpanded && (
-          <div className="mt-6 space-y-6">
-            {isEditing ? (
-              <div className="space-y-6">
-                              <div className="grid grid-cols-3 gap-4">
-                {/* Format Selection */}
-                <div>
-                  <Label className="text-sm font-medium">
-                    Format
-                  </Label>
-                  <DocumentFormatSelect
-                    value={formData.format}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, format: value }))}
-                    placeholder="Select format..."
-                    className="mt-1 pb-0"
-                  />
                 </div>
 
-                {/* Category */}
-                <div>
-                  <Label className="text-sm font-medium">Document Category</Label>
-                  <DocumentCategorySelect
-                    value={formData.categoryCode || ''}
-                    onValueChange={(value) => setFormData(prev => ({
-                      ...prev,
-                      categoryCode: value || undefined
-                    }))}
-                    placeholder="Select category..."
-                    className="mt-1 pb-0"
-                  />
+                {/* Second row: URL (truncated) */}
+                <div className="text-xs text-gray-500 flex items-center gap-1">
+                  <Globe className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate font-mono">{formData.url}</span>
                 </div>
 
-                {/* Document Languages - Multi-select */}
-                <div>
-                  <Label className="text-sm font-medium">Document Languages</Label>
-                  <DocumentLanguagesSelect
-                    value={selectedLanguages}
-                    onValueChange={(languages) => {
-                      const languageArray = Array.isArray(languages) ? languages : [languages];
-                      setSelectedLanguages(languageArray);
-                      setFormData(prev => ({ ...prev, languageCodes: languageArray }));
-                    }}
-                    placeholder="Select languages..."
-                    multiple={true}
-                    className="mt-1 pb-0"
-                  />
-                </div>
-              </div>
-
-                                 {/* Description Field - Always visible */}
-                 <div className="col-span-2">
-                   <Label className="text-sm font-medium">
-                     Description {isImage && '(Caption)'}
-                   </Label>
-                   <div className="mt-2">
-                     <Textarea
-                       value={formData.description?.[0]?.text || ''}
-                       onChange={(e) => {
-                         const existingDesc = formData.description || [];
-                         const updatedDesc = [...existingDesc];
-                         if (updatedDesc.length === 0) {
-                           updatedDesc.push({ text: e.target.value, lang: locale });
-                         } else {
-                           updatedDesc[0] = { ...updatedDesc[0], text: e.target.value };
-                         }
-                         setFormData(prev => ({ ...prev, description: updatedDesc }));
-                       }}
-                       placeholder={isImage ? "Enter image caption..." : "Enter document description..."}
-                       className="w-full min-h-[72px] resize-y"
-                       rows={3}
-                     />
-                   </div>
-                   {(formData.description?.length || 0) > 1 && (
-                     <div className="space-y-3 mt-3">
-                       {formData.description!.slice(1).map((narrative, index) => (
-                         <div key={index + 1} className="space-y-2">
-                           <div className="flex gap-2">
-                             <Select
-                               value={narrative.lang}
-                               onValueChange={(value) => updateNarrative('description', index + 1, { lang: value })}
-                             >
-                               <SelectTrigger className="w-24">
-                                 <SelectValue />
-                               </SelectTrigger>
-                               <SelectContent>
-                                 {COMMON_LANGUAGES.map(lang => (
-                                   <SelectItem key={lang.code} value={lang.code}>
-                                     {lang.code.toUpperCase()}
-                                   </SelectItem>
-                                 ))}
-                               </SelectContent>
-                             </Select>
-                             <Button
-                               type="button"
-                               variant="ghost"
-                               size="sm"
-                               onClick={() => removeNarrative('description', index + 1)}
-                               className="px-2"
-                             >
-                               <Trash2 className="w-4 h-4" />
-                             </Button>
-                           </div>
-                           <Textarea
-                             value={narrative.text}
-                             onChange={(e) => updateNarrative('description', index + 1, { text: e.target.value })}
-                             placeholder={isImage ? "Image caption" : "Document description"}
-                             className="w-full min-h-[72px] resize-y"
-                             rows={3}
-                           />
-                         </div>
-                       ))}
-                     </div>
-                   )}
-                   <Button
-                     type="button"
-                     variant="outline"
-                     size="sm"
-                     onClick={() => addNarrative('description')}
-                     className="gap-1 mt-2"
-                   >
-                     <Plus className="w-3 h-3" />
-                     Add language
-                   </Button>
-                 </div>
-
-                                 
-
-                {/* Document Date */}
-                <div>
-                  <Label htmlFor="documentDate" className="text-sm font-medium">Document Date</Label>
-                  <Input
-                    id="documentDate"
-                    type="date"
-                    value={formData.documentDate || ''}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentDate: e.target.value || undefined 
-                    }))}
-                    className="mt-1"
-                  />
-                </div>
-
-                                 {/* Recipient Countries - Collaboration Type style dropdown */}
-                 <div>
-                   <Label className="text-sm font-medium">Recipient Countries</Label>
-                   <RecipientCountriesSelect
-                     value=""
-                     onValueChange={(value) => {
-                       if (value && !selectedCountries.includes(value)) {
-                         const updated = [...selectedCountries, value];
-                         setSelectedCountries(updated);
-                         setFormData(prev => ({ ...prev, recipientCountries: updated }));
-                       }
-                     }}
-                     placeholder="Add recipient country..."
-                     excludeValues={selectedCountries}
-                     className="mt-2 pb-0"
-                   />
-                   <div className="flex flex-wrap gap-2 mt-2">
-                     {selectedCountries.map(code => (
-                       <Badge key={code} variant="secondary" className="gap-1">
-                         {code}
-                         <button
-                           onClick={() => removeCountry(code)}
-                           className="ml-1 hover:text-red-600"
-                         >
-                           <X className="w-3 h-3" />
-                         </button>
-                       </Badge>
-                     ))}
-                   </div>
-                 </div>
-
-                {/* Validation Errors */}
-                {showValidation && !validation.ok && validation.issues && validation.issues.length > 0 && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-sm font-medium text-amber-800 mb-1">Validation Issues</p>
-                    <ul className="text-xs text-amber-700 space-y-1">
-                      {validation.issues.map((issue, i) => (
-                        <li key={i}>• {issue.message}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Save/Cancel Actions */}
-                <div className="flex gap-2 pt-2">
+                {/* Third row: Action buttons */}
+                <div className="flex gap-1 pt-1">
                   <Button
-                    onClick={handleSave}
-                    disabled={showValidation && !validation.ok}
-                    className="gap-1"
-                  >
-                    <Save className="w-4 h-4" />
-                    Save
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleCancel}
-                    className="gap-1"
-                  >
-                    <X className="w-4 h-4" />
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Extended metadata display */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <Label className="text-xs font-medium text-gray-500">URL</Label>
-                    <p className="truncate">{formData.url}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs font-medium text-gray-500">Format</Label>
-                    <p>{getFormatLabel(formData.format)}</p>
-                  </div>
-                  {formData.documentDate && (
-                    <div>
-                      <Label className="text-xs font-medium text-gray-500">Date</Label>
-                      <p>{format(new Date(formData.documentDate), 'MMM d, yyyy')}</p>
-                    </div>
-                  )}
-                  {category && (
-                    <div>
-                      <Label className="text-xs font-medium text-gray-500">Category</Label>
-                      <p>{category.name}</p>
-                    </div>
-                  )}
-                </div>
-
-                {primaryDescription && (
-                  <div>
-                    <Label className="text-xs font-medium text-gray-500">
-                      {isImage ? 'Caption' : 'Description'}
-                    </Label>
-                    <p className="text-sm text-gray-700 mt-1">{primaryDescription.text}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-        
-        {/* Actions */}
-        {!isEditing && (
-          <div className="flex gap-1 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleEdit}
-              className="text-xs gap-1"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onEdit?.()}
+                    className="text-xs gap-1 h-7 px-2"
             >
               <Edit className="w-3 h-3" />
               Edit
@@ -721,7 +328,7 @@ export function DocumentCardInlineFixed({
               variant="ghost"
               onClick={handleCopyXml}
               disabled={!validation.ok}
-              className="text-xs gap-1"
+                    className="text-xs gap-1 h-7 px-2"
             >
               <Copy className="w-3 h-3" />
               {copyFeedback === 'xml' ? 'Copied!' : 'XML'}
@@ -731,7 +338,7 @@ export function DocumentCardInlineFixed({
               size="sm"
               variant="ghost"
               onClick={handleCopyJson}
-              className="text-xs gap-1"
+                    className="text-xs gap-1 h-7 px-2"
             >
               <Copy className="w-3 h-3" />
               {copyFeedback === 'json' ? 'Copied!' : 'JSON'}
@@ -741,7 +348,7 @@ export function DocumentCardInlineFixed({
               size="sm"
               variant="ghost"
               onClick={handleOpen}
-              className="text-xs gap-1"
+                    className="text-xs gap-1 h-7 px-2"
             >
               <ExternalLink className="w-3 h-3" />
               Open
@@ -751,13 +358,16 @@ export function DocumentCardInlineFixed({
               size="sm"
               variant="ghost"
               onClick={() => onDelete(formData.url)}
-              className="text-xs gap-1 text-red-600 hover:text-red-700"
+                    className="text-xs gap-1 h-7 px-2 text-red-600 hover:text-red-700"
             >
               <Trash2 className="w-3 h-3" />
               Delete
             </Button>
+                </div>
           </div>
         )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,23 +1,23 @@
 "use client"
 
 import React from "react"
-import { NavLink } from "./NavLink"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { 
   Home, 
-  FileText, 
-  Building2, 
+  Activity, 
   Users, 
-  BarChartHorizontal, 
-  FileCode, 
+  Building, 
   BarChart3, 
-  Contact,
-  CheckSquare,
-  CreditCard,
-  PieChart,
-  UsersRound,
-  Stethoscope,
+  Settings, 
+  UserCheck,
+  Search,
   Calendar,
-  Briefcase
+  FileText,
+  Map,
+  Briefcase,
+  Database,
+  Shield
 } from "lucide-react"
 
 interface SidebarNavProps {
@@ -26,135 +26,135 @@ interface SidebarNavProps {
   isLoading?: boolean
 }
 
-// Define nav items with their visibility rules
-const getNavItems = (userRole?: string, canManageUsers?: boolean) => [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: <Home className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/my-portfolio",
-    label: "My Portfolio",
-    icon: <Briefcase className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/calendar",
-    label: "Calendar",
-    icon: <Calendar className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/analytics-dashboard",
-    label: "Analytics",
-    icon: <BarChart3 className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/iati-import-enhanced",
-    label: "IATI Import",
-    icon: <FileCode className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/activities",
-    label: "Activities",
-    icon: <FileText className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/transactions",
-    label: "Transactions",
-    icon: <CreditCard className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/organizations",
-    label: "Organizations",
-    icon: <Building2 className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/sectors",
-    label: "Sectors",
-    icon: <PieChart className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/working-groups",
-    label: "Working Groups",
-    icon: <UsersRound className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/partners",
-    label: "Partner Funding Summary",
-    icon: <BarChartHorizontal className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/rolodex",
-    label: "Rolodex",
-    icon: <Contact className="h-4 w-4" strokeWidth={2} />,
-    show: true
-  },
-  {
-    href: "/validations",
-    label: "Validations",
-    icon: <CheckSquare className="h-4 w-4" strokeWidth={2} />,
-    show: userRole === 'gov_partner_tier_1' || userRole === 'super_user' || userRole === 'admin'
-  },
-  {
-    href: "/data-clinic",
-    label: "Data Clinic",
-    icon: <Stethoscope className="h-4 w-4" strokeWidth={2} />,
-    show: userRole === 'gov_partner_tier_1' || userRole === 'super_user' || userRole === 'admin'
-  },
-  {
-    href: "/admin/calendar-events",
-    label: "Calendar Management",
-    icon: <Calendar className="h-4 w-4" strokeWidth={2} />,
-    show: userRole === 'admin'
-  },
-  {
-    href: "/admin/users",
-    label: "User Management",
-    icon: <Users className="h-4 w-4" strokeWidth={2} />,
-    show: canManageUsers === true
-  }
-]
-
 export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavProps) {
-  // Get nav items based on current user permissions
-  const navItems = React.useMemo(
-    () => getNavItems(userRole, canManageUsers),
-    [userRole, canManageUsers]
-  )
+  const pathname = usePathname()
 
-  // Show all items initially during loading to prevent layout shift
-  // Once loaded, apply visibility rules
-  const shouldShowItem = (item: any) => {
-    if (isLoading) {
-      // During loading, show all items that would be visible to any user
-      // Hide only admin-specific items
-      return !item.href.startsWith('/admin/') && item.href !== '/validations' && item.href !== '/data-clinic';
+  if (isLoading) {
+    return (
+      <nav className="px-4 py-6">
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-10 bg-gray-200 rounded-md animate-pulse" />
+          ))}
+        </div>
+      </nav>
+    )
+  }
+
+  const navItems = [
+    {
+      name: "Dashboard",
+      href: "/dashboard",
+      icon: Home,
+      show: true
+    },
+    {
+      name: "Activities",
+      href: "/activities",
+      icon: Activity,
+      show: true
+    },
+    {
+      name: "Organizations",
+      href: "/organizations",
+      icon: Building,
+      show: true
+    },
+    {
+      name: "Partners",
+      href: "/partners",
+      icon: Users,
+      show: true
+    },
+    {
+      name: "Transactions",
+      href: "/transactions",
+      icon: FileText,
+      show: true
+    },
+    {
+      name: "Analytics",
+      href: "/analytics-dashboard",
+      icon: BarChart3,
+      show: true
+    },
+    {
+      name: "Search",
+      href: "/search",
+      icon: Search,
+      show: true
+    },
+    {
+      name: "Calendar",
+      href: "/calendar",
+      icon: Calendar,
+      show: true
+    },
+    {
+      name: "Aid Flow Map",
+      href: "/aid-flow-map",
+      icon: Map,
+      show: true
+    },
+    {
+      name: "My Portfolio",
+      href: "/my-portfolio",
+      icon: Briefcase,
+      show: true
+    },
+    {
+      name: "Rolodex",
+      href: "/rolodex",
+      icon: UserCheck,
+      show: true
+    },
+    {
+      name: "Data Clinic",
+      href: "/data-clinic",
+      icon: Database,
+      show: true
+    },
+    {
+      name: "Admin",
+      href: "/admin",
+      icon: Shield,
+      show: canManageUsers
+    },
+    {
+      name: "Settings",
+      href: "/settings",
+      icon: Settings,
+      show: true
     }
-    return item.show;
-  };
+  ]
+
+  const filteredNavItems = navItems.filter(item => item.show)
 
   return (
-    <nav className="p-4 space-y-2 overflow-y-auto h-full">
-      {navItems.map((item) => (
-        // Use a stable key and always render the wrapper div
-        // This prevents hydration mismatches from conditional rendering
-        <div key={item.href} className={shouldShowItem(item) ? undefined : "hidden"}>
-          <NavLink href={item.href} icon={item.icon}>
-            {item.label}
-          </NavLink>
-        </div>
-      ))}
+    <nav className="px-4 py-6">
+      <div className="space-y-1">
+        {filteredNavItems.map((item) => {
+          const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
+          const Icon = item.icon
+          
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`
+                flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                ${isActive 
+                  ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-600' 
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                }
+              `}
+            >
+              <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
+              {item.name}
+            </Link>
+          )
+        })}
+      </div>
     </nav>
   )
 }

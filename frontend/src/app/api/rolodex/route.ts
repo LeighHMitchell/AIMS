@@ -299,7 +299,7 @@ export async function GET(request: NextRequest) {
           fax: contact.fax,
           created_at: contact.created_at,
           updated_at: contact.updated_at,
-          role_label: contact.type || contact.position || 'Contact',
+          role_label: contact.type || contact.position || '',
           activity_title: undefined, // Will fetch separately if needed
           country_code: undefined, // Will fetch separately if needed
           source_label: 'Activity Contact',

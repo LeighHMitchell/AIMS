@@ -223,7 +223,7 @@ export function PersonCard({
             
             <div className="space-y-1">
               {/* Role Pill - only for Users (but not super users since they have their own badge) */}
-              {person.source === 'user' && person.role && !isPersonSuperUser && (
+              {person.source === 'user' && person.role && !isPersonSuperUser && roleInfo.label && (
                 <div>
                   <Badge 
                     variant="outline" 
@@ -414,7 +414,7 @@ export function PersonCard({
             )}
 
             {/* Role Badge - only for Users (but not super users since they have their own badge) */}
-            {person.source === 'user' && person.role && !isPersonSuperUser && (
+            {person.source === 'user' && person.role && !isPersonSuperUser && roleInfo.label && (
               <div className="flex items-center space-x-2 flex-wrap">
                 <Badge 
                   variant="outline" 

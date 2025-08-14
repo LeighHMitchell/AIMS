@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { toast } from 'sonner';
 import { DocumentCardInlineFixed } from './DocumentCardInlineFixed';
 import {
@@ -40,6 +40,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { DocumentFormatSelect } from '@/components/forms/DocumentFormatSelect';
+import { DocumentCategorySelect } from '@/components/forms/DocumentCategorySelect';
+import { DocumentLanguagesSelect } from '@/components/forms/DocumentLanguagesSelect';
+import { RecipientCountriesSelect } from '@/components/forms/RecipientCountriesSelect';
+import { RecipientCountriesMultiSelect } from '@/components/forms/RecipientCountriesMultiSelect';
 
 // Document Type Filter Component
 interface DocumentTypeFilterProps {
@@ -209,6 +224,15 @@ interface UploadingFile {
   status: 'uploading' | 'processing' | 'complete' | 'success' | 'error';
 }
 
+interface DocumentMetadataModalProps {
+  document: IatiDocumentLink;
+  isOpen: boolean;
+  onSave: (document: IatiDocumentLink) => void;
+  onCancel: () => void;
+  locale?: string;
+  isEditing?: boolean;
+}
+
 export function DocumentsAndImagesTabInline({
   documents = [],
   onChange,
@@ -220,12 +244,39 @@ export function DocumentsAndImagesTabInline({
   customLanguages,
 }: DocumentsAndImagesTabInlineProps) {
   
+  // Load documents from new backend on mount
+  React.useEffect(() => {
+    const loadDocuments = async () => {
+      if (!activityId) return;
+      
+      try {
+        console.log('[DocumentsTab] Loading documents for activity:', activityId);
+        const response = await fetch(`/api/activities/${activityId}/documents`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[DocumentsTab] Loaded documents:', data);
+          // Always update with backend data (it's the source of truth)
+          onChange(data.documents || []);
+        } else {
+          console.error('[DocumentsTab] Failed to load documents:', response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('[DocumentsTab] Failed to load documents from backend:', error);
+      }
+    };
+    
+    loadDocuments();
+  }, [activityId]); // Only depend on activityId to avoid infinite loops
+  
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filterFormat, setFilterFormat] = React.useState<string>('all');
   const [filterCategory, setFilterCategory] = React.useState<string>('all');
   const [uploadingFiles, setUploadingFiles] = React.useState<UploadingFile[]>([]);
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
   const [isDragOver, setIsDragOver] = React.useState(false);
+  const [pendingUploadedDocument, setPendingUploadedDocument] = React.useState<IatiDocumentLink | null>(null);
+  const [showMetadataModal, setShowMetadataModal] = React.useState(false);
+  const [editingDocument, setEditingDocument] = React.useState<IatiDocumentLink | null>(null);
   
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
@@ -283,6 +334,31 @@ export function DocumentsAndImagesTabInline({
     toast.success('Document added successfully');
   };
   
+  const handleSaveUploadedDocument = async (document: IatiDocumentLink) => {
+    try {
+      console.log('[DocumentsTab] Saving document (skipping database update - already saved during upload)');
+      console.log('[DocumentsTab] Document:', document);
+      
+      // The document is already in the parent state, just update it with new metadata
+      const updatedDocuments = documents.map(doc => 
+        doc.url === document.url ? document : doc
+      );
+      onChange(updatedDocuments);
+      setPendingUploadedDocument(null);
+      setShowMetadataModal(false);
+      toast.success('Document information saved successfully');
+    } catch (error) {
+      console.error('[DocumentsTab] Failed to save document metadata:', error);
+      toast.error('Failed to save document information');
+    }
+  };
+  
+  const handleCancelUploadedDocument = () => {
+    // Document is already in parent state with minimal metadata, just close modal
+    setPendingUploadedDocument(null);
+    setShowMetadataModal(false);
+  };
+  
   const handleCancelNewDocument = () => {
     setNewDocument(null);
   };
@@ -293,6 +369,27 @@ export function DocumentsAndImagesTabInline({
     );
     onChange(updated);
     toast.success('Document updated successfully');
+  };
+  
+  const handleEditDocument = (document: IatiDocumentLink) => {
+    // Check if this is an uploaded document
+    if (isDocumentUploaded(document)) {
+      // Show modal for uploaded documents
+      setEditingDocument(document);
+      setShowMetadataModal(true);
+    }
+    // For external URLs, the inline editing will be handled by DocumentCardInlineFixed
+  };
+  
+  const handleSaveEditedDocument = (document: IatiDocumentLink) => {
+    handleSaveDocument(document);
+    setEditingDocument(null);
+    setShowMetadataModal(false);
+  };
+  
+  const handleCancelEdit = () => {
+    setEditingDocument(null);
+    setShowMetadataModal(false);
   };
   
   const handleDeleteDocument = (url: string) => {
@@ -321,6 +418,8 @@ export function DocumentsAndImagesTabInline({
 
   // Real file upload function
   const uploadFile = async (file: File, uploadId: string) => {
+    console.log('[DocumentsTab] Starting upload for file:', file.name, 'to activity:', activityId);
+    
     const formData = new FormData();
     formData.append('file', file);
     if (activityId) {
@@ -333,36 +432,45 @@ export function DocumentsAndImagesTabInline({
         f.id === uploadId ? { ...f, progress: 10 } : f
       ));
       
-      const response = await fetch('/api/documents/upload', {
+      console.log('[DocumentsTab] Making upload request to:', `/api/activities/${activityId}/documents/upload`);
+      const response = await fetch(`/api/activities/${activityId}/documents/upload`, {
         method: 'POST',
         body: formData,
       });
       
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorText = await response.text();
+        console.error('Upload failed:', response.status, errorText);
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
       }
       
       const data = await response.json();
+      console.log('[DocumentsTab] Upload API response:', data);
+      console.log('[DocumentsTab] Document from response:', data.document);
       
       // Update to processing
       setUploadingFiles(prev => prev.map(f => 
         f.id === uploadId ? { ...f, progress: 90, status: 'processing' } : f
       ));
       
-      // Create document with uploaded file info
-      const newDocument: IatiDocumentLink = {
-        url: `${window.location.origin}${data.url}`,
+      // The new API returns the document in IATI format already
+      const newDocument: IatiDocumentLink = data.document || {
+        url: data.url,
         format: data.mimeType || file.type || 'application/octet-stream',
         title: [{ text: file.name.replace(/\.[^/.]+$/, ''), lang: locale }],
-        description: [],
+        description: [{ text: '', lang: locale }],
+        categoryCode: 'A01',
         languageCodes: ['en'],
         recipientCountries: [],
         documentDate: new Date().toISOString().split('T')[0],
-        thumbnailUrl: data.thumbnailUrl ? `${window.location.origin}${data.thumbnailUrl}` : undefined,
+        thumbnailUrl: data.thumbnailUrl,
+        // Add the document ID from the API response
+        _id: data.document?.id || data.id,
+        _fileName: data.fileName || file.name,
+        _fileSize: data.fileSize || file.size,
+        _isExternal: false,
+        _createdAt: new Date().toISOString()
       };
-      
-      // Add to documents
-      onChange([...documents, newDocument]);
       
       // Complete upload
       setUploadingFiles(prev => prev.map(f => 
@@ -372,10 +480,17 @@ export function DocumentsAndImagesTabInline({
       // Remove from uploading list after delay
       setTimeout(() => {
         setUploadingFiles(prev => prev.filter(f => f.id !== uploadId));
-      }, 1000);
+      }, 500);
+      
+      // Add document to parent state immediately for tab completion
+      onChange([...documents, newDocument]);
+      
+      // Show metadata modal for the uploaded document
+      setPendingUploadedDocument(newDocument);
+      setShowMetadataModal(true);
       
       toast.success('File uploaded', {
-        description: `${file.name} has been uploaded successfully. Edit it to add more details.`,
+        description: `${file.name} has been uploaded. Please complete the document information.`,
       });
       
     } catch (error) {
@@ -446,8 +561,11 @@ export function DocumentsAndImagesTabInline({
   const isDocumentUploaded = (document: IatiDocumentLink) => {
     try {
       const url = new URL(document.url);
+      // Check if it's a Supabase Storage URL or local upload
       const currentOrigin = window.location.origin;
-      return url.origin === currentOrigin;
+      const isSupabaseStorage = url.hostname.includes('supabase.co') && url.pathname.includes('/storage/v1/object/public/activity-documents');
+      const isLocalUpload = url.origin === currentOrigin;
+      return isSupabaseStorage || isLocalUpload;
     } catch {
       return false;
     }
@@ -486,19 +604,8 @@ export function DocumentsAndImagesTabInline({
       </div>
 
       {/* Add Documents Section */}
-      <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="upload" className="flex items-center gap-2">
-            <Cloud className="w-4 h-4" />
-            Upload Files
-          </TabsTrigger>
-          <TabsTrigger value="link" className="flex items-center gap-2">
-            <ExternalLink className="w-4 h-4" />
-            Link to URL
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="upload" className="mt-4">
+      <div className="w-full">
+        <div className="mt-4">
           <div 
             className={cn(
               "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
@@ -549,31 +656,8 @@ export function DocumentsAndImagesTabInline({
               />
             </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="link" className="mt-4">
-          <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-            <div className="text-center">
-              <div className="mx-auto w-24 h-24 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <ExternalLink className="w-8 h-8 text-blue-600" />
-              </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">
-                Link to External Document
-              </h4>
-              <p className="text-gray-600 mb-4">
-                Add a link to a document hosted elsewhere (must be publicly accessible)
-              </p>
-              <Button onClick={handleAddUrl} className="gap-2">
-                <Link2 className="w-4 h-4" />
-                Add URL Link
-              </Button>
-              <p className="text-xs text-gray-500 mt-3">
-                Examples: Google Drive, Dropbox, organization websites, etc.
-              </p>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
 
       {/* Search and Filter Section */}
       {documents.length > 0 && (
@@ -630,7 +714,7 @@ export function DocumentsAndImagesTabInline({
                 value={upload.progress} 
                 className={cn(
                   "h-2",
-                  upload.status === 'success' && "bg-green-100",
+                  upload.status === 'success' && "bg-gray-100",
                   upload.status === 'error' && "bg-red-100"
                 )}
               />
@@ -679,20 +763,13 @@ export function DocumentsAndImagesTabInline({
                           {uploadedDocs.map((doc, index) => (
                             <div
                               key={doc.url}
-                              draggable
-                              onDragStart={(e) => handleDocumentDragStart(e, filteredDocuments.indexOf(doc))}
-                              onDragOver={handleDocumentDragOver}
-                              onDrop={(e) => handleDocumentDrop(e, filteredDocuments.indexOf(doc))}
-                              onDragEnd={handleDocumentDragEnd}
-                              className={cn(
-                                "transition-opacity duration-200 bg-green-50 border border-green-200 rounded-lg p-1",
-                                draggedIndex === filteredDocuments.indexOf(doc) && "opacity-50"
-                              )}
+                              className="bg-gray-50 border border-gray-200 rounded-lg p-0.5"
                             >
                               <DocumentCardInlineFixed
                                 document={doc}
                                 onSave={handleSaveDocument}
                                 onDelete={handleDeleteDocument}
+                                onEdit={() => handleEditDocument(doc)}
                                 fetchHead={fetchHead}
                                 locale={locale}
                                 isUploaded={true}
@@ -711,18 +788,10 @@ export function DocumentsAndImagesTabInline({
                         </div>
                         <div className="space-y-3">
                           {linkedDocs.map((doc, index) => (
-                            <div
-                              key={doc.url}
-                              draggable
-                              onDragStart={(e) => handleDocumentDragStart(e, filteredDocuments.indexOf(doc))}
-                              onDragOver={handleDocumentDragOver}
-                              onDrop={(e) => handleDocumentDrop(e, filteredDocuments.indexOf(doc))}
-                              onDragEnd={handleDocumentDragEnd}
-                              className={cn(
-                                "transition-opacity duration-200 bg-blue-50 border border-blue-200 rounded-lg p-1",
-                                draggedIndex === filteredDocuments.indexOf(doc) && "opacity-50"
-                              )}
-                            >
+                                                      <div
+                            key={doc.url}
+                            className="bg-white border border-gray-200 rounded-lg p-1"
+                          >
                               <DocumentCardInlineFixed
                                 document={doc}
                                 onSave={handleSaveDocument}
@@ -759,20 +828,7 @@ export function DocumentsAndImagesTabInline({
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
             Get started by uploading files from your computer or linking to documents hosted elsewhere
           </p>
-          <div className="flex justify-center gap-3">
-            <Button 
-              onClick={() => activityId && fileInputRef.current?.click()}
-              disabled={!activityId}
-              className="gap-2"
-            >
-              <Upload className="w-4 h-4" />
-              Upload Files
-            </Button>
-            <Button onClick={handleAddUrl} variant="outline" className="gap-2">
-              <Link2 className="w-4 h-4" />
-              Add URL Link
-            </Button>
-          </div>
+
         </div>
       )}
       
@@ -813,6 +869,154 @@ export function DocumentsAndImagesTabInline({
           </div>
         </div>
       )}
+      
+      {/* Document Metadata Modal */}
+      {showMetadataModal && (pendingUploadedDocument || editingDocument) && (
+        <DocumentMetadataModal
+          document={pendingUploadedDocument || editingDocument!}
+          isOpen={showMetadataModal}
+          onSave={pendingUploadedDocument ? handleSaveUploadedDocument : handleSaveEditedDocument}
+          onCancel={pendingUploadedDocument ? handleCancelUploadedDocument : handleCancelEdit}
+          locale={locale}
+          isEditing={!!editingDocument}
+        />
+      )}
     </div>
+  );
+}
+
+// Document Metadata Modal Component
+function DocumentMetadataModal({
+  document,
+  isOpen,
+  onSave,
+  onCancel,
+  locale = 'en',
+  isEditing = false
+}: DocumentMetadataModalProps) {
+  const [formData, setFormData] = React.useState<IatiDocumentLink>(document);
+  const [selectedLanguages, setSelectedLanguages] = React.useState<string[]>(
+    document.languageCodes || ['en']
+  );
+  const [selectedCountries, setSelectedCountries] = React.useState<string[]>(
+    document.recipientCountries || []
+  );
+
+  const handleSave = () => {
+    const updatedDocument = {
+      ...formData,
+      languageCodes: selectedLanguages,
+      recipientCountries: selectedCountries
+    };
+    onSave(updatedDocument);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent className="max-w-2xl max-h-[80vh] sm:max-h-[85vh] overflow-hidden flex flex-col mx-4 sm:mx-0">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>{isEditing ? 'Edit Document Information' : 'Complete Document Information'}</DialogTitle>
+          <DialogDescription>
+            {isEditing 
+              ? 'Update the document information and metadata.'
+              : 'Please provide additional details about the uploaded document. This information helps organize and categorize your documents.'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-1 -mx-1">
+          <div className="space-y-4 py-4 px-1">
+          {/* Title */}
+          <div className="space-y-2">
+            <Label htmlFor="doc-title">Document Title *</Label>
+            <Input
+              id="doc-title"
+              value={formData.title[0]?.text || ''}
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                title: [{ text: e.target.value, lang: locale }]
+              }))}
+              placeholder="Enter document title..."
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="doc-description">Description</Label>
+            <Textarea
+              id="doc-description"
+              value={formData.description?.[0]?.text || ''}
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                description: [{ text: e.target.value, lang: locale }]
+              }))}
+              placeholder="Describe the document content..."
+              rows={3}
+            />
+          </div>
+
+          {/* Format */}
+          <div className="space-y-2">
+            <Label>Document Format *</Label>
+            <DocumentFormatSelect
+              value={formData.format}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, format: value }))}
+              placeholder="Select document format..."
+            />
+          </div>
+
+          {/* Category */}
+          <div className="space-y-2">
+            <Label>Document Category</Label>
+            <DocumentCategorySelect
+              value={formData.categoryCode}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, categoryCode: value }))}
+              placeholder="Select category..."
+            />
+          </div>
+
+          {/* Languages */}
+          <div className="space-y-2">
+            <Label>Document Languages</Label>
+            <DocumentLanguagesSelect
+              value={selectedLanguages}
+              onValueChange={(value) => setSelectedLanguages(Array.isArray(value) ? value : [value])}
+              placeholder="Select languages..."
+              multiple={true}
+            />
+          </div>
+
+          {/* Recipient Countries */}
+          <div className="space-y-2">
+            <Label>Recipient Countries</Label>
+            <RecipientCountriesMultiSelect
+              value={selectedCountries}
+              onValueChange={setSelectedCountries}
+              placeholder="Select recipient countries..."
+            />
+          </div>
+
+          {/* Document Date */}
+          <div className="space-y-2">
+            <Label htmlFor="doc-date">Document Date</Label>
+            <Input
+              id="doc-date"
+              type="date"
+              value={formData.documentDate || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, documentDate: e.target.value }))}
+            />
+          </div>
+          </div>
+        </div>
+
+        <DialogFooter className="flex-shrink-0 border-t pt-4">
+          <Button variant="outline" onClick={onCancel}>
+            {isEditing ? 'Cancel' : 'Skip for Now'}
+          </Button>
+          <Button onClick={handleSave}>
+            {isEditing ? 'Update Document' : 'Save Document Information'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 } 

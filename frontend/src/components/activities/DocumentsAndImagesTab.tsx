@@ -337,14 +337,6 @@ export function DocumentsAndImagesTab({
           {filteredDocuments.map((doc, index) => (
             <div
               key={doc.url}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, index)}
-              onDragEnd={handleDragEnd}
-              className={`transition-opacity ${
-                draggedIndex === index ? 'opacity-50' : ''
-              }`}
             >
               <DocumentCard
                 document={doc}

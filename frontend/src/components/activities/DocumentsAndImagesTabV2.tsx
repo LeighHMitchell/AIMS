@@ -188,7 +188,7 @@ export function DocumentsAndImagesTabV2({
         f.id === uploadId ? { ...f, progress: 10 } : f
       ));
       
-      const response = await fetch('/api/documents/upload', {
+      const response = await fetch(`/api/activities/${activityId}/documents/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -204,13 +204,18 @@ export function DocumentsAndImagesTabV2({
         f.id === uploadId ? { ...f, progress: 90, status: 'processing' } : f
       ));
       
-      // Create document with uploaded file info
-      const newDocument: IatiDocumentLink = {
-        url: `${window.location.origin}${data.url}`,
+      // The new API returns the document in IATI format already
+      const newDocument: IatiDocumentLink = data.document || {
+        url: data.url,
         format: data.mimeType || file.type || 'application/octet-stream',
         title: [{ text: file.name, lang: locale }],
+        description: [{ text: '', lang: locale }],
+        categoryCode: 'A01',
+        languageCodes: ['en'],
+        recipientCountries: [],
+        documentDate: new Date().toISOString().split('T')[0],
         isImage: isImageMime(data.mimeType || file.type),
-        thumbnailUrl: data.thumbnailUrl ? `${window.location.origin}${data.thumbnailUrl}` : undefined,
+        thumbnailUrl: data.thumbnailUrl,
       };
       
       // Add to documents
@@ -356,19 +361,8 @@ export function DocumentsAndImagesTabV2({
       </div>
 
       {/* Add Documents Section */}
-      <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="upload" className="flex items-center gap-2">
-            <Cloud className="w-4 h-4" />
-            Upload Files
-          </TabsTrigger>
-          <TabsTrigger value="link" className="flex items-center gap-2">
-            <ExternalLink className="w-4 h-4" />
-            Link to URL
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="upload" className="mt-4">
+      <div className="w-full">
+        <div className="mt-4">
           <div 
             className={cn(
               "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
@@ -419,31 +413,8 @@ export function DocumentsAndImagesTabV2({
               />
             </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="link" className="mt-4">
-          <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-            <div className="text-center">
-              <div className="mx-auto w-24 h-24 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <ExternalLink className="w-8 h-8 text-blue-600" />
-              </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">
-                Link to External Document
-              </h4>
-              <p className="text-gray-600 mb-4">
-                Add a link to a document hosted elsewhere (must be publicly accessible)
-              </p>
-              <Button onClick={handleAddUrl} className="gap-2">
-                <Link2 className="w-4 h-4" />
-                Add URL Link
-              </Button>
-              <p className="text-xs text-gray-500 mt-3">
-                Examples: Google Drive, Dropbox, organization websites, etc.
-              </p>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
 
       {/* Search and Filter Section */}
       {documents.length > 0 && (
@@ -546,20 +517,7 @@ export function DocumentsAndImagesTabV2({
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
                 Get started by uploading files from your computer or linking to documents hosted elsewhere
               </p>
-              <div className="flex justify-center gap-3">
-                <Button 
-                  onClick={() => activityId && fileInputRef.current?.click()}
-                  disabled={!activityId}
-                  className="gap-2"
-                >
-                  <Upload className="w-4 h-4" />
-                  Upload Files
-                </Button>
-                <Button onClick={handleAddUrl} variant="outline" className="gap-2">
-                  <Link2 className="w-4 h-4" />
-                  Add URL Link
-                </Button>
-              </div>
+
             </div>
           ) : (
             <>
@@ -609,10 +567,10 @@ export function DocumentsAndImagesTabV2({
                     </div>
                     <div className="grid gap-3">
                       {linkedDocs.map((doc, index) => (
-                        <div
-                          key={doc.url}
-                          className="bg-blue-50 border border-blue-200 rounded-lg p-2"
-                        >
+                                              <div
+                        key={doc.url}
+                        className="bg-white border border-gray-200 rounded-lg p-2"
+                      >
                           <DocumentCard
                             document={doc}
                             onEdit={() => handleEditDocument(doc)}

@@ -511,6 +511,70 @@ export function checkDocumentsTabCompletion(documents: any[]): TabCompletionStat
 }
 
 /**
+ * Check if the Government Inputs tab is complete based on any field being filled
+ */
+export function checkGovernmentInputsTabCompletion(governmentInputs: any): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  // Check if any field has been completed
+  let hasAnyField = false
+  
+  // Check budget classification fields
+  if (governmentInputs?.onBudgetClassification) {
+    hasAnyField = true
+    completedFields.push('budget_classification')
+  }
+  
+  // Check financial contribution
+  if (governmentInputs?.rgcContribution?.isProvided) {
+    hasAnyField = true
+    completedFields.push('financial_contribution')
+  }
+  
+  // Check national plan alignment
+  if (governmentInputs?.nationalPlanAlignment?.isAligned) {
+    hasAnyField = true
+    completedFields.push('national_plan_alignment')
+  }
+  
+  // Check technical coordination
+  if (governmentInputs?.technicalCoordination?.mechanismType) {
+    hasAnyField = true
+    completedFields.push('technical_coordination')
+  }
+  
+  // Check oversight agreements
+  if (governmentInputs?.oversightAgreement?.hasAgreement) {
+    hasAnyField = true
+    completedFields.push('oversight_agreement')
+  }
+  
+  // Check geographic context
+  if (governmentInputs?.geographicContext?.riskLevel) {
+    hasAnyField = true
+    completedFields.push('geographic_context')
+  }
+  
+  // Check evaluation framework
+  if (governmentInputs?.evaluationFramework?.isLinked) {
+    hasAnyField = true
+    completedFields.push('evaluation_framework')
+  }
+  
+  if (!hasAnyField) {
+    missingFields.push('government_inputs')
+  }
+
+  return {
+    isComplete: hasAnyField,
+    isInProgress: false,
+    completedFields,
+    missingFields
+  }
+}
+
+/**
  * Check if the Focal Points tab is complete based on assigned focal points
  */
 export function checkFocalPointsTabCompletion(focalPointsData: any): TabCompletionStatus {
@@ -602,6 +666,8 @@ export function getTabCompletionStatus(
       return checkResultsTabCompletion(data);
     case 'documents':
       return checkDocumentsTabCompletion(data);
+    case 'government':
+      return checkGovernmentInputsTabCompletion(data);
     case 'focal_points':
       return checkFocalPointsTabCompletion(data);
     // Add other tabs here as needed

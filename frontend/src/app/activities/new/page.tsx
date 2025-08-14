@@ -940,7 +940,10 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         onFocalPointsChange={setFocalPoints}
       />;
     case "government":
-      return <GovernmentInputsSectionEnhanced governmentInputs={governmentInputs} onChange={setGovernmentInputs} />;
+      return <GovernmentInputsSectionEnhanced 
+        governmentInputs={governmentInputs} 
+        onChange={setGovernmentInputs} 
+      />;
     case "documents":
       return <DocumentsAndImagesTabInline
         documents={documents}
@@ -1217,17 +1220,105 @@ function NewActivityPageContent() {
   const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([]);
   // Add state to track documents for Documents & Images tab
   const [documents, setDocuments] = useState<IatiDocumentLink[]>([]);
+  
+  // Load documents for tab completion
+  React.useEffect(() => {
+    const loadDocuments = async () => {
+      if (!general.id) return;
+      try {
+        const response = await fetch(`/api/activities/${general.id}/documents`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.documents && data.documents.length > 0) {
+            setDocuments(data.documents);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load documents for tab completion:', error);
+      }
+    };
+    loadDocuments();
+  }, [general.id]);
+
+  // Load government inputs from backend
+  React.useEffect(() => {
+    const loadGovernmentInputs = async () => {
+      if (!general.id) return;
+      try {
+        const response = await fetch(`/api/activities/${general.id}/government-inputs`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.governmentInputs) {
+            setGovernmentInputs(data.governmentInputs);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load government inputs:', error);
+      }
+    };
+    loadGovernmentInputs();
+  }, [general.id]);
+
   // Add state to track focal points for Focal Points tab completion
   const [focalPoints, setFocalPoints] = useState<any>(null);
   
-  // Add autosave for documents
-  const documentsAutosave = useFieldAutosave('documents', {
-    activityId: general.id,
-    userId: user?.id,
-    onSuccess: () => {
-      toast.success('Documents saved', { position: 'top-right' });
-    },
-  });
+  // Documents are now handled by dedicated API endpoints, no autosave needed
+  const documentsAutosave = {
+    saveNow: () => {
+      // No-op: documents are saved directly to activity_documents table via upload API
+      console.log('[DocumentsAutosave] Skipping autosave - using dedicated API');
+    }
+  };
+
+  // Government Inputs autosave - custom implementation
+  const governmentInputsAutosave = React.useMemo(() => ({
+    saveNow: async (data: any) => {
+      if (!general.id || !user?.id) {
+        console.log('[GovernmentInputsAutosave] Skipping save - missing activity ID or user ID');
+        return;
+      }
+      
+      try {
+        console.log('[GovernmentInputsAutosave] Saving government inputs...');
+        const response = await fetch(`/api/activities/${general.id}/government-inputs`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...data,
+            userId: user.id
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to save government inputs: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('[GovernmentInputsAutosave] Government inputs saved successfully');
+        return result;
+      } catch (error) {
+        console.error('[GovernmentInputsAutosave] Failed to save government inputs:', error);
+        throw error;
+      }
+    }
+  }), [general.id, user?.id]);
+
+  // Autosave government inputs when they change
+  React.useEffect(() => {
+    if (!general.id || !user?.id) return;
+    
+    // Skip autosave on initial load (empty object)
+    if (Object.keys(governmentInputs).length === 0) return;
+    
+    const timeoutId = setTimeout(() => {
+      governmentInputsAutosave.saveNow(governmentInputs);
+    }, 2000); // 2 second debounce
+    
+    return () => clearTimeout(timeoutId);
+  }, [governmentInputs, general.id, user?.id, governmentInputsAutosave]);
+
 
   // State for IATI Sync status
   const [iatiSyncState, setIatiSyncState] = useState({
@@ -1634,6 +1725,9 @@ function NewActivityPageContent() {
     // Documents & Images tab: green check if at least one document exists
     const documentsCompletion = getTabCompletionStatus('documents', documents);
     
+    // Government Inputs tab: green check if at least one field is completed
+    const governmentInputsCompletion = getTabCompletionStatus('government', governmentInputs);
+    
     // Focal Points tab: green check if at least one focal point is assigned
     const focalPointsCompletion = getTabCompletionStatus('focal_points', focalPoints);
     
@@ -1706,6 +1800,10 @@ function NewActivityPageContent() {
       documents: documentsCompletion ? { 
         isComplete: documentsCompletion.isComplete,
         isInProgress: documentsCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
+      government: governmentInputsCompletion ? {
+        isComplete: governmentInputsCompletion.isComplete,
+        isInProgress: governmentInputsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
       focal_points: focalPointsCompletion ? { 
         isComplete: focalPointsCompletion.isComplete,
@@ -2103,7 +2201,7 @@ function NewActivityPageContent() {
         {/* 3-Column Layout: Main Sidebar (fixed by MainLayout) | Editor Nav | Main Panel */}
         <div className="flex h-[calc(100vh-6rem)] overflow-hidden gap-x-6 lg:gap-x-8">
         {/* Activity Editor Navigation Panel */}
-        <aside className="w-80 flex-shrink-0 bg-white overflow-y-auto">
+        <aside className="w-80 flex-shrink-0 bg-white overflow-y-auto pb-24">
           {/* Activity Metadata Summary - Only show when editing */}
           {isEditing && general.id && (
             <div className="bg-white border-b border-gray-200 p-4">
@@ -2190,21 +2288,12 @@ function NewActivityPageContent() {
               activityCreated={!!general.id}
               tabCompletionStatus={tabCompletionStatus}
             />
-            
-            {/* Activity Completion Rating Widget */}
-            <div className="mt-6">
-              <ActivityCompletionRating
-                activity={general}
-                transactions={transactions}
-                sectors={sectors}
-              />
-            </div>
           </div>
         </aside>
 
         {/* Main Content Panel */}
         <main className="flex-1 min-w-0 overflow-y-auto bg-white">
-          <div className="activity-editor pl-0 pr-6 md:pr-8 py-6">
+          <div className="activity-editor pl-0 pr-6 md:pr-8 py-6 pb-24">
             <div className="flex items-center justify-end mb-6">
               <div className="flex items-center gap-6">
                 {/* Publish Toggle */}
@@ -2236,8 +2325,14 @@ function NewActivityPageContent() {
               </div>
             </div>
             
-            
-
+            {/* Activity Completion Rating Widget */}
+            <div className="mb-6">
+              <ActivityCompletionRating
+                activity={general}
+                transactions={transactions}
+                sectors={sectors}
+              />
+            </div>
 
             {/* Duplicate Detection Alert */}
             {!isEditing && similarActivities.length > 0 && (
@@ -2346,6 +2441,7 @@ function NewActivityPageContent() {
                     documents={documents}
                     setDocuments={setDocuments}
                     documentsAutosave={documentsAutosave}
+                    governmentInputsAutosave={governmentInputsAutosave}
                     focalPoints={focalPoints}
                     setFocalPoints={setFocalPoints}
                     setIatiSyncState={setIatiSyncState}

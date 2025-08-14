@@ -1,18 +1,18 @@
 import React from 'react';
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
-interface RecipientCountriesSelectProps {
-  value?: string;
-  onValueChange?: (value: string) => void;
+interface RecipientCountriesMultiSelectProps {
+  value?: string[];
+  onValueChange?: (value: string[]) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  dropdownId?: string;
-  excludeValues?: string[];
 }
 
 // Common country codes - you can expand this list
@@ -205,69 +205,74 @@ const COMMON_COUNTRIES = [
   { code: 'ZW', name: 'Zimbabwe' },
 ];
 
-export function RecipientCountriesSelect({
-  value,
+export function RecipientCountriesMultiSelect({
+  value = [],
   onValueChange,
-  placeholder = "Select country...",
+  placeholder = "Select countries...",
   disabled = false,
   className,
-  dropdownId = "recipient-countries-select",
-  excludeValues = [],
-}: RecipientCountriesSelectProps) {
+}: RecipientCountriesMultiSelectProps) {
   
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  const selectedOption = COMMON_COUNTRIES.find(option => option.code === value);
+  const selectedCountries = COMMON_COUNTRIES.filter(country => value.includes(country.code));
 
   const filteredOptions = React.useMemo(() => {
-    let options = COMMON_COUNTRIES.filter(country => !excludeValues.includes(country.code));
-    
-    if (!searchQuery) return options;
+    if (!searchQuery) return COMMON_COUNTRIES;
     
     const query = searchQuery.toLowerCase();
-    return options.filter(option => 
+    return COMMON_COUNTRIES.filter(option => 
       option.code.toLowerCase().includes(query) ||
       option.name.toLowerCase().includes(query)
     );
-  }, [searchQuery, excludeValues]);
+  }, [searchQuery]);
+
+  const handleToggleCountry = (countryCode: string) => {
+    const newValue = value.includes(countryCode)
+      ? value.filter(v => v !== countryCode)
+      : [...value, countryCode];
+    onValueChange?.(newValue);
+  };
+
+  const handleRemoveCountry = (countryCode: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onValueChange?.(value.filter(v => v !== countryCode));
+  };
 
   return (
-    <div className={cn("pb-6", className)}>
+    <div className={cn("", className)}>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
-            !selectedOption && "text-muted-foreground"
+            "flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            !selectedCountries.length && "text-muted-foreground"
           )}
           disabled={disabled}
         >
-          <span className="truncate">
-            {selectedOption ? (
-              <span className="font-medium">{selectedOption.name}</span>
+          <div className="flex-1 flex flex-wrap gap-1 items-center">
+            {selectedCountries.length > 0 ? (
+              selectedCountries.map(country => (
+                <Badge key={country.code} variant="secondary" className="text-xs">
+                  {country.name}
+                  <button
+                    type="button"
+                    onClick={(e) => handleRemoveCountry(country.code, e)}
+                    className="ml-1 hover:text-destructive"
+                    aria-label={`Remove ${country.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))
             ) : (
-              placeholder
+              <span>{placeholder}</span>
             )}
-          </span>
-          <div className="flex items-center gap-2">
-            {selectedOption && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onValueChange?.("");
-                }}
-                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                aria-label="Clear selection"
-              >
-                <span className="text-xs">×</span>
-              </button>
-            )}
-            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[350px] p-0 shadow-lg border-border max-h-[300px] overflow-hidden" 
+          className="w-[400px] p-0 shadow-lg border-border max-h-[400px] overflow-hidden" 
           align="start"
           sideOffset={4}
         >
@@ -279,7 +284,7 @@ export function RecipientCountriesSelect({
               className="h-8 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
-          <ScrollArea className="h-[240px]">
+          <ScrollArea className="h-[320px]">
             <div className="p-2">
               {filteredOptions.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground">
@@ -288,28 +293,28 @@ export function RecipientCountriesSelect({
                 </div>
               ) : (
                 filteredOptions.map((country) => (
-                  <button
+                  <div
                     key={country.code}
                     className={cn(
-                      "w-full text-left px-2 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
-                      value === country.code && "bg-blue-100 text-blue-900"
+                      "flex items-center space-x-2 px-2 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer",
+                      value.includes(country.code) && "bg-blue-50"
                     )}
-                    onClick={() => {
-                      onValueChange?.(country.code);
-                      setIsOpen(false);
-                      setSearchQuery("");
-                    }}
+                    onClick={() => handleToggleCountry(country.code)}
                   >
-                    <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={value.includes(country.code)}
+                      onCheckedChange={() => handleToggleCountry(country.code)}
+                      className="pointer-events-none"
+                    />
+                    <div className="flex items-center gap-2 flex-1">
                       <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded min-w-[2.5rem]">
                         {country.code}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{country.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">ISO 3166-1: {country.code}</div>
                       </div>
                     </div>
-                  </button>
+                  </div>
                 ))
               )}
             </div>
@@ -318,4 +323,4 @@ export function RecipientCountriesSelect({
       </Popover>
     </div>
   );
-} 
+}

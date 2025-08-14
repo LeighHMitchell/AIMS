@@ -30,6 +30,7 @@ import {
 import { 
   IatiDocumentLink, 
   DOCUMENT_CATEGORIES, 
+  COMMON_LANGUAGES,
   getFormatLabel,
   isImageMime,
   toIatiXml,
@@ -70,6 +71,14 @@ export function DocumentCard({
   
   // Get category label
   const category = DOCUMENT_CATEGORIES.find(c => c.code === document.categoryCode);
+  
+  // Get language names from codes
+  const getLanguageNames = (languageCodes: string[]) => {
+    return languageCodes.map(code => {
+      const lang = COMMON_LANGUAGES.find(l => l.code === code);
+      return lang ? lang.name : code.toUpperCase();
+    });
+  };
   
   // Get file type icon
   const getFileIcon = () => {
@@ -183,12 +192,12 @@ export function DocumentCard({
                   <Tooltip>
                     <TooltipTrigger>
                       <Badge variant="outline" className="text-xs">
-                        {category.code}
+                        {category.name}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
                       <div className="max-w-xs">
-                        <p className="font-medium">{category.name}</p>
+                        <p className="font-medium">{category.name} ({category.code})</p>
                         <p className="text-sm">{category.description}</p>
                       </div>
                     </TooltipContent>
@@ -199,7 +208,7 @@ export function DocumentCard({
               {document.languageCodes && document.languageCodes.length > 0 && (
                 <Badge variant="outline" className="text-xs gap-1">
                   <Languages className="w-3 h-3" />
-                  {document.languageCodes.join(', ')}
+                  {getLanguageNames(document.languageCodes).join(', ')}
                 </Badge>
               )}
               
@@ -227,11 +236,11 @@ export function DocumentCard({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => onEdit(document)}
+            onClick={() => window.open(`https://stackedit.io/app#url=${encodeURIComponent(document.url)}`, '_blank')}
             className="text-xs gap-1"
           >
             <Edit className="w-3 h-3" />
-            Edit
+            Stack Edit
           </Button>
           
           <Button

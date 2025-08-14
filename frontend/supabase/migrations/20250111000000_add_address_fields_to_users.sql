@@ -7,12 +7,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_name = 'users' 
-        AND column_name = 'address_line_1'
-        AND table_schema = 'public'
-    ) THEN
-        ALTER TABLE public.users ADD COLUMN address_line_1 TEXT;
-        COMMENT ON COLUMN public.users.address_line_1 IS 'First line of address (street, building number)';
-    END IF;
+        AND column1
 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 

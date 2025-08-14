@@ -59,12 +59,12 @@ export function DocumentFormatSelect({
           )}
           disabled={disabled}
         >
-          <span className="truncate">
+          <span className="truncate text-left">
             {selectedOption ? (
-              <div>
-                <div className="font-medium">{selectedOption.label}</div>
-                <div className="text-xs text-muted-foreground">{selectedOption.mime}</div>
-              </div>
+              <span className="text-left flex items-center gap-2">
+                <span className="font-medium">{selectedOption.label}</span>
+                <span className="text-xs text-muted-foreground">({selectedOption.mime})</span>
+              </span>
             ) : (
               placeholder
             )}

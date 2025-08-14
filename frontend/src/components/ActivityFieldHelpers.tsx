@@ -193,34 +193,43 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
   const [isExpanded, setIsExpanded] = React.useState(false);
   
   return (
-    <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-      <h3 className="text-sm font-semibold text-gray-700">Activity Completion Rating</h3>
-      
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <span className="text-2xl font-bold text-gray-900">{completionPercentage}%</span>
-          <span className="text-xs text-gray-500">Complete</span>
+    <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-700 mb-1">Activity Completion Rating</h3>
+            <p className="text-sm text-slate-500">Data quality assessment</p>
+          </div>
+          <div className="text-right">
+            <span className={`text-3xl font-bold ${
+              completionPercentage === 100 
+                ? 'text-slate-700' 
+                : completionPercentage >= 80 
+                ? 'text-slate-600' 
+                : completionPercentage >= 60 
+                ? 'text-slate-500' 
+                : 'text-slate-400'
+            }`}>{completionPercentage}%</span>
+            <p className="text-xs text-slate-500 mt-1">Complete</p>
+          </div>
         </div>
-        
-
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-sm text-slate-600 hover:text-slate-700 font-medium flex items-center gap-1 px-3 py-2 rounded-md hover:bg-slate-100 transition-colors"
+        >
+          {isExpanded ? '▼' : '▶'} Improve my rating?
+        </button>
       </div>
       
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-      >
-        {isExpanded ? '▼' : '▶'} Improve my rating?
-      </button>
-      
       {isExpanded && (
-        <div className="space-y-3 pt-2 border-t">
+        <div className="space-y-3 pt-4 mt-4 border-t border-slate-200">
           {missingFields.required.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-red-600 mb-1">Required fields:</h4>
+              <h4 className="text-xs font-semibold text-slate-600 mb-1">Required fields:</h4>
               <ul className="text-xs space-y-0.5">
                 {missingFields.required.map((field, idx) => (
-                  <li key={idx} className="text-gray-600 flex items-start gap-1">
-                    <span className="text-red-600 mt-0.5">•</span>
+                  <li key={idx} className="text-slate-600 flex items-start gap-1">
+                    <span className="text-slate-500 mt-0.5">•</span>
                     <span>{field}</span>
                   </li>
                 ))}
@@ -230,11 +239,11 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
           
           {missingFields.recommended.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-gray-700 mb-1">Recommended fields:</h4>
+              <h4 className="text-xs font-semibold text-slate-600 mb-1">Recommended fields:</h4>
               <ul className="text-xs space-y-0.5">
                 {missingFields.recommended.map((field, idx) => (
-                  <li key={idx} className="text-gray-600 flex items-start gap-1">
-                    <span className="text-gray-400 mt-0.5">•</span>
+                  <li key={idx} className="text-slate-600 flex items-start gap-1">
+                    <span className="text-slate-400 mt-0.5">•</span>
                     <span>{field}</span>
                   </li>
                 ))}

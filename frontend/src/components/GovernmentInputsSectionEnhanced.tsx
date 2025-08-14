@@ -149,29 +149,29 @@ export function GovernmentInputsSectionEnhanced({
     <TooltipProvider>
       <div className="space-y-6">
         <div className="flex items-center gap-3 mb-6">
-          <Building className="h-6 w-6 text-slate-600" />
+          <Building className="h-6 w-6 text-gray-600" />
             <div>
-            <h2 className="text-xl font-semibold text-slate-900">Government Inputs & Alignment</h2>
-            <p className="text-sm text-slate-600">Track government involvement, budget classification, and national alignment</p>
+            <h2 className="text-xl font-semibold text-gray-900">Government Inputs & Alignment</h2>
+            <p className="text-sm text-gray-600">Track government involvement, budget classification, and national alignment</p>
             </div>
           </div>
           
         <Tabs defaultValue="budget-finance" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-100">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-100">
             <TabsTrigger value="budget-finance" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
+              <DollarSign className="h-4 w-4 text-gray-600" />
               Budget & Finance
             </TabsTrigger>
             <TabsTrigger value="coordination" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
+              <Users className="h-4 w-4 text-gray-600" />
               Coordination
             </TabsTrigger>
             <TabsTrigger value="oversight" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
+              <Shield className="h-4 w-4 text-gray-600" />
               Oversight
             </TabsTrigger>
             <TabsTrigger value="evaluation" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
+              <BarChart3 className="h-4 w-4 text-gray-600" />
               Evaluation
             </TabsTrigger>
           </TabsList>
@@ -184,8 +184,8 @@ export function GovernmentInputsSectionEnhanced({
               <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                      <FileCheck className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-gray-100 rounded-lg">
+                      <FileCheck className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
                       <CardTitle className="text-lg">Budget Classification</CardTitle>
@@ -272,8 +272,8 @@ export function GovernmentInputsSectionEnhanced({
             <Card>
               <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Wallet className="h-5 w-5 text-green-600" />
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <Wallet className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
                   <CardTitle className="text-lg">Government Financial Contribution</CardTitle>
@@ -312,10 +312,10 @@ export function GovernmentInputsSectionEnhanced({
               {governmentInputs.rgcContribution?.isProvided && (
                 <>
                     {/* Total Contribution Summary */}
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className="flex items-center gap-2 mb-4">
-                        <DollarSign className="h-5 w-5 text-green-600" />
-                        <h4 className="font-semibold text-green-900">Total Government Contribution</h4>
+                        <DollarSign className="h-5 w-5 text-gray-600" />
+                        <h4 className="font-semibold text-gray-900">Total Government Contribution</h4>
                     </div>
                     
                       <div className="grid grid-cols-3 gap-4">
@@ -465,8 +465,8 @@ export function GovernmentInputsSectionEnhanced({
             <Card>
               <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Target className="h-5 w-5 text-purple-600" />
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <Target className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
                     <CardTitle className="text-lg">National Plan Alignment</CardTitle>
@@ -541,8 +541,8 @@ export function GovernmentInputsSectionEnhanced({
             <Card>
               <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Users className="h-5 w-5 text-orange-600" />
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <Users className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
                   <CardTitle className="text-lg">Technical Coordination</CardTitle>
@@ -626,8 +626,8 @@ export function GovernmentInputsSectionEnhanced({
             <Card>
               <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <Shield className="h-5 w-5 text-red-600" />
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <Shield className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
                     <CardTitle className="text-lg">Oversight & Agreements</CardTitle>
@@ -700,8 +700,8 @@ export function GovernmentInputsSectionEnhanced({
             <Card>
               <CardHeader>
               <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
-                    <MapPin className="h-5 w-5 text-yellow-600" />
+                  <div className="p-2 bg-gray-100 rounded-lg">
+                    <MapPin className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
                     <CardTitle className="text-lg">Geographic & Risk Context</CardTitle>
@@ -817,8 +817,8 @@ export function GovernmentInputsSectionEnhanced({
             <Card>
               <CardHeader>
               <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg">
-                    <BarChart3 className="h-5 w-5 text-indigo-600" />
+                  <div className="p-2 bg-gray-100 rounded-lg">
+                    <BarChart3 className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
                     <CardTitle className="text-lg">Evaluation & Results Framework</CardTitle>
@@ -927,12 +927,12 @@ function getDimensionHelp(key: string): string {
 function getStatusIcon(status: string | undefined) {
   switch (status) {
     case "Yes":
-      return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+      return <CheckCircle2 className="h-4 w-4 text-gray-600" />;
     case "Partial":
-      return <CircleSlash className="h-4 w-4 text-yellow-600" />;
+      return <CircleSlash className="h-4 w-4 text-gray-500" />;
     case "No":
-      return <Circle className="h-4 w-4 text-red-600" />;
+      return <Circle className="h-4 w-4 text-gray-400" />;
     default:
-      return <Circle className="h-4 w-4 text-slate-400" />;
+      return <Circle className="h-4 w-4 text-gray-300" />;
   }
 }
