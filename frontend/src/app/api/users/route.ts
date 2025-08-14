@@ -189,6 +189,7 @@ export async function PUT(request: NextRequest) {
     
     console.log('[AIMS] PUT /api/users - updateData after destructuring:', updateData);
     console.log('[AIMS] PUT /api/users - department in updateData:', updateData.department);
+    console.log('[AIMS] PUT /api/users - organization_id in updateData:', updateData.organization_id);
     
     // Map frontend field names to database column names
     const dbUpdateData = {
@@ -197,13 +198,44 @@ export async function PUT(request: NextRequest) {
     };
     
     console.log('[AIMS] PUT /api/users - dbUpdateData being sent to database:', dbUpdateData);
+    console.log('[AIMS] PUT /api/users - organization_id in dbUpdateData:', dbUpdateData.organization_id);
     
     // Handle profile picture mapping
     if (profile_picture !== undefined) {
       dbUpdateData.avatar_url = profile_picture;
     }
     
+    // Verify organization exists if organization_id is being set
+    if (dbUpdateData.organization_id) {
+      console.log('[AIMS] Verifying organization exists:', dbUpdateData.organization_id);
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('id, name')
+        .eq('id', dbUpdateData.organization_id)
+        .single();
+      
+      if (orgError || !orgData) {
+        console.error('[AIMS] Organization not found:', dbUpdateData.organization_id, orgError);
+        return NextResponse.json(
+          { error: `Organization not found: ${dbUpdateData.organization_id}` },
+          { status: 400 }
+        );
+      }
+      console.log('[AIMS] Organization verified:', orgData);
+      
+      // Also set the organisation text field for backward compatibility
+      dbUpdateData.organisation = orgData.name;
+      console.log('[AIMS] Setting organisation text field to:', orgData.name);
+    } else if (dbUpdateData.organization_id === null) {
+      // If organization_id is being cleared, also clear the organisation text field
+      dbUpdateData.organisation = null;
+      console.log('[AIMS] Clearing organisation text field');
+    }
+
     // Update user profile
+    console.log('[AIMS] About to update user with ID:', id);
+    console.log('[AIMS] Update data being sent to Supabase:', JSON.stringify(dbUpdateData, null, 2));
+    
     const { data, error } = await supabase
       .from('users')
       .update(dbUpdateData)
@@ -212,15 +244,28 @@ export async function PUT(request: NextRequest) {
       .single();
     
     if (error) {
-      console.error('[AIMS] Error updating user:', error);
+      console.error('[AIMS] Supabase error updating user:', error);
+      console.error('[AIMS] Error code:', error.code);
+      console.error('[AIMS] Error message:', error.message);
+      console.error('[AIMS] Error details:', error.details);
+      console.error('[AIMS] Error hint:', error.hint);
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message, code: error.code, details: error.details },
         { status: 400 }
+      );
+    }
+    
+    if (!data) {
+      console.error('[AIMS] No data returned from Supabase update');
+      return NextResponse.json(
+        { error: 'No data returned from update' },
+        { status: 500 }
       );
     }
     
     console.log('[AIMS] Updated user in Supabase - returned data:', data);
     console.log('[AIMS] Department in returned data:', data?.department);
+    console.log('[AIMS] Organization ID in returned data:', data?.organization_id);
     return NextResponse.json(data);
     
   } catch (error) {

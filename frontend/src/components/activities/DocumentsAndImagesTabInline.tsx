@@ -11,6 +11,8 @@ import {
   Link2,
   FileUp,
   X,
+  Cloud,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { DocumentCardInlineFixed } from './DocumentCardInlineFixed';
 import {
@@ -355,6 +358,7 @@ export function DocumentsAndImagesTabInline({
         languageCodes: ['en'],
         recipientCountries: [],
         documentDate: new Date().toISOString().split('T')[0],
+        thumbnailUrl: data.thumbnailUrl ? `${window.location.origin}${data.thumbnailUrl}` : undefined,
       };
       
       // Add to documents
@@ -437,100 +441,174 @@ export function DocumentsAndImagesTabInline({
   const handleDocumentDragEnd = () => {
     setDraggedIndex(null);
   };
+
+  // Helper function to determine if a document is uploaded (vs external URL)
+  const isDocumentUploaded = (document: IatiDocumentLink) => {
+    try {
+      const url = new URL(document.url);
+      const currentOrigin = window.location.origin;
+      return url.origin === currentOrigin;
+    } catch {
+      return false;
+    }
+  };
   
   return (
-    <div 
-      className={cn(
-        "space-y-4 transition-colors duration-200",
-        isDragOver && "bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-4"
-      )}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {/* Drop Zone Message */}
-      {isDragOver && (
-        <div className="flex flex-col items-center justify-center py-8 text-blue-600">
-          <FileUp className="w-12 h-12 mb-2" />
-          <p className="text-lg font-medium">Drop files here to upload</p>
-          <p className="text-sm">Supports images, PDFs, and documents</p>
+    <div className="space-y-6">
+      {/* Header with Stats */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Documents & Images</h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Upload files or link to external documents
+          </p>
         </div>
-      )}
-      
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex gap-2 flex-1">
-          <Button onClick={handleAddUrl} className="gap-2">
-            <Link2 className="w-4 h-4" />
-            Add URL
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => fileInputRef.current?.click()} 
-            className="gap-2"
-            disabled={!activityId}
-          >
-            <Upload className="w-4 h-4" />
-            Upload Files
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            onChange={(e) => handleFileSelect(e.target.files)}
-            className="hidden"
-            accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv"
-          />
-        </div>
-        
-        <div className="flex gap-3 flex-1">
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search documents..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <div className="w-48">
-            <DocumentTypeFilter
-              value={filterFormat}
-              onValueChange={setFilterFormat}
-            />
-          </div>
-          
-          <div className="w-64">
-            <DocumentCategoryFilter
-              value={filterCategory}
-              onValueChange={setFilterCategory}
-            />
-          </div>
-        </div>
-      </div>
-      
-      {/* Stats */}
-      <div className="flex gap-4 text-sm text-gray-600">
-        <span className="flex items-center gap-1">
-          <FileText className="w-4 h-4" />
-          {stats.total} total
-        </span>
-        <span className="flex items-center gap-1">
-          <FileImage className="w-4 h-4" />
-          {stats.images} images
-        </span>
-        <span className="flex items-center gap-1">
-          <CheckCircle className="w-4 h-4" />
-          {stats.validated} validated
-        </span>
-        {stats.total > stats.validated && (
-          <span className="flex items-center gap-1 text-amber-600">
-            <AlertCircle className="w-4 h-4" />
-            {stats.total - stats.validated} need attention
+        <div className="flex gap-4 text-sm text-gray-600">
+          <span className="flex items-center gap-1">
+            <FileText className="w-4 h-4" />
+            {stats.total} total
           </span>
-        )}
+          <span className="flex items-center gap-1">
+            <FileImage className="w-4 h-4" />
+            {stats.images} images
+          </span>
+          <span className="flex items-center gap-1">
+            <CheckCircle className="w-4 h-4" />
+            {stats.validated} validated
+          </span>
+          {stats.total > stats.validated && (
+            <span className="flex items-center gap-1 text-amber-600">
+              <AlertCircle className="w-4 h-4" />
+              {stats.total - stats.validated} need attention
+            </span>
+          )}
+        </div>
       </div>
+
+      {/* Add Documents Section */}
+      <Tabs defaultValue="upload" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="upload" className="flex items-center gap-2">
+            <Cloud className="w-4 h-4" />
+            Upload Files
+          </TabsTrigger>
+          <TabsTrigger value="link" className="flex items-center gap-2">
+            <ExternalLink className="w-4 h-4" />
+            Link to URL
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="upload" className="mt-4">
+          <div 
+            className={cn(
+              "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
+              isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-100",
+              !activityId && "opacity-50 cursor-not-allowed"
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => activityId && fileInputRef.current?.click()}
+          >
+            <div className="text-center max-w-md">
+              <div className="mb-6">
+                {isDragOver ? (
+                  <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
+                ) : (
+                  <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                )}
+              </div>
+              <h4 className="text-2xl font-medium text-gray-900 mb-3">
+                {isDragOver ? "Drop your files here" : "Upload Documents & Images"}
+              </h4>
+              <p className="text-gray-600 mb-6 text-lg">
+                Drag and drop files anywhere in this area, or click to browse your computer
+              </p>
+              <Button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (activityId) fileInputRef.current?.click();
+                }}
+                disabled={!activityId}
+                className="gap-2 text-lg px-6 py-3"
+                size="lg"
+              >
+                <Upload className="w-5 h-5" />
+                Choose Files
+              </Button>
+              <p className="text-sm text-gray-500 mt-4">
+                Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={(e) => handleFileSelect(e.target.files)}
+                className="hidden"
+                accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv"
+              />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="link" className="mt-4">
+          <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+            <div className="text-center">
+              <div className="mx-auto w-24 h-24 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <ExternalLink className="w-8 h-8 text-blue-600" />
+              </div>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">
+                Link to External Document
+              </h4>
+              <p className="text-gray-600 mb-4">
+                Add a link to a document hosted elsewhere (must be publicly accessible)
+              </p>
+              <Button onClick={handleAddUrl} className="gap-2">
+                <Link2 className="w-4 h-4" />
+                Add URL Link
+              </Button>
+              <p className="text-xs text-gray-500 mt-3">
+                Examples: Google Drive, Dropbox, organization websites, etc.
+              </p>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Search and Filter Section */}
+      {documents.length > 0 && (
+        <div className="bg-white border rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search documents..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <div className="w-64">
+                <DocumentCategoryFilter
+                  value={filterCategory}
+                  onValueChange={setFilterCategory}
+                />
+              </div>
+              
+              <div className="w-48">
+                <DocumentTypeFilter
+                  value={filterFormat}
+                  onValueChange={setFilterFormat}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Uploading Files */}
       {uploadingFiles.length > 0 && (
@@ -574,56 +652,129 @@ export function DocumentsAndImagesTabInline({
       )}
       
       {/* Documents List */}
-      <div className="space-y-4">
-        {filteredDocuments.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            {documents.length === 0 ? (
-              <>
-                <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium mb-2">No documents yet</h3>
-                <p className="mb-4">Add your first document or image to get started</p>
-                <Button onClick={handleAddUrl} className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Document
-                </Button>
-              </>
-            ) : (
-              <>
-                <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium mb-2">No matching documents</h3>
-                <p>Try adjusting your search or filters</p>
-              </>
-            )}
-          </div>
-        ) : (
-          <ScrollArea className="h-auto">
-            <div className="space-y-4">
-              {filteredDocuments.map((doc, index) => (
-                <div
-                  key={doc.url}
-                  draggable
-                  onDragStart={(e) => handleDocumentDragStart(e, index)}
-                  onDragOver={handleDocumentDragOver}
-                  onDrop={(e) => handleDocumentDrop(e, index)}
-                  onDragEnd={handleDocumentDragEnd}
-                  className={cn(
-                    "transition-opacity duration-200",
-                    draggedIndex === index && "opacity-50"
-                  )}
-                >
-                  <DocumentCardInlineFixed
-                    document={doc}
-                    onSave={handleSaveDocument}
-                    onDelete={handleDeleteDocument}
-                    fetchHead={fetchHead}
-                    locale={locale}
-                  />
-                </div>
-              ))}
+      {documents.length > 0 && (
+        <div className="space-y-6">
+          {filteredDocuments.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
+              <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium mb-2">No matching documents</h3>
+              <p>Try adjusting your search or filters</p>
             </div>
-          </ScrollArea>
-        )}
-      </div>
+          ) : (
+            <>
+              {/* Separate uploaded files and linked documents */}
+              {(() => {
+                const uploadedDocs = filteredDocuments.filter(doc => isDocumentUploaded(doc));
+                const linkedDocs = filteredDocuments.filter(doc => !isDocumentUploaded(doc));
+                
+                return (
+                  <>
+                    {uploadedDocs.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 pb-2 border-b">
+                          <Cloud className="w-5 h-5 text-gray-600" />
+                          <h4 className="font-medium text-gray-900">Uploaded Files ({uploadedDocs.length})</h4>
+                        </div>
+                        <div className="space-y-3">
+                          {uploadedDocs.map((doc, index) => (
+                            <div
+                              key={doc.url}
+                              draggable
+                              onDragStart={(e) => handleDocumentDragStart(e, filteredDocuments.indexOf(doc))}
+                              onDragOver={handleDocumentDragOver}
+                              onDrop={(e) => handleDocumentDrop(e, filteredDocuments.indexOf(doc))}
+                              onDragEnd={handleDocumentDragEnd}
+                              className={cn(
+                                "transition-opacity duration-200 bg-green-50 border border-green-200 rounded-lg p-1",
+                                draggedIndex === filteredDocuments.indexOf(doc) && "opacity-50"
+                              )}
+                            >
+                              <DocumentCardInlineFixed
+                                document={doc}
+                                onSave={handleSaveDocument}
+                                onDelete={handleDeleteDocument}
+                                fetchHead={fetchHead}
+                                locale={locale}
+                                isUploaded={true}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {linkedDocs.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 pb-2 border-b">
+                          <ExternalLink className="w-5 h-5 text-gray-600" />
+                          <h4 className="font-medium text-gray-900">Linked Documents ({linkedDocs.length})</h4>
+                        </div>
+                        <div className="space-y-3">
+                          {linkedDocs.map((doc, index) => (
+                            <div
+                              key={doc.url}
+                              draggable
+                              onDragStart={(e) => handleDocumentDragStart(e, filteredDocuments.indexOf(doc))}
+                              onDragOver={handleDocumentDragOver}
+                              onDrop={(e) => handleDocumentDrop(e, filteredDocuments.indexOf(doc))}
+                              onDragEnd={handleDocumentDragEnd}
+                              className={cn(
+                                "transition-opacity duration-200 bg-blue-50 border border-blue-200 rounded-lg p-1",
+                                draggedIndex === filteredDocuments.indexOf(doc) && "opacity-50"
+                              )}
+                            >
+                              <DocumentCardInlineFixed
+                                document={doc}
+                                onSave={handleSaveDocument}
+                                onDelete={handleDeleteDocument}
+                                fetchHead={fetchHead}
+                                locale={locale}
+                                isUploaded={false}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {documents.length === 0 && (
+        <div className="text-center py-16 text-gray-500">
+          <div className="flex justify-center gap-4 mb-6">
+            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Cloud className="w-8 h-8 text-gray-400" />
+            </div>
+            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+              <ExternalLink className="w-8 h-8 text-gray-400" />
+            </div>
+          </div>
+          <h3 className="text-xl font-medium mb-2 text-gray-900">No documents yet</h3>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            Get started by uploading files from your computer or linking to documents hosted elsewhere
+          </p>
+          <div className="flex justify-center gap-3">
+            <Button 
+              onClick={() => activityId && fileInputRef.current?.click()}
+              disabled={!activityId}
+              className="gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Upload Files
+            </Button>
+            <Button onClick={handleAddUrl} variant="outline" className="gap-2">
+              <Link2 className="w-4 h-4" />
+              Add URL Link
+            </Button>
+          </div>
+        </div>
+      )}
       
       {/* Bulk Actions */}
       {filteredDocuments.length > 0 && (

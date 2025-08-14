@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const { count: contactsCount } = await supabase
       .from('activity_contacts')
       .select('*', { count: 'exact', head: true })
-      .or('email.neq.is.null,first_name.neq.is.null');
+      .or('not.email.is.null,not.first_name.is.null');
 
     const stats = [
       { contact_type: 'user', count: usersCount || 0 },

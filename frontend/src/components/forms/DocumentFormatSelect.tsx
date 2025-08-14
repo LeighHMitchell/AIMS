@@ -61,12 +61,10 @@ export function DocumentFormatSelect({
         >
           <span className="truncate">
             {selectedOption ? (
-              <span className="flex items-center gap-2">
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                  {selectedOption.mime.split('/')[1]?.toUpperCase()}
-                </span>
-                <span className="font-medium">{selectedOption.label}</span>
-              </span>
+              <div>
+                <div className="font-medium">{selectedOption.label}</div>
+                <div className="text-xs text-muted-foreground">{selectedOption.mime}</div>
+              </div>
             ) : (
               placeholder
             )}
@@ -122,14 +120,9 @@ export function DocumentFormatSelect({
                       setSearchQuery("");
                     }}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded min-w-[2.5rem]">
-                        {format.mime.split('/')[1]?.toUpperCase()}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{format.label}</div>
-                        <div className="text-xs text-muted-foreground truncate">{format.mime}</div>
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{format.label}</div>
+                      <div className="text-xs text-muted-foreground truncate">{format.mime}</div>
                     </div>
                   </button>
                 ))

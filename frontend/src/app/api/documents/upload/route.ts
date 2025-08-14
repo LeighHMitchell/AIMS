@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { generateThumbnail, supportsThumbnail } from '@/lib/thumbnail-generator';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,11 +46,27 @@ export async function POST(request: NextRequest) {
     // Generate public URL
     const publicUrl = `/uploads/documents/${activityId || 'temp'}/${uniqueFilename}`;
     
+    // Generate thumbnail if supported
+    let thumbnailUrl: string | null = null;
+    if (supportsThumbnail(file.type)) {
+      try {
+        const thumbnailDir = join(process.cwd(), 'public', 'uploads', 'thumbnails', activityId || 'temp');
+        const thumbnailResult = await generateThumbnail(filePath, file.type, thumbnailDir);
+        if (thumbnailResult) {
+          thumbnailUrl = thumbnailResult.thumbnailUrl;
+        }
+      } catch (error) {
+        console.error('Thumbnail generation failed:', error);
+        // Continue without thumbnail - not a critical error
+      }
+    }
+    
     return NextResponse.json({
       url: publicUrl,
       filename: file.name,
       size: file.size,
       mimeType: file.type,
+      thumbnailUrl,
       uploadedAt: new Date().toISOString()
     });
   } catch (error) {

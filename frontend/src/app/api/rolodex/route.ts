@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
     // Start with a direct approach - get users and activity contacts separately
     console.log('[AIMS Rolodex] Using direct table queries...');
     
-    // Get users data - simplified query first
+    // Get users data with organization information
     let usersQuery = supabase
             .from('users')
             .select(`
@@ -116,9 +116,18 @@ export async function GET(request: NextRequest) {
               department,
               telephone,
               created_at,
-              updated_at
-      `);
+              updated_at,
+              organizations!users_organization_id_fkey (
+                id,
+                name,
+                acronym
+              )
+      `)
+      .not('email', 'is', null)
+      .neq('email', '');
 
+    console.log('[AIMS Rolodex] Users query with organization join:', usersQuery);
+    
     // Apply user filters
     if (filters.search) {
       usersQuery = usersQuery.or(`email.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%`);
@@ -139,6 +148,25 @@ export async function GET(request: NextRequest) {
 
     console.log('[AIMS Rolodex] Users query result:', { users: users?.length, error: usersError });
     console.log('[AIMS Rolodex] Sample user data:', users?.[0]);
+    if (usersError) {
+      console.log('[AIMS Rolodex] Users error details:', usersError);
+    }
+    
+    // Let's also test a simple count query to see total users
+    const { count: totalUsersCount, error: countError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+    
+    // Test with the same conditions as stats API
+    const { count: filteredUsersCount, error: filteredCountError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .not('email', 'is', null)
+      .neq('email', '');
+    
+    console.log('[AIMS Rolodex] Total users in database:', totalUsersCount, 'Error:', countError);
+    console.log('[AIMS Rolodex] Filtered users (same as stats):', filteredUsersCount, 'Error:', filteredCountError);
+    console.log('[AIMS Rolodex] Actual users returned by query:', users?.length);
 
     if (usersError) {
       console.error('[AIMS Rolodex] Users query error:', usersError);
@@ -168,11 +196,15 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at,
         organizations (
+          id,
           name,
           acronym
         )
-      `);
+      `)
+;
 
+    console.log('[AIMS Rolodex] Contacts query with organization join:', contactsQuery);
+    
     // Apply contact filters
     if (filters.search) {
       contactsQuery = contactsQuery.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,position.ilike.%${filters.search}%`);
@@ -191,6 +223,13 @@ export async function GET(request: NextRequest) {
     const { data: contacts, error: contactsError } = await contactsQuery;
 
     console.log('[AIMS Rolodex] Contacts query result:', { contacts: contacts?.length, error: contactsError });
+    
+    // Let's also test a simple count query for activity contacts
+    const { count: totalContactsCount, error: contactsCountError } = await supabase
+      .from('activity_contacts')
+      .select('*', { count: 'exact', head: true });
+    
+    console.log('[AIMS Rolodex] Total activity contacts in database:', totalContactsCount, 'Error:', contactsCountError);
 
     if (contactsError) {
       console.error('[AIMS Rolodex] Contacts query error:', contactsError);
@@ -216,8 +255,8 @@ export async function GET(request: NextRequest) {
           job_title: user.job_title,
           department: user.department,
           organization_id: user.organization_id,
-          organization_name: undefined, // Will be populated later if needed
-          organization_acronym: undefined, // Will be populated later if needed
+          organization_name: user.organizations?.name,
+          organization_acronym: user.organizations?.acronym,
           activity_id: undefined,
           position: user.job_title,
           phone: user.telephone,
@@ -239,7 +278,6 @@ export async function GET(request: NextRequest) {
           .filter(Boolean)
           .join(' ')
           .trim();
-        const orgData = contact.organizations || {};
         
         transformedPeople.push({
           id: contact.id,
@@ -253,8 +291,8 @@ export async function GET(request: NextRequest) {
           secondary_email: contact.secondary_email,
           role: contact.position || contact.type || '',
           organization_id: contact.organisation_id,
-          organization_name: orgData.name || contact.organisation || null,
-          organization_acronym: orgData.acronym || null,
+          organization_name: contact.organizations?.name || contact.organisation, // Use joined data first, fallback to text field
+          organization_acronym: contact.organizations?.acronym,
           activity_id: contact.activity_id,
           position: contact.position,
           phone: contact.phone,

@@ -53,12 +53,14 @@ PopoverTrigger.displayName = "PopoverTrigger"
 interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement> {
   align?: "start" | "center" | "end"
   sideOffset?: number
+  collisionPadding?: number
 }
 
 const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
-  ({ className, align = "center", sideOffset = 4, ...props }, ref) => {
+  ({ className, align = "center", sideOffset = 4, collisionPadding = 8, ...props }, ref) => {
     const context = React.useContext(PopoverContext)
     const contentRef = React.useRef<HTMLDivElement | null>(null)
+    const [position, setPosition] = React.useState<'bottom' | 'top'>('bottom')
     
     if (!context) throw new Error("PopoverContent must be used within Popover")
 
@@ -113,6 +115,41 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
        return () => document.removeEventListener("keydown", handleEscape)
      }, [context?.open, context])
 
+    // Collision detection
+    React.useEffect(() => {
+      if (!context.open || !contentRef.current) return
+
+      const checkCollision = () => {
+        const content = contentRef.current
+        if (!content) return
+
+        const rect = content.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const spaceBelow = viewportHeight - rect.bottom
+        const spaceAbove = rect.top
+
+        // If there's not enough space below and more space above, flip to top
+        if (spaceBelow < collisionPadding && spaceAbove > spaceBelow) {
+          setPosition('top')
+        } else {
+          setPosition('bottom')
+        }
+      }
+
+      // Check collision after render
+      const timeoutId = setTimeout(checkCollision, 0)
+      
+      // Also check on scroll and resize
+      window.addEventListener('scroll', checkCollision, true)
+      window.addEventListener('resize', checkCollision)
+
+      return () => {
+        clearTimeout(timeoutId)
+        window.removeEventListener('scroll', checkCollision, true)
+        window.removeEventListener('resize', checkCollision)
+      }
+    }, [context.open, collisionPadding])
+
     if (!context.open) return null
 
     // Check if className contains positioning classes
@@ -128,7 +165,11 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
           align === "end" && "right-0",
           className
         )}
-        style={!hasCustomPosition ? { top: `calc(100% + ${sideOffset}px)` } : undefined}
+        style={!hasCustomPosition ? (
+          position === 'top' 
+            ? { bottom: `calc(100% + ${sideOffset}px)` }
+            : { top: `calc(100% + ${sideOffset}px)` }
+        ) : undefined}
         {...props}
       />
     )

@@ -120,7 +120,11 @@ export function SimplePhoneInput({
             <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0" align="start">
+        <PopoverContent 
+          className="w-[300px] p-0" 
+          align="start"
+          sideOffset={4}
+        >
           <Command>
             <CommandInput
               placeholder="Search countries..."

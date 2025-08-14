@@ -97,6 +97,18 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
 
   // Field-level autosave for contacts
   const contactsAutosave = useContactsAutosave(activityId, user?.id);
+  
+  // Monitor autosave state changes
+  React.useEffect(() => {
+    console.log('[CONTACTS DEBUG] Autosave state changed:', contactsAutosave.state);
+    if (contactsAutosave.state.error) {
+      console.error('[CONTACTS DEBUG] Autosave error detected:', contactsAutosave.state.error);
+      toast.error(`Failed to save contacts: ${contactsAutosave.state.error}`);
+    }
+    if (contactsAutosave.state.lastSaved) {
+      console.log('[CONTACTS DEBUG] Contacts successfully saved at:', contactsAutosave.state.lastSaved);
+    }
+  }, [contactsAutosave.state]);
 
   // Fetch organizations on component mount
   useEffect(() => {
@@ -121,9 +133,16 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
 
   // Enhanced onChange that triggers autosave
   const handleContactsChange = (newContacts: Contact[]) => {
+    console.log('[CONTACTS DEBUG] handleContactsChange called with:', newContacts);
+    console.log('[CONTACTS DEBUG] Activity ID:', activityId);
+    console.log('[CONTACTS DEBUG] Autosave state:', contactsAutosave.state);
+    
     onChange(newContacts);
     if (activityId) {
+      console.log('[CONTACTS DEBUG] Triggering autosave for contacts...');
       contactsAutosave.triggerFieldSave(newContacts);
+    } else {
+      console.warn('[CONTACTS DEBUG] No activity ID, skipping autosave');
     }
   };
 
@@ -195,6 +214,11 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
 
     if (!editingContact.position.trim()) {
       toast.error("Position/Role is required");
+      return;
+    }
+
+    if (!editingContact.type) {
+      toast.error("Contact type is required");
       return;
     }
 
@@ -507,7 +531,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
               {editingIndex === contacts.length ? "Add New Contact" : "Edit Contact"}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             {/* Profile Photo at top left */}
             <div className="flex justify-start">
               <ProfilePhotoUpload
@@ -599,7 +623,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
             </div>
 
             {/* Organisation - full width */}
-            <div>
+            <div className="-mt-4">
               <label className="text-sm font-medium">Organisation</label>
               <OrganizationSearchableSelect
                 organizations={organizations}

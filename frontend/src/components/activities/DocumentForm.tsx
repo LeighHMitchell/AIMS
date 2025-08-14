@@ -45,6 +45,7 @@ interface DocumentFormProps {
   onSave: (document: IatiDocumentLink) => void;
   fetchHead?: (url: string) => Promise<{ format?: string; size?: number } | null>;
   locale?: string;
+  isUploaded?: boolean;
 }
 
 export function DocumentForm({
@@ -54,6 +55,7 @@ export function DocumentForm({
   onSave,
   fetchHead,
   locale = 'en',
+  isUploaded = false,
 }: DocumentFormProps) {
   const [formData, setFormData] = React.useState<IatiDocumentLink>(() => 
     document || {
@@ -234,52 +236,45 @@ export function DocumentForm({
               </h3>
               
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="url">
-                    URL
-                    <Popover>
-                      <PopoverTrigger>
-                        <button className="ml-1">
-                          <HelpCircle className="w-3 h-3 text-gray-400" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="text-sm">
-                        The document URL must use HTTPS and be publicly accessible.
-                      </PopoverContent>
-                    </Popover>
-                  </Label>
-                  <Input
-                    id="url"
-                    type="url"
-                    value={formData.url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                    onBlur={handleUrlBlur}
-                    placeholder="https://example.org/document.pdf"
-                    className="mt-1"
-                  />
-                  {urlMetadata.error && (
-                    <p className="text-xs text-amber-600 mt-1">{urlMetadata.error}</p>
-                  )}
-                  {urlMetadata.size && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  )}
-                </div>
+                {/* Only show URL field for non-uploaded documents */}
+                {!isUploaded && (
+                  <div>
+                    <Label htmlFor="url">
+                      URL
+                      <Popover>
+                        <PopoverTrigger>
+                          <button className="ml-1">
+                            <HelpCircle className="w-3 h-3 text-gray-400" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="text-sm">
+                          The document URL must use HTTPS and be publicly accessible.
+                        </PopoverContent>
+                      </Popover>
+                    </Label>
+                    <Input
+                      id="url"
+                      type="url"
+                      value={formData.url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                      onBlur={handleUrlBlur}
+                      placeholder="https://example.org/document.pdf"
+                      className="mt-1"
+                    />
+                    {urlMetadata.error && (
+                      <p className="text-xs text-amber-600 mt-1">{urlMetadata.error}</p>
+                    )}
+                    {urlMetadata.size && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    )}
+                  </div>
+                )}
                 
                 <div>
                   <Label htmlFor="format">
                     Format (MIME Type)
-                    <Popover>
-                      <PopoverTrigger>
-                        <button className="ml-1">
-                          <HelpCircle className="w-3 h-3 text-gray-400" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="text-sm">
-                        The file format must be a valid IANA MIME type from the IATI FileFormat codelist.
-                      </PopoverContent>
-                    </Popover>
                   </Label>
                   <Select
                     value={formData.format}
@@ -291,7 +286,10 @@ export function DocumentForm({
                     <SelectContent>
                       {Object.entries(FILE_FORMATS).map(([mime, label]) => (
                         <SelectItem key={mime} value={mime}>
-                          {label} ({mime})
+                          <div>
+                            <div className="font-medium">{label}</div>
+                            <div className="text-xs text-muted-foreground">{mime}</div>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>

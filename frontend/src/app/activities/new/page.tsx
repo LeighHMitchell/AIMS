@@ -9,7 +9,7 @@ import FinancesSection from "@/components/FinancesSection";
 import ImprovedSectorAllocationForm from "@/components/activities/ImprovedSectorAllocationForm";
 import OrganisationsSection from "@/components/OrganisationsSection";
 import ContactsSection from "@/components/ContactsSection";
-import GovernmentInputsSectionEnhanced from "@/components/GovernmentInputsSectionEnhanced";
+import { GovernmentInputsSectionEnhanced } from "@/components/GovernmentInputsSectionEnhanced";
 import ContributorsSection from "@/components/ContributorsSection";
 import { BannerUpload } from "@/components/BannerUpload";
 import { IconUpload } from "@/components/IconUpload";

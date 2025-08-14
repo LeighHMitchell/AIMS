@@ -633,22 +633,40 @@ export async function POST(request: Request) {
 
         // Insert new contacts
         if (body.contacts.length > 0) {
-          const contactsData = body.contacts.map((contact: any) => ({
-            activity_id: body.id,
-            type: contact.type,
-            title: contact.title,
-            first_name: contact.firstName,
-            middle_name: contact.middleName || null,
-            last_name: contact.lastName,
-            position: contact.position,
-            organisation: contact.organisation || null,
-            phone: contact.phone || null,
-            fax: contact.fax || null,
-            email: contact.email || null,
-            secondary_email: contact.secondaryEmail || null,
-            profile_photo: contact.profilePhoto || null,
-            notes: contact.notes || null
-          }));
+          const contactsData = body.contacts.map((contact: any) => {
+            // Validate required fields and provide defaults
+            const type = contact.type || '1'; // Default to "General Enquiries"
+            const firstName = contact.firstName?.trim() || 'Unknown';
+            const lastName = contact.lastName?.trim() || 'Unknown';
+            const position = contact.position?.trim() || 'Unknown';
+            
+            // Create contact data using the actual database schema columns
+            const contactData: any = {
+              activity_id: body.id,
+              type: type,
+              title: contact.title || null,
+              first_name: firstName,
+              middle_name: contact.middleName || null,
+              last_name: lastName,
+              position: position,
+              organisation: contact.organisation || null, // DEPRECATED but kept for compatibility
+              phone: contact.phone || null, // DEPRECATED but kept for compatibility
+              fax: contact.fax || null,
+              email: contact.email || null, // DEPRECATED but kept for compatibility
+              profile_photo: contact.profilePhoto || null,
+              notes: contact.notes || null,
+              organisation_id: contact.organisationId || null,
+              organisation_name: contact.organisation || null, // Use organisation as fallback
+              primary_email: contact.email || null,
+              secondary_email: contact.secondaryEmail || null,
+              display_on_web: contact.displayOnWeb || false,
+              user_id: contact.userId || null,
+              role: contact.role || null,
+              name: contact.name || null
+            };
+            
+            return contactData;
+          });
 
           const { error: contactsError } = await getSupabaseAdmin()
             .from('activity_contacts')

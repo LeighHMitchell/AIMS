@@ -462,20 +462,6 @@ export function DocumentCardInline({
                 <div>
                   <Label className="text-sm font-medium">
                     Format (MIME Type)
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button type="button" className="ml-1">
-                            <HelpCircle className="w-3 h-3 text-gray-400" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="text-sm">
-                            The file format must be a valid IANA MIME type from the IATI FileFormat codelist.
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
                   </Label>
                   <DocumentFormatSelect
                     value={formData.format}

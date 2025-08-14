@@ -65,6 +65,18 @@ export function PersonCard({
       .slice(0, 2);
   };
 
+  // Check if phone number is just a country code
+  const isValidPhoneNumber = (phone: string) => {
+    if (!phone) return false;
+    // Remove common formatting characters
+    const cleanPhone = phone.replace(/[\s\-\(\)\+]/g, '');
+    // Check if it's just a country code (1-4 digits)
+    return cleanPhone.length > 4;
+  };
+
+  // Check if this person is a super user
+  const isPersonSuperUser = person.source === 'user' && (person.role === 'super_user' || person.role_label === 'super_user');
+
   const handleEmailClick = (email?: string) => {
     if (email) {
       window.location.href = `mailto:${email}`;
@@ -143,10 +155,16 @@ export function PersonCard({
       // For Activity Contacts: Position/Role
       return person.position || person.role;
     } else {
-      // For Users: Job Title, Department
-      const jobParts = [person.job_title, person.department].filter(Boolean);
-      return jobParts.join(', ') || person.position;
+      // For Users: Just Job Title (department will be shown separately)
+      return person.job_title || person.position;
     }
+  };
+
+  const getDepartmentInfo = () => {
+    if (person.source === 'user') {
+      return person.department;
+    }
+    return null;
   };
 
   const getOrganizationInfo = () => {
@@ -158,13 +176,14 @@ export function PersonCard({
 
   const displayName = getDisplayName();
   const jobInfo = getJobInfo();
+  const departmentInfo = getDepartmentInfo();
   const organizationInfo = getOrganizationInfo();
 
   if (compact) {
     return (
-      <div className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-        <div className="flex items-center space-x-3">
-          <Avatar className="h-8 w-8">
+      <div className="flex items-start justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+        <div className="flex items-start space-x-3 min-w-0 flex-1">
+          <Avatar className="h-8 w-8 flex-shrink-0">
             {person.profile_photo && (
               <AvatarImage src={person.profile_photo} alt={displayName} />
             )}
@@ -173,49 +192,70 @@ export function PersonCard({
             </AvatarFallback>
           </Avatar>
           
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-slate-900 truncate">
-              {displayName}
-            </p>
-            <div className="flex items-center space-x-2 flex-wrap">
-              {/* Contact Type Pill */}
-              <Badge 
-                variant={person.source === 'user' ? 'default' : 'secondary'}
-                className={`text-xs font-medium ${
-                  person.source === 'user' 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}
-              >
-                {person.source === 'user' ? 'User' : 'Contact'}
-              </Badge>
-              
-              {/* Role Pill - only for Users */}
-              {person.source === 'user' && person.role && (
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-start justify-between">
+              <p className="text-sm font-medium text-slate-900 break-words leading-tight">
+                {displayName}
+              </p>
+              <div className="flex items-center space-x-1 ml-2">
+                {/* Super User Badge - only for super users */}
+                {isPersonSuperUser && (
+                  <Badge 
+                    variant="secondary" 
+                    className="text-xs flex-shrink-0 bg-red-100 text-red-700"
+                  >
+                    Super User
+                  </Badge>
+                )}
+                
                 <Badge 
-                  variant="outline" 
-                  className={`text-xs ${roleInfo.color}`}
+                  variant="secondary" 
+                  className={`text-xs flex-shrink-0 ${
+                    person.source === 'user' 
+                      ? 'bg-slate-100 text-slate-600' 
+                      : 'bg-purple-100 text-purple-700'
+                  }`}
                 >
-                  {roleInfo.label}
+                  {person.source === 'user' ? 'User' : 'Activity'}
                 </Badge>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              {/* Role Pill - only for Users (but not super users since they have their own badge) */}
+              {person.source === 'user' && person.role && !isPersonSuperUser && (
+                <div>
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs ${roleInfo.color}`}
+                  >
+                    {roleInfo.label}
+                  </Badge>
+                </div>
               )}
               
               {jobInfo && (
-                <span className="text-xs text-slate-500 truncate">
+                <div className="text-xs text-slate-500 break-words">
                   {jobInfo}
-                </span>
+                </div>
+              )}
+              
+              {departmentInfo && (
+                <div className="text-xs text-slate-500 break-words">
+                  {departmentInfo}
+                </div>
               )}
               
               {organizationInfo && (
-                <span className="text-xs text-slate-500 truncate">
-                  • {organizationInfo}
-                </span>
+                <div className="text-xs text-slate-500 break-words" title={organizationInfo}>
+                  {organizationInfo}
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
           {person.email && (
             <TooltipProvider>
               <Tooltip>
@@ -271,9 +311,10 @@ export function PersonCard({
   return (
     <Card className="hover:shadow-md transition-all duration-200 border-slate-200">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-12 w-12">
+        <div className="flex flex-col space-y-3">
+          {/* Top row: Avatar (top-left) and Source Badge (top-right) */}
+          <div className="flex items-start justify-between">
+            <Avatar className="h-12 w-12 flex-shrink-0">
               {person.profile_photo && (
                 <AvatarImage src={person.profile_photo} alt={displayName} />
               )}
@@ -282,102 +323,120 @@ export function PersonCard({
               </AvatarFallback>
             </Avatar>
             
-            <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                {displayName}
-              </h3>
-              
-              {/* Job/Position Info */}
-              {jobInfo && (
-                <div className="flex items-center space-x-2 text-sm text-slate-600 mb-1">
-                  <Briefcase className="h-4 w-4 text-slate-400" />
-                  <span>{jobInfo}</span>
-                </div>
-              )}
-
-              {/* Organization Info */}
-              {organizationInfo && (
-                <div className="flex items-center space-x-2 text-sm text-slate-600 mb-2">
-                  <Building2 className="h-4 w-4 text-slate-400" />
-                  <button
-                    onClick={handleOrganizationClick}
-                    className="hover:text-blue-600 transition-colors truncate"
-                    disabled={!person.organization_id}
-                  >
-                    {organizationInfo}
-                  </button>
-                  {person.organization_id && (
-                    <ExternalLink className="h-3 w-3 text-slate-400" />
-                  )}
-                </div>
-              )}
-
-              {/* Contact Type and Role Badges */}
-              <div className="flex items-center space-x-2 flex-wrap">
-                {/* Contact Type Badge */}
+            {/* Source Badge in top-right */}
+            <div className="flex items-center space-x-2">
+              {/* Super User Badge - only for super users */}
+              {isPersonSuperUser && (
                 <Badge 
-                  variant={person.source === 'user' ? 'default' : 'secondary'}
-                  className={`text-xs font-medium ${
-                    person.source === 'user' 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-green-100 text-green-800'
-                  }`}
+                  variant="secondary" 
+                  className="text-xs flex-shrink-0 bg-red-100 text-red-700"
                 >
-                  {person.source === 'user' ? 'User' : 'Contact'}
+                  Super User
                 </Badge>
-                
-                {/* Role Badge - only for Users */}
-                {person.source === 'user' && person.role && (
-                  <Badge 
-                    variant="outline" 
-                    className={`text-xs ${roleInfo.color}`}
-                  >
-                    {roleInfo.label}
-                  </Badge>
-                )}
-              </div>
+              )}
+              
+              <Badge 
+                variant="secondary" 
+                className={`text-xs flex-shrink-0 ${
+                  person.source === 'user' 
+                    ? 'bg-slate-100 text-slate-600' 
+                    : 'bg-purple-100 text-purple-700'
+                }`}
+              >
+                {person.source === 'user' ? 'User Contact' : 'Activity Contact'}
+              </Badge>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {person.organization_id && (
+                    <DropdownMenuItem onClick={handleOrganizationClick}>
+                      <Building2 className="mr-2 h-4 w-4" />
+                      View Organization
+                    </DropdownMenuItem>
+                  )}
+                  {person.activity_id && (
+                    <DropdownMenuItem onClick={handleActivityClick}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      View Activity
+                    </DropdownMenuItem>
+                  )}
+                  {person.email && (
+                    <DropdownMenuItem onClick={() => handleEmailClick(person.email)}>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Send Email
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
+          
+          {/* Content area with proper text wrapping */}
+          <div className="min-w-0 space-y-1">
+            <h3 className="text-base font-semibold text-slate-900 leading-tight break-words">
+              {displayName}
+            </h3>
+            
+            {/* Job/Position Info */}
+            {jobInfo && (
+              <div className="text-xs text-slate-600">
+                <span className="break-words">{jobInfo}</span>
+              </div>
+            )}
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {person.organization_id && (
-                <DropdownMenuItem onClick={handleOrganizationClick}>
-                  <Building2 className="mr-2 h-4 w-4" />
-                  View Organization
-                </DropdownMenuItem>
-              )}
-              {person.activity_id && (
-                <DropdownMenuItem onClick={handleActivityClick}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  View Activity
-                </DropdownMenuItem>
-              )}
-              {person.email && (
-                <DropdownMenuItem onClick={() => handleEmailClick(person.email)}>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Send Email
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            {/* Department Info - separate line for users */}
+            {departmentInfo && (
+              <div className="text-xs text-slate-600">
+                <span className="break-words">{departmentInfo}</span>
+              </div>
+            )}
+
+            {/* Organization Info */}
+            {organizationInfo && (
+              <div className="text-xs text-slate-600">
+                <button
+                  onClick={handleOrganizationClick}
+                  className="hover:text-blue-600 transition-colors text-left break-words w-full"
+                  disabled={!person.organization_id}
+                  title={organizationInfo}
+                >
+                  <span className="break-words">{organizationInfo}</span>
+                  {person.organization_id && (
+                    <ExternalLink className="h-3 w-3 ml-1 inline text-slate-400 flex-shrink-0" />
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Role Badge - only for Users (but not super users since they have their own badge) */}
+            {person.source === 'user' && person.role && !isPersonSuperUser && (
+              <div className="flex items-center space-x-2 flex-wrap">
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${roleInfo.color}`}
+                >
+                  {roleInfo.label}
+                </Badge>
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0 space-y-3">
+      <CardContent className="pt-0 space-y-2">
         {/* Contact Information */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           {/* Email Section */}
           {(person.email || person.secondary_email) && (
             <div className="space-y-1">
               {person.email && (
-                <div className="flex items-center space-x-2 text-sm">
-                  <Mail className="h-4 w-4 text-slate-400" />
+                <div className="flex items-center space-x-2 text-xs">
+                  <Mail className="h-3 w-3 text-slate-400" />
                   <button
                     onClick={() => handleEmailClick(person.email)}
                     className="text-slate-600 hover:text-blue-600 transition-colors truncate"
@@ -387,7 +446,7 @@ export function PersonCard({
                 </div>
               )}
               {person.secondary_email && (
-                <div className="flex items-center space-x-2 text-sm ml-6">
+                <div className="flex items-center space-x-2 text-xs ml-4">
                   <span className="text-slate-400">|</span>
                   <button
                     onClick={() => handleEmailClick(person.secondary_email)}
@@ -401,11 +460,11 @@ export function PersonCard({
           )}
           
           {/* Phone Section */}
-          {(person.phone || person.fax) && (
+          {((person.phone && isValidPhoneNumber(person.phone)) || person.fax) && (
             <div className="space-y-1">
-              {person.phone && (
-                <div className="flex items-center space-x-2 text-sm">
-                  <Phone className="h-4 w-4 text-slate-400" />
+              {person.phone && isValidPhoneNumber(person.phone) && (
+                <div className="flex items-center space-x-2 text-xs">
+                  <Phone className="h-3 w-3 text-slate-400" />
                   <button
                     onClick={handlePhoneClick}
                     className="text-slate-600 hover:text-blue-600 transition-colors"
@@ -415,7 +474,7 @@ export function PersonCard({
                 </div>
               )}
               {person.fax && (
-                <div className="flex items-center space-x-2 text-sm ml-6">
+                <div className="flex items-center space-x-2 text-xs ml-4">
                   <span className="text-slate-400">|</span>
                   <button
                     onClick={handleFaxClick}
@@ -432,9 +491,9 @@ export function PersonCard({
 
         {/* Notes if available */}
         {person.notes && (
-          <div className="pt-2 border-t border-slate-100">
-            <div className="text-sm">
-              <p className="text-slate-600 text-xs leading-relaxed">{person.notes}</p>
+          <div className="pt-1 border-t border-slate-100">
+            <div className="text-xs">
+              <p className="text-slate-600 text-xs leading-snug">{person.notes}</p>
             </div>
           </div>
         )}

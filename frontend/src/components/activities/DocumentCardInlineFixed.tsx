@@ -281,10 +281,10 @@ export function DocumentCardInlineFixed({
           {/* Thumbnail/Icon - Container spanning Title to URL field bottom */}
           <div className="flex-shrink-0 flex items-start">
             {formData.url ? (
-              isImage ? (
+              (isImage || formData.thumbnailUrl) ? (
                 <div className="w-32 h-36 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                   <img
-                    src={formData.url}
+                    src={formData.thumbnailUrl || formData.url}
                     alt={primaryTitle?.text || 'Document'}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -468,20 +468,6 @@ export function DocumentCardInlineFixed({
                 <div>
                   <Label className="text-sm font-medium">
                     Format
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button type="button" className="ml-1">
-                            <HelpCircle className="w-3 h-3 text-gray-400" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="text-sm">
-                            The file format must be a valid IANA MIME type from the IATI FileFormat codelist.
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
                   </Label>
                   <DocumentFormatSelect
                     value={formData.format}

@@ -290,37 +290,48 @@ export default function UserManagement() {
 
   const handleUserUpdate = async (updatedUser: User) => {
     try {
+      console.log('[AIMS Frontend] Updating user with organizationId:', updatedUser.organizationId);
+      
       // Split name into first_name and last_name for database
       const nameParts = updatedUser.name?.split(' ') || [];
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
+      const requestBody = {
+        id: updatedUser.id,
+        title: updatedUser.title,
+        first_name: firstName,
+        middle_name: updatedUser.middleName,
+        last_name: lastName,
+        email: updatedUser.email,
+        job_title: updatedUser.jobTitle,
+        department: updatedUser.department,
+        telephone: updatedUser.telephone,
+        website: updatedUser.website,
+        mailing_address: updatedUser.mailingAddress,
+        bio: updatedUser.bio,
+        preferred_language: updatedUser.preferredLanguage,
+        timezone: updatedUser.timezone,
+        profile_picture: updatedUser.profilePicture,
+        role: updatedUser.role,
+        organization_id: updatedUser.organizationId || null,
+      };
+      
+      console.log('[AIMS Frontend] Request body organization_id:', requestBody.organization_id);
+      console.log('[AIMS Frontend] Full request body:', requestBody);
+
       const response = await fetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: updatedUser.id,
-          title: updatedUser.title,
-          first_name: firstName,
-          middle_name: updatedUser.middleName,
-          last_name: lastName,
-          email: updatedUser.email,
-          job_title: updatedUser.jobTitle,
-          department: updatedUser.department,
-          telephone: updatedUser.telephone,
-          website: updatedUser.website,
-          mailing_address: updatedUser.mailingAddress,
-          bio: updatedUser.bio,
-          preferred_language: updatedUser.preferredLanguage,
-          timezone: updatedUser.timezone,
-          profile_picture: updatedUser.profilePicture,
-          role: updatedUser.role,
-          organization_id: updatedUser.organizationId || null,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('[AIMS Frontend] Response status:', response.status);
+      console.log('[AIMS Frontend] Response ok:', response.ok);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('[AIMS Frontend] Response data:', data);
         // Transform and update the user in state
         const transformedUser = {
           ...updatedUser,
@@ -355,7 +366,9 @@ export default function UserManagement() {
         setEditingUser(null);
       } else {
         const error = await response.json();
-        console.error('[AIMS] User update error:', error);
+        console.error('[AIMS Frontend] User update error:', error);
+        console.error('[AIMS Frontend] Response status:', response.status);
+        console.error('[AIMS Frontend] Response headers:', response.headers);
         toast.error(error.error || "Failed to update user");
       }
     } catch (error) {

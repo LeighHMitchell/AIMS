@@ -130,12 +130,12 @@ export function OrganizationSearchableSelect({
   );
 
   return (
-    <div className={cn("pb-6", className)}>
+    <div className={cn("", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           data-popover-trigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex min-h-[60px] w-full items-center justify-between rounded-md border border-input bg-background px-3 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
             !selectedOrganization && "text-muted-foreground"
           )}
           disabled={disabled}

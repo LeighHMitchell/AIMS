@@ -46,6 +46,7 @@ interface DocumentFormEnhancedProps {
   onSave: (document: IatiDocumentLink) => void;
   fetchHead?: (url: string) => Promise<{ format?: string; size?: number } | null>;
   locale?: string;
+  isUploaded?: boolean;
 }
 
 // Extended language list with full names
@@ -61,6 +62,7 @@ export function DocumentFormEnhanced({
   onSave,
   fetchHead,
   locale = 'en',
+  isUploaded = false,
 }: DocumentFormEnhancedProps) {
   const [formatSearch, setFormatSearch] = React.useState('');
   const [titleLangSearch, setTitleLangSearch] = React.useState('');
@@ -267,26 +269,29 @@ export function DocumentFormEnhanced({
               </h3>
               
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="url">URL</Label>
-                  <Input
-                    id="url"
-                    type="url"
-                    value={formData.url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                    onBlur={handleUrlBlur}
-                    placeholder="https://example.org/document.pdf"
-                    className="mt-1"
-                  />
-                  {urlMetadata.error && (
-                    <p className="text-xs text-amber-600 mt-1">{urlMetadata.error}</p>
-                  )}
-                  {urlMetadata.size && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  )}
-                </div>
+                {/* Only show URL field for non-uploaded documents */}
+                {!isUploaded && (
+                  <div>
+                    <Label htmlFor="url">URL</Label>
+                    <Input
+                      id="url"
+                      type="url"
+                      value={formData.url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                      onBlur={handleUrlBlur}
+                      placeholder="https://example.org/document.pdf"
+                      className="mt-1"
+                    />
+                    {urlMetadata.error && (
+                      <p className="text-xs text-amber-600 mt-1">{urlMetadata.error}</p>
+                    )}
+                    {urlMetadata.size && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    )}
+                  </div>
+                )}
                 
                 <div>
                   <Label>Format (MIME Type)</Label>
@@ -299,9 +304,14 @@ export function DocumentFormEnhanced({
                         className="w-full justify-between mt-1 text-left font-normal"
                       >
                         <span className="truncate">
-                          {formData.format
-                            ? FILE_FORMATS[formData.format] || 'Unknown'
-                            : "Select format..."}
+                          {formData.format ? (
+                            <div>
+                              <div className="font-medium">{FILE_FORMATS[formData.format] || 'Unknown'}</div>
+                              <div className="text-xs text-muted-foreground">{formData.format}</div>
+                            </div>
+                          ) : (
+                            "Select format..."
+                          )}
                         </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>

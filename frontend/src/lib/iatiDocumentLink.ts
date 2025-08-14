@@ -21,6 +21,7 @@ export type IatiDocumentLink = {
     vocabularyUri?: string; // required if vocabulary === '99'
   };
   isImage?: boolean; // derived from format
+  thumbnailUrl?: string; // URL to generated thumbnail
 };
 
 // IATI Codelists
@@ -206,6 +207,7 @@ export const documentLinkSchema = z.object({
   recipientCountries: z.array(z.string().length(2)).optional(),
   recipientRegion: recipientRegionSchema.optional(),
   isImage: z.boolean().optional(),
+  thumbnailUrl: z.string().url('Must be a valid URL').optional(),
 });
 
 // Helper functions

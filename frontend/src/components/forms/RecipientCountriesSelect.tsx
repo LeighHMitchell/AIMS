@@ -272,7 +272,7 @@ export function RecipientCountriesSelect({
           </div>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[350px] p-0 shadow-lg border-border max-h-[300px] overflow-hidden" 
+          className="w-[350px] p-0 shadow-lg border-border max-h-[300px] overflow-hidden bottom-full" 
           align="start"
           sideOffset={4}
         >

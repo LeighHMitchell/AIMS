@@ -377,37 +377,71 @@ export async function POST(request: Request) {
 
           // Insert new contacts if any
           if (Array.isArray(body.value) && body.value.length > 0) {
-            const contactsData = body.value.map((contact: any) => ({
-              activity_id: body.activityId,
-              type: contact.type,
-              title: contact.title,
-              first_name: contact.firstName,
-              middle_name: contact.middleName || null,
-              last_name: contact.lastName,
-              position: contact.position,
-              organisation: contact.organisation || null,
-              organisation_id: contact.organisationId || null,
-              phone: contact.phone || null, // Legacy field
-              country_code: contact.countryCode || null,
-              phone_number: contact.phoneNumber || null,
-              fax: contact.fax || null, // Legacy field
-              fax_country_code: contact.faxCountryCode || null,
-              fax_number: contact.faxNumber || null,
-              email: contact.email || null,
-              secondary_email: contact.secondaryEmail || null,
-              profile_photo: contact.profilePhoto || null,
-              notes: contact.notes || null,
-              display_on_web: contact.displayOnWeb || false
-            }));
+            const contactsData = body.value.map((contact: any) => {
+              // Validate required fields and provide defaults
+              const type = contact.type || '1'; // Default to "General Enquiries"
+              const firstName = contact.firstName?.trim() || 'Unknown';
+              const lastName = contact.lastName?.trim() || 'Unknown';
+              const position = contact.position?.trim() || 'Unknown';
+              
+              console.log('[Field API] Processing contact:', {
+                originalType: contact.type,
+                mappedType: type,
+                originalFirstName: contact.firstName,
+                mappedFirstName: firstName,
+                originalLastName: contact.lastName,
+                mappedLastName: lastName,
+                originalPosition: contact.position,
+                mappedPosition: position
+              });
+              
+              // Create contact data using the actual database schema columns
+              const contactData: any = {
+                activity_id: body.activityId,
+                type: type,
+                title: contact.title || null,
+                first_name: firstName,
+                middle_name: contact.middleName || null,
+                last_name: lastName,
+                position: position,
+                organisation: contact.organisation || null, // DEPRECATED but kept for compatibility
+                phone: contact.phone || null, // DEPRECATED but kept for compatibility
+                fax: contact.fax || null,
+                email: contact.email || null, // DEPRECATED but kept for compatibility
+                profile_photo: contact.profilePhoto || null,
+                notes: contact.notes || null,
+                organisation_id: contact.organisationId || null,
+                organisation_name: contact.organisation || null, // Use organisation as fallback
+                primary_email: contact.email || null,
+                secondary_email: contact.secondaryEmail || null,
+                display_on_web: contact.displayOnWeb || false,
+                user_id: contact.userId || null,
+                role: contact.role || null,
+                name: contact.name || null
+              };
+              
+              return contactData;
+            });
 
-            const { error: insertError } = await getSupabaseAdmin()
+            console.log('[Field API] About to insert contacts data:', JSON.stringify(contactsData, null, 2));
+            
+            const { data: insertedData, error: insertError } = await getSupabaseAdmin()
               .from('activity_contacts')
-              .insert(contactsData);
+              .insert(contactsData)
+              .select();
               
             if (insertError) {
               console.error('[Field API] Error inserting contacts:', insertError);
-              throw insertError;
+              console.error('[Field API] Error details:', {
+                message: insertError.message,
+                details: insertError.details,
+                hint: insertError.hint,
+                code: insertError.code
+              });
+              throw new Error(`Database error: ${insertError.message}${insertError.details ? ` - ${insertError.details}` : ''}`);
             }
+            
+            console.log('[Field API] Successfully inserted contacts:', insertedData);
             
             console.log('[Field API] Successfully updated', contactsData.length, 'contacts');
           }

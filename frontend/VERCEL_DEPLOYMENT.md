@@ -1,53 +1,62 @@
-# Vercel Deployment Instructions
+# Vercel Deployment Guide for AIMS Project
 
-## Prerequisites
-1. Vercel account
-2. Vercel CLI installed (`npm install -g vercel`)
+## Environment Variables
 
-## Environment Variables Setup
+Before deploying to Vercel, you need to configure the following environment variables in your Vercel project settings:
 
-### Option 1: Via Vercel Dashboard (Recommended)
-1. Go to your Vercel project dashboard at https://vercel.com
-2. Navigate to Settings → Environment Variables
-3. Add the following variables for all environments (Production, Preview, Development):
+### Required Environment Variables
 
-```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-```
+1. **NEXT_PUBLIC_SUPABASE_URL**
+   - Your Supabase project URL
+   - Example: `https://your-project-id.supabase.co`
+   - Get from: Supabase Dashboard → Settings → API
 
-### Option 2: Via CLI (One-time setup)
-```bash
-vercel env add NEXT_PUBLIC_SUPABASE_URL
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
-vercel env add SUPABASE_SERVICE_ROLE_KEY
-```
+2. **NEXT_PUBLIC_SUPABASE_ANON_KEY**
+   - Your Supabase anonymous/public key
+   - Get from: Supabase Dashboard → Settings → API
 
-## Deploy Command
-After setting up environment variables:
-```bash
-vercel --prod
-```
+3. **SUPABASE_SERVICE_ROLE_KEY**
+   - Your Supabase service role key (keep this secret!)
+   - Get from: Supabase Dashboard → Settings → API
 
-## Automatic Deployment
-Push to your main branch will automatically trigger a deployment if you've connected your GitHub repository to Vercel.
+### Optional Environment Variables
 
-## Configuration
-The project includes:
-- `vercel.json`: Configures build settings, function timeouts, and CORS headers
-- `.env.example`: Template for required environment variables
-- TypeScript errors are temporarily ignored for deployment (can be re-enabled in next.config.js)
+4. **BLOB_READ_WRITE_TOKEN** (if using Vercel Blob Storage)
+   - For file uploads and profile pictures
+   - Get from: Vercel Dashboard → Storage → Blob
 
-## Function Timeouts
-API routes have extended timeouts (60 seconds) configured for:
-- `/api/activities/*`
-- `/api/organizations/*`
-- `/api/analytics/*`
-- `/api/iati/*`
-- `/api/activities/*/transactions/*`
+## Deployment Steps
+
+1. **Set up Environment Variables in Vercel**
+   - Go to your Vercel project dashboard
+   - Navigate to Settings → Environment Variables
+   - Add each environment variable listed above
+
+2. **Deploy**
+   - Push your code to the main branch
+   - Vercel will automatically build and deploy
+
+3. **Verify Deployment**
+   - Check the deployment logs for any errors
+   - Visit `/api/health` to verify the database connection
+   - Test the activities page to ensure data is loading
+
+## Build Configuration
+
+The project is already configured with:
+- `vercel.json` for proper Next.js deployment
+- API route timeout settings (30 seconds)
+- CORS headers for API routes
+- Security headers
+
+## Database Setup
+
+Make sure your Supabase database has all the required tables and migrations applied. See the `supabase/migrations` directory for the SQL files.
 
 ## Troubleshooting
-1. If deployment fails due to missing environment variables, ensure all variables are set in Vercel dashboard
-2. For build errors, check the build logs in Vercel dashboard
-3. For runtime errors, check the function logs in Vercel dashboard
+
+If you encounter issues:
+1. Check the Vercel function logs for errors
+2. Verify all environment variables are set correctly
+3. Ensure the Supabase project is accessible from Vercel
+4. Check that all database migrations have been applied
