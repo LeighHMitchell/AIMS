@@ -30,25 +30,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
       .slice(0, 2)
   }
 
-  // Upload file to the profile photo endpoint
-  const uploadProfileFile = async (file: File): Promise<string> => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('type', 'profile')
-
-    const response = await fetch('/api/profile/photo/upload', {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || 'Failed to upload photo')
-    }
-
-    const data = await response.json()
-    return data.url
-  }
+  // No external upload needed - we'll use base64 like organization images
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -61,10 +43,10 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
       return
     }
 
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024 // 5MB
+    // Validate file size (2MB max for base64 storage)
+    const maxSize = 2 * 1024 * 1024 // 2MB
     if (file.size > maxSize) {
-      toast.error("File size must be less than 5MB")
+      toast.error("File size must be less than 2MB")
       return
     }
 
@@ -105,29 +87,12 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
           canvas.height = height
           ctx?.drawImage(img, 0, 0, width, height)
           
-          // Convert to blob for file upload
-          canvas.toBlob(async (blob) => {
-            if (!blob) {
-              toast.error("Failed to process image")
-              setIsUploading(false)
-              return
-            }
-
-            try {
-              // Upload the compressed blob as a file
-              const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' })
-              const uploadedUrl = await uploadProfileFile(file)
-              
-              setPreviewUrl(null)
-              onUpload(uploadedUrl)
-              toast.success("Profile picture updated")
-            } catch (error) {
-              console.error('Upload failed:', error)
-              toast.error("Failed to upload profile picture")
-            } finally {
-              setIsUploading(false)
-            }
-          }, 'image/jpeg', 0.7) // Higher quality since we're compressing the dimensions
+          // Convert to base64 (same as organization images)
+          const base64String = canvas.toDataURL('image/jpeg', 0.8)
+          setPreviewUrl(base64String)
+          onUpload(base64String)
+          toast.success("Profile picture updated successfully")
+          setIsUploading(false)
         }
         
         img.onerror = () => {
@@ -154,7 +119,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
   }
 
   const removeAvatar = () => {
-    // No need to delete from storage since we're using data URLs
+    // No need to delete from storage since we're using base64 in database
     setPreviewUrl(null)
     onUpload("")
     if (fileInputRef.current) {
@@ -233,7 +198,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
             </Button>
           </label>
           <p className="text-xs text-muted-foreground">
-            JPG, PNG, GIF or WebP. Images will be compressed to 150x150px.
+            JPG, PNG, GIF or WebP. Max 2MB. Images resized to 150x150px.
           </p>
         </div>
       </div>
@@ -241,7 +206,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
       {/* Storage info */}
       <Alert>
         <AlertDescription className="text-xs">
-          Images are compressed to 150x150px and stored in the database.
+          Images are compressed to 150x150px and stored directly in the database (same as organization logos).
         </AlertDescription>
       </Alert>
     </div>
