@@ -31,6 +31,7 @@
     "fix-user-auth": "tsx src/scripts/fix-user-auth-mismatch.ts",
     "reset-password": "tsx src/scripts/reset-user-password.ts",
     "debug-login": "tsx src/scripts/debug-login.ts",
+    "fix-avatar-urls": "tsx src/scripts/fix-broken-avatar-urls.ts",
     "clean": "rm -rf .next",
     "clean:all": "rm -rf .next node_modules package-lock.json && npm install",
     "dev:clean": "npm run clean && npm run dev",

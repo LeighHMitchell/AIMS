@@ -19,11 +19,12 @@ Before deploying to Vercel, you need to configure the following environment vari
    - Your Supabase service role key (keep this secret!)
    - Get from: Supabase Dashboard → Settings → API
 
-### Optional Environment Variables
+### Required for File Uploads
 
-4. **BLOB_READ_WRITE_TOKEN** (if using Vercel Blob Storage)
+4. **BLOB_READ_WRITE_TOKEN** (REQUIRED for profile pictures and document uploads)
    - For file uploads and profile pictures
    - Get from: Vercel Dashboard → Storage → Blob
+   - Without this, profile picture uploads will fail
 
 ## Deployment Steps
 
@@ -60,3 +61,14 @@ If you encounter issues:
 2. Verify all environment variables are set correctly
 3. Ensure the Supabase project is accessible from Vercel
 4. Check that all database migrations have been applied
+
+### Profile Pictures Not Showing
+
+If profile pictures aren't showing in production:
+1. The database may have old URLs pointing to local filesystem (`/uploads/profiles/...`)
+2. Set up Vercel Blob Storage and add `BLOB_READ_WRITE_TOKEN` to environment variables
+3. Run the fix script to clean up broken URLs:
+   ```bash
+   npm run fix-avatar-urls
+   ```
+4. Users will need to re-upload their profile pictures
