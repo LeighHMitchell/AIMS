@@ -59,6 +59,15 @@ export async function GET(request: NextRequest) {
         console.log(`${idx + 1}. Title: "${activity.title_narrative}"`)
         console.log(`   Partner ID: "${activity.other_identifier}"`)
         console.log(`   IATI ID: "${activity.iati_identifier}"`)
+        // Debug raw icon data
+        if (activity.icon) {
+          const iconPreview = activity.icon.substring(0, 100)
+          console.log(`   Raw icon (first 100 chars): ${iconPreview}...`)
+          console.log(`   Icon contains unsplash: ${activity.icon.includes('unsplash.com')}`)
+          console.log(`   Will be filtered out: ${activity.icon.includes('unsplash.com')}`)
+        } else {
+          console.log(`   No icon in database`)
+        }
         console.log('   ---')
       })
     }
@@ -158,10 +167,12 @@ export async function GET(request: NextRequest) {
         subtitle: activity.other_identifier || activity.iati_identifier || undefined,
         metadata: {
           status: activity.activity_status,
-          reporting_org: activity.created_by_org_acronym || activity.created_by_org_name || undefined,
+          reporting_org: activity.created_by_org_name || undefined,
+          reporting_org_acronym: activity.created_by_org_acronym || undefined,
           partner_id: activity.other_identifier || undefined,
           iati_id: activity.iati_identifier || undefined,
           updated_at: activity.updated_at,
+          // Use activity icon (including Unsplash icons, but not banner-sized images)
           activity_icon_url: activity.icon || undefined
         }
       })),
@@ -233,6 +244,12 @@ export async function GET(request: NextRequest) {
         console.log(`${idx + 1}. ${result.type}: "${result.title}" - subtitle: "${result.subtitle}"`)
         if (result.metadata) {
           console.log(`   Metadata:`, JSON.stringify(result.metadata, null, 2))
+          // Debug icon URL specifically
+          if (result.type === 'activity' && result.metadata.activity_icon_url) {
+            console.log(`   Activity icon URL (first 100 chars): ${result.metadata.activity_icon_url.substring(0, 100)}...`)
+          } else if (result.type === 'activity') {
+            console.log(`   Activity has no icon URL (filtered out or not available)`)
+          }
         }
       })
     }

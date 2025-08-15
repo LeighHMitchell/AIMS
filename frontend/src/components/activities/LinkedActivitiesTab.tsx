@@ -94,6 +94,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
         
         const data = await response.json();
         
+
         // Filter out already linked activities
         const linkedIds = new Set(linkedActivities.map(la => la.activityId).filter(Boolean));
         const filtered = data.filter((act: any) => !linkedIds.has(act.id));
@@ -192,14 +193,44 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
               onClick={() => handleSelectActivity(activity)}
             >
               <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h5 className="font-medium text-sm">{activity.title}</h5>
-                  <p className="text-xs text-gray-600 mt-1">
-                    IATI ID: {activity.iati_id || 'N/A'} | 
-                    Status: {activity.activity_status}
-                  </p>
+                <div className="flex items-start gap-3 flex-1">
+                  {/* Activity Icon */}
+                  <div className="flex-shrink-0 mt-0.5">
+                    {activity.icon ? (
+                      <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                        <img 
+                          src={activity.icon} 
+                          alt="Activity icon" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback to default icon if image fails to load
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            target.parentElement!.innerHTML = `
+                              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span class="text-blue-600 font-semibold text-sm">A</span>
+                              </div>
+                            `
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 font-semibold text-sm">A</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Activity Details */}
+                  <div className="flex-1 min-w-0">
+                    <h5 className="font-medium text-sm truncate">{activity.title}</h5>
+                    <p className="text-xs text-gray-600 mt-1">
+                      IATI ID: {activity.iati_id || 'N/A'} | 
+                      Status: {activity.activity_status}
+                    </p>
+                  </div>
                 </div>
-                <Plus className="w-4 h-4 text-blue-600 mt-1" />
+                <Plus className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
               </div>
             </div>
           ))}

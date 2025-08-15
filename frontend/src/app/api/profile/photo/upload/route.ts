@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
+import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
+
+// Create Supabase client with service role key for file uploads
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,34 +37,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate environment variable
-    const VERCEL_BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
-    if (!VERCEL_BLOB_TOKEN) {
+    // Validate Supabase configuration
+    if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json(
-        { error: 'Cloud storage not configured' },
+        { error: 'Supabase storage not configured' },
         { status: 500 }
       );
     }
 
+    // Create Supabase client with service role for file operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     // Create a unique filename
     const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const uniqueFilename = `${uuidv4()}.${fileExtension}`;
-    
-    // Upload to Vercel Blob storage
-    const blob = await put(`profiles/${uniqueFilename}`, file, {
-      access: 'public',
-      token: VERCEL_BLOB_TOKEN,
-    });
-    
-    // Use the cloud URL
-    const publicUrl = blob.url;
+    const filePath = `profiles/${uniqueFilename}`;
+
+    // Convert File to ArrayBuffer for Supabase
+    const fileBuffer = await file.arrayBuffer();
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('uploads')
+      .upload(filePath, fileBuffer, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return NextResponse.json(
+        { error: `Failed to upload file: ${error.message}` },
+        { status: 500 }
+      );
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('uploads')
+      .getPublicUrl(filePath);
+
+    const publicUrl = publicUrlData.publicUrl;
     
     return NextResponse.json({
       url: publicUrl,
       filename: file.name,
       size: file.size,
       mimeType: file.type,
-      uploadedAt: new Date().toISOString()
+      uploadedAt: new Date().toISOString(),
+      path: data.path
     });
   } catch (error) {
     console.error('Profile photo upload error:', error);

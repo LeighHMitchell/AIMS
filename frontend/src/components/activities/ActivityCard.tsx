@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatActivityDate, formatDateRange, formatRelativeTime, calculateDuration } from '@/lib/date-utils';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
+import { formatReportedBy } from '@/utils/format-helpers';
+import { StatusIcon } from '@/components/ui/status-icon';
 
 // Aid modality label mappings
 const AID_TYPE_LABELS: Record<string, string> = {
@@ -46,17 +48,20 @@ const FINANCE_TYPE_LABELS: Record<string, string> = {
 const FLOW_TYPE_LABELS: Record<string, string> = {
   '10': 'ODA',
   '20': 'OOF',
-  '30': 'Private grants',
-  '35': 'Private market',
+  '21': 'Non-export credit OOF',
+  '22': 'Officially supported export credits',
+  '30': 'Private Development Finance',
+  '35': 'Private Market',
+  '36': 'Private Foreign Direct Investment',
+  '37': 'Other Private Flows at Market Terms',
   '40': 'Non flow',
   '50': 'Other flows'
 };
 
 const TIED_STATUS_LABELS: Record<string, string> = {
-  '1': 'Tied',
-  '2': 'Partially tied',
-  '3': 'Untied',
-  '4': 'Not reported'
+  '3': 'Partially tied',
+  '4': 'Tied',
+  '5': 'Untied'
 };
 
 interface ActivityCardProps {
@@ -79,8 +84,10 @@ interface ActivityCardProps {
     default_finance_type?: string;
     default_flow_type?: string;
     default_tied_status?: string;
+    default_modality?: string;
     // Financial and reporting fields
     created_by_org_name?: string;
+    created_by_org_acronym?: string;
     totalBudget?: number;
     totalDisbursed?: number;
   };
@@ -98,6 +105,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   isLoading = false 
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  
+
 
   // Currency formatting utility
   const formatCurrency = (value: number) => {
@@ -190,7 +199,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       ${className}
     `}>
       {/* Action Menu - Better positioned */}
-      <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <div className="absolute top-3 right-3 z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -248,19 +257,34 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           {/* Subtle overlay for depth */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
           
-          {/* Activity Icon Overlay - Better positioned */}
-          {activity.icon && (
-            <div className="absolute bottom-2 right-2">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white bg-white shadow-md overflow-hidden">
-                <img
-                  src={activity.icon}
-                  alt={`Icon for ${activity.title}`}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
+          {/* Activity Icon Overlay - Positioned with offset from right edge and vertically centered between banner and content */}
+          {(activity.icon || true) && (
+            <div className="absolute right-6 bottom-0 translate-y-1/2">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white bg-white shadow-md overflow-hidden">
+                {activity.icon && activity.icon.trim() !== '' ? (
+                  <img
+                    src={activity.icon}
+                    alt={`Icon for ${activity.title}`}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      console.log("Icon failed to load for:", activity.title, "Icon data:", activity.icon?.substring(0, 100));
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      // Show a fallback icon
+                      const fallback = document.createElement('div');
+                      fallback.className = 'w-full h-full bg-red-100 flex items-center justify-center';
+                      fallback.innerHTML = '<span class="text-red-600 font-semibold text-sm">!</span>';
+                      target.parentNode?.appendChild(fallback);
+                    }}
+                    onLoad={() => {
+                      console.log("Icon loaded successfully for:", activity.title);
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-600 font-semibold text-sm">A</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -271,30 +295,30 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           <div className="space-y-4">
             {/* Title and IDs Section */}
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold leading-tight line-clamp-2 text-gray-900 tracking-tight">
+              <h3 className="text-lg font-semibold leading-tight line-clamp-2 text-gray-900 tracking-tight pt-8">
                 {activity.title}
               </h3>
               
-              {/* Activity ID and IATI ID with improved styling */}
+              {/* Activity ID and IATI ID - Always displayed */}
               <div className="space-y-2">
-                {activity.partner_id && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Activity ID</span>
-                    <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">{activity.partner_id}</span>
-                  </div>
-                )}
-                {activity.iati_id && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">IATI ID</span>
-                    <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">{activity.iati_id}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Activity ID</span>
+                  <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">
+                    {activity.partner_id || 'Activity ID not reported'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">IATI ID</span>
+                  <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">
+                    {activity.iati_id || 'IATI Identifier not reported'}
+                  </span>
+                </div>
               </div>
             </div>
 
 
             {/* Status Pills Section */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               {activity.activity_status && (
                 <Badge 
                   variant={statusColors[activity.activity_status as keyof typeof statusColors] || 'secondary'}
@@ -313,23 +337,89 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                    activity.submission_status.charAt(0).toUpperCase() + activity.submission_status.slice(1)}
                 </Badge>
               )}
+              {activity.publication_status && (
+                <StatusIcon 
+                  type="publication" 
+                  status={activity.publication_status} 
+                  className="ml-1"
+                />
+              )}
+              {activity.default_modality && (
+                <StatusIcon 
+                  type="aid-modality" 
+                  status={activity.default_modality} 
+                  isPublished={activity.publication_status === 'published'}
+                  className="ml-1"
+                />
+              )}
             </div>
 
-            {/* Dates Section - Enhanced formatting */}
-            <div className="space-y-1">
-              {(activity.planned_start_date || activity.planned_end_date) && (
-                <div className="flex items-center gap-1 text-xs leading-normal text-gray-500">
-                  <Calendar className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">
-                    {formatDateRange(activity.planned_start_date, activity.planned_end_date)}
+
+
+
+
+            {/* Aid Modality & Reporting Section - Always displayed */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Activity Details</h4>
+              <div className="space-y-2">
+                {activity.created_by_org_name && (
+                  <div className="flex justify-between items-center py-2 min-h-[3.5rem]">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reported by</span>
+                    <span className="text-sm text-gray-700 font-medium text-right flex items-center">
+                      {activity.created_by_org_name}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Budgeted</span>
+                  <span className="text-sm text-gray-700">{formatCurrency(activity.totalBudget || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Disbursed</span>
+                  <span className="text-sm text-gray-700">{formatCurrency(activity.totalDisbursed || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Aid Type</span>
+                  <span className="text-sm text-gray-700">
+                    {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
                   </span>
-                  {activity.planned_start_date && activity.planned_end_date && (
-                    <span className="text-gray-400 hidden sm:inline">
-                      • {calculateDuration(activity.planned_start_date, activity.planned_end_date)}
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Flow Type</span>
+                  <span className="text-sm text-gray-700">
+                    {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tied Status</span>
+                  <span className="text-sm text-gray-700">
+                    {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status) : 'Not reported'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Dates Section - At bottom of card */}
+            <div className="mt-4 pt-3 border-t border-gray-200 space-y-1">
+              <div className="flex items-center gap-1 text-xs leading-normal text-gray-500">
+                <Calendar className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">
+                  {activity.planned_start_date || activity.planned_end_date ? (
+                    <>
+                      {formatDateRange(activity.planned_start_date, activity.planned_end_date)}
+                      {activity.planned_start_date && activity.planned_end_date && (
+                        <span className="text-gray-400 hidden sm:inline">
+                          • {calculateDuration(activity.planned_start_date, activity.planned_end_date)}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-gray-400">
+                      Start date not reported • End date not reported
                     </span>
                   )}
-                </div>
-              )}
+                </span>
+              </div>
               
               {activity.updated_at && (
                 <div className="flex items-center gap-1 text-xs leading-normal text-gray-400">
@@ -340,60 +430,6 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 </div>
               )}
             </div>
-
-            {/* Financial Summary Section */}
-            {(activity.totalBudget !== undefined && activity.totalBudget > 0) || (activity.totalDisbursed !== undefined && activity.totalDisbursed > 0) ? (
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Financial Summary</h4>
-                <div className="space-y-2">
-                  {activity.totalBudget !== undefined && activity.totalBudget > 0 && (
-                    <div className="flex justify-between items-center">
-                      <div className="text-xs text-gray-600 uppercase tracking-wide">Total Budgeted</div>
-                      <div className="text-lg font-semibold text-gray-900">{formatCurrency(activity.totalBudget)}</div>
-                    </div>
-                  )}
-                  {activity.totalDisbursed !== undefined && activity.totalDisbursed > 0 && (
-                    <div className="flex justify-between items-center">
-                      <div className="text-xs text-gray-600 uppercase tracking-wide">Total Disbursed</div>
-                      <div className="text-lg font-semibold text-gray-900">{formatCurrency(activity.totalDisbursed)}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : null}
-
-            {/* Aid Modality & Reporting Section */}
-            {(activity.default_aid_type || activity.default_flow_type || activity.default_tied_status || activity.created_by_org_name) && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Activity Details</h4>
-                <div className="space-y-2">
-                  {activity.created_by_org_name && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reported by</span>
-                      <span className="text-sm text-gray-700 font-medium">{activity.created_by_org_name}</span>
-                    </div>
-                  )}
-                  {activity.default_aid_type && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Aid Type</span>
-                      <span className="text-sm text-gray-700">{AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type}</span>
-                    </div>
-                  )}
-                  {activity.default_flow_type && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Flow Type</span>
-                      <span className="text-sm text-gray-700">{FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type}</span>
-                    </div>
-                  )}
-                  {activity.default_tied_status && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tied Status</span>
-                      <span className="text-sm text-gray-700">{TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </Link>

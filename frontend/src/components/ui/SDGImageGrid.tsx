@@ -21,6 +21,8 @@ interface SDGImageGridProps {
   showTooltips?: boolean;
   /** Maximum number of SDGs to display before showing "+" indicator */
   maxDisplay?: number;
+  /** Tooltip alignment */
+  tooltipAlign?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 // SDG goal names mapping for quick lookup
@@ -89,7 +91,8 @@ export function SDGImageGrid({
   size = 'md',
   className = '',
   showTooltips = true,
-  maxDisplay
+  maxDisplay,
+  tooltipAlign = 'top'
 }: SDGImageGridProps) {
   // Parse and validate SDG codes
   const validSDGs = sdgCodes
@@ -139,8 +142,13 @@ export function SDGImageGrid({
           <TooltipTrigger asChild>
             {imageElement}
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs">
-            <div className="text-center">
+          <TooltipContent 
+            side="top" 
+            align="start"
+            className="max-w-xs"
+            sideOffset={4}
+          >
+            <div className="text-left">
               <div className="font-semibold">Goal {goalNumber}: {goalName}</div>
               {SDG_GOALS.find(g => g.id === goalNumber)?.description && (
                 <div className="text-xs text-gray-600 mt-1">

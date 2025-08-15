@@ -59,6 +59,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    const transactionWarnings: string[] = [];
     
     // Enhanced debugging
     console.log('[AIMS API] ============ POST /api/activities ============');
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
     console.log('[AIMS API] Request body keys:', Object.keys(body));
     console.log('[AIMS API] Activity title:', body.title);
     console.log('[AIMS API] Activity ID:', body.id || 'NEW');
+    console.log('[AIMS API] Publication Status:', body.publicationStatus);
     console.log('[AIMS API] Transactions count:', body.transactions?.length || 0);
     
     console.log('[AIMS API] Received body.contacts:', body.contacts);
@@ -84,6 +86,10 @@ export async function POST(request: Request) {
 
     // If we have an ID, this is an update
     if (body.id) {
+      console.log('[AIMS API] ============ ACTIVITY UPDATE ============');
+      console.log('[AIMS API] Updating activity ID:', body.id);
+      console.log('[AIMS API] New publication status:', body.publicationStatus);
+      
       // Fetch existing activity
       const { data: existingActivity, error: fetchError } = await getSupabaseAdmin()
         .from('activities')
@@ -97,6 +103,11 @@ export async function POST(request: Request) {
           { status: 404 }
         );
       }
+      
+      console.log('[AIMS API] Existing publication status:', existingActivity.publication_status);
+      console.log('[AIMS API] New publication status:', body.publicationStatus);
+      const isUnpublishing = existingActivity.publication_status === 'published' && body.publicationStatus === 'draft';
+      console.log('[AIMS API] Is unpublishing operation:', isUnpublishing);
       
       // Track changes for activity logging
       const changes: any[] = [];
@@ -281,7 +292,6 @@ export async function POST(request: Request) {
         // Upsert transactions (update existing, insert new)
         if (body.transactions.length > 0) {
           let transactionsData;
-          const transactionWarnings = [];
           
           try {
             transactionsData = body.transactions.map((transaction: any, index: number) => {
@@ -383,14 +393,28 @@ export async function POST(request: Request) {
               
             if (upsertError) {
               console.error('[AIMS] Error upserting transactions:', upsertError);
-              return NextResponse.json(
-                { 
-                  error: 'Failed to save some transactions', 
-                  details: upsertError.message,
-                  warnings: transactionWarnings 
-                },
-                { status: 400 }
-              );
+              
+              // Check if this is an unpublishing operation
+              const isUnpublishing = existingActivity.publication_status === 'published' && body.publicationStatus === 'draft';
+              console.log('[AIMS API] Transaction error - Unpublishing check:', {
+                existingStatus: existingActivity.publication_status,
+                newStatus: body.publicationStatus,
+                isUnpublishing: isUnpublishing
+              });
+              
+              if (isUnpublishing) {
+                console.warn('[AIMS] Transaction upsert failed during unpublishing - continuing with activity update');
+                transactionWarnings.push(`Some transactions could not be updated: ${upsertError.message}`);
+              } else {
+                return NextResponse.json(
+                  { 
+                    error: 'Failed to save some transactions', 
+                    details: upsertError.message,
+                    warnings: transactionWarnings 
+                  },
+                  { status: 400 }
+                );
+              }
             } else {
               console.log(`[AIMS] Successfully upserted ${validTransactions.length} transactions`);
               if (upsertedData) {
@@ -1077,7 +1101,6 @@ export async function POST(request: Request) {
     // Handle transactions - only insert if provided
     if (body.transactions && body.transactions.length > 0) {
       let transactionsData;
-      const transactionWarnings = [];
       
       try {
         transactionsData = body.transactions.map((transaction: any, index: number) => {
@@ -1560,9 +1583,17 @@ export async function POST(request: Request) {
     console.log('[AIMS API] Title:', responseData.title);
     console.log('[AIMS API] Status:', responseData.activityStatus);
     console.log('[AIMS API] Publication:', responseData.publicationStatus);
+    if (transactionWarnings.length > 0) {
+      console.log('[AIMS API] Warnings:', transactionWarnings);
+    }
     console.log('[AIMS API] ==================================');
     
-    return NextResponse.json(responseData, { status: 201 });
+    // Include warnings in response if any occurred
+    const response = transactionWarnings.length > 0 
+      ? { ...responseData, warnings: transactionWarnings }
+      : responseData;
+    
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error('[AIMS] Error saving activity:', error);
     console.error('[AIMS] Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
@@ -1856,7 +1887,18 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform the data to match the expected format
-    const transformedActivities = activitiesWithSummaries.map((activity: any) => ({
+    const transformedActivities = activitiesWithSummaries.map((activity: any) => {
+      // Debug icon data from database
+      if (activity.icon) {
+        console.log('[API] Activity with icon from DB:', {
+          title: activity.title_narrative,
+          icon: activity.icon?.substring(0, 100) + "...",
+          iconType: typeof activity.icon,
+          iconLength: activity.icon?.length
+        });
+      }
+      
+      const transformed = {
       ...activity,
       sectors: (sectorsMap.get(activity.id) || []).map((sector: any) => ({
         id: sector.id,
@@ -1960,7 +2002,20 @@ export async function GET(request: NextRequest) {
       documents: activity.documents ? JSON.parse(activity.documents) : [],
       createdAt: activity.created_at,
       updatedAt: activity.updated_at,
-    }));
+    };
+    
+    // Debug final transformed activity with icon
+    if (transformed.icon) {
+      console.log('[API] Final transformed activity with icon:', {
+        title: transformed.title,
+        icon: transformed.icon?.substring(0, 100) + "...",
+        iconType: typeof transformed.icon,
+        iconLength: transformed.icon?.length
+      });
+    }
+    
+    return transformed;
+    });
 
     console.log(`[AIMS] Successfully fetched ${transformedActivities.length} activities from database`);
 

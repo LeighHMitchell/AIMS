@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
         publication_status,
         submission_status,
         banner,
+        icon,
         reporting_org_id,
         created_by_org_name,
         created_by_org_acronym,
@@ -97,6 +98,21 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[AIMS-SIMPLE] Fetched ${data?.length || 0} activities (page ${page})`);
+    
+    // Debug icon data
+    const activitiesWithIcons = data?.filter((activity: any) => activity.icon) || [];
+    if (activitiesWithIcons.length > 0) {
+      console.log(`[AIMS-SIMPLE] Found ${activitiesWithIcons.length} activities with icons:`);
+      activitiesWithIcons.forEach((activity: any) => {
+        console.log(`[AIMS-SIMPLE] Activity "${activity.title_narrative}" has icon:`, {
+          iconType: typeof activity.icon,
+          iconLength: activity.icon?.length,
+          iconPreview: activity.icon?.substring(0, 100) + "..."
+        });
+      });
+    } else {
+      console.log('[AIMS-SIMPLE] No activities found with icon data');
+    }
 
     // Fetch budget data and transaction summaries for each activity
     const activityIds = data?.map((a: any) => a.id) || [];

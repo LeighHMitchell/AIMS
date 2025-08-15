@@ -26,19 +26,23 @@ const AID_TYPE_LABELS: Record<string, string> = {
 const FLOW_TYPE_LABELS: Record<string, string> = {
   '10': 'ODA',
   '20': 'OOF',
-  '30': 'Private grants',
-  '35': 'Private market',
+  '21': 'Non-export credit OOF',
+  '22': 'Officially supported export credits',
+  '30': 'Private Development Finance',
+  '35': 'Private Market',
+  '36': 'Private Foreign Direct Investment',
+  '37': 'Other Private Flows at Market Terms',
   '40': 'Non flow',
   '50': 'Other flows'
 };
 
 const TIED_STATUS_LABELS: Record<string, string> = {
-  '1': 'Tied',
-  '2': 'Partially tied',
-  '3': 'Untied',
-  '4': 'Not reported'
+  '3': 'Partially tied',
+  '4': 'Tied',
+  '5': 'Untied'
 };
 import { SDGImageGrid } from '@/components/ui/SDGImageGrid';
+import { formatReportedBy } from '@/utils/format-helpers';
 
 interface ActivityCardForExportProps {
   activity: any;
@@ -162,7 +166,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
             
             {/* Title Overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-4">
-              <h1 className="text-xl font-bold text-white leading-tight line-clamp-2 mb-1">
+              <h1 className="text-xl font-bold text-white leading-tight line-clamp-2 mb-1 pt-8">
                 {activity.title}
               </h1>
               
@@ -189,14 +193,14 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
               </div>
             </div>
 
-            {/* Activity Icon */}
+            {/* Activity Icon - Positioned with offset from right edge and vertically centered between banner and content */}
             {activity.icon && (
-              <div className="absolute top-3 right-3">
-                <div className="w-12 h-12 rounded-xl border-2 border-white bg-white shadow-lg overflow-hidden">
+              <div className="absolute right-6 bottom-0 translate-y-1/2">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-white bg-white shadow-lg overflow-hidden">
                   <img
                     src={activity.icon}
                     alt={`Icon for ${activity.title}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </div>
               </div>
@@ -207,93 +211,26 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
         {/* Main Content Area */}
         <div className="p-6 space-y-4">
           
-          {/* IDs Section - Compact */}
+          {/* IDs Section - Always displayed */}
           <div className="grid grid-cols-2 gap-4">
-            {activity.partner_id && (
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Activity ID</div>
-                <div className="text-sm font-mono bg-gray-100 px-3 py-1.5 rounded-lg">{activity.partner_id}</div>
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Activity ID</div>
+              <div className="text-sm font-mono bg-gray-100 px-3 py-1.5 rounded-lg">
+                {activity.partner_id || 'Activity ID not reported'}
               </div>
-            )}
-            {activity.iati_id && (
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">IATI ID</div>
-                <div className="text-sm font-mono bg-gray-100 px-3 py-1.5 rounded-lg text-xs leading-tight">{activity.iati_id}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">IATI ID</div>
+              <div className="text-sm font-mono bg-gray-100 px-3 py-1.5 rounded-lg text-xs leading-tight">
+                {activity.iati_id || 'IATI Identifier not reported'}
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Timeline Section */}
-          {(activity.planned_start_date || activity.planned_end_date) && (
-            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-              <div className="flex items-center gap-2 text-sm text-blue-800">
-                <Calendar className="w-4 h-4 flex-shrink-0" />
-                <span className="font-medium">
-                  {formatDateRange(activity.planned_start_date, activity.planned_end_date)}
-                </span>
-                {activity.planned_start_date && activity.planned_end_date && (
-                  <span className="text-blue-600">
-                    • {calculateDuration(activity.planned_start_date, activity.planned_end_date)}
-                  </span>
-                )}
-              </div>
-              {activity.updated_at && (
-                <div className="flex items-center gap-2 text-xs text-blue-600 mt-1">
-                  <Clock className="w-3 h-3 flex-shrink-0" />
-                  <span>Updated {formatRelativeTime(activity.updated_at)}</span>
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* Two Column Layout for Details */}
-          <div className="grid grid-cols-2 gap-6">
-            
-            {/* Financial Summary - Left Column */}
-            {((activity.totalBudget !== undefined && activity.totalBudget > 0) || 
-              (activity.totalDisbursed !== undefined && activity.totalDisbursed > 0)) && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Financial Summary</h3>
-                </div>
-                
-                <div className="space-y-3">
-                  {activity.totalBudget !== undefined && activity.totalBudget > 0 && (
-                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                      <div className="text-xs font-medium text-green-700 uppercase tracking-wide mb-1">Total Budgeted</div>
-                      <div className="text-2xl font-bold text-green-800">{formatCurrency(activity.totalBudget)}</div>
-                    </div>
-                  )}
-                  
-                  {activity.totalDisbursed !== undefined && activity.totalDisbursed > 0 && (
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <div className="text-xs font-medium text-blue-700 uppercase tracking-wide mb-1">Total Disbursed</div>
-                      <div className="text-2xl font-bold text-blue-800">{formatCurrency(activity.totalDisbursed)}</div>
-                    </div>
-                  )}
-                  
-                  {/* Progress Bar */}
-                  {activity.totalBudget > 0 && activity.totalDisbursed > 0 && (
-                    <div className="mt-3">
-                      <div className="flex justify-between text-xs text-gray-600 mb-1">
-                        <span>Progress</span>
-                        <span>{Math.round((activity.totalDisbursed / activity.totalBudget) * 100)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min((activity.totalDisbursed / activity.totalBudget) * 100, 100)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
-            {/* Activity Details - Right Column */}
-            <div className="space-y-3">
+          {/* Activity Details */}
+          <div className="space-y-3">
               <div className="flex items-center gap-2 mb-3">
                 <Globe className="w-5 h-5 text-blue-600" />
                 <h3 className="text-lg font-semibold text-gray-900">Activity Details</h3>
@@ -303,32 +240,43 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                 {activity.created_by_org_name && (
                   <div className="bg-gray-50 rounded-lg p-3 border">
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Reported by</div>
-                    <div className="text-sm font-medium text-gray-900">{activity.created_by_org_name}</div>
+                    <div className="text-sm font-medium text-gray-900 text-right py-2 min-h-[3.5rem] flex items-center justify-end">
+                      {activity.created_by_org_name}
+                    </div>
                   </div>
                 )}
                 
-                {activity.default_aid_type && (
-                  <div className="bg-gray-50 rounded-lg p-3 border">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Aid Type</div>
-                    <div className="text-sm text-gray-700">{AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type}</div>
-                  </div>
-                )}
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Budgeted</div>
+                  <div className="text-sm text-gray-700">{formatCurrency(activity.totalBudget || 0)}</div>
+                </div>
                 
-                {activity.default_flow_type && (
-                  <div className="bg-gray-50 rounded-lg p-3 border">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Flow Type</div>
-                    <div className="text-sm text-gray-700">{FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type}</div>
-                  </div>
-                )}
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Disbursed</div>
+                  <div className="text-sm text-gray-700">{formatCurrency(activity.totalDisbursed || 0)}</div>
+                </div>
                 
-                {activity.default_tied_status && (
-                  <div className="bg-gray-50 rounded-lg p-3 border">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Tied Status</div>
-                    <div className="text-sm text-gray-700">{TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status}</div>
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Aid Type</div>
+                  <div className="text-sm text-gray-700">
+                    {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
                   </div>
-                )}
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Flow Type</div>
+                  <div className="text-sm text-gray-700">
+                    {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Tied Status</div>
+                  <div className="text-sm text-gray-700">
+                    {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status) : 'Not reported'}
+                  </div>
+                </div>
               </div>
-            </div>
           </div>
 
           {/* SDG Section - Full Width Bottom */}
@@ -351,6 +299,35 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
               </div>
             </div>
           )}
+
+          {/* Timeline Section - At bottom */}
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 mt-6">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <Calendar className="w-4 h-4 flex-shrink-0" />
+              <span className="font-medium">
+                {activity.planned_start_date || activity.planned_end_date ? (
+                  <>
+                    {formatDateRange(activity.planned_start_date, activity.planned_end_date)}
+                    {activity.planned_start_date && activity.planned_end_date && (
+                      <span className="text-blue-600">
+                        • {calculateDuration(activity.planned_start_date, activity.planned_end_date)}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-blue-600">
+                    Start date not reported • End date not reported
+                  </span>
+                )}
+              </span>
+            </div>
+            {activity.updated_at && (
+              <div className="flex items-center gap-2 text-xs text-blue-600 mt-1">
+                <Clock className="w-3 h-3 flex-shrink-0" />
+                <span>Updated {formatRelativeTime(activity.updated_at)}</span>
+              </div>
+            )}
+          </div>
 
           {/* Export Footer */}
           <div className="border-t pt-3 mt-6">

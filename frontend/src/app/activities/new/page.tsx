@@ -1914,7 +1914,7 @@ function NewActivityPageContent() {
         documents,
         // Handle status fields
         activityStatus: general.activityStatus || "1",
-        publicationStatus: publish ? "published" : (general.publicationStatus || "draft"),
+        publicationStatus: publish ? "published" : "draft",
         // Include user's organization ID for new activities
         createdByOrg: general.createdByOrg || user?.organizationId,
         // Include user information for logging
@@ -2055,11 +2055,24 @@ function NewActivityPageContent() {
         console.log('[AIMS DEBUG] After save - contributors from response:', data.contributors);
         console.log('[AIMS DEBUG] After save - contributors count:', data.contributors?.length || 0);
         
-        // Show appropriate success message
+        // Show appropriate success message with warnings if any
         const successMsg = publish 
           ? "Activity published successfully"
-          : "Activity saved";
-        toast.success(successMsg);
+          : (general.publicationStatus === 'published' && !publish) 
+            ? "Activity unpublished successfully"
+            : "Activity saved";
+        
+        // Handle warnings from unpublishing
+        if (data.warnings && data.warnings.length > 0) {
+          toast.success(successMsg);
+          // Show warnings as info toasts
+          data.warnings.forEach((warning: string) => {
+            toast.info(`Warning: ${warning}`, { duration: 5000 });
+          });
+        } else {
+          toast.success(successMsg);
+        }
+        
         setSuccess("");  // Clear any previous success message
         
         // Clear error message on success
@@ -2085,6 +2098,8 @@ function NewActivityPageContent() {
       console.error("[AIMS] Error saving activity:", err);
       setError(err.message || "Failed to save activity");
       toast.error(err.message || "Failed to save activity");
+      // Re-throw the error so callers can handle it
+      throw err;
     } finally {
       setSubmitting(false);
       setSaving(false);
@@ -2312,8 +2327,21 @@ function NewActivityPageContent() {
                           saveActivity({ publish: true });
                         } else {
                           // Unpublish the activity
+                          console.log('[AIMS] Attempting to unpublish activity');
+                          const originalStatus = general.publicationStatus;
+                          
+                          // Optimistically update the UI
                           setGeneral(prev => ({ ...prev, publicationStatus: 'draft' }));
-                          saveActivity({ publish: false });
+                          
+                          try {
+                            await saveActivity({ publish: false });
+                            console.log('[AIMS] Unpublish successful');
+                          } catch (error) {
+                            console.error('[AIMS] Unpublish failed, reverting state:', error);
+                            // Revert the optimistic update on failure
+                            setGeneral(prev => ({ ...prev, publicationStatus: originalStatus }));
+                            toast.error('Failed to unpublish activity. Please try again.');
+                          }
                         }
                       }}
                       disabled={!general.title?.trim() || submitting || publishing}

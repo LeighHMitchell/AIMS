@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
         iati_identifier,
         activity_status,
         created_by_org_name,
-        created_by_org_acronym
+        created_by_org_acronym,
+        icon
       `)
       .order('created_at', { ascending: false })
       .limit(limit);

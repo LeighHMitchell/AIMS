@@ -271,7 +271,7 @@ export function OptimizedOrganizationList({
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="government">Government</SelectItem>
                 <SelectItem value="multilateral">Multilateral</SelectItem>
                 <SelectItem value="ngo">NGO</SelectItem>
@@ -285,7 +285,7 @@ export function OptimizedOrganizationList({
                 <SelectValue placeholder="Country" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Countries</SelectItem>
+                <SelectItem value="all">All Countries</SelectItem>
                 <SelectItem value="US">United States</SelectItem>
                 <SelectItem value="GB">United Kingdom</SelectItem>
                 <SelectItem value="DE">Germany</SelectItem>

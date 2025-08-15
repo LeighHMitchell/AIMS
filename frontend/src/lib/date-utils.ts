@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns';
+import { format, formatDistanceToNow, isValid, parseISO, differenceInMonths, differenceInDays } from 'date-fns';
 
 export const formatActivityDate = (dateString: string | undefined): string => {
   if (!dateString) return '';
@@ -37,16 +37,38 @@ export const calculateDuration = (
   
   if (!isValid(start) || !isValid(end)) return '';
   
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  const years = Math.floor(diffDays / 365);
-  const months = Math.floor((diffDays % 365) / 30);
+  // Calculate duration with inclusive end date handling
+  let totalMonths = differenceInMonths(end, start);
   
+  // Check if we need to add an extra month for inclusive end dates
+  // This handles cases where the end date is the last day of a month
+  const startDay = start.getDate();
+  const endDay = end.getDate();
+  const endMonth = end.getMonth();
+  const endYear = end.getFullYear();
+  
+  // Get the last day of the end month
+  const lastDayOfEndMonth = new Date(endYear, endMonth + 1, 0).getDate();
+  
+  // If the end date is the last day of its month, and we're doing an inclusive calculation,
+  // we should count that full month
+  if (endDay === lastDayOfEndMonth && endDay >= startDay) {
+    totalMonths += 1;
+  }
+  
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  
+  // If less than a month, show days
+  if (totalMonths === 0) {
+    const days = differenceInDays(end, start) + 1; // +1 for inclusive counting
+    return `${days} day${days !== 1 ? 's' : ''}`;
+  }
+  
+  // Format years and months
   if (years > 0) {
-    return months > 0 ? `${years}y ${months}m` : `${years} year${years > 1 ? 's' : ''}`;
+    return months > 0 ? `${years}y ${months}m` : `${years}y`;
   }
-  if (months > 0) {
-    return `${months} month${months > 1 ? 's' : ''}`;
-  }
-  return `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+  
+  return `${months}m`;
 }; 

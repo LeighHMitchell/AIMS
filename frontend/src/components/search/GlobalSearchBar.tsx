@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { format } from 'date-fns'
 
 interface SearchResult {
   id: string
@@ -31,6 +30,7 @@ interface SearchResult {
   metadata?: {
     status?: string
     reporting_org?: string
+    reporting_org_acronym?: string
     manager?: string
     tags?: string[]
     partner_id?: string
@@ -71,6 +71,7 @@ export function GlobalSearchBar({
     if (!searchQuery.trim()) {
       setResults([])
       setError(null)
+      setLoading(false)
       return
     }
 
@@ -83,7 +84,7 @@ export function GlobalSearchBar({
     abortControllerRef.current = new AbortController()
 
     try {
-      setLoading(true)
+      // Don't set loading here since it's already set in handleInputChange
       setError(null)
 
       const response = await fetch(
@@ -128,14 +129,20 @@ export function GlobalSearchBar({
 
     // Search immediately with 1 character
     if (value.trim().length >= 1) {
+      // Set loading state immediately when user starts typing
+      setLoading(true)
+      setError(null)
+      setResults([]) // Clear previous results immediately
+      
       // Set new timeout for debounced search with very fast delay
       searchTimeoutRef.current = setTimeout(() => {
         performSearch(value)
-      }, 10) // 10ms debounce delay for near-instant response
+      }, 300) // 300ms debounce delay for better UX
     } else {
       // Clear results if no input
       setResults([])
       setError(null)
+      setLoading(false)
     }
   }, [performSearch])
 
@@ -371,7 +378,7 @@ export function GlobalSearchBar({
               </div>
             )}
             
-            {!loading && !error && query && results.length === 0 && (
+            {!loading && !error && query && results.length === 0 && query.trim().length > 0 && (
               <CommandEmpty>No results found for "{query}"</CommandEmpty>
             )}
             
@@ -418,14 +425,20 @@ export function GlobalSearchBar({
                               )}
                               {result.type === 'activity' && (
                                 <div className="text-xs text-gray-500 mt-1">
-                                  {result.metadata?.partner_id && (
-                                    <div className="truncate">
-                                      Partner ID: {result.metadata.partner_id}
+                                  {result.metadata?.reporting_org && (
+                                    <div className="truncate mb-1">
+                                      {result.metadata.reporting_org}
+                                      {result.metadata.reporting_org_acronym && 
+                                        ` (${result.metadata.reporting_org_acronym})`
+                                      }
                                     </div>
                                   )}
-                                  {result.metadata?.reporting_org && (
+                                  {(result.metadata?.partner_id || result.metadata?.iati_id) && (
                                     <div className="truncate">
-                                      Reported by: {result.metadata.reporting_org}
+                                      {[result.metadata?.partner_id, result.metadata?.iati_id]
+                                        .filter(Boolean)
+                                        .join(' • ')
+                                      }
                                     </div>
                                   )}
                                 </div>
@@ -464,11 +477,6 @@ export function GlobalSearchBar({
                                 </div>
                               )}
                             </div>
-                            {result.metadata?.updated_at && (
-                              <div className="text-xs text-gray-400 whitespace-nowrap">
-                                {format(new Date(result.metadata.updated_at), 'MMM d')}
-                              </div>
-                            )}
                           </div>
                         </CommandItem>
                       ))}

@@ -43,6 +43,7 @@ interface Activity {
   status: string;
   organizationName?: string;
   organizationAcronym?: string;
+  icon?: string | null;
 }
 
 interface LinkedActivitiesEditorTabProps {
@@ -158,6 +159,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
         if (!response.ok) throw new Error('Search failed');
         
         const data = await response.json();
+        
+
         // Map the database field names to component field names
         const mappedActivities = (data.activities || []).map((activity: any) => ({
           id: activity.id,
@@ -165,8 +168,10 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           iatiIdentifier: activity.iati_identifier || activity.iatiIdentifier || '',
           status: activity.activity_status || activity.status || '',
           organizationName: activity.created_by_org_name || activity.organizationName || '',
-          organizationAcronym: activity.created_by_org_acronym || activity.organizationAcronym || ''
+          organizationAcronym: activity.created_by_org_acronym || activity.organizationAcronym || '',
+          icon: activity.icon || null
         }));
+
         setSearchResults(mappedActivities.filter((a: Activity) => a.id !== activityId));
     } catch (error) {
         console.error('Search error:', error);
@@ -340,18 +345,50 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                     onClick={() => canEdit && handleActivitySelect(activity)}
                   >
                     <CardContent className="p-4">
-                      <h4 className="font-medium text-gray-900 line-clamp-1">
-                        {activity.title}
-                      </h4>
-                      <div className="mt-1 space-y-1">
-                        <p className="text-xs text-gray-600">
-                          {activity.iatiIdentifier}
-                        </p>
-                        {activity.organizationName && (
-                          <p className="text-xs text-gray-500">
-                            {activity.organizationName}
-                          </p>
-                        )}
+                      <div className="flex items-start gap-3">
+                        {/* Activity Icon */}
+                        <div className="flex-shrink-0 mt-0.5">
+                          {activity.icon ? (
+                            <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                              <img 
+                                src={activity.icon} 
+                                alt="Activity icon" 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Fallback to default icon if image fails to load
+                                  const target = e.target as HTMLImageElement
+                                  target.style.display = 'none'
+                                  target.parentElement!.innerHTML = `
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                      <span class="text-blue-600 font-semibold text-sm">A</span>
+                                    </div>
+                                  `
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-blue-600 font-semibold text-sm">A</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Activity Details */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-900 line-clamp-1">
+                            {activity.title}
+                          </h4>
+                          <div className="mt-1 space-y-1">
+                            <p className="text-xs text-gray-600">
+                              {activity.iatiIdentifier}
+                            </p>
+                            {activity.organizationName && (
+                              <p className="text-xs text-gray-500">
+                                {activity.organizationName}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatActivityDate, formatDateRange, formatRelativeTime, calculateDuration } from '@/lib/date-utils';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
 import { SDGImageGrid } from '@/components/ui/SDGImageGrid';
+import { formatReportedBy } from '@/utils/format-helpers';
+import { StatusIcon } from '@/components/ui/status-icon';
 
 
 // Aid modality label mappings
@@ -48,18 +50,20 @@ const FINANCE_TYPE_LABELS: Record<string, string> = {
 const FLOW_TYPE_LABELS: Record<string, string> = {
   '10': 'ODA',
   '20': 'OOF',
-  '30': 'Private grants',
-  '35': 'Private market',
+  '21': 'Non-export credit OOF',
+  '22': 'Officially supported export credits',
+  '30': 'Private Development Finance',
+  '35': 'Private Market',
+  '36': 'Private Foreign Direct Investment',
+  '37': 'Other Private Flows at Market Terms',
   '40': 'Non flow',
   '50': 'Other flows'
 };
 
 const TIED_STATUS_LABELS: Record<string, string> = {
-  '1': 'Tied',
-  '2': 'Partially tied',
-  '3': 'Untied',
-  '4': 'Not reported',
-  '5': 'Not reported'
+  '3': 'Partially tied',
+  '4': 'Tied',
+  '5': 'Untied'
 };
 
 interface SDGMapping {
@@ -90,8 +94,10 @@ interface ActivityCardWithSDGProps {
     default_finance_type?: string;
     default_flow_type?: string;
     default_tied_status?: string;
+    default_modality?: string;
     // Financial and reporting fields
     created_by_org_name?: string;
+    created_by_org_acronym?: string;
     totalBudget?: number;
     totalDisbursed?: number;
     // SDG mapping support
@@ -217,11 +223,11 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
       bg-white rounded-xl border border-gray-100 
       hover:border-gray-200 hover:shadow-lg 
       transition-all duration-300 ease-in-out
-      overflow-hidden relative group shadow-sm
+      relative group shadow-sm
       ${className}
     `}>
       {/* Action Menu - Bottom right */}
-      <div className="absolute bottom-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <div className="absolute bottom-3 right-3 z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -254,9 +260,9 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
         </DropdownMenu>
       </div>
 
-      {/* SDG Display Section - Bottom left */}
+      {/* SDG Display Section - Bottom left with tooltips that can overflow */}
       {hasSDGs && (
-        <div className="absolute bottom-3 left-3 z-10">
+        <div className="absolute bottom-3 left-3 z-20" style={{ zIndex: 9999 }}>
           <SDGImageGrid 
             sdgCodes={sdgGoals} 
             size="sm" 
@@ -267,7 +273,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
         </div>
       )}
 
-      <Link href={`/activities/${activity.id}`} className="block">
+      <Link href={`/activities/${activity.id}`} className="block overflow-hidden rounded-xl">
         {/* Banner Image */}
         <div className="relative">
           {activity.banner ? (
@@ -289,19 +295,34 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
           {/* Subtle overlay for depth */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
           
-          {/* Activity Icon Overlay */}
-          {activity.icon && (
-            <div className="absolute bottom-2 right-2">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border-2 border-white bg-white shadow-md overflow-hidden">
-                <img
-                  src={activity.icon}
-                  alt={`Icon for ${activity.title}`}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
+          {/* Activity Icon Overlay - Positioned with offset from right edge and vertically centered between banner and content */}
+          {(activity.icon || true) && (
+            <div className="absolute right-6 bottom-0 translate-y-1/2">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-white bg-white shadow-md overflow-hidden">
+                {activity.icon && activity.icon.trim() !== '' ? (
+                  <img
+                    src={activity.icon}
+                    alt={`Icon for ${activity.title}`}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      console.log("Icon failed to load for:", activity.title, "Icon data:", activity.icon?.substring(0, 100));
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      // Show a fallback icon
+                      const fallback = document.createElement('div');
+                      fallback.className = 'w-full h-full bg-red-100 flex items-center justify-center';
+                      fallback.innerHTML = '<span class="text-red-600 font-semibold text-sm">!</span>';
+                      target.parentNode?.appendChild(fallback);
+                    }}
+                    onLoad={() => {
+                      console.log("Icon loaded successfully for:", activity.title);
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-600 font-semibold text-sm">A</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -312,43 +333,37 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
           <div className="space-y-4">
             {/* Title and IDs Section */}
             <div className="space-y-3">
-              <h3 className="font-medium text-foreground leading-tight line-clamp-2">
+              <h3 className="font-medium text-foreground leading-tight line-clamp-2 pt-8">
                 {activity.title}
               </h3>
               
-              {/* Activity ID and IATI ID - matching table view style */}
-              {(activity.partner_id || activity.iati_id) && (
-                <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
-                  {activity.partner_id && (
-                    <>
-                      <span>{activity.partner_id}</span>
-                      <button
-                        onClick={(e) => handleCopy(activity.partner_id!, e)}
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
-                        title="Copy Activity ID"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
-                    </>
-                  )}
-                  {activity.iati_id && (
-                    <>
-                      <span className="text-slate-400 ml-2">{activity.iati_id}</span>
-                      <button
-                        onClick={(e) => handleCopy(activity.iati_id!, e)}
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
-                        title="Copy IATI Identifier"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
+              {/* Activity ID and IATI ID - Always displayed */}
+              <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
+                <span>{activity.partner_id || 'Activity ID not reported'}</span>
+                {activity.partner_id && (
+                  <button
+                    onClick={(e) => handleCopy(activity.partner_id!, e)}
+                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                    title="Copy Activity ID"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                )}
+                <span className="text-slate-400 ml-2">{activity.iati_id || 'IATI Identifier not reported'}</span>
+                {activity.iati_id && (
+                  <button
+                    onClick={(e) => handleCopy(activity.iati_id!, e)}
+                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                    title="Copy IATI Identifier"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Status Pills Section */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               {activity.activity_status && (
                 <Badge 
                   variant={statusColors[activity.activity_status as keyof typeof statusColors] || 'secondary'}
@@ -367,23 +382,86 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                    activity.submission_status.charAt(0).toUpperCase() + activity.submission_status.slice(1)}
                 </Badge>
               )}
+              {activity.publication_status && (
+                <StatusIcon 
+                  type="publication" 
+                  status={activity.publication_status} 
+                  className="ml-1"
+                />
+              )}
+              {activity.default_modality && (
+                <StatusIcon 
+                  type="aid-modality" 
+                  status={activity.default_modality} 
+                  isPublished={activity.publication_status === 'published'}
+                  className="ml-1"
+                />
+              )}
             </div>
 
-            {/* Dates Section */}
-            <div className="space-y-1">
-              {(activity.planned_start_date || activity.planned_end_date) && (
-                <div className="flex items-center gap-1 text-xs leading-normal text-gray-500">
-                  <Calendar className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">
-                    {formatDateRange(activity.planned_start_date, activity.planned_end_date)}
+
+
+
+
+            {/* Activity Details - Always displayed */}
+            <div className="space-y-2">
+              {activity.created_by_org_name && (
+                <div className="flex justify-between items-center py-2 min-h-[3.5rem]">
+                  <span className="text-sm font-medium text-gray-700">Reported by</span>
+                  <span className="text-sm text-gray-900 text-right flex items-center">
+                    {activity.created_by_org_name}
                   </span>
-                  {activity.planned_start_date && activity.planned_end_date && (
-                    <span className="text-gray-400 hidden sm:inline">
-                      • {calculateDuration(activity.planned_start_date, activity.planned_end_date)}
-                    </span>
-                  )}
                 </div>
               )}
+              <div className="flex justify-between items-center">
+                <div className="text-sm font-medium text-gray-700">Total Budgeted</div>
+                <div className="text-sm text-gray-900">{formatCurrency(activity.totalBudget || 0)}</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="text-sm font-medium text-gray-700">Total Disbursed</div>
+                <div className="text-sm text-gray-900">{formatCurrency(activity.totalDisbursed || 0)}</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700">Aid Type</span>
+                <span className="text-sm text-gray-900">
+                  {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700">Flow Type</span>
+                <span className="text-sm text-gray-900">
+                  {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700">Tied Status</span>
+                <span className="text-sm text-gray-900">
+                  {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status) : 'Not reported'}
+                </span>
+              </div>
+            </div>
+
+            {/* Dates Section - At bottom of card */}
+            <div className="mt-4 pt-3 border-t border-gray-200 space-y-1">
+              <div className="flex items-center gap-1 text-xs leading-normal text-gray-500">
+                <Calendar className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">
+                  {activity.planned_start_date || activity.planned_end_date ? (
+                    <>
+                      {formatDateRange(activity.planned_start_date, activity.planned_end_date)}
+                      {activity.planned_start_date && activity.planned_end_date && (
+                        <span className="text-gray-400 hidden sm:inline">
+                          • {calculateDuration(activity.planned_start_date, activity.planned_end_date)}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-gray-400">
+                      Start date not reported • End date not reported
+                    </span>
+                  )}
+                </span>
+              </div>
               
               {activity.updated_at && (
                 <div className="flex items-center gap-1 text-xs leading-normal text-gray-400">
@@ -394,54 +472,6 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                 </div>
               )}
             </div>
-
-            {/* Financial Information */}
-            {((activity.totalBudget !== undefined && activity.totalBudget > 0) || (activity.totalDisbursed !== undefined && activity.totalDisbursed > 0)) && (
-              <div className="space-y-2">
-                {activity.totalBudget !== undefined && activity.totalBudget > 0 && (
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm font-medium text-gray-700">Total Budgeted</div>
-                    <div className="text-sm text-gray-900">{formatCurrency(activity.totalBudget)}</div>
-                  </div>
-                )}
-                {activity.totalDisbursed !== undefined && activity.totalDisbursed > 0 && (
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm font-medium text-gray-700">Total Disbursed</div>
-                    <div className="text-sm text-gray-900">{formatCurrency(activity.totalDisbursed)}</div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Activity Details */}
-            {(activity.default_aid_type || activity.default_flow_type || activity.default_tied_status || activity.created_by_org_name) && (
-              <div className="space-y-2">
-                {activity.created_by_org_name && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">Reported by</span>
-                    <span className="text-sm text-gray-900">{activity.created_by_org_name}</span>
-                  </div>
-                )}
-                {activity.default_aid_type && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">Aid Type</span>
-                    <span className="text-sm text-gray-900">{AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type}</span>
-                  </div>
-                )}
-                {activity.default_flow_type && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">Flow Type</span>
-                    <span className="text-sm text-gray-900">{FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type}</span>
-                  </div>
-                )}
-                {activity.default_tied_status && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">Tied Status</span>
-                    <span className="text-sm text-gray-900">{TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status}</span>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </Link>

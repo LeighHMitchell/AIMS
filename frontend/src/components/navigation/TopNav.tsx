@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { FolderPlus, User, LogOut, Briefcase, Settings } from "lucide-react"
+import { FolderPlus, User, LogOut, Briefcase, Settings, Shield } from "lucide-react"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
 
@@ -26,6 +26,12 @@ interface TopNavProps {
     profilePicture?: string
     firstName?: string
     lastName?: string
+    organisation?: string
+    organization?: {
+      id: string
+      name: string
+      acronym?: string
+    }
   } | null
   canCreateActivities?: boolean
   onLogout?: () => void
@@ -64,28 +70,46 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
                   <span>{user.name || "User"}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuContent align="end" className="w-72">
                 <DropdownMenuLabel>
-                  <div className="flex flex-col space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8">
+                  <div className="flex flex-col space-y-3 py-2">
+                    {/* User Details Section with increased padding */}
+                    <div className="flex items-center gap-3 px-1">
+                      <Avatar className="h-10 w-10">
                         <AvatarImage src={user.profilePicture} key={user.profilePicture} />
                         <AvatarFallback>
                           {user.firstName?.[0] || user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                           {user.lastName?.[0] || (user.name?.split(' ')[1]?.[0] || '')}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex flex-col">
-                        <p className="text-sm font-medium leading-none">{user.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      <div className="flex flex-col space-y-1 flex-1">
+                        <p className="text-sm font-medium leading-tight">{user.name}</p>
+                        <p className="text-xs leading-tight text-muted-foreground">{user.email}</p>
+                        {/* Organization Context */}
+                        {(user.organization?.name || user.organisation) && (
+                          <p className="text-xs leading-tight text-muted-foreground font-light">
+                            {user.organization?.name || user.organisation}
+                            {user.organization?.acronym && ` (${user.organization.acronym})`}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <Badge 
-                      variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"} 
-                      className="mt-1 w-fit"
-                    >
-                      {user.role && ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
-                    </Badge>
+                    
+                    {/* Visual Separator and Role Badge Section */}
+                    {user.role && (
+                      <>
+                        <div className="border-t border-gray-200 mx-1"></div>
+                        <div className="px-1">
+                          <Badge 
+                            variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"} 
+                            className="w-fit"
+                          >
+                            {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
+                          </Badge>
+                        </div>
+                        <div className="border-t border-gray-200 mx-1"></div>
+                      </>
+                    )}
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -101,6 +125,14 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
                     <span>My Portfolio</span>
                   </DropdownMenuItem>
                 </Link>
+                {user.role === USER_ROLES.SUPER_USER && (
+                  <Link href="/admin">
+                    <DropdownMenuItem>
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Admin</span>
+                    </DropdownMenuItem>
+                  </Link>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onLogout}>
                   <LogOut className="mr-2 h-4 w-4" />

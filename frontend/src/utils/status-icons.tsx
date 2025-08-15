@@ -12,7 +12,12 @@ import {
   CheckCircle2,
   Lock,
   Ban,
-  CircleSlash
+  CircleSlash,
+  HandCoins,
+  CreditCard,
+  GraduationCap,
+  Repeat,
+  TrendingUp
 } from "lucide-react"
 
 export interface StatusIconConfig {
@@ -75,79 +80,121 @@ export const getPublicationStatusIcon = (status: string): StatusIconConfig => {
   }
 }
 
-export const getActivityStatusIcon = (status: string): StatusIconConfig => {
+export const getActivityStatusIcon = (status: string, isPublished?: boolean): StatusIconConfig => {
+  const strokeWeight = isPublished ? 2.5 : 1.5;
+  const iconSize = isPublished ? "h-5 w-5" : "h-4 w-4";
+  
   switch (status) {
     // Text-based statuses
     case 'planning': 
     case 'pipeline':
       return { 
-        icon: <Waypoints className="h-4 w-4 text-foreground" />, 
+        icon: <Waypoints className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Pipeline/Identification" 
       }
     case 'implementation':
     case 'active': 
       return { 
-        icon: <Activity className="h-4 w-4 text-foreground" />, 
+        icon: <Activity className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Implementation" 
       }
     case 'completed': 
     case 'finalisation':
       return { 
-        icon: <CheckCircle2 className="h-4 w-4 text-foreground" />, 
+        icon: <CheckCircle2 className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Finalisation" 
       }
     case 'closed': 
       return { 
-        icon: <Lock className="h-4 w-4 text-foreground" />, 
+        icon: <Lock className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Closed" 
       }
     case 'cancelled': 
       return { 
-        icon: <Ban className="h-4 w-4 text-foreground" />, 
+        icon: <Ban className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Cancelled" 
       }
     case 'suspended': 
       return { 
-        icon: <CircleSlash className="h-4 w-4 text-foreground" />, 
+        icon: <CircleSlash className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Suspended" 
       }
     
     // IATI numeric codes
     case '1': 
       return { 
-        icon: <Waypoints className="h-4 w-4 text-foreground" />, 
+        icon: <Waypoints className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Pipeline/Identification" 
       }
     case '2': 
       return { 
-        icon: <Activity className="h-4 w-4 text-foreground" />, 
+        icon: <Activity className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Implementation" 
       }
     case '3': 
       return { 
-        icon: <CheckCircle2 className="h-4 w-4 text-foreground" />, 
+        icon: <CheckCircle2 className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Finalisation" 
       }
     case '4': 
       return { 
-        icon: <Lock className="h-4 w-4 text-foreground" />, 
+        icon: <Lock className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Closed" 
       }
     case '5': 
       return { 
-        icon: <Ban className="h-4 w-4 text-foreground" />, 
+        icon: <Ban className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Cancelled" 
       }
     case '6': 
       return { 
-        icon: <CircleSlash className="h-4 w-4 text-foreground" />, 
+        icon: <CircleSlash className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Suspended" 
       }
     
     default: 
       return { 
-        icon: <Waypoints className="h-4 w-4 text-foreground" />, 
+        icon: <Waypoints className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
         tooltip: "Pipeline/Identification" 
+      }
+  }
+}
+
+export const getDefaultAidModalityIcon = (modality: string, isPublished?: boolean): StatusIconConfig => {
+  const strokeWeight = isPublished ? 2.5 : 1.5;
+  const iconSize = isPublished ? "h-5 w-5" : "h-4 w-4";
+  
+  switch (modality) {
+    case '1': 
+      return { 
+        icon: <HandCoins className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
+        tooltip: "Grant – Non-repayable funds, typically public sector support" 
+      }
+    case '2': 
+      return { 
+        icon: <CreditCard className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
+        tooltip: "Loan – Repayable funds with terms and conditions" 
+      }
+    case '3': 
+      return { 
+        icon: <GraduationCap className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
+        tooltip: "Technical Assistance – Personnel, training, or capacity support" 
+      }
+    case '4': 
+      return { 
+        icon: <Repeat className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
+        tooltip: "Reimbursable Grant or Other – Partial repayment or hybrid arrangement" 
+      }
+    case '5': 
+      return { 
+        icon: <TrendingUp className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
+        tooltip: "Investment/Guarantee – Risk capital or financial instruments without cash transfer" 
+      }
+    
+    default: 
+      return { 
+        icon: <HandCoins className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
+        tooltip: "Grant – Non-repayable funds, typically public sector support" 
       }
   }
 }

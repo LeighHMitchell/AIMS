@@ -70,10 +70,9 @@ const FLOW_TYPE_LABELS: Record<string, string> = {
 
 // Tied Status mappings
 const TIED_STATUS_LABELS: Record<string, string> = {
-  '1': 'Tied',
-  '2': 'Partially tied',
-  '3': 'Untied',
-  '4': 'Not reported'
+  '3': 'Partially tied',
+  '4': 'Tied',
+  '5': 'Untied'
 };
 
 type Organization = {
@@ -138,6 +137,7 @@ type Activity = {
   default_finance_type?: string;
   default_flow_type?: string;
   default_tied_status?: string;
+  default_modality?: string;
   tied_status?: string; // Legacy field
 };
 
@@ -970,7 +970,7 @@ function ActivitiesPageContent() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <DatabaseZap className="h-4 w-4 text-gray-500 hover:text-primary cursor-pointer mx-auto" />
+                                <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer mx-auto`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <div className="space-y-2 p-1">
@@ -1042,7 +1042,7 @@ function ActivitiesPageContent() {
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Link2 className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.tied_status ? TIED_STATUS_LABELS[activity.tied_status] || activity.tied_status : 'Not specified'}</span>
+                                    <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status : 'Not specified'}</span>
                                   </div>
                                 </div>
                               </TooltipContent>

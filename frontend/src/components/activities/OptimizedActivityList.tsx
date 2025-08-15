@@ -210,7 +210,7 @@ export function OptimizedActivityList({
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="suspended">Suspended</SelectItem>
@@ -222,7 +222,7 @@ export function OptimizedActivityList({
                 <SelectValue placeholder="Date" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="this_year">This Year</SelectItem>
                 <SelectItem value="last_year">Last Year</SelectItem>
                 <SelectItem value="this_month">This Month</SelectItem>

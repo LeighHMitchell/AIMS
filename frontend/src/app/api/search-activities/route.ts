@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
         activity_status,
         publication_status,
         description_narrative,
-        created_at
+        created_at,
+        icon
       `);
     
     // Build search conditions for comprehensive search
@@ -122,6 +123,7 @@ export async function GET(request: NextRequest) {
         activity_status: activity.activity_status || 'unknown',
         publication_status: activity.publication_status || 'draft',
         description: activity.description_narrative || '',
+        icon: activity.icon || null,
         relevanceScore
       };
     });

@@ -471,7 +471,7 @@ export default function ProfilePage() {
                               <SelectValue placeholder="Select" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               <SelectItem value="Mr.">Mr.</SelectItem>
                               <SelectItem value="Ms.">Ms.</SelectItem>
                               <SelectItem value="Mrs.">Mrs.</SelectItem>

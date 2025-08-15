@@ -280,7 +280,7 @@ export function OptimizedTransactionList({
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="incoming-funds">Incoming</SelectItem>
                 <SelectItem value="commitment">Commitment</SelectItem>
                 <SelectItem value="disbursement">Disbursement</SelectItem>
@@ -293,7 +293,7 @@ export function OptimizedTransactionList({
                 <SelectValue placeholder="Flow" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="ODA">ODA</SelectItem>
                 <SelectItem value="OOF">OOF</SelectItem>
                 <SelectItem value="private">Private</SelectItem>

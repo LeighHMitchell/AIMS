@@ -306,7 +306,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
                     <SelectValue placeholder="Select organization" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Organization</SelectItem>
+                    <SelectItem value="none">No Organization</SelectItem>
                     {organizations.map((org) => (
                       <SelectItem key={org.id} value={org.id}>
                         {org.name} {org.acronym && `(${org.acronym})`}

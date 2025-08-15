@@ -888,7 +888,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                   <SelectValue placeholder="All sections" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All sections</SelectItem>
+                  <SelectItem value="all">All sections</SelectItem>
                   <SelectItem value="general">General Information</SelectItem>
                   <SelectItem value="finances">Finances</SelectItem>
                   <SelectItem value="sectors">Sectors</SelectItem>
