@@ -122,6 +122,13 @@ const getTextColor = (backgroundColor: string): string => {
   return lightColors.includes(backgroundColor) ? '#1f2937' : '#ffffff';
 };
 
+// Helper function to format percentage for display (max 3 decimal places)
+const formatPercentageDisplay = (value: number): string => {
+  if (value === 0) return '0';
+  if (value % 1 === 0) return value.toString(); // Whole numbers
+  return parseFloat(value.toFixed(3)).toString(); // Max 3 decimals, remove trailing zeros
+};
+
 const getSectorInfo = (code: string): { name: string; description: string; category: string; categoryCode: string } => {
   const dacSectorsData = require('@/data/dac-sectors.json');
   
@@ -467,7 +474,7 @@ export default function ImprovedSectorAllocationForm({
           <Tooltip>
             <TooltipTrigger asChild>
               <HeroCard
-                title="% Allocation"
+                title="% Allocated"
                 value={Math.round(totalAllocated * 10) / 10}
                 currency=""
                 suffix="%"
@@ -514,7 +521,7 @@ export default function ImprovedSectorAllocationForm({
           <Tooltip>
             <TooltipTrigger asChild>
               <HeroCard
-                title="3-Digit Sectors"
+                title="Sectors"
                 value={sectorCount}
                 currency=""
                 subtitle="Selected sectors"
@@ -570,6 +577,27 @@ export default function ImprovedSectorAllocationForm({
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Selected Sectors</CardTitle>
                 <div className="flex items-center gap-2">
+                  {/* Distribute Equally Button only if more than one allocation */}
+                  {allocations.length > 1 && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="default" 
+                            size="sm"
+                            onClick={distributeEqually}
+                            className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            Distribute Equally
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Distribute percentage equally across all sectors</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -592,9 +620,28 @@ export default function ImprovedSectorAllocationForm({
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {Object.entries(groupedAllocations).map(([category, grouped]) => (
+              {Object.entries(groupedAllocations).map(([category, grouped]) => {
+                // Get the category code from the first allocation in this group
+                const firstAllocation = grouped[0];
+                const sectorInfo = getSectorInfo(firstAllocation.code);
+                const categoryCode = sectorInfo.categoryCode;
+                
+                return (
                 <div key={category} className="mb-4">
-                  <div className="font-semibold text-sm text-gray-700 mb-2">{category}</div>
+                  <div className="font-semibold text-sm text-gray-700 mb-2">
+                    {category.startsWith(categoryCode) ? (
+                      // Category already includes the code, just make the code part monospace
+                      <>
+                        <span className="font-mono">{categoryCode}</span>
+                        {category.substring(categoryCode.length)}
+                      </>
+                    ) : (
+                      // Category doesn't include code, add it
+                      <>
+                        <span className="font-mono">{categoryCode}</span> - {category}
+                      </>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     {grouped.map((allocation) => {
                       const sectorInfo = getSectorInfo(allocation.code);
@@ -654,8 +701,8 @@ export default function ImprovedSectorAllocationForm({
                               type="number"
                               min="0"
                               max="100"
-                              step="0.1"
-                              value={allocation.percentage || ''}
+                              step="0.001"
+                              value={formatPercentageDisplay(allocation.percentage || 0)}
                               onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
                               className={cn(
                                 "w-28 h-10 text-sm text-center font-mono",
@@ -677,19 +724,8 @@ export default function ImprovedSectorAllocationForm({
                     })}
                   </div>
                 </div>
-              ))}
-              {/* Distribute Equally Button only if more than one allocation */}
-              {allocations.length > 1 && (
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={distributeEqually}
-                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  Distribute Equally
-                </Button>
-              )}
+                );
+              })}
             </CardContent>
           </Card>
         )}

@@ -207,7 +207,7 @@ export default function LocationsTab({
       )}
 
       {/* Single column layout */}
-      <div className="max-w-4xl">
+      <div className="max-w-7xl w-full">
         {/* Location Selector */}
         <div className="flex flex-col h-full">
           <SimpleMapSelector

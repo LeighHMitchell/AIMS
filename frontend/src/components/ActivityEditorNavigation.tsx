@@ -81,7 +81,7 @@ export default function ActivityEditorNavigation({
       sections: [
         { id: "documents", label: "Documents & Images" },
         ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
-        { id: "aid_effectiveness", label: "Aid Effectiveness", optional: true }
+        { id: "aid_effectiveness", label: "Aid Effectiveness" }
       ]
     }
   ]
@@ -133,11 +133,10 @@ export default function ActivityEditorNavigation({
                         ? "text-gray-400 cursor-not-allowed opacity-60" 
                         : isActive
                           ? "bg-blue-100 text-blue-700 font-medium border-l-3 border-blue-600 shadow-sm"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-black hover:border-l-3 hover:border-gray-300",
-                      section.optional && "italic text-gray-500"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-black hover:border-l-3 hover:border-gray-300"
                     )}
                     aria-current={isActive ? "page" : undefined}
-                    aria-describedby={section.optional ? `${section.id}-optional` : undefined}
+                    aria-describedby={undefined}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -146,15 +145,6 @@ export default function ActivityEditorNavigation({
                       </div>
                       <div className="flex items-center gap-2">
                         <TabCompletionIndicator isComplete={isComplete} isInProgress={isInProgress} />
-                        {section.optional && (
-                          <span 
-                            id={`${section.id}-optional`}
-                            className="text-xs text-gray-400 font-normal not-italic"
-                            aria-label="Optional section"
-                          >
-                            (Optional)
-                          </span>
-                        )}
                       </div>
                     </div>
                   </button>

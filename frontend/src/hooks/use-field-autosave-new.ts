@@ -2,6 +2,12 @@ import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { setFieldSaved, isFieldSaved, clearFieldSaved } from '@/utils/persistentSave';
 import { toast } from 'sonner';
 
+// Global lock to prevent multiple simultaneous activity creations
+const globalActivityCreationLock = {
+  isCreating: false,
+  pendingRequests: new Map<string, any>()
+};
+
 interface FieldAutosaveState {
   isSaving: boolean;
   lastSaved: Date | null;
@@ -74,12 +80,27 @@ export function useFieldAutosave(
       console.log(`[FieldAutosave] performFieldSave - queued value:`, value);
       return;
     }
+
+    // For new activity creation, use global lock to prevent duplicates
+    const isNewActivity = !activityId || activityId === 'NEW';
+    const isImageField = fieldName === 'banner' || fieldName === 'icon';
+    if (isNewActivity && globalActivityCreationLock.isCreating) {
+      console.log(`[FieldAutosave] Global activity creation lock active, queuing request for ${fieldName}`);
+      globalActivityCreationLock.pendingRequests.set(fieldName, value);
+      return;
+    }
     
     console.log(`[FieldAutosave] performFieldSave - proceeding with save for ${fieldName}`);
 
     try {
       isSavingRef.current = true;
       setState(prev => ({ ...prev, isSaving: true, error: null }));
+
+      // Set global lock for new activity creation
+      if (isNewActivity) {
+        console.log(`[FieldAutosave] Setting global activity creation lock for ${fieldName}`);
+        globalActivityCreationLock.isCreating = true;
+      }
 
       // Cancel any existing request
       if (abortControllerRef.current) {
@@ -103,12 +124,33 @@ export function useFieldAutosave(
       // Handle activity creation vs update
       if (!activityId || activityId === 'NEW') {
         endpoint = '/api/activities';
+        // For new activities, always include title field (required)
+        // Map field names to their database equivalents
+        const fieldMappings: Record<string, string> = {
+          'title': 'title',
+          'description': 'description',
+          'collaborationType': 'collaborationType',
+          'activityStatus': 'activityStatus',
+          'publicationStatus': 'publicationStatus',
+          'plannedStartDate': 'plannedStartDate',
+          'plannedEndDate': 'plannedEndDate',
+          'actualStartDate': 'actualStartDate',
+          'actualEndDate': 'actualEndDate',
+          'otherIdentifier': 'partnerId',
+          'iatiIdentifier': 'iatiId',
+          'banner': 'banner',
+          'icon': 'icon',
+          'uuid': 'uuid'
+        };
+        
+        const mappedField = fieldMappings[fieldName] || fieldName;
+        
         requestBody = {
-          [fieldName]: value,
+          title: fieldName === 'title' ? value : (additionalData.title || 'New Activity'),
+          [mappedField]: value,
           activityStatus: '1',
           publicationStatus: 'draft',
           submissionStatus: 'draft',
-          uuid: 'NEW',
           user: { id: userId },
           ...additionalData
         };
@@ -117,9 +159,13 @@ export function useFieldAutosave(
       console.log(`[FieldAutosave] Making request to ${endpoint}`);
       console.log('[FieldAutosave] Request body:', JSON.stringify(requestBody, null, 2));
       
-      // Create a timeout promise that rejects after 30 seconds
+      // Create a timeout promise that rejects after 60 seconds for image uploads, 10s for new activities, 20s for updates
+      const timeoutDuration = isImageField ? 60000 : (isNewActivity ? 10000 : 20000);
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000);
+        setTimeout(() => {
+          console.log(`[FieldAutosave] Request timeout for ${fieldName} after ${timeoutDuration/1000} seconds`);
+          reject(new Error(`Request timeout after ${timeoutDuration/1000} seconds`));
+        }, timeoutDuration);
       });
 
       // Race the fetch against the timeout
@@ -154,6 +200,13 @@ export function useFieldAutosave(
         hasUnsavedChanges: false,
         error: null
       }));
+
+      // Clear global lock for new activity creation
+      if (isNewActivity) {
+        console.log(`[FieldAutosave] Clearing global activity creation lock for ${fieldName}`);
+        globalActivityCreationLock.isCreating = false;
+        globalActivityCreationLock.pendingRequests.clear();
+      }
 
       // Set persistent saved flag
       if (activityId && userId) {
@@ -192,6 +245,13 @@ export function useFieldAutosave(
         // CRITICAL FIX: Reset saving state on abort
         isSavingRef.current = false;
         setState(prev => ({ ...prev, isSaving: false }));
+        
+        // Clear global lock for new activity creation
+        if (isNewActivity) {
+          console.log(`[FieldAutosave] Clearing global activity creation lock after abort for ${fieldName}`);
+          globalActivityCreationLock.isCreating = false;
+          globalActivityCreationLock.pendingRequests.clear();
+        }
         return;
       }
 
@@ -199,23 +259,167 @@ export function useFieldAutosave(
       console.error(`[FieldAutosave] Field ${fieldName} save failed:`, err);
       
       isSavingRef.current = false;
-      setState(prev => ({
-        ...prev,
-        isSaving: false,
-        error: err,
-        hasUnsavedChanges: true // Mark as unsaved since save failed
-      }));
+      
+      // For new activity creation timeouts, don't set error state yet - let polling determine outcome
+      const isNewActivityTimeout = isNewActivity && fieldName === 'title' && err.message.includes('timeout');
+      
+      if (!isNewActivityTimeout) {
+        setState(prev => ({
+          ...prev,
+          isSaving: false,
+          error: err,
+          hasUnsavedChanges: true // Mark as unsaved since save failed
+        }));
+      } else {
+        // Keep isSaving state until polling completes
+        setState(prev => ({ ...prev, isSaving: true }));
+      }
 
-      // Show user-friendly error message
+      // Clear global lock for new activity creation on error (except for timeouts with polling)
+      if (isNewActivity && !isNewActivityTimeout) {
+        console.log(`[FieldAutosave] Clearing global activity creation lock after error for ${fieldName}`);
+        globalActivityCreationLock.isCreating = false;
+        globalActivityCreationLock.pendingRequests.clear();
+      }
+
+      // Handle timeout errors differently for new activity creation and image uploads
       if (err.message.includes('timeout')) {
+        if (isImageField) {
+          console.error(`[FieldAutosave] Image upload timeout for ${fieldName} - image may be too large`);
+          // For image timeouts, show a more specific error message
+          setState(prev => ({
+            ...prev,
+            isSaving: false,
+            error: new Error(`Image upload failed - file may be too large. Please try a smaller image.`),
+            hasUnsavedChanges: true
+          }));
+          onError?.(new Error(`Image upload failed - file may be too large. Please try a smaller image.`));
+          return;
+        }
         console.error(`[FieldAutosave] Save timeout - server may be unresponsive`);
+        
+        // For new activity creation that times out, try to poll for the created activity
+        if (isNewActivity && fieldName === 'title') {
+          console.log(`[FieldAutosave] Polling for created activity after timeout...`);
+          
+          // Don't show error toast yet - let polling determine the outcome
+          setTimeout(async () => {
+            try {
+              // Try to fetch activities to see if one was created with our title
+              const response = await fetch('/api/activities-simple?limit=5');
+              if (response.ok) {
+                const data = await response.json();
+                console.log(`[FieldAutosave] Polling response data:`, data);
+                
+                // Handle both array response and object with data property
+                let activities = [];
+                if (Array.isArray(data)) {
+                  activities = data;
+                } else if (data && typeof data === 'object') {
+                  activities = data.data || data.activities || data.results || [];
+                }
+                
+                console.log(`[FieldAutosave] Extracted activities array:`, activities);
+                
+                if (!Array.isArray(activities)) {
+                  console.error(`[FieldAutosave] Activities is not an array:`, activities);
+                  // Polling failed, show timeout error
+                  isSavingRef.current = false;
+                  setState(prev => ({
+                    ...prev,
+                    isSaving: false,
+                    error: new Error('Failed to create activity - please try again'),
+                    hasUnsavedChanges: true
+                  }));
+                  globalActivityCreationLock.isCreating = false;
+                  globalActivityCreationLock.pendingRequests.clear();
+                  onError?.(new Error('Failed to create activity - please try again'));
+                  return;
+                }
+                
+                const createdActivity = activities.find((activity: any) => 
+                  activity.title_narrative === value && 
+                  Math.abs(new Date(activity.created_at).getTime() - Date.now()) < 5 * 60 * 1000 // Created within last 5 minutes
+                );
+                
+                if (createdActivity) {
+                  console.log(`[FieldAutosave] Found created activity after timeout:`, createdActivity);
+                  // Clear the error state and call success
+                  isSavingRef.current = false;
+                  setState(prev => ({
+                    ...prev,
+                    isSaving: false,
+                    lastSaved: new Date(),
+                    hasUnsavedChanges: false,
+                    error: null
+                  }));
+                  
+                  globalActivityCreationLock.isCreating = false;
+                  // Clear pending requests to prevent duplicate activity creation
+                  globalActivityCreationLock.pendingRequests.clear();
+                  
+                  onSuccess?.({
+                    id: createdActivity.id,
+                    uuid: createdActivity.id,
+                    ...createdActivity
+                  });
+                  return;
+                } else {
+                  console.log(`[FieldAutosave] No matching activity found in polling, showing error`);
+                  // No activity found, show timeout error
+                  isSavingRef.current = false;
+                  setState(prev => ({
+                    ...prev,
+                    isSaving: false,
+                    error: new Error('Failed to create activity - please try again'),
+                    hasUnsavedChanges: true
+                  }));
+                  globalActivityCreationLock.isCreating = false;
+                  globalActivityCreationLock.pendingRequests.clear();
+                  onError?.(new Error('Failed to create activity - please try again'));
+                }
+              } else {
+                console.error(`[FieldAutosave] Polling request failed with status:`, response.status);
+                // Polling failed, show timeout error
+                isSavingRef.current = false;
+                setState(prev => ({
+                  ...prev,
+                  isSaving: false,
+                  error: new Error('Failed to create activity - please try again'),
+                  hasUnsavedChanges: true
+                }));
+                globalActivityCreationLock.isCreating = false;
+                globalActivityCreationLock.pendingRequests.clear();
+                onError?.(new Error('Failed to create activity - please try again'));
+              }
+            } catch (pollError) {
+              console.error(`[FieldAutosave] Error polling for created activity:`, pollError);
+              // Polling failed, show timeout error
+              isSavingRef.current = false;
+              setState(prev => ({
+                ...prev,
+                isSaving: false,
+                error: new Error('Failed to create activity - please try again'),
+                hasUnsavedChanges: true
+              }));
+              globalActivityCreationLock.isCreating = false;
+              globalActivityCreationLock.pendingRequests.clear();
+              onError?.(new Error('Failed to create activity - please try again'));
+            }
+          }, 2000); // Poll after 2 seconds
+          
+          // Return early to avoid showing error toast immediately
+          return;
+        }
       } else if (err.message.includes('fetch')) {
         console.error(`[FieldAutosave] Network error - check connection`);
       }
 
       // Retry logic - retry up to 2 times for timeout or network errors
+      // But skip retry for new activity creation timeouts (they use polling instead)
       if (!isRetry && retryCountRef.current < 2 && 
-          (err.message.includes('timeout') || err.message.includes('fetch') || err.message.includes('NetworkError'))) {
+          (err.message.includes('timeout') || err.message.includes('fetch') || err.message.includes('NetworkError')) &&
+          !(isNewActivity && fieldName === 'title' && err.message.includes('timeout'))) {
         retryCountRef.current += 1;
         console.log(`[FieldAutosave] Retrying save attempt ${retryCountRef.current}/2 for ${fieldName}`);
         
@@ -236,9 +440,20 @@ export function useFieldAutosave(
   const triggerFieldSave = useCallback((value: any) => {
     if (!enabled) return;
 
+    console.log(`[FieldAutosave] triggerFieldSave called for ${fieldName} with value:`, value);
+    console.log(`[FieldAutosave] Current state - isSaving: ${isSavingRef.current}, activityId: ${activityId}`);
+
     // Clear existing timeout
     if (timeoutRef.current) {
+      console.log(`[FieldAutosave] Clearing existing timeout for ${fieldName}`);
       clearTimeout(timeoutRef.current);
+    }
+
+    // If already saving, just queue the value and return
+    if (isSavingRef.current) {
+      console.log(`[FieldAutosave] Already saving ${fieldName}, queuing value:`, value);
+      pendingValueRef.current = value;
+      return;
     }
 
     // Update state immediately
@@ -250,21 +465,31 @@ export function useFieldAutosave(
       setIsPersistentlySaved(false);
     }
 
-    if (immediate) {
-      // For critical fields like title, handle rapid typing properly
+    // For new activities, always use debouncing to prevent multiple drafts
+    const isNewActivity = !activityId || activityId === 'NEW';
+    const shouldDebounce = !immediate || isNewActivity;
+    
+    console.log(`[FieldAutosave] shouldDebounce: ${shouldDebounce}, isNewActivity: ${isNewActivity}`);
+    
+    if (shouldDebounce) {
+      const debounceTime = isNewActivity ? Math.max(debounceMs, 2000) : debounceMs; // Increased to 2s for new activities
+      console.log(`[FieldAutosave] Setting timeout for ${fieldName} with ${debounceTime}ms debounce`);
+      // Set new timeout for debounced save
+      timeoutRef.current = setTimeout(() => {
+        console.log(`[FieldAutosave] Debounce timeout fired for ${fieldName}`);
+        performFieldSave(value);
+      }, debounceTime);
+    } else {
+      // For existing activities with immediate flag, handle rapid typing properly
       if (isSavingRef.current) {
         // If already saving, queue the latest value
         pendingValueRef.current = value;
         console.log(`[FieldAutosave] Queuing value for ${fieldName}:`, value);
       } else {
         // Save immediately
+        console.log(`[FieldAutosave] Saving immediately for ${fieldName}`);
         performFieldSave(value);
       }
-    } else {
-      // Set new timeout for debounced save
-      timeoutRef.current = setTimeout(() => {
-        performFieldSave(value);
-      }, debounceMs);
     }
   }, [enabled, immediate, debounceMs, performFieldSave, activityId, userId, fieldName]);
 

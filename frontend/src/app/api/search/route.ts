@@ -86,23 +86,34 @@ export async function GET(request: NextRequest) {
     }
 
 
-    // Search sectors - only sector names
+    // Search sectors - deduplicated unique sectors
     let sectors: any[] = []
     try {
       const { data: sectorsData, error: sectorsError } = await supabase
         .from('activity_sectors')
         .select(`
-          id,
           sector_code,
-          sector_name,
-          activity_id
+          sector_name
         `)
         .ilike('sector_name', searchTerm)
-        .limit(limit)
         .order('sector_name')
 
       if (!sectorsError && sectorsData) {
-        sectors = sectorsData
+        // Deduplicate sectors by sector_code
+        const uniqueSectors = new Map<string, any>()
+        sectorsData.forEach((sector: any) => {
+          if (!uniqueSectors.has(sector.sector_code)) {
+            uniqueSectors.set(sector.sector_code, {
+              id: sector.sector_code, // Use sector_code as unique ID
+              sector_code: sector.sector_code,
+              sector_name: sector.sector_name,
+              // Determine sector level for display
+              level: sector.sector_code.length === 3 ? 'category' : 
+                     sector.sector_code.length === 5 ? 'subsector' : 'sector'
+            })
+          }
+        })
+        sectors = Array.from(uniqueSectors.values()).slice(0, limit)
       } else {
         console.log('[AIMS API] Could not search sectors:', sectorsError?.message)
       }
@@ -115,8 +126,8 @@ export async function GET(request: NextRequest) {
     try {
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('id, email, first_name, last_name, profile_picture_url, avatar_url')
-        .or(`first_name.ilike.${searchTerm},last_name.ilike.${searchTerm}`)
+        .select('id, email, first_name, last_name, avatar_url')
+        .or(`first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm}`)
         .limit(limit)
         .order('first_name')
       
@@ -157,6 +168,43 @@ export async function GET(request: NextRequest) {
       console.log('[AIMS API] Tag search failed, skipping:', err)
     }
 
+    // Search activity contacts - search by contact names
+    let contacts: any[] = []
+    try {
+      const { data: contactsData, error: contactsError } = await supabase
+        .from('activity_contacts')
+        .select(`
+          id,
+          activity_id,
+          type,
+          title,
+          first_name,
+          middle_name,
+          last_name,
+          position,
+          organisation,
+          email,
+          phone,
+          activities (
+            id,
+            title_narrative,
+            other_identifier,
+            iati_identifier
+          )
+        `)
+        .or(`first_name.ilike.${searchTerm},middle_name.ilike.${searchTerm},last_name.ilike.${searchTerm},name.ilike.${searchTerm}`)
+        .limit(limit)
+        .order('first_name')
+
+      if (!contactsError && contactsData) {
+        contacts = contactsData
+      } else {
+        console.log('[AIMS API] Could not search contacts:', contactsError?.message)
+      }
+    } catch (err) {
+      console.log('[AIMS API] Contact search failed, skipping:', err)
+    }
+
     // Format results
     const results = [
       // Format activities
@@ -172,8 +220,8 @@ export async function GET(request: NextRequest) {
           partner_id: activity.other_identifier || undefined,
           iati_id: activity.iati_identifier || undefined,
           updated_at: activity.updated_at,
-          // Use activity icon (including Unsplash icons, but not banner-sized images)
-          activity_icon_url: activity.icon || undefined
+          // Don't show Unsplash banner images as activity icons
+          activity_icon_url: (activity.icon && !activity.icon.includes('unsplash.com')) ? activity.icon : undefined
         }
       })),
       
@@ -189,14 +237,15 @@ export async function GET(request: NextRequest) {
         }
       })),
       
-      // Format sectors
+      // Format sectors with improved display
       ...(sectors || []).map(sector => ({
-        id: sector.id,
+        id: sector.sector_code, // Use sector_code as ID for navigation
         type: 'sector' as const,
         title: sector.sector_name,
-        subtitle: `Code: ${sector.sector_code}`,
+        subtitle: `${sector.level.charAt(0).toUpperCase() + sector.level.slice(1)}: ${sector.sector_code}`,
         metadata: {
-          sector_code: sector.sector_code
+          sector_code: sector.sector_code,
+          level: sector.level
         }
       })),
       
@@ -207,7 +256,7 @@ export async function GET(request: NextRequest) {
         title: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.email,
         subtitle: user.email,
         metadata: {
-          profile_picture_url: user.profile_picture_url || user.avatar_url || undefined
+          profile_picture_url: user.avatar_url || undefined
         }
       })),
 
@@ -222,7 +271,39 @@ export async function GET(request: NextRequest) {
           activity_count: tag.activity_count || 0,
           created_at: tag.created_at
         }
-      }))
+      })),
+
+      // Format contacts
+      ...(contacts || []).map(contact => {
+        // Build contact full name
+        const nameParts = [contact.title, contact.first_name, contact.middle_name, contact.last_name]
+          .filter(Boolean)
+        const fullName = nameParts.join(' ') || contact.name || 'Unknown Contact'
+        
+        // Build subtitle with position and organization
+        const subtitleParts = []
+        if (contact.position) subtitleParts.push(contact.position)
+        if (contact.organisation) subtitleParts.push(contact.organisation)
+        if (contact.activities?.title_narrative) {
+          subtitleParts.push(`Activity: ${contact.activities.title_narrative}`)
+        }
+        
+        return {
+          id: contact.id,
+          type: 'contact' as const,
+          title: fullName,
+          subtitle: subtitleParts.join(' • ') || undefined,
+          metadata: {
+            activity_id: contact.activity_id,
+            activity_title: contact.activities?.title_narrative,
+            position: contact.position,
+            organisation: contact.organisation,
+            email: contact.email,
+            phone: contact.phone,
+            contact_type: contact.type
+          }
+        }
+      })
     ]
 
     // Calculate totals and pagination metadata
@@ -231,7 +312,8 @@ export async function GET(request: NextRequest) {
     const totalSectors = sectors.length // Note: sectors don't have pagination yet
     const totalUsers = users.length // Note: users don't have pagination yet
     const totalTags = tags.length // Note: tags don't have pagination yet
-    const totalResults = totalActivities + totalOrganizations + totalSectors + totalUsers + totalTags
+    const totalContacts = contacts.length // Note: contacts don't have pagination yet
+    const totalResults = totalActivities + totalOrganizations + totalSectors + totalUsers + totalTags + totalContacts
     const hasMore = offset + limit < totalResults
 
     console.log(`[AIMS API] Search completed - Found ${results.length} results for query: "${query}"`)

@@ -2,8 +2,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PieChart, Table2 } from 'lucide-react';
 // @ts-ignore
 import sectorGroupData from '@/data/SectorGroup.json';
 import * as d3 from 'd3';
@@ -30,23 +28,18 @@ interface Props {
   className?: string;
 }
 
-// Color palette - expanded gray and slate colors for visual variety
-const GRAY_SLATE_COLORS = [
-  '#1e293b', // slate-800
-  '#334155', // slate-700  
-  '#475569', // slate-600
-  '#64748b', // slate-500
-  '#94a3b8', // slate-400
-  '#0f172a', // slate-900
-  '#374151', // gray-700
-  '#4b5563', // gray-600
-  '#6b7280', // gray-500
-  '#9ca3af', // gray-400
-  '#d1d5db', // gray-300
-  '#111827', // gray-900
-  '#1f2937', // gray-800
-  '#374151', // gray-700
-  '#6b7280'  // gray-500
+// Color palette - custom brand colors with darker/base/lighter variations
+const COLOR_PALETTE = [
+  { darker: '#C7303C', base: '#E3120B', lighter: '#FF6B6C' }, // Red
+  { darker: '#000000', base: '#0C0C0C', lighter: '#333333' }, // Black (using dark gray for lighter)
+  { darker: '#C21F25', base: '#DB444B', lighter: '#FF6D70' }, // DB Red
+  { darker: '#00588D', base: '#006BA2', lighter: '#1270A8' }, // Blue
+  { darker: '#0092A7', base: '#3EBCD2', lighter: '#25ADC2' }, // Cyan
+  { darker: '#00786B', base: '#379A8B', lighter: '#4DAD9E' }, // Green
+  { darker: '#8D6300', base: '#EBB434', lighter: '#C89608' }, // Yellow
+  { darker: '#667100', base: '#B4BA39', lighter: '#9DA521' }, // Olive
+  { darker: '#925977', base: '#9A607F', lighter: '#C98CAC' }, // Purple
+  { darker: '#826636', base: '#D1B07C', lighter: '#FFC2E3' }, // Gold
 ];
 
 export default function SectorSunburstVisualization({ 
@@ -54,7 +47,6 @@ export default function SectorSunburstVisualization({
   onSegmentClick, 
   className = '' 
 }: Props) {
-  const [viewMode, setViewMode] = useState<'sunburst' | 'table'>('sunburst');
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Build hierarchy: Categories -> Sectors -> Subsectors
@@ -149,7 +141,7 @@ export default function SectorSunburstVisualization({
 
   // Simple D3 sunburst implementation
   useEffect(() => {
-    if (!svgRef.current || viewMode !== 'sunburst') return;
+    if (!svgRef.current) return;
 
     console.log('Rendering sunburst with data:', hierarchyData);
 
@@ -203,14 +195,14 @@ export default function SectorSunburstVisualization({
 
     categories.forEach(([categoryCode, category], categoryIndex) => {
       const categoryAngle = (category.percentage / totalAllocated) * 360;
-      const categoryColor = GRAY_SLATE_COLORS[categoryIndex % GRAY_SLATE_COLORS.length];
+      const colorSet = COLOR_PALETTE[categoryIndex % COLOR_PALETTE.length];
 
-      // Inner ring - Categories (DAC Groups)
+      // Inner ring - Categories (DAC Groups) - use darker shade
       const categoryPath = createArc(currentAngle, currentAngle + categoryAngle, innerRadius, middleInnerRadius);
       if (categoryPath) {
         g.append('path')
           .attr('d', categoryPath)
-          .attr('fill', categoryColor) // Use category-specific color
+          .attr('fill', colorSet.darker) // Use darker shade for inner ring
           .attr('stroke', '#fff')
           .attr('stroke-width', 2)
           .style('cursor', 'pointer')
@@ -240,12 +232,12 @@ export default function SectorSunburstVisualization({
       sectors.forEach(([sectorCode, sector]) => {
         const sectorAngle = (sector.percentage / totalAllocated) * 360;
 
-        // Middle ring - Sectors (3-digit codes)
+        // Middle ring - Sectors (3-digit codes) - use base color
         const sectorPath = createArc(sectorStartAngle, sectorStartAngle + sectorAngle, middleInnerRadius, middleOuterRadius);
         if (sectorPath) {
           g.append('path')
             .attr('d', sectorPath)
-            .attr('fill', d3.color(categoryColor)!.brighter(0.3).toString()) // Lighter shade of category color
+            .attr('fill', colorSet.base) // Use base color for middle ring
             .attr('stroke', '#fff')
             .attr('stroke-width', 1)
             .style('cursor', 'pointer')
@@ -273,12 +265,12 @@ export default function SectorSunburstVisualization({
         sector.subsectors.forEach((subsector) => {
           const subsectorAngle = (subsector.percentage / totalAllocated) * 360;
 
-          // Outer ring - Subsectors (5-digit codes)
+          // Outer ring - Subsectors (5-digit codes) - use lighter shade
           const subsectorPath = createArc(subsectorStartAngle, subsectorStartAngle + subsectorAngle, middleOuterRadius, outerOuterRadius);
           if (subsectorPath) {
             g.append('path')
               .attr('d', subsectorPath)
-              .attr('fill', d3.color(categoryColor)!.brighter(0.6).toString()) // Even lighter shade
+              .attr('fill', colorSet.lighter) // Use lighter shade for outer ring
               .attr('stroke', '#fff')
               .attr('stroke-width', 1)
               .style('cursor', 'pointer')
@@ -315,7 +307,7 @@ export default function SectorSunburstVisualization({
     return () => {
       d3.select('body').selectAll('.absolute.bg-gray-900').remove();
     };
-  }, [hierarchyData, viewMode, totalAllocated, onSegmentClick, containerSize]);
+  }, [hierarchyData, totalAllocated, onSegmentClick, containerSize]);
 
   // Render table view
   const renderTable = () => {
@@ -403,49 +395,17 @@ export default function SectorSunburstVisualization({
   }
 
   return (
-    <Card className={`p-6 ${className}`}>
-      {/* Header with toggle */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">Sector Allocation Visualization</h3>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            variant={viewMode === 'sunburst' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('sunburst')}
-            className="flex items-center gap-2"
-          >
-            <PieChart className="h-4 w-4" />
-            <span className="hidden sm:inline">Sunburst</span>
-          </Button>
-          <Button
-            variant={viewMode === 'table' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('table')}
-            className="flex items-center gap-2"
-          >
-            <Table2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Table</span>
-          </Button>
+    <div className={`${className}`}>
+      {/* Content - always show sunburst since tabs handle the switching */}
+      <div className="flex justify-center items-center p-4 overflow-hidden">
+        <div className="w-full max-w-2xl aspect-square flex items-center justify-center">
+          <svg 
+            ref={svgRef} 
+            className="w-full h-full max-w-full max-h-full"
+            style={{ maxHeight: '600px' }}
+          ></svg>
         </div>
       </div>
-
-      {/* Content */}
-      <div className="relative">
-        {viewMode === 'sunburst' ? (
-          <div className="flex justify-center items-center p-4 overflow-hidden">
-            <div className="w-full max-w-2xl aspect-square flex items-center justify-center">
-              <svg 
-                ref={svgRef} 
-                className="w-full h-full max-w-full max-h-full"
-                style={{ maxHeight: '600px' }}
-              ></svg>
-            </div>
-          </div>
-        ) : renderTable()}
-      </div>
-    </Card>
+    </div>
   );
 } 

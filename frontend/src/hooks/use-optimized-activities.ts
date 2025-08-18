@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 interface Activity {
   id: string;
   title: string;
+  acronym?: string;
   partnerId?: string;
   iatiId?: string;
   iatiIdentifier?: string;
@@ -38,6 +39,7 @@ interface UseOptimizedActivitiesOptions {
   pageSize?: number;
   enableOptimization?: boolean;
   onError?: (error: string) => void;
+  viewMode?: 'table' | 'card';
 }
 
 interface UseOptimizedActivitiesReturn {
@@ -83,7 +85,8 @@ export function useOptimizedActivities(
   const {
     pageSize = 20,
     enableOptimization = true,
-    onError
+    onError,
+    viewMode = 'table'
   } = options;
 
   // Force enable optimization for debugging
@@ -153,7 +156,8 @@ export function useOptimizedActivities(
       reportedBy,
       aidType,
       flowType,
-      tiedStatus
+      tiedStatus,
+      viewMode
     });
 
     // Check cache first
@@ -190,7 +194,8 @@ export function useOptimizedActivities(
         ...(reportedBy !== 'all' && { reportedBy }),
         ...(aidType !== 'all' && { aidType }),
         ...(flowType !== 'all' && { flowType }),
-        ...(tiedStatus !== 'all' && { tiedStatus })
+        ...(tiedStatus !== 'all' && { tiedStatus }),
+        ...(viewMode === 'card' && { includeImages: 'true' })
       });
 
       // Try optimized endpoint first, fallback to lightweight simple endpoint
@@ -290,7 +295,7 @@ export function useOptimizedActivities(
   // Fetch data when key dependencies change
   useEffect(() => {
     fetchActivities();
-  }, [currentPage, pageSize, debouncedSearchQuery, sortField, sortOrder, activityStatus, submissionStatus, reportedBy, aidType, flowType, tiedStatus]);
+  }, [currentPage, pageSize, debouncedSearchQuery, sortField, sortOrder, activityStatus, submissionStatus, reportedBy, aidType, flowType, tiedStatus, viewMode]);
 
   // Cleanup on unmount
   useEffect(() => {

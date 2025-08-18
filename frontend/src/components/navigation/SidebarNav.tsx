@@ -16,7 +16,8 @@ import {
   FileText,
   Map,
   Briefcase,
-  Database
+  Database,
+  Shield
 } from "lucide-react"
 
 interface SidebarNavProps {
@@ -75,6 +76,12 @@ export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavPr
       name: "Analytics",
       href: "/analytics-dashboard",
       icon: BarChart3,
+      show: true
+    },
+    {
+      name: "Aid Effectiveness",
+      href: "/aid-effectiveness-dashboard",
+      icon: Shield,
       show: true
     },
     {

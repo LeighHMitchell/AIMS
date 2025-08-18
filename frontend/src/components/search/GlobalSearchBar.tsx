@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Search, X, Loader2, Building2, Target } from 'lucide-react'
+import { Search, X, Loader2, Building2, Target, UserCircle } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { 
@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils'
 
 interface SearchResult {
   id: string
-  type: 'activity' | 'organization' | 'user' | 'sector' | 'tag'
+  type: 'activity' | 'organization' | 'user' | 'sector' | 'tag' | 'contact'
   title: string
   subtitle?: string
   metadata?: {
@@ -44,6 +44,14 @@ interface SearchResult {
     activity_icon_url?: string
     code?: string
     activity_count?: number
+    // Contact specific metadata
+    activity_id?: string
+    activity_title?: string
+    position?: string
+    organisation?: string
+    email?: string
+    phone?: string
+    contact_type?: string
   }
 }
 
@@ -163,10 +171,17 @@ export function GlobalSearchBar({
         router.push(`/users/${result.id}`)
         break
       case 'sector':
-        router.push(`/activities?sector=${encodeURIComponent(result.metadata?.sector_code || result.title)}`)
+        // Navigate to dedicated sector detail page
+        router.push(`/sectors/${encodeURIComponent(result.metadata?.sector_code || result.id)}`)
         break
       case 'tag':
         router.push(`/activities?tag=${encodeURIComponent(result.title)}`)
+        break
+      case 'contact':
+        // Navigate to the activity that contains this contact
+        if (result.metadata?.activity_id) {
+          router.push(`/activities/${result.metadata.activity_id}#contacts`)
+        }
         break
     }
   }, [router])
@@ -325,6 +340,10 @@ export function GlobalSearchBar({
       case 'tag':
         return <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
           <span className="text-purple-600 font-semibold text-sm">#</span>
+        </div>
+      case 'contact':
+        return <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+          <UserCircle className="h-4 w-4 text-indigo-600" />
         </div>
       default:
         return <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">

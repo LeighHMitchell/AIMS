@@ -65,58 +65,40 @@ export function checkGeneralTabCompletion(
     missingFields.push('activityStatus')
   }
   
-  // Identifier fields - required for completion
+  // Identifier fields - optional for completion (these are not marked as required in the UI)
   if (general.otherIdentifier?.trim()) {
     completedFields.push('otherIdentifier')
-  } else {
-    missingFields.push('otherIdentifier')
   }
   
   if (general.iatiIdentifier?.trim()) {
     completedFields.push('iatiIdentifier')
-  } else {
-    missingFields.push('iatiIdentifier')
   }
   
   if (general.uuid?.trim()) {
     completedFields.push('uuid')
+  }
+  
+  // Date fields - only require planned dates for completion
+  // Actual dates are optional and don't affect green tick status
+  if (general.plannedStartDate) {
+    completedFields.push('plannedStartDate')
   } else {
-    missingFields.push('uuid')
+    missingFields.push('plannedStartDate')
   }
   
-  // Date fields - check based on availability
-  const dateStatus = getDateFieldStatus()
-  
-  if (dateStatus.plannedStartDate) {
-    if (general.plannedStartDate) {
-      completedFields.push('plannedStartDate')
-    } else {
-      missingFields.push('plannedStartDate')
-    }
+  if (general.plannedEndDate) {
+    completedFields.push('plannedEndDate')
+  } else {
+    missingFields.push('plannedEndDate')
   }
   
-  if (dateStatus.plannedEndDate) {
-    if (general.plannedEndDate) {
-      completedFields.push('plannedEndDate')
-    } else {
-      missingFields.push('plannedEndDate')
-    }
+  // Actual dates are tracked but not required for completion
+  if (general.actualStartDate) {
+    completedFields.push('actualStartDate')
   }
   
-  if (dateStatus.actualStartDate) {
-    if (general.actualStartDate) {
-      completedFields.push('actualStartDate')
-    } else {
-      missingFields.push('actualStartDate')
-    }
-  }
-  
-  if (dateStatus.actualEndDate) {
-    if (general.actualEndDate) {
-      completedFields.push('actualEndDate')
-    } else {
-      missingFields.push('actualEndDate')
-    }
+  if (general.actualEndDate) {
+    completedFields.push('actualEndDate')
   }
   
   const isComplete = missingFields.length === 0
@@ -197,10 +179,13 @@ export function checkLocationsTabCompletion(data: { specificLocations?: any[], s
   const completedFields: string[] = []
   const missingFields: string[] = []
   
+  let hasValidLocations = false
+  let hasCompleteSubnational = false
+  
   // Check specific locations
   if (data.specificLocations && data.specificLocations.length > 0) {
     // Check if we have at least one valid location with name and coordinates
-    const hasValidLocations = data.specificLocations.some(location => 
+    hasValidLocations = data.specificLocations.some(location => 
       location.name?.trim() && 
       typeof location.latitude === 'number' && 
       typeof location.longitude === 'number'
@@ -208,11 +193,7 @@ export function checkLocationsTabCompletion(data: { specificLocations?: any[], s
     
     if (hasValidLocations) {
       completedFields.push('locations')
-    } else {
-      missingFields.push('locations')
     }
-  } else {
-    missingFields.push('locations')
   }
   
   // Check subnational breakdown
@@ -222,16 +203,24 @@ export function checkLocationsTabCompletion(data: { specificLocations?: any[], s
     const hasAnyValues = Object.values(data.subnationalBreakdowns).some(value => value > 0)
     
     if (isValidTotal && hasAnyValues) {
+      hasCompleteSubnational = true
       completedFields.push('subnational_breakdown')
-    } else if (hasAnyValues) {
-      missingFields.push('subnational_breakdown')
     }
-    // If no values, we don't mark it as missing since it's optional
+  }
+  
+  // The Locations tab is complete if EITHER condition is met:
+  // 1. At least one valid location is saved OR
+  // 2. Subnational breakdown totals 100%
+  const isComplete = hasValidLocations || hasCompleteSubnational
+  
+  // If neither is complete, we consider it missing
+  if (!hasValidLocations && !hasCompleteSubnational) {
+    missingFields.push('locations_or_subnational')
   }
   
   return {
-    isComplete: missingFields.length === 0,
-    isInProgress: completedFields.length > 0 && missingFields.length > 0,
+    isComplete,
+    isInProgress: completedFields.length > 0 && !isComplete,
     completedFields,
     missingFields
   }
@@ -629,6 +618,133 @@ export function checkFocalPointsTabCompletion(focalPointsData: any): TabCompleti
   }
 }
 
+/**
+ * Check if the Aid Effectiveness tab is complete based on required fields
+ */
+export function checkAidEffectivenessTabCompletion(data: any): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  const aidEffectiveness = data?.aidEffectiveness || {}
+  
+  // Output 1 fields
+  if (aidEffectiveness.implementingPartner) {
+    completedFields.push('implementingPartner')
+  } else {
+    missingFields.push('implementingPartner')
+  }
+  
+  if (aidEffectiveness.linkedToGovFramework) {
+    completedFields.push('linkedToGovFramework')
+  } else {
+    missingFields.push('linkedToGovFramework')
+  }
+  
+  if (aidEffectiveness.supportsPublicSector) {
+    completedFields.push('supportsPublicSector')
+  } else {
+    missingFields.push('supportsPublicSector')
+  }
+  
+  if (aidEffectiveness.numOutcomeIndicators !== undefined && aidEffectiveness.numOutcomeIndicators !== null) {
+    completedFields.push('numOutcomeIndicators')
+  } else {
+    missingFields.push('numOutcomeIndicators')
+  }
+  
+  if (aidEffectiveness.indicatorsFromGov) {
+    completedFields.push('indicatorsFromGov')
+  } else {
+    missingFields.push('indicatorsFromGov')
+  }
+  
+  if (aidEffectiveness.indicatorsViaGovData) {
+    completedFields.push('indicatorsViaGovData')
+  } else {
+    missingFields.push('indicatorsViaGovData')
+  }
+  
+  if (aidEffectiveness.finalEvalPlanned) {
+    completedFields.push('finalEvalPlanned')
+    if (aidEffectiveness.finalEvalPlanned === 'yes' && !aidEffectiveness.finalEvalDate) {
+      missingFields.push('finalEvalDate')
+    } else if (aidEffectiveness.finalEvalPlanned === 'yes' && aidEffectiveness.finalEvalDate) {
+      completedFields.push('finalEvalDate')
+    }
+  } else {
+    missingFields.push('finalEvalPlanned')
+  }
+  
+  // Output 2 fields
+  if (aidEffectiveness.govBudgetSystem) {
+    completedFields.push('govBudgetSystem')
+  } else {
+    missingFields.push('govBudgetSystem')
+  }
+  
+  if (aidEffectiveness.govFinReporting) {
+    completedFields.push('govFinReporting')
+  } else {
+    missingFields.push('govFinReporting')
+  }
+  
+  if (aidEffectiveness.govAudit) {
+    completedFields.push('govAudit')
+  } else {
+    missingFields.push('govAudit')
+  }
+  
+  if (aidEffectiveness.govProcurement) {
+    completedFields.push('govProcurement')
+  } else {
+    missingFields.push('govProcurement')
+  }
+  
+  // Output 3 fields
+  if (aidEffectiveness.annualBudgetShared) {
+    completedFields.push('annualBudgetShared')
+  } else {
+    missingFields.push('annualBudgetShared')
+  }
+  
+  if (aidEffectiveness.forwardPlanShared) {
+    completedFields.push('forwardPlanShared')
+  } else {
+    missingFields.push('forwardPlanShared')
+  }
+  
+  if (aidEffectiveness.tiedStatus) {
+    completedFields.push('tiedStatus')
+  } else {
+    missingFields.push('tiedStatus')
+  }
+  
+  // Contact fields - check for new contacts array or legacy fields
+  if (aidEffectiveness.contacts && aidEffectiveness.contacts.length > 0) {
+    completedFields.push('contactName')
+    completedFields.push('contactOrg')
+    completedFields.push('contactEmail')
+  } else if (aidEffectiveness.contactName && aidEffectiveness.contactOrg && aidEffectiveness.contactEmail) {
+    completedFields.push('contactName')
+    completedFields.push('contactOrg')
+    completedFields.push('contactEmail')
+  } else {
+    missingFields.push('contactName')
+    missingFields.push('contactOrg')
+    missingFields.push('contactEmail')
+  }
+  
+  const isComplete = missingFields.length === 0
+  const isInProgress = completedFields.length > 0 && !isComplete
+  
+  return {
+    isComplete,
+    isInProgress,
+    completedFields,
+    missingFields
+  }
+}
+
 export function getTabCompletionStatus(
   sectionId: string,
   data: any,
@@ -670,6 +786,8 @@ export function getTabCompletionStatus(
       return checkGovernmentInputsTabCompletion(data);
     case 'focal_points':
       return checkFocalPointsTabCompletion(data);
+    case 'aid_effectiveness':
+      return checkAidEffectivenessTabCompletion(data);
     // Add other tabs here as needed
     default:
       return null;

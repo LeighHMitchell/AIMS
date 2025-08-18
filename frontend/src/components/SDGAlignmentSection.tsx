@@ -74,6 +74,8 @@ export default function SDGAlignmentSection({
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [hasUserEdited, setHasUserEdited] = useState(false);
 
   // Calculate total contribution percentage
   const totalContribution = mappings.reduce((sum, m) => sum + (m.contributionPercent || 0), 0);
@@ -121,17 +123,18 @@ export default function SDGAlignmentSection({
   // Update parent and trigger save when mappings change
   useEffect(() => {
     onUpdate(mappings);
-    // Only save when there are actual goal mappings (not on initial load or removal)
-    if (mappings.length > 0 && mappings.some(m => m.sdgGoal)) {
+    // Only save when user has made edits (not on initial load)
+    if (hasUserEdited && mappings.length > 0 && mappings.some(m => m.sdgGoal)) {
       debouncedSave(mappings);
     }
-  }, [mappings, activityId]);
+  }, [mappings, activityId, hasUserEdited]);
 
   // Initialize selected goals from existing mappings
   useEffect(() => {
     const goals = Array.from(new Set(sdgMappings.map(m => m.sdgGoal)));
     setSelectedGoals(goals);
     setMappings(sdgMappings);
+    setHasInitialized(true);
   }, [sdgMappings]);
 
   // Cleanup timeout on unmount
@@ -145,6 +148,8 @@ export default function SDGAlignmentSection({
 
   const toggleGoal = (goalId: number) => {
     if (!canEdit) return;
+
+    setHasUserEdited(true);
 
     if (selectedGoals.includes(goalId)) {
       // Remove goal and all its mappings
@@ -171,6 +176,8 @@ export default function SDGAlignmentSection({
   const addTargetMapping = (goalId: number, targetId: string) => {
     if (!canEdit) return;
 
+    setHasUserEdited(true);
+
     // Check if this target is already mapped
     const exists = mappings.find(m => m.sdgGoal === goalId && m.sdgTarget === targetId);
     if (exists) return;
@@ -189,6 +196,8 @@ export default function SDGAlignmentSection({
   const removeTargetMapping = (goalId: number, targetId: string) => {
     if (!canEdit) return;
     
+    setHasUserEdited(true);
+    
     // Simply remove the target mapping
     setMappings(mappings.filter(m => !(m.sdgGoal === goalId && m.sdgTarget === targetId)));
     
@@ -197,6 +206,8 @@ export default function SDGAlignmentSection({
 
   const updateMappingContribution = (goalId: number, targetId: string, percent: number) => {
     if (!canEdit) return;
+
+    setHasUserEdited(true);
 
     setMappings(mappings.map(m => 
       m.sdgGoal === goalId && m.sdgTarget === targetId 
@@ -207,6 +218,8 @@ export default function SDGAlignmentSection({
 
   const updateMappingNotes = (goalId: number, targetId: string, notes: string) => {
     if (!canEdit) return;
+
+    setHasUserEdited(true);
 
     setMappings(mappings.map(m => 
       m.sdgGoal === goalId && m.sdgTarget === targetId 

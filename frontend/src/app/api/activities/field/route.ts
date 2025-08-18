@@ -35,10 +35,19 @@ function cleanUUIDValue(value: any): string | null {
 }
 
 export async function POST(request: Request) {
+  const startTime = Date.now();
+  
+  // Set a timeout for the entire request
+  const timeoutId = setTimeout(() => {
+    console.error('[Field API] Request timeout after 28 seconds');
+  }, 28000);
+  
   try {
+
     // Check if the request has a body
     const contentLength = request.headers.get('content-length');
     if (!contentLength || contentLength === '0') {
+      clearTimeout(timeoutId);
       console.error('[Field API] Request has no body - content-length:', contentLength);
       return NextResponse.json(
         { error: 'Request body is empty' },
@@ -65,6 +74,7 @@ export async function POST(request: Request) {
     
     // Validate required fields
     if (!body.activityId) {
+      clearTimeout(timeoutId);
       return NextResponse.json(
         { error: 'Activity ID is required' },
         { status: 400 }
@@ -72,6 +82,7 @@ export async function POST(request: Request) {
     }
 
     if (!body.field) {
+      clearTimeout(timeoutId);
       return NextResponse.json(
         { error: 'Field name is required' },
         { status: 400 }
@@ -86,6 +97,7 @@ export async function POST(request: Request) {
       .single();
 
     if (fetchError || !existingActivity) {
+      clearTimeout(timeoutId);
       return NextResponse.json(
         { error: 'Activity not found' },
         { status: 404 }
@@ -102,6 +114,12 @@ export async function POST(request: Request) {
         oldValue = existingActivity.title_narrative;
         newValue = body.value;
         updateData.title_narrative = body.value;
+        break;
+        
+      case 'acronym':
+        oldValue = existingActivity.acronym;
+        newValue = body.value;
+        updateData.acronym = body.value;
         break;
         
       case 'description':
@@ -652,6 +670,7 @@ export async function POST(request: Request) {
         break;
         
       default:
+        clearTimeout(timeoutId);
         return NextResponse.json(
           { error: `Unsupported field: ${body.field}` },
           { status: 400 }
@@ -919,6 +938,7 @@ export async function POST(request: Request) {
     const responseData = {
       id: updatedActivity.id,
       title: updatedActivity.title_narrative,
+      acronym: updatedActivity.acronym,
       description: updatedActivity.description_narrative,
       activityStatus: updatedActivity.activity_status,
       publicationStatus: updatedActivity.publication_status,
@@ -948,9 +968,11 @@ export async function POST(request: Request) {
     };
 
     console.log('[Field API] Field update successful');
+    clearTimeout(timeoutId);
     return NextResponse.json(responseData);
 
   } catch (error) {
+    clearTimeout(timeoutId);
     console.error('[Field API] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

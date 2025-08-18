@@ -77,7 +77,7 @@ export function transformSectorGroups() {
       categorySectors.forEach(sector => {
         options.push({
           code: sector.code,
-          name: `${sector.code} – ${sector.name}`,
+          name: sector.name,
           description: sector.name,
           indent: 0, // No indentation for flat list
           categoryName: categoryName,

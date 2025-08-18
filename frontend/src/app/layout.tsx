@@ -34,6 +34,9 @@ export default function RootLayout({
             richColors 
             closeButton 
             duration={5000}
+            visibleToasts={5}
+            expand={true}
+            gap={12}
             toastOptions={{
               style: {
                 fontSize: '14px',

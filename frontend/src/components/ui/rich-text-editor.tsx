@@ -98,13 +98,23 @@ export function RichTextEditor({
   const handleEditorClick = useCallback((event: React.MouseEvent) => {
     if (!editor || disabled) return;
     
-    // If the editor is empty, ensure there's a paragraph to click into
-    if (editor.isEmpty) {
-      editor.commands.setContent("<p></p>");
-    }
+    // Only handle clicks on the wrapper div itself (empty space)
+    // Don't interfere with clicks on actual content
+    const target = event.target as HTMLElement;
+    const currentTarget = event.currentTarget as HTMLElement;
     
-    // Focus the editor at the end of content
-    editor.commands.focus("end");
+    // Check if we clicked on the wrapper div directly (not on the editor content)
+    if (target === currentTarget) {
+      // If the editor is empty, ensure there's a paragraph to click into
+      if (editor.isEmpty) {
+        editor.commands.setContent("<p></p>");
+      }
+      
+      // Focus the editor at the end of content when clicking empty space
+      editor.commands.focus("end");
+    }
+    // If clicking on the editor content itself, let TipTap handle it naturally
+    // This preserves text selection and cursor positioning
   }, [editor, disabled])
 
   const setLink = useCallback(() => {

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
+import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Check, AlertTriangle, MapPin, Trash2 } from 'lucide-react'
 import { MYANMAR_REGIONS, type MyanmarRegion } from "@/data/myanmar-regions"
@@ -363,28 +364,14 @@ export function SubnationalBreakdownTab({
           )}
 
           {/* Nationwide Option */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
-            <div className="flex-1">
-              <label 
-                htmlFor="nationwide" 
-                className="text-sm font-medium leading-none"
-              >
-                Nationwide (apply equal share to all States/Regions)
-              </label>
-              <p className="text-xs text-gray-500 mt-1">
-                {isNationwide 
-                  ? "All regions are allocated equally. Toggle off to manually adjust values."
-                  : "Toggle on to automatically distribute 100% equally across all subnational locations."
-                }
-              </p>
-            </div>
-            <Switch
-              id="nationwide"
-              checked={isNationwide}
-              onCheckedChange={handleNationwideChange}
-              disabled={!canEdit}
-            />
-          </div>
+          <Button
+            onClick={() => handleNationwideChange(!isNationwide)}
+            disabled={!canEdit}
+            variant={isNationwide ? "default" : "outline"}
+            className="w-full"
+          >
+            Nationwide
+          </Button>
 
           {/* Regional Breakdown Table */}
           <div className="space-y-3">
@@ -416,7 +403,6 @@ export function SubnationalBreakdownTab({
                       <div className="font-medium text-sm truncate">
                         {region.name}
                       </div>
-                      <div className="text-xs text-gray-500">{region.type}</div>
                     </div>
                     <div className="flex items-center space-x-3 flex-shrink-0">
                       <Input

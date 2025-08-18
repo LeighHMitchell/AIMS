@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 // @ts-ignore
 import sectorGroupData from '@/data/SectorGroup.json';
 
@@ -29,24 +29,71 @@ interface SectorAllocationTableProps {
   allocations: SectorAllocation[];
 }
 
+type SortField = 'code' | 'name' | 'categoryCode' | 'categoryName' | 'groupCode' | 'groupName' | 'percentage';
+type SortDirection = 'asc' | 'desc';
+
 export default function SectorAllocationTable({ allocations }: SectorAllocationTableProps) {
+  const [sortField, setSortField] = useState<SortField>('code');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
   // Enhance allocations with full metadata
   const enhancedAllocations = allocations.map(allocation => {
     const sectorData = sectorGroupData.data.find((s: any) => s.code === allocation.code);
     return {
       ...allocation,
       groupName: sectorData?.['codeforiati:group-name'] || allocation.groupName || 'Unknown',
+      groupCode: sectorData?.['codeforiati:group-code'] || allocation.code.substring(0, 2) + '0', // DAC Group code
       categoryName: sectorData?.['codeforiati:category-name'] || allocation.categoryName || 'Unknown',
       categoryCode: sectorData?.['codeforiati:category-code'] || allocation.categoryCode || allocation.code.substring(0, 3)
     };
   });
 
-  // Sort by group, then category, then code
-  const sortedAllocations = [...enhancedAllocations].sort((a, b) => {
-    if (a.groupName !== b.groupName) return a.groupName.localeCompare(b.groupName);
-    if (a.categoryName !== b.categoryName) return a.categoryName.localeCompare(b.categoryName);
-    return a.code.localeCompare(b.code);
-  });
+  // Sort allocations based on current sort field and direction
+  const sortedAllocations = useMemo(() => {
+    return [...enhancedAllocations].sort((a, b) => {
+      let aValue = a[sortField];
+      let bValue = b[sortField];
+      
+      // Handle numeric sorting for percentage
+      if (sortField === 'percentage') {
+        aValue = Number(aValue);
+        bValue = Number(bValue);
+      }
+      
+      let comparison = 0;
+      if (aValue < bValue) comparison = -1;
+      if (aValue > bValue) comparison = 1;
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [enhancedAllocations, sortField, sortDirection]);
+
+  // Handle column header click for sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Render sortable header
+  const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+    <TableHead 
+      className="cursor-pointer hover:bg-gray-50 select-none"
+      onClick={() => handleSort(field)}
+    >
+      <div className="flex items-center gap-1">
+        {children}
+        {sortField === field && (
+          sortDirection === 'asc' ? 
+            <ChevronUp className="h-4 w-4" /> : 
+            <ChevronDown className="h-4 w-4" />
+        )}
+      </div>
+    </TableHead>
+  );
 
   const totalPercentage = allocations.reduce((sum, a) => sum + a.percentage, 0);
   const unallocatedPercentage = Math.max(0, 100 - totalPercentage);
@@ -56,47 +103,69 @@ export default function SectorAllocationTable({ allocations }: SectorAllocationT
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Sector Code</TableHead>
-            <TableHead>Sector Name</TableHead>
-            <TableHead>Sector Category</TableHead>
-            <TableHead>DAC Group</TableHead>
-            <TableHead className="text-right">% Allocation</TableHead>
+            <SortableHeader field="code">Sub-sector Code</SortableHeader>
+            <SortableHeader field="name">Sub-sector</SortableHeader>
+            <SortableHeader field="categoryCode">Sector Code</SortableHeader>
+            <SortableHeader field="categoryName">Sector</SortableHeader>
+            <SortableHeader field="groupCode">Sector Category Code</SortableHeader>
+            <SortableHeader field="groupName">Sector Category</SortableHeader>
+            <TableHead 
+              className="text-right cursor-pointer hover:bg-gray-50 select-none"
+              onClick={() => handleSort('percentage')}
+            >
+              <div className="flex items-center justify-end gap-1">
+                % Allocation
+                {sortField === 'percentage' && (
+                  sortDirection === 'asc' ? 
+                    <ChevronUp className="h-4 w-4" /> : 
+                    <ChevronDown className="h-4 w-4" />
+                )}
+              </div>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedAllocations.map((allocation) => (
-            <TableRow key={allocation.id}>
-              <TableCell className="font-mono text-sm">
+            <TableRow key={allocation.id} className="h-10">
+              {/* Sub-sector Code */}
+              <TableCell className="font-mono py-2">
                 {allocation.code}
               </TableCell>
-              <TableCell>{allocation.name}</TableCell>
-              <TableCell>
-                <Badge variant="outline" className="text-xs font-mono">
-                  {allocation.categoryName}
-                </Badge>
+              {/* Sub-sector */}
+              <TableCell className="py-2">{allocation.name}</TableCell>
+              {/* Sector Code */}
+              <TableCell className="font-mono py-2">
+                {allocation.categoryCode}
               </TableCell>
-              <TableCell>
-                <Badge variant="secondary" className="text-xs font-mono">
-                  {allocation.groupName}
-                </Badge>
+              {/* Sector */}
+              <TableCell className="py-2">
+                {allocation.categoryName}
               </TableCell>
-              <TableCell className="text-right font-mono">
+              {/* Sector Category Code */}
+              <TableCell className="font-mono py-2">
+                {allocation.groupCode}
+              </TableCell>
+              {/* Sector Category */}
+              <TableCell className="py-2">
+                {allocation.groupName}
+              </TableCell>
+              <TableCell className="text-right font-mono py-2">
                 {allocation.percentage.toFixed(1)}%
               </TableCell>
             </TableRow>
           ))}
           {/* Total row */}
-          <TableRow className="font-semibold border-t-2">
-            <TableCell colSpan={4}>Total Allocated</TableCell>
-            <TableCell className="text-right font-mono">
+          <TableRow className="border-t-2">
+            <TableCell colSpan={6} className="py-2">Total Allocated</TableCell>
+            <TableCell className="text-right font-mono py-2">
               {totalPercentage.toFixed(1)}%
             </TableCell>
           </TableRow>
           {/* Unallocated row */}
           {unallocatedPercentage > 0 && (
             <TableRow className="text-gray-500">
-              <TableCell colSpan={4}>Unallocated</TableCell>
-              <TableCell className="text-right font-mono">
+              <TableCell colSpan={6} className="py-2">Unallocated</TableCell>
+              <TableCell className="text-right font-mono py-2">
                 {unallocatedPercentage.toFixed(1)}%
               </TableCell>
             </TableRow>

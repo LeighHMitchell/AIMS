@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Search, Edit, Trash2, Plus, X, Flame, RotateCcw, Layers, Satellite, Mountain } from 'lucide-react';
+import { MapPin, Map, Edit, Trash2, Plus, X, RotateCcw, Layers, Satellite, Mountain, Home, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
+import { LocationTypeSelect } from '@/components/forms/LocationTypeSelect';
+import { getLocationTypeLabel } from '@/data/location-types';
 // Note: Leaflet is imported dynamically to avoid SSR issues
 
 // Note: Gesture handling CSS is not needed - the plugin works without it
@@ -30,6 +32,14 @@ const Marker = dynamic(
 );
 const Popup = dynamic(
   () => import('react-leaflet').then((mod) => mod.Popup),
+  { ssr: false }
+);
+const ZoomControl = dynamic(
+  () => import('react-leaflet').then((mod) => mod.ZoomControl),
+  { ssr: false }
+);
+const AttributionControl = dynamic(
+  () => import('react-leaflet').then((mod) => mod.AttributionControl),
   { ssr: false }
 );
 
@@ -57,24 +67,26 @@ const loadLeafletDependencies = () => {
         console.warn('⚠️ Leaflet gesture handling plugin not loaded, using default interactions:', e);
       }
       
-      // Fix for default marker icons in Leaflet
-      if (L?.Icon?.Default) {
+      // Load leaflet.heat plugin for heatmap functionality
+      try {
+        require('leaflet.heat');
+        console.log('✅ Leaflet heat plugin loaded successfully');
+      } catch (e) {
+        console.warn('⚠️ Leaflet heat plugin not loaded, heatmap functionality disabled:', e);
+      }
+      
+      // Fix marker icons
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-        });
-      }
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      });
     } catch (error) {
       console.error('Failed to load Leaflet dependencies:', error);
-      L = null;
-      useMapEventsHook = null;
     }
   }
 };
-
-// Dependencies will be loaded in the component useEffect
 
 // Create local SVG marker icon (no external dependencies)
 function createLocalMarkerIcon() {
@@ -83,10 +95,9 @@ function createLocalMarkerIcon() {
     return null;
   }
   // Create a bright red pin SVG as data URL
-  const svgPin = `<svg width="25" height="41" viewBox="0 0 25 41" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12.5 0C5.596 0 0 5.596 0 12.5C0 19.404 12.5 41 12.5 41C12.5 41 25 19.404 25 12.5C25 5.596 19.404 0 12.5 0Z" fill="#DC2626"/>
+  const svgPin = `<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12.5 0C5.6 0 0 5.6 0 12.5c0 8.3 12.5 28.5 12.5 28.5s12.5-20.2 12.5-28.5C25 5.6 19.4 0 12.5 0z" fill="#e74c3c"/>
     <circle cx="12.5" cy="12.5" r="6" fill="white"/>
-    <circle cx="12.5" cy="12.5" r="3" fill="#DC2626"/>
   </svg>`;
   
   const svgDataUrl = `data:image/svg+xml;base64,${btoa(svgPin)}`;
@@ -105,17 +116,63 @@ function createLocalMarkerIcon() {
     console.log('✅ Local SVG icon created successfully');
     return icon;
   } catch (error) {
-    console.error('❌ Error creating local SVG icon:', error);
-    // Fallback to basic divIcon
-    return new L.divIcon({
-      html: '<div style="background: red; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
-      className: 'fallback-marker'
-    });
+    console.error('❌ Failed to create local SVG icon:', error);
+    return null;
   }
 }
 
+// Create selected marker icon (different color)
+function createSelectedMarkerIcon() {
+  if (typeof window === 'undefined' || !L) {
+    return null;
+  }
+  
+  const svgPin = `<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12.5 0C5.6 0 0 5.6 0 12.5c0 8.3 12.5 28.5 12.5 28.5s12.5-20.2 12.5-28.5C25 5.6 19.4 0 12.5 0z" fill="#3498db"/>
+    <circle cx="12.5" cy="12.5" r="6" fill="white"/>
+  </svg>`;
+  
+  const svgDataUrl = `data:image/svg+xml;base64,${btoa(svgPin)}`;
+  
+  try {
+    return new L.Icon({
+      iconUrl: svgDataUrl,
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      className: 'custom-pin-marker selected'
+    });
+  } catch (error) {
+    console.error('❌ Failed to create selected marker icon:', error);
+    return null;
+  }
+}
+
+// Map layer configurations
+type MapLayerType = 'streets' | 'satellite' | 'terrain';
+
+const MAP_LAYERS = {
+  streets: {
+    name: 'Streets',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors',
+    icon: Layers
+  },
+  satellite: {
+    name: 'Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles © Esri',
+    icon: Satellite
+  },
+  terrain: {
+    name: 'Terrain',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap',
+    icon: Mountain
+  }
+};
+
+// Location interface (matching LocationSelector.tsx)
 interface Location {
   id?: string;
   activity_id?: string;
@@ -125,6 +182,12 @@ interface Location {
   latitude?: number;
   longitude?: number;
   address?: string;
+  address_line_1?: string;
+  address_line_2?: string;
+  city?: string;
+  state_province?: string;
+  country?: string;
+  postal_code?: string;
   site_type?: string;
   admin_unit?: string;
   coverage_scope?: 'national' | 'subnational' | 'regional' | 'local';
@@ -142,6 +205,7 @@ interface Location {
   activity_sector?: string;
 }
 
+// Save status interface
 interface SaveStatus {
   isLoading: boolean;
   error: string | null;
@@ -158,34 +222,6 @@ interface SimpleMapSelectorProps {
   activityTitle?: string;
   activitySector?: string;
 }
-
-// Map layer configuration
-const MAP_LAYERS = {
-  streets: {
-    name: 'Streets',
-    icon: Layers,
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> &copy; OpenStreetMap contributors'
-  },
-  satellite: {
-    name: 'Satellite',
-    icon: Satellite,
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; <a href="https://www.esri.com/">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-  },
-  topographic: {
-    name: 'Topographic',
-    icon: Mountain,
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://opentopomap.org/">OpenTopoMap</a> contributors'
-  }
-} as const;
-
-type MapLayerType = keyof typeof MAP_LAYERS;
-
-// Default center: Myanmar
-const defaultCenter: [number, number] = [21.9162, 95.9560];
-const defaultZoom = 6;
 
 // Map events component
 function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
@@ -217,7 +253,7 @@ function MapReset({ shouldReset, onResetComplete }: { shouldReset: boolean; onRe
       if (!map || !shouldReset) return;
       
       console.log('Resetting map view to Myanmar');
-      map.setView(defaultCenter, defaultZoom);
+      map.setView([19.5, 96.0], 6);
       onResetComplete();
     }, [map, shouldReset, onResetComplete]);
     
@@ -244,26 +280,14 @@ function MapBounds({ locations }: { locations: Location[] }) {
     );
     
     if (validLocations.length === 0) {
-      console.log('No valid locations to fit bounds');
+      console.log('🗺️ MapBounds: No valid locations, keeping current view');
       return;
     }
     
-    console.log('🗺️ MapBounds: Fitting map bounds to', validLocations.length, 'locations');
-    console.log('🗺️ MapBounds: Valid locations:', validLocations.map(loc => ({
-      name: loc.location_name,
-      lat: loc.latitude,
-      lng: loc.longitude,
-      position: [loc.latitude, loc.longitude]
-    })));
-    
     if (validLocations.length === 1) {
-      // For single location, set view with higher zoom
+      // For single location, center on it
       const loc = validLocations[0];
-      console.log('🗺️ MapBounds: Setting view to single location:', {
-        name: loc.location_name,
-        position: [loc.latitude!, loc.longitude!],
-        zoom: 12
-      });
+      console.log('🗺️ MapBounds: Single location, centering on:', loc.location_name);
       map.setView([loc.latitude!, loc.longitude!], 12);
     } else {
       // For multiple locations, fit bounds
@@ -286,7 +310,6 @@ function MapBounds({ locations }: { locations: Location[] }) {
       });
       
       map.fitBounds(bounds, { padding: [20, 20] });
-      console.log('🗺️ MapBounds: Fitted bounds to multiple locations');
     }
     }, [map, locations]);
     
@@ -323,30 +346,23 @@ function MapInitializer() {
         console.log('✅ Force enabled touch zoom');
       }
       
-      // Force map to refresh and recalculate size
+      // Force refresh map size
       setTimeout(() => {
         console.log('🔄 Forcing map refresh...');
         map.invalidateSize();
         console.log('✅ Map size invalidated and refreshed');
       }, 100);
       
-      // Set up test event listeners with more detailed logging
-      map.on('drag', () => {
-        console.log('🚀 Map is being dragged');
-        // Don't force redraw during drag - let Leaflet handle it naturally
-      });
-      
-      map.on('dragend', () => {
-        console.log('🏁 Drag ended - forcing map refresh');
-        map.invalidateSize();
-      });
-      
-      map.on('zoom', () => console.log('🔍 Map is being zoomed'));
-      
-      console.log('🔧 Final status check:');
-      console.log('- Dragging enabled:', map.dragging?.enabled());
-      console.log('- Scroll wheel enabled:', map.scrollWheelZoom?.enabled());
-      console.log('- Touch zoom enabled:', map.touchZoom?.enabled());
+      // Additional interaction setup
+      setTimeout(() => {
+        if (map.getContainer) {
+          const container = map.getContainer();
+          if (container) {
+            container.style.cursor = 'grab';
+            console.log('🎯 Map cursor set to grab');
+          }
+        }
+      }, 200);
     }
     }, [map]);
     
@@ -410,20 +426,21 @@ function HeatmapLayer({ locations }: { locations: Location[] }) {
           maxZoom: 18,
           minOpacity: 0.4,
           gradient: {
-            0.0: '#8b5cf6',
-            0.2: '#a855f7', 
-            0.4: '#c084fc',
-            0.6: '#fbbf24',
-            0.8: '#f59e0b',
-            1.0: '#d97706'
+            0.0: 'blue',
+            0.2: 'cyan',
+            0.4: 'lime',
+            0.6: 'yellow',
+            0.8: 'orange',
+            1.0: 'red'
           }
         });
         
+        map.addLayer(heatLayer);
         heatLayerRef.current = heatLayer;
-        heatLayer.addTo(map);
+        console.log('✅ Heatmap layer added successfully');
         
       } catch (error) {
-        console.warn('Leaflet.heat plugin not available:', error);
+        console.error('Error creating heatmap:', error);
       }
     }
     
@@ -444,66 +461,110 @@ function HeatmapLayer({ locations }: { locations: Location[] }) {
 }
 
 // Map thumbnail component for location cards
-function MapThumbnail({ location }: { location: Location }) {
-  // Memoize icon creation to prevent function calls during JSX evaluation
-  const markerIcon = useMemo(() => {
-    if (typeof window === 'undefined' || !L || !useMapEventsHook) {
-      return null;
-    }
-    return createLocalMarkerIcon();
-  }, []);
-
-  if (typeof window === 'undefined') {
-    return (
-      <div className="w-32 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-          <MapPin className="h-6 w-6 text-gray-400" />
-        </div>
-      </div>
-    );
-  }
+function MapThumbnail({ location, mapLayer = 'streets' }: { location: Location; mapLayer?: MapLayerType }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   if (!location.latitude || !location.longitude) {
+    console.log('MapThumbnail: Missing coordinates for location:', location.location_name);
     return (
-      <div className="w-32 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+      <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
           <MapPin className="h-6 w-6 text-gray-400" />
-        </div>
       </div>
     );
   }
 
-  // Don't render if Leaflet isn't loaded
-  if (!L || !useMapEventsHook || !markerIcon) {
+  // Use memoized URLs to prevent unnecessary re-renders
+  const mapUrls = useMemo(() => {
+    const lat = location.latitude!;
+    const lng = location.longitude!;
+    
+    // Primary: Use Mapbox static API for all map types (more reliable)
+    const mapboxToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+    
+    let primaryUrl = '';
+    let fallbackUrl = '';
+    
+    switch (mapLayer) {
+      case 'satellite':
+        // Mapbox satellite
+        primaryUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},14,0/128x128@2x?access_token=${mapboxToken}`;
+        // Esri fallback
+        fallbackUrl = `https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/export?bbox=${lng - 0.005},${lat - 0.005},${lng + 0.005},${lat + 0.005}&bboxSR=4326&size=128,128&imageSR=4326&format=png&f=image`;
+        break;
+      case 'terrain':
+        // Mapbox terrain
+        primaryUrl = `https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},14,0/128x128@2x?access_token=${mapboxToken}`;
+        // OSM topo fallback
+        fallbackUrl = `https://tile.opentopomap.org/${Math.floor(14)}/${Math.floor((lng + 180) * Math.pow(2, 14) / 360)}/${Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) * Math.pow(2, 13))}.png`;
+        break;
+      case 'streets':
+      default:
+        // Mapbox streets
+        primaryUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},14,0/128x128@2x?access_token=${mapboxToken}`;
+        // OSM fallback with a tile approach
+        const osmZoom = 14;
+        const osmX = Math.floor((lng + 180) / 360 * Math.pow(2, osmZoom));
+        const osmY = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, osmZoom));
+        fallbackUrl = `https://tile.openstreetmap.org/${osmZoom}/${osmX}/${osmY}.png`;
+        break;
+    }
+    
+    return { primaryUrl, fallbackUrl };
+  }, [location.latitude, location.longitude, mapLayer]);
+
+  // Reset state when location or map layer changes
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError(false);
+    setRetryCount(0);
+  }, [location.latitude, location.longitude, mapLayer]);
+
+  console.log('MapThumbnail: Rendering thumbnail for:', location.location_name, 'with layer:', mapLayer);
+
     return (
-      <div className="w-32 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-          <MapPin className="h-6 w-6 text-gray-400" />
+    <div className="w-16 h-16 rounded overflow-hidden border bg-gray-100 relative">
+      {isLoading && !hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="animate-pulse">
+            <MapPin className="h-4 w-4 text-gray-400" />
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="w-32 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-      <MapContainer
-        center={[location.latitude, location.longitude]}
-        zoom={15}
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={false}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
-        dragging={false}
-      >
-        <TileLayer
-          attribution={MAP_LAYERS.topographic.attribution}
-          url={MAP_LAYERS.topographic.url}
+      )}
+      
+      {hasError ? (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+          <MapPin className="h-4 w-4 text-gray-400" />
+        </div>
+      ) : (
+        <img
+          key={`${location.id}-${mapLayer}-${retryCount}`}
+          src={retryCount === 0 ? mapUrls.primaryUrl : mapUrls.fallbackUrl}
+          alt={`Map of ${location.location_name}`}
+          className="w-full h-full object-cover"
+          loading="lazy"
+          onLoad={() => {
+            console.log('MapThumbnail: Successfully loaded map for:', location.location_name);
+            setIsLoading(false);
+            setHasError(false);
+          }}
+          onError={(e) => {
+            console.error('MapThumbnail: Failed to load map for:', location.location_name, 'Retry count:', retryCount);
+            
+            if (retryCount === 0) {
+              // Try fallback URL
+              console.log('MapThumbnail: Trying fallback URL for:', location.location_name);
+              setRetryCount(1);
+            } else {
+              // Both failed, show placeholder
+            console.log('MapThumbnail: All map services failed for:', location.location_name);
+            setIsLoading(false);
+            setHasError(true);
+            }
+          }}
         />
-        <Marker 
-          position={[location.latitude, location.longitude]} 
-          icon={markerIcon}
-        />
-      </MapContainer>
+      )}
     </div>
   );
 }
@@ -522,14 +583,19 @@ export default function SimpleMapSelector({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<Partial<Location>>({});
+  const [selectedLocation, setSelectedLocation] = useState<Partial<Location>>({
+    location_type: 'site',
+    site_type: 'SD1'
+  });
   const [isAddingLocation, setIsAddingLocation] = useState(false);
   const [editingLocation, setEditingLocation] = useState<string | null>(null);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(true);
   const [shouldResetMap, setShouldResetMap] = useState(false);
   const [mapLayer, setMapLayer] = useState<MapLayerType>('streets');
+  const [expandedLocationId, setExpandedLocationId] = useState<string | null>(null);
+  const [editingLocationData, setEditingLocationData] = useState<Location | null>(null);
   const mapRef = useRef<any>(null);
 
   console.log('[SimpleMapSelector] Component rendering...');
@@ -550,12 +616,19 @@ export default function SimpleMapSelector({
     return createLocalMarkerIcon();
   }, [isMapLoaded]);
 
+  const selectedMarkerIcon = useMemo(() => {
+    if (typeof window === 'undefined' || !L || !useMapEventsHook || !isMapLoaded) {
+      return null;
+    }
+    return createSelectedMarkerIcon();
+  }, [isMapLoaded]);
+
+  // Load Leaflet dependencies on component mount
   useEffect(() => {
-    // Ensure Leaflet is loaded before setting map as loaded
-    if (typeof window !== 'undefined') {
-      try {
         loadLeafletDependencies();
-        // Only set map as loaded if L and useMapEventsHook are available
+    
+    // Check if dependencies loaded successfully
+    const checkInterval = setInterval(() => {
         if (L && useMapEventsHook) {
           setIsMapLoaded(true);
           console.log('✅ Leaflet dependencies loaded and map ready');
@@ -563,11 +636,10 @@ export default function SimpleMapSelector({
           console.warn('⚠️ Leaflet dependencies not fully loaded');
           setIsMapLoaded(false);
         }
-      } catch (error) {
-        console.error('❌ Failed to load Leaflet dependencies:', error);
-        setIsMapLoaded(false);
-      }
-    }
+      clearInterval(checkInterval);
+    }, 100);
+
+    return () => clearInterval(checkInterval);
   }, []);
 
   // Handle search
@@ -612,7 +684,7 @@ export default function SimpleMapSelector({
         setShowDropdown(false);
         setIsSearching(false);
       }
-    }, 300); // 300ms delay
+    }, 300);
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, handleSearch]);
@@ -641,11 +713,17 @@ export default function SimpleMapSelector({
       const newLocation: Partial<Location> = {
         location_name: '',
         location_type: 'site',
-        site_type: 'project_site',
+        site_type: 'SD1',
         latitude: lat,
         longitude: lng,
         address: data.display_name || `${lat}, ${lng}`,
         description: '',
+        // Populate new address fields from reverse geocoding
+        address_line_2: address.house_number && address.road ? `${address.house_number} ${address.road}` : address.road || '',
+        city: address.city || address.town || address.village || address.hamlet || '',
+        state_province: address.state || address.region || address.province || '',
+        country: address.country || '',
+        postal_code: address.postcode || '',
         // Extract administrative levels for Myanmar
         state_region_name: address.state || address.region || address.province || '',
         state_region_code: address.state_code || '',
@@ -665,6 +743,55 @@ export default function SimpleMapSelector({
     } catch (error) {
       console.error('Error reverse geocoding:', error);
       toast.error('Failed to get location details');
+    }
+  }, []);
+
+  // Handle coordinate entry and trigger reverse geocoding + map centering
+  const handleCoordinateEntry = useCallback(async (lat: number, lng: number) => {
+    console.log('📍 Coordinates entered:', lat, lng);
+    
+    // Center the map on the new coordinates
+    if (mapRef.current) {
+      const map = mapRef.current;
+      map.setView([lat, lng], 14); // Zoom level 14 for detailed view
+      console.log('🗺️ Map centered on entered coordinates');
+    }
+    
+    try {
+      // Reverse geocode to get detailed address information
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`
+      );
+      const data = await response.json();
+      
+      // Extract administrative details from the address components
+      const address = data.address || {};
+      console.log('🏛️ Address details from coordinates:', address);
+      
+      // Update the selected location with reverse geocoded data
+      setSelectedLocation(prev => ({
+        ...prev,
+        latitude: lat,
+        longitude: lng,
+        address: data.display_name || `${lat}, ${lng}`,
+        // Populate address fields from reverse geocoding
+        address_line_2: address.house_number && address.road ? `${address.house_number} ${address.road}` : address.road || '',
+        city: address.city || address.town || address.village || address.hamlet || '',
+        state_province: address.state || address.region || address.province || '',
+        country: address.country || '',
+        postal_code: address.postcode || '',
+        // Extract administrative levels for Myanmar
+        state_region_name: address.state || address.region || address.province || '',
+        state_region_code: address.state_code || '',
+        township_name: address.township || address.county || address.municipality || '',
+        township_code: address.township_code || '',
+        village_name: address.village || address.hamlet || address.suburb || address.neighbourhood || '',
+      }));
+      
+      console.log('✅ Location details updated from coordinates');
+    } catch (error) {
+      console.error('Error reverse geocoding coordinates:', error);
+      toast.error('Failed to get location details for coordinates');
     }
   }, []);
 
@@ -713,6 +840,12 @@ export default function SimpleMapSelector({
               latitude: selectedLocation.latitude || 0,
               longitude: selectedLocation.longitude || 0,
               address: selectedLocation.address || '',
+              address_line_1: selectedLocation.address_line_1 || '',
+              address_line_2: selectedLocation.address_line_2 || '',
+              city: selectedLocation.city || '',
+              state_province: selectedLocation.state_province || '',
+              country: selectedLocation.country || '',
+              postal_code: selectedLocation.postal_code || '',
               description: selectedLocation.description || '',
               state_region_code: selectedLocation.state_region_code,
               state_region_name: selectedLocation.state_region_name,
@@ -732,10 +865,16 @@ export default function SimpleMapSelector({
         id: Date.now().toString(),
         location_name: selectedLocation.location_name || '',
         location_type: selectedLocation.location_type || 'site',
-        site_type: selectedLocation.site_type || 'project_site',
+        site_type: selectedLocation.site_type || 'SD1',
         latitude: selectedLocation.latitude || 0,
         longitude: selectedLocation.longitude || 0,
         address: selectedLocation.address || '',
+        address_line_1: selectedLocation.address_line_1 || '',
+        address_line_2: selectedLocation.address_line_2 || '',
+        city: selectedLocation.city || '',
+        state_province: selectedLocation.state_province || '',
+        country: selectedLocation.country || '',
+        postal_code: selectedLocation.postal_code || '',
         description: selectedLocation.description || '',
         state_region_code: selectedLocation.state_region_code,
         state_region_name: selectedLocation.state_region_name,
@@ -748,7 +887,10 @@ export default function SimpleMapSelector({
       toast.success('Location added successfully');
     }
 
-    setSelectedLocation({});
+    setSelectedLocation({
+      location_type: 'site',
+      site_type: 'SD1'
+    });
     setIsAddingLocation(false);
   };
 
@@ -789,395 +931,128 @@ export default function SimpleMapSelector({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Search Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Add Location
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative search-container">
-            <Input
-              placeholder="Search for a location..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-              }}
-              className="pr-10"
-            />
-            {isSearching && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-              </div>
-            )}
-            
-            {/* Search results dropdown */}
-            {showDropdown && searchResults.length > 0 && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                {searchResults.map((result, index) => (
-                  <div
-                    key={index}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                                        onClick={() => {
-                        // Extract administrative details from search result
-                        const address = result.address || {};
-                        
-                        const newLocation: Partial<Location> = {
-                          location_name: result.name || result.display_name.split(',')[0],
-                          location_type: 'site',
-                          site_type: 'project_site',
-                          latitude: parseFloat(result.lat),
-                          longitude: parseFloat(result.lon),
-                          address: result.display_name,
-                          description: '',
-                          // Extract administrative levels
-                          state_region_name: address.state || address.region || address.province || '',
-                          state_region_code: address.state_code || '',
-                          township_name: address.township || address.county || address.municipality || '',
-                          township_code: address.township_code || '',
-                          village_name: address.village || address.hamlet || address.suburb || address.neighbourhood || '',
-                        };
-                        setSelectedLocation(newLocation);
-                        setIsAddingLocation(true);
-                        setShowDropdown(false);
-                        // Keep the search result in the search bar
-                        setSearchQuery(result.name || result.display_name.split(',')[0]);
-                        
-                        // Move map to the selected location
-                        if (mapRef.current) {
-                          const leafletMap = mapRef.current;
-                          leafletMap.setView([parseFloat(result.lat), parseFloat(result.lon)], 15);
-                        }
-                      }}
-                  >
-                    <div className="font-medium">{result.name || result.display_name.split(',')[0]}</div>
-                    <div className="text-gray-500 text-xs">{result.display_name}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          
-                        {/* Coordinate Entry */}
-          <div className="mt-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="manual-lat" className="text-xs text-gray-500">Latitude</Label>
-                <Input
-                  id="manual-lat"
-                  type="number"
-                  step="any"
-                  value={selectedLocation.latitude || ''}
-                  onChange={(e) => {
-                    const lat = parseFloat(e.target.value);
-                    if (!isNaN(lat)) {
-                      setSelectedLocation({ ...selectedLocation, latitude: lat });
-                      // Auto-fill location name if empty
-                      if (!selectedLocation.location_name) {
-                        setSelectedLocation(prev => ({ 
-                          ...prev, 
-                          latitude: lat,
-                          location_name: `Location at ${lat.toFixed(6)}, ${selectedLocation.longitude?.toFixed(6) || '...'}`
-                        }));
-                      }
-                    }
-                  }}
-                  placeholder="e.g., 21.9162"
-                  className="text-sm"
-                />
-              </div>
-              <div>
-                <Label htmlFor="manual-lng" className="text-xs text-gray-500">Longitude</Label>
-                <Input
-                  id="manual-lng"
-                  type="number"
-                  step="any"
-                  value={selectedLocation.longitude || ''}
-                  onChange={(e) => {
-                    const lng = parseFloat(e.target.value);
-                    if (!isNaN(lng)) {
-                      setSelectedLocation({ ...selectedLocation, longitude: lng });
-                      // Auto-fill location name if empty
-                      if (!selectedLocation.location_name) {
-                        setSelectedLocation(prev => ({ 
-                          ...prev, 
-                          longitude: lng,
-                          location_name: `Location at ${selectedLocation.latitude?.toFixed(6) || '...'}, ${lng.toFixed(6)}`
-                        }));
-                      }
-                    }
-                  }}
-                  placeholder="e.g., 95.9560"
-                  className="text-sm"
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Map Section */}
-      <Card>
+    <div className="space-y-6 w-full">
+      {/* Map on Left, Add Location and Location Details Stacked on Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+        {/* Map Section - Left Side (Full Height) */}
+        <div className="lg:col-span-1">
+          <Card className="h-full flex flex-col">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
+                  <Map className="h-5 w-5" />
               Map
             </div>
                             <div className="flex items-center gap-2">
-                  {/* Map Layer Selector */}
                   <Select value={mapLayer} onValueChange={(value: MapLayerType) => setMapLayer(value)}>
                     <SelectTrigger className="w-32 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(MAP_LAYERS).map(([key, layer]) => {
-                        const IconComponent = layer.icon;
-                        return (
-                          <SelectItem key={key} value={key}>
-                            <div className="flex items-center gap-2">
-                              <IconComponent className="h-3 w-3" />
-                              {layer.name}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
+                      <SelectItem value="streets">Streets</SelectItem>
+                      <SelectItem value="satellite">Satellite</SelectItem>
+                      <SelectItem value="terrain">Terrain</SelectItem>
                     </SelectContent>
                   </Select>
-                  
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShouldResetMap(true)}
+                    onClick={() => {
+                      setShouldResetMap(true);
+                      setTimeout(() => setShouldResetMap(false), 100);
+                    }}
                     className="text-xs"
                     title="Reset view to Myanmar"
                   >
                     <RotateCcw className="h-3 w-3 mr-1" />
                     Reset View
                   </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => setShowHeatmap(!showHeatmap)}
-                    className="text-xs"
-                    title={showHeatmap ? "Switch to Pin View" : "Switch to Heat Map View"}
-                  >
-                    {showHeatmap ? (
-                      <>
-                        <MapPin className="h-3 w-3 mr-1" />
-                        Show Pins
-                      </>
-                    ) : (
-                      <>
-                        <Flame className="h-3 w-3 mr-1" />
-                        Show Heat Map
-                      </>
-                    )}
-                  </Button>
                 </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-96 w-full relative rounded-lg overflow-hidden">
-            {isMapLoaded && L && useMapEventsHook && (
+        <CardContent className="flex-1">
+          <div className="h-full w-full relative rounded-lg overflow-hidden">
+            {isMapLoaded && L && useMapEventsHook ? (
               <MapContainer
-                center={defaultCenter}
-                zoom={defaultZoom}
-                style={{ height: '100%', width: '100%' }}
-                className="leaflet-map-container"
                 ref={mapRef}
-                // Explicitly enable all interactions
-                dragging={true}
-                touchZoom={true}
-                scrollWheelZoom={true}
-                doubleClickZoom={true}
-                boxZoom={true}
-                keyboard={true}
-                zoomControl={true}
-                attributionControl={true}
-                // Don't use gestureHandling for now to debug
-                // gestureHandling={true}
+                    center={[19.5, 96.0]}
+                    zoom={6}
+                    style={{ height: '100%', width: '100%' }}
+                    zoomControl={false}
+                    attributionControl={false}
                 whenReady={() => {
-                  console.log('🗺️ Map is ready, setting up interactions...');
-                  
-                  if (mapRef.current) {
-                    const leafletMap = mapRef.current;
+                      console.log('Map is ready');
+                      setIsMapLoaded(true);
+                    }}
+                  >
+                    <ZoomControl position="topright" />
+                    <AttributionControl position="bottomleft" prefix={false} />
                     
-                    // Force enable all interactions
-                    if (leafletMap.dragging) {
-                      leafletMap.dragging.enable();
-                      console.log('✅ Dragging enabled');
-                    }
-                    if (leafletMap.scrollWheelZoom) {
-                      leafletMap.scrollWheelZoom.enable();
-                      console.log('✅ Scroll wheel zoom enabled');
-                    }
-                    if (leafletMap.touchZoom) {
-                      leafletMap.touchZoom.enable();
-                      console.log('✅ Touch zoom enabled');
-                    }
-                    if (leafletMap.doubleClickZoom) {
-                      leafletMap.doubleClickZoom.enable();
-                      console.log('✅ Double click zoom enabled');
-                    }
-                    if (leafletMap.boxZoom) {
-                      leafletMap.boxZoom.enable();
-                      console.log('✅ Box zoom enabled');
-                    }
-                    if (leafletMap.keyboard) {
-                      leafletMap.keyboard.enable();
-                      console.log('✅ Keyboard navigation enabled');
-                    }
-                    
-                    // Add event listeners to verify interactions work
-                    leafletMap.on('dragstart', () => console.log('🚀 Drag started'));
-                    leafletMap.on('drag', () => console.log('🚀 Dragging...'));
-                    leafletMap.on('dragend', () => console.log('🚀 Drag ended'));
-                    leafletMap.on('zoomstart', () => console.log('🔍 Zoom started'));
-                    leafletMap.on('zoomend', () => console.log('🔍 Zoom ended'));
-                    
-                    console.log('🔧 Final check - Interactions enabled:');
-                    console.log('- Dragging:', leafletMap.dragging?.enabled() || false);
-                    console.log('- Scroll wheel:', leafletMap.scrollWheelZoom?.enabled() || false);
-                    console.log('- Touch zoom:', leafletMap.touchZoom?.enabled() || false);
-                  }
-                }}
-              >
                 <TileLayer
                   attribution={MAP_LAYERS[mapLayer].attribution}
                   url={MAP_LAYERS[mapLayer].url}
                   keepBuffer={2}
                   updateWhenIdle={false}
-                  updateWhenZooming={true}
-                  tileSize={256}
-                  maxZoom={19}
-                  minZoom={1}
-                />
-                
-                {/* Existing location markers */}
-                {/* Duplicate coordinate detection */}
-                {(() => {
-                  const tolerance = 0.0001;
-                  const duplicateGroups: Location[][] = [];
-                  const processed = new Set<string>();
-                  
-                  locations.forEach(location => {
-                    if (!location.id || processed.has(location.id)) return;
+                      updateWhenZooming={false}
+                    />
                     
-                    const duplicates = locations.filter(loc => 
-                      loc.latitude !== undefined && location.latitude !== undefined &&
-                      loc.longitude !== undefined && location.longitude !== undefined &&
-                      Math.abs(loc.latitude - location.latitude) < tolerance &&
-                      Math.abs(loc.longitude - location.longitude) < tolerance
-                    );
-                    
-                    if (duplicates.length > 1) {
-                      duplicateGroups.push(duplicates);
-                      duplicates.forEach(dup => dup.id && processed.add(dup.id));
-                    } else {
-                      location.id && processed.add(location.id);
-                    }
-                  });
-                  
-                  if (duplicateGroups.length > 0) {
-                    console.warn('🚫 DUPLICATE COORDINATES DETECTED:', duplicateGroups);
-                  }
-                  
-                  return null;
-                })()}
-                
-                {/* PIN VIEW - Only show when heatmap is OFF */}
                 {!showHeatmap && locations.map((location, index) => {
                   if (!location.latitude || !location.longitude) {
                     console.warn('Skipping location with missing coordinates:', location);
                     return null;
                   }
                   
-                  // Debug log for each marker being rendered
-                  console.log(`📍 Rendering marker ${index + 1}/${locations.length}:`, {
-                    name: location.location_name,
-                    lat: location.latitude,
-                    lng: location.longitude,
-                    latType: typeof location.latitude,
-                    lngType: typeof location.longitude,
-                    position: [location.latitude, location.longitude],
-                    googleMapsUrl: `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
-                  });
-                  
-                  // Validate coordinates are within Myanmar bounds
-                  const isValidLat = location.latitude >= 20.69 && location.latitude <= 22.74;
-                  const isValidLng = location.longitude >= 94.35 && location.longitude <= 99.15;
-                  
-                  if (!isValidLat || !isValidLng) {
-                    console.warn(`⚠️ Marker outside Myanmar bounds:`, {
-                      name: location.location_name,
-                      lat: location.latitude,
-                      lng: location.longitude,
-                      isValidLat,
-                      isValidLng
-                    });
-                  }
+                      const position: [number, number] = [location.latitude!, location.longitude!];
+                      const isSelected = selectedMarkerId === location.id;
                   
                   return (
                     <Marker
-                      key={location.id}
-                      position={[location.latitude, location.longitude]}
-                      icon={markerIcon || undefined}
+                          key={location.id || `location-${index}`}
+                          position={position}
+                          icon={isSelected ? selectedMarkerIcon : markerIcon}
                       eventHandlers={{
                         click: () => {
-                          console.log('🎯 CLICKED MARKER:', {
-                            name: location.location_name,
-                            inputCoords: [location.latitude, location.longitude],
-                            shouldBeAt: `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
-                          });
+                              console.log('Marker clicked:', location.location_name);
                           setSelectedMarkerId(location.id || null);
                         },
                       }}
                     >
-                      {selectedMarkerId === location.id && (
                         <Popup>
-                          <div className="p-2">
-                            <h3 className="font-medium">{location.location_name}</h3>
-                            <p className="text-sm text-gray-600">{location.address}</p>
-                            <div className="text-xs text-blue-600 font-mono mt-2 bg-blue-50 p-1 rounded">
-                              📍 Lat: {location.latitude?.toFixed(6)}<br/>
-                              📍 Lng: {location.longitude?.toFixed(6)}
-                            </div>
+                            <div className="text-sm">
+                              <div className="font-semibold mb-1">{location.location_name}</div>
                             {location.description && (
-                              <p className="text-sm text-gray-500 mt-1">{location.description}</p>
-                            )}
+                                <div className="text-gray-600 mb-2">{location.description}</div>
+                              )}
+                              <div className="text-xs text-gray-500 space-y-1">
+                                {location.state_region_name && (
+                                  <div>📍 {location.state_region_name}</div>
+                                )}
+                                {location.township_name && (
+                                  <div>🏘️ {location.township_name}</div>
+                                )}
+                                {location.village_name && (
+                                  <div>🏡 {location.village_name}</div>
+                                )}
+                                <div className="font-mono">
+                                  {location.latitude?.toFixed(6)}, {location.longitude?.toFixed(6)}
+                                </div>
+                              </div>
                           </div>
                         </Popup>
-                      )}
                     </Marker>
                   );
                 })}
                 
-                {/* Test marker for debugging - DEFAULT ICON */}
-
-                
-
-                
-
-                
-
-                
-                <MapReset shouldReset={shouldResetMap} onResetComplete={handleResetComplete} />
                 <MapBounds locations={locations} />
                 <MapInitializer />
                 <MapEvents onMapClick={handleMapClick} />
                 
-                {/* HEATMAP VIEW - Only show when toggle is ON */}
                 {showHeatmap && <HeatmapLayer locations={locations} />}
               </MapContainer>
-            )}
+            ) : null}
             
-            {/* Loading state when map isn't ready */}
             {(!isMapLoaded || !L || !useMapEventsHook) && (
-              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                  <div className="flex items-center justify-center h-full bg-gray-50">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
                   <div className="text-sm text-gray-600">Loading map...</div>
@@ -1185,36 +1060,21 @@ export default function SimpleMapSelector({
               </div>
             )}
             
-            {/* Map instructions and debug info */}
-            <div className="absolute bottom-4 left-4 bg-white/90 p-2 rounded shadow text-xs text-gray-600 pointer-events-none space-y-1">
-              <div>💡 Click on the map to add a location</div>
-              <div>🖱️ Try dragging the map to pan around</div>
-              <div>🔍 Use mouse wheel to zoom</div>
-              <div>📍 Locations: {locations?.length || 0}</div>
-              {locations?.length > 0 && (
-                <div>📊 Valid coords: {locations.filter(l => l.latitude && l.longitude).length}</div>
-              )}
-              {locations?.length > 0 && (
-                <div className="mt-2 text-blue-600 font-bold">🎯 Click pins to see their coordinates!</div>
-              )}
-              {/* Debug: Show coordinate ranges */}
-              {locations?.length > 1 && (() => {
-                const validLocs = locations.filter(l => l.latitude !== undefined && l.longitude !== undefined);
-                const lats = validLocs.map(l => l.latitude!);
-                const lngs = validLocs.map(l => l.longitude!);
-                return (
-                  <div className="mt-2 pt-2 border-t border-gray-300">
-                    <div className="font-semibold">Debug Info:</div>
-                    <div>Lat range: {Math.min(...lats).toFixed(2)} - {Math.max(...lats).toFixed(2)}</div>
-                    <div>Lng range: {Math.min(...lngs).toFixed(2)} - {Math.max(...lngs).toFixed(2)}</div>
+                {isAddingLocation && (
+                  <div className="absolute top-4 left-4 bg-blue-500 text-white p-3 rounded-lg shadow-lg text-sm max-w-xs">
+                    <div className="font-semibold mb-1">📍 Click on the map</div>
+                    <div>Click anywhere on the map to add a new location at that point.</div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsAddingLocation(false)}
+                      className="mt-2 text-white hover:bg-blue-600 p-1 h-auto"
+                    >
+                      Cancel
+                    </Button>
                   </div>
-                );
-              })()}
-            </div>
+                )}
 
-
-
-            {/* View mode indicator */}
             {locations?.length > 0 && (
               <div className="absolute bottom-4 right-4 bg-white/90 p-2 rounded shadow text-xs text-gray-600 pointer-events-none">
                 <div className="font-semibold">
@@ -1223,165 +1083,339 @@ export default function SimpleMapSelector({
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+          </div>
           
-          {/* Location Details from Map Click */}
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Location Details</h4>
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="state-region" className="text-xs text-gray-500">State/Region/Union Territory</Label>
+        {/* Right Side - Add Location and Location Details Stacked */}
+        <div className="lg:col-span-1 flex flex-col gap-4">
+          {/* Add Location Card */}
+          <Card className="flex-1 flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Add Location
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1">
+              <div className="relative search-container">
                 <Input
-                  id="state-region"
-                  value={selectedLocation.state_region_name || ''}
-                  className="bg-gray-100 text-gray-500 cursor-not-allowed"
-                  placeholder="Click on map to auto-fill"
-                  readOnly
-                  disabled
+                  placeholder="Search for a location..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                  }}
+                  onBlur={() => {
+                    // Delay hiding dropdown to allow click events on dropdown items
+                    setTimeout(() => {
+                      setShowDropdown(false);
+                      // Clear search if no location was selected
+                      if (!selectedLocation.location_name) {
+                        setSearchQuery('');
+                      }
+                    }, 200);
+                  }}
+                  onFocus={() => {
+                    if (searchResults.length > 0) {
+                      setShowDropdown(true);
+                    }
+                  }}
+                  className="pr-10"
                 />
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
               </div>
+                )}
+                
+                {showDropdown && searchResults.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {searchResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        onClick={() => {
+                          const address = result.address || {};
+                          
+                          // Parse the display name to extract address components
+                          const displayParts = result.display_name.split(',').map((part: string) => part.trim());
+                          
+                          const newLocation: Partial<Location> = {
+                            location_name: result.name || displayParts[0],
+                            location_type: 'site',
+                            site_type: 'SD1',
+                            latitude: parseFloat(result.lat),
+                            longitude: parseFloat(result.lon),
+                            address: result.display_name,
+                            description: '',
+                            // Populate new address fields
+                            address_line_2: address.house_number && address.road ? `${address.house_number} ${address.road}` : address.road || '',
+                            city: address.city || address.town || address.village || address.hamlet || '',
+                            state_province: address.state || address.region || address.province || '',
+                            country: address.country || '',
+                            postal_code: address.postcode || '',
+                            // Keep existing Myanmar-specific fields
+                            state_region_name: address.state || address.region || address.province || '',
+                            state_region_code: address.state_code || '',
+                            township_name: address.township || address.county || address.municipality || '',
+                            township_code: address.township_code || '',
+                            village_name: address.village || address.hamlet || address.suburb || address.neighbourhood || '',
+                          };
+                          
+                          setSelectedLocation(newLocation);
+                          setSearchQuery(result.name || displayParts[0]);
+                          setShowDropdown(false);
+                          setIsAddingLocation(true);
+                        }}
+                      >
+                        <div className="font-medium">{result.name || result.display_name.split(',')[0]}</div>
+                        <div className="text-xs text-gray-500">{result.display_name}</div>
+              </div>
+                    ))}
+                  </div>
+                )}
+            </div>
+            
+              <div className="mt-4 space-y-3">
+                <div className="text-sm font-medium text-gray-700">Or enter coordinates manually:</div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="township" className="text-xs text-gray-500">Township</Label>
+                    <Label htmlFor="latitude" className="text-xs">Latitude</Label>
                   <Input
-                    id="township"
-                    value={selectedLocation.township_name || ''}
-                    className="bg-gray-100 text-gray-500 cursor-not-allowed"
-                    placeholder="Click on map"
-                    readOnly
-                    disabled
+                      id="latitude"
+                      type="number"
+                      step="any"
+                      value={selectedLocation.latitude || ''}
+                      onChange={(e) => setSelectedLocation(prev => ({
+                        ...prev,
+                        latitude: parseFloat(e.target.value) || undefined
+                      }))}
+                      placeholder="e.g., 16.8661"
+                      className="text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="village" className="text-xs text-gray-500">Village</Label>
+                    <Label htmlFor="longitude" className="text-xs">Longitude</Label>
                   <Input
-                    id="village"
-                    value={selectedLocation.village_name || ''}
-                    className="bg-gray-100 text-gray-500 cursor-not-allowed"
-                    placeholder="Click on map"
-                    readOnly
-                    disabled
+                      id="longitude"
+                      type="number"
+                      step="any"
+                      value={selectedLocation.longitude || ''}
+                      onChange={(e) => setSelectedLocation(prev => ({
+                        ...prev,
+                        longitude: parseFloat(e.target.value) || undefined
+                      }))}
+                      placeholder="e.g., 95.9560"
+                      className="text-sm"
                   />
                 </div>
               </div>
             </div>
-          </div>
+
         </CardContent>
       </Card>
 
-      {/* Add Location Form */}
-      {isAddingLocation && (
-        <Card>
+          {/* Location Details Card */}
+          <Card className="flex-1 flex flex-col">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Add New Location
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setIsAddingLocation(false);
-                  setSelectedLocation({});
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+                            <CardTitle className="flex items-center gap-2">
+                <Home className="h-5 w-5" />
+                Location Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="flex-1 space-y-4">
+              {/* Location Name */}
               <div>
-                <Label htmlFor="location-name">Location Name *</Label>
+                <Label htmlFor="location-name" className="text-xs">Location Name *</Label>
                 <Input
                   id="location-name"
                   value={selectedLocation.location_name || ''}
-                  onChange={(e) => setSelectedLocation({ ...selectedLocation, location_name: e.target.value })}
+                  onChange={(e) => setSelectedLocation(prev => ({
+                    ...prev,
+                    location_name: e.target.value
+                  }))}
                   placeholder="Enter location name"
+                  className="text-sm"
                 />
               </div>
+
+              {/* Location Type */}
               <div>
-                <Label htmlFor="location-type">Type</Label>
-                <Select
-                  value={selectedLocation.site_type || 'project_site'}
-                  onValueChange={(value) => setSelectedLocation({ ...selectedLocation, site_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="project_site">Project Site</SelectItem>
-                    <SelectItem value="office">Office</SelectItem>
-                    <SelectItem value="field_office">Field Office</SelectItem>
-                    <SelectItem value="warehouse">Warehouse</SelectItem>
-                    <SelectItem value="training_center">Training Center</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="location-type" className="text-xs">Location Type *</Label>
+                <LocationTypeSelect
+                  value={selectedLocation.site_type || ''}
+                  onValueChange={(value) => setSelectedLocation(prev => ({
+                    ...prev,
+                    site_type: value
+                  }))}
+                  className="text-sm"
+                />
               </div>
+
+              {/* Address Line 1 */}
+              <div>
+                <Label htmlFor="address-line-1" className="text-xs">Address Line 1</Label>
+                <Input
+                  id="address-line-1"
+                  value={selectedLocation.address_line_1 || ''}
+                  onChange={(e) => setSelectedLocation(prev => ({
+                    ...prev,
+                    address_line_1: e.target.value
+                  }))}
+                  placeholder="Street address, building name, etc."
+                  className="text-sm"
+                />
+              </div>
+
+              {/* Address Line 2 */}
+              <div>
+                <Label htmlFor="address-line-2" className="text-xs">Address Line 2</Label>
+                <Input
+                  id="address-line-2"
+                  value={selectedLocation.address_line_2 || ''}
+                  onChange={(e) => setSelectedLocation(prev => ({
+                    ...prev,
+                    address_line_2: e.target.value
+                  }))}
+                  placeholder="Apartment, suite, unit, etc."
+                  className="text-sm"
+                />
             </div>
             
+              {/* City, State/Province */}
+              <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="location-description">Description</Label>
-              <Textarea
-                id="location-description"
-                value={selectedLocation.description || ''}
-                onChange={(e) => setSelectedLocation({ ...selectedLocation, description: e.target.value })}
-                placeholder="Enter location description"
-                rows={3}
-              />
+                  <Label htmlFor="city" className="text-xs">City</Label>
+                  <Input
+                    id="city"
+                    value={selectedLocation.city || ''}
+                    onChange={(e) => setSelectedLocation(prev => ({
+                      ...prev,
+                      city: e.target.value
+                    }))}
+                    placeholder="City"
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="state-province" className="text-xs">State/Province</Label>
+                  <Input
+                    id="state-province"
+                    value={selectedLocation.state_province || ''}
+                    onChange={(e) => setSelectedLocation(prev => ({
+                      ...prev,
+                      state_province: e.target.value
+                    }))}
+                    placeholder="State or Province"
+                    className="text-sm"
+                  />
+                </div>
             </div>
             
+              {/* Country, Postal Code */}
+              <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="location-address">Address</Label>
+                  <Label htmlFor="country" className="text-xs">Country</Label>
               <Input
-                id="location-address"
-                value={selectedLocation.address || ''}
-                onChange={(e) => setSelectedLocation({ ...selectedLocation, address: e.target.value })}
-                placeholder="Address"
-              />
+                    id="country"
+                    value={selectedLocation.country || ''}
+                    onChange={(e) => setSelectedLocation(prev => ({
+                      ...prev,
+                      country: e.target.value
+                    }))}
+                    placeholder="Country"
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="postal-code" className="text-xs">Postal Code</Label>
+                  <Input
+                    id="postal-code"
+                    value={selectedLocation.postal_code || ''}
+                    onChange={(e) => setSelectedLocation(prev => ({
+                      ...prev,
+                      postal_code: e.target.value
+                    }))}
+                    placeholder="Postal/ZIP code"
+                    className="text-sm"
+                  />
+                </div>
             </div>
             
-            <div className="flex gap-2">
-              <Button onClick={saveLocation} className="flex-1">
+              {/* Description */}
+              <div>
+                <Label htmlFor="description" className="text-xs">Description</Label>
+                <Input
+                  id="description"
+                  value={selectedLocation.description || ''}
+                  onChange={(e) => setSelectedLocation(prev => ({
+                    ...prev,
+                    description: e.target.value
+                  }))}
+                  placeholder="Additional details about this location"
+                  className="text-sm"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4">
+                <Button
+                  onClick={saveLocation}
+                  className="flex-1"
+                  disabled={!selectedLocation.location_name || !selectedLocation.latitude || !selectedLocation.longitude}
+                >
                 {editingLocation ? 'Update Location' : 'Add Location'}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => {
-                  setIsAddingLocation(false);
-                  setSelectedLocation({});
+                  setSelectedLocation({
+                    location_type: 'site',
+                    site_type: 'SD1'
+                  });
+                    setIsAddingLocation(false);
                   setEditingLocation(null);
+                    setSearchQuery('');
                 }}
               >
-                Cancel
+                  Clear
               </Button>
             </div>
           </CardContent>
         </Card>
-      )}
+        </div>
+      </div>
 
-      {/* Existing Locations */}
-      {locations.length > 0 && (
+      {/* Saved Locations List - Full Width Below */}
+      {locations && locations.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Saved Locations ({locations.length})
+            <CardTitle>
+              <h4 className="font-semibold text-gray-900">Saved Locations</h4>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {locations.map((location) => (
-                <div key={location.id} className="border rounded-lg p-4">
+            <div className="grid gap-3">
+              {locations.map((location, index) => {
+                const isExpanded = expandedLocationId === location.id;
+                const isEditing = editingLocationData?.id === location.id;
+                
+                return (
+                  <div key={location.id} className="border rounded-lg overflow-hidden transition-all duration-300">
+                    <div className="p-4">
                   <div className="flex items-start gap-4">
-                    {/* Map Thumbnail */}
-                    <MapThumbnail location={location} />
+                        <MapThumbnail location={location} mapLayer={mapLayer} />
                     
-                    {/* Location Details */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <h3 className="font-medium text-sm">{location.location_name}</h3>
+                          {location.site_type && (
+                            <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                              <Building2 className="h-3 w-3" />
+                              {getLocationTypeLabel(location.site_type)}
+                            </p>
+                          )}
                           <p className="text-xs text-gray-600 mt-1">{location.address}</p>
                         </div>
                         <div className="flex gap-1 ml-2">
@@ -1389,9 +1423,15 @@ export default function SimpleMapSelector({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              setSelectedLocation(location);
-                              setEditingLocation(location.id || null);
-                              setIsAddingLocation(true);
+                                  if (isExpanded && isEditing) {
+                                    // Close if already expanded and editing
+                                    setExpandedLocationId(null);
+                                    setEditingLocationData(null);
+                                  } else {
+                                    // Expand and load location data for editing
+                                    setExpandedLocationId(location.id || null);
+                                    setEditingLocationData({...location});
+                                  }
                             }}
                             className="h-8 w-8 p-0"
                           >
@@ -1408,7 +1448,6 @@ export default function SimpleMapSelector({
                         </div>
                       </div>
                       
-                      {/* Administrative details */}
                       {(location.state_region_name || location.township_name || location.village_name) && (
                         <div className="space-y-1 text-xs text-gray-500 mb-2">
                           {location.state_region_name && (
@@ -1435,7 +1474,191 @@ export default function SimpleMapSelector({
                     </div>
                   </div>
                 </div>
-              ))}
+                    
+                    {/* Expandable Edit Section */}
+                    {isExpanded && editingLocationData && (
+                      <div className="border-t bg-gray-50 p-4 space-y-4 animate-in slide-in-from-top duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Location Name */}
+                          <div className="md:col-span-2">
+                            <Label htmlFor={`edit-name-${location.id}`} className="text-xs">Location Name *</Label>
+                            <Input
+                              id={`edit-name-${location.id}`}
+                              value={editingLocationData.location_name || ''}
+                              onChange={(e) => setEditingLocationData(prev => prev ? {...prev, location_name: e.target.value} : null)}
+                              placeholder="Enter location name"
+                              className="text-sm"
+                            />
+                          </div>
+
+                          {/* Location Type */}
+                          <div className="md:col-span-2">
+                            <Label htmlFor={`edit-type-${location.id}`} className="text-xs">Location Type *</Label>
+                            <LocationTypeSelect
+                              value={editingLocationData.site_type || ''}
+                              onValueChange={(value) => setEditingLocationData(prev => prev ? {...prev, site_type: value} : null)}
+                              className="text-sm"
+                            />
+                          </div>
+
+                          {/* Coordinates */}
+                          <div>
+                            <Label htmlFor={`edit-lat-${location.id}`} className="text-xs">Latitude *</Label>
+                            <Input
+                              id={`edit-lat-${location.id}`}
+                              type="number"
+                              step="any"
+                              value={editingLocationData.latitude || ''}
+                              onChange={(e) => setEditingLocationData(prev => prev ? {...prev, latitude: parseFloat(e.target.value) || undefined} : null)}
+                              placeholder="e.g., 16.8661"
+                              className="text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`edit-lng-${location.id}`} className="text-xs">Longitude *</Label>
+                            <Input
+                              id={`edit-lng-${location.id}`}
+                              type="number"
+                              step="any"
+                              value={editingLocationData.longitude || ''}
+                              onChange={(e) => setEditingLocationData(prev => prev ? {...prev, longitude: parseFloat(e.target.value) || undefined} : null)}
+                              placeholder="e.g., 95.9560"
+                              className="text-sm"
+                            />
+                          </div>
+
+                          {/* Address Fields */}
+                          <div className="md:col-span-2">
+                            <Label htmlFor={`edit-addr1-${location.id}`} className="text-xs">Address Line 1</Label>
+                            <Input
+                              id={`edit-addr1-${location.id}`}
+                              value={editingLocationData.address_line_1 || ''}
+                              onChange={(e) => setEditingLocationData(prev => prev ? {...prev, address_line_1: e.target.value} : null)}
+                              placeholder="Street address, building name, etc."
+                              className="text-sm"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <Label htmlFor={`edit-addr2-${location.id}`} className="text-xs">Address Line 2</Label>
+                            <Input
+                              id={`edit-addr2-${location.id}`}
+                              value={editingLocationData.address_line_2 || ''}
+                              onChange={(e) => setEditingLocationData(prev => prev ? {...prev, address_line_2: e.target.value} : null)}
+                              placeholder="Apartment, suite, unit, etc."
+                              className="text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor={`edit-city-${location.id}`} className="text-xs">City</Label>
+                            <Input
+                              id={`edit-city-${location.id}`}
+                              value={editingLocationData.city || ''}
+                              onChange={(e) => setEditingLocationData(prev => prev ? {...prev, city: e.target.value} : null)}
+                              placeholder="City"
+                              className="text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`edit-state-${location.id}`} className="text-xs">State/Province</Label>
+                            <Input
+                              id={`edit-state-${location.id}`}
+                              value={editingLocationData.state_province || ''}
+                              onChange={(e) => setEditingLocationData(prev => prev ? {...prev, state_province: e.target.value} : null)}
+                              placeholder="State or Province"
+                              className="text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor={`edit-country-${location.id}`} className="text-xs">Country</Label>
+                            <Input
+                              id={`edit-country-${location.id}`}
+                              value={editingLocationData.country || ''}
+                              onChange={(e) => setEditingLocationData(prev => prev ? {...prev, country: e.target.value} : null)}
+                              placeholder="Country"
+                              className="text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`edit-postal-${location.id}`} className="text-xs">Postal Code</Label>
+                            <Input
+                              id={`edit-postal-${location.id}`}
+                              value={editingLocationData.postal_code || ''}
+                              onChange={(e) => setEditingLocationData(prev => prev ? {...prev, postal_code: e.target.value} : null)}
+                              placeholder="Postal/ZIP code"
+                              className="text-sm"
+                            />
+                          </div>
+
+                          {/* Description */}
+                          <div className="md:col-span-2">
+                            <Label htmlFor={`edit-desc-${location.id}`} className="text-xs">Description</Label>
+                            <Textarea
+                              id={`edit-desc-${location.id}`}
+                              value={editingLocationData.description || ''}
+                              onChange={(e) => setEditingLocationData(prev => prev ? {...prev, description: e.target.value} : null)}
+                              placeholder="Additional details about this location"
+                              className="text-sm h-20"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setExpandedLocationId(null);
+                              setEditingLocationData(null);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (!editingLocationData.location_name || !editingLocationData.latitude || !editingLocationData.longitude) {
+                                toast.error('Please fill in all required fields');
+                                return;
+                              }
+
+                              // Check for duplicate coordinates (excluding current location)
+                              const tolerance = 0.0001;
+                              const existingLocationWithSameCoords = locations.find(loc => 
+                                loc.id !== editingLocationData.id &&
+                                loc.latitude && loc.longitude &&
+                                Math.abs(loc.latitude - editingLocationData.latitude!) < tolerance &&
+                                Math.abs(loc.longitude - editingLocationData.longitude!) < tolerance
+                              );
+
+                              if (existingLocationWithSameCoords) {
+                                toast.error(`⚠️ These coordinates are too close to existing location "${existingLocationWithSameCoords.location_name}".`);
+                                return;
+                              }
+
+                              // Update the location
+                              const updatedLocations = locations.map(loc => 
+                                loc.id === editingLocationData.id ? editingLocationData : loc
+                              );
+                              
+                              onLocationsChange(updatedLocations);
+                              setExpandedLocationId(null);
+                              setEditingLocationData(null);
+                              toast.success('Location updated successfully');
+                            }}
+                            disabled={!editingLocationData.location_name || !editingLocationData.latitude || !editingLocationData.longitude}
+                          >
+                            Update Location
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

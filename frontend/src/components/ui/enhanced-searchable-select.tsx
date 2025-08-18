@@ -197,7 +197,7 @@ export function EnhancedSearchableSelect({
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                               {option.code}
                             </span>
-                            <span className="font-medium text-foreground">
+                            <span className="text-foreground">
                               {option.name.replace(new RegExp(`^${option.code}\\s*-?\\s*`), "")}
                             </span>
                           </div>

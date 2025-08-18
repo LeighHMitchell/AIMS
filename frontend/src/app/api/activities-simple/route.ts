@@ -45,11 +45,12 @@ export async function GET(request: NextRequest) {
       // ignore
     }
 
+    // Check if card view is requested (needs banner and icon)
+    const includeImages = searchParams.get('includeImages') === 'true';
+    
     // Use the simplest possible query without any joins
-    console.log('[AIMS-SIMPLE] Executing simple query without joins...');
-    const { data, error } = await supabase
-      .from('activities')
-      .select(`
+    console.log('[AIMS-SIMPLE] Executing simple query without joins...', includeImages ? 'including images for card view' : 'excluding images for performance');
+    const selectFields = `
         id,
         other_identifier,
         iati_identifier,
@@ -59,8 +60,6 @@ export async function GET(request: NextRequest) {
         activity_status,
         publication_status,
         submission_status,
-        banner,
-        icon,
         reporting_org_id,
         created_by_org_name,
         created_by_org_acronym,
@@ -78,6 +77,7 @@ export async function GET(request: NextRequest) {
         default_tied_status,
         default_currency,
         created_by,
+        ${includeImages ? 'banner, icon,' : ''}
         activity_sdg_mappings (
           id,
           sdg_goal,
@@ -85,7 +85,11 @@ export async function GET(request: NextRequest) {
           contribution_percent,
           notes
         )
-      `)
+      `;
+    
+    const { data, error } = await supabase
+      .from('activities')
+      .select(selectFields)
       .order('updated_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -98,21 +102,6 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[AIMS-SIMPLE] Fetched ${data?.length || 0} activities (page ${page})`);
-    
-    // Debug icon data
-    const activitiesWithIcons = data?.filter((activity: any) => activity.icon) || [];
-    if (activitiesWithIcons.length > 0) {
-      console.log(`[AIMS-SIMPLE] Found ${activitiesWithIcons.length} activities with icons:`);
-      activitiesWithIcons.forEach((activity: any) => {
-        console.log(`[AIMS-SIMPLE] Activity "${activity.title_narrative}" has icon:`, {
-          iconType: typeof activity.icon,
-          iconLength: activity.icon?.length,
-          iconPreview: activity.icon?.substring(0, 100) + "..."
-        });
-      });
-    } else {
-      console.log('[AIMS-SIMPLE] No activities found with icon data');
-    }
 
     // Fetch budget data and transaction summaries for each activity
     const activityIds = data?.map((a: any) => a.id) || [];

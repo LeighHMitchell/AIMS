@@ -233,7 +233,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
             <Button
               variant="secondary"
               size="sm"
-              className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm shadow-sm"
+              className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm shadow-sm focus:bg-blue-500 focus:text-white hover:bg-blue-50"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-3.5 w-3.5" />

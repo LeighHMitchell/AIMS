@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Search, Filter, Building2, Target, User, Grid3X3, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Filter, Building2, Target, User, Grid3X3, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,7 +14,7 @@ import { format } from 'date-fns'
 
 interface SearchResult {
   id: string
-  type: 'activity' | 'organization' | 'user' | 'sector' | 'tag'
+  type: 'activity' | 'organization' | 'user' | 'sector' | 'tag' | 'contact'
   title: string
   subtitle?: string
   metadata?: {
@@ -32,6 +32,14 @@ interface SearchResult {
     banner_url?: string
     activity_icon_url?: string
     activity_count?: number
+    // Contact specific metadata
+    activity_id?: string
+    activity_title?: string
+    position?: string
+    organisation?: string
+    email?: string
+    phone?: string
+    contact_type?: string
   }
 }
 
@@ -146,6 +154,7 @@ function SearchPageContent() {
       user: results.filter(r => r.type === 'user').length,
       sector: results.filter(r => r.type === 'sector').length,
       tag: results.filter(r => r.type === 'tag').length,
+      contact: results.filter(r => r.type === 'contact').length,
     }
     return counts
   }, [results])
@@ -167,6 +176,12 @@ function SearchPageContent() {
         break
       case 'tag':
         router.push(`/activities?tag=${encodeURIComponent(result.title)}`)
+        break
+      case 'contact':
+        // Navigate to the activity that contains this contact
+        if (result.metadata?.activity_id) {
+          router.push(`/activities/${result.metadata.activity_id}#contacts`)
+        }
         break
     }
   }, [router])
@@ -263,6 +278,10 @@ function SearchPageContent() {
         return <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
           <span className="text-purple-600 font-semibold text-lg">#</span>
         </div>
+      case 'contact':
+        return <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+          <UserCircle className="h-5 w-5 text-indigo-600" />
+        </div>
       default:
         return <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
           <span className="text-gray-600 font-semibold">?</span>
@@ -310,7 +329,7 @@ function SearchPageContent() {
         {/* Results */}
         {query && !error && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6 mb-6">
+            <TabsList className="grid w-full grid-cols-7 mb-6">
               <TabsTrigger value="all" className="text-sm">
                 All ({resultCounts.all})
               </TabsTrigger>
@@ -328,6 +347,9 @@ function SearchPageContent() {
               </TabsTrigger>
               <TabsTrigger value="tag" className="text-sm">
                 Tags ({resultCounts.tag})
+              </TabsTrigger>
+              <TabsTrigger value="contact" className="text-sm">
+                Contacts ({resultCounts.contact})
               </TabsTrigger>
             </TabsList>
 

@@ -87,11 +87,24 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   eslint: {
-    // Temporarily ignore ESLint during builds to allow deployment  
-    ignoreDuringBuilds: true,
+    // Enable ESLint for production builds
+    ignoreDuringBuilds: false,
   },
   images: {
-    domains: ['lhiayyjwkjkjkxvhcenw.supabase.co'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lhiayyjwkjkjkxvhcenw.supabase.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/**',
+      }
+    ],
   },
 }
 

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
+import { toast } from 'sonner';
 
 interface ActivityEditorFieldAutosaveProps {
   activityId: string;
@@ -69,6 +70,7 @@ export function ActivityEditorFieldAutosave({
         // New activity was created
         onActivityCreated?.(data);
       }
+      toast.success('Activity Status saved', { position: 'top-right' });
     }
   });
   

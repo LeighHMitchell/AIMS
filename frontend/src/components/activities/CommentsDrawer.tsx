@@ -106,7 +106,7 @@ export function CommentsDrawer({
 
   // Fetch comments when drawer opens or filters change
   useEffect(() => {
-    if (open && activityId) {
+    if (open && activityId && activityId !== '' && activityId !== 'new') {
       fetchComments();
       fetchUnreadCount();
     }
@@ -114,7 +114,7 @@ export function CommentsDrawer({
 
   // Auto-refresh every 30 seconds when drawer is open
   useEffect(() => {
-    if (!open) return;
+    if (!open || !activityId || activityId === '' || activityId === 'new') return;
     
     const interval = setInterval(() => {
       fetchComments();
@@ -125,7 +125,7 @@ export function CommentsDrawer({
   }, [open, activityId, searchTerm, filterType, activeTab, selectedSection]);
 
   const fetchComments = async () => {
-    if (!activityId) return;
+    if (!activityId || activityId === '' || activityId === 'new') return;
     
     setLoading(true);
     setError(null);
@@ -224,6 +224,8 @@ export function CommentsDrawer({
   };
 
   const fetchUnreadCount = async () => {
+    if (!activityId || activityId === '' || activityId === 'new') return;
+    
     try {
       const response = await fetch(`/api/activities/${activityId}/comments/unread-count`);
       if (response.ok) {

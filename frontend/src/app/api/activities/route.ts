@@ -128,6 +128,7 @@ export async function POST(request: Request) {
           other_identifier: body.partnerId || null,
           iati_identifier: body.iatiId,
           title_narrative: body.title,
+          acronym: body.acronym,
           description_narrative: body.description,
           created_by_org_name: body.created_by_org_name,
           created_by_org_acronym: body.created_by_org_acronym,
@@ -207,6 +208,7 @@ export async function POST(request: Request) {
           iatiId: updatedActivity.iati_identifier,
           iatiIdentifier: updatedActivity.iati_identifier,  // Add this for frontend compatibility
           title: updatedActivity.title_narrative,
+          acronym: updatedActivity.acronym,
           description: updatedActivity.description_narrative,
           created_by_org_name: updatedActivity.created_by_org_name,
           created_by_org_acronym: updatedActivity.created_by_org_acronym,
@@ -811,10 +813,12 @@ export async function POST(request: Request) {
       // Transform response to match API format
       const responseData = {
         ...updatedActivity,
+        uuid: updatedActivity.id,  // Use id as uuid for compatibility
         partnerId: updatedActivity.other_identifier,
         iatiId: updatedActivity.iati_identifier,
         iatiIdentifier: updatedActivity.iati_identifier,  // Add this for frontend compatibility
         title: updatedActivity.title_narrative,
+        acronym: updatedActivity.acronym,
         description: updatedActivity.description_narrative,
         created_by_org_name: updatedActivity.created_by_org_name,
         created_by_org_acronym: updatedActivity.created_by_org_acronym,
@@ -996,10 +1000,15 @@ export async function POST(request: Request) {
         }
       }
 
+      // Generate UUID for new activity
+      const activityUuid = uuidv4();
+      
       insertData = {
+        id: activityUuid,
         other_identifier: body.partnerId || null,
         iati_identifier: body.iatiId,
         title_narrative: body.title,
+        acronym: body.acronym,
         description_narrative: body.description,
         created_by_org_name: userOrgData.created_by_org_name,
         created_by_org_acronym: userOrgData.created_by_org_acronym,
@@ -1481,10 +1490,12 @@ export async function POST(request: Request) {
     // Transform response to match API format
     const responseData = {
       ...newActivity,
+      uuid: newActivity.id,  // Use id as uuid for compatibility
       partnerId: newActivity.other_identifier,
       iatiId: newActivity.iati_identifier,
       iatiIdentifier: newActivity.iati_identifier,  // Add this for frontend compatibility
       title: newActivity.title_narrative,
+      acronym: newActivity.acronym,
       description: newActivity.description_narrative,
       created_by_org_name: newActivity.created_by_org_name,
       created_by_org_acronym: newActivity.created_by_org_acronym,

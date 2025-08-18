@@ -73,6 +73,8 @@ export default function SDGAlignmentSectionSimplified({
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [hasUserEdited, setHasUserEdited] = useState(false);
 
   // Debounced save function
   const debouncedSave = async (updatedMappings: SDGMapping[]) => {
@@ -114,10 +116,11 @@ export default function SDGAlignmentSectionSimplified({
   // Update parent and trigger save when mappings change
   useEffect(() => {
     onUpdate(mappings);
-    if (mappings.length > 0) {
+    // Only save when user has made edits (not on initial load)
+    if (hasUserEdited && mappings.length > 0) {
       debouncedSave(mappings);
     }
-  }, [mappings, activityId]);
+  }, [mappings, activityId, hasUserEdited]);
 
   // Initialize selected goals from existing mappings
   useEffect(() => {
@@ -132,6 +135,7 @@ export default function SDGAlignmentSectionSimplified({
       initialExpanded[goalId] = hasTargets;
     });
     setExpandedGoals(initialExpanded);
+    setHasInitialized(true);
   }, [sdgMappings]);
 
   // Cleanup timeout on unmount
@@ -145,6 +149,8 @@ export default function SDGAlignmentSectionSimplified({
 
   const toggleGoal = (goalId: number) => {
     if (!canEdit) return;
+
+    setHasUserEdited(true);
 
     if (selectedGoals.includes(goalId)) {
       // Remove goal and all its mappings
@@ -165,6 +171,8 @@ export default function SDGAlignmentSectionSimplified({
   const addTargetMapping = (goalId: number, targetId: string) => {
     if (!canEdit) return;
 
+    setHasUserEdited(true);
+
     // Check if this target is already mapped
     const exists = mappings.find(m => m.sdgGoal === goalId && m.sdgTarget === targetId);
     if (exists) return;
@@ -182,6 +190,8 @@ export default function SDGAlignmentSectionSimplified({
 
   const removeTargetMapping = (goalId: number, targetId: string) => {
     if (!canEdit) return;
+    
+    setHasUserEdited(true);
     setMappings(mappings.filter(m => !(m.sdgGoal === goalId && m.sdgTarget === targetId)));
   };
 

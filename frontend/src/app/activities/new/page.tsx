@@ -23,6 +23,7 @@ import { LinkedActivityTitle } from "@/components/ui/linked-activity-title";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
 import { format } from "date-fns";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
@@ -94,50 +95,108 @@ import { IatiDocumentLink } from "@/lib/iatiDocumentLink";
 
 // Separate component for General section to properly use hooks
 function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState }: any) {
+  const hasShownInitialToast = useRef(false);
+
   // Field-level autosave hooks with context-aware success callbacks
-  const descriptionAutosave = useDescriptionAutosave(general.id, user?.id);
-  const collaborationTypeAutosave = useFieldAutosave('collaborationType', {
-    activityId: general.id,
+  // Pass 'NEW' for new activities to trigger creation on first save
+  const effectiveActivityId = general.id || 'NEW';
+  const descriptionAutosave = useFieldAutosave('description', { 
+    activityId: effectiveActivityId,
     userId: user?.id,
-    onSuccess: () => {
+    debounceMs: 3000, // Longer debounce for rich text
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+      toast.success('Description saved', { position: 'top-right' });
+    }
+  });
+  const collaborationTypeAutosave = useFieldAutosave('collaborationType', {
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    additionalData: {
+      title: general.title || 'New Activity'
+    },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
       toast.success('Collaboration Type saved', { position: 'top-right' });
     },
   });
-  const publicationStatusAutosave = useFieldAutosave('publicationStatus', { activityId: general.id, userId: user?.id });
-  const plannedStartDateAutosave = useFieldAutosave('plannedStartDate', {
-    activityId: general.id,
+  const publicationStatusAutosave = useFieldAutosave('publicationStatus', { 
+    activityId: effectiveActivityId, 
     userId: user?.id,
-    onSuccess: () => {
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+    }
+  });
+  const plannedStartDateAutosave = useFieldAutosave('plannedStartDate', {
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
       toast.success('Planned Start Date saved', { position: 'top-right' });
     },
   });
   const plannedEndDateAutosave = useFieldAutosave('plannedEndDate', {
-    activityId: general.id,
+    activityId: effectiveActivityId,
     userId: user?.id,
-    onSuccess: () => {
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
       toast.success('Planned End Date saved', { position: 'top-right' });
     },
   });
   const actualStartDateAutosave = useFieldAutosave('actualStartDate', {
-    activityId: general.id,
+    activityId: effectiveActivityId,
     userId: user?.id,
-    onSuccess: () => {
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
       toast.success('Actual Start Date saved', { position: 'top-right' });
     },
   });
   const actualEndDateAutosave = useFieldAutosave('actualEndDate', {
-    activityId: general.id,
+    activityId: effectiveActivityId,
     userId: user?.id,
-    onSuccess: () => {
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
       toast.success('Actual End Date saved', { position: 'top-right' });
     },
   });
   
   // Context-aware autosave hooks for Activity ID and IATI Identifier
   const activityIdAutosave = useFieldAutosave('otherIdentifier', { 
-    activityId: general.id, 
+    activityId: effectiveActivityId, 
     userId: user?.id,
+    additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data: any) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
       if (general.id) {
         toast.success('Activity ID saved successfully', { position: 'top-right' });
       } else {
@@ -147,9 +206,14 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   });
   
   const iatiIdentifierAutosave = useFieldAutosave('iatiIdentifier', { 
-    activityId: general.id, 
+    activityId: effectiveActivityId, 
     userId: user?.id,
+    additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data: any) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
       if (general.id) {
         toast.success('IATI Identifier saved successfully', { position: 'top-right' });
       } else {
@@ -160,21 +224,42 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
   // Banner and Icon autosave hooks
   const bannerAutosave = useFieldAutosave('banner', {
-    activityId: general.id,
+    activityId: effectiveActivityId,
     userId: user?.id,
-    onSuccess: () => toast.success('Activity Banner saved', { position: 'top-right' }),
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+      toast.success('Activity Banner saved', { position: 'top-right' });
+    },
   });
   const iconAutosave = useFieldAutosave('icon', {
-    activityId: general.id,
+    activityId: effectiveActivityId,
     userId: user?.id,
-    onSuccess: () => toast.success('Activity Icon saved', { position: 'top-right' }),
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+      toast.success('Activity Icon saved', { position: 'top-right' });
+    },
   });
 
   // UUID autosave hook (read-only field)
   const uuidAutosave = useFieldAutosave('uuid', {
-    activityId: general.id,
+    activityId: effectiveActivityId,
     userId: user?.id,
-    onSuccess: () => toast.success('UUID saved', { position: 'top-right' }),
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+      toast.success('UUID saved', { position: 'top-right' });
+    },
   });
 
   // Helper function to determine if fields should be locked
@@ -201,20 +286,44 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
   // Field-level autosave hooks with context-aware success callbacks
   const titleAutosave = useFieldAutosave('title', { 
-    activityId: general.id,
+    activityId: effectiveActivityId,
     userId: user?.id,
-    immediate: true,
+    immediate: false, // Changed to false to enable debouncing for new activities
+    debounceMs: 1000, // 1 second debounce for faster feedback
     additionalData: {
-      banner: general.banner || null,
-      icon: general.icon || null,
+      // Remove heavy image data from initial activity creation
       partnerId: general.otherIdentifier || null,
       iatiId: general.iatiIdentifier || null
     },
     onSuccess: (data) => {
       if (data.id && !general.id) {
         // New activity was created
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
         setShowActivityCreatedAlert(true);
+        
+        // Upload images separately after activity creation to improve performance
+        setTimeout(() => {
+          // Check image sizes before uploading (base64 strings ~1.37x larger than original file)
+          const maxImageSize = 2 * 1024 * 1024; // 2MB limit for base64 strings (~1.5MB actual file)
+          
+          if (general.banner) {
+            if (general.banner.length > maxImageSize) {
+              toast.error('Banner image is too large. Please use an image smaller than 1.5MB.');
+            } else {
+              // Stagger image uploads to prevent simultaneous heavy requests
+              setTimeout(() => bannerAutosave.triggerFieldSave(general.banner), 200);
+            }
+          }
+          if (general.icon) {
+            if (general.icon.length > maxImageSize) {
+              toast.error('Icon image is too large. Please use an image smaller than 1.5MB.');
+            } else {
+              // Upload icon after banner to prevent timeouts
+              setTimeout(() => iconAutosave.triggerFieldSave(general.icon), 500);
+            }
+          }
+        }, 100); // Small delay to ensure activity ID is set
+        
         toast.success(
           <div className="flex items-center gap-2">
             <PartyPopper className="h-4 w-4" />
@@ -225,9 +334,70 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             position: 'top-right'
           }
         );
+      } else {
+        // Existing activity title was updated
+        toast.success('Activity Title saved', { position: 'top-right' });
       }
+    },
+    onError: (error) => {
+      console.error('[Activity Creation] Failed to create activity:', error);
+      toast.error(
+        <div className="flex items-center gap-2">
+          <XCircle className="h-4 w-4" />
+          <span>Failed to create activity. Please try again.</span>
+        </div>,
+        {
+          duration: 5000,
+          position: 'top-right'
+        }
+      );
     }
   });
+
+  const acronymAutosave = useFieldAutosave('acronym', {
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    immediate: false,
+    debounceMs: 1000,
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+      toast.success('Activity Acronym saved', { position: 'top-right' });
+    }
+  });
+
+  // Show orange toast when creating activity
+  React.useEffect(() => {
+    const isNewActivity = !general.id;
+    const isSaving = titleAutosave.state.isSaving;
+    
+    if (isNewActivity && isSaving && general.title) {
+      toast(
+        <div className="flex items-center gap-2">
+          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>Creating activity... Please wait.</span>
+        </div>,
+        {
+          id: 'creating-activity',
+          duration: Infinity, // Keep showing until dismissed
+          position: 'top-right',
+          style: {
+            background: '#fed7aa', // Orange background
+            color: '#9a3412', // Dark orange text
+            border: '1px solid #fdba74' // Orange border
+          }
+        }
+      );
+    } else if (general.id || titleAutosave.state.error) {
+      // Dismiss the toast when activity is created or if there's an error
+      toast.dismiss('creating-activity');
+    }
+  }, [titleAutosave.state.isSaving, titleAutosave.state.error, general.id, general.title]);
 
   // Expose title autosave state up
   React.useEffect(() => {
@@ -235,6 +405,27 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       onTitleAutosaveState(titleAutosave.state, general.id);
     }
   }, [titleAutosave.state, general.id]);
+
+  // Show initial toast when component mounts if no title exists
+  useEffect(() => {
+    if (!general.title?.trim() && !hasShownInitialToast.current) {
+      toast.info("Start by entering an Activity Title to unlock all form fields!", {
+        position: 'top-right',
+        duration: 5000,
+      });
+      hasShownInitialToast.current = true;
+    }
+  }, [general.title]);
+
+  // Handler for when users click on disabled fields
+  const handleDisabledFieldClick = (fieldName: string) => {
+    if (!general.title?.trim()) {
+      toast.warning(`Enter an Activity Title first to unlock the ${fieldName} field`, {
+        position: 'top-right',
+        duration: 3000,
+      });
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
@@ -244,21 +435,26 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={bannerAutosave.state.isSaving}
             isSaved={!!general.banner}
-            className="text-gray-700 mb-2"
+            className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'} mb-2`}
           >
             <div className="flex items-center gap-2">
               Activity Banner
               <HelpTextTooltip>
-                Upload a banner image (1200×300 pixels) to visually represent the activity. This image will appear on the activity profile page, activity cards, and other locations throughout the application.
+                Upload a banner image (1200×300 pixels) to visually represent the activity. This image will be displayed on the activity profile page, activity cards, and other locations across the application.
               </HelpTextTooltip>
             </div>
           </LabelSaveIndicator>
-          <div className="flex-1">
+          <div 
+            className={`flex-1 ${!general.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={() => !general.title?.trim() && handleDisabledFieldClick('Activity Banner')}
+          >
             <BannerUpload
               currentBanner={general.banner}
               onBannerChange={banner => {
-                setGeneral((g: any) => ({ ...g, banner }));
-                if (general.id) bannerAutosave.triggerFieldSave(banner);
+                if (general.title?.trim()) {
+                  setGeneral((g: any) => ({ ...g, banner }));
+                  if (general.id) bannerAutosave.triggerFieldSave(banner);
+                }
               }}
               activityId={general.id || "new"}
             />
@@ -271,21 +467,26 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={iconAutosave.state.isSaving}
             isSaved={!!general.icon}
-            className="text-gray-700 mb-2"
+            className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'} mb-2`}
           >
             <div className="flex items-center gap-2">
               Activity Icon/Logo
               <HelpTextTooltip>
-                Upload a square image (256×256 pixels) to serve as the activity's icon or logo. It will be displayed on the activity profile page, activity cards, tables, and summaries across the application.
+                Upload a square image (256×256 pixels) to represent the activity's icon or logo. This image will be displayed on the activity profile page, activity cards, and summaries across the application.
               </HelpTextTooltip>
             </div>
           </LabelSaveIndicator>
-          <div className="flex-1">
+          <div 
+            className={`flex-1 ${!general.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={() => !general.title?.trim() && handleDisabledFieldClick('Activity Icon/Logo')}
+          >
             <IconUpload
               currentIcon={general.icon}
               onIconChange={icon => {
-                setGeneral((g: any) => ({ ...g, icon }));
-                if (general.id) iconAutosave.triggerFieldSave(icon);
+                if (general.title?.trim()) {
+                  setGeneral((g: any) => ({ ...g, icon }));
+                  if (general.id) iconAutosave.triggerFieldSave(icon);
+                }
               }}
               activityId={general.id || "new"}
             />
@@ -302,7 +503,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={activityIdAutosave.state.isSaving}
             isSaved={!!general.otherIdentifier?.trim()}
-            className="text-gray-700"
+            className={!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}
           >
             <div className="flex items-center gap-2">
               Activity ID
@@ -317,10 +518,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               type="text"
               value={general.otherIdentifier || ''}
               onChange={(e) => {
-                setGeneral((g: any) => ({ ...g, otherIdentifier: e.target.value }));
+                if (general.title?.trim()) {
+                  setGeneral((g: any) => ({ ...g, otherIdentifier: e.target.value }));
+                }
               }}
               onBlur={(e) => {
-                if (e.target.value.trim()) {
+                if (e.target.value.trim() && general.title?.trim()) {
                   if (general.id) {
                     activityIdAutosave.triggerFieldSave(e.target.value);
                   } else {
@@ -328,7 +531,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   }
                 }
               }}
+              onClick={() => handleDisabledFieldClick('Activity ID')}
               placeholder="Enter your organization's activity ID"
+              disabled={!general.title?.trim()}
+              className={!general.title?.trim() ? 'bg-gray-50' : ''}
             />
             {general.otherIdentifier && (
               <button
@@ -346,12 +552,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={iatiIdentifierAutosave.state.isSaving}
             isSaved={!!general.iatiIdentifier?.trim()}
-            className="text-gray-700"
+            className={!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}
           >
             <div className="flex items-center gap-2">
               IATI Identifier
               <HelpTextTooltip>
-                A globally unique identifier that combines the reporting organisation's registered IATI prefix and the activity ID. Enables consistent linking and sharing of data in the IATI Registry.
+                This field is used to link activities reported in the application with those in the IATI Registry. It allows users to match locally reported activities with existing entries and, if desired, to keep them synchronised with the IATI Registry.
               </HelpTextTooltip>
             </div>
           </LabelSaveIndicator>
@@ -361,10 +567,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               type="text"
               value={general.iatiIdentifier || ''}
               onChange={(e) => {
-                setGeneral((g: any) => ({ ...g, iatiIdentifier: e.target.value }));
+                if (general.title?.trim()) {
+                  setGeneral((g: any) => ({ ...g, iatiIdentifier: e.target.value }));
+                }
               }}
               onBlur={(e) => {
-                if (e.target.value.trim()) {
+                if (e.target.value.trim() && general.title?.trim()) {
                   if (general.id) {
                     iatiIdentifierAutosave.triggerFieldSave(e.target.value);
                   } else {
@@ -372,7 +580,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   }
                 }
               }}
+              onClick={() => handleDisabledFieldClick('IATI Identifier')}
               placeholder="Enter IATI identifier"
+              disabled={!general.title?.trim()}
+              className={!general.title?.trim() ? 'bg-gray-50' : ''}
             />
             {general.iatiIdentifier && (
               <button
@@ -397,7 +608,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 Universally Unique Identifier
               </span>
               <HelpTextTooltip>
-                This field is auto-generated and locked. Every activity has a unique identifier (UUID) assigned automatically by the system. It cannot be edited to ensure data consistency across systems and during IATI exports.
+                This field is auto-generated and locked. Every activity has a Universally Unique Identifier (UUID) that is assigned automatically by the system. It cannot be edited to ensure consistency across the application.
               </HelpTextTooltip>
             </div>
           </LabelSaveIndicator>
@@ -424,34 +635,74 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         </div>
       </div>
 
-      {/* Field-level Autosave for Title */}
-      <div className="space-y-2">
-        <LabelSaveIndicator
-          isSaving={titleAutosave.state.isSaving}
-          isSaved={!!general.title?.trim()}
-          className="text-gray-700"
-        >
-                      <div className="flex items-center gap-2">
+      {/* Field-level Autosave for Title and Acronym */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Activity Title - takes up 3 columns */}
+        <div className="lg:col-span-3 space-y-2">
+          <LabelSaveIndicator
+            isSaving={titleAutosave.state.isSaving}
+            isSaved={!titleAutosave.state.isSaving && !titleAutosave.state.hasUnsavedChanges && titleAutosave.state.lastSaved !== null}
+            className="text-gray-700"
+          >
+            <div className="flex items-center gap-2">
               Activity Title
               <HelpTextTooltip>
                 A short, human-readable title that provides a meaningful summary of the activity. It should be clear, descriptive, and consistent with the reporting organisation's titles used in published projects.
               </HelpTextTooltip>
             </div>
-        </LabelSaveIndicator>
-        <div>
-          <Input
-            id="title"
-            value={general.title || ''}
-            onChange={(e) => {
-              setGeneral((g: any) => ({ ...g, title: e.target.value }));
-              titleAutosave.triggerFieldSave(e.target.value);
-            }}
-            placeholder="Enter activity title"
-            className="w-full"
-          />
-          {titleAutosave.state.error && (
-            <p className="text-xs text-red-600 mt-1">{titleAutosave.state.error.toString()}</p>
-          )}
+          </LabelSaveIndicator>
+          <div>
+            <Input
+              id="title"
+              value={general.title || ''}
+              onChange={(e) => {
+                setGeneral((g: any) => ({ ...g, title: e.target.value }));
+                titleAutosave.triggerFieldSave(e.target.value);
+              }}
+              placeholder="Enter activity title"
+              className="w-full"
+            />
+            {titleAutosave.state.error && (
+              <p className="text-xs text-red-600 mt-1">{titleAutosave.state.error.toString()}</p>
+            )}
+          </div>
+        </div>
+        
+        {/* Activity Acronym - takes up 1 column */}
+        <div className="space-y-2">
+          <LabelSaveIndicator
+            isSaving={acronymAutosave.state.isSaving}
+            isSaved={!!general.acronym?.trim()}
+            className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}`}
+          >
+            <div className="flex items-center gap-2">
+              Activity Acronym
+              <HelpTextTooltip>
+                This field is used to record a short acronym or abbreviation for the activity. It helps users quickly identify and reference the activity across the application, especially in lists, cards, and summaries.
+              </HelpTextTooltip>
+            </div>
+          </LabelSaveIndicator>
+          <div 
+            className={`${!general.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={() => !general.title?.trim() && handleDisabledFieldClick('Activity Acronym')}
+          >
+            <Input
+              id="acronym"
+              value={general.acronym || ''}
+              onChange={(e) => {
+                if (general.title?.trim()) {
+                  setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
+                  if (general.id) acronymAutosave.triggerFieldSave(e.target.value);
+                }
+              }}
+              placeholder="Enter acronym"
+              className="w-full"
+              disabled={!general.title?.trim()}
+            />
+            {acronymAutosave.state.error && (
+              <p className="text-xs text-red-600 mt-1">{acronymAutosave.state.error.toString()}</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -604,7 +855,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-gray-900">Activity Dates</h3>
           <HelpTextTooltip>
-            Actual Start and End Dates become available based on the activity's status. The Actual Start Date is enabled once the status is set to Implementation or later. The Actual End Date becomes available when the status reaches Completion, Finalisation, or a subsequent phase.
+            The Actual Start Date field becomes available once the activity status is set to Implementation or beyond. The Actual End Date field becomes available once the status is set to Completion, Post-completion, or if the activity is marked as Cancelled or Suspended.
           </HelpTextTooltip>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -633,18 +884,19 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <input
-              type="date"
-              id="plannedStartDate"
-              value={general.plannedStartDate || ''}
-              onChange={(e) => {
+            <EnhancedDatePicker
+              value={general.plannedStartDate ? new Date(general.plannedStartDate + 'T00:00:00') : undefined}
+              onChange={(date) => {
                 if (!fieldLockStatus.isLocked) {
-                  setGeneral((g: any) => ({ ...g, plannedStartDate: e.target.value }));
-                  plannedStartDateAutosave.triggerFieldSave(e.target.value);
+                  const dateString = date ? date.toISOString().split('T')[0] : '';
+                  setGeneral((g: any) => ({ ...g, plannedStartDate: dateString }));
+                  plannedStartDateAutosave.triggerFieldSave(dateString);
                 }
               }}
+              placeholder="dd/mm/yyyy"
+              format="dd/mm/yyyy"
               disabled={fieldLockStatus.isLocked}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${fieldLockStatus.isLocked ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}`}
+              className={fieldLockStatus.isLocked ? "opacity-50" : ""}
             />
             {plannedStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedStartDateAutosave.state.error.message}</p>}
           </div>
@@ -673,18 +925,19 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <input
-              type="date"
-              id="plannedEndDate"
-              value={general.plannedEndDate || ''}
-              onChange={(e) => {
+            <EnhancedDatePicker
+              value={general.plannedEndDate ? new Date(general.plannedEndDate + 'T00:00:00') : undefined}
+              onChange={(date) => {
                 if (!fieldLockStatus.isLocked) {
-                  setGeneral((g: any) => ({ ...g, plannedEndDate: e.target.value }));
-                  plannedEndDateAutosave.triggerFieldSave(e.target.value);
+                  const dateString = date ? date.toISOString().split('T')[0] : '';
+                  setGeneral((g: any) => ({ ...g, plannedEndDate: dateString }));
+                  plannedEndDateAutosave.triggerFieldSave(dateString);
                 }
               }}
+              placeholder="dd/mm/yyyy"
+              format="dd/mm/yyyy"
               disabled={fieldLockStatus.isLocked}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${fieldLockStatus.isLocked ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}`}
+              className={fieldLockStatus.isLocked ? "opacity-50" : ""}
             />
             {plannedEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedEndDateAutosave.state.error.message}</p>}
           </div>
@@ -713,18 +966,19 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <input
-              type="date"
-              id="actualStartDate"
-              value={general.actualStartDate || ''}
-              onChange={(e) => {
+            <EnhancedDatePicker
+              value={general.actualStartDate ? new Date(general.actualStartDate + 'T00:00:00') : undefined}
+              onChange={(date) => {
                 if (!fieldLockStatus.isLocked && getDateFieldStatus().actualStartDate) {
-                  setGeneral((g: any) => ({ ...g, actualStartDate: e.target.value }));
-                  actualStartDateAutosave.triggerFieldSave(e.target.value);
+                  const dateString = date ? date.toISOString().split('T')[0] : '';
+                  setGeneral((g: any) => ({ ...g, actualStartDate: dateString }));
+                  actualStartDateAutosave.triggerFieldSave(dateString);
                 }
               }}
+              placeholder="dd/mm/yyyy"
+              format="dd/mm/yyyy"
               disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${(fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate) ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}`}
+              className={(fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate) ? "opacity-50" : ""}
             />
             {actualStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualStartDateAutosave.state.error.message}</p>}
           </div>
@@ -753,18 +1007,19 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <input
-              type="date"
-              id="actualEndDate"
-              value={general.actualEndDate || ''}
-              onChange={(e) => {
+            <EnhancedDatePicker
+              value={general.actualEndDate ? new Date(general.actualEndDate + 'T00:00:00') : undefined}
+              onChange={(date) => {
                 if (!fieldLockStatus.isLocked && getDateFieldStatus().actualEndDate) {
-                  setGeneral((g: any) => ({ ...g, actualEndDate: e.target.value }));
-                  actualEndDateAutosave.triggerFieldSave(e.target.value);
+                  const dateString = date ? date.toISOString().split('T')[0] : '';
+                  setGeneral((g: any) => ({ ...g, actualEndDate: dateString }));
+                  actualEndDateAutosave.triggerFieldSave(dateString);
                 }
               }}
+              placeholder="dd/mm/yyyy"
+              format="dd/mm/yyyy"
               disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${(fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate) ? "bg-gray-100 cursor-not-allowed opacity-50" : ""}`}
+              className={(fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate) ? "opacity-50" : ""}
             />
             {actualEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualEndDateAutosave.state.error.message}</p>}
           </div>
@@ -774,7 +1029,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount }: any) {
   switch (section) {
     case "metadata":
       return <MetadataTab activityId={general.id} />;
@@ -813,7 +1068,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         <div className="w-full">
           <h3 className="text-xl font-semibold text-gray-900">Sectors</h3>
           <p className="text-sm text-gray-600 mt-1">
-            Assign OECD DAC sector codes and allocate percentages for this activity.
+            Assign sectors to this activity and allocate percentage shares to show how the budget is distributed.
           </p>
           <div className="mt-6">
             <ImprovedSectorAllocationForm
@@ -872,6 +1127,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         activityId={general.id}
         canEdit={permissions?.canEditActivity ?? true}
         onSubnationalDataChange={setSubnationalBreakdowns}
+        subnationalBreakdowns={subnationalBreakdowns}
         activityTitle={general.title}
         activitySector={general.primarySector}
       />;
@@ -1010,7 +1266,7 @@ function NewActivityPageContent() {
     created_by_org_name: "",
     created_by_org_acronym: "",
     collaborationType: "",
-    activityStatus: "1",
+    activityStatus: "",
     defaultAidType: "",
     defaultFinanceType: "",
     defaultCurrency: "",
@@ -1213,6 +1469,13 @@ function NewActivityPageContent() {
   const [showActivityCreatedAlert, setShowActivityCreatedAlert] = useState(false);
   const [titleAutosaveState, setTitleAutosaveState] = useState<{ isSaving: boolean; hasUnsavedChanges: boolean; lastSaved: Date | null; error: any }>({ isSaving: false, hasUnsavedChanges: false, lastSaved: null, error: null });
   const [activityId, setActivityId] = useState(general.id);
+  
+  // Update activityId state when general.id changes
+  useEffect(() => {
+    if (general.id && general.id !== activityId) {
+      setActivityId(general.id);
+    }
+  }, [general.id, activityId]);
   // Add state to track budgets and budgetNotProvided for Budgets tab completion
   const [budgets, setBudgets] = useState<any[]>([]);
   const [budgetNotProvided, setBudgetNotProvided] = useState(false);
@@ -1394,7 +1657,7 @@ function NewActivityPageContent() {
             updatedAt: data.updatedAt || "",
             iatiIdentifier: data.iatiIdentifier || "",
             otherIdentifier: data.partnerId || data.otherIdentifier || "",
-            uuid: data.uuid || "",
+            uuid: data.id || "",
             autoSync: data.autoSync || false,
             lastSyncTime: data.lastSyncTime || "",
             syncStatus: data.syncStatus || "not_synced",
@@ -1519,7 +1782,7 @@ function NewActivityPageContent() {
             ...prev,
             created_by_org_name: user?.organisation || user?.organization?.name || "",
             createdByOrg: user?.organizationId || "",
-            uuid: generateUUID()
+            uuid: ""
           }));
         }
       } catch (error) {
@@ -1591,10 +1854,12 @@ function NewActivityPageContent() {
   const canEdit = general.submissionStatus === 'draft' || general.submissionStatus === 'rejected' || user?.role === 'super_user';
   const canSubmit = user?.role === 'gov_partner_tier_2' || user?.role === 'dev_partner_tier_2';
   const canValidate = user?.role === 'gov_partner_tier_1' || user?.role === 'super_user';
-  const canPublish = (user?.role === 'gov_partner_tier_1' || user?.role === 'super_user') && 
-                     (general.submissionStatus === 'validated' || user?.role === 'super_user') &&
-                     general.id && general.title?.trim() && general.description?.trim() && 
-                     general.activityStatus && general.plannedStartDate && general.plannedEndDate;
+  // Super users can always see the publish toggle
+  const canPublish = user?.role === 'super_user' ? true :
+                     ((user?.role === 'gov_partner_tier_1') && 
+                      (general.submissionStatus === 'validated') &&
+                      general.id && general.title?.trim() && general.description?.trim() && 
+                      general.activityStatus && general.plannedStartDate && general.plannedEndDate);
 
   // 🚀 FIELD-LEVEL AUTOSAVE SYSTEM - saves individual fields immediately
   // Simplified autosave state for field-level autosave system
@@ -1731,6 +1996,9 @@ function NewActivityPageContent() {
     // Focal Points tab: green check if at least one focal point is assigned
     const focalPointsCompletion = getTabCompletionStatus('focal_points', focalPoints);
     
+    // Aid Effectiveness tab: check if all required fields are completed
+    const aidEffectivenessCompletion = getTabCompletionStatus('aid_effectiveness', general);
+    
     // TEMPORARY: Force completion for testing - remove this later
     // if (participatingOrgsCount === 0) {
     //   console.log('[TabCompletion] TESTING: Forcing organizations completion to true');
@@ -1809,9 +2077,13 @@ function NewActivityPageContent() {
         isComplete: focalPointsCompletion.isComplete,
         isInProgress: focalPointsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
-      sdg: { isComplete: sdgComplete, isInProgress: false }
+      sdg: { isComplete: sdgComplete, isInProgress: false },
+      aid_effectiveness: aidEffectivenessCompletion ? {
+        isComplete: aidEffectivenessCompletion.isComplete,
+        isInProgress: aidEffectivenessCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, contributorsCount, linkedActivitiesCount, resultsCount, documents, focalPoints]);
+  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, contributorsCount, linkedActivitiesCount, resultsCount, documents, governmentInputs, focalPoints]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -2189,7 +2461,7 @@ function NewActivityPageContent() {
       sections: [
         { id: "documents", label: "Documents & Images" },
         ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
-        { id: "aid_effectiveness", label: "Aid Effectiveness", optional: true }
+        { id: "aid_effectiveness", label: "Aid Effectiveness" }
       ]
     }
   ];
@@ -2312,44 +2584,61 @@ function NewActivityPageContent() {
             <div className="flex items-center justify-end mb-6">
               <div className="flex items-center gap-6">
                 {/* Publish Toggle */}
-                {(canPublish || !isEditing) && (
-                  <div className="flex items-center gap-4">
-                    <span className="text-base font-semibold text-gray-700">Unpublished</span>
-                    <Switch
-                      checked={general.publicationStatus === 'published'}
-                      onCheckedChange={async (checked) => {
-                        if (checked) {
-                          // Check if we have the required fields for publishing
-                          if (!general.title?.trim() || !general.description?.trim() || !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate) {
-                            toast.error('Please fill in all required fields: Title, Description, Status, Planned Start Date, and Planned End Date');
-                            return;
-                          }
-                          saveActivity({ publish: true });
-                        } else {
-                          // Unpublish the activity
-                          console.log('[AIMS] Attempting to unpublish activity');
-                          const originalStatus = general.publicationStatus;
-                          
-                          // Optimistically update the UI
-                          setGeneral(prev => ({ ...prev, publicationStatus: 'draft' }));
-                          
-                          try {
-                            await saveActivity({ publish: false });
-                            console.log('[AIMS] Unpublish successful');
-                          } catch (error) {
-                            console.error('[AIMS] Unpublish failed, reverting state:', error);
-                            // Revert the optimistic update on failure
-                            setGeneral(prev => ({ ...prev, publicationStatus: originalStatus }));
-                            toast.error('Failed to unpublish activity. Please try again.');
-                          }
-                        }
-                      }}
-                      disabled={!general.title?.trim() || submitting || publishing}
-                      className="data-[state=checked]:bg-green-600 scale-125"
-                    />
-                    <span className="text-base font-semibold text-gray-700">Published</span>
-                  </div>
-                )}
+                                 {(canPublish || !isEditing) && (
+                   <div className="flex items-center gap-4">
+                     <span className="text-base font-semibold text-gray-700">Unpublished</span>
+                     <TooltipProvider>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <div>
+                             <Switch
+                               checked={general.publicationStatus === 'published'}
+                               onCheckedChange={async (checked) => {
+                                 if (checked) {
+                                   // Check if we have the required fields for publishing
+                                   if (!general.title?.trim() || !general.description?.trim() || !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate) {
+                                     toast.error('Please fill in all required fields: Title, Description, Status, Planned Start Date, and Planned End Date');
+                                     return;
+                                   }
+                                   saveActivity({ publish: true });
+                                 } else {
+                                   // Unpublish the activity
+                                   console.log('[AIMS] Attempting to unpublish activity');
+                                   const originalStatus = general.publicationStatus;
+                                   
+                                   // Optimistically update the UI
+                                   setGeneral(prev => ({ ...prev, publicationStatus: 'draft' }));
+                                   
+                                   try {
+                                     await saveActivity({ publish: false });
+                                     console.log('[AIMS] Unpublish successful');
+                                   } catch (error) {
+                                     console.error('[AIMS] Unpublish failed, reverting state:', error);
+                                     // Revert the optimistic update on failure
+                                     setGeneral(prev => ({ ...prev, publicationStatus: originalStatus }));
+                                     toast.error('Failed to unpublish activity. Please try again.');
+                                   }
+                                 }
+                               }}
+                               disabled={
+                                 // Disable only when minimum required fields are missing
+                                 (!general.title?.trim() || !general.description?.trim() || 
+                                  !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate)
+                               }
+                               className="data-[state=checked]:bg-green-600 scale-125"
+                             />
+                           </div>
+                         </TooltipTrigger>
+                         <TooltipContent className="max-w-sm">
+                           <p className="text-sm">
+                             Minimum required for publishing: Activity Title, Description, Activity Status, Planned Start Date, and Planned End Date. Complete these basic fields to enable the publish option.
+                           </p>
+                         </TooltipContent>
+                       </Tooltip>
+                     </TooltipProvider>
+                     <span className="text-base font-semibold text-gray-700">Published</span>
+                   </div>
+                 )}
               </div>
             </div>
             
@@ -2407,7 +2696,12 @@ function NewActivityPageContent() {
           
           <div className="px-0 pr-6 md:pr-8 pb-32">
             <section>
-              <h2 className="text-2xl font-semibold mb-6">{getSectionLabel(activeSection)}</h2>
+              <div className="flex items-center gap-3 mb-6">
+                <h2 className="text-2xl font-semibold">{getSectionLabel(activeSection)}</h2>
+                <HelpTextTooltip content="Minimum required for publishing: Activity Title, Description, Activity Status, Planned Start Date, and Planned End Date. Complete these basic fields to enable the publish option.">
+                  <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+                </HelpTextTooltip>
+              </div>
               {tabLoading ? (
                 getTabSkeleton(activeSection)
               ) : (
@@ -2473,10 +2767,12 @@ function NewActivityPageContent() {
                     focalPoints={focalPoints}
                     setFocalPoints={setFocalPoints}
                     setIatiSyncState={setIatiSyncState}
+                    subnationalBreakdowns={subnationalBreakdowns}
                     setSubnationalBreakdowns={setSubnationalBreakdowns}
                     setParticipatingOrgsCount={setParticipatingOrgsCount}
                     setContributorsCount={setContributorsCount}
                     setLinkedActivitiesCount={setLinkedActivitiesCount}
+                    setResultsCount={setResultsCount}
                   />
                 </div>
               )}
@@ -2529,25 +2825,20 @@ function NewActivityPageContent() {
                 )}
               </div>
 
-              {/* Center: Saved Status */}
-              <div className="flex-1 text-center">
-                {(!activityId && titleAutosaveState.isSaving) ? (
-                  <span className="text-orange-600 font-medium">Creating activity...</span>
-                ) : titleAutosaveState.isSaving ? (
-                  <span className="text-orange-600 font-medium">Saving...</span>
-                ) : (!titleAutosaveState.isSaving && !titleAutosaveState.hasUnsavedChanges && titleAutosaveState.lastSaved) ? (
-                  <span className="text-green-700 font-medium">Saved</span>
-                ) : null}
-              </div>
+              {/* Center: Empty space for cleaner footer */}
+              <div className="flex-1"></div>
 
               {/* Right side: Comments + Back + Next Navigation Buttons */}
               <div className="flex items-center gap-3">
                 {/* Comments Button */}
-                {isEditing && general.id && (
+                {general.id ? (
                   <Button
                     variant="outline"
                     className="px-4 py-3 text-base font-semibold"
-                    onClick={() => setIsCommentsDrawerOpen(true)}
+                    onClick={() => {
+                      console.log('[Comments] Opening drawer for activity:', general.id);
+                      setIsCommentsDrawerOpen(true);
+                    }}
                   >
                     <MessageSquare className="mr-2 h-5 w-5" />
                     Comments
@@ -2556,6 +2847,16 @@ function NewActivityPageContent() {
                         {comments.length}
                       </span>
                     )}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="px-4 py-3 text-base font-semibold opacity-50 cursor-not-allowed"
+                    disabled
+                    title="Enter a title to enable comments"
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    <span>Comments</span>
                   </Button>
                 )}
                 
@@ -2652,7 +2953,7 @@ function NewActivityPageContent() {
       
       {/* Comments Drawer */}
       <CommentsDrawer
-        activityId={general.id}
+        activityId={general.id || ''}
         isOpen={isCommentsDrawerOpen}
         onClose={() => setIsCommentsDrawerOpen(false)}
       />

@@ -1,5 +1,5 @@
 import React from "react";
-import { HelpCircle, AlertCircle } from "lucide-react";
+import { HelpCircle, AlertCircle, ChevronDown, ChevronRight, Target, CheckCircle, Clock } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -192,64 +192,138 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
   const missingFields = getMissingFields();
   const [isExpanded, setIsExpanded] = React.useState(false);
   
+  // Get completion status
+  const getCompletionStatus = () => {
+    if (completionPercentage === 100) return { text: 'Excellent', color: 'text-slate-700', bgColor: 'bg-slate-600' };
+    if (completionPercentage >= 80) return { text: 'Good', color: 'text-slate-600', bgColor: 'bg-slate-500' };
+    if (completionPercentage >= 60) return { text: 'Fair', color: 'text-slate-500', bgColor: 'bg-slate-400' };
+    return { text: 'Needs Work', color: 'text-slate-400', bgColor: 'bg-slate-300' };
+  };
+  
+  const status = getCompletionStatus();
+  
   return (
-    <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-700 mb-1">Activity Completion Rating</h3>
-            <p className="text-sm text-slate-500">Data quality assessment</p>
+    <div className="bg-slate-50 rounded-lg border border-slate-200">
+      {/* Compact Header */}
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-slate-600" />
+            <h3 className="text-sm font-semibold text-slate-700">Completion Rating</h3>
           </div>
-          <div className="text-right">
-            <span className={`text-3xl font-bold ${
-              completionPercentage === 100 
-                ? 'text-slate-700' 
-                : completionPercentage >= 80 
-                ? 'text-slate-600' 
-                : completionPercentage >= 60 
-                ? 'text-slate-500' 
-                : 'text-slate-400'
-            }`}>{completionPercentage}%</span>
-            <p className="text-xs text-slate-500 mt-1">Complete</p>
+          <div className="flex items-center gap-2">
+            <span className={`text-lg font-bold ${status.color}`}>{completionPercentage}%</span>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-1 hover:bg-slate-200 rounded transition-colors"
+              aria-label="Toggle completion details"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4 text-slate-500" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-slate-500" />
+              )}
+            </button>
           </div>
         </div>
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-sm text-slate-600 hover:text-slate-700 font-medium flex items-center gap-1 px-3 py-2 rounded-md hover:bg-slate-100 transition-colors"
-        >
-          {isExpanded ? '▼' : '▶'} Improve my rating?
-        </button>
+        
+        {/* Progress Bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-slate-500">Data quality</span>
+            <span className={`text-xs font-medium ${status.color}`}>{status.text}</span>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full transition-all duration-300 ${status.bgColor}`}
+              style={{ width: `${completionPercentage}%` }}
+            />
+          </div>
+        </div>
       </div>
       
+      {/* Expandable Content */}
       {isExpanded && (
-        <div className="space-y-3 pt-4 mt-4 border-t border-slate-200">
-          {missingFields.required.length > 0 && (
-            <div>
-              <h4 className="text-xs font-semibold text-slate-600 mb-1">Required fields:</h4>
-              <ul className="text-xs space-y-0.5">
-                {missingFields.required.map((field, idx) => (
-                  <li key={idx} className="text-slate-600 flex items-start gap-1">
-                    <span className="text-slate-500 mt-0.5">•</span>
-                    <span>{field}</span>
-                  </li>
-                ))}
-              </ul>
+        <div className="border-t border-slate-200 p-4 bg-white">
+          <div className="space-y-4">
+            {/* Completion Summary */}
+            <div className="bg-slate-50 rounded-md p-3">
+              <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                How to Improve Your Rating
+              </h4>
+              <p className="text-xs text-slate-600 mb-2">
+                Complete missing fields to improve your activity's data quality and visibility.
+              </p>
             </div>
-          )}
-          
-          {missingFields.recommended.length > 0 && (
-            <div>
-              <h4 className="text-xs font-semibold text-slate-600 mb-1">Recommended fields:</h4>
-              <ul className="text-xs space-y-0.5">
-                {missingFields.recommended.map((field, idx) => (
-                  <li key={idx} className="text-slate-600 flex items-start gap-1">
-                    <span className="text-slate-400 mt-0.5">•</span>
-                    <span>{field}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+
+            {/* Required Fields */}
+            {missingFields.required.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
+                  <h4 className="text-sm font-semibold text-slate-700">Required Fields</h4>
+                </div>
+                <p className="text-xs text-slate-600 mb-2">These fields are essential for publishing your activity:</p>
+                <ul className="space-y-1">
+                  {missingFields.required.map((field, idx) => (
+                    <li key={idx} className="text-xs text-slate-700 flex items-start gap-2 pl-4">
+                      <span className="text-slate-500 mt-1">•</span>
+                      <span>{field}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {/* Recommended Fields */}
+            {missingFields.recommended.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
+                  <h4 className="text-sm font-semibold text-slate-700">Recommended Fields</h4>
+                </div>
+                <p className="text-xs text-slate-600 mb-2">Adding these will improve data quality and discoverability:</p>
+                <ul className="space-y-1">
+                  {missingFields.recommended.map((field, idx) => (
+                    <li key={idx} className="text-xs text-slate-700 flex items-start gap-2 pl-4">
+                      <span className="text-slate-400 mt-1">•</span>
+                      <span>{field}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Perfect Score */}
+            {completionPercentage === 100 && (
+              <div className="bg-slate-50 border border-slate-300 rounded-md p-3">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm font-medium">Perfect Score!</span>
+                </div>
+                <p className="text-xs text-slate-600 mt-1">
+                  Your activity has excellent data quality. All required and recommended fields are complete.
+                </p>
+              </div>
+            )}
+
+            {/* Tips */}
+            {completionPercentage < 100 && (
+              <div className="bg-slate-50 border border-slate-300 rounded-md p-3">
+                <div className="flex items-center gap-2 text-slate-700 mb-1">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm font-medium">Quick Tips</span>
+                </div>
+                <ul className="text-xs text-slate-600 space-y-1">
+                  <li>• Focus on required fields first to enable publishing</li>
+                  <li>• Add descriptions and target groups for better context</li>
+                  <li>• Include financial data in the Finances tab</li>
+                  <li>• Specify sectors and locations for better discoverability</li>
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

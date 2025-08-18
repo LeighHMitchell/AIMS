@@ -247,17 +247,25 @@ const canUserEditActivity = (user: any, activity: Activity): boolean => {
 };
 
 function ActivitiesPageContent() {
-  // FORCE DISABLE optimization to use working legacy API
-  const enableOptimization = false;
+  // Enable optimization to get conditional image loading
+  const enableOptimization = true;
   
   console.log('[Activities Page] Environment variable NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION:', process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION);
   console.log('[Activities Page] enableOptimization:', enableOptimization);
   console.log('[Activities Page] typeof env var:', typeof process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION);
   
+  // Common state regardless of optimization (moved before hook call)
+  const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  const [pageLimit, setPageLimit] = useState<number>(20);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  
   // Use optimized hook if enabled, otherwise fall back to original implementation
   const optimizedData = useOptimizedActivities({
     pageSize: 20,
     enableOptimization,
+    viewMode: viewMode,
     onError: (error) => {
       console.error('[Activities Page] Optimization error:', error);
       // Could fall back to original implementation here if needed
@@ -270,13 +278,6 @@ function ActivitiesPageContent() {
   const [legacyError, setLegacyError] = useState<string | null>(null);
   const [legacyCurrentPage, setLegacyCurrentPage] = useState(1);
   
-  // Common state regardless of optimization
-  const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
-  const [pageLimit, setPageLimit] = useState<number>(20);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  
   // Legacy sorting state for non-optimized version
   const [legacySortField, setLegacySortField] = useState<SortField>('updatedAt');
   const [legacySortOrder, setLegacySortOrder] = useState<SortOrder>('desc');
@@ -287,8 +288,8 @@ function ActivitiesPageContent() {
   // Track if we've ever successfully loaded data to prevent flash of empty state
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   
-  // FORCE LEGACY MODE - completely disable optimization
-  const usingOptimization = false;
+  // Use optimization mode to get conditional image loading
+  const usingOptimization = enableOptimization;
   
   // Safely extract optimized data with fallbacks
   const safeOptimizedData = {
@@ -583,6 +584,16 @@ function ActivitiesPageContent() {
   const handleDelete = async (id: string, retryCount = 0) => {
     const MAX_RETRIES = 3;
     
+    // Get the activity title for better toast feedback
+    let activityTitle = '';
+    if (usingOptimization) {
+      const activity = safeOptimizedData.activities.find(a => a.id === id);
+      activityTitle = (activity as any)?.title_narrative || activity?.title || 'Activity';
+    } else {
+      const activity = legacyActivities.find(a => a.id === id);
+      activityTitle = (activity as any)?.title_narrative || activity?.title || 'Activity';
+    }
+    
     try {
       // Immediately remove the activity from the UI (optimistic update)
       if (retryCount === 0) {
@@ -614,7 +625,8 @@ function ActivitiesPageContent() {
         // If it's a 404, the activity is already gone - that's fine
         if (res.status === 404) {
           console.log("[AIMS] Activity already deleted:", id);
-          toast.success("Activity deleted successfully");
+          console.log('[AIMS] About to show success toast for already deleted activity:', activityTitle);
+          toast.success(`"${activityTitle}" was deleted successfully`);
           return;
         }
         
@@ -633,7 +645,8 @@ function ActivitiesPageContent() {
         throw new Error(errorData.error || "Failed to delete activity");
       }
       
-      toast.success("Activity deleted successfully");
+      console.log('[AIMS] About to show success toast for deletion:', activityTitle);
+      toast.success(`"${activityTitle}" was deleted successfully`);
       // Activity already removed optimistically, no need to do anything else
       
     } catch (error) {

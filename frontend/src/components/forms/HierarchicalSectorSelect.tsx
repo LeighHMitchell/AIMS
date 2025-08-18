@@ -309,11 +309,8 @@ export function HierarchicalSectorSelect({
                                 )}
                               />
                               <div className="flex-1 min-w-0">
-                                <div className="font-mono text-xs text-gray-700">
-                                  {subsector.code}
-                                </div>
                                 <div className="text-sm truncate">
-                                  {subsector.name}
+                                  <span className="font-mono text-xs text-gray-700">{subsector.code}</span> – {subsector.name}
                                 </div>
                               </div>
                             </div>
