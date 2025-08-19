@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     // Optimized query - only select needed fields for better performance
     const { data: organizations, error } = await getSupabaseAdmin()
       .from('organizations')
-      .select('id, name, acronym, type, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at')
+      .select('id, name, acronym, type, organisation_type, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at')
       .order('name');
     
     if (error) {
@@ -255,8 +255,9 @@ export async function PUT(request: NextRequest) {
     }
     
     if ('organisation_type' in updates) {
+      // Save to both type and organisation_type columns for compatibility
       updates.type = updates.organisation_type;
-      delete updates.organisation_type;
+      updates.organisation_type = updates.organisation_type;
     }
     
     // Handle logo field - check if logo_url column exists, otherwise map to logo

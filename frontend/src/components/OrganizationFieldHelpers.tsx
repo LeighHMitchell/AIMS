@@ -40,7 +40,7 @@ export const ORGANIZATION_TYPES = [
 export const calculateCooperationModality = (
   country: string, 
   organisationType: string, 
-  focusCountry: string = "Myanmar" // Default focus country
+  focusCountry?: string
 ): string => {
   if (!country || !organisationType) return "";
   

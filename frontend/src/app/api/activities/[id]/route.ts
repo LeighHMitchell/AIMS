@@ -301,6 +301,8 @@ export async function GET(
       lastSyncTime: activity.last_sync_time || null,
       syncStatus: activity.sync_status || 'not_synced',
       autoSyncFields: activity.auto_sync_fields || [],
+      // Include general_info data
+      general_info: activity.general_info || {},
       // Include related data
       sectors: sectors?.map((sector: any) => ({
         id: sector.id,

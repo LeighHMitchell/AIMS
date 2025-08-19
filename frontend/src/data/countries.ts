@@ -83,8 +83,8 @@ export const countries: Country[] = [
   { code: "PG", name: "Papua New Guinea", dialCode: "+675", format: "### ####" },
 ];
 
-// Default country (Myanmar for AIMS)
-export const DEFAULT_COUNTRY = countries.find(c => c.code === "MM") || countries[0];
+// Get default country from context instead of hardcoding
+// export const DEFAULT_COUNTRY = countries.find(c => c.code === "MM") || countries[0];
 
 // Function to find country by dial code
 export const findCountryByDialCode = (dialCode: string): Country | undefined => {

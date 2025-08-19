@@ -71,6 +71,8 @@ export async function PUT(
         tags: body.tags,
         group_code: body.group_code,
         is_public: body.is_public,
+        // logo: body.logo,  // TODO: Add after running migration
+        // banner: body.banner,  // TODO: Add after running migration
         updated_at: new Date().toISOString()
       })
       .eq('id', params.id)
@@ -106,6 +108,32 @@ export async function PUT(
         { error: error.message },
         { status: 500 }
       );
+    }
+    
+    // Update organization memberships if provided
+    if (body.organization_ids && Array.isArray(body.organization_ids)) {
+      // First, remove all existing memberships
+      await getSupabaseAdmin()
+        .from('custom_group_memberships')
+        .delete()
+        .eq('group_id', params.id);
+      
+      // Then add new memberships
+      if (body.organization_ids.length > 0) {
+        const memberships = body.organization_ids.map((orgId: string) => ({
+          group_id: params.id,
+          organization_id: orgId
+        }));
+        
+        const { error: membershipError } = await getSupabaseAdmin()
+          .from('custom_group_memberships')
+          .insert(memberships);
+        
+        if (membershipError) {
+          console.error('[API] Error updating group memberships:', membershipError);
+          // Don't fail the entire request, but log the error
+        }
+      }
     }
     
     console.log('[API] Successfully updated custom group:', data);

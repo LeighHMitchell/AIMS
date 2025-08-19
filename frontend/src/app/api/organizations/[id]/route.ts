@@ -51,12 +51,11 @@ export async function GET(
       );
     }
     
-    // Calculate active project count
+    // Calculate total activities reported by this organization
     const { data: activities, error: activitiesError } = await getSupabaseAdmin()
       .from('activities')
       .select('id')
-      .eq('reporting_org_id', params.id)
-      .eq('activity_status', 'implementation');
+      .eq('reporting_org_id', params.id);
     
     const { data: contributions, error: contributionsError } = await getSupabaseAdmin()
       .from('activity_contributors')
@@ -64,32 +63,33 @@ export async function GET(
       .eq('organization_id', params.id)
       .in('contribution_type', ['funder', 'implementer', 'funding', 'implementing']);
     
-    let activeProjectCount = 0;
+    let totalActivitiesCount = 0;
     
     if (activities && !activitiesError) {
-      activeProjectCount += activities.length;
+      totalActivitiesCount += activities.length;
     }
     
     if (contributions && !contributionsError) {
       // Get unique activity IDs from contributions
       const contributionActivityIds = new Set(contributions.map((c: any) => c.activity_id));
       
-      // Check which of these are active
-      const { data: activeContributedActivities } = await getSupabaseAdmin()
+      // Check which of these activities exist (regardless of status)
+      const { data: contributedActivities } = await getSupabaseAdmin()
         .from('activities')
         .select('id')
-        .in('id', Array.from(contributionActivityIds))
-        .eq('activity_status', 'implementation');
+        .in('id', Array.from(contributionActivityIds));
       
-      if (activeContributedActivities) {
-        activeProjectCount += activeContributedActivities.length;
+      if (contributedActivities) {
+        totalActivitiesCount += contributedActivities.length;
       }
     }
     
     // Enhance organization with computed fields
     const enhancedOrganization = {
       ...organization,
-      active_project_count: activeProjectCount,
+      // Ensure we use the correct organisation_type field for frontend compatibility
+      organisation_type: organization.organisation_type || organization.type,
+      active_project_count: totalActivitiesCount,
       // Add default values for IATI fields if not present
       default_currency: organization.default_currency || 'USD',
       default_language: organization.default_language || 'en',
@@ -125,11 +125,30 @@ export async function PUT(
     const body = await request.json();
     
     // Remove computed fields before updating
-    const { active_project_count, ...updateData } = body;
+    const { active_project_count, ...updates } = body;
+    
+    // Handle iati_org_id field - convert empty strings to null to avoid unique constraint issues
+    if ('iati_org_id' in updates) {
+      if (!updates.iati_org_id || updates.iati_org_id.trim() === '') {
+        updates.iati_org_id = null;
+      }
+    }
+    
+    // Map frontend field names to database column names
+    if ('country_represented' in updates) {
+      updates.country = updates.country_represented;
+      delete updates.country_represented;
+    }
+    
+    if ('organisation_type' in updates) {
+      // Save to both type and organisation_type columns for compatibility
+      updates.type = updates.organisation_type;
+      updates.organisation_type = updates.organisation_type;
+    }
     
     const { data, error } = await getSupabaseAdmin()
       .from('organizations')
-      .update(updateData)
+      .update(updates)
       .eq('id', params.id)
       .select()
       .single();

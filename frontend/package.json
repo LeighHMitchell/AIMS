@@ -32,6 +32,8 @@
     "consolidate-orgs": "tsx scripts/identify-consolidate-duplicate-organizations.ts",
     "migrate-profile-pics": "tsx src/scripts/migrate-profile-pictures.ts",
     "create-auth-accounts": "tsx src/scripts/create-missing-auth-accounts.ts",
+    "diagnose-email": "tsx src/scripts/diagnose-email-change.ts",
+    "setup-local-user": "tsx src/scripts/setup-local-user.ts",
     "fix-user-auth": "tsx src/scripts/fix-user-auth-mismatch.ts",
     "reset-password": "tsx src/scripts/reset-user-password.ts",
     "debug-login": "tsx src/scripts/debug-login.ts",

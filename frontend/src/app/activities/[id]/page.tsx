@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -129,6 +130,7 @@ interface Partner {
   acronym?: string;
   code?: string;
   fullName?: string;
+  logo?: string;
 }
 
 export default function ActivityDetailPage() {
@@ -702,17 +704,46 @@ export default function ActivityDetailPage() {
 
                   {/* Metadata Grid */}
                   <div className="grid grid-cols-2 gap-4 mt-6 text-sm">
-                    <div className="flex flex-wrap items-baseline gap-2">
+                    <div className="flex items-center gap-2">
                       <span className="text-slate-500 shrink-0">Reported by:</span>
-                      <span className="text-slate-900 font-medium break-words min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
                         {(() => {
                           const creatorOrg = partners.find(p => p.id === activity.createdByOrg);
-                          if (creatorOrg) {
-                            return creatorOrg.acronym || creatorOrg.code || creatorOrg.name;
-                          }
-                          return activity.created_by_org_acronym || activity.created_by_org_name || 'Unknown Organization';
+                          return (
+                            <>
+                              {creatorOrg?.logo && (
+                                <div className="flex-shrink-0">
+                                  <Image
+                                    src={creatorOrg.logo}
+                                    alt={`${creatorOrg.name} logo`}
+                                    width={20}
+                                    height={20}
+                                    className="rounded-sm object-contain"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              {creatorOrg ? (
+                                <a 
+                                  href={`/organizations/${creatorOrg.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-black hover:text-black transition-colors font-medium break-words min-w-0"
+                                >
+                                  {creatorOrg.acronym || creatorOrg.code || creatorOrg.name}{" "}
+                                  <ExternalLink className="inline h-3 w-3" style={{ verticalAlign: "middle" }} />
+                                </a>
+                              ) : (
+                                <span className="text-slate-900 font-medium break-words min-w-0">
+                                  {activity.created_by_org_acronym || activity.created_by_org_name || 'Unknown Organization'}
+                                </span>
+                              )}
+                            </>
+                          );
                         })()}
-                      </span>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm">
                       <div className="flex items-center">

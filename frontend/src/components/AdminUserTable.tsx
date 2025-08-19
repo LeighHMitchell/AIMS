@@ -9,13 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { mockUsers } from "@/hooks/useUser"
 import { User, ROLE_LABELS, USER_ROLES, Organization } from "@/types/user"
-import { Search, UserPlus, Edit, Mail, Phone, Building2, Loader2, AlertCircle, Shield } from "lucide-react"
+import { Search, UserPlus, Edit, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useUser } from "@/hooks/useUser"
 import { Skeleton } from "@/components/ui/skeleton"
+import { CreateUserModal } from "@/components/admin/CreateUserModal"
+import { EditUserModal } from "@/components/admin/EditUserModal"
+import { ResetPasswordModal } from "@/components/ResetPasswordModal"
 
 interface ExtendedUser extends User {
   // Extended user includes all fields from User type
@@ -31,6 +34,9 @@ export function AdminUserTable() {
   const [orgFilter, setOrgFilter] = useState<string>("all")
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<ExtendedUser | null>(null)
+  const [resetPasswordUser, setResetPasswordUser] = useState<ExtendedUser | null>(null)
 
   // Security check - only super users can access this
   const canAccess = currentUser?.role === USER_ROLES.SUPER_USER
@@ -60,19 +66,10 @@ export function AdminUserTable() {
         return
       }
 
-      // Fetch users with their organizations
+      // Fetch users first
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select(`
-          *,
-          organizations (
-            id,
-            name,
-            type,
-            created_at,
-            updated_at
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
 
       if (usersError) {
@@ -83,31 +80,34 @@ export function AdminUserTable() {
       const mappedUsers: ExtendedUser[] = (usersData || []).map((user: any) => ({
         id: user.id,
         email: user.email,
-        name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name || 'Unnamed User',
+        name: [user.first_name, user.middle_name, user.last_name].filter(Boolean).join(' ') || user.name || 'Unnamed User',
         firstName: user.first_name,
+        middleName: user.middle_name,
         lastName: user.last_name,
+        title: user.title,
         role: user.role as any,
         organizationId: user.organization_id,
-        organization: user.organizations ? {
-          id: user.organizations.id,
-          name: user.organizations.name,
-          type: user.organizations.type,
-          createdAt: user.organizations.created_at,
-          updatedAt: user.organizations.updated_at
-        } : undefined,
+        organization: undefined, // Will fetch separately if needed
         organisation: user.organisation,
         department: user.department,
-        jobTitle: user.job_title,
-        title: user.title || user.job_title,
+        jobTitle: user.position || user.job_title,
+        contactType: user.contact_type,
         telephone: user.telephone,
-        phone: user.phone || user.telephone,
+        phone: user.telephone,
+        secondaryEmail: user.secondary_email,
+        secondaryPhone: user.secondary_phone,
+        faxNumber: user.fax_number,
         website: user.website,
         mailingAddress: user.mailing_address,
+        notes: user.notes,
+        profilePicture: user.avatar_url,
         isActive: user.is_active ?? true,
         lastLogin: user.last_login,
         createdAt: user.created_at,
         updatedAt: user.updated_at
       }))
+
+      console.log('[AdminUserTable] Fetched users:', mappedUsers.length)
 
       setUsers(mappedUsers)
       setFilteredUsers(mappedUsers)
@@ -192,13 +192,52 @@ export function AdminUserTable() {
   }
 
   const handleEditUser = (userId: string) => {
-    // TODO: Implement user editing modal or navigation
-    toast.info("User editing feature coming soon")
+    const userToEdit = users.find(user => user.id === userId)
+    if (userToEdit) {
+      setEditingUser(userToEdit)
+    } else {
+      toast.error("User not found")
+    }
+  }
+
+  const handleResetPassword = (userId: string) => {
+    const userToReset = users.find(user => user.id === userId)
+    if (userToReset) {
+      setResetPasswordUser(userToReset)
+    } else {
+      toast.error("User not found")
+    }
   }
 
   const handleAddUser = () => {
-    // TODO: Implement user creation modal
-    toast.info("User creation feature coming soon")
+    setIsCreateUserModalOpen(true)
+  }
+
+  const handleUserCreated = (newUser: User) => {
+    // Add the new user to our local state
+    const extendedUser: ExtendedUser = newUser
+    setUsers(prev => [extendedUser, ...prev])
+    setIsCreateUserModalOpen(false)
+    
+    // Refresh the data to ensure we have the latest from the server
+    fetchUsersAndOrganizations()
+  }
+
+  const handleUserUpdated = (updatedUser: User) => {
+    // Update the user in our local state
+    const extendedUser: ExtendedUser = updatedUser
+    setUsers(prev => prev.map(user => 
+      user.id === updatedUser.id ? extendedUser : user
+    ))
+    setEditingUser(null)
+    
+    // Refresh the data to ensure we have the latest from the server
+    fetchUsersAndOrganizations()
+  }
+
+  const handlePasswordReset = () => {
+    setResetPasswordUser(null)
+    // No need to refresh data as password reset doesn't change user profile data
   }
 
   // Security check
@@ -374,13 +413,24 @@ export function AdminUserTable() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleEditUser(user.id)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditUser(user.id)}
+                          title="Edit user"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleResetPassword(user.id)}
+                          title="Reset password"
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -395,6 +445,32 @@ export function AdminUserTable() {
           </Table>
         </div>
       </CardContent>
+
+      {/* Create User Modal */}
+      <CreateUserModal
+        isOpen={isCreateUserModalOpen}
+        onClose={() => setIsCreateUserModalOpen(false)}
+        onUserCreated={handleUserCreated}
+        organizations={organizations}
+      />
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        isOpen={!!editingUser}
+        onClose={() => setEditingUser(null)}
+        onUserUpdated={handleUserUpdated}
+        user={editingUser}
+        organizations={organizations}
+      />
+
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        isOpen={!!resetPasswordUser}
+        onClose={handlePasswordReset}
+        userId={resetPasswordUser?.id || ''}
+        userName={resetPasswordUser?.name || ''}
+        userEmail={resetPasswordUser?.email || ''}
+      />
     </Card>
   )
 } 

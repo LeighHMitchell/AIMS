@@ -77,11 +77,28 @@ export async function PUT(request: NextRequest) {
     console.log('[AIMS] Changing email from', userProfile.email, 'to', newEmail, 'for user', userId);
 
     // Check if this user exists in Supabase Auth by trying to get user by ID first
-    const { data: authUserCheck, error: authUserCheckError } = await supabase.auth.admin.getUserById(userId);
+    console.log('[AIMS] Checking if user exists in Supabase Auth...');
     
-    if (authUserCheckError || !authUserCheck.user) {
+    let authUserExists = false;
+    try {
+      const { data: authUserCheck, error: authUserCheckError } = await supabase.auth.admin.getUserById(userId);
+      
+      if (authUserCheckError) {
+        console.log('[AIMS] Auth check error:', {
+          message: authUserCheckError.message,
+          code: authUserCheckError.code,
+          status: authUserCheckError.status
+        });
+      }
+      
+      authUserExists = !authUserCheckError && authUserCheck?.user;
+      console.log('[AIMS] User exists in Auth:', authUserExists);
+    } catch (error) {
+      console.log('[AIMS] Error checking auth user:', error);
+    }
+    
+    if (!authUserExists) {
       console.log('[AIMS] User not found in Auth, this might be a database-only user');
-      console.log('[AIMS] Auth error:', authUserCheckError?.message);
       
       // If user doesn't exist in Auth, just update the database
       const { data: updatedProfile, error: profileUpdateError } = await supabase
@@ -115,16 +132,66 @@ export async function PUT(request: NextRequest) {
     console.log('[AIMS] User found in Auth, proceeding with full update');
     
     // Update the Supabase Auth user
-    const { data: authUser, error: authUpdateError } = await supabase.auth.admin.updateUserById(userId, {
-      email: newEmail,
-      email_confirm: true // Automatically confirm the new email for admin changes
-    });
+    console.log('[AIMS] Attempting to update auth user email for userId:', userId);
     
-    if (authUpdateError) {
-      console.error('[AIMS] Error updating auth user email:', authUpdateError);
+    let authUser: any = null;
+    
+    try {
+      const authUpdateResult = await supabase.auth.admin.updateUserById(userId, {
+        email: newEmail,
+        email_confirm: true // Automatically confirm the new email for admin changes
+      });
+      
+      authUser = authUpdateResult.data;
+      const authUpdateError = authUpdateResult.error;
+      
+      if (authUpdateError) {
+        console.error('[AIMS] Detailed auth update error:', {
+          message: authUpdateError.message,
+          status: authUpdateError.status,
+          code: authUpdateError.code,
+          details: authUpdateError.details,
+          hint: authUpdateError.hint,
+          name: authUpdateError.name
+        });
+        
+        // Check if it's a specific error we can handle
+        if (authUpdateError.message?.includes('duplicate key value') || 
+            authUpdateError.message?.includes('already exists')) {
+          return NextResponse.json(
+            { error: 'This email address is already registered' },
+            { status: 400 }
+          );
+        }
+        
+        // Check if it's an auth service configuration issue
+        if (authUpdateError.message?.includes('not enabled') ||
+            authUpdateError.message?.includes('disabled')) {
+          return NextResponse.json(
+            { error: 'Email changes are currently disabled. Please contact support.' },
+            { status: 400 }
+          );
+        }
+        
+        return NextResponse.json(
+          { 
+            error: 'Failed to update authentication email', 
+            details: authUpdateError.message,
+            hint: authUpdateError.hint || 'Check Supabase Auth configuration'
+          },
+          { status: 400 }
+        );
+      }
+      
+      console.log('[AIMS] Auth email updated successfully');
+    } catch (error) {
+      console.error('[AIMS] Unexpected error during auth update:', error);
       return NextResponse.json(
-        { error: 'Failed to update authentication email: ' + authUpdateError.message },
-        { status: 400 }
+        { 
+          error: 'System error while updating email',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        },
+        { status: 500 }
       );
     }
 
@@ -163,7 +230,7 @@ export async function PUT(request: NextRequest) {
       success: true, 
       message: 'Email address updated successfully',
       user: updatedProfile,
-      authUser: authUser.user
+      authUser: authUser
     });
     
   } catch (error) {

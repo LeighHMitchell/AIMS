@@ -72,12 +72,9 @@ export function PhoneFields({
   };
 
   return (
-    <div className={cn("flex gap-3", className)}>
+    <div className={cn("flex gap-3 items-end", className)}>
       {/* Country Code Field */}
-      <div className="flex flex-col space-y-2">
-        <label className="text-sm font-medium text-gray-700">
-          Country Code
-        </label>
+      <div className="flex flex-col">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger>
             <Button
@@ -87,7 +84,7 @@ export function PhoneFields({
               aria-expanded={open}
               aria-label="Select country code"
               className={cn(
-                "w-[120px] justify-between",
+                "w-[120px] justify-between h-9",
                 disabled && "cursor-not-allowed opacity-50"
               )}
               disabled={disabled}
@@ -151,8 +148,8 @@ export function PhoneFields({
       </div>
 
       {/* Phone Number Field */}
-      <div className="flex flex-col space-y-2 flex-1">
-        <label className="text-sm font-medium text-gray-700">
+      <div className="flex flex-col flex-1">
+        <label className="text-sm font-medium text-gray-700 mb-2">
           {phoneLabel}
         </label>
         <Input
@@ -161,7 +158,7 @@ export function PhoneFields({
           onChange={handlePhoneNumberChange}
           placeholder={phonePlaceholder}
           disabled={disabled}
-          className="w-full"
+          className="w-full h-9"
         />
       </div>
     </div>

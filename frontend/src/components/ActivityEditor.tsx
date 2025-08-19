@@ -22,7 +22,7 @@ const COLLABORATION_TYPES = [
 
 // IATI Activity Status codes
 const ACTIVITY_STATUSES = [
-  { value: '1', label: 'Pipeline/identification' },
+  { value: '1', label: 'Pipeline' },
   { value: '2', label: 'Implementation' },
   { value: '3', label: 'Finalisation' },
   { value: '4', label: 'Closed' },

@@ -102,12 +102,7 @@ export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavPr
       icon: Map,
       show: true
     },
-    {
-      name: "My Portfolio",
-      href: "/my-portfolio",
-      icon: Briefcase,
-      show: true
-    },
+
     {
       name: "Rolodex",
       href: "/rolodex",
@@ -120,12 +115,7 @@ export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavPr
       icon: Database,
       show: true
     },
-    {
-      name: "Settings",
-      href: "/settings",
-      icon: Settings,
-      show: true
-    }
+
   ]
 
   const filteredNavItems = navItems.filter(item => item.show)

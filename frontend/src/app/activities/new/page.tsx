@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useCallback, useEffect, Suspense, useRef } from "react";
+import Image from "next/image";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useRouter, useSearchParams } from "next/navigation";
 import FinancesSection from "@/components/FinancesSection";
@@ -30,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink } from "lucide-react";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator, ActivityCompletionRating } from "@/components/ActivityFieldHelpers";
@@ -1898,7 +1899,7 @@ function NewActivityPageContent() {
     const statusCode = parseInt(mappedStatus) || 1;
     
     // IATI Status codes:
-    // 1 = Pipeline/Identification - only planned dates
+    // 1 = Pipeline - only planned dates
     // 2 = Implementation - planned dates + actual start
     // 3 = Finalisation - all dates
     // 4 = Closed - all dates  
@@ -2195,7 +2196,9 @@ function NewActivityPageContent() {
           name: user.name,
           role: user.role,
           organizationId: user.organizationId
-        } : null
+        } : null,
+        // Include general_info structure for JSONB storage
+        general_info: {}
       };
 
       // If we have an ID, include it in the payload for updates
@@ -2527,31 +2530,61 @@ function NewActivityPageContent() {
                   )}
                 </div>
                 <div className="space-y-2">
-                                    <div className="space-y-1">
-                    <div className="text-gray-500">Reported by:</div>
-                    <div className="font-medium break-words">
-                      {(() => {
-                        if (general.created_by_org_name && general.created_by_org_acronym) {
-                          return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
-                        }
-                        return general.created_by_org_name || general.created_by_org_acronym || "Unknown";
-                      })()}
-                    </div>
-                  </div>
-                                    <div className="space-y-3 text-sm">
+                  <div className="grid grid-cols-1 gap-4 text-sm">
                     <div className="space-y-1">
-                      <div className="text-gray-500">Date created:</div>
-                      <div className="font-medium">
-                        {general.createdAt ? format(new Date(general.createdAt), "dd MMM yyyy") : "Unknown"}
+                      <div className="text-gray-500">Reported by:</div>
+                      <div className="flex items-center gap-2">
+                        {user?.organization?.logo && (
+                          <div className="flex-shrink-0">
+                            <Image
+                              src={user.organization.logo}
+                              alt={`${user.organization.name} logo`}
+                              width={20}
+                              height={20}
+                              className="rounded-sm object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        {user?.organization ? (
+                          <a 
+                            href={`/organizations/${user.organization.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-black hover:text-black transition-colors font-medium break-words min-w-0"
+                          >
+                            {(() => {
+                              if (general.created_by_org_name && general.created_by_org_acronym) {
+                                return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
+                              }
+                              return general.created_by_org_name || general.created_by_org_acronym || user.organization.name || "Unknown";
+                            })()}{" "}
+                            <ExternalLink className="inline h-3 w-3" style={{ verticalAlign: "middle" }} />
+                          </a>
+                        ) : (
+                          <div className="font-medium break-words">
+                            {(() => {
+                              if (general.created_by_org_name && general.created_by_org_acronym) {
+                                return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
+                              }
+                              return general.created_by_org_name || general.created_by_org_acronym || "Unknown";
+                            })()}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <div className="text-gray-500">Last updated:</div>
-                      <div className="font-medium">
-                        {general.updatedAt ? format(new Date(general.updatedAt), "dd MMM yyyy") : "Unknown"}
+                      <div className="flex justify-between text-gray-500">
+                        <span>Date created:</span>
+                        <span>Last updated:</span>
                       </div>
-                  </div>
-                    
+                      <div className="flex justify-between font-medium">
+                        <span>{general.createdAt ? format(new Date(general.createdAt), "dd MMM yyyy") : "Unknown"}</span>
+                        <span>{general.updatedAt ? format(new Date(general.updatedAt), "dd MMM yyyy") : "Unknown"}</span>
+                      </div>
+                    </div>
                   </div>
                   {contributors.filter(c => c.status === 'accepted').length > 0 && (
                     <div>

@@ -15,13 +15,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Plus, X, Search, Check, Users } from 'lucide-react'
+import { Plus, X, Search, Check, Users, Upload, ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
+import { useDropzone } from 'react-dropzone'
 
 interface Organization {
   id: string
@@ -51,9 +52,15 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
     group_code: '',
     is_public: true,
     tags: [] as string[],
+    logo: '',
+    banner: '',
   })
   
   const [tagInput, setTagInput] = useState('')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [bannerFile, setBannerFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string>('')
+  const [bannerPreview, setBannerPreview] = useState<string>('')
 
   useEffect(() => {
     if (open) {
@@ -73,6 +80,44 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
     }
   }
 
+  // Logo dropzone
+  const logoDropzone = useDropzone({
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+    },
+    maxFiles: 1,
+    onDrop: (acceptedFiles) => {
+      const file = acceptedFiles[0]
+      if (file) {
+        setLogoFile(file)
+        const reader = new FileReader()
+        reader.onload = () => {
+          setLogoPreview(reader.result as string)
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+  })
+
+  // Banner dropzone
+  const bannerDropzone = useDropzone({
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+    },
+    maxFiles: 1,
+    onDrop: (acceptedFiles) => {
+      const file = acceptedFiles[0]
+      if (file) {
+        setBannerFile(file)
+        const reader = new FileReader()
+        reader.onload = () => {
+          setBannerPreview(reader.result as string)
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -89,11 +134,49 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
     setLoading(true)
     
     try {
+      // Upload files if they exist
+      let logoUrl = formData.logo
+      let bannerUrl = formData.banner
+
+      if (logoFile) {
+        const logoFormData = new FormData()
+        logoFormData.append('file', logoFile)
+        logoFormData.append('type', 'logo')
+        
+        const logoResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: logoFormData
+        })
+        
+        if (logoResponse.ok) {
+          const logoResult = await logoResponse.json()
+          logoUrl = logoResult.url
+        }
+      }
+
+      if (bannerFile) {
+        const bannerFormData = new FormData()
+        bannerFormData.append('file', bannerFile)
+        bannerFormData.append('type', 'banner')
+        
+        const bannerResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: bannerFormData
+        })
+        
+        if (bannerResponse.ok) {
+          const bannerResult = await bannerResponse.json()
+          bannerUrl = bannerResult.url
+        }
+      }
+
       const response = await fetch('/api/custom-groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          logo: logoUrl,
+          banner: bannerUrl,
           organization_ids: selectedOrgs
         })
       })
@@ -110,9 +193,15 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
           group_code: '',
           is_public: true,
           tags: [],
+          logo: '',
+          banner: '',
         })
         setSelectedOrgs([])
         setTagInput('')
+        setLogoFile(null)
+        setBannerFile(null)
+        setLogoPreview('')
+        setBannerPreview('')
         
         onOpenChange(false)
         onSuccess?.()
@@ -166,6 +255,18 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
       .map(org => getOrganizationDisplay(org))
   }
 
+  const removeLogo = () => {
+    setLogoFile(null)
+    setLogoPreview('')
+    setFormData(prev => ({ ...prev, logo: '' }))
+  }
+
+  const removeBanner = () => {
+    setBannerFile(null)
+    setBannerPreview('')
+    setFormData(prev => ({ ...prev, banner: '' }))
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -204,6 +305,80 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
             <p className="text-sm text-muted-foreground">
               An internal identifier or abbreviation for this group
             </p>
+          </div>
+
+          {/* Logo Upload */}
+          <div className="space-y-2">
+            <Label>Group Logo</Label>
+            <div className="space-y-3">
+              {logoPreview ? (
+                <div className="relative inline-block">
+                  <img 
+                    src={logoPreview} 
+                    alt="Logo preview" 
+                    className="w-20 h-20 object-contain rounded-lg border bg-white p-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                    onClick={removeLogo}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div 
+                  {...logoDropzone.getRootProps()} 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
+                >
+                  <input {...logoDropzone.getInputProps()} />
+                  <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-600">
+                    Drop logo here or click to browse
+                  </p>
+                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Banner Upload */}
+          <div className="space-y-2">
+            <Label>Group Banner</Label>
+            <div className="space-y-3">
+              {bannerPreview ? (
+                <div className="relative inline-block">
+                  <img 
+                    src={bannerPreview} 
+                    alt="Banner preview" 
+                    className="w-full h-32 object-cover rounded-lg border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2 h-6 w-6 rounded-full p-0"
+                    onClick={removeBanner}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div 
+                  {...bannerDropzone.getRootProps()} 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
+                >
+                  <input {...bannerDropzone.getInputProps()} />
+                  <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-600">
+                    Drop banner image here or click to browse
+                  </p>
+                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Description */}

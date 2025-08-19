@@ -90,7 +90,7 @@ export const getActivityStatusIcon = (status: string, isPublished?: boolean): St
     case 'pipeline':
       return { 
         icon: <Waypoints className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
-        tooltip: "Pipeline/Identification" 
+        tooltip: "Pipeline" 
       }
     case 'implementation':
     case 'active': 
@@ -124,7 +124,7 @@ export const getActivityStatusIcon = (status: string, isPublished?: boolean): St
     case '1': 
       return { 
         icon: <Waypoints className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
-        tooltip: "Pipeline/Identification" 
+        tooltip: "Pipeline" 
       }
     case '2': 
       return { 
@@ -155,7 +155,7 @@ export const getActivityStatusIcon = (status: string, isPublished?: boolean): St
     default: 
       return { 
         icon: <Waypoints className={`${iconSize} text-foreground`} strokeWidth={strokeWeight} />, 
-        tooltip: "Pipeline/Identification" 
+        tooltip: "Pipeline" 
       }
   }
 }

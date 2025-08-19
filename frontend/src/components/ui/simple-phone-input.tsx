@@ -3,7 +3,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { countries, Country, DEFAULT_COUNTRY, findCountryByDialCode } from '@/data/countries';
+import { countries, Country, findCountryByDialCode } from '@/data/countries';
+import { useHomeCountryData } from '@/contexts/SystemSettingsContext';
 
 interface SimplePhoneInputProps {
   value?: string;
@@ -22,7 +23,9 @@ export function SimplePhoneInput({
   className,
   id
 }: SimplePhoneInputProps) {
-  const [selectedCountry, setSelectedCountry] = useState<Country>(DEFAULT_COUNTRY);
+  const homeCountryData = useHomeCountryData();
+  const defaultCountry = countries.find(c => c.code === homeCountryData.code) || countries[0];
+  const [selectedCountry, setSelectedCountry] = useState<Country>(defaultCountry);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');

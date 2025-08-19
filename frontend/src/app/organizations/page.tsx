@@ -5,6 +5,7 @@ import { usePreCache } from '@/hooks/use-pre-cached-data'
 import { AsyncErrorBoundary } from '@/components/errors/AsyncErrorBoundary'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -21,6 +22,7 @@ import { toast } from 'sonner'
 import { useDropzone } from 'react-dropzone'
 import Flag from 'react-world-flags'
 import { CreateCustomGroupModal } from '@/components/organizations/CreateCustomGroupModal'
+import { EditCustomGroupModal } from '@/components/organizations/EditCustomGroupModal'
 import {
   Tooltip,
   TooltipContent,
@@ -344,6 +346,8 @@ interface Organization {
   updated_at: string
   // Computed fields
   activeProjects: number
+  totalBudgeted?: number
+  totalDisbursed?: number
   displayName: string
   derived_category?: string
   // Project breakdown
@@ -476,6 +480,12 @@ const deriveCategory = (orgTypeCode: string, country: string): string => {
   }
 }
 
+// Get organization type label from code
+const getOrganizationTypeLabel = (typeCode: string, availableTypes: OrganizationType[]): string => {
+  const type = availableTypes.find(t => t.code === typeCode);
+  return type?.label || typeCode;
+}
+
 // Get Partner Classification based on IATI-aligned logic
 const getPartnerClassification = (orgTypeCode: string, location: string): string => {
   const isMyanmar = location?.toLowerCase() === "myanmar";
@@ -521,16 +531,21 @@ const COOPERATION_MODALITY_OPTIONS = [
 
 // Default organization types (will be fetched from API)
 const DEFAULT_ORGANIZATION_TYPES: OrganizationType[] = [
-  { code: '23', label: 'Bilateral', description: 'National development agencies representing a single government', is_active: true, sort_order: 1 },
-  { code: '22', label: 'Multilateral', description: 'Intergovernmental organisations with a global or regional mandate', is_active: true, sort_order: 2 },
-  { code: '10', label: 'Government', description: 'Ministries, line departments, or state authorities', is_active: true, sort_order: 3 },
-  { code: '30', label: 'Private Sector', description: 'For-profit businesses, contractors, or service providers', is_active: true, sort_order: 4 },
-  { code: '15', label: 'NGO', description: 'Civil society or non-profit organisations', is_active: true, sort_order: 5 },
-  { code: '20', label: 'Public Sector', description: 'State-owned enterprises, public institutions, or local authorities', is_active: true, sort_order: 6 },
-  { code: '21', label: 'Public–Private Partnership', description: 'Formal joint arrangements between public and private sectors', is_active: true, sort_order: 7 },
-  { code: '40', label: 'Academic, Training, and Research', description: 'Higher education institutions or research and policy institutes', is_active: true, sort_order: 8 },
-  { code: '60', label: 'Foundation', description: 'Charitable or grant-making organisations funded by private or public sources', is_active: true, sort_order: 9 },
-  { code: '70', label: 'Other', description: 'Organisations that do not fit clearly into the listed categories', is_active: true, sort_order: 10 }
+  { code: '10', label: 'Government', description: 'National governments (donor or recipient), including central aid coordination bodies', is_active: true, sort_order: 1 },
+  { code: '11', label: 'Local Government', description: 'Sub-national public authorities such as provincial or municipal governments', is_active: true, sort_order: 2 },
+  { code: '15', label: 'Other Public Sector', description: 'Government-linked bodies that are neither central nor local government', is_active: true, sort_order: 3 },
+  { code: '21', label: 'International NGO', description: 'NGOs operating across countries or internationally affiliated', is_active: true, sort_order: 4 },
+  { code: '22', label: 'National NGO', description: 'NGOs operating only within one country', is_active: true, sort_order: 5 },
+  { code: '23', label: 'Partner Country based NGO', description: 'Local CSOs and NGOs operating in the aid recipient country', is_active: true, sort_order: 6 },
+  { code: '30', label: 'Regional Organisation', description: 'Organisations representing a defined group of countries', is_active: true, sort_order: 7 },
+  { code: '31', label: 'Public Private Partnership', description: 'Hybrid organisations involving both government and private sector', is_active: true, sort_order: 8 },
+  { code: '40', label: 'Multilateral', description: 'Organisations with multiple member states (e.g., UN agencies, MDBs)', is_active: true, sort_order: 9 },
+  { code: '60', label: 'Foundation', description: 'Philanthropic or grant-making organisations', is_active: true, sort_order: 10 },
+  { code: '71', label: 'Private Sector in Provider Country', description: 'Private companies from a donor/provider country', is_active: true, sort_order: 11 },
+  { code: '72', label: 'Private Sector in Aid Recipient Country', description: 'Private companies operating in a recipient country', is_active: true, sort_order: 12 },
+  { code: '73', label: 'Private Sector in Third Country', description: 'Private companies from outside both donor and recipient countries', is_active: true, sort_order: 13 },
+  { code: '80', label: 'Academic, Training and Research', description: 'Universities, training centres, or research institutions', is_active: true, sort_order: 14 },
+  { code: '90', label: 'Other', description: 'Catch-all for organisations not listed above', is_active: true, sort_order: 15 }
 ]
 
 // getCountryCode is now imported from @/lib/country-utils
@@ -1449,20 +1464,39 @@ const CustomGroupCard: React.FC<{
   }
   
   return (
-    <Card className="h-full transition-all duration-200 hover:shadow-lg cursor-pointer" onClick={handleView}>
+    <Card className="h-full transition-all duration-200 hover:shadow-lg">
+      {/* Banner Image */}
+      {group.banner && (
+        <div className="h-32 bg-gradient-to-r from-blue-500 to-teal-600 relative overflow-hidden flex-shrink-0">
+          <img 
+            src={group.banner} 
+            alt={`${group.name} banner`}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+      
       <CardContent className="p-6 flex flex-col h-full">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-start space-x-4 flex-1">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Users className="h-6 w-6 text-blue-600" />
+          <div className="flex items-start space-x-4 flex-1 cursor-pointer" onClick={handleView}>
+            {/* Logo or default icon */}
+            <div className="w-12 h-12 flex-shrink-0">
+              {group.logo ? (
+                <img 
+                  src={group.logo} 
+                  alt={`${group.name} logo`}
+                  className="w-12 h-12 object-contain rounded-lg border bg-white p-1"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-lg text-gray-900 truncate">
                 {group.name}
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {group.group_code || `ID: ${group.id.substring(0, 8)}`}
-              </p>
             </div>
           </div>
           
@@ -1473,42 +1507,22 @@ const CustomGroupCard: React.FC<{
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleView()
-                }}
-              >
+              <DropdownMenuItem onClick={() => handleView()}>
                 <Eye className="h-4 w-4 mr-2" />
                 View Details
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onEdit(group)
-                }}
-              >
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(group)}>
                 <Edit2 className="h-4 w-4 mr-2" />
                 Edit
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-red-600 hover:text-red-700"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDelete(group)
-                }}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => onDelete(group)}
+                className="text-red-600"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
-              </Button>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -1552,7 +1566,7 @@ const CustomGroupCard: React.FC<{
         
         {/* Footer */}
         <div className="mt-auto pt-4 border-t border-gray-100">
-          <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
             <span>Updated {formatDate(group.updated_at)}</span>
             <div className="flex items-center space-x-1">
               {group.is_public ? (
@@ -1562,6 +1576,34 @@ const CustomGroupCard: React.FC<{
               )}
               <span>{group.is_public ? 'Public' : 'Private'}</span>
             </div>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit(group)
+              }}
+              className="flex-1"
+            >
+              <Edit2 className="h-3 w-3 mr-1" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleView()
+              }}
+              className="flex-1"
+            >
+              <Eye className="h-3 w-3 mr-1" />
+              View
+            </Button>
           </div>
         </div>
       </CardContent>
@@ -1607,40 +1649,10 @@ const OrganizationCard: React.FC<{
           </div>
         )}
         
-        {/* Actions Dropdown - positioned on banner */}
-        <div 
-          className="absolute top-4 right-4" 
-          onClick={(e) => e.stopPropagation()}
-        >
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 bg-black/20 hover:bg-black/40">
-                <MoreVertical className="h-4 w-4 text-white" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleView()}>
-                <Eye className="h-4 w-4 mr-2" />
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(organization)}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => onDelete(organization)}
-                className="text-red-600"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+
       </div>
 
-      <CardContent className="p-6 flex flex-col flex-grow">
+      <CardContent className="p-6 flex flex-col flex-grow relative">
         <div className="flex flex-col space-y-4 flex-grow">
           {/* Top section with logo and name */}
           <div className="flex items-start gap-4">
@@ -1663,12 +1675,12 @@ const OrganizationCard: React.FC<{
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-lg text-gray-900 line-clamp-2">
                 {organization.name}
+                {organization.acronym && (
+                  <span className="text-gray-900 font-semibold ml-2">({organization.acronym})</span>
+                )}
               </h3>
-              {organization.acronym && (
-                <p className="text-sm text-gray-600 mt-0.5">
-                  {organization.acronym}
-                </p>
-              )}
+              
+              {/* IATI ID */}
               <div className="flex items-center gap-1 mt-2">
                 <p className="text-sm text-gray-500">
                   {organization.iati_org_id || 'No IATI identifier'}
@@ -1688,8 +1700,127 @@ const OrganizationCard: React.FC<{
                   </Button>
                 )}
               </div>
+
+              {/* Location Represented and Partner Classification Pills */}
+              <div className="flex items-center gap-2 mt-1">
+                {/* Location Represented Pill */}
+                {(organization.country_represented || organization.country) && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {organization.country_represented || organization.country}
+                  </span>
+                )}
+                
+                {/* Partner Classification Pill */}
+                {organization.organisation_type && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    {getPartnerClassification(organization.organisation_type, organization.country_represented || organization.country || '')}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Contact Information - Moved to bottom with border above */}
+          <div className="pt-3 border-t border-gray-200 space-y-2">
+            {organization.website && (
+              <div className="flex items-center gap-2">
+                <ExternalLink className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <a 
+                  href={organization.website.startsWith('http') ? organization.website : `https://${organization.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:text-blue-800 truncate"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {organization.website}
+                </a>
+              </div>
+            )}
+            {organization.email && (
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <a 
+                  href={`mailto:${organization.email}`}
+                  className="text-sm text-blue-600 hover:text-blue-800 truncate"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {organization.email}
+                </a>
+              </div>
+            )}
+            {organization.address && (
+              <div className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                <span className="text-sm text-gray-600 line-clamp-2">
+                  {organization.address}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Statistics Section - Similar to Activity Cards */}
+          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+            <h4 className="text-sm font-medium text-gray-900 mb-3">Organization Statistics</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Activities Reported</span>
+                <span className="text-sm text-gray-700 font-medium">{organization.activeProjects || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Budgeted</span>
+                <span className="text-sm text-gray-700">{formatCurrency(organization.totalBudgeted)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Disbursed</span>
+                <span className="text-sm text-gray-700">{formatCurrency(organization.totalDisbursed)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Description */}
+          {organization.description && (
+            <div className="pt-2 border-t border-gray-100">
+              <p className="text-sm text-gray-600 line-clamp-3">
+                {organization.description}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Actions Dropdown - positioned at bottom right */}
+        <div 
+          className="absolute bottom-4 right-4" 
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 bg-gray-100 hover:bg-blue-500 hover:text-white transition-colors duration-200 rounded-full shadow-sm"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleView()}>
+                <Eye className="h-4 w-4 mr-2" />
+                View
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(organization)}>
+                <Edit2 className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => onDelete(organization)}
+                className="text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardContent>
     </Card>
@@ -1729,7 +1860,7 @@ const OrganizationListView: React.FC<{
               {/* Acronym */}
               {org.acronym && (
                 <div className="flex-shrink-0">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm font-semibold text-gray-900">
                     {org.acronym}
                   </span>
                 </div>
@@ -1830,6 +1961,8 @@ function OrganizationsPageContent() {
   const [customGroups, setCustomGroups] = useState<any[]>([])
   const [loadingCustomGroups, setLoadingCustomGroups] = useState(false)
   const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false)
+  const [editGroupModalOpen, setEditGroupModalOpen] = useState(false)
+  const [selectedGroup, setSelectedGroup] = useState<any>(null)
   
   // AbortController refs for race condition prevention
   const mainFetchControllerRef = useRef<AbortController | null>(null)
@@ -1952,6 +2085,8 @@ function OrganizationsPageContent() {
         console.error('[OrganizationsPage] Failed to fetch custom groups')
         setCustomGroups([])
       }
+      // Successfully completed request, set loading to false
+      setLoadingCustomGroups(false)
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('[OrganizationsPage] Groups request aborted')
@@ -1959,7 +2094,7 @@ function OrganizationsPageContent() {
       }
       console.error('[OrganizationsPage] Error fetching custom groups:', error)
       setCustomGroups([])
-    } finally {
+      // Only set loading to false for actual errors, not aborts
       setLoadingCustomGroups(false)
     }
   }
@@ -2063,6 +2198,9 @@ function OrganizationsPageContent() {
         const summaryData = await summaryResponse.json()
         setSummary(summaryData)
       }
+      
+      // Successfully loaded data, set loading to false
+      setLoading(false)
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('[OrganizationsPage] Main request aborted')
@@ -2079,7 +2217,7 @@ function OrganizationsPageContent() {
         totalCustomGroups: 0,
         lastUpdated: new Date().toISOString()
       })
-    } finally {
+      // Only set loading to false for actual errors, not aborts
       setLoading(false)
     }
   }
@@ -2087,6 +2225,48 @@ function OrganizationsPageContent() {
   // Optimized function to calculate active projects and project breakdown
   const processOrganizationsOptimized = async (orgsData: any[]): Promise<Organization[]> => {
     try {
+      // Create a map to store organization statistics
+      const orgStatsMap = new Map();
+      
+      // Initialize all organizations with zero stats
+      orgsData.forEach(org => {
+        orgStatsMap.set(org.id, {
+          count: 0,
+          totalBudgeted: 0,
+          totalDisbursed: 0
+        });
+      });
+
+      // Fetch activity counts for each organization using their API endpoint
+      const orgStatsPromises = orgsData.map(async (org) => {
+        try {
+          const response = await fetch(`/api/organizations/${org.id}`);
+          if (response.ok) {
+            const orgData = await response.json();
+            return {
+              id: org.id,
+              activeProjects: orgData.active_project_count || 0
+            };
+          }
+        } catch (error) {
+          console.error(`Error fetching stats for org ${org.id}:`, error);
+        }
+        return { id: org.id, activeProjects: 0 };
+      });
+
+      // Wait for all organization stats to be fetched
+      const orgStats = await Promise.all(orgStatsPromises);
+      
+      // Update the stats map with fetched data
+      orgStats.forEach(stat => {
+        if (orgStatsMap.has(stat.id)) {
+          orgStatsMap.get(stat.id).count = stat.activeProjects;
+        }
+      });
+
+      // For now, set financial data to 0 since we need to implement proper calculation
+      // TODO: Implement proper financial calculations from activities and transactions
+
       // Map organizations with calculated data
       return orgsData.map((org: any) => {
         // Debug country_represented values
@@ -2098,17 +2278,21 @@ function OrganizationsPageContent() {
           });
         }
         
-        // Use active_project_count from API if available, otherwise default to 0
-        const activeProjects = org.active_project_count || 0;
+        // Get activity data for this organization
+        const activityData = orgStatsMap.get(org.id) || { count: 0, totalBudgeted: 0, totalDisbursed: 0 };
         
         return {
           ...org,
-          activeProjects,
+          // Ensure we use the correct organisation_type field
+          organisation_type: org.organisation_type || org.type,
+          activeProjects: activityData.count,
+          totalBudgeted: activityData.totalBudgeted,
+          totalDisbursed: activityData.totalDisbursed,
           displayName: org.name && org.acronym ? `${org.name} (${org.acronym})` : org.name,
-          derived_category: deriveCategory(org.organisation_type, org.country_represented || org.country || ''),
-          // Initialize project status breakdown with active count from API
+          derived_category: deriveCategory(org.organisation_type || org.type, org.country_represented || org.country || ''),
+          // Initialize project status breakdown with active count
           projectsByStatus: { 
-            active: activeProjects, 
+            active: activityData.count, 
             pipeline: 0, 
             completed: 0, 
             cancelled: 0 
@@ -2413,20 +2597,33 @@ function OrganizationsPageContent() {
           
           {/* Results counter */}
           {activeFilter === 'custom_groups' ? (
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>
-                Showing {customGroups.length} custom group{customGroups.length !== 1 ? 's' : ''}
-              </span>
-            </div>
+            loadingCustomGroups ? (
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <Skeleton className="h-4 w-32" />
+              </div>
+            ) : (
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>
+                  Showing {customGroups.length} custom group{customGroups.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+            )
           ) : (
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredOrganizations.length)} of {filteredOrganizations.length} organizations
-              </span>
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
-            </div>
+            loading ? (
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            ) : (
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredOrganizations.length)} of {filteredOrganizations.length} organizations
+                </span>
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+              </div>
+            )
           )}
         </div>
 
@@ -2484,7 +2681,8 @@ function OrganizationsPageContent() {
                         key={group.id}
                         group={group}
                         onEdit={(group) => {
-                          router.push(`/partners/groups/${group.id}/edit`)
+                          setSelectedGroup(group)
+                          setEditGroupModalOpen(true)
                         }}
                         onDelete={async (group) => {
                           if (!confirm('Are you sure you want to delete this group?')) return
@@ -2527,7 +2725,24 @@ function OrganizationsPageContent() {
               )
             ) : (
               /* Organization Grid or Table based on view mode */
-              paginatedOrganizations.length > 0 ? (
+              loading ? (
+                /* Show loading skeletons while data is being fetched */
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => (
+                    <Card key={i} className="h-64">
+                      <CardContent className="p-6">
+                        <Skeleton className="h-12 w-12 rounded-full mb-4" />
+                        <Skeleton className="h-4 w-3/4 mb-2" />
+                        <Skeleton className="h-3 w-1/2 mb-4" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-3 w-full" />
+                          <Skeleton className="h-3 w-5/6" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : paginatedOrganizations.length > 0 ? (
                 <>
                   {viewMode === 'card' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -2666,6 +2881,17 @@ function OrganizationsPageContent() {
         <CreateCustomGroupModal 
           open={createGroupModalOpen}
           onOpenChange={setCreateGroupModalOpen}
+          onSuccess={fetchCustomGroups}
+        />
+
+        {/* Edit Custom Group Modal */}
+        <EditCustomGroupModal 
+          group={selectedGroup}
+          open={editGroupModalOpen}
+          onOpenChange={(open) => {
+            setEditGroupModalOpen(open)
+            if (!open) setSelectedGroup(null)
+          }}
           onSuccess={fetchCustomGroups}
         />
       </div>

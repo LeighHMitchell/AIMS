@@ -123,7 +123,7 @@ export default function StatusIconsDemoPage() {
                           {status === 'completed' && 'Completed - Activity completed successfully'}
                           {status === 'cancelled' && 'Cancelled - Activity cancelled'}
                           {status === 'suspended' && 'Suspended - Activity temporarily suspended'}
-                          {status === '1' && 'Pipeline/Identification - Activity in pipeline'}
+                          {status === '1' && 'Pipeline - Activity in pipeline'}
                           {status === '2' && 'Implementation - Activity being implemented'}
                           {status === '3' && 'Finalisation - Activity in final phase'}
                           {status === '4' && 'Closed - Activity closed'}

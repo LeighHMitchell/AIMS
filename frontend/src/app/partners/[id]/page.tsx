@@ -48,12 +48,14 @@ import {
   calculateCooperationModality 
 } from "@/components/OrganizationFieldHelpers";
 import { ImageUpload } from "@/components/ImageUpload";
+import { useHomeCountry } from "@/contexts/SystemSettingsContext";
 
 export default function PartnerProfilePage() {
   const params = useParams();
   const router = useRouter();
   const { user, permissions } = useUser();
   const { partners, getPartnerById, updatePartner } = usePartners();
+  const homeCountry = useHomeCountry();
   const [activeTab, setActiveTab] = useState("about");
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
@@ -713,7 +715,8 @@ export default function PartnerProfilePage() {
                 id="cooperationModality"
                 value={calculateCooperationModality(
                   formData.countryRepresented, 
-                  formData.organisationType
+                  formData.organisationType,
+                  homeCountry
                 )}
                 disabled
                 className="bg-gray-100"

@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { OrganizationSearchableSelect, type Organization } from "@/components/ui/organization-searchable-select";
 import { PhoneFields } from "@/components/ui/phone-fields";
+import { useHomeCountryData } from '@/contexts/SystemSettingsContext';
 
 interface Contact {
   id?: string;
@@ -56,7 +57,7 @@ const getContactTypeName = (code: string): string => {
 
 // Helper function to split legacy phone number into country code and local number
 const splitPhoneNumber = (phone: string) => {
-  if (!phone) return { countryCode: "+95", phoneNumber: "" };
+  if (!phone) return { countryCode: "", phoneNumber: "" };
   
   const countries = [
     { code: "+95", pattern: /^\+95/ },
@@ -80,8 +81,8 @@ const splitPhoneNumber = (phone: string) => {
     }
   }
   
-  // If no country code found, default to Myanmar and use full number as phone
-  return { countryCode: "+95", phoneNumber: phone };
+  // If no country code found, return empty country code
+  return { countryCode: "", phoneNumber: phone };
 };
 
 export default function ContactsSection({ contacts, onChange, activityId }: ContactsSectionProps) {
@@ -90,6 +91,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
   const { user } = useUser();
+  const homeCountryData = useHomeCountryData();
   const [emailErrors, setEmailErrors] = useState({
     primary: "",
     secondary: ""
@@ -189,9 +191,9 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
       firstName: "",
       lastName: "",
       position: "",
-      countryCode: "+95", // Default to Myanmar
+      countryCode: homeCountryData.dialCode || "",
       phoneNumber: "",
-      faxCountryCode: "+95", // Default to Myanmar
+      faxCountryCode: homeCountryData.dialCode || "",
       faxNumber: "",
     };
     console.log('[CONTACTS DEBUG] Creating new contact form with:', newContact);
@@ -588,7 +590,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <PhoneFields
-                        countryCode={editingContact.countryCode || "+95"}
+                        countryCode={editingContact.countryCode || homeCountryData.dialCode || ""}
                         phoneNumber={editingContact.phoneNumber || ""}
                         onCountryCodeChange={(code) =>
                           setEditingContact({ ...editingContact, countryCode: code })
@@ -602,7 +604,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
                     </div>
                     <div>
                       <PhoneFields
-                        countryCode={editingContact.faxCountryCode || "+95"}
+                        countryCode={editingContact.faxCountryCode || homeCountryData.dialCode || ""}
                         phoneNumber={editingContact.faxNumber || ""}
                         onCountryCodeChange={(code) =>
                           setEditingContact({ ...editingContact, faxCountryCode: code })

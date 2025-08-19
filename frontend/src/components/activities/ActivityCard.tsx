@@ -363,7 +363,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <h4 className="text-sm font-medium text-gray-900 mb-3">Activity Details</h4>
               <div className="space-y-2">
                 {activity.created_by_org_name && (
-                  <div className="flex justify-between items-center py-2 min-h-[3.5rem]">
+                  <div className="flex justify-between items-center py-2 min-h-[3.5rem] border-t border-gray-200">
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reported by</span>
                     <span className="text-sm text-gray-700 font-medium text-right flex items-center">
                       {activity.created_by_org_name}

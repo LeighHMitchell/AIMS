@@ -62,7 +62,7 @@ export const ACTIVITY_FIELDS: SystemField[] = [
   { id: 'end_date_planned', name: 'End Date', type: 'date', required: true, description: 'Planned end date (YYYY-MM-DD)', format: 'YYYY-MM-DD' },
   { id: 'total_budget', name: 'Total Budget', type: 'number', required: true, description: 'Total budget amount in USD' },
   { id: 'activity_status', name: 'Status', type: 'select', required: false, description: 'Current status of the activity', options: [
-    { value: 'pipeline', label: 'Pipeline/Identification' },
+    { value: 'pipeline', label: 'Pipeline' },
     { value: 'implementation', label: 'Implementation' },
     { value: 'completion', label: 'Completion' },
     { value: 'cancelled', label: 'Cancelled' },

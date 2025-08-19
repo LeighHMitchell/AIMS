@@ -20,6 +20,8 @@ import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 import { PhoneFields } from "@/components/ui/phone-fields";
 import { AddressSearch, AddressComponents } from "@/components/ui/address-search";
 import { EmailChangeConfirmDialog } from "@/components/EmailChangeConfirmDialog";
+import { supabase } from "@/lib/supabase";
+import { CONTACT_TYPES } from "@/data/contact-types";
 import { 
   Building2, 
   User, 
@@ -127,11 +129,43 @@ const formatMailingAddress = (address: AddressComponents): string => {
   return parts.length > 0 ? parts.join(', ') : '';
 };
 
+// Organization interface
+interface Organization {
+  id: string
+  name: string
+  acronym?: string
+  iati_org_id?: string
+}
+
+// IATI validation helpers
+const validateReportingOrgId = (id: string): string | null => {
+  if (id && !/^[A-Z]{2}-[A-Z0-9\-]+$/i.test(id)) return "Invalid IATI organization ID format (e.g., XM-DAC-41114)"
+  return null
+}
+
+// ISO 639-1 language codes
+const languages = [
+  { code: "en", name: "English" },
+  { code: "fr", name: "French" },
+  { code: "es", name: "Spanish" },
+  { code: "ar", name: "Arabic" },
+  { code: "zh", name: "Chinese" },
+  { code: "pt", name: "Portuguese" },
+  { code: "ru", name: "Russian" },
+  { code: "hi", name: "Hindi" },
+  { code: "sw", name: "Swahili" },
+  { code: "de", name: "German" },
+  { code: "my", name: "Myanmar" },
+];
+
 export default function ProfilePage() {
   const { user, setUser } = useUser();
   const [activeTab, setActiveTab] = useState("personal");
   const [isEditing, setIsEditing] = useState(false);
   const [emailChangeDialogOpen, setEmailChangeDialogOpen] = useState(false);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   // Function to enter edit mode and refresh data
   const handleEditClick = async () => {
@@ -162,7 +196,14 @@ export default function ProfilePage() {
             bio: freshData.bio || "",
             preferredLanguage: freshData.preferred_language || "en",
             timezone: freshData.timezone || "UTC",
-            role: freshData.role || ""
+            role: freshData.role || "",
+            contactType: freshData.contact_type || "",
+            secondaryEmail: freshData.secondary_email || "",
+            secondaryCountryCode: splitTelephone(freshData.secondary_phone || "").countryCode,
+            secondaryPhoneNumber: splitTelephone(freshData.secondary_phone || "").phoneNumber,
+            faxCountryCode: splitTelephone(freshData.fax_number || "").countryCode,
+            faxPhoneNumber: splitTelephone(freshData.fax_number || "").phoneNumber,
+            notes: freshData.notes || ""
           }));
           
           // Preserve profile photo when entering edit mode
@@ -188,6 +229,7 @@ export default function ProfilePage() {
     email: user?.email || "",
     jobTitle: user?.jobTitle || "",
     department: user?.department || "",
+    organisation: user?.organisation || "",
     ...splitTelephone(user?.telephone || user?.phone || ""),
     website: user?.website || "",
     mailingAddress: user?.mailingAddress || "",
@@ -197,10 +239,79 @@ export default function ProfilePage() {
     timezone: user?.timezone || "UTC",
     role: user?.role || "",
     organization: user?.organization || null,
+    reportingOrgId: "",
     password: "",
     newPassword: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    contactType: user?.contactType || "",
+    secondaryEmail: user?.secondaryEmail || "",
+    ...splitTelephone(user?.secondaryPhone || ""),
+    secondaryCountryCode: splitTelephone(user?.secondaryPhone || "").countryCode,
+    secondaryPhoneNumber: splitTelephone(user?.secondaryPhone || "").phoneNumber,
+    ...splitTelephone(user?.faxNumber || ""),
+    faxCountryCode: splitTelephone(user?.faxNumber || "").countryCode,
+    faxPhoneNumber: splitTelephone(user?.faxNumber || "").phoneNumber,
+    notes: user?.notes || ""
   });
+
+  // Fetch organizations for super users
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      if (!supabase || user?.role !== 'super_user') return
+
+      try {
+        const { data, error } = await supabase
+          .from('organizations')
+          .select('id, name, acronym, iati_org_id')
+          .order('name')
+
+        if (error) {
+          console.error('Error fetching organizations:', error)
+          return
+        }
+
+        setOrganizations(data || [])
+        
+        // Set the selected org ID if user has an organization
+        if (user?.organizationId) {
+          setSelectedOrgId(user.organizationId)
+        }
+      } catch (error) {
+        console.error('Error fetching organizations:', error)
+      }
+    }
+
+    fetchOrganizations()
+  }, [user?.role, user?.organizationId])
+
+  // Load IATI profile data
+  useEffect(() => {
+    const loadIATIProfile = async () => {
+      if (!user?.email) return
+
+      try {
+        const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`)
+        
+        if (response.ok) {
+          const userData = await response.json()
+          
+          setFormData(prev => ({
+            ...prev,
+            reportingOrgId: userData.reporting_org_id || '',
+            organisation: userData.organisation || user.organisation || prev.organisation,
+          }))
+          
+          if (userData.organization_id) {
+            setSelectedOrgId(userData.organization_id)
+          }
+        }
+      } catch (error) {
+        console.error('Error loading IATI profile:', error)
+      }
+    }
+
+    loadIATIProfile()
+  }, [user?.email])
 
   // Refresh form data when user prop changes
   useEffect(() => {
@@ -215,6 +326,7 @@ export default function ProfilePage() {
         email: user.email || "",
         jobTitle: user.jobTitle || "",
         department: user.department || "",
+        organisation: user.organisation || "",
         ...splitTelephone(user.telephone || user.phone || ""),
         website: user.website || "",
         mailingAddress: user.mailingAddress || "",
@@ -223,7 +335,14 @@ export default function ProfilePage() {
         preferredLanguage: user.preferredLanguage || "en",
         timezone: user.timezone || "UTC",
         role: user.role || "",
-        organization: user.organization || null
+        organization: user.organization || null,
+        contactType: user.contactType || "",
+        secondaryEmail: user.secondaryEmail || "",
+        secondaryCountryCode: splitTelephone(user.secondaryPhone || "").countryCode,
+        secondaryPhoneNumber: splitTelephone(user.secondaryPhone || "").phoneNumber,
+        faxCountryCode: splitTelephone(user.faxNumber || "").countryCode,
+        faxPhoneNumber: splitTelephone(user.faxNumber || "").phoneNumber,
+        notes: user.notes || ""
       }));
       
       if (user.profilePicture) {
@@ -242,7 +361,7 @@ export default function ProfilePage() {
     }
 
     try {
-      const response = await fetch('/api/users/change-email', {
+      const response = await fetch('/api/users/change-email-simple', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -252,17 +371,28 @@ export default function ProfilePage() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to change email address");
+        console.error('[Profile] Email change error response:', data);
+        
+        // Provide more specific error messages
+        if (data.details) {
+          throw new Error(`${data.error}: ${data.details}`);
+        } else {
+          throw new Error(data.error || "Failed to change email address");
+        }
       }
 
       // Update the form data and user
       setFormData(prev => ({ ...prev, email: newEmail }));
       setUser({ ...user, email: newEmail });
       
+      // Show success message
+      toast.success("Email address updated successfully");
+      
     } catch (error) {
-      console.error('Error changing email:', error);
+      console.error('[Profile] Error changing email:', error);
       throw error; // Re-throw to be handled by the dialog
     }
   };
@@ -282,6 +412,7 @@ export default function ProfilePage() {
         last_name: formData.lastName,
         job_title: formData.jobTitle,
         department: formData.department,
+        organisation: formData.organisation,
         telephone: formData.countryCode + formData.phoneNumber,
         website: formData.website,
         mailing_address: formatMailingAddress(formData.addressComponents),
@@ -289,7 +420,18 @@ export default function ProfilePage() {
         preferred_language: formData.preferredLanguage,
         timezone: formData.timezone,
         avatar_url: profilePhoto,
+        reporting_org_id: formData.reportingOrgId,
+        contact_type: formData.contactType,
+        secondary_email: formData.secondaryEmail,
+        secondary_phone: formData.secondaryCountryCode + formData.secondaryPhoneNumber,
+        fax_number: formData.faxCountryCode + formData.faxPhoneNumber,
+        notes: formData.notes,
       };
+
+      // Include organisation update for super users
+      if (user.role === 'super_user' && selectedOrgId) {
+        (apiData as any).organization_id = selectedOrgId;
+      }
 
       console.log('[Profile] Sending API data:', apiData);
 
@@ -305,6 +447,21 @@ export default function ProfilePage() {
         const updatedData = await response.json();
         console.log('[Profile] Profile updated successfully:', updatedData);
         
+        // If organization was changed, fetch the new organization data
+        let organizationData = user.organization
+        if (user.role === 'super_user' && selectedOrgId && selectedOrgId !== user.organizationId) {
+          const selectedOrg = organizations.find(o => o.id === selectedOrgId)
+          if (selectedOrg) {
+            organizationData = {
+              id: selectedOrg.id,
+              name: selectedOrg.name,
+              type: 'development_partner', // Default type, should be fetched from org data
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }
+          }
+        }
+
         // Update user context with the new data
         const updatedUser = {
           ...user,
@@ -315,6 +472,9 @@ export default function ProfilePage() {
           name: updatedData.name || `${updatedData.first_name || ''} ${updatedData.last_name || ''}`.trim(),
           jobTitle: updatedData.job_title || "",
           department: updatedData.department || "",
+          organisation: updatedData.organisation || formData.organisation,
+          organizationId: updatedData.organization_id || (user.role === 'super_user' && selectedOrgId ? selectedOrgId : user.organizationId),
+          organization: organizationData,
           telephone: updatedData.telephone || "",
           phone: updatedData.telephone || "",
           website: updatedData.website || "",
@@ -361,7 +521,16 @@ export default function ProfilePage() {
         organization: user.organization || null,
         password: "",
         newPassword: "",
-        confirmPassword: ""
+        confirmPassword: "",
+        contactType: user.contactType || "",
+        secondaryEmail: user.secondaryEmail || "",
+        secondaryCountryCode: splitTelephone(user.secondaryPhone || "").countryCode,
+        secondaryPhoneNumber: splitTelephone(user.secondaryPhone || "").phoneNumber,
+        faxCountryCode: splitTelephone(user.faxNumber || "").countryCode,
+        faxPhoneNumber: splitTelephone(user.faxNumber || "").phoneNumber,
+        notes: user.notes || "",
+        reportingOrgId: (user as any).reportingOrgId || "",
+        organisation: (user as any).organisation || ""
       });
       setProfilePhoto(user.profilePicture || "");
     }
@@ -414,8 +583,12 @@ export default function ProfilePage() {
               Personal Info
             </TabsTrigger>
             <TabsTrigger value="contact" className="flex items-center gap-2">
-              <Phone className="h-4 w-4" />
-              Contact & Address
+              <MapPin className="h-4 w-4" />
+              Address & Website
+            </TabsTrigger>
+            <TabsTrigger value="iati" className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              IATI Settings
             </TabsTrigger>
             <TabsTrigger value="system" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -426,48 +599,49 @@ export default function ProfilePage() {
           {/* Personal Information Tab */}
           <TabsContent value="personal" className="space-y-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
                   Personal Information
                 </CardTitle>
                 <CardDescription>
-                  Your basic profile information
+                      Your complete profile and contact details
                 </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Profile Picture Section */}
-                <div className="flex flex-col items-center space-y-4">
-                  <ProfilePhotoUpload
-                    currentPhoto={profilePhoto}
-                    userInitials={`${formData.firstName?.[0] || ''}${formData.lastName?.[0] || user.name?.[0] || 'U'}`}
-                    onPhotoChange={handlePhotoChange}
-                    className="mb-2"
-                    disabled={!isEditing}
-                  />
-                </div>
-
-                {/* Role Badge */}
-                <div className="flex justify-center">
+                  </div>
                   <Badge variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"}>
                     <Shield className="h-3 w-3 mr-1" />
                     {ROLE_LABELS[user.role] || user.role}
                   </Badge>
                 </div>
-
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Profile Picture Section - Smaller and to the side */}
+                <div className="flex gap-6 items-start">
+                  <ProfilePhotoUpload
+                    currentPhoto={profilePhoto}
+                    userInitials={`${formData.firstName?.[0] || ''}${formData.lastName?.[0] || user.name?.[0] || 'U'}`}
+                    onPhotoChange={handlePhotoChange}
+                    className="shrink-0"
+                    disabled={!isEditing}
+                  />
+                  
+                  <div className="flex-1 space-y-6">
                 {isEditing ? (
                   <>
                     {/* Editing Mode */}
+                        {/* Name Section */}
                     <div className="space-y-4">
-                      {/* Title and Name fields */}
-                      <div className="grid grid-cols-4 gap-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">Name Details</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <div>
-                          <Label htmlFor="title">Title</Label>
+                              <Label htmlFor="title" className="text-xs">Title</Label>
                           <Select 
                             value={formData.title} 
                             onValueChange={(value) => setFormData({ ...formData, title: value })}
                           >
-                            <SelectTrigger>
+                                <SelectTrigger className="h-9">
                               <SelectValue placeholder="Select" />
                             </SelectTrigger>
                             <SelectContent>
@@ -484,173 +658,301 @@ export default function ProfilePage() {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="firstName">First Name</Label>
+                              <Label htmlFor="firstName" className="text-xs">First Name *</Label>
                           <Input
                             id="firstName"
                             value={formData.firstName}
                             onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                className="h-9"
                             required
                           />
                         </div>
                         <div>
-                          <Label htmlFor="middleName">Middle Name</Label>
+                              <Label htmlFor="middleName" className="text-xs">Middle Name</Label>
                           <Input
                             id="middleName"
                             value={formData.middleName}
                             onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+                                className="h-9"
                             placeholder="Optional"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="lastName">Last Name</Label>
+                              <Label htmlFor="lastName" className="text-xs">Last Name *</Label>
                           <Input
                             id="lastName"
                             value={formData.lastName}
                             onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                className="h-9"
                             required
                           />
                         </div>
                       </div>
-
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="email">Email Address</Label>
-                          {user.role === 'super_user' && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEmailChangeDialogOpen(true)}
-                              className="text-orange-600 hover:text-orange-700"
-                            >
-                              Change Email
-                            </Button>
-                          )}
-                        </div>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          disabled
-                          className="bg-muted"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {user.role === 'super_user' 
-                            ? "Use the 'Change Email' button to safely update your email address" 
-                            : "Contact your administrator to change your email address"
-                          }
-                        </p>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Position Section */}
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">Position</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <Label htmlFor="jobTitle">Job Title</Label>
+                              <Label htmlFor="jobTitle" className="text-xs">Position/Role</Label>
                           <Input
                             id="jobTitle"
                             value={formData.jobTitle}
                             onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                                className="h-9"
                             placeholder="e.g., Aid Coordinator"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="department">Department</Label>
+                              <Label htmlFor="department" className="text-xs">Department</Label>
                           <Input
                             id="department"
                             value={formData.department}
                             onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                className="h-9"
                             placeholder="e.g., International Development"
                           />
+                            </div>
                         </div>
                       </div>
 
+                        {/* Organization Section */}
                       <div className="space-y-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">Organization</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <Label htmlFor="bio">Bio / Description</Label>
-                          <Textarea
-                            id="bio"
-                            value={formData.bio}
-                            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                            placeholder="Brief description about yourself..."
-                            rows={4}
-                          />
+                              <Label htmlFor="contactType" className="text-xs">Contact Type</Label>
+                              <Select 
+                                value={formData.contactType} 
+                                onValueChange={(value) => setFormData({ ...formData, contactType: value })}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {CONTACT_TYPES.map((type) => (
+                                    <SelectItem key={type.code} value={type.code}>
+                                      {type.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                         </div>
-                      </div>
-                    </div>
-                  </>
+                        <div>
+                              {user.role === 'super_user' ? (
+                                <>
+                                  <Label htmlFor="organisation" className="text-xs">Organisation</Label>
+                      <Select
+                        value={selectedOrgId}
+                        onValueChange={(value) => {
+                          setSelectedOrgId(value)
+                          const org = organizations.find(o => o.id === value)
+                          if (org) {
+                            setFormData(prev => ({ ...prev, organisation: org.name }))
+                          }
+                        }}
+                      >
+                                    <SelectTrigger id="organisation" className="h-9">
+                          <SelectValue placeholder="Select organisation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {organizations.map((org) => (
+                            <SelectItem key={org.id} value={org.id}>
+                              <div className="flex flex-col">
+                                            <div className="text-sm">
+                                  {org.name} {org.acronym && `(${org.acronym})`}
+                                </div>
+                                {org.iati_org_id && (
+                                  <div className="text-xs text-muted-foreground">
+                                    IATI: {org.iati_org_id}
+                                  </div>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                                </>
                 ) : (
                   <>
-                    {/* View Mode */}
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Full Name</Label>
-                          <p className="text-lg">
-                            {user.title && user.title !== "none" ? `${user.title} ` : ""}
-                            {user.firstName && user.lastName 
-                              ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}` 
-                              : user.name || "Not specified"}
-                          </p>
+                                  <Label className="text-xs">Organisation</Label>
+                                  <div className="h-9 px-3 py-2 border rounded-md bg-muted flex items-center">
+                                    <span className="text-sm">{user.organization?.name || formData.organisation || "Not assigned"}</span>
                         </div>
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Email Address</Label>
-                          <p className="text-lg">{user.email}</p>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
+
+                        {/* Contact Details Section */}
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">Contact Details</h4>
+                          
+                          {/* Primary Email */}
+                          <div className="space-y-3">
                         <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Job Title</Label>
-                          <p className="text-lg">{user.jobTitle || "Not specified"}</p>
+                              <Label htmlFor="email" className="text-xs mb-2 block">Primary Email</Label>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  id="email"
+                                  type="email"
+                                  value={formData.email}
+                                  disabled
+                                  className="bg-muted h-9 flex-1"
+                                />
+                                {user.role === 'super_user' && (
+                                  <Button
+                                    type="button"
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => setEmailChangeDialogOpen(true)}
+                                    className="bg-orange-600 hover:bg-orange-700 text-white h-9 text-xs shrink-0"
+                                  >
+                                    Change Email
+                                  </Button>
+                                )}
+                              </div>
+                      </div>
+                            
+                            {/* Primary Phone */}
+                            <div>
+                              <Label className="text-xs mb-1">Primary Phone</Label>
+                              <PhoneFields
+                                countryCode={formData.countryCode}
+                                phoneNumber={formData.phoneNumber}
+                                onCountryCodeChange={(code) => setFormData({ ...formData, countryCode: code })}
+                                onPhoneNumberChange={(number) => setFormData({ ...formData, phoneNumber: number })}
+                                phoneLabel=""
+                                phonePlaceholder="Phone number"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Secondary Contact */}
+                          <div className="space-y-3">
+                            <div>
+                              <Label htmlFor="secondaryEmail" className="text-xs">Secondary Email</Label>
+                              <Input
+                                id="secondaryEmail"
+                                type="email"
+                                value={formData.secondaryEmail}
+                                onChange={(e) => setFormData({ ...formData, secondaryEmail: e.target.value })}
+                                className="h-9"
+                                placeholder="Optional secondary email"
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label className="text-xs mb-1">Secondary Phone</Label>
+                              <PhoneFields
+                                countryCode={formData.secondaryCountryCode}
+                                phoneNumber={formData.secondaryPhoneNumber}
+                                onCountryCodeChange={(code) => setFormData({ ...formData, secondaryCountryCode: code })}
+                                onPhoneNumberChange={(number) => setFormData({ ...formData, secondaryPhoneNumber: number })}
+                                phoneLabel=""
+                                phonePlaceholder="Phone number"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Fax */}
+                          <div>
+                            <Label className="text-xs mb-1">Fax Number</Label>
+                            <PhoneFields
+                              countryCode={formData.faxCountryCode}
+                              phoneNumber={formData.faxPhoneNumber}
+                              onCountryCodeChange={(code) => setFormData({ ...formData, faxCountryCode: code })}
+                              onPhoneNumberChange={(number) => setFormData({ ...formData, faxPhoneNumber: number })}
+                              phoneLabel=""
+                              phonePlaceholder="Fax number"
+                            />
+                          </div>
                         </div>
+
+                        {/* Notes Section */}
                         <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Department</Label>
-                          <p className="text-lg">{user.department || "Not specified"}</p>
+                          <Label htmlFor="notes" className="text-xs">Notes</Label>
+                          <Textarea
+                            id="notes"
+                            value={formData.notes}
+                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            placeholder="Additional information or notes..."
+                            rows={3}
+                            className="resize-none"
+                          />
                         </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* View Mode */}
+                        <div className="space-y-6">
+                          {/* Name and Position */}
+                          <div>
+                            <h3 className="font-medium text-lg mb-1">
+                              {user.title && user.title !== "none" ? `${user.title} ` : ""}
+                              {user.firstName && user.lastName 
+                                ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}` 
+                                : user.name || "Not specified"}
+                            </h3>
+                        <p className="text-sm text-muted-foreground">
+                              {user.jobTitle || "Position not specified"} 
+                              {user.department && ` • ${user.department}`}
+                        </p>
                       </div>
 
-                      {user.bio && (
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Bio</Label>
-                          <p className="text-lg mt-1">{user.bio}</p>
+                          {/* Organization */}
+                          {(user.organization || user.contactType) && (
+                            <div className="flex items-start gap-3">
+                              <Building2 className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <p className="text-sm font-medium">{user.organization?.name || user.organisation || "No organization"}</p>
+                                {user.contactType && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {CONTACT_TYPES.find(t => t.code === user.contactType)?.name || "Contact Type"}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Contact Details */}
+                          <div className="space-y-3">
+                            <div className="flex items-start gap-3">
+                              <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div className="space-y-1">
+                                <p className="text-sm">{user.email}</p>
+                                {user.secondaryEmail && (
+                                  <p className="text-sm text-muted-foreground">{user.secondaryEmail} (Secondary)</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {(user.telephone || user.secondaryPhone || user.faxNumber) && (
+                              <div className="flex items-start gap-3">
+                                <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                <div className="space-y-1">
+                                  {user.telephone && <p className="text-sm">{user.telephone}</p>}
+                                  {user.secondaryPhone && <p className="text-sm text-muted-foreground">{user.secondaryPhone} (Secondary)</p>}
+                                  {user.faxNumber && <p className="text-sm text-muted-foreground">{user.faxNumber} (Fax)</p>}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Notes */}
+                          {user.notes && (
+                            <div className="border-t pt-4">
+                              <h4 className="text-sm font-medium text-muted-foreground mb-2">Notes</h4>
+                              <p className="text-sm">{user.notes}</p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
                   </>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Organization Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Organization
-                </CardTitle>
-                <CardDescription>
-                  Your organization affiliation
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {user.organization ? (
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Building2 className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{user.organization.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {user.organization.type === 'development_partner' ? 'Development Partner' : 
-                         user.organization.type === 'partner_government' ? 'Government Partner' : 
-                         user.organization.type === 'bilateral' ? 'Bilateral Partner' :
-                         'Other Organization'}
-                      </p>
-                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No organization assigned</p>
-                    <p className="text-sm text-muted-foreground">Contact your administrator for organization assignment</p>
-                  </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -660,26 +962,17 @@ export default function ProfilePage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Phone className="h-5 w-5" />
-                  Contact Information
+                  <MapPin className="h-5 w-5" />
+                  Address & Website
                 </CardTitle>
                 <CardDescription>
-                  Your contact details and address
+                  Your mailing address and website information
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {isEditing ? (
                   <>
                     {/* Editing Mode */}
-                    <div className="space-y-4">
-                      <PhoneFields
-                        countryCode={formData.countryCode}
-                        phoneNumber={formData.phoneNumber}
-                        onCountryCodeChange={(code) => setFormData({ ...formData, countryCode: code })}
-                        onPhoneNumberChange={(number) => setFormData({ ...formData, phoneNumber: number })}
-                      />
-                    </div>
-
                     <div>
                       <Label htmlFor="website">Website</Label>
                       <Input
@@ -687,6 +980,7 @@ export default function ProfilePage() {
                         value={formData.website}
                         onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                         placeholder="https://example.com"
+                        className="h-9"
                       />
                     </div>
 
@@ -704,31 +998,142 @@ export default function ProfilePage() {
                 ) : (
                   <>
                     {/* View Mode */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      {user.website && (
+                        <div className="flex items-start gap-3">
+                          <Globe className="h-4 w-4 text-muted-foreground mt-0.5" />
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Phone Number</Label>
-                        <p className="text-lg">{user.telephone || user.phone || "Not specified"}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Website</Label>
-                        <p className="text-lg">
-                          {user.website ? (
-                            <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Website</p>
+                            <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
                               {user.website}
                             </a>
-                          ) : (
-                            "Not specified"
-                          )}
+                      </div>
+                    </div>
+                      )}
+
+                    {user.mailingAddress && (
+                        <div className="flex items-start gap-3">
+                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Mailing Address</p>
+                            <p className="text-sm">{user.mailingAddress}</p>
+                          </div>
+                      </div>
+                    )}
+
+                      {!user.website && !user.mailingAddress && (
+                        <div className="text-center py-8">
+                          <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No address or website information</p>
+                          <p className="text-sm text-muted-foreground">
+                            Click 'Edit Profile' to add your address and website
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* IATI Settings Tab */}
+          <TabsContent value="iati" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  IATI Configuration
+                </CardTitle>
+                <CardDescription>
+                  Configure your International Aid Transparency Initiative (IATI) settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {isEditing ? (
+                  <>
+                    {/* Editing Mode */}
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="preferredLanguageIATI">Preferred Language (ISO 639-1) *</Label>
+                        <Select
+                          value={formData.preferredLanguage}
+                          onValueChange={(value) => {
+                            setFormData({ ...formData, preferredLanguage: value })
+                            const error = validateReportingOrgId(value)
+                            if (error) {
+                              setErrors(prev => ({ ...prev, preferredLanguage: error }))
+                            } else {
+                              setErrors(prev => {
+                                const newErrors = { ...prev }
+                                delete newErrors.preferredLanguage
+                                return newErrors
+                              })
+                            }
+                          }}
+                        >
+                          <SelectTrigger id="preferredLanguageIATI" className={errors.preferredLanguage ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Select language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {languages.map((lang) => (
+                              <SelectItem key={lang.code} value={lang.code}>
+                                {lang.name} ({lang.code})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.preferredLanguage && (
+                          <p className="text-sm text-red-500">{errors.preferredLanguage}</p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="reportingOrgId">Reporting Organisation ID</Label>
+                        <Input
+                          id="reportingOrgId"
+                          value={formData.reportingOrgId || ""}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setFormData({ ...formData, reportingOrgId: value })
+                            const error = validateReportingOrgId(value)
+                            if (error) {
+                              setErrors(prev => ({ ...prev, reportingOrgId: error }))
+                            } else {
+                              setErrors(prev => {
+                                const newErrors = { ...prev }
+                                delete newErrors.reportingOrgId
+                                return newErrors
+                              })
+                            }
+                          }}
+                          placeholder="e.g., XM-DAC-41114"
+                          className={errors.reportingOrgId ? "border-red-500" : ""}
+                        />
+                        {errors.reportingOrgId && (
+                          <p className="text-sm text-red-500">{errors.reportingOrgId}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Your IATI organization identifier. Contact your administrator if you're unsure.
                         </p>
                       </div>
                     </div>
-
-                    {user.mailingAddress && (
+                  </>
+                ) : (
+                  <>
+                    {/* View Mode */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Mailing Address</Label>
-                        <p className="text-lg mt-1">{user.mailingAddress}</p>
+                        <Label className="text-sm font-medium text-muted-foreground">Preferred Language</Label>
+                        <p className="text-lg">
+                          {languages.find(lang => lang.code === user.preferredLanguage)?.name || 'English'} ({user.preferredLanguage || 'en'})
+                        </p>
                       </div>
-                    )}
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Reporting Organisation ID</Label>
+                        <p className="text-lg">{formData.reportingOrgId || "Not specified"}</p>
+                      </div>
+                    </div>
                   </>
                 )}
               </CardContent>
@@ -751,25 +1156,7 @@ export default function ProfilePage() {
                 {isEditing ? (
                   <>
                     {/* Editing Mode */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="language">Preferred Language</Label>
-                        <Select 
-                          value={formData.preferredLanguage} 
-                          onValueChange={(value) => setFormData({ ...formData, preferredLanguage: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="es">Español</SelectItem>
-                            <SelectItem value="fr">Français</SelectItem>
-                            <SelectItem value="my">Myanmar</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
+                    <div className="grid grid-cols-1 gap-4">
                       <div>
                         <Label htmlFor="timezone">Timezone</Label>
                         <Select 
@@ -794,17 +1181,7 @@ export default function ProfilePage() {
                 ) : (
                   <>
                     {/* View Mode */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Preferred Language</Label>
-                        <p className="text-lg">
-                          {user.preferredLanguage === 'en' ? 'English' :
-                           user.preferredLanguage === 'es' ? 'Español' :
-                           user.preferredLanguage === 'fr' ? 'Français' :
-                           user.preferredLanguage === 'my' ? 'Myanmar' :
-                           'English'}
-                        </p>
-                      </div>
+                    <div className="grid grid-cols-1 gap-6">
                       <div>
                         <Label className="text-sm font-medium text-muted-foreground">Timezone</Label>
                         <p className="text-lg">

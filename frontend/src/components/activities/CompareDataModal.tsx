@@ -41,7 +41,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
     // For status codes, show both code and label
     if (field === 'activity_status' && value) {
       const statusLabels: Record<string, string> = {
-        '1': 'Pipeline/identification',
+        '1': 'Pipeline',
         '2': 'Implementation',
         '3': 'Finalisation',
         '4': 'Closed',

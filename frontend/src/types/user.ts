@@ -57,8 +57,13 @@ export interface User {
   role: UserRole | 'admin'; // Allow 'admin' from Django backend
   organizationId?: string;
   organization?: Organization; // Legacy - for backward compatibility
-  title?: string; // Legacy - replaced by jobTitle
+  title?: string; // Title (Mr., Mrs., Dr., etc.)
   phone?: string; // Legacy - replaced by telephone
+  contactType?: string;
+  secondaryEmail?: string;
+  secondaryPhone?: string;
+  faxNumber?: string;
+  notes?: string;
   isActive: boolean;
   lastLogin?: string;
   createdAt: string;

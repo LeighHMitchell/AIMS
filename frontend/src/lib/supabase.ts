@@ -68,6 +68,9 @@ export const supabase = (supabaseUrl && supabaseAnonKey && isValidUrl(supabaseUr
     })
   : null as any
 
+// Import local database as fallback
+import { localDb } from './db/local-db'
+
 // Server-side Supabase client with lazy initialization
 export function getSupabaseAdmin() {
   if (typeof window !== 'undefined') {
@@ -86,6 +89,21 @@ export function getSupabaseAdmin() {
   }
   
   return _supabaseAdmin
+}
+
+// Get database client (Supabase or local fallback)
+export function getDbClient() {
+  const supabaseClient = getSupabaseAdmin()
+  if (supabaseClient) {
+    return supabaseClient
+  }
+  
+  // Import and initialize local database
+  const { localDb, ensureInitialized } = require('./db/local-db')
+  ensureInitialized()
+  
+  console.log('[Database] Using local database (Supabase not configured)')
+  return localDb as any
 }
 
 // Database types (you can generate these from Supabase later)

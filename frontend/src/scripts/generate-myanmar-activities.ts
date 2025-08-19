@@ -90,7 +90,7 @@ const FINANCE_TYPES = [
 ]
 
 const ACTIVITY_STATUSES = [
-  { code: '1', name: 'Pipeline/identification' },
+  { code: '1', name: 'Pipeline' },
   { code: '2', name: 'Implementation' },
   { code: '3', name: 'Finalisation' },
   { code: '4', name: 'Closed' },

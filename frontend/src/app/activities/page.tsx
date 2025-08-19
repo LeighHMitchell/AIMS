@@ -201,7 +201,7 @@ const getActivityStatusColor = (status: string): "secondary" | "success" | "defa
 // Helper function to get status label from code
 const getActivityStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
-    "1": "Pipeline / Identification",
+    "1": "Pipeline",
     "2": "Implementation", 
     "3": "Finalisation",
     "4": "Closed",

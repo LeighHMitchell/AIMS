@@ -260,16 +260,34 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
   const autoSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Update parent component with current formData from ref
+      const updatedGeneral = {
+        ...general,
+        aidEffectiveness: formDataRef.current
+      };
+      
+      onUpdate(updatedGeneral);
+      
+      // If we have an activity ID, also save to database directly
+      if (general.id) {
+        const response = await fetch(`/api/activities/${general.id}/general-info`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            aidEffectiveness: formDataRef.current,
+            general_info: {
+              aidEffectiveness: formDataRef.current
+            }
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save to database');
+        }
+      }
       
       const now = new Date().toLocaleTimeString();
       setLastSaved(now);
-      
-      // Update parent component with current formData from ref
-      onUpdate({
-        ...general,
-        aidEffectiveness: formDataRef.current
-      });
     } catch (error) {
       console.error("Auto-save failed:", error);
       toast.error("Auto-save failed");

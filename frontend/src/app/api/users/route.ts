@@ -65,7 +65,12 @@ export async function GET(request: NextRequest) {
       gender: user.gender,
       profilePicture: user.avatar_url, // Map avatar_url to profilePicture
       organisation: user.organisation || user.organizations?.name,
-      organization: user.organizations
+      organization: user.organizations,
+      contactType: user.contact_type,
+      secondaryEmail: user.secondary_email,
+      secondaryPhone: user.secondary_phone,
+      faxNumber: user.fax_number,
+      notes: user.notes
     });
     
     const transformedData = Array.isArray(data) 
@@ -113,22 +118,37 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Create user profile
+    // Create user profile with all available fields
+    const userProfileData: any = {
+      id: authData.user.id,
+      email: body.email,
+      first_name: body.first_name || '',
+      last_name: body.last_name || '',
+      role: body.role || 'dev_partner_tier_1',
+      organization_id: body.organization_id || null,
+      organisation: body.organisation || null,
+      department: body.department || null,
+      job_title: body.job_title || null, // Position maps to job_title
+      telephone: body.telephone || null,
+      website: body.website || null,
+      mailing_address: body.mailing_address || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+
+    // Add optional fields if they exist in the request
+    if (body.title !== undefined) userProfileData.title = body.title === 'none' ? null : body.title
+    if (body.middle_name !== undefined) userProfileData.middle_name = body.middle_name
+    if (body.contact_type !== undefined) userProfileData.contact_type = body.contact_type === 'none' ? null : body.contact_type
+    if (body.secondary_email !== undefined) userProfileData.secondary_email = body.secondary_email
+    if (body.secondary_phone !== undefined) userProfileData.secondary_phone = body.secondary_phone
+    if (body.fax_number !== undefined) userProfileData.fax_number = body.fax_number
+    if (body.notes !== undefined) userProfileData.notes = body.notes
+    if (body.avatar_url !== undefined) userProfileData.avatar_url = body.avatar_url
+
     const { data, error } = await supabase
       .from('users')
-      .insert({
-        id: authData.user.id,
-        email: body.email,
-        first_name: body.first_name || '',
-        last_name: body.last_name || '',
-        role: body.role || 'dev_partner_tier_1',
-        organisation: body.organisation || null,
-        department: body.department || null,
-        job_title: body.job_title || null,
-        telephone: body.telephone || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+      .insert(userProfileData)
       .select()
       .single();
     
@@ -196,6 +216,13 @@ export async function PUT(request: NextRequest) {
       ...updateData,
       updated_at: new Date().toISOString()
     };
+    
+    // Ensure the new fields are included if provided
+    if ('contact_type' in updateData) dbUpdateData.contact_type = updateData.contact_type;
+    if ('secondary_email' in updateData) dbUpdateData.secondary_email = updateData.secondary_email;
+    if ('secondary_phone' in updateData) dbUpdateData.secondary_phone = updateData.secondary_phone;
+    if ('fax_number' in updateData) dbUpdateData.fax_number = updateData.fax_number;
+    if ('notes' in updateData) dbUpdateData.notes = updateData.notes;
     
     console.log('[AIMS] PUT /api/users - dbUpdateData being sent to database:', dbUpdateData);
     console.log('[AIMS] PUT /api/users - organization_id in dbUpdateData:', dbUpdateData.organization_id);
