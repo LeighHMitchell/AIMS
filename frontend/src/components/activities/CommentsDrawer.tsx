@@ -16,6 +16,8 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ROLE_LABELS } from '@/components/rolodex/utils/roleLabels';
 import { 
   MessageSquare, 
   X, 
@@ -84,6 +86,11 @@ export function CommentsDrawer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Helper function to get user initials
+  const getUserInitials = (name: string): string => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+  };
   
   // Form state
   const [newComment, setNewComment] = useState('');
@@ -246,7 +253,8 @@ export function CommentsDrawer({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: newComment.trim(),
+          user,
+          content: newComment.trim(),
           type: commentType,
           contextSection: selectedSection,
           contextField: contextField || '',
@@ -278,7 +286,8 @@ export function CommentsDrawer({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: replyContent.trim(),
+          user,
+          content: replyContent.trim(),
           type: 'Feedback',
         }),
       });
@@ -582,24 +591,47 @@ export function CommentsDrawer({
                       comment.isArchived && "bg-gray-50 border-gray-200"
                     )}>
                     <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(comment.status)}
-                          {getTypeIcon(comment.type)}
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">{comment.author?.name || 'Unknown User'}</span>
-                              <Badge variant="outline" className="text-xs">{comment.author?.role || 'user'}</Badge>
-                              <Badge variant={comment.type === 'Question' ? 'default' : 'secondary'} className="text-xs">
-                                {comment.type}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-gray-600 mt-1">
-                              {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                            </p>
+                      <div className="space-y-3">
+                        {/* Top Row: Comment Type (left) and Date (right) */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={comment.type === 'Question' ? 'default' : 'secondary'} className="text-xs">
+                              {comment.type}
+                            </Badge>
+                            {getStatusIcon(comment.status)}
                           </div>
+                          
+                          {/* Top Right: Date/Time */}
+                          <p className="text-xs text-gray-400">
+                            {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                          </p>
                         </div>
                         
+                        {/* User Info Section */}
+                        <div className="flex items-start gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={comment.author?.profilePicture} />
+                            <AvatarFallback className="text-xs">
+                              {getUserInitials(comment.author?.name || 'Unknown User')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{comment.author?.name || 'Unknown User'}</div>
+                            <Badge variant="outline" className="text-xs mt-1">
+                              {comment.author?.role || 'user'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        <div className="text-sm text-gray-900 whitespace-pre-wrap">
+                          {comment.message}
+                        </div>
+                        
+                        {/* Action buttons */}
                         <div className="flex items-center gap-2">
                           {comment.replies && comment.replies.length > 0 && (
                             <Badge variant="secondary" className="text-xs">
@@ -630,14 +662,6 @@ export function CommentsDrawer({
                             </Button>
                           )}
                         </div>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        <div className="text-sm text-gray-900 whitespace-pre-wrap">
-                          {comment.message}
-                        </div>
 
                         {comment.contextSection && (
                           <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -666,15 +690,35 @@ export function CommentsDrawer({
                               };
                               
                               return (
-                                <div key={safeReply.id} className="bg-gray-50 rounded-lg p-3">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className="font-medium text-xs">{safeReply.author?.name || 'Unknown User'}</span>
-                                    <Badge variant="outline" className="text-xs">{safeReply.author?.role || 'user'}</Badge>
-                                    <span className="text-xs text-gray-500">
+                                <div key={safeReply.id} className="bg-gray-50 rounded-lg p-3 space-y-2">
+                                  {/* Top Row: Reply Type (left) and Date (right) */}
+                                  <div className="flex items-start justify-between">
+                                    <Badge variant="secondary" className="text-xs h-5">
+                                      Reply
+                                    </Badge>
+                                    
+                                    {/* Top Right: Date/Time */}
+                                    <span className="text-xs text-gray-400">
                                       {formatDistanceToNow(new Date(safeReply.createdAt), { addSuffix: true })}
                                     </span>
                                   </div>
-                                  <div className="text-sm text-gray-900 whitespace-pre-wrap">
+                                  
+                                  {/* User Info Section */}
+                                  <div className="flex items-start gap-2">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src={safeReply.author?.profilePicture} />
+                                      <AvatarFallback className="text-xs">
+                                        {getUserInitials(safeReply.author?.name || 'Unknown User')}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-xs truncate">{safeReply.author?.name || 'Unknown User'}</div>
+                                      <Badge variant="outline" className="text-xs h-4 mt-1">
+                                        {safeReply.author?.role || 'user'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-gray-600 whitespace-pre-wrap ml-8">
                                     {safeReply.message}
                                   </div>
                                 </div>

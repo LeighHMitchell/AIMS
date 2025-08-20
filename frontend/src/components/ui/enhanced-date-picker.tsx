@@ -238,7 +238,7 @@ export function EnhancedDatePicker({
       </div>
       
       {isOpen && !disabled && (
-        <div className="absolute z-50 mt-1 p-4 bg-white border border-gray-300 rounded-lg shadow-lg">
+        <div className="absolute z-50 bottom-full mb-1 p-4 bg-white border border-gray-300 rounded-lg shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <button

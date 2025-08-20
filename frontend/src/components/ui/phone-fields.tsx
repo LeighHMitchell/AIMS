@@ -101,6 +101,9 @@ export function PhoneFields({
     <div className={cn("flex gap-3 items-end", className)}>
       {/* Country Code Field */}
       <div className="flex flex-col">
+        <label className="text-sm font-medium text-gray-700 mb-2">
+          Country Code
+        </label>
         <Popover open={open} onOpenChange={(newOpen) => {
           setOpen(newOpen);
           if (!newOpen) {

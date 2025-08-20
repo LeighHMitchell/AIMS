@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { Button } from './button'
 import { cn } from '@/lib/utils'
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 
 interface RichTextEditorProps {
   content: string
@@ -35,6 +35,11 @@ export function RichTextEditor({
   className,
   disabled = false
 }: RichTextEditorProps) {
+  // Track when we're setting content programmatically to avoid triggering onChange
+  const isSettingContentRef = useRef(false)
+  const lastPropContentRef = useRef(content)
+  const isInitializedRef = useRef(false)
+  
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -47,7 +52,23 @@ export function RichTextEditor({
     ],
     content,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      const currentContent = editor.getHTML()
+      
+      // Only trigger onChange if this is a user-initiated change, not programmatic
+      if (!isSettingContentRef.current && isInitializedRef.current) {
+        // Additional check: ensure the content actually differs from what was set via props
+        if (currentContent !== lastPropContentRef.current) {
+          console.log('[RichTextEditor] User-initiated onChange triggered');
+          onChange(currentContent)
+        } else {
+          console.log('[RichTextEditor] Content matches prop, ignoring onChange');
+        }
+      } else {
+        console.log('[RichTextEditor] Programmatic onChange blocked', {
+          isSettingContent: isSettingContentRef.current,
+          isInitialized: isInitializedRef.current
+        });
+      }
     },
     editable: !disabled,
     editorProps: {
@@ -61,9 +82,29 @@ export function RichTextEditor({
   // Update content when prop changes
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
+      // Set flag to indicate we're setting content programmatically
+      isSettingContentRef.current = true
+      lastPropContentRef.current = content
       editor.commands.setContent(content)
+      // Use requestAnimationFrame to ensure the onUpdate has fired before resetting
+      requestAnimationFrame(() => {
+        isSettingContentRef.current = false
+        // Mark as initialized after the first content setting
+        isInitializedRef.current = true
+      })
     }
   }, [content, editor])
+  
+  // Initialize the editor as ready after first render and track prop content
+  useEffect(() => {
+    if (editor) {
+      lastPropContentRef.current = content
+      // Small delay to ensure editor is fully initialized
+      setTimeout(() => {
+        isInitializedRef.current = true
+      }, 100)
+    }
+  }, [editor, content])
 
   // Update editor editable state when disabled prop changes
   useEffect(() => {
@@ -85,8 +126,12 @@ export function RichTextEditor({
             
             // If the editor is empty, add a paragraph to make it clickable
             if (editor.isEmpty) {
+              isSettingContentRef.current = true
               editor.commands.setContent("<p></p>");
               editor.commands.focus("start");
+              requestAnimationFrame(() => {
+                isSettingContentRef.current = false
+              })
             }
           }
         }, 50);
@@ -107,7 +152,11 @@ export function RichTextEditor({
     if (target === currentTarget) {
       // If the editor is empty, ensure there's a paragraph to click into
       if (editor.isEmpty) {
+        isSettingContentRef.current = true
         editor.commands.setContent("<p></p>");
+        requestAnimationFrame(() => {
+          isSettingContentRef.current = false
+        })
       }
       
       // Focus the editor at the end of content when clicking empty space

@@ -21,7 +21,7 @@ interface UseFieldAutosaveOptions {
   enabled?: boolean;
   debounceMs?: number;
   immediate?: boolean; // For critical fields like title
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: any, isUserInitiated?: boolean) => void;
   onError?: (error: Error) => void;
   additionalData?: Record<string, any>; // Pre-entered values to include in activity creation
 }
@@ -62,6 +62,7 @@ export function useFieldAutosave(
   const pendingValueRef = useRef<any>(null);
   const saveQueueRef = useRef<any[]>([]);
   const retryCountRef = useRef(0);
+  const isUserInitiatedRef = useRef(false);
 
   // Enhanced save function with proper queue handling and retry logic
   const performFieldSave = useCallback(async (value: any, isRetry = false) => {
@@ -217,7 +218,7 @@ export function useFieldAutosave(
       // Reset retry counter on successful save
       retryCountRef.current = 0;
       
-      onSuccess?.(responseData);
+      onSuccess?.(responseData, isUserInitiatedRef.current);
       console.log(`[FieldAutosave] Field ${fieldName} saved successfully`);
 
       // Process any pending value that was queued during this save
@@ -362,7 +363,7 @@ export function useFieldAutosave(
                     id: createdActivity.id,
                     uuid: createdActivity.id,
                     ...createdActivity
-                  });
+                  }, isUserInitiatedRef.current);
                   return;
                 } else {
                   console.log(`[FieldAutosave] No matching activity found in polling, showing error`);
@@ -437,11 +438,15 @@ export function useFieldAutosave(
   }, [fieldName, activityId, userId, enabled, onSuccess, onError, additionalData]);
 
   // Enhanced trigger function with better handling of rapid typing
-  const triggerFieldSave = useCallback((value: any) => {
+  const triggerFieldSave = useCallback((value: any, userInitiated = true) => {
     if (!enabled) return;
 
     console.log(`[FieldAutosave] triggerFieldSave called for ${fieldName} with value:`, value);
     console.log(`[FieldAutosave] Current state - isSaving: ${isSavingRef.current}, activityId: ${activityId}`);
+    console.log(`[FieldAutosave] User initiated: ${userInitiated}`);
+
+    // Set the user-initiated flag
+    isUserInitiatedRef.current = userInitiated;
 
     // Clear existing timeout
     if (timeoutRef.current) {
@@ -494,10 +499,14 @@ export function useFieldAutosave(
   }, [enabled, immediate, debounceMs, performFieldSave, activityId, userId, fieldName]);
 
   // Save immediately (bypass debounce)
-  const saveNow = useCallback(async (value: any) => {
+  const saveNow = useCallback(async (value: any, userInitiated = true) => {
     console.log(`[FieldAutosave] saveNow called for field ${fieldName} with value:`, value);
     console.log(`[FieldAutosave] saveNow - enabled: ${enabled}, activityId: ${activityId}, userId: ${userId}`);
     console.log(`[FieldAutosave] saveNow - isSavingRef.current: ${isSavingRef.current}`);
+    console.log(`[FieldAutosave] saveNow - userInitiated: ${userInitiated}`);
+    
+    // Set the user-initiated flag
+    isUserInitiatedRef.current = userInitiated;
     
     if (timeoutRef.current) {
       console.log(`[FieldAutosave] saveNow - clearing existing timeout for ${fieldName}`);

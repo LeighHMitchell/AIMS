@@ -11,9 +11,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ActivityComment, CommentReply } from '@/types/comment';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
+import { ROLE_LABELS } from '@/components/rolodex/utils/roleLabels';
 import {
   MessageSquare,
   Send,
@@ -51,6 +53,11 @@ import {
   FileText,
   Trash,
 } from 'lucide-react';
+
+// Helper function to get user initials
+const getUserInitials = (name: string): string => {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+};
 
 interface ReactionCount {
   reaction_type: string;
@@ -120,6 +127,8 @@ export function EnhancedActivityComments({
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [lastPollTime, setLastPollTime] = useState(Date.now());
+
+
   
   // Attachment support
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
@@ -271,8 +280,10 @@ export function EnhancedActivityComments({
       activityId: comment.activity_id || comment.activityId || '',
       author: {
         userId: comment.user_id || comment.userId || '',
-        name: comment.author.name || comment.userName || 'Unknown User',
-        role: comment.author.role || comment.userRole || 'user'
+        name: comment.user_name || comment.author?.name || comment.userName || 'Unknown User',
+        role: ROLE_LABELS[comment.user_role || comment.author?.role || comment.userRole] ? ROLE_LABELS[comment.user_role || comment.author?.role || comment.userRole].label : (comment.user_role || comment.author?.role || comment.userRole || 'user'),
+        roleColor: ROLE_LABELS[comment.user_role || comment.author?.role || comment.userRole] ? ROLE_LABELS[comment.user_role || comment.author?.role || comment.userRole].color : 'bg-gray-100 text-gray-800',
+        profilePicture: user?.profilePicture || comment.user_avatar_url?.avatar_url || comment.user_avatar_url || comment.author?.profilePicture || comment.userProfilePicture
       },
       message: comment.message || comment.content || '',
       type: comment.type || 'Feedback' as 'Feedback' | 'Question',
@@ -306,7 +317,9 @@ export function EnhancedActivityComments({
         author: {
           userId: reply.user_id || reply.userId || '',
           name: reply.author.name || reply.userName || 'Unknown User',
-          role: reply.author.role || reply.userRole || 'user'
+          role: ROLE_LABELS[reply.author.role || reply.userRole] ? ROLE_LABELS[reply.author.role || reply.userRole].label : (reply.author.role || reply.userRole || 'user'),
+          roleColor: ROLE_LABELS[reply.author.role || reply.userRole] ? ROLE_LABELS[reply.author.role || reply.userRole].color : 'bg-gray-100 text-gray-800',
+          profilePicture: user?.profilePicture || reply.author?.profilePicture || reply.user_avatar_url?.avatar_url || reply.user_avatar_url || reply.userProfilePicture
         },
         message: reply.message || reply.content || '',
         type: reply.type || 'Feedback' as 'Feedback' | 'Question',
@@ -968,12 +981,39 @@ function CommentCard({
                 )}
               </div>
               
-              <div className="text-sm">
-                <span className="font-medium">{comment.author.name}</span>
-                <span className="text-gray-500 ml-2">({comment.author.role})</span>
-                <span className="text-gray-500 ml-2">
-                  {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                </span>
+              <div className="space-y-2">
+                {/* Top Row: Comment Type (left) and Date (right) */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={comment.type === 'Question' ? 'default' : 'secondary'}>
+                      {comment.type === 'Question' ? <HelpCircle className="h-3 w-3 mr-1" /> : <MessageSquare className="h-3 w-3 mr-1" />}
+                      {comment.type}
+                    </Badge>
+                  </div>
+                  
+                  {/* Top Right: Date/Time */}
+                  <span className="text-gray-500 text-xs">
+                    {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                  </span>
+                </div>
+                
+                {/* User Info Section */}
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={comment.author.profilePicture} />
+                    <AvatarFallback className="text-xs">
+                      {getUserInitials(comment.author.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm truncate">{comment.author.name}</span>
+                      <Badge className={`text-xs ${comment.author.roleColor || 'bg-gray-100 text-gray-800'}`}>
+                        {comment.author.role}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -1220,8 +1260,16 @@ function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
           <Badge variant={reply.type === 'Question' ? 'default' : 'secondary'} className="text-xs">
             {reply.type}
           </Badge>
+          <Avatar className="h-6 w-6">
+            <AvatarImage src={reply.author.profilePicture} />
+            <AvatarFallback className="text-xs">
+              {getUserInitials(reply.author.name)}
+            </AvatarFallback>
+          </Avatar>
           <span className="text-sm font-medium">{reply.author.name}</span>
-          <span className="text-xs text-gray-500">({reply.author.role})</span>
+          <Badge className={`text-xs ml-2 ${reply.author.roleColor || 'bg-gray-100 text-gray-800'}`}>
+            {reply.author.role}
+          </Badge>
           <span className="text-xs text-gray-500">
             {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
           </span>

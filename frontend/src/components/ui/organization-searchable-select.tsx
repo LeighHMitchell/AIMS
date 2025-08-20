@@ -26,6 +26,9 @@ interface OrganizationSearchableSelectProps {
   className?: string;
   emptyStateMessage?: string;
   emptyStateSubMessage?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  forceDirection?: 'up' | 'down' | 'auto';
 }
 
 export function OrganizationSearchableSelect({
@@ -38,11 +41,25 @@ export function OrganizationSearchableSelect({
   className,
   emptyStateMessage = "No organizations found.",
   emptyStateSubMessage = "Try adjusting your search terms",
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
+  forceDirection = 'auto',
 }: OrganizationSearchableSelectProps) {
-  const [open, setOpen] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
+  // Use external state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
+
   const selectedOrganization = organizations.find(org => org.id === value);
+
+  // Clean up search when dropdown closes
+  React.useEffect(() => {
+    if (!open) {
+      setSearch("");
+    }
+  }, [open]);
 
   // Filter organizations based on search query
   const filteredOrganizations = React.useMemo(() => {
@@ -61,7 +78,6 @@ export function OrganizationSearchableSelect({
   const handleSelect = (organizationId: string) => {
     onValueChange(organizationId);
     setOpen(false);
-    setSearch("");
   };
 
   const handleClear = (e: React.MouseEvent) => {
@@ -76,7 +92,6 @@ export function OrganizationSearchableSelect({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
       setOpen(false);
-      setSearch("");
     }
   };
 
@@ -130,7 +145,7 @@ export function OrganizationSearchableSelect({
   );
 
   return (
-    <div className={cn("", className)}>
+    <div className={cn("w-full", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           data-popover-trigger
@@ -163,9 +178,11 @@ export function OrganizationSearchableSelect({
           </div>
         </PopoverTrigger>
         <PopoverContent
-          className="w-[var(--radix-popover-trigger-width)] p-0 shadow-lg border"
+          className="w-[600px] min-w-[var(--radix-popover-trigger-width)] p-0 shadow-lg border"
           align="start"
-          sideOffset={4}
+          sideOffset={2}
+          collisionPadding={20}
+          forcePosition={forceDirection === 'up' ? 'top' : forceDirection === 'down' ? 'bottom' : undefined}
         >
           {/* Search Input */}
           <div className="flex items-center border-b px-3 py-2">
@@ -176,7 +193,7 @@ export function OrganizationSearchableSelect({
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleKeyDown}
               className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
-              autoFocus
+              autoFocus={false}
             />
             {search && (
               <button
@@ -192,7 +209,10 @@ export function OrganizationSearchableSelect({
           </div>
 
           {/* Organizations List */}
-          <div className="max-h-[300px] overflow-y-auto">
+          <div 
+            className="max-h-[300px] overflow-y-auto scroll-smooth"
+            onScroll={(e) => e.stopPropagation()}
+          >
             {filteredOrganizations.length === 0 ? (
               <div className="py-8 text-center">
                 <div className="text-sm text-muted-foreground">

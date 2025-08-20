@@ -8,6 +8,14 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { 
   Trash2, 
@@ -15,17 +23,16 @@ import {
   CheckCircle, 
   Loader2, 
   Sparkles,
-  Info
+  Info,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { HeroCard } from '@/components/ui/hero-card';
 import { SectorSelect, transformSectorGroups } from '@/components/forms/SectorSelect';
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
 import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization';
-import SectorAllocationTable from '@/components/charts/SectorAllocationTable';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PieChart, Table } from 'lucide-react';
 
 interface Sector {
   code: string;
@@ -129,7 +136,40 @@ const formatPercentageDisplay = (value: number): string => {
   return parseFloat(value.toFixed(3)).toString(); // Max 3 decimals, remove trailing zeros
 };
 
-const getSectorInfo = (code: string): { name: string; description: string; category: string; categoryCode: string } => {
+// Create a mapping for DAC category codes to parent category names
+const getCategoryParentName = (categoryCode: string): string => {
+  const categoryMap: { [key: string]: string } = {
+    '11': 'Education',
+    '12': 'Health',
+    '13': 'Population Policies/Programmes & Reproductive Health',
+    '14': 'Water Supply & Sanitation',
+    '15': 'Government & Civil Society',
+    '16': 'Other Social Infrastructure & Services',
+    '21': 'Transport & Storage',
+    '22': 'Communications',
+    '23': 'Energy',
+    '24': 'Banking & Financial Services',
+    '25': 'Business & Other Services',
+    '31': 'Agriculture, Forestry, Fishing',
+    '32': 'Industry, Mining, Construction',
+    '33': 'Trade Policies & Regulations',
+    '41': 'General Environmental Protection',
+    '43': 'Other Multisector',
+    '51': 'General Budget Support',
+    '52': 'Developmental Food Aid/Food Security Assistance',
+    '53': 'Other Commodity Assistance',
+    '60': 'Action Relating to Debt',
+    '70': 'Humanitarian Aid',
+    '91': 'Administrative Costs of Donors',
+    '92': 'Support to National NGOs',
+    '93': 'Refugees in Donor Countries',
+    '99': 'Unallocated/Unspecified'
+  };
+  
+  return categoryMap[categoryCode] || `Category ${categoryCode}`;
+};
+
+const getSectorInfo = (code: string): { name: string; description: string; category: string; categoryCode: string; categoryName: string } => {
   const dacSectorsData = require('@/data/dac-sectors.json');
   
   // Search through all categories to find the sector
@@ -139,21 +179,30 @@ const getSectorInfo = (code: string): { name: string; description: string; categ
     
     if (sector) {
       const categoryCode = sector.code.substring(0, 3);
+      const parentCategoryCode = categoryCode.substring(0, 2);
+      const parentCategoryName = getCategoryParentName(parentCategoryCode);
+      
       return {
         name: sector.name,
         description: sector.description || '',
         category: categoryName,
-        categoryCode: categoryCode
+        categoryCode: categoryCode,
+        categoryName: parentCategoryName
       };
     }
   }
   
   // Fallback if sector not found
+  const categoryCode = code.substring(0, 3);
+  const parentCategoryCode = categoryCode.substring(0, 2);
+  const parentCategoryName = getCategoryParentName(parentCategoryCode);
+  
   return {
     name: `Sector ${code}`,
     description: '',
-    category: `Category ${code.substring(0, 3)}`,
-    categoryCode: code.substring(0, 3)
+    category: `Category ${categoryCode}`,
+    categoryCode: categoryCode,
+    categoryName: parentCategoryName
   };
 };
 
@@ -172,6 +221,9 @@ interface SectorGroup {
   options: SectorOption[];
 }
 
+type SortField = 'subSector' | 'sector' | 'category' | 'percentage';
+type SortDirection = 'asc' | 'desc';
+
 export default function ImprovedSectorAllocationForm({ 
   allocations = [], 
   onChange, 
@@ -183,6 +235,77 @@ export default function ImprovedSectorAllocationForm({
   // Multi-select: get all selected sector codes
   const selectedSectors = allocations.map(a => a.code);
   const sectorsAutosave = useSectorsAutosave(activityId, user?.id);
+  const [sortField, setSortField] = useState<SortField>('subSector');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  // Handle column sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Sort allocations based on current sort field and direction
+  const sortedAllocations = useMemo(() => {
+    return [...allocations].sort((a, b) => {
+      const aInfo = getSectorInfo(a.code);
+      const bInfo = getSectorInfo(b.code);
+      
+      let aValue: string | number;
+      let bValue: string | number;
+      
+      switch (sortField) {
+        case 'subSector':
+          aValue = a.name || aInfo.name.split(' – ')[1] || a.code;
+          bValue = b.name || bInfo.name.split(' – ')[1] || b.code;
+          break;
+        case 'sector':
+          aValue = aInfo.category || 'Unknown Sector';
+          bValue = bInfo.category || 'Unknown Sector';
+          break;
+        case 'category':
+          aValue = aInfo.categoryName;
+          bValue = bInfo.categoryName;
+          break;
+        case 'percentage':
+          aValue = a.percentage || 0;
+          bValue = b.percentage || 0;
+          break;
+        default:
+          aValue = a.code;
+          bValue = b.code;
+      }
+      
+      let comparison = 0;
+      if (aValue < bValue) comparison = -1;
+      if (aValue > bValue) comparison = 1;
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [allocations, sortField, sortDirection]);
+
+  // Render sortable header
+  const SortableHeader = ({ field, children, className = "" }: { field: SortField; children: React.ReactNode; className?: string }) => {
+    const isRightAligned = className.includes('text-right');
+    return (
+      <TableHead 
+        className={cn("cursor-pointer hover:bg-gray-100 select-none py-3", className)}
+        onClick={() => handleSort(field)}
+      >
+        <div className={cn("flex items-center gap-1", isRightAligned ? "justify-end" : "justify-start")}>
+          {children}
+          {sortField === field && (
+            sortDirection === 'asc' ? 
+              <ChevronUp className="h-4 w-4" /> : 
+              <ChevronDown className="h-4 w-4" />
+          )}
+        </div>
+      </TableHead>
+    );
+  };
 
   // Per-allocation save status
   const [allocationStatus, setAllocationStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
@@ -619,113 +742,113 @@ export default function ImprovedSectorAllocationForm({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {Object.entries(groupedAllocations).map(([category, grouped]) => {
-                // Get the category code from the first allocation in this group
-                const firstAllocation = grouped[0];
-                const sectorInfo = getSectorInfo(firstAllocation.code);
-                const categoryCode = sectorInfo.categoryCode;
-                
-                return (
-                <div key={category} className="mb-4">
-                  <div className="font-semibold text-sm text-gray-700 mb-2">
-                    {category.startsWith(categoryCode) ? (
-                      // Category already includes the code, just make the code part monospace
-                      <>
-                        <span className="font-mono">{categoryCode}</span>
-                        {category.substring(categoryCode.length)}
-                      </>
-                    ) : (
-                      // Category doesn't include code, add it
-                      <>
-                        <span className="font-mono">{categoryCode}</span> - {category}
-                      </>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    {grouped.map((allocation) => {
+            <CardContent className="p-0">
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <SortableHeader field="subSector">Sub-sector</SortableHeader>
+                      <SortableHeader field="sector">Sector</SortableHeader>
+                      <SortableHeader field="category">Sector Category</SortableHeader>
+                      <SortableHeader field="percentage" className="w-40 text-right">%</SortableHeader>
+                      <TableHead className="w-20 text-center py-3"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedAllocations.map((allocation) => {
                       const sectorInfo = getSectorInfo(allocation.code);
                       const categoryCode = sectorInfo.categoryCode;
                       const categoryColor = getCategoryColor(categoryCode);
+                      
+                      // Extract hierarchy information
+                      const subSectorCode = allocation.code;
+                      const subSectorName = allocation.name || sectorInfo.name.split(' – ')[1] || allocation.code;
+                      const sectorCode = categoryCode;
+                      const sectorName = sectorInfo.category || 'Unknown Sector';
+                      const categoryGroupCode = categoryCode.substring(0, 2) + '0';
+                      const categoryGroupName = sectorInfo.categoryName;
+                      
                       return (
-                        <div
+                        <TableRow 
                           key={allocation.id}
                           className={cn(
-                            "flex items-center gap-4 p-4 rounded-lg border transition-all",
-                            allocation.percentage === 0 && "bg-red-50 border-red-200"
+                            "hover:bg-gray-50",
+                            allocation.percentage === 0 && "bg-red-50 hover:bg-red-100"
                           )}
                         >
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm text-gray-900 flex items-center gap-2">
-                              <span className="font-mono">{allocation.code}</span> – {allocation.name || sectorInfo.name.split(' – ')[1] || allocation.code}
-                              <Badge 
-                                variant="outline" 
+                          {/* Sub-sector Code and Name */}
+                          <TableCell className="py-2 text-sm">
+                            <span className="font-mono">{subSectorCode}</span> - {subSectorName}
+                          </TableCell>
+                          
+                          {/* Sector Code and Name */}
+                          <TableCell className="py-2 text-sm">
+                            <span className="font-mono">{sectorCode}</span> - {sectorName.replace(/^\d{3}\s*-\s*/, '')}
+                          </TableCell>
+                          
+                          {/* Sector Category Code and Name */}
+                          <TableCell className="py-2 text-sm">
+                            <span className="font-mono">{categoryGroupCode}</span> - {categoryGroupName}
+                          </TableCell>
+                          
+                          {/* Percentage Input */}
+                          <TableCell className="py-2">
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.001"
+                                value={formatPercentageDisplay(allocation.percentage || 0)}
+                                onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
                                 className={cn(
-                                  "text-xs",
-                                  allocation.level === 'group' && "bg-blue-50 text-blue-700 border-blue-200",
-                                  (allocation.level === 'sector' && allocation.code.length === 3) && "bg-green-50 text-green-700 border-green-200",
-                                  allocation.level === 'subsector' && "bg-gray-50 text-gray-700 border-gray-200"
+                                  "w-24 h-8 text-sm text-center font-mono p-2",
+                                  allocation.percentage === 0 && "border-red-300"
                                 )}
-                              >
-                                {allocation.level === 'group' && 'Group'}
-                                {(allocation.level === 'sector' && allocation.code.length === 3) && 'Category'}
-                                {allocation.level === 'subsector' && ''}
-                                {!allocation.level && ''}
-                              </Badge>
-                            </div>
-                            {/* Removed redundant 3-digit sector label that was: {sectorInfo.category} */}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {/* Progress Bar */}
-                            <div className="w-40">
-                              <Progress 
-                                value={allocation.percentage} 
-                                className="h-6 [&>*]:rounded-sm"
-                                style={{
-                                  '--progress-foreground': categoryColor
-                                } as React.CSSProperties}
                               />
-                            </div>
-                            {/* Per-allocation save status icon */}
-                            {allocationStatus[allocation.id] === 'saving' && (
-                              <span title="Saving..."><Loader2 className="h-4 w-4 animate-spin text-orange-500" /></span>
-                            )}
-                            {allocationStatus[allocation.id] === 'saved' && (
-                              <span title="Saved"><CheckCircle className="h-4 w-4 text-green-600" /></span>
-                            )}
-                            {allocationStatus[allocation.id] === 'error' && (
-                              <span title="Save failed"><AlertCircle className="h-4 w-4 text-red-600" /></span>
-                            )}
-                            {/* Percentage Input */}
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.001"
-                              value={formatPercentageDisplay(allocation.percentage || 0)}
-                              onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
-                              className={cn(
-                                "w-28 h-10 text-sm text-center font-mono",
-                                allocation.percentage === 0 && "border-red-300"
+                              {/* Save Status Icon */}
+                              {allocationStatus[allocation.id] === 'saving' && (
+                                <Loader2 className="h-3 w-3 animate-spin text-orange-500" />
                               )}
-                            />
-                            {/* Delete Button */}
+                              {allocationStatus[allocation.id] === 'saved' && (
+                                <CheckCircle className="h-3 w-3 text-green-600" />
+                              )}
+                              {allocationStatus[allocation.id] === 'error' && (
+                                <AlertCircle className="h-3 w-3 text-red-600" />
+                              )}
+                            </div>
+                          </TableCell>
+                          
+                          {/* Action - Delete Button */}
+                          <TableCell className="py-2 text-center">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => removeSector(allocation.id)}
-                              className="h-10 w-10 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
-                          </div>
-                        </div>
+                          </TableCell>
+                        </TableRow>
                       );
                     })}
-                  </div>
-                </div>
-                );
-              })}
+                    
+                    {/* Unallocated Row */}
+                    {totalUnallocated > 0 && (
+                      <TableRow className="text-gray-500 bg-gray-50">
+                        <TableCell colSpan={3} className="py-2 px-4">
+                          Unallocated
+                        </TableCell>
+                        <TableCell className="text-center font-mono py-2">
+                          {totalUnallocated.toFixed(1)}%
+                        </TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -744,39 +867,22 @@ export default function ImprovedSectorAllocationForm({
           </Alert>
         )}
 
-        {/* Visualization - Sunburst Chart or Table */}
+        {/* Visualization - Interactive Chart */}
         {allocations.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Sector Allocation Visualization</CardTitle>
               <CardDescription>
-                View sector allocations as an interactive chart or accessible table
+                Interactive sunburst chart showing sector allocation hierarchy and relationships
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="sunburst" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="sunburst" className="flex items-center gap-2">
-                    <PieChart className="h-4 w-4" />
-                    Sunburst Chart
-                  </TabsTrigger>
-                  <TabsTrigger value="table" className="flex items-center gap-2">
-                    <Table className="h-4 w-4" />
-                    Table View
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="sunburst" className="mt-4">
-                  <div className="relative overflow-hidden">
-                    <SectorSunburstVisualization 
-                      allocations={allocations}
-                      onSegmentClick={handleSunburstSegmentClick}
-                    />
-                  </div>
-                </TabsContent>
-                <TabsContent value="table" className="mt-4">
-                  <SectorAllocationTable allocations={allocations} />
-                </TabsContent>
-              </Tabs>
+              <div className="relative overflow-hidden">
+                <SectorSunburstVisualization 
+                  allocations={allocations}
+                  onSegmentClick={handleSunburstSegmentClick}
+                />
+              </div>
             </CardContent>
           </Card>
         )}

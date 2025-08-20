@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Plus, ChevronDown, UserPlus, Info, CheckCircle } from "lucide-react";
+import { X, Plus, ChevronDown, UserPlus, Info, CheckCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ActivityContributor } from "@/lib/activity-permissions";
 import { useUser } from '@/hooks/useUser';
@@ -51,6 +51,12 @@ export default function OrganisationsSection({
 
   const { user } = useUser();
   const [nominationModal, setNominationModal] = useState<{open: boolean, organization: Organization | null}>({open: false, organization: null});
+  const [openDropdown, setOpenDropdown] = useState<'extending' | 'implementing' | 'government' | null>(null);
+  const [savingState, setSavingState] = useState<{extending: boolean, implementing: boolean, government: boolean}>({
+    extending: false,
+    implementing: false, 
+    government: false
+  });
 
   // Use the new hooks
   const { organizations, loading: organizationsLoading } = useOrganizations({
@@ -87,21 +93,36 @@ export default function OrganisationsSection({
   const implementingOrgs = getOrganizationsByRole('implementing');
   const governmentOrgs = getOrganizationsByRole('government');
 
+  // Helper function to determine if an organization is classified as Partner Government
+  const isPartnerGovernment = (org: Organization): boolean => {
+    const typeCode = parseInt(org.organisation_type || '') || 0;
+    const orgTypeText = (org.organisation_type || '').toLowerCase();
+    const isMyanmar = org.country?.toLowerCase() === "myanmar";
+    
+    // Partner Government: Organizations in Myanmar with government-related types
+    if (!isMyanmar) return false;
+    
+    // Check IATI codes: Government (10), Local Government (11), Other Public Sector (15)
+    if ([10, 11, 15].includes(typeCode)) return true;
+    
+    // Check text-based organization types
+    if (orgTypeText.includes('government') || 
+        orgTypeText.includes('local government') ||
+        orgTypeText.includes('other public sector') ||
+        orgTypeText.includes('public sector')) {
+      return true;
+    }
+    
+    return false;
+  };
+
   // Filter organizations that are not already participating in each role
   const getAvailableOrganizations = (roleType: 'extending' | 'implementing' | 'government') => {
     let filteredOrgs = organizations;
     
-    // For government partners, only show organizations with government organization type
+    // For government partners, only show organizations classified as Partner Government
     if (roleType === 'government') {
-      filteredOrgs = organizations.filter(org => 
-        org.organisation_type?.toLowerCase().includes('government') ||
-        org.organisation_type?.toLowerCase().includes('ministry') ||
-        org.organisation_type?.toLowerCase().includes('agency') ||
-        org.organisation_type?.toLowerCase().includes('public') ||
-        org.organisation_type?.toLowerCase().includes('state') ||
-        org.organisation_type?.toLowerCase().includes('local authority') ||
-        org.organisation_type?.toLowerCase().includes('municipal')
-      );
+      filteredOrgs = organizations.filter(org => isPartnerGovernment(org));
     }
     
     return filteredOrgs.filter(org => !isOrganizationParticipating(org.id, roleType));
@@ -111,12 +132,19 @@ export default function OrganisationsSection({
     try {
       console.log('[OrganisationsSection] Adding organization:', organizationId, 'role:', roleType);
       console.log('[OrganisationsSection] Activity ID for add:', activityId);
+      
+      // Set saving state for this role type
+      setSavingState(prev => ({ ...prev, [roleType]: true }));
+      
       const result = await addParticipatingOrganization(organizationId, roleType);
       console.log('[OrganisationsSection] Add result:', result);
       toast.success('Organization added successfully');
     } catch (error) {
       console.error('[OrganisationsSection] Error adding organization:', error);
       toast.error('Failed to add organization');
+    } finally {
+      // Clear saving state for this role type
+      setSavingState(prev => ({ ...prev, [roleType]: false }));
     }
   };
 
@@ -264,12 +292,13 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Extending Partners
-            {extendingOrgs.length > 0 && (
+            {savingState.extending ? (
+              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+            ) : extendingOrgs.length > 0 ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
-            )}
-            {participatingLoading && (
-              <span className="text-xs text-blue-600">Loading...</span>
-            )}
+            ) : participatingLoading ? (
+              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+            ) : null}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -303,6 +332,8 @@ export default function OrganisationsSection({
             searchPlaceholder="Search extending partners..."
             disabled={organizationsLoading}
             className="w-full"
+            open={openDropdown === 'extending'}
+            onOpenChange={(open) => setOpenDropdown(open ? 'extending' : null)}
           />
         </CardContent>
       </Card>
@@ -312,12 +343,13 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Implementing Partners
-            {implementingOrgs.length > 0 && (
+            {savingState.implementing ? (
+              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+            ) : implementingOrgs.length > 0 ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
-            )}
-            {participatingLoading && (
-              <span className="text-xs text-blue-600">Loading...</span>
-            )}
+            ) : participatingLoading ? (
+              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+            ) : null}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -351,6 +383,8 @@ export default function OrganisationsSection({
             searchPlaceholder="Search implementing partners..."
             disabled={organizationsLoading}
             className="w-full"
+            open={openDropdown === 'implementing'}
+            onOpenChange={(open) => setOpenDropdown(open ? 'implementing' : null)}
           />
         </CardContent>
       </Card>
@@ -360,12 +394,13 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Government Partners
-            {governmentOrgs.length > 0 && (
+            {savingState.government ? (
+              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+            ) : governmentOrgs.length > 0 ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
-            )}
-            {participatingLoading && (
-              <span className="text-xs text-blue-600">Loading...</span>
-            )}
+            ) : participatingLoading ? (
+              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+            ) : null}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -400,6 +435,9 @@ export default function OrganisationsSection({
             searchPlaceholder="Search government partners..."
             disabled={organizationsLoading}
             className="w-full"
+            open={openDropdown === 'government'}
+            onOpenChange={(open) => setOpenDropdown(open ? 'government' : null)}
+            forceDirection="up"
           />
         </CardContent>
       </Card>

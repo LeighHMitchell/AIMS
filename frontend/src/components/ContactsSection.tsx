@@ -43,6 +43,8 @@ interface ContactsSectionProps {
   contacts: Contact[];
   onChange: (contacts: Contact[]) => void;
   activityId?: string;
+  reportingOrgId?: string;
+  reportingOrgName?: string;
 }
 
 // Remove this as we now use the data from contact-types.ts
@@ -85,7 +87,7 @@ const splitPhoneNumber = (phone: string) => {
   return { countryCode: "", phoneNumber: phone };
 };
 
-export default function ContactsSection({ contacts, onChange, activityId }: ContactsSectionProps) {
+export default function ContactsSection({ contacts, onChange, activityId, reportingOrgId, reportingOrgName }: ContactsSectionProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -191,6 +193,8 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
       firstName: "",
       lastName: "",
       position: "",
+      organisation: reportingOrgName || "",
+      organisationId: reportingOrgId || "",
       countryCode: homeCountryData.dialCode || "",
       phoneNumber: "",
       faxCountryCode: homeCountryData.dialCode || "",
@@ -712,7 +716,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
                     </div>
                   </div>
                   {contact.notes && (
-                    <p className="text-sm text-gray-600 mt-3 bg-gray-50 p-3 rounded">
+                    <p className="text-sm text-gray-600 mt-3">
                       {contact.notes}
                     </p>
                   )}
@@ -892,7 +896,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <PhoneFields
-                      countryCode={editingContact.countryCode || "+95"}
+                      countryCode={editingContact.countryCode || homeCountryData.dialCode || ""}
                       phoneNumber={editingContact.phoneNumber || ""}
                       onCountryCodeChange={(code) =>
                         setEditingContact({ ...editingContact, countryCode: code })
@@ -906,7 +910,7 @@ export default function ContactsSection({ contacts, onChange, activityId }: Cont
                   </div>
                   <div>
                     <PhoneFields
-                      countryCode={editingContact.faxCountryCode || "+95"}
+                      countryCode={editingContact.faxCountryCode || homeCountryData.dialCode || ""}
                       phoneNumber={editingContact.faxNumber || ""}
                       onCountryCodeChange={(code) =>
                         setEditingContact({ ...editingContact, faxCountryCode: code })

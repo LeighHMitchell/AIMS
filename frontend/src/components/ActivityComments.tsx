@@ -10,9 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ActivityComment, CommentReply, CommentSearchFilters } from '@/types/comment';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
+import { ROLE_LABELS } from '@/components/rolodex/utils/roleLabels';
 import {
   MessageSquare,
   Send,
@@ -74,6 +76,11 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Helper function to get user initials
+  const getUserInitials = (name: string): string => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+  };
+
   // Function to normalize comment format to expected structure
   const normalizeComment = (comment: any): ActivityComment => {
     // Handle database format (user_name, user_role, etc.)
@@ -83,8 +90,9 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
         activityId: comment.activity_id || activityId,
         author: {
           userId: comment.user_id || '',
-          name: comment.user_name || 'Unknown User',
-          role: comment.user_role || 'user',
+                        name: comment.user_name || 'Unknown User',
+              role: ROLE_LABELS[comment.user_role] ? ROLE_LABELS[comment.user_role].label : (comment.user_role || 'user'),
+              profilePicture: user?.profilePicture || comment.user_avatar_url?.avatar_url || comment.user_avatar_url || comment.userProfilePicture
         },
         type: comment.type === 'response' ? 'Feedback' : (comment.type || 'Feedback'),
         message: comment.message || comment.content || '',
@@ -96,8 +104,9 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
           message: reply.message || reply.content || '',
           author: {
             userId: reply.user_id || '',
-            name: reply.user_name || 'Unknown User',
-            role: reply.user_role || 'user',
+                            name: reply.user_name || 'Unknown User',
+                role: ROLE_LABELS[reply.user_role] ? ROLE_LABELS[reply.user_role].label : (reply.user_role || 'user'),
+                profilePicture: user?.profilePicture || reply.user_avatar_url?.avatar_url || reply.user_avatar_url || reply.userProfilePicture
           }
         })),
         status: comment.status || 'Open',
@@ -117,6 +126,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
           userId: comment.userId,
           name: comment.userName || 'Unknown',
           role: comment.userRole || 'user',
+          profilePicture: comment.userProfilePicture
         },
         type: comment.type === 'response' ? 'Feedback' : (comment.type || 'Feedback'),
         message: comment.content || comment.message || '',
@@ -568,34 +578,56 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                 </CollapsibleTrigger>
                 
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{comment.author?.name || 'Unknown User'}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {comment.author?.role || 'user'}
-                    </Badge>
-                    <Badge 
-                      variant={comment.type === 'Question' ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
-                      {comment.type === 'Question' ? (
-                        <HelpCircle className="h-3 w-3 mr-1" />
-                      ) : (
-                        <MessageSquare className="h-3 w-3 mr-1" />
-                      )}
-                      {comment.type}
-                    </Badge>
-                    {comment.status === 'Open' && comment.type === 'Question' && !comment.isArchived && (
-                      <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700">
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Unresolved
-                      </Badge>
-                    )}
-                    {comment.isArchived && (
-                      <Badge variant="outline" className="text-xs border-gray-400 text-gray-600">
-                        <Archive className="h-3 w-3 mr-1" />
-                        Archived
-                      </Badge>
-                    )}
+                  <div className="space-y-2">
+                    {/* Top Row: Comment Type (left) and Date (right) */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={comment.type === 'Question' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {comment.type === 'Question' ? (
+                            <HelpCircle className="h-3 w-3 mr-1" />
+                          ) : (
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                          )}
+                          {comment.type}
+                        </Badge>
+                        {comment.status === 'Open' && comment.type === 'Question' && !comment.isArchived && (
+                          <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Unresolved
+                          </Badge>
+                        )}
+                        {comment.isArchived && (
+                          <Badge variant="outline" className="text-xs border-gray-400 text-gray-600">
+                            <Archive className="h-3 w-3 mr-1" />
+                            Archived
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      {/* Top Right: Date/Time */}
+                      <span className="text-gray-500 text-xs">
+                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                      </span>
+                    </div>
+                    
+                    {/* User Info Section */}
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={comment.author?.profilePicture} />
+                        <AvatarFallback className="text-xs">
+                          {getUserInitials(comment.author?.name || 'Unknown User')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{comment.author?.name || 'Unknown User'}</div>
+                        <Badge variant="outline" className="text-xs mt-1">
+                          {comment.author?.role || 'user'}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
                   
                   {comment.status === 'Resolved' && !isExpanded && comment.resolvedAt && (

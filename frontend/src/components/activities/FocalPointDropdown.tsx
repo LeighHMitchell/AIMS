@@ -7,7 +7,7 @@ import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { ROLE_LABELS } from "@/types/user";
+import { ROLE_LABELS } from "@/components/rolodex/utils/roleLabels";
 
 // User Avatar Component
 const UserAvatar = ({ user, size = "sm" }: { user: User; size?: "xs" | "sm" | "md" }) => {
@@ -75,6 +75,7 @@ interface User {
   phone?: string;
   website?: string;
   bio?: string;
+  title?: string; // Title (Mr., Mrs., Dr., Daw, U, etc.)
   // Enhanced organization details
   organization?: {
     id: string;
@@ -90,6 +91,8 @@ interface FocalPointDropdownProps {
   type: 'government_focal_point' | 'development_partner_focal_point';
   currentAssignments: any[];
   onAssignmentChange: () => void;
+  onAssignmentAdded?: (newAssignment: any) => void;
+  onAssignmentRemoved?: (removedContactId: string) => void;
   placeholder?: string;
   className?: string;
 }
@@ -99,6 +102,8 @@ export function FocalPointDropdown({
   type,
   currentAssignments,
   onAssignmentChange,
+  onAssignmentAdded,
+  onAssignmentRemoved,
   placeholder = "Select focal point...",
   className,
 }: FocalPointDropdownProps) {
@@ -162,8 +167,28 @@ export function FocalPointDropdown({
       const result = await response.json();
 
       if (response.ok) {
-        toast.success(`${user.name} assigned as focal point`);
-        onAssignmentChange();
+        toast.success(`${formatUserName(user)} assigned as focal point`);
+        
+        // If we have the optimized callback, use it to update state directly
+        if (onAssignmentAdded) {
+          const newAssignment = {
+            id: result.assignment?.id || `temp-${Date.now()}`,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            title: user.title,
+            job_title: user.job_title,
+            organisation: user.organisation,
+            type: type,
+            avatar_url: user.avatar_url,
+            organization: user.organization
+          };
+          onAssignmentAdded(newAssignment);
+        } else {
+          // Fallback to full refresh
+          onAssignmentChange();
+        }
+        
         setOpen(false);
         setSearchQuery("");
       } else {
@@ -195,7 +220,14 @@ export function FocalPointDropdown({
 
       if (response.ok) {
         toast.success(`${userName} removed from focal points`);
-        onAssignmentChange();
+        
+        // If we have the optimized callback, use it to update state directly
+        if (onAssignmentRemoved) {
+          onAssignmentRemoved(contactId);
+        } else {
+          // Fallback to full refresh
+          onAssignmentChange();
+        }
       } else {
         toast.error(result.error || 'Failed to remove user');
       }
@@ -225,9 +257,20 @@ export function FocalPointDropdown({
      );
    }, [availableUsers, searchQuery]);
 
-   const getRoleLabel = (role: string): string => {
-     return ROLE_LABELS[role as keyof typeof ROLE_LABELS] || role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-   };
+  const getRoleLabel = (role: string): string => {
+    return ROLE_LABELS[role]?.label || role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const getRoleColor = (role: string): string => {
+    return ROLE_LABELS[role]?.color || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatUserName = (user: User): string => {
+    const parts = [];
+    if (user.title) parts.push(user.title);
+    parts.push(user.name);
+    return parts.join(' ');
+  };
 
    const formatOrganizationInfo = (user: User): { orgDisplay: string; iatiJobDisplay: string } => {
      const org = user.organization;
@@ -284,8 +327,8 @@ export function FocalPointDropdown({
                 <UserAvatar user={assignment} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground">{assignment.name}</span>
-                    <Badge variant="secondary" className="text-xs">
+                    <span className="font-medium text-foreground">{formatUserName(assignment)}</span>
+                    <Badge className={`text-xs ${getRoleColor(assignment.role)}`}>
                       {getRoleLabel(assignment.role)}
                     </Badge>
                   </div>
@@ -390,8 +433,8 @@ export function FocalPointDropdown({
                         <UserAvatar user={user} size="sm" />
                         <div className="flex-1 ml-3 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-foreground">{user.name}</span>
-                            <Badge variant="secondary" className="text-xs">
+                            <span className="font-medium text-foreground">{formatUserName(user)}</span>
+                            <Badge className={`text-xs ${getRoleColor(user.role)}`}>
                               {getRoleLabel(user.role)}
                             </Badge>
                           </div>

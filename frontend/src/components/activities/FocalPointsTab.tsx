@@ -34,6 +34,65 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Optimized handlers to avoid full refresh
+  const handleAssignmentAdded = (newAssignment: any, type: 'government_focal_point' | 'development_partner_focal_point') => {
+    setData(prevData => {
+      if (!prevData) return prevData;
+      
+      if (type === 'government_focal_point') {
+        return {
+          ...prevData,
+          government_focal_points: [...prevData.government_focal_points, newAssignment]
+        };
+      } else {
+        return {
+          ...prevData,
+          development_partner_focal_points: [...prevData.development_partner_focal_points, newAssignment]
+        };
+      }
+    });
+    
+    // Update parent component
+    if (data) {
+      const updatedData = { ...data };
+      if (type === 'government_focal_point') {
+        updatedData.government_focal_points = [...data.government_focal_points, newAssignment];
+      } else {
+        updatedData.development_partner_focal_points = [...data.development_partner_focal_points, newAssignment];
+      }
+      onFocalPointsChange?.(updatedData);
+    }
+  };
+
+  const handleAssignmentRemoved = (removedContactId: string, type: 'government_focal_point' | 'development_partner_focal_point') => {
+    setData(prevData => {
+      if (!prevData) return prevData;
+      
+      if (type === 'government_focal_point') {
+        return {
+          ...prevData,
+          government_focal_points: prevData.government_focal_points.filter(fp => fp.id !== removedContactId)
+        };
+      } else {
+        return {
+          ...prevData,
+          development_partner_focal_points: prevData.development_partner_focal_points.filter(fp => fp.id !== removedContactId)
+        };
+      }
+    });
+    
+    // Update parent component
+    if (data) {
+      const updatedData = { ...data };
+      if (type === 'government_focal_point') {
+        updatedData.government_focal_points = data.government_focal_points.filter(fp => fp.id !== removedContactId);
+      } else {
+        updatedData.development_partner_focal_points = data.development_partner_focal_points.filter(fp => fp.id !== removedContactId);
+      }
+      onFocalPointsChange?.(updatedData);
+    }
+  };
+
   const fetchFocalPoints = async () => {
     try {
       setLoading(true);
@@ -54,7 +113,7 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
       onFocalPointsChange?.(result);
     } catch (err) {
       console.error('[AIMS] Error fetching focal points:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load focal points');
+      setError(err instanceof Error ? err.message : 'Failed to load Focal Points');
       onFocalPointsChange?.(null);
     } finally {
       setLoading(false);
@@ -94,7 +153,7 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
   if (!data) {
     return (
       <Alert>
-        <AlertDescription>No focal points data available.</AlertDescription>
+        <AlertDescription>No Focal Points data available.</AlertDescription>
       </Alert>
     );
   }
@@ -129,6 +188,8 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
               type="government_focal_point"
               currentAssignments={data.government_focal_points}
               onAssignmentChange={fetchFocalPoints}
+              onAssignmentAdded={(newAssignment) => handleAssignmentAdded(newAssignment, 'government_focal_point')}
+              onAssignmentRemoved={(contactId) => handleAssignmentRemoved(contactId, 'government_focal_point')}
               placeholder="Select government focal point..."
             />
           </CardContent>
@@ -152,6 +213,8 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
               type="development_partner_focal_point"
               currentAssignments={data.development_partner_focal_points}
               onAssignmentChange={fetchFocalPoints}
+              onAssignmentAdded={(newAssignment) => handleAssignmentAdded(newAssignment, 'development_partner_focal_point')}
+              onAssignmentRemoved={(contactId) => handleAssignmentRemoved(contactId, 'development_partner_focal_point')}
               placeholder="Select development partner focal point..."
             />
           </CardContent>

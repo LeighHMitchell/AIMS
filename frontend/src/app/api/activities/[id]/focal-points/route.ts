@@ -30,6 +30,7 @@ export async function GET(
       .select(`
         id,
         type,
+        title,
         first_name,
         last_name,
         email,
@@ -41,6 +42,7 @@ export async function GET(
           id,
           role,
           job_title,
+          title,
           organization_id,
           organizations:organization_id (
             id,
@@ -74,6 +76,7 @@ export async function GET(
         organisation: a.organisation, // Keep for backward compatibility
         role: user?.role || a.position || 'Focal Point',
         job_title: user?.job_title,
+        title: user?.title || a.title, // Include title from user or contact
         type: a.type,
         avatar_url: a.profile_photo,
         organization: organization ? {
@@ -180,7 +183,7 @@ export async function POST(
       // Assign user - first get user details
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('id, first_name, last_name, email, role, organisation, avatar_url')
+        .select('id, first_name, last_name, title, email, role, organisation, avatar_url')
         .eq('id', user_id)
         .single();
 
@@ -213,6 +216,7 @@ export async function POST(
         activity_id: id,
         type: type,
         user_id: user.id, // Store user_id to enable enhanced data retrieval
+        title: user.title, // Include title field
         first_name: user.first_name || user.email.split('@')[0], // Use email username as fallback
         last_name: user.last_name || 'User', // Required field - use generic fallback
         position: user.role || 'Focal Point', // Required field - use descriptive fallback

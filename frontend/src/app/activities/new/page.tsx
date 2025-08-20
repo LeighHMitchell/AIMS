@@ -97,6 +97,15 @@ import { IatiDocumentLink } from "@/lib/iatiDocumentLink";
 // Separate component for General section to properly use hooks
 function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState }: any) {
   const hasShownInitialToast = useRef(false);
+  const lastSavedDescriptionRef = useRef<string>('');
+  const hasUserEditedDescriptionRef = useRef(false);
+
+  // Initialize tracking refs with current data on first load
+  useEffect(() => {
+    lastSavedDescriptionRef.current = general.description || '';
+    // Reset the edit flag when the component mounts or when switching between activities
+    hasUserEditedDescriptionRef.current = false;
+  }, [general.id]); // Only reset when activity ID changes
 
   // Field-level autosave hooks with context-aware success callbacks
   // Pass 'NEW' for new activities to trigger creation on first save
@@ -106,12 +115,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     userId: user?.id,
     debounceMs: 3000, // Longer debounce for rich text
     additionalData: { title: general.title || 'New Activity' },
-    onSuccess: (data) => {
+    onSuccess: (data, isUserInitiated = false) => {
       if (data.id && !general.id) {
         setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
         setShowActivityCreatedAlert(true);
       }
-      toast.success('Description saved', { position: 'top-right' });
+      // Only show toast if this was a user-initiated change AND the user has actually edited the description
+      if (isUserInitiated && hasUserEditedDescriptionRef.current) {
+        toast.success('Description saved', { position: 'top-right' });
+        lastSavedDescriptionRef.current = general.description || '';
+      }
     }
   });
   const collaborationTypeAutosave = useFieldAutosave('collaborationType', {
@@ -738,6 +751,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             content={general.description || ''}
             onChange={(content) => {
               if (!fieldLockStatus.isLocked) {
+                console.log('[GeneralSection] Description onChange triggered with content:', content);
+                // Mark that the user has actually edited the description
+                hasUserEditedDescriptionRef.current = true;
                 setGeneral((g: any) => ({ ...g, description: content }));
                 descriptionAutosave.triggerFieldSave(content);
               }
@@ -1190,7 +1206,13 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         defaultLanguage="en"
       />;
     case "contacts":
-      return <ContactsSection contacts={contacts} onChange={updateContacts} activityId={general.id} />;
+      return <ContactsSection 
+        contacts={contacts} 
+        onChange={updateContacts} 
+        activityId={general.id} 
+        reportingOrgId={general.createdByOrg || general.reportingOrgId}
+        reportingOrgName={general.created_by_org_name || general.created_by_org_acronym}
+      />;
     case "focal_points":
       return <FocalPointsTab 
         activityId={general.id} 
@@ -1818,6 +1840,7 @@ function NewActivityPageContent() {
       organisations: "Organisations",
       contributors: "Contributors",
       contacts: "Contacts",
+      focal_points: "Focal Points",
       linked_activities: "Linked Activities",
       finances: "Finances",
       results: "Results",

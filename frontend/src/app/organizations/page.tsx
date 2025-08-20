@@ -1796,22 +1796,44 @@ const OrganizationCard: React.FC<{
             </div>
           )}
 
-          {/* Statistics Section - Similar to Activity Cards */}
+          {/* Statistics Section - Different for Government vs Development Partners */}
           <div className="border-t border-gray-200 pt-4">
             <div className="p-4 space-y-3">
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-gray-500 tracking-wide">Activities Reported</span>
-                <span className="text-sm text-gray-700 font-medium">{organization.activeProjects || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-gray-500 tracking-wide">Total Budgeted</span>
-                <span className="text-sm text-gray-700">{formatCurrency(organization.totalBudgeted)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-gray-500 tracking-wide">Total Disbursed</span>
-                <span className="text-sm text-gray-700">{formatCurrency(organization.totalDisbursed)}</span>
-              </div>
+              {/* Check if this is a government partner (types 10, 11, 15) */}
+              {(['10', '11', '15'].includes(organization.organisation_type)) ? (
+                // Government Partner Statistics
+                <>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-gray-500 tracking-wide">Organisation Type</span>
+                    <span className="text-sm text-gray-700 font-medium">{getOrganizationTypeLabel(organization.organisation_type, availableTypes)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-gray-500 tracking-wide"># of Activities</span>
+                    <span className="text-sm text-gray-700 font-medium">{organization.activeProjects || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-gray-500 tracking-wide">Budget Allocation Received</span>
+                    <span className="text-sm text-gray-700">{formatCurrency(organization.totalBudgeted)}</span>
+                  </div>
+                </>
+              ) : (
+                // Development Partner Statistics (existing)
+                <>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-gray-500 tracking-wide">Activities Reported</span>
+                    <span className="text-sm text-gray-700 font-medium">{organization.activeProjects || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-gray-500 tracking-wide">Total Budgeted</span>
+                    <span className="text-sm text-gray-700">{formatCurrency(organization.totalBudgeted)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-gray-500 tracking-wide">Total Disbursed</span>
+                    <span className="text-sm text-gray-700">{formatCurrency(organization.totalDisbursed)}</span>
+                  </div>
+                </>
+              )}
             </div>
             </div>
           </div>

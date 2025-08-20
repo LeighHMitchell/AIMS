@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('users')
       .select(`
-        id, email, role, first_name, last_name, organisation, department, job_title, avatar_url, bio, phone, telephone, website,
+        id, email, role, first_name, last_name, title, organisation, department, job_title, avatar_url, bio, phone, telephone, website,
         organization_id,
         organizations:organization_id (
           id,
@@ -77,6 +77,7 @@ export async function GET(request: NextRequest) {
         name: fullName,
         email: user.email,
         role: user.role,
+        title: user.title, // Include title field (Mr., Mrs., Dr., Daw, U, etc.)
         organisation: organisationFallback, // Keep for backward compatibility
         job_title: user.job_title,
         avatar_url: user.avatar_url,

@@ -54,13 +54,14 @@ interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement> {
   align?: "start" | "center" | "end"
   sideOffset?: number
   collisionPadding?: number
+  forcePosition?: 'top' | 'bottom'
 }
 
 const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
-  ({ className, align = "center", sideOffset = 4, collisionPadding = 8, ...props }, ref) => {
+  ({ className, align = "center", sideOffset = 4, collisionPadding = 8, forcePosition, ...props }, ref) => {
     const context = React.useContext(PopoverContext)
     const contentRef = React.useRef<HTMLDivElement | null>(null)
-    const [position, setPosition] = React.useState<'bottom' | 'top'>('bottom')
+    const [position, setPosition] = React.useState<'bottom' | 'top'>(forcePosition || 'bottom')
     
     if (!context) throw new Error("PopoverContent must be used within Popover")
 
@@ -115,9 +116,9 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
        return () => document.removeEventListener("keydown", handleEscape)
      }, [context?.open, context])
 
-    // Collision detection
+    // Collision detection (simplified to reduce flickering)
     React.useEffect(() => {
-      if (!context.open || !contentRef.current) return
+      if (!context.open || !contentRef.current || forcePosition) return
 
       const checkCollision = () => {
         const content = contentRef.current
@@ -136,19 +137,17 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
         }
       }
 
-      // Check collision after render
+      // Check collision after initial render only
       const timeoutId = setTimeout(checkCollision, 0)
       
-      // Also check on scroll and resize
-      window.addEventListener('scroll', checkCollision, true)
+      // Only check on resize, not on scroll to prevent flickering
       window.addEventListener('resize', checkCollision)
 
       return () => {
         clearTimeout(timeoutId)
-        window.removeEventListener('scroll', checkCollision, true)
         window.removeEventListener('resize', checkCollision)
       }
-    }, [context.open, collisionPadding])
+    }, [context.open, collisionPadding, forcePosition])
 
     if (!context.open) return null
 

@@ -2,6 +2,8 @@ export interface CommentAuthor {
   userId: string;
   name: string;
   role: string;
+  roleColor?: string;
+  profilePicture?: string;
 }
 
 export interface CommentMention {

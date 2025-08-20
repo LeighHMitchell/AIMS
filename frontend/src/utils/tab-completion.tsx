@@ -572,7 +572,7 @@ export function checkFocalPointsTabCompletion(focalPointsData: any): TabCompleti
   
   // Check if there's any focal points data
   if (!focalPointsData) {
-    missingFields.push('focal_points')
+    missingFields.push('Focal Points')
     return {
       isComplete: false,
       isInProgress: false,
@@ -607,7 +607,7 @@ export function checkFocalPointsTabCompletion(focalPointsData: any): TabCompleti
   
   // If no focal points are assigned, mark as missing
   if (!hasAnyFocalPoints) {
-    missingFields.push('focal_points')
+    missingFields.push('Focal Points')
   }
 
   return {

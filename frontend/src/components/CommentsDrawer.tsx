@@ -7,6 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { ROLE_LABELS } from '@/components/rolodex/utils/roleLabels';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -25,6 +28,8 @@ interface Comment {
     userId: string;
     name: string;
     role: string;
+    roleColor?: string;
+    profilePicture?: string;
   };
   message: string;
   createdAt: string;
@@ -35,6 +40,8 @@ interface Comment {
     userId: string;
     name: string;
     role: string;
+    roleColor?: string;
+    profilePicture?: string;
   };
   archivedAt?: string;
   archiveReason?: string;
@@ -44,6 +51,8 @@ interface Comment {
       userId: string;
       name: string;
       role: string;
+      roleColor?: string;
+      profilePicture?: string;
     };
     message: string;
     createdAt: string;
@@ -53,6 +62,8 @@ interface Comment {
     userId: string;
     name: string;
     role: string;
+    roleColor?: string;
+    profilePicture?: string;
   };
   resolvedAt?: string;
   resolutionNote?: string;
@@ -78,6 +89,70 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
   const [replyType, setReplyType] = useState<'Question' | 'Feedback'>('Feedback');
   const [replyTypeOpen, setReplyTypeOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+
+  // Helper function to get user initials
+  const getUserInitials = (name: string): string => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+  };
+
+  // Normalize comment format for backward compatibility
+  const normalizeComment = (comment: any): Comment => {
+    // Get role label from ROLE_LABELS or fallback to raw role
+    const role = comment.user_role || comment.author?.role || comment.userRole || 'user';
+    const roleInfo = ROLE_LABELS[role] || { label: role, color: 'bg-gray-100 text-gray-800' };
+    
+    const normalized = {
+      id: comment.id,
+      activityId: comment.activity_id || comment.activityId || '',
+      author: {
+        userId: comment.user_id || comment.userId || '',
+        name: comment.user_name || comment.author?.name || comment.userName || 'Unknown User',
+        role: roleInfo.label,
+        roleColor: roleInfo.color,
+        profilePicture: user?.profilePicture || comment.author?.profilePicture || comment.user_avatar_url?.avatar_url || comment.user_avatar_url || comment.userProfilePicture
+      },
+      message: comment.message || comment.content || '',
+      type: comment.type || 'Feedback' as 'Feedback' | 'Question',
+      status: comment.status || 'Open' as 'Open' | 'Resolved',
+      createdAt: comment.created_at || comment.createdAt,
+      isArchived: comment.is_archived || comment.isArchived || false,
+      replies: (comment.replies || []).map((reply: any) => {
+        const replyRole = reply.user_role || reply.author?.role || reply.userRole || 'user';
+        const replyRoleInfo = ROLE_LABELS[replyRole] || { label: replyRole, color: 'bg-gray-100 text-gray-800' };
+        
+        return {
+          id: reply.id,
+          author: {
+            userId: reply.user_id || reply.userId || '',
+            name: reply.user_name || reply.author?.name || reply.userName || 'Unknown User',
+            role: replyRoleInfo.label,
+            roleColor: replyRoleInfo.color,
+            profilePicture: reply.author?.profilePicture || reply.user_avatar_url?.avatar_url || reply.user_avatar_url || reply.userProfilePicture
+          },
+          message: reply.message || reply.content || '',
+          type: reply.type || 'Feedback' as 'Feedback' | 'Question',
+          createdAt: reply.created_at || reply.createdAt
+        };
+      }),
+      resolvedBy: comment.resolved_by_name ? {
+        userId: comment.resolved_by_id || '',
+        name: comment.resolved_by_name,
+        role: 'user',
+        profilePicture: comment.resolved_by_avatar_url
+      } : undefined,
+      resolvedAt: comment.resolved_at || comment.resolvedAt,
+      resolutionNote: comment.resolution_note || comment.resolutionNote,
+      archivedBy: comment.archived_by_name ? {
+        userId: comment.archived_by_id || '',
+        name: comment.archived_by_name,
+        role: 'user',
+        profilePicture: comment.archived_by_avatar_url
+      } : undefined,
+      archivedAt: comment.archived_at || comment.archivedAt,
+      archiveReason: comment.archive_reason || comment.archiveReason
+    };
+    return normalized;
+  };
 
   useEffect(() => {
     if (isOpen && activityId) {
@@ -106,41 +181,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       }
       
       const data = await res.json();
-      let fetchedComments = Array.isArray(data) ? data : [];
-      
-      // Transform API response to match expected structure
-      fetchedComments = fetchedComments.map((comment: any) => {
-        // Ensure author object exists with proper fallbacks
-        const author = {
-          userId: comment.user_id || comment.userId || '',
-          name: comment.user_name || comment.userName || 'Unknown User',
-          role: comment.user_role || comment.userRole || 'user'
-        };
-
-        // Transform replies with proper author objects
-        const replies = (comment.replies || []).map((reply: any) => ({
-          ...reply,
-          createdAt: reply.created_at || reply.createdAt,
-          message: reply.message || reply.content || '',
-          author: {
-            userId: reply.user_id || reply.userId || '',
-            name: reply.user_name || reply.userName || 'Unknown User',
-            role: reply.user_role || reply.userRole || 'user'
-          }
-        }));
-
-        return {
-          ...comment,
-          activityId: comment.activity_id || activityId,
-          createdAt: comment.created_at || comment.createdAt,
-          message: comment.message || comment.content || '',
-          author,
-          replies,
-          contextSection: comment.context_section || comment.contextSection,
-          contextField: comment.context_field || comment.contextField,
-          isArchived: comment.is_archived || comment.isArchived || false
-        };
-      });
+      const fetchedComments = Array.isArray(data) ? data.map(normalizeComment) : [];
       
       setComments(fetchedComments);
     } catch (err) {
@@ -171,7 +212,8 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       }
       
       const updatedComments = await res.json();
-      setComments(Array.isArray(updatedComments) ? updatedComments : []);
+      const normalizedComments = Array.isArray(updatedComments) ? updatedComments.map(normalizeComment) : [];
+      setComments(normalizedComments);
       setNewComment('');
       toast.success('Comment added successfully');
     } catch (err) {
@@ -203,7 +245,8 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       }
       
       const updatedComments = await res.json();
-      setComments(Array.isArray(updatedComments) ? updatedComments : []);
+      const normalizedComments = Array.isArray(updatedComments) ? updatedComments.map(normalizeComment) : [];
+      setComments(normalizedComments);
       setReplyContent('');
       setReplyingTo(null);
       toast.success('Reply added successfully');
@@ -415,25 +458,44 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                   comment.status === 'Resolved' ? 'bg-gray-50' : ''
                 } ${comment.isArchived ? 'bg-gray-100 opacity-75' : ''}`}>
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <p className="font-medium text-sm">{comment.author?.name || 'Unknown User'}</p>
-                        <p className="text-xs text-gray-500">{comment.author?.role || 'user'}</p>
-                      </div>
-                      <span className={`text-xs px-2 py-1 rounded ${comment.type === 'Question' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {/* Top Left: Comment Type Badge */}
+                    <div className="flex items-start gap-2">
+                      <Badge variant={comment.type === 'Question' ? 'default' : 'secondary'} className="text-xs">
                         {comment.type}
-                      </span>
+                      </Badge>
                       {comment.status === 'Resolved' && (
-                        <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">Resolved</span>
+                        <Badge variant="outline" className="text-xs bg-green-50 text-green-600 border-green-200">
+                          Resolved
+                        </Badge>
                       )}
                       {comment.isArchived && (
-                        <span className="text-xs px-2 py-1 rounded bg-gray-200 text-gray-700">
+                        <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600">
                           <Archive className="h-3 w-3 inline mr-1" />
                           Archived
-                        </span>
+                        </Badge>
                       )}
                     </div>
+                    
+                    {/* Top Right: Date/Time */}
                     <p className="text-xs text-gray-400">{formatDate(comment.createdAt)}</p>
+                  </div>
+                  
+                  {/* User Info Section */}
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={comment.author?.profilePicture} />
+                      <AvatarFallback className="text-xs">
+                        {getUserInitials(comment.author?.name || 'Unknown User')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{comment.author?.name || 'Unknown User'}</span>
+                        <Badge className={`text-xs ${comment.author?.roleColor || 'bg-gray-100 text-gray-800'}`}>
+                          {comment.author?.role || 'user'}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
                   <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.message}</p>
                   
@@ -441,15 +503,36 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                   {comment.replies && comment.replies.length > 0 && (
                     <div className="ml-4 mt-3 space-y-2 border-l-2 border-gray-200 pl-3">
                       {comment.replies.map((reply) => (
-                        <div key={reply.id} className="bg-gray-50 p-2 rounded">
-                          <div className="flex items-start justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-xs">{reply.author?.name || 'Unknown User'}</p>
-                              <span className="text-xs px-1 py-0.5 rounded bg-gray-200 text-gray-700">{reply.type}</span>
-                            </div>
+                        <div key={reply.id} className="bg-gray-50 p-2 rounded space-y-2">
+                          <div className="flex items-start justify-between">
+                            {/* Top Left: Reply Type Badge */}
+                            <Badge variant={reply.type === 'Question' ? 'default' : 'secondary'} className="text-xs h-5">
+                              {reply.type}
+                            </Badge>
+                            
+                            {/* Top Right: Date/Time */}
                             <p className="text-xs text-gray-400">{formatDate(reply.createdAt)}</p>
                           </div>
-                          <p className="text-xs text-gray-600 whitespace-pre-wrap">{reply.message}</p>
+                          
+                          {/* User Info Section */}
+                          <div className="flex items-start gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={reply.author?.profilePicture} />
+                              <AvatarFallback className="text-xs">
+                                {getUserInitials(reply.author?.name || 'Unknown User')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-xs truncate">{reply.author?.name || 'Unknown User'}</span>
+                                <Badge className={`text-xs h-4 ${reply.author?.roleColor || 'bg-gray-100 text-gray-800'}`}>
+                                  {reply.author?.role || 'user'}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <p className="text-xs text-gray-600 whitespace-pre-wrap ml-8">{reply.message}</p>
                         </div>
                       ))}
                     </div>

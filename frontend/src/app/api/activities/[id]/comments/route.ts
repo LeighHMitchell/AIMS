@@ -112,6 +112,13 @@ export async function GET(
       query = query.order('created_at', { ascending: false });
       
       const { data: comments, error: commentsError } = await query;
+      
+      console.log('[AIMS Comments API] Query result:', { 
+        commentsCount: comments?.length || 0, 
+        activityId: params.id,
+        includeArchived,
+        error: commentsError 
+      });
 
       if (commentsError) {
         console.error('[AIMS Comments API] Comments table error:', commentsError);
@@ -268,6 +275,7 @@ export async function POST(
           mentions: JSON.stringify(mentions),
           attachments: JSON.stringify([]),
           is_read: JSON.stringify({}),
+          is_archived: false, // Explicitly set to false so it appears in default queries
         };
         
         console.log('[AIMS Comments API] Inserting comment with data:', commentData);
