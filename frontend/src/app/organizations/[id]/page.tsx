@@ -315,7 +315,7 @@ export default function OrganizationProfilePage() {
       totalBudget,
       totalExpenditure,
       totalTransactions,
-      activeActivities: activities.filter(a => a.activity_status === 'active').length,
+      activeActivities: activities.filter(a => ['2', '3'].includes(a.activity_status)).length, // 2=Implementation, 3=Finalisation
       totalActivities: activities.length
     }
   }

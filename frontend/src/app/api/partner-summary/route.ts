@@ -391,7 +391,7 @@ export async function GET(request: NextRequest) {
         distinctProjectIds.has(activity.id)
       );
       const activeProjectCount = orgActivities.filter((a: ActivityData) => 
-        a.activity_status === 'active' || a.activity_status === 'implementation'
+        ['2', '3'].includes(a.activity_status) // 2=Implementation, 3=Finalisation
       ).length;
 
       // --- Financial Data Calculation ---

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     const { data: activities, error: activitiesError } = await getSupabaseAdmin()
       .from('activities')
       .select('id, reporting_org_id, activity_status')
-      .in('activity_status', ['implementation', 'ongoing', 'active']);
+      .in('activity_status', ['2', '3']); // 2=Implementation, 3=Finalisation
 
     if (activitiesError) {
       console.error('[AIMS] Error fetching activities:', activitiesError);

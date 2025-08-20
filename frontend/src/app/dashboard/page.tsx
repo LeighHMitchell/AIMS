@@ -163,11 +163,11 @@ export default function Dashboard() {
         ? Math.round((totalDisbursed / totalCommitments) * 100) 
         : 0
 
-      // Get active projects count
+      // Get active projects count (Implementation + Finalisation)
       const { count: activeProjects } = await supabase
         .from('activities')
         .select('*', { count: 'exact', head: true })
-        .eq('activity_status', 'active')
+        .in('activity_status', ['2', '3']) // 2=Implementation, 3=Finalisation
         .eq('publication_status', 'published')
 
       // Get donors reporting count

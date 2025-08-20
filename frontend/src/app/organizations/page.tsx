@@ -402,16 +402,16 @@ const deriveCooperationModality = (orgTypeCode: string, country: string): string
 
   // Updated logic to work with type codes and regional options
   if (isRegional || countryValue === 'global or regional' || countryValue?.includes('global') || countryValue?.includes('regional')) {
-    result = 'Multilateral';
-    console.log('[Cooperation Modality] Rule: Regional/Global → Multilateral');
+    result = 'Global or Regional';
+    console.log('[Cooperation Modality] Rule: Regional/Global → Global or Regional');
   } else if (typeCode === '10' && countryValue !== 'myanmar') {
     // Government (code 10) from foreign country
     result = 'External';
     console.log('[Cooperation Modality] Rule: Government (10) + Foreign Country → External');
   } else if (['22', '40'].includes(typeCode)) {
     // Multilateral (22) or Academic/Research (40)
-    result = 'Multilateral';
-    console.log('[Cooperation Modality] Rule: Multilateral/Academic → Multilateral');
+    result = 'Global or Regional';
+    console.log('[Cooperation Modality] Rule: Multilateral/Academic → Global or Regional');
   } else if (typeCode === '15' && countryValue === 'myanmar') {
     // NGO (code 15) based in Myanmar
     result = 'Internal';
@@ -520,7 +520,7 @@ const getTabCategory = (orgTypeCode: string, location: string): string => {
 
 // Cooperation Modality options
 const COOPERATION_MODALITY_OPTIONS = [
-  { value: 'Multilateral', label: 'Multilateral' },
+  { value: 'Global or Regional', label: 'Global or Regional' },
   { value: 'Regional', label: 'Regional' },
   { value: 'External', label: 'External' },
   { value: 'Internal', label: 'Internal' },
@@ -856,6 +856,25 @@ const EditOrganizationModal: React.FC<{
         address: organization.address || ''
       })
       setValidationErrors([])
+    } else {
+      // Initialize empty form for creating new organization
+      console.log('[EditModal] Initializing form for new organization')
+      setFormData({
+        iati_org_id: '',
+        name: '',
+        acronym: '',
+        country_represented: '',
+        organisation_type: '',
+        cooperation_modality: '',
+        description: '',
+        logo: '',
+        banner: '',
+        website: '',
+        email: '',
+        phone: '',
+        address: ''
+      })
+      setValidationErrors([])
     }
   }, [organization])
 
@@ -956,14 +975,18 @@ const EditOrganizationModal: React.FC<{
     }
   }, [formData.organisation_type, formData.country_represented])
 
-  if (!organization) return null
+  const isCreating = !organization
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="text-xl font-semibold">Edit Organization Profile</DialogTitle>
-          <p className="text-sm text-muted-foreground">Update organization information and details</p>
+          <DialogTitle className="text-xl font-semibold">
+            {isCreating ? 'Add New Organization' : 'Edit Organization Profile'}
+          </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {isCreating ? 'Create a new organization profile' : 'Update organization information and details'}
+          </p>
         </DialogHeader>
         
         {/* Validation Error Banner */}
@@ -1038,8 +1061,8 @@ const EditOrganizationModal: React.FC<{
 
               {/* Name (Required) */}
               <div className="space-y-2">
-                <Label htmlFor="name" className="flex items-center gap-1 text-sm font-medium">
-                  Name <span className="text-red-500">*</span>
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Name
                 </Label>
                 <Input
                   id="name"
@@ -1052,8 +1075,8 @@ const EditOrganizationModal: React.FC<{
 
               {/* Acronym / Short Name (Required) */}
               <div className="space-y-2">
-                <Label htmlFor="acronym" className="flex items-center gap-1 text-sm font-medium">
-                  Acronym / Short Name <span className="text-red-500">*</span>
+                <Label htmlFor="acronym" className="text-sm font-medium">
+                  Acronym / Short Name
                 </Label>
                 <Input
                   id="acronym"
@@ -1066,8 +1089,8 @@ const EditOrganizationModal: React.FC<{
 
               {/* Location Represented */}
               <div className="space-y-2">
-                <Label htmlFor="country_represented" className="flex items-center gap-1 text-sm font-medium">
-                  Location Represented <span className="text-red-500">*</span>
+                <Label htmlFor="country_represented" className="text-sm font-medium">
+                  Location Represented
                 </Label>
                 <Select 
                   key={`country-${organization?.id || 'new'}`}
@@ -1130,14 +1153,14 @@ const EditOrganizationModal: React.FC<{
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Select a specific country or choose a regional/global option for multilateral organizations
+                  Select a specific country or choose a regional/global option for global or regional organizations
                 </p>
               </div>
 
               {/* Organisation Type (Required) */}
               <div className="space-y-2">
-                <Label htmlFor="organisation_type" className="flex items-center gap-1 text-sm font-medium">
-                  Organisation Type <span className="text-red-500">*</span>
+                <Label htmlFor="organisation_type" className="text-sm font-medium">
+                  Organisation Type
                 </Label>
                 <Select 
                   value={formData.organisation_type || ''} 
@@ -1168,14 +1191,14 @@ const EditOrganizationModal: React.FC<{
               {/* Partner Origin (Auto-calculated) */}
               <div className="space-y-2">
                 <Label htmlFor="partner_origin" className="flex items-center gap-2 text-sm font-medium">
-                  Partner Origin <span className="text-red-500">*</span>
+                  Partner Origin
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <HelpCircle className="h-3 w-3 text-gray-500 cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-xs">
-                        <p>Indicates whether the organisation is internal (Myanmar-based), external (foreign), or global/multilateral. Useful for high-level reporting and coordination grouping.</p>
+                        <p>Indicates whether the organisation is internal (Myanmar-based), external (foreign), or global/regional. Useful for high-level reporting and coordination grouping.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -1185,10 +1208,6 @@ const EditOrganizationModal: React.FC<{
                     {formData.cooperation_modality || 'Awaiting calculation...'}
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground italic">
-                  Indicates whether the organisation is internal (Myanmar-based), external (foreign), or global/multilateral.<br />
-                  Useful for high-level reporting and coordination grouping.
-                </p>
               </div>
 
               {/* Partner Classification (Auto-calculated) */}
@@ -1213,10 +1232,6 @@ const EditOrganizationModal: React.FC<{
                       : 'Awaiting calculation...'}
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground italic">
-                  A detailed, descriptive label combining organisation type and country.<br />
-                  Examples: "External Government", "Local/Partner Country NGO", "Foreign Foundation".
-                </p>
               </div>
 
             </div>
@@ -1318,14 +1333,18 @@ const EditOrganizationModal: React.FC<{
 
         {/* Modal Footer */}
         <DialogFooter className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Organization
-          </Button>
+          {!isCreating && (
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Organization
+            </Button>
+          )}
+          {isCreating && <div />}
+          
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>
               Cancel
@@ -1335,7 +1354,10 @@ const EditOrganizationModal: React.FC<{
               disabled={saving}
               className="bg-slate-900 hover:bg-slate-800"
             >
-              {saving ? 'Updating...' : 'Update Organization'}
+              {saving 
+                ? (isCreating ? 'Creating...' : 'Updating...') 
+                : (isCreating ? 'Create Organization' : 'Update Organization')
+              }
             </Button>
           </div>
         </DialogFooter>
@@ -1465,7 +1487,7 @@ const CustomGroupCard: React.FC<{
   }
   
   return (
-    <Card className={`h-full transition-all duration-200 hover:shadow-lg ${group.banner ? 'overflow-hidden' : ''} relative`}>
+    <Card className={`bg-white border border-gray-300 hover:border-gray-400 hover:shadow-lg transition-all duration-300 ease-in-out h-full shadow-sm ${group.banner ? 'overflow-hidden' : ''} relative`}>
       {/* Banner Image */}
       {group.banner && (
         <div className="h-32 bg-gradient-to-r from-blue-500 to-teal-600 relative overflow-hidden flex-shrink-0">
@@ -1666,7 +1688,7 @@ const OrganizationCard: React.FC<{
 
   return (
     <Card 
-      className="hover:shadow-lg transition-shadow duration-200 cursor-pointer overflow-hidden h-full flex flex-col"
+      className="bg-white border border-gray-300 hover:border-gray-400 hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer overflow-hidden h-full flex flex-col shadow-sm"
       onClick={handleView}
     >
       {/* Banner Image */}
@@ -1776,8 +1798,7 @@ const OrganizationCard: React.FC<{
 
           {/* Statistics Section - Similar to Activity Cards */}
           <div className="border-t border-gray-200 pt-4">
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Organization Statistics</h4>
+            <div className="p-4 space-y-3">
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-medium text-gray-500 tracking-wide">Activities Reported</span>
@@ -2048,7 +2069,7 @@ function OrganizationsPageContent() {
     { label: "All", value: "all" },
     { label: "Bilateral Donors", value: "bilateral" },
     { label: "Multilaterals", value: "multilateral" },
-    { label: "Partner Governments", value: "partner_gov" },
+    { label: "Government Partners", value: "partner_gov" },
     { label: "Private Sector", value: "private_sector" },
     { label: "INGOs", value: "ingo" },
     { label: "CSOs / Local NGOs", value: "csos" },
@@ -2387,6 +2408,11 @@ function OrganizationsPageContent() {
     setEditModalOpen(true)
   }
 
+  const handleAddOrganization = () => {
+    setSelectedOrganization(null)
+    setEditModalOpen(true)
+  }
+
   const handleDeleteOrganization = (organization: Organization) => {
     setSelectedOrganization(organization)
     setDeleteModalOpen(true)
@@ -2396,8 +2422,11 @@ function OrganizationsPageContent() {
     try {
       console.log('[OrganizationsPage] Saving organization with data:', data);
       
+      const isCreating = !data.id;
+      const method = isCreating ? 'POST' : 'PUT';
+      
       const response = await fetch('/api/organizations', {
-        method: 'PUT',
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
@@ -2406,7 +2435,8 @@ function OrganizationsPageContent() {
       
       if (!response.ok) {
         console.error('[OrganizationsPage] Save failed:', responseData);
-        throw new Error(responseData.error || 'Failed to update organization')
+        const action = isCreating ? 'create' : 'update';
+        throw new Error(responseData.error || `Failed to ${action} organization`)
       }
       
       console.log('[OrganizationsPage] Save successful:', responseData);
@@ -2532,7 +2562,7 @@ function OrganizationsPageContent() {
               <ExternalLink className="h-4 w-4" />
               <span>Export All Partners</span>
             </Button>
-            <Button className="flex items-center space-x-2">
+            <Button className="flex items-center space-x-2" onClick={handleAddOrganization}>
               <Plus className="h-4 w-4" />
               <span>Add Organization</span>
             </Button>
@@ -2900,7 +2930,7 @@ function OrganizationsPageContent() {
                       <div>
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations yet</h3>
                         <p className="text-gray-500 mb-4">Get started by adding your first organization.</p>
-                        <Button className="mt-4">
+                        <Button className="mt-4" onClick={handleAddOrganization}>
                           <Plus className="h-4 w-4 mr-2" />
                           Add Organization
                         </Button>

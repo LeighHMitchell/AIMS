@@ -91,15 +91,15 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
     const activities = organization.activities || [];
     
     const activeCount = activities.filter(a => 
-      a.activity_status === 'implementation' || a.activity_status === 'active'
+      ['2', '3'].includes(a.activity_status) // 2=Implementation, 3=Finalisation
     ).length;
     
     const completedCount = activities.filter(a => 
-      a.activity_status === 'completed' || a.activity_status === 'completion'
+      a.activity_status === '4' // 4=Closed/Completed
     ).length;
     
     const pipelineCount = activities.filter(a => 
-      a.activity_status === 'pipeline' || a.activity_status === 'planning'
+      a.activity_status === '1' // 1=Pipeline/Planning
     ).length;
 
     // Calculate role distribution
