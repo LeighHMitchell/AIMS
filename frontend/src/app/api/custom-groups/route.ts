@@ -75,8 +75,8 @@ export async function POST(request: Request) {
         tags: body.tags || [],
         group_code: body.group_code,
         is_public: body.is_public !== false, // Default to true
-        // logo: body.logo,  // TODO: Add after running migration
-        // banner: body.banner,  // TODO: Add after running migration
+        logo: body.logo,
+        banner: body.banner,
         created_by_name: body.created_by_name,
         created_by_role: body.created_by_role
       })

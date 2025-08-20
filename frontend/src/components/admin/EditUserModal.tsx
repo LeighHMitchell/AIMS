@@ -17,8 +17,11 @@ import { AddressSearch, AddressComponents } from "@/components/ui/address-search
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload"
 import { User, UserRole, USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { Organization } from "@/types/user"
-import { Edit, AlertCircle, Loader2, Save, X } from "lucide-react"
+import { Edit, AlertCircle, Loader2, Save, X, Lock, Unlock } from "lucide-react"
 import { toast } from "sonner"
+import { LockedField } from "@/components/ui/locked-field"
+import { OrganizationDropdownWithLogo, OrganizationWithLogo } from "@/components/ui/organization-dropdown-with-logo"
+import { useUser } from "@/hooks/useUser"
 
 interface EditUserModalProps {
   isOpen: boolean
@@ -40,11 +43,11 @@ interface EditUserForm {
   organisation?: string
   contactType?: string
   email: string
-  secondaryEmail?: string
+
   countryCode?: string
   phoneNumber?: string
   secondaryCountryCode?: string
-  secondaryPhoneNumber?: string
+
   faxCountryCode?: string
   faxNumber?: string
   website?: string
@@ -53,6 +56,8 @@ interface EditUserForm {
   profilePicture?: string
   role: UserRole
   isActive: boolean
+  createdBy?: string
+  reportedByOrgId?: string
 }
 
 // Helper function to parse phone number into country code and number
@@ -76,6 +81,7 @@ const parsePhoneNumber = (fullPhone: string): { countryCode: string; phoneNumber
 }
 
 export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizations = [] }: EditUserModalProps) {
+  const { user: currentUser } = useUser()
   const [form, setForm] = useState<EditUserForm | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -84,7 +90,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
   useEffect(() => {
     if (user && isOpen) {
       const primaryPhone = parsePhoneNumber(user.telephone || user.phone || "")
-      const secondaryPhone = parsePhoneNumber(user.secondaryPhone || "")
+
       const faxPhone = parsePhoneNumber(user.faxNumber || "")
 
       setForm({
@@ -99,11 +105,10 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         organisation: user.organisation || "",
         contactType: user.contactType || "none",
         email: user.email,
-        secondaryEmail: user.secondaryEmail || "",
+
         countryCode: primaryPhone.countryCode,
         phoneNumber: primaryPhone.phoneNumber,
-        secondaryCountryCode: secondaryPhone.countryCode,
-        secondaryPhoneNumber: secondaryPhone.phoneNumber,
+
         faxCountryCode: faxPhone.countryCode,
         faxNumber: faxPhone.phoneNumber,
         website: user.website || "",
@@ -111,7 +116,9 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         notes: user.notes || "",
         profilePicture: user.profilePicture || "",
         role: user.role as UserRole,
-        isActive: user.isActive
+        isActive: user.isActive,
+        createdBy: user.createdBy || currentUser?.name || "",
+        reportedByOrgId: user.reportedByOrgId || user.organizationId
       })
     }
   }, [user, isOpen])
@@ -170,9 +177,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         ? `${form.countryCode}${form.phoneNumber}`.replace(/\s+/g, '')
         : form.phoneNumber || ""
       
-      const secondaryPhone = form.secondaryCountryCode && form.secondaryPhoneNumber 
-        ? `${form.secondaryCountryCode}${form.secondaryPhoneNumber}`.replace(/\s+/g, '')
-        : form.secondaryPhoneNumber || ""
+
       
       const faxPhone = form.faxCountryCode && form.faxNumber 
         ? `${form.faxCountryCode}${form.faxNumber}`.replace(/\s+/g, '')
@@ -190,14 +195,15 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         department: form.department?.trim() || null,
         contact_type: form.contactType === 'none' ? null : form.contactType,
         telephone: primaryPhone.trim() || null,
-        secondary_email: form.secondaryEmail?.trim() || null,
-        secondary_phone: secondaryPhone.trim() || null,
+
         fax_number: faxPhone.trim() || null,
         website: form.website?.trim() || null,
         mailing_address: form.mailingAddress?.trim() || null,
         notes: form.notes?.trim() || null,
         avatar_url: form.profilePicture || null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        created_by: form.createdBy?.trim() || null,
+        reported_by_org_id: form.reportedByOrgId || null
       }
 
       console.log('[EditUserModal] Updating user:', form.email)
@@ -239,8 +245,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         contactType: result.contact_type,
         telephone: result.telephone,
         phone: result.telephone,
-        secondaryEmail: result.secondary_email,
-        secondaryPhone: result.secondary_phone,
+
         faxNumber: result.fax_number,
         website: result.website,
         mailingAddress: result.mailing_address,
@@ -249,7 +254,9 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         isActive: result.is_active ?? true,
         lastLogin: result.last_login,
         createdAt: result.created_at,
-        updatedAt: result.updated_at
+        updatedAt: result.updated_at,
+        createdBy: result.created_by || form.createdBy,
+        reportedByOrgId: result.reported_by_org_id || form.reportedByOrgId
       }
 
       toast.success(`User ${updatedUser.email} updated successfully!`)
@@ -459,6 +466,43 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                 placeholder="Enter organization name"
               />
             </div>
+
+            {/* Reported by Organization Dropdown */}
+            <div>
+              <Label htmlFor="reportedByOrg">Reported by Organization</Label>
+              <OrganizationDropdownWithLogo
+                organizations={organizations?.map(org => ({
+                  id: org.id,
+                  name: org.name,
+                  acronym: org.acronym,
+                  type: org.type,
+                  country: org.country,
+                  iati_org_id: org.iati_org_id,
+                  logo: org.logo
+                })) || []}
+                value={form.reportedByOrgId}
+                onValueChange={(value) => handleFormChange("reportedByOrgId", value)}
+                placeholder="Select reporting organization..."
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* System Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">System Information</h3>
+            
+            {/* Created by field with lock */}
+            <LockedField
+              label="Created by"
+              value={form.createdBy || ""}
+              onChange={(value) => handleFormChange("createdBy", value)}
+              isSuperUser={currentUser?.role === USER_ROLES.SUPER_USER}
+              placeholder="User who created this record"
+              lockTooltip="This field is locked and can only be edited by super users"
+              unlockTooltip="Click to unlock and edit the created by field"
+            />
           </div>
 
           <Separator />
@@ -478,16 +522,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                   placeholder="user@example.com"
                 />
               </div>
-              <div>
-                <Label htmlFor="secondaryEmail">Secondary Email</Label>
-                <Input
-                  id="secondaryEmail"
-                  type="email"
-                  value={form.secondaryEmail}
-                  onChange={(e) => handleFormChange("secondaryEmail", e.target.value)}
-                  placeholder="secondary@example.com"
-                />
-              </div>
+
             </div>
             
             <div>
@@ -501,16 +536,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
               />
             </div>
 
-            <div>
-              <PhoneFields
-                countryCode={form.secondaryCountryCode}
-                phoneNumber={form.secondaryPhoneNumber}
-                onCountryCodeChange={(code) => handleFormChange("secondaryCountryCode", code)}
-                onPhoneNumberChange={(number) => handleFormChange("secondaryPhoneNumber", number)}
-                phoneLabel="Secondary Phone"
-                phonePlaceholder="Enter secondary phone number"
-              />
-            </div>
+
 
             <div>
               <PhoneFields

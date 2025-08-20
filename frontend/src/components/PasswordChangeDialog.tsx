@@ -12,9 +12,10 @@ import { toast } from "sonner";
 interface PasswordChangeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  userId: string;
 }
 
-export function PasswordChangeDialog({ open, onOpenChange }: PasswordChangeDialogProps) {
+export function PasswordChangeDialog({ open, onOpenChange, userId }: PasswordChangeDialogProps) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -40,15 +41,15 @@ export function PasswordChangeDialog({ open, onOpenChange }: PasswordChangeDialo
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/projects/api/auth/change-password/', {
+      const response = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
-          current_password: currentPassword,
-          new_password: newPassword,
+          currentPassword: currentPassword,
+          newPassword: newPassword,
+          userId: userId,
         }),
       });
 

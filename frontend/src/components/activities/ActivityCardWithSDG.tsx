@@ -405,11 +405,11 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
 
             {/* Activity Details - Always displayed */}
             <div className="space-y-2">
-              {activity.created_by_org_name && (
+              {(activity.created_by_org_acronym || activity.created_by_org_name) && (
                 <div className="flex justify-between items-center py-2 min-h-[3.5rem] border-t border-b border-gray-200">
                   <span className="text-sm font-medium text-gray-700">Reported by</span>
                   <span className="text-sm text-gray-900 text-right flex items-center">
-                    {activity.created_by_org_name}
+                    {activity.created_by_org_acronym || activity.created_by_org_name}
                   </span>
                 </div>
               )}

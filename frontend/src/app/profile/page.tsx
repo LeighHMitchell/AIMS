@@ -20,6 +20,7 @@ import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 import { PhoneFields } from "@/components/ui/phone-fields";
 import { AddressSearch, AddressComponents } from "@/components/ui/address-search";
 import { EmailChangeConfirmDialog } from "@/components/EmailChangeConfirmDialog";
+import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
 import { supabase } from "@/lib/supabase";
 import { CONTACT_TYPES } from "@/data/contact-types";
 import { 
@@ -135,13 +136,10 @@ interface Organization {
   name: string
   acronym?: string
   iati_org_id?: string
+  logo?: string
 }
 
-// IATI validation helpers
-const validateReportingOrgId = (id: string): string | null => {
-  if (id && !/^[A-Z]{2}-[A-Z0-9\-]+$/i.test(id)) return "Invalid IATI organization ID format (e.g., XM-DAC-41114)"
-  return null
-}
+
 
 // ISO 639-1 language codes
 const languages = [
@@ -186,9 +184,11 @@ export default function ProfilePage() {
             firstName: freshData.first_name || "",
             middleName: freshData.middle_name || "",
             lastName: freshData.last_name || "",
+            suffix: freshData.suffix || "",
             email: prev.email, // Keep current email in edit mode
             jobTitle: freshData.job_title || "",
             department: freshData.department || "",
+            organisation: freshData.organisation || "",
             ...splitTelephone(freshData.telephone || ""),
             website: freshData.website || "",
             mailingAddress: freshData.mailing_address || "",
@@ -198,9 +198,6 @@ export default function ProfilePage() {
             timezone: freshData.timezone || "UTC",
             role: freshData.role || "",
             contactType: freshData.contact_type || "",
-            secondaryEmail: freshData.secondary_email || "",
-            secondaryCountryCode: splitTelephone(freshData.secondary_phone || "").countryCode,
-            secondaryPhoneNumber: splitTelephone(freshData.secondary_phone || "").phoneNumber,
             faxCountryCode: splitTelephone(freshData.fax_number || "").countryCode,
             faxPhoneNumber: splitTelephone(freshData.fax_number || "").phoneNumber,
             notes: freshData.notes || ""
@@ -226,12 +223,14 @@ export default function ProfilePage() {
     firstName: user?.firstName || "",
     middleName: user?.middleName || "",
     lastName: user?.lastName || "",
+    suffix: user?.suffix || "",
     email: user?.email || "",
     jobTitle: user?.jobTitle || "",
     department: user?.department || "",
     organisation: user?.organisation || "",
     ...splitTelephone(user?.telephone || user?.phone || ""),
     website: user?.website || "",
+
     mailingAddress: user?.mailingAddress || "",
     addressComponents: parseMailingAddress(user?.mailingAddress || ""),
     bio: user?.bio || "",
@@ -239,15 +238,11 @@ export default function ProfilePage() {
     timezone: user?.timezone || "UTC",
     role: user?.role || "",
     organization: user?.organization || null,
-    reportingOrgId: "",
+
     password: "",
     newPassword: "",
     confirmPassword: "",
     contactType: user?.contactType || "",
-    secondaryEmail: user?.secondaryEmail || "",
-    ...splitTelephone(user?.secondaryPhone || ""),
-    secondaryCountryCode: splitTelephone(user?.secondaryPhone || "").countryCode,
-    secondaryPhoneNumber: splitTelephone(user?.secondaryPhone || "").phoneNumber,
     ...splitTelephone(user?.faxNumber || ""),
     faxCountryCode: splitTelephone(user?.faxNumber || "").countryCode,
     faxPhoneNumber: splitTelephone(user?.faxNumber || "").phoneNumber,
@@ -262,7 +257,7 @@ export default function ProfilePage() {
       try {
         const { data, error } = await supabase
           .from('organizations')
-          .select('id, name, acronym, iati_org_id')
+          .select('id, name, acronym, iati_org_id, logo')
           .order('name')
 
         if (error) {
@@ -284,9 +279,9 @@ export default function ProfilePage() {
     fetchOrganizations()
   }, [user?.role, user?.organizationId])
 
-  // Load IATI profile data
+  // Load profile data
   useEffect(() => {
-    const loadIATIProfile = async () => {
+    const loadProfile = async () => {
       if (!user?.email) return
 
       try {
@@ -297,7 +292,6 @@ export default function ProfilePage() {
           
           setFormData(prev => ({
             ...prev,
-            reportingOrgId: userData.reporting_org_id || '',
             organisation: userData.organisation || user.organisation || prev.organisation,
           }))
           
@@ -306,11 +300,11 @@ export default function ProfilePage() {
           }
         }
       } catch (error) {
-        console.error('Error loading IATI profile:', error)
+        console.error('Error loading profile:', error)
       }
     }
 
-    loadIATIProfile()
+    loadProfile()
   }, [user?.email])
 
   // Refresh form data when user prop changes
@@ -337,9 +331,6 @@ export default function ProfilePage() {
         role: user.role || "",
         organization: user.organization || null,
         contactType: user.contactType || "",
-        secondaryEmail: user.secondaryEmail || "",
-        secondaryCountryCode: splitTelephone(user.secondaryPhone || "").countryCode,
-        secondaryPhoneNumber: splitTelephone(user.secondaryPhone || "").phoneNumber,
         faxCountryCode: splitTelephone(user.faxNumber || "").countryCode,
         faxPhoneNumber: splitTelephone(user.faxNumber || "").phoneNumber,
         notes: user.notes || ""
@@ -410,6 +401,7 @@ export default function ProfilePage() {
         first_name: formData.firstName,
         middle_name: formData.middleName,
         last_name: formData.lastName,
+        suffix: formData.suffix,
         job_title: formData.jobTitle,
         department: formData.department,
         organisation: formData.organisation,
@@ -420,10 +412,7 @@ export default function ProfilePage() {
         preferred_language: formData.preferredLanguage,
         timezone: formData.timezone,
         avatar_url: profilePhoto,
-        reporting_org_id: formData.reportingOrgId,
         contact_type: formData.contactType,
-        secondary_email: formData.secondaryEmail,
-        secondary_phone: formData.secondaryCountryCode + formData.secondaryPhoneNumber,
         fax_number: formData.faxCountryCode + formData.faxPhoneNumber,
         notes: formData.notes,
       };
@@ -455,6 +444,7 @@ export default function ProfilePage() {
             organizationData = {
               id: selectedOrg.id,
               name: selectedOrg.name,
+              logo: selectedOrg.logo,
               type: 'development_partner', // Default type, should be fetched from org data
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
@@ -469,6 +459,7 @@ export default function ProfilePage() {
           firstName: updatedData.first_name || "",
           middleName: updatedData.middle_name || "",
           lastName: updatedData.last_name || "",
+          suffix: updatedData.suffix || "",
           name: updatedData.name || `${updatedData.first_name || ''} ${updatedData.last_name || ''}`.trim(),
           jobTitle: updatedData.job_title || "",
           department: updatedData.department || "",
@@ -478,11 +469,14 @@ export default function ProfilePage() {
           telephone: updatedData.telephone || "",
           phone: updatedData.telephone || "",
           website: updatedData.website || "",
+          faxNumber: updatedData.fax_number || "",
           mailingAddress: updatedData.mailing_address || "",
           bio: updatedData.bio || "",
           preferredLanguage: updatedData.preferred_language || "en",
           timezone: updatedData.timezone || "UTC",
           profilePicture: updatedData.avatar_url,
+          notes: updatedData.notes || "",
+          contactType: updatedData.contact_type || "",
         };
         
         setUser(updatedUser);
@@ -507,9 +501,11 @@ export default function ProfilePage() {
         firstName: user.firstName || "",
         middleName: user.middleName || "",
         lastName: user.lastName || "",
+        suffix: user.suffix || "",
         email: user.email || "",
         jobTitle: user.jobTitle || "",
         department: user.department || "",
+        organisation: user.organisation || "",
         ...splitTelephone(user.telephone || user.phone || ""),
         website: user.website || "",
         mailingAddress: user.mailingAddress || "",
@@ -523,14 +519,9 @@ export default function ProfilePage() {
         newPassword: "",
         confirmPassword: "",
         contactType: user.contactType || "",
-        secondaryEmail: user.secondaryEmail || "",
-        secondaryCountryCode: splitTelephone(user.secondaryPhone || "").countryCode,
-        secondaryPhoneNumber: splitTelephone(user.secondaryPhone || "").phoneNumber,
         faxCountryCode: splitTelephone(user.faxNumber || "").countryCode,
         faxPhoneNumber: splitTelephone(user.faxNumber || "").phoneNumber,
-        notes: user.notes || "",
-        reportingOrgId: (user as any).reportingOrgId || "",
-        organisation: (user as any).organisation || ""
+        notes: user.notes || ""
       });
       setProfilePhoto(user.profilePicture || "");
     }
@@ -549,7 +540,7 @@ export default function ProfilePage() {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
@@ -585,10 +576,6 @@ export default function ProfilePage() {
             <TabsTrigger value="contact" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               Address & Website
-            </TabsTrigger>
-            <TabsTrigger value="iati" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              IATI Settings
             </TabsTrigger>
             <TabsTrigger value="system" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -634,8 +621,8 @@ export default function ProfilePage() {
                         {/* Name Section */}
                     <div className="space-y-4">
                           <h4 className="text-sm font-medium text-muted-foreground">Name Details</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <div>
+                          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div className="md:col-span-2">
                               <Label htmlFor="title" className="text-xs">Title</Label>
                           <Select 
                             value={formData.title} 
@@ -657,7 +644,7 @@ export default function ProfilePage() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div>
+                        <div className="md:col-span-3">
                               <Label htmlFor="firstName" className="text-xs">First Name *</Label>
                           <Input
                             id="firstName"
@@ -667,7 +654,7 @@ export default function ProfilePage() {
                             required
                           />
                         </div>
-                        <div>
+                        <div className="md:col-span-3">
                               <Label htmlFor="middleName" className="text-xs">Middle Name</Label>
                           <Input
                             id="middleName"
@@ -677,7 +664,7 @@ export default function ProfilePage() {
                             placeholder="Optional"
                           />
                         </div>
-                        <div>
+                        <div className="md:col-span-2">
                               <Label htmlFor="lastName" className="text-xs">Last Name *</Label>
                           <Input
                             id="lastName"
@@ -686,6 +673,36 @@ export default function ProfilePage() {
                                 className="h-9"
                             required
                           />
+                        </div>
+                        <div className="md:col-span-2">
+                              <Label htmlFor="suffix" className="text-xs">Suffix</Label>
+                          <Select 
+                            value={formData.suffix} 
+                            onValueChange={(value) => setFormData({ ...formData, suffix: value })}
+                          >
+                                <SelectTrigger className="h-9">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              <SelectItem value="Jr.">Jr.</SelectItem>
+                              <SelectItem value="Sr.">Sr.</SelectItem>
+                              <SelectItem value="II">II</SelectItem>
+                              <SelectItem value="III">III</SelectItem>
+                              <SelectItem value="IV">IV</SelectItem>
+                              <SelectItem value="PhD">PhD</SelectItem>
+                              <SelectItem value="MD">MD</SelectItem>
+                              <SelectItem value="JD">JD</SelectItem>
+                              <SelectItem value="MBA">MBA</SelectItem>
+                              <SelectItem value="MS">MS</SelectItem>
+                              <SelectItem value="MA">MA</SelectItem>
+                              <SelectItem value="BS">BS</SelectItem>
+                              <SelectItem value="BA">BA</SelectItem>
+                              <SelectItem value="RN">RN</SelectItem>
+                              <SelectItem value="CPA">CPA</SelectItem>
+                              <SelectItem value="PE">PE</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                       </div>
@@ -719,26 +736,18 @@ export default function ProfilePage() {
 
                         {/* Organization Section */}
                       <div className="space-y-4">
+                          <Separator className="my-4" />
                           <h4 className="text-sm font-medium text-muted-foreground">Organization</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                              <Label htmlFor="contactType" className="text-xs">Contact Type</Label>
-                              <Select 
-                                value={formData.contactType} 
-                                onValueChange={(value) => setFormData({ ...formData, contactType: value })}
-                              >
-                                <SelectTrigger className="h-9">
-                                  <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {CONTACT_TYPES.map((type) => (
-                                    <SelectItem key={type.code} value={type.code}>
-                                      {type.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                        </div>
+                                                    <div>
+                              <Label htmlFor="userRole" className="text-xs">User Role</Label>
+                              <Input
+                                id="userRole"
+                                value={ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
+                                disabled
+                                className="h-9 bg-muted"
+                              />
+                            </div>
                         <div>
                               {user.role === 'super_user' ? (
                                 <>
@@ -759,15 +768,28 @@ export default function ProfilePage() {
                         <SelectContent>
                           {organizations.map((org) => (
                             <SelectItem key={org.id} value={org.id}>
-                              <div className="flex flex-col">
-                                            <div className="text-sm">
-                                  {org.name} {org.acronym && `(${org.acronym})`}
-                                </div>
-                                {org.iati_org_id && (
-                                  <div className="text-xs text-muted-foreground">
-                                    IATI: {org.iati_org_id}
-                                  </div>
+                              <div className="flex items-center gap-3">
+                                {org.logo && (
+                                  <img
+                                    src={org.logo}
+                                    alt={`${org.name} logo`}
+                                    className="w-8 h-8 object-contain rounded-sm flex-shrink-0"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                    }}
+                                  />
                                 )}
+                                <div className="flex flex-col">
+                                  <div className="text-sm">
+                                    {org.name} {org.acronym && `(${org.acronym})`}
+                                  </div>
+                                  {org.iati_org_id && (
+                                    <div className="text-xs text-muted-foreground">
+                                      IATI: {org.iati_org_id}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </SelectItem>
                           ))}
@@ -777,7 +799,18 @@ export default function ProfilePage() {
                 ) : (
                   <>
                                   <Label className="text-xs">Organisation</Label>
-                                  <div className="h-9 px-3 py-2 border rounded-md bg-muted flex items-center">
+                                  <div className="h-9 px-3 py-2 border rounded-md bg-muted flex items-center gap-3">
+                                    {user.organization?.logo && (
+                                      <img
+                                        src={user.organization.logo}
+                                        alt={`${user.organization.name} logo`}
+                                        className="w-6 h-6 object-contain rounded-sm flex-shrink-0"
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          target.style.display = 'none';
+                                        }}
+                                      />
+                                    )}
                                     <span className="text-sm">{user.organization?.name || formData.organisation || "Not assigned"}</span>
                         </div>
                                 </>
@@ -816,58 +849,31 @@ export default function ProfilePage() {
                               </div>
                       </div>
                             
-                            {/* Primary Phone */}
-                            <div>
-                              <Label className="text-xs mb-1">Primary Phone</Label>
-                              <PhoneFields
-                                countryCode={formData.countryCode}
-                                phoneNumber={formData.phoneNumber}
-                                onCountryCodeChange={(code) => setFormData({ ...formData, countryCode: code })}
-                                onPhoneNumberChange={(number) => setFormData({ ...formData, phoneNumber: number })}
-                                phoneLabel=""
-                                phonePlaceholder="Phone number"
-                              />
+                            {/* Phone and Fax on same line */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Label className="text-xs mb-1">Phone</Label>
+                                <PhoneFields
+                                  countryCode={formData.countryCode}
+                                  phoneNumber={formData.phoneNumber}
+                                  onCountryCodeChange={(code) => setFormData({ ...formData, countryCode: code })}
+                                  onPhoneNumberChange={(number) => setFormData({ ...formData, phoneNumber: number })}
+                                  phoneLabel=""
+                                  phonePlaceholder="Phone number"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs mb-1">Fax Number</Label>
+                                <PhoneFields
+                                  countryCode={formData.faxCountryCode}
+                                  phoneNumber={formData.faxPhoneNumber}
+                                  onCountryCodeChange={(code) => setFormData({ ...formData, faxCountryCode: code })}
+                                  onPhoneNumberChange={(number) => setFormData({ ...formData, faxPhoneNumber: number })}
+                                  phoneLabel=""
+                                  phonePlaceholder="Fax number"
+                                />
+                              </div>
                             </div>
-                          </div>
-
-                          {/* Secondary Contact */}
-                          <div className="space-y-3">
-                            <div>
-                              <Label htmlFor="secondaryEmail" className="text-xs">Secondary Email</Label>
-                              <Input
-                                id="secondaryEmail"
-                                type="email"
-                                value={formData.secondaryEmail}
-                                onChange={(e) => setFormData({ ...formData, secondaryEmail: e.target.value })}
-                                className="h-9"
-                                placeholder="Optional secondary email"
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label className="text-xs mb-1">Secondary Phone</Label>
-                              <PhoneFields
-                                countryCode={formData.secondaryCountryCode}
-                                phoneNumber={formData.secondaryPhoneNumber}
-                                onCountryCodeChange={(code) => setFormData({ ...formData, secondaryCountryCode: code })}
-                                onPhoneNumberChange={(number) => setFormData({ ...formData, secondaryPhoneNumber: number })}
-                                phoneLabel=""
-                                phonePlaceholder="Phone number"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Fax */}
-                          <div>
-                            <Label className="text-xs mb-1">Fax Number</Label>
-                            <PhoneFields
-                              countryCode={formData.faxCountryCode}
-                              phoneNumber={formData.faxPhoneNumber}
-                              onCountryCodeChange={(code) => setFormData({ ...formData, faxCountryCode: code })}
-                              onPhoneNumberChange={(number) => setFormData({ ...formData, faxPhoneNumber: number })}
-                              phoneLabel=""
-                              phonePlaceholder="Fax number"
-                            />
                           </div>
                         </div>
 
@@ -905,7 +911,19 @@ export default function ProfilePage() {
                           {/* Organization */}
                           {(user.organization || user.contactType) && (
                             <div className="flex items-start gap-3">
-                              <Building2 className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              {user.organization?.logo ? (
+                                <img
+                                  src={user.organization.logo}
+                                  alt={`${user.organization.name} logo`}
+                                  className="w-8 h-8 object-contain rounded-sm flex-shrink-0 mt-0.5"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                <Building2 className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              )}
                               <div>
                                 <p className="text-sm font-medium">{user.organization?.name || user.organisation || "No organization"}</p>
                                 {user.contactType && (
@@ -923,18 +941,16 @@ export default function ProfilePage() {
                               <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
                               <div className="space-y-1">
                                 <p className="text-sm">{user.email}</p>
-                                {user.secondaryEmail && (
-                                  <p className="text-sm text-muted-foreground">{user.secondaryEmail} (Secondary)</p>
-                                )}
+
                               </div>
                             </div>
 
-                            {(user.telephone || user.secondaryPhone || user.faxNumber) && (
+                            {(user.telephone || user.faxNumber) && (
                               <div className="flex items-start gap-3">
                                 <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
                                 <div className="space-y-1">
                                   {user.telephone && <p className="text-sm">{user.telephone}</p>}
-                                  {user.secondaryPhone && <p className="text-sm text-muted-foreground">{user.secondaryPhone} (Secondary)</p>}
+
                                   {user.faxNumber && <p className="text-sm text-muted-foreground">{user.faxNumber} (Fax)</p>}
                                 </div>
                               </div>
@@ -1037,108 +1053,7 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* IATI Settings Tab */}
-          <TabsContent value="iati" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  IATI Configuration
-                </CardTitle>
-                <CardDescription>
-                  Configure your International Aid Transparency Initiative (IATI) settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {isEditing ? (
-                  <>
-                    {/* Editing Mode */}
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="preferredLanguageIATI">Preferred Language (ISO 639-1) *</Label>
-                        <Select
-                          value={formData.preferredLanguage}
-                          onValueChange={(value) => {
-                            setFormData({ ...formData, preferredLanguage: value })
-                            const error = validateReportingOrgId(value)
-                            if (error) {
-                              setErrors(prev => ({ ...prev, preferredLanguage: error }))
-                            } else {
-                              setErrors(prev => {
-                                const newErrors = { ...prev }
-                                delete newErrors.preferredLanguage
-                                return newErrors
-                              })
-                            }
-                          }}
-                        >
-                          <SelectTrigger id="preferredLanguageIATI" className={errors.preferredLanguage ? "border-red-500" : ""}>
-                            <SelectValue placeholder="Select language" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {languages.map((lang) => (
-                              <SelectItem key={lang.code} value={lang.code}>
-                                {lang.name} ({lang.code})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {errors.preferredLanguage && (
-                          <p className="text-sm text-red-500">{errors.preferredLanguage}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="reportingOrgId">Reporting Organisation ID</Label>
-                        <Input
-                          id="reportingOrgId"
-                          value={formData.reportingOrgId || ""}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            setFormData({ ...formData, reportingOrgId: value })
-                            const error = validateReportingOrgId(value)
-                            if (error) {
-                              setErrors(prev => ({ ...prev, reportingOrgId: error }))
-                            } else {
-                              setErrors(prev => {
-                                const newErrors = { ...prev }
-                                delete newErrors.reportingOrgId
-                                return newErrors
-                              })
-                            }
-                          }}
-                          placeholder="e.g., XM-DAC-41114"
-                          className={errors.reportingOrgId ? "border-red-500" : ""}
-                        />
-                        {errors.reportingOrgId && (
-                          <p className="text-sm text-red-500">{errors.reportingOrgId}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          Your IATI organization identifier. Contact your administrator if you're unsure.
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* View Mode */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Preferred Language</Label>
-                        <p className="text-lg">
-                          {languages.find(lang => lang.code === user.preferredLanguage)?.name || 'English'} ({user.preferredLanguage || 'en'})
-                        </p>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Reporting Organisation ID</Label>
-                        <p className="text-lg">{formData.reportingOrgId || "Not specified"}</p>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+
 
           {/* System & Security Tab */}
           <TabsContent value="system" className="space-y-6">

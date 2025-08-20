@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,8 +17,11 @@ import { AddressSearch, AddressComponents } from "@/components/ui/address-search
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload"
 import { User, UserRole, USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { Organization } from "@/types/user"
-import { Eye, EyeOff, Copy, RefreshCw, UserPlus, Key, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
+import { Eye, EyeOff, Copy, RefreshCw, UserPlus, Key, AlertCircle, CheckCircle, Loader2, Lock, Unlock } from "lucide-react"
 import { toast } from "sonner"
+import { LockedField } from "@/components/ui/locked-field"
+import { OrganizationDropdownWithLogo, OrganizationWithLogo } from "@/components/ui/organization-dropdown-with-logo"
+import { useUser } from "@/hooks/useUser"
 
 interface CreateUserModalProps {
   isOpen: boolean
@@ -53,6 +56,8 @@ interface CreateUserForm {
   password: string
   generatePassword: boolean
   sendWelcomeEmail: boolean
+  createdBy?: string
+  reportedByOrgId?: string
 }
 
 const initialFormState: CreateUserForm = {
@@ -80,15 +85,28 @@ const initialFormState: CreateUserForm = {
   role: USER_ROLES.DEV_PARTNER_TIER_2,
   password: "",
   generatePassword: true,
-  sendWelcomeEmail: true
+  sendWelcomeEmail: true,
+  createdBy: "",
+  reportedByOrgId: undefined
 }
 
 export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations = [] }: CreateUserModalProps) {
+  const { user: currentUser } = useUser()
   const [form, setForm] = useState<CreateUserForm>(initialFormState)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [createdUser, setCreatedUser] = useState<{ user: User; password: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Initialize created by field with current user when form opens
+  React.useEffect(() => {
+    if (isOpen && currentUser && !form.createdBy) {
+      setForm(prev => ({ 
+        ...prev, 
+        createdBy: currentUser.name || `${currentUser.firstName} ${currentUser.lastName}`.trim()
+      }))
+    }
+  }, [isOpen, currentUser, form.createdBy])
 
   // Generate a secure password
   const generateSecurePassword = (): string => {
@@ -207,7 +225,9 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
         mailing_address: form.mailingAddress?.trim() || null,
         notes: form.notes?.trim() || null,
         avatar_url: form.profilePicture?.trim() || null,
-        password: finalPassword
+        password: finalPassword,
+        created_by: form.createdBy?.trim() || null,
+        reported_by_org_id: form.reportedByOrgId || null
       }
 
       console.log('[CreateUserModal] Creating user:', userData.email)
@@ -249,8 +269,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
         contactType: result.contact_type,
         telephone: result.telephone,
         phone: result.telephone,
-        secondaryEmail: result.secondary_email,
-        secondaryPhone: result.secondary_phone,
+
         faxNumber: result.fax_number,
         website: result.website,
         mailingAddress: result.mailing_address,
@@ -258,7 +277,9 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
         profilePicture: result.avatar_url,
         isActive: result.is_active ?? true,
         createdAt: result.created_at,
-        updatedAt: result.updated_at
+        updatedAt: result.updated_at,
+        createdBy: result.created_by || form.createdBy,
+        reportedByOrgId: result.reported_by_org_id || form.reportedByOrgId
       }
 
       // Show success state with credentials
@@ -548,6 +569,43 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
                 placeholder="Enter organization name"
               />
             </div>
+
+            {/* Reported by Organization Dropdown */}
+            <div>
+              <Label htmlFor="reportedByOrg">Reported by Organization</Label>
+              <OrganizationDropdownWithLogo
+                organizations={organizations?.map(org => ({
+                  id: org.id,
+                  name: org.name,
+                  acronym: org.acronym,
+                  type: org.type,
+                  country: org.country,
+                  iati_org_id: org.iati_org_id,
+                  logo: org.logo
+                })) || []}
+                value={form.reportedByOrgId}
+                onValueChange={(value) => handleFormChange("reportedByOrgId", value)}
+                placeholder="Select reporting organization..."
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* System Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">System Information</h3>
+            
+            {/* Created by field with lock */}
+            <LockedField
+              label="Created by"
+              value={form.createdBy || ""}
+              onChange={(value) => handleFormChange("createdBy", value)}
+              isSuperUser={currentUser?.role === USER_ROLES.SUPER_USER}
+              placeholder="User who created this record"
+              lockTooltip="This field is locked and can only be edited by super users"
+              unlockTooltip="Click to unlock and edit the created by field"
+            />
           </div>
 
           <Separator />

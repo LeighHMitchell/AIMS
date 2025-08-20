@@ -26,6 +26,9 @@ interface TopNavProps {
     profilePicture?: string
     firstName?: string
     lastName?: string
+    title?: string
+    middleName?: string
+    suffix?: string
     organisation?: string
     organization?: {
       id: string
@@ -38,6 +41,24 @@ interface TopNavProps {
 }
 
 export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
+  // Function to construct full name with title, middle name, and suffix
+  const getFullName = (user: TopNavProps['user']) => {
+    if (!user) return "User";
+    
+    const parts = [];
+    if (user.title && user.title !== 'none') parts.push(user.title);
+    if (user.firstName) parts.push(user.firstName);
+    if (user.middleName) parts.push(user.middleName);
+    if (user.lastName) parts.push(user.lastName);
+    
+    let fullName = parts.join(' ');
+    if (user.suffix && user.suffix !== 'none') {
+      fullName += `, ${user.suffix}`;
+    }
+    
+    return fullName || user.name || "User";
+  };
+
   return (
     <nav className="border-b bg-white sticky top-0 z-30">
       <div className="flex h-16 items-center px-6">
@@ -67,7 +88,7 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
                       {user.lastName?.[0] || (user.name?.split(' ')[1]?.[0] || '')}
                     </AvatarFallback>
                   </Avatar>
-                  <span>{user.name || "User"}</span>
+                  <span>{getFullName(user)}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-72">
@@ -83,7 +104,7 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col space-y-1 flex-1">
-                        <p className="text-sm font-medium leading-tight">{user.name}</p>
+                        <p className="text-sm font-medium leading-tight">{getFullName(user)}</p>
                         <p className="text-xs leading-tight text-muted-foreground">{user.email}</p>
                         {/* Organization Context */}
                         {(user.organization?.name || user.organisation) && (

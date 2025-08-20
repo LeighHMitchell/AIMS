@@ -62,13 +62,12 @@ export async function GET(request: NextRequest) {
       firstName: user.first_name,
       middleName: user.middle_name,
       lastName: user.last_name,
+      suffix: user.suffix,
       gender: user.gender,
       profilePicture: user.avatar_url, // Map avatar_url to profilePicture
       organisation: user.organisation || user.organizations?.name,
       organization: user.organizations,
       contactType: user.contact_type,
-      secondaryEmail: user.secondary_email,
-      secondaryPhone: user.secondary_phone,
       faxNumber: user.fax_number,
       notes: user.notes
     });
@@ -139,9 +138,9 @@ export async function POST(request: NextRequest) {
     // Add optional fields if they exist in the request
     if (body.title !== undefined) userProfileData.title = body.title === 'none' ? null : body.title
     if (body.middle_name !== undefined) userProfileData.middle_name = body.middle_name
+    if (body.suffix !== undefined) userProfileData.suffix = body.suffix === 'none' ? null : body.suffix
     if (body.contact_type !== undefined) userProfileData.contact_type = body.contact_type === 'none' ? null : body.contact_type
-    if (body.secondary_email !== undefined) userProfileData.secondary_email = body.secondary_email
-    if (body.secondary_phone !== undefined) userProfileData.secondary_phone = body.secondary_phone
+
     if (body.fax_number !== undefined) userProfileData.fax_number = body.fax_number
     if (body.notes !== undefined) userProfileData.notes = body.notes
     if (body.avatar_url !== undefined) userProfileData.avatar_url = body.avatar_url
@@ -219,10 +218,9 @@ export async function PUT(request: NextRequest) {
     
     // Ensure the new fields are included if provided
     if ('contact_type' in updateData) dbUpdateData.contact_type = updateData.contact_type;
-    if ('secondary_email' in updateData) dbUpdateData.secondary_email = updateData.secondary_email;
-    if ('secondary_phone' in updateData) dbUpdateData.secondary_phone = updateData.secondary_phone;
     if ('fax_number' in updateData) dbUpdateData.fax_number = updateData.fax_number;
     if ('notes' in updateData) dbUpdateData.notes = updateData.notes;
+    if ('suffix' in updateData) dbUpdateData.suffix = updateData.suffix === 'none' ? null : updateData.suffix;
     
     console.log('[AIMS] PUT /api/users - dbUpdateData being sent to database:', dbUpdateData);
     console.log('[AIMS] PUT /api/users - organization_id in dbUpdateData:', dbUpdateData.organization_id);

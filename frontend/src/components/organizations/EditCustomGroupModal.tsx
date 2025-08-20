@@ -30,6 +30,7 @@ interface Organization {
   iati_org_id?: string
   type?: string
   country?: string
+  logo?: string
 }
 
 interface CustomGroup {
@@ -57,11 +58,11 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [selectedOrgs, setSelectedOrgs] = useState<string[]>([])
   const [searchOpen, setSearchOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
   
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    purpose: '',
     group_code: '',
     is_public: true,
     tags: [] as string[],
@@ -81,7 +82,6 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
       setFormData({
         name: group.name || '',
         description: group.description || '',
-        purpose: group.purpose || '',
         group_code: group.group_code || '',
         is_public: group.is_public || true,
         tags: group.tags || [],
@@ -281,6 +281,17 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
       .map(org => getOrganizationDisplay(org))
   }
 
+  // Filter organizations based on search term
+  const filteredOrganizations = organizations.filter(org => {
+    if (!searchTerm) return true
+    const searchLower = searchTerm.toLowerCase()
+    return (
+      org.name.toLowerCase().includes(searchLower) ||
+      (org.acronym && org.acronym.toLowerCase().includes(searchLower)) ||
+      (org.iati_org_id && org.iati_org_id.toLowerCase().includes(searchLower))
+    )
+  })
+
   const removeLogo = () => {
     setLogoFile(null)
     setLogoPreview('')
@@ -297,7 +308,7 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -321,121 +332,9 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
             />
           </div>
 
-          {/* Group Code */}
+          {/* Group Members - Moved right after Group Name */}
           <div className="space-y-2">
-            <Label htmlFor="group_code">Group Code (Optional)</Label>
-            <Input
-              id="group_code"
-              value={formData.group_code}
-              onChange={(e) => setFormData(prev => ({ ...prev, group_code: e.target.value }))}
-              placeholder="e.g., HDC-2024"
-            />
-            <p className="text-sm text-muted-foreground">
-              An internal identifier or abbreviation for this group
-            </p>
-          </div>
-
-          {/* Logo Upload */}
-          <div className="space-y-2">
-            <Label>Group Logo</Label>
-            <div className="space-y-3">
-              {logoPreview ? (
-                <div className="relative inline-block">
-                  <img 
-                    src={logoPreview} 
-                    alt="Logo preview" 
-                    className="w-20 h-20 object-contain rounded-lg border bg-white p-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                    onClick={removeLogo}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ) : (
-                <div 
-                  {...logoDropzone.getRootProps()} 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
-                >
-                  <input {...logoDropzone.getInputProps()} />
-                  <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-600">
-                    Drop logo here or click to browse
-                  </p>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Banner Upload */}
-          <div className="space-y-2">
-            <Label>Group Banner</Label>
-            <div className="space-y-3">
-              {bannerPreview ? (
-                <div className="relative inline-block">
-                  <img 
-                    src={bannerPreview} 
-                    alt="Banner preview" 
-                    className="w-full h-32 object-cover rounded-lg border"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2 h-6 w-6 rounded-full p-0"
-                    onClick={removeBanner}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ) : (
-                <div 
-                  {...bannerDropzone.getRootProps()} 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
-                >
-                  <input {...bannerDropzone.getInputProps()} />
-                  <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-600">
-                    Drop banner image here or click to browse
-                  </p>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Brief description of the group..."
-              rows={2}
-            />
-          </div>
-
-          {/* Purpose */}
-          <div className="space-y-2">
-            <Label htmlFor="purpose">Purpose</Label>
-            <Textarea
-              id="purpose"
-              value={formData.purpose}
-              onChange={(e) => setFormData(prev => ({ ...prev, purpose: e.target.value }))}
-              placeholder="What is the main purpose or objective of this group?"
-              rows={2}
-            />
-          </div>
-
-          {/* Members Selection */}
-          <div className="space-y-2">
-            <Label>Group Members *</Label>
+            <Label>Group Members</Label>
             <Popover open={searchOpen} onOpenChange={setSearchOpen}>
               <PopoverTrigger className="w-full">
                 <div
@@ -455,40 +354,62 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
                 </div>
               </PopoverTrigger>
               <PopoverContent className="w-[600px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search organizations by name or acronym..." />
-                  <CommandList>
-                    <CommandEmpty>No organization found.</CommandEmpty>
-                    <CommandGroup>
-                      <ScrollArea className="h-[300px]">
-                        {organizations.map((org) => (
-                          <CommandItem
-                            key={org.id}
-                            onSelect={() => toggleOrganization(org.id)}
-                            className="cursor-pointer"
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedOrgs.includes(org.id) ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <div className="flex-1">
-                              <div className="font-medium">
-                                {getOrganizationDisplay(org)}
+                <div className="p-2 border-b">
+                  <Input
+                    placeholder="Search organizations by name or acronym..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <ScrollArea className="h-[300px] p-1">
+                  {filteredOrganizations.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      No organization found.
+                    </div>
+                  ) : (
+                    filteredOrganizations.map((org) => (
+                      <div
+                        key={org.id}
+                        onClick={() => toggleOrganization(org.id)}
+                        className="flex items-center p-2 hover:bg-accent rounded-md cursor-pointer"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4 flex-shrink-0",
+                            selectedOrgs.includes(org.id) ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          {/* Organization Logo/Icon */}
+                          <div className="w-8 h-8 flex-shrink-0">
+                            {org.logo ? (
+                              <img 
+                                src={org.logo} 
+                                alt={`${org.name} logo`}
+                                className="w-8 h-8 object-contain rounded border bg-white p-0.5"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                                <Users className="h-4 w-4 text-blue-600" />
                               </div>
-                              {org.iati_org_id && (
-                                <div className="text-xs text-muted-foreground">
-                                  IATI: {org.iati_org_id}
-                                </div>
-                              )}
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">
+                              {getOrganizationDisplay(org)}
                             </div>
-                          </CommandItem>
-                        ))}
-                      </ScrollArea>
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
+                            {org.iati_org_id && (
+                              <div className="text-xs text-muted-foreground truncate">
+                                IATI: {org.iati_org_id}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </ScrollArea>
               </PopoverContent>
             </Popover>
             
@@ -516,9 +437,98 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
             )}
           </div>
 
-          {/* Tags */}
+          {/* Logo and Banner Upload - On same line with logo same height as banner */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Logo Upload - Takes 1/3 of the width, same height as banner */}
+            <div className="space-y-2">
+              <Label>Group Logo</Label>
+              <div className="space-y-3">
+                {logoPreview ? (
+                  <div className="relative">
+                    <img 
+                      src={logoPreview} 
+                      alt="Logo preview" 
+                      className="w-full h-32 object-contain rounded-lg border bg-white p-2"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                      onClick={removeLogo}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    {...logoDropzone.getRootProps()} 
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer h-32 flex flex-col justify-center"
+                  >
+                    <input {...logoDropzone.getInputProps()} />
+                    <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
+                    <p className="mt-1 text-xs text-gray-600">
+                      Drop logo here
+                    </p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Banner Upload - Takes 2/3 of the width */}
+            <div className="md:col-span-2 space-y-2">
+              <Label>Group Banner</Label>
+              <div className="space-y-3">
+                {bannerPreview ? (
+                  <div className="relative">
+                    <img 
+                      src={bannerPreview} 
+                      alt="Banner preview" 
+                      className="w-full h-32 object-cover rounded-lg border"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2 h-6 w-6 rounded-full p-0"
+                      onClick={removeBanner}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    {...bannerDropzone.getRootProps()} 
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer h-32 flex flex-col justify-center"
+                  >
+                    <input {...bannerDropzone.getInputProps()} />
+                    <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-600">
+                      Drop banner image here or click to browse
+                    </p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="tags">Tags (Optional)</Label>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Brief description of the group..."
+              rows={2}
+            />
+          </div>
+
+          {/* Tags - Full card width */}
+          <div className="space-y-2 col-span-full">
+            <Label htmlFor="tags">Tags</Label>
             <div className="flex gap-2">
               <Input
                 id="tags"
@@ -530,9 +540,11 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
                     handleAddTag()
                   }
                 }}
-                placeholder="Add tags (press Enter)"
+                placeholder="Add tags (press Enter to add)"
+                className="flex-1"
+                style={{ minWidth: '400px' }}
               />
-              <Button type="button" onClick={handleAddTag} size="icon" variant="outline">
+              <Button type="button" onClick={handleAddTag} size="icon" variant="outline" className="flex-shrink-0">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>

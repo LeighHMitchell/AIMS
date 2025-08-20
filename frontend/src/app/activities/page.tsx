@@ -364,17 +364,25 @@ function ActivitiesPageContent() {
 
   // Memoized helper functions - must be defined before use in other memos
   const getCreatorOrganization = useCallback((activity: Activity): string => {
+    // First, check if we have a stored acronym
     if (activity.created_by_org_acronym) {
       return activity.created_by_org_acronym;
     }
+    
+    // Look up by organization ID
     if (activity.createdByOrg) {
       const org = organizations.find(o => o.id === activity.createdByOrg);
       if (org && org.acronym) return org.acronym;
       if (org && org.name) return org.name;
     }
+    
+    // Look up by organization name to find acronym
     if (activity.created_by_org_name) {
+      const org = organizations.find(o => o.name === activity.created_by_org_name);
+      if (org && org.acronym) return org.acronym;
       return activity.created_by_org_name;
     }
+    
     return "Unknown";
   }, [organizations]);
 

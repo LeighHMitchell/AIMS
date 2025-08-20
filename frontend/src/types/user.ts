@@ -23,6 +23,8 @@ export interface Organization {
   acronym?: string;
   logo?: string;
   type: "development_partner" | "partner_government" | "bilateral" | "other";
+  country?: string;
+  iati_org_id?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,16 +60,17 @@ export interface User {
   organizationId?: string;
   organization?: Organization; // Legacy - for backward compatibility
   title?: string; // Title (Mr., Mrs., Dr., etc.)
+  suffix?: string; // Suffix (Jr., Sr., PhD, MD, etc.)
   phone?: string; // Legacy - replaced by telephone
   contactType?: string;
-  secondaryEmail?: string;
-  secondaryPhone?: string;
   faxNumber?: string;
   notes?: string;
   isActive: boolean;
   lastLogin?: string;
   createdAt: string;
   updatedAt: string;
+  createdBy?: string;
+  reportedByOrgId?: string;
 }
 
 export interface UserPermissions {

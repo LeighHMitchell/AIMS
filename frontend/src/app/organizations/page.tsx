@@ -1448,6 +1448,7 @@ const CustomGroupCard: React.FC<{
   onDelete: (group: any) => void
 }> = ({ group, onEdit, onDelete }) => {
   const router = useRouter()
+  const [showFullDescription, setShowFullDescription] = useState(false)
   
   const handleView = () => {
     router.push(`/partners/groups/${group.id}`)
@@ -1464,7 +1465,7 @@ const CustomGroupCard: React.FC<{
   }
   
   return (
-    <Card className="h-full transition-all duration-200 hover:shadow-lg">
+    <Card className={`h-full transition-all duration-200 hover:shadow-lg ${group.banner ? 'overflow-hidden' : ''} relative`}>
       {/* Banner Image */}
       {group.banner && (
         <div className="h-32 bg-gradient-to-r from-blue-500 to-teal-600 relative overflow-hidden flex-shrink-0">
@@ -1476,70 +1477,120 @@ const CustomGroupCard: React.FC<{
         </div>
       )}
       
-      <CardContent className="p-6 flex flex-col h-full">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-start space-x-4 flex-1 cursor-pointer" onClick={handleView}>
-            {/* Logo or default icon */}
-            <div className="w-12 h-12 flex-shrink-0">
-              {group.logo ? (
-                <img 
-                  src={group.logo} 
-                  alt={`${group.name} logo`}
-                  className="w-12 h-12 object-contain rounded-lg border bg-white p-1"
-                />
-              ) : (
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg text-gray-900 truncate">
-                {group.name}
-              </h3>
-            </div>
+      {/* Dropdown Menu - Absolutely positioned in bottom right */}
+      <div className="absolute bottom-4 right-4 z-30">
+        <DropdownMenu>
+          <DropdownMenuTrigger onClick={(e) => e.stopPropagation()} asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 bg-white hover:bg-gray-50 shadow-md border border-gray-300 rounded-full">
+              <MoreVertical className="h-4 w-4 text-gray-600" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="z-50">
+            <DropdownMenuItem onClick={() => handleView()}>
+              <Eye className="h-4 w-4 mr-2" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(group)}>
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => onDelete(group)}
+              className="text-red-600"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      
+      <CardContent className={`flex flex-col h-full ${group.banner ? 'p-6 pt-4' : 'p-6'}`}>
+        <div className="flex items-start space-x-4 mb-4 cursor-pointer" onClick={handleView}>
+          {/* Logo or default icon */}
+          <div className="w-12 h-12 flex-shrink-0">
+            {group.logo ? (
+              <img 
+                src={group.logo} 
+                alt={`${group.name} logo`}
+                className="w-12 h-12 object-contain rounded-lg border"
+              />
+            ) : (
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+            )}
           </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger onClick={(e) => e.stopPropagation()} asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleView()}>
-                <Eye className="h-4 w-4 mr-2" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(group)}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => onDelete(group)}
-                className="text-red-600"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-lg text-gray-900 leading-tight break-words">
+              {group.name}
+            </h3>
+          </div>
         </div>
         
         {/* Description */}
         {group.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {group.description}
-          </p>
+          <div className="mb-3">
+            <p className={`text-sm text-gray-600 ${showFullDescription ? '' : 'line-clamp-2'}`}>
+              {group.description}
+            </p>
+            {group.description.length > 120 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowFullDescription(!showFullDescription)
+                }}
+                className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium"
+              >
+                {showFullDescription ? 'Read less' : 'Read more'}
+              </button>
+            )}
+          </div>
         )}
         
+        {/* Member Organizations */}
+        {group.members && group.members.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center text-sm font-medium text-gray-700 mb-2">
+              <Users className="h-4 w-4 mr-2 text-gray-400" />
+              <span>{group.members.length} members</span>
+            </div>
+            <div className="space-y-1">
+              {group.members.slice(0, 4).map((member: any, index: number) => (
+                <div key={index} className="flex items-center space-x-2 text-xs text-gray-600">
+                  <div className="w-4 h-4 flex-shrink-0">
+                    {member.organization?.logo ? (
+                      <img 
+                        src={member.organization.logo} 
+                        alt={`${member.organization.name} logo`}
+                        className="w-4 h-4 object-contain rounded"
+                      />
+                    ) : (
+                      <div className="w-4 h-4 bg-blue-100 rounded flex items-center justify-center">
+                        <Building2 className="h-2 w-2 text-blue-600" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="truncate">
+                    {member.organization?.name || member.organization_name || 'Unknown Organization'}
+                    {member.organization?.acronym && member.organization.acronym !== member.organization.name && 
+                      ` (${member.organization.acronym})`
+                    }
+                  </span>
+                </div>
+              ))}
+              {group.members.length > 4 && (
+                <div className="text-xs text-gray-500 pl-6">
+                  +{group.members.length - 4} more organizations
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Metadata */}
         <div className="space-y-2 mb-4">
-          <div className="flex items-center text-sm text-gray-600">
-            <Users className="h-4 w-4 mr-2 text-gray-400" />
-            <span>{group.member_count || 0} member organizations</span>
-          </div>
           {group.created_by_name && (
             <div className="flex items-center text-sm text-gray-600">
               <User className="h-4 w-4 mr-2 text-gray-400" />
@@ -1552,12 +1603,12 @@ const CustomGroupCard: React.FC<{
         {group.tags && group.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-4">
             {group.tags.slice(0, 3).map((tag: string, index: number) => (
-              <Badge key={index} variant="secondary" className="text-xs">
+              <Badge key={index} variant="amber" className="text-xs">
                 {tag}
               </Badge>
             ))}
             {group.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="amber" className="text-xs">
                 +{group.tags.length - 3} more
               </Badge>
             )}
@@ -1565,8 +1616,8 @@ const CustomGroupCard: React.FC<{
         )}
         
         {/* Footer */}
-        <div className="mt-auto pt-4 border-t border-gray-100">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+        <div className={`mt-auto pt-4 pb-2 pr-12 ${group.banner ? 'border-t border-gray-200' : 'border-t border-gray-100'}`}>
+          <div className="flex items-center space-x-4 text-xs text-gray-500">
             <span>Updated {formatDate(group.updated_at)}</span>
             <div className="flex items-center space-x-1">
               {group.is_public ? (
@@ -1576,34 +1627,6 @@ const CustomGroupCard: React.FC<{
               )}
               <span>{group.is_public ? 'Public' : 'Private'}</span>
             </div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                onEdit(group)
-              }}
-              className="flex-1"
-            >
-              <Edit2 className="h-3 w-3 mr-1" />
-              Edit
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleView()
-              }}
-              className="flex-1"
-            >
-              <Eye className="h-3 w-3 mr-1" />
-              View
-            </Button>
           </div>
         </div>
       </CardContent>
@@ -1620,6 +1643,7 @@ const OrganizationCard: React.FC<{
   onTagClick: (tag: string) => void
 }> = ({ organization, onEdit, onDelete, availableTypes, onTagClick }) => {
   const router = useRouter()
+  const [showFullDescription, setShowFullDescription] = useState(false)
 
   const handleView = () => {
     router.push(`/organizations/${organization.id}`)
@@ -1628,6 +1652,16 @@ const OrganizationCard: React.FC<{
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
     toast.success('Copied to clipboard')
+  }
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Unknown'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    })
   }
 
   return (
@@ -1720,7 +1754,48 @@ const OrganizationCard: React.FC<{
             </div>
           </div>
 
-          {/* Contact Information - Moved to bottom with border above */}
+          {/* Description */}
+          {organization.description && (
+            <div className="pt-3 border-t border-gray-200">
+              <p className={`text-sm text-gray-600 ${showFullDescription ? '' : 'line-clamp-3'}`}>
+                {organization.description}
+              </p>
+              {organization.description.length > 150 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFullDescription(!showFullDescription)
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium"
+                >
+                  {showFullDescription ? 'Read less' : 'Read more'}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Statistics Section - Similar to Activity Cards */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Organization Statistics</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-gray-500 tracking-wide">Activities Reported</span>
+                <span className="text-sm text-gray-700 font-medium">{organization.activeProjects || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-gray-500 tracking-wide">Total Budgeted</span>
+                <span className="text-sm text-gray-700">{formatCurrency(organization.totalBudgeted)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-gray-500 tracking-wide">Total Disbursed</span>
+                <span className="text-sm text-gray-700">{formatCurrency(organization.totalDisbursed)}</span>
+              </div>
+            </div>
+            </div>
+          </div>
+
+          {/* Contact Information */}
           <div className="pt-3 border-t border-gray-200 space-y-2">
             {organization.website && (
               <div className="flex items-center gap-2">
@@ -1756,35 +1831,26 @@ const OrganizationCard: React.FC<{
                 </span>
               </div>
             )}
+            {organization.phone && (
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <span className="text-sm text-gray-600">
+                  {organization.phone}
+                </span>
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Statistics Section - Similar to Activity Cards */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Organization Statistics</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Activities Reported</span>
-                <span className="text-sm text-gray-700 font-medium">{organization.activeProjects || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Budgeted</span>
-                <span className="text-sm text-gray-700">{formatCurrency(organization.totalBudgeted)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Disbursed</span>
-                <span className="text-sm text-gray-700">{formatCurrency(organization.totalDisbursed)}</span>
-              </div>
+        {/* Footer */}
+        <div className="mt-auto pt-4 border-t border-gray-100">
+          <div className="flex items-center space-x-4 text-xs text-gray-500">
+            <span>Updated {formatDate(organization.updated_at)}</span>
+            <div className="flex items-center space-x-1">
+              <Globe className="h-3 w-3" />
+              <span>Public</span>
             </div>
           </div>
-
-          {/* Description */}
-          {organization.description && (
-            <div className="pt-2 border-t border-gray-100">
-              <p className="text-sm text-gray-600 line-clamp-3">
-                {organization.description}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Actions Dropdown - positioned at bottom right */}
@@ -1797,9 +1863,9 @@ const OrganizationCard: React.FC<{
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8 bg-gray-100 hover:bg-blue-500 hover:text-white transition-colors duration-200 rounded-full shadow-sm"
+                className="h-8 w-8 bg-white hover:bg-gray-50 shadow-md border border-gray-300 rounded-full"
               >
-                <MoreVertical className="h-4 w-4" />
+                <MoreVertical className="h-4 w-4 text-gray-600" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -1950,7 +2016,7 @@ function OrganizationsPageContent() {
     // Load saved view mode from localStorage or default to 'card'
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('organizationViewMode')
-      return (saved === 'table' || saved === 'card') ? saved : 'card'
+      return saved === 'table' ? 'table' : 'card' // Always default to 'card' unless explicitly set to 'table'
     }
     return 'card'
   })
@@ -2461,14 +2527,7 @@ function OrganizationsPageContent() {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Button 
-              variant="outline" 
-              className="flex items-center space-x-2"
-              onClick={() => router.push('/partners/groups')}
-            >
-              <Users className="h-4 w-4" />
-              <span>Manage Groups</span>
-            </Button>
+
             <Button variant="outline" className="flex items-center space-x-2">
               <ExternalLink className="h-4 w-4" />
               <span>Export All Partners</span>

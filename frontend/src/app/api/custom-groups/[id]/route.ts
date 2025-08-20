@@ -71,8 +71,8 @@ export async function PUT(
         tags: body.tags,
         group_code: body.group_code,
         is_public: body.is_public,
-        // logo: body.logo,  // TODO: Add after running migration
-        // banner: body.banner,  // TODO: Add after running migration
+        logo: body.logo,
+        banner: body.banner,
         updated_at: new Date().toISOString()
       })
       .eq('id', params.id)

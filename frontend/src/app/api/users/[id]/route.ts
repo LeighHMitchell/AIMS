@@ -38,14 +38,14 @@ export async function PUT(
     // Add optional fields that exist in the database schema
     if (body.title !== undefined) updateData.title = body.title === 'none' ? null : body.title
     if (body.middle_name !== undefined) updateData.middle_name = body.middle_name
+    if (body.suffix !== undefined) updateData.suffix = body.suffix === 'none' ? null : body.suffix
     if (body.job_title !== undefined) updateData.job_title = body.job_title
     if (body.avatar_url !== undefined) updateData.avatar_url = body.avatar_url
     
     // Try to add contact fields - they may exist from migrations
     try {
       if (body.contact_type !== undefined) updateData.contact_type = body.contact_type === 'none' ? null : body.contact_type
-      if (body.secondary_email !== undefined) updateData.secondary_email = body.secondary_email
-      if (body.secondary_phone !== undefined) updateData.secondary_phone = body.secondary_phone
+
       if (body.fax_number !== undefined) updateData.fax_number = body.fax_number
       if (body.notes !== undefined) updateData.notes = body.notes
     } catch (error) {
