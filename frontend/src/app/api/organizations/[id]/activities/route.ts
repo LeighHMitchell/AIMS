@@ -136,7 +136,7 @@ export async function GET(
     console.log('[AIMS] Found activities for organization:', activities?.length || 0);
     
     // Add financial data calculation for each activity (same logic as organization level)
-    const activitiesWithFinancialData = (activities || []).map(activity => {
+    const activitiesWithFinancialData = (activities || []).map((activity: any) => {
       // Calculate financial data by year for this specific activity
       const financialData: Record<string, number> = {};
       const years = [2022, 2023, 2024, 2025, 2026, 2027];
