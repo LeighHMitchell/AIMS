@@ -388,11 +388,12 @@ function ActivitiesPageContent() {
   }, [organizations]);
 
   // Copy ID to clipboard
-  const copyToClipboard = (text: string, type: 'partnerId' | 'iatiIdentifier', activityId: string) => {
+  const copyToClipboard = (text: string, type: 'partnerId' | 'iatiIdentifier' | 'acronym', activityId: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(`${activityId}-${type}`);
     setTimeout(() => setCopiedId(null), 2000);
-    toast.success(`${type === 'partnerId' ? 'Activity ID' : 'IATI Identifier'} copied to clipboard`);
+    const message = type === 'partnerId' ? 'Activity ID' : type === 'iatiIdentifier' ? 'IATI Identifier' : 'Acronym';
+    toast.success(`${message} copied to clipboard`);
   };
 
   const fetchOrganizations = async () => {
