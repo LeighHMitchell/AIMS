@@ -410,8 +410,8 @@ export async function GET(request: NextRequest) {
             groupedData = (customGroups || []).map((group: any) => {
               // Get organization IDs that belong to this group
               const groupOrgIds = (memberships || [])
-                .filter(m => m.group_id === group.id)
-                .map(m => m.organization_id);
+                .filter((m: any) => m.group_id === group.id)
+                .map((m: any) => m.organization_id);
 
               // Get the actual organization metrics for this group
               const groupOrganizations = organizationMetrics.filter(org => 
