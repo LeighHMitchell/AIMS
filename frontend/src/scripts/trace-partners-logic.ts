@@ -15,7 +15,7 @@ async function tracePartnersLogic() {
 
   try {
     const afdOrgId = '16e93614-2437-4649-b932-9cc35458c444';
-    const transactionType = 'D'; // Disbursements
+    const transactionType: 'C' | 'D' = 'D'; // Disbursements
     
     // Step 1: Get AFD organization (exactly like Partners API)
     const { data: organizations } = await supabase
