@@ -35,6 +35,9 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { OrganizationCombobox, type Organization } from "@/components/ui/organization-combobox";
 import { usePartners } from "@/hooks/usePartners";
 import { useIATIReferenceValues } from "@/hooks/useIATIReferenceValues";
+import { useUser } from "@/hooks/useUser";
+import { getUserPermissions } from "@/types/user";
+
 import { cn } from "@/lib/utils";
 import {
   Transaction,
@@ -63,7 +66,6 @@ import { TiedStatusSelect } from '@/components/forms/TiedStatusSelect';
 import { Switch } from '@/components/ui/switch';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { useTransactionFieldAutosave } from '@/hooks/use-transaction-field-autosave';
-import { useUser } from '@/hooks/useUser';
 // Remove lodash import (not used)
 // import { uniqBy } from 'lodash';
 
@@ -770,31 +772,7 @@ export default function TransactionModal({
   // Add missing states for isInternallySubmitting and validation toasts
   const [isInternallySubmitting, setIsInternallySubmitting] = useState(false);
 
-  // Toast functions for validation, success, and error messages
-  const showValidationError = (message: string, options?: { isDuplicateReference?: boolean; onClearReference?: () => void }) => {
-    // Implementation for showing validation errors
-    console.error('[TransactionModal] Validation Error:', message);
-    // You can implement toast notifications here
-  };
 
-  const showTransactionError = (message: string) => {
-    console.error('[TransactionModal] Transaction Error:', message);
-    // You can implement toast notifications here
-  };
-
-  const showTransactionSuccess = (message: string) => {
-    console.log('[TransactionModal] Success:', message);
-    // You can implement toast notifications here
-  };
-
-  const showAutoCreateSuccess = (message: string) => {
-    console.log('[TransactionModal] Auto Create Success:', message);
-    // You can implement toast notifications here
-  };
-
-  const clearAllTransactionToasts = () => {
-    // Clear any existing toasts
-  };
 
   // Add missing imports and components needed
   const LabelSaveIndicator = ({ children, isSaving, isSaved }: { children: React.ReactNode; isSaving?: boolean; isSaved?: boolean }) => (
@@ -1045,6 +1023,15 @@ export default function TransactionModal({
       const saved = await response.json();
       setCreatedTransactionId(saved.id || saved.uuid);
       setCreationError(null);
+      
+      // Update form data with the auto-generated transaction reference
+      if (saved.transaction_reference && !formData.transaction_reference) {
+        setFormData(prev => ({ 
+          ...prev, 
+          transaction_reference: saved.transaction_reference 
+        }));
+      }
+      
       showAutoCreateSuccess('Transaction saved! You can now upload documents.');
       
       // Save any pending fields (with same abort controller)
@@ -1251,18 +1238,60 @@ export default function TransactionModal({
 
                 <div className="space-y-2">
                   <Label htmlFor="status" className="text-sm font-medium">
-                    Transaction Status
+                    Validation Status
                   </Label>
-                  <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-gray-100">
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                        {formData.status === 'validated' ? '1' : '2'}
-                      </span>
-                      <span className="font-medium">
+                  {user && getUserPermissions(user.role).canValidateActivities ? (
+                    // Validation toggle for users with permission
+                    <div className="flex items-center justify-between h-12 w-full rounded-md border border-input bg-background px-4 py-3 hover:bg-accent/50 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="validated"
+                          checked={formData.status === 'validated'}
+                          onCheckedChange={(checked) => {
+                            setFormData({
+                              ...formData,
+                              status: checked ? 'validated' : 'submitted'
+                            });
+                          }}
+                          className="h-5 w-5"
+                        />
+                        <div className="flex flex-col">
+                          <Label htmlFor="validated" className="text-sm font-medium cursor-pointer">
+                            Mark as Validated
+                          </Label>
+                          <span className="text-xs text-muted-foreground">
+                            Toggle to validate this transaction
+                          </span>
+                        </div>
+                      </div>
+                      <div className={`text-sm font-medium px-2 py-1 rounded-full ${
+                        formData.status === 'validated' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
                         {formData.status === 'validated' ? 'Validated' : 'Unvalidated'}
-                      </span>
-                    </span>
-                  </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Read-only status display for users without permission
+                    <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-gray-50 px-4 py-3">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">
+                          {formData.status === 'validated' ? 'Validated Transaction' : 'Unvalidated Transaction'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Current status: {formData.status || 'draft'}
+                        </span>
+                      </div>
+                      <div className={`text-sm font-medium px-2 py-1 rounded-full ${
+                        formData.status === 'validated' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {formData.status === 'validated' ? 'Validated' : 'Unvalidated'}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

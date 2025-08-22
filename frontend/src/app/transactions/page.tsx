@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Grid3X3, TableIcon } from "lucide-react";
+import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Grid3X3, TableIcon, Frown } from "lucide-react";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { useTransactions } from "@/hooks/useTransactions";
 import { TRANSACTION_TYPE_LABELS, Transaction } from "@/types/transaction";
@@ -50,12 +50,10 @@ export default function TransactionsPage() {
     status: "all",
   });
 
-  // Use the custom hook to fetch transactions
+  // Use the custom hook to fetch transactions (without sorting - we'll sort client-side)
   const { transactions, loading, error, refetch, deleteTransaction, addTransaction } = useTransactions({
     searchQuery,
     filters,
-    sortField,
-    sortOrder,
     page: currentPage,
     limit: pageLimit,
   });
@@ -86,11 +84,12 @@ export default function TransactionsPage() {
     }
   };
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change (but not when sorting changes)
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filters, sortField, sortOrder]);
+  }, [searchQuery, filters]);
 
+  // Client-side sorting function
   const handleSort = (field: string) => {
     if (sortField === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -99,6 +98,58 @@ export default function TransactionsPage() {
       setSortOrder("asc");
     }
   };
+
+  // Sort transactions client-side
+  const sortedTransactions = React.useMemo(() => {
+    if (!transactions.data.length) return transactions.data;
+    
+    return [...transactions.data].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'transaction_date':
+          aValue = new Date(a.transaction_date).getTime();
+          bValue = new Date(b.transaction_date).getTime();
+          break;
+        case 'transaction_type':
+          aValue = a.transaction_type;
+          bValue = b.transaction_type;
+          break;
+        case 'value':
+          aValue = a.value || 0;
+          bValue = b.value || 0;
+          break;
+        case 'value_usd':
+          aValue = a.value_usd || 0;
+          bValue = b.value_usd || 0;
+          break;
+        case 'provider_org_name':
+          aValue = (a.provider_org_name || a.from_org || '').toLowerCase();
+          bValue = (b.provider_org_name || b.from_org || '').toLowerCase();
+          break;
+        case 'activity':
+          // Use title_narrative which is the actual field from the API
+          aValue = (a.activity?.title_narrative || a.activity?.title || 'Untitled Activity').toLowerCase();
+          bValue = (b.activity?.title_narrative || b.activity?.title || 'Untitled Activity').toLowerCase();
+          break;
+        case 'finance_type':
+          aValue = a.finance_type || '';
+          bValue = b.finance_type || '';
+          break;
+        case 'aid_type':
+          aValue = a.aid_type || '';
+          bValue = b.aid_type || '';
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [transactions.data, sortField, sortOrder]);
 
   const handlePageLimitChange = (newLimit: number) => {
     setPageLimit(newLimit);
@@ -149,12 +200,26 @@ export default function TransactionsPage() {
   };
 
   const handleRowClick = (transactionId: string) => {
-    router.push(`/transactions/${transactionId}`);
+    // Find the transaction to get its activity_id
+    const transaction = transactions.data.find(t => (t.uuid || t.id) === transactionId);
+    if (transaction && transaction.activity_id) {
+      // Navigate to Activity Editor's finances section
+      router.push(`/activities/new?id=${transaction.activity_id}&section=finances`);
+    } else {
+      // Fallback to transaction detail page if no activity_id
+      router.push(`/transactions/${transactionId}`);
+    }
   };
 
   const handleEdit = (transaction: any) => {
-    setEditingTransaction(transaction);
-    setShowTransactionModal(true);
+    if (transaction && transaction.activity_id) {
+      // Navigate to Activity Editor's finances section for editing
+      router.push(`/activities/new?id=${transaction.activity_id}&section=finances`);
+    } else {
+      // Fallback to modal if no activity_id
+      setEditingTransaction(transaction);
+      setShowTransactionModal(true);
+    }
   };
 
   const handleDelete = async (transactionId: string) => {
@@ -325,6 +390,9 @@ export default function TransactionsPage() {
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
+                  <SelectItem value="validated">Validated</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                   <SelectItem value="actual">Actual</SelectItem>
                 </SelectContent>
               </Select>
@@ -423,7 +491,8 @@ export default function TransactionsPage() {
               <div className="text-slate-500">No matching transactions found</div>
             ) : (
               <div className="space-y-4">
-                <div className="text-slate-500">No transactions yet.<br/>Transactions are created from within an activity.</div>
+                <Frown className="h-16 w-16 mx-auto text-slate-400" />
+                <div className="text-slate-500">No transactions yet. Create a new activity or open an existing one to add transactions.</div>
               </div>
             )}
           </div>
@@ -431,7 +500,7 @@ export default function TransactionsPage() {
           <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <TransactionTable
-                transactions={transactions.data}
+                transactions={sortedTransactions}
                 loading={false}
                 error={null}
                 sortField={sortField}
@@ -496,4 +565,4 @@ export default function TransactionsPage() {
       </div>
     </MainLayout>
   );
-} 
+}

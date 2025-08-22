@@ -125,12 +125,27 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
 
   // Format currency value
   const formatCurrency = (value: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+    // Ensure currency is a valid 3-letter code, fallback to USD
+    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase()) 
+      ? currency.toUpperCase() 
+      : "USD";
+    
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: safeCurrency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(value);
+    } catch (error) {
+      console.warn(`[LinkedTransactionsTab] Invalid currency "${currency}", using USD:`, error);
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(value);
+    }
   };
 
   // Transaction type icon

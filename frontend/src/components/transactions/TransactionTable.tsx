@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowDownLeft,
   Banknote,
@@ -29,8 +30,10 @@ import {
   Link2,
   Copy,
   MoreVertical,
+  Check,
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
+
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -134,21 +137,24 @@ const FINANCE_TYPE_LABELS: Record<string, { short: string; full: string }> = {
   '412': { short: 'Joint Loan', full: 'Loan in a joint venture with the recipient' },
   '413': { short: 'Private Loan', full: 'Loan to national private investor' },
   '414': { short: 'Export Loan', full: 'Loan to national private exporter' },
+  '421': { short: 'Standard Loan', full: 'Standard loan' },
+  '422': { short: 'Reimbursable Grant', full: 'Reimbursable grant' },
+  '423': { short: 'Bonds', full: 'Bonds' },
+  '424': { short: 'Asset-backed Securities', full: 'Asset-backed securities' },
+  '425': { short: 'Other Debt Securities', full: 'Other debt securities' },
+  '431': { short: 'Subordinated Loan', full: 'Subordinated loan' },
+  '432': { short: 'Preferred Equity', full: 'Preferred equity' },
+  '433': { short: 'Other Hybrid', full: 'Other hybrid instruments' },
   '451': { short: 'Export Credit', full: 'Non-banks guaranteed export credits' },
   '452': { short: 'Non-guaranteed', full: 'Non-banks non-guaranteed portions of guaranteed export credits' },
   '453': { short: 'Bank Credit', full: 'Bank export credits' },
-  '510': { short: 'Guarantees', full: 'Guarantees/insurance' },
-  '610': { short: 'Debt Swap', full: 'Debt swap - Conversion of ODA claims' },
-  '611': { short: 'Paris Club', full: 'Debt swap - Paris Club agreement' },
-  '612': { short: 'Debt Other', full: 'Debt swap - Other' },
-  '620': { short: 'Debt Forgive', full: 'Debt forgiveness/conversion: export credit claims' },
-  '621': { short: 'ODA Forgive', full: 'Debt forgiveness: ODA claims' },
-  '622': { short: 'OOF Forgive', full: 'Debt forgiveness: OOF claims' },
-  '623': { short: 'Private Forgive', full: 'Debt forgiveness: private claims' },
-  '624': { short: 'ODA Reschedule', full: 'Debt rescheduling: ODA claims' },
-  '625': { short: 'OOF Reschedule', full: 'Debt rescheduling: OOF claims' },
-  '626': { short: 'Private Resched', full: 'Debt rescheduling: private claims' },
-  '627': { short: 'Export Resched', full: 'Debt rescheduling: export credit claims' },
+  '510': { short: 'Common Equity', full: 'Common equity' },
+  '520': { short: 'Collective Investment', full: 'Shares in collective investment vehicles' },
+  '530': { short: 'Reinvested Earnings', full: 'Reinvested earnings' },
+  '610': { short: 'Debt Forgiveness (ODA-P)', full: 'Debt forgiveness: ODA claims (P)' },
+  '611': { short: 'Debt Forgiveness (ODA-I)', full: 'Debt forgiveness: ODA claims (I)' },
+  '620': { short: 'Debt Rescheduling (ODA-P)', full: 'Debt rescheduling: ODA claims (P)' },
+  '621': { short: 'Debt Rescheduling (ODA-I)', full: 'Debt rescheduling: ODA claims (I)' },
   '710': { short: 'FDI', full: 'Foreign direct investment' },
   '711': { short: 'Other FDI', full: 'Other foreign direct investment' },
   '810': { short: 'Bank Bonds', full: 'Bank bonds' },
@@ -177,6 +183,7 @@ interface TransactionData {
   id: string;
   uuid?: string;
   activity_id?: string;
+  transaction_reference?: string;
   activity?: {
     id: string;
     title: string;
@@ -238,13 +245,41 @@ export function TransactionTable({
   onConvertCurrency,
   variant = "full",
 }: TransactionTableProps) {
+  const router = useRouter();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyToClipboard = async (text: string, type: string, transactionId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(`${transactionId}-${type}`);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+    }
+  };
+
   const formatCurrency = (value: number, currency: string = "USD") => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    // Ensure currency is a valid 3-letter code, fallback to USD
+    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase()) 
+      ? currency.toUpperCase() 
+      : "USD";
+    
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: safeCurrency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+    } catch (error) {
+      console.warn(`[TransactionTable] Invalid currency "${currency}", using USD:`, error);
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+    }
   };
 
   const getTransactionIcon = (type: string) => {
@@ -325,11 +360,11 @@ export function TransactionTable({
   return (
     <div>
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-muted/50 border-b border-border">
           <TableRow>
             {variant === "full" && (
               <TableHead 
-                className="font-medium cursor-pointer hover:bg-gray-200"
+                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
                 onClick={() => onSort("activity")}
               >
                 <div className="flex items-center gap-1">
@@ -339,7 +374,7 @@ export function TransactionTable({
               </TableHead>
             )}
             <TableHead 
-              className="font-medium cursor-pointer hover:bg-gray-200"
+              className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
               onClick={() => onSort("transaction_date")}
             >
               <div className="flex items-center gap-1">
@@ -348,7 +383,7 @@ export function TransactionTable({
               </div>
             </TableHead>
             <TableHead
-              className="font-medium cursor-pointer hover:bg-gray-200"
+              className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
               onClick={() => onSort("transaction_type")}
             >
               <div className="flex items-center gap-1">
@@ -356,11 +391,9 @@ export function TransactionTable({
                 {getSortIcon("transaction_type")}
               </div>
             </TableHead>
-            <TableHead className="text-center font-medium">
-              Transaction State
-            </TableHead>
+
             <TableHead 
-              className="font-medium cursor-pointer hover:bg-gray-200"
+              className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
               onClick={() => onSort("provider_org_name")}
             >
               <div className="flex items-center gap-1">
@@ -369,7 +402,7 @@ export function TransactionTable({
               </div>
             </TableHead>
             <TableHead
-              className="text-right font-medium cursor-pointer hover:bg-gray-200"
+              className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
               onClick={() => onSort("value")}
             >
               <div className="flex items-center justify-end gap-1">
@@ -378,7 +411,7 @@ export function TransactionTable({
               </div>
             </TableHead>
             <TableHead
-              className="text-right font-medium cursor-pointer hover:bg-gray-200"
+              className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
               onClick={() => onSort("value_usd")}
             >
               <div className="flex items-center justify-end gap-1">
@@ -387,20 +420,21 @@ export function TransactionTable({
               </div>
             </TableHead>
             {variant === "full" && (
-              <TableHead className="hidden xl:table-cell font-medium cursor-pointer hover:bg-gray-200" onClick={() => onSort("finance_type")}>
+              <TableHead className="hidden xl:table-cell h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("finance_type")}>
                 <div className="flex items-center gap-1">
                   <span>Finance Type</span>
                   {getSortIcon("finance_type")}
                 </div>
               </TableHead>
             )}
-            <TableHead className="text-center font-medium cursor-pointer hover:bg-gray-200" onClick={() => onSort("aid_type")}>
+            <TableHead className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("aid_type")}>
               <div className="flex items-center gap-1">
                 <span>Modality & Classification</span>
                 {getSortIcon("aid_type")}
               </div>
             </TableHead>
-            <TableHead className="text-right font-medium">
+
+            <TableHead className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground">
               Actions
             </TableHead>
           </TableRow>
@@ -430,7 +464,7 @@ export function TransactionTable({
                 {variant === "full" && (
                   <td className="px-4 py-3">
                     <div 
-                      className="space-y-0.5 cursor-pointer hover:opacity-75"
+                      className="space-y-0.5 cursor-pointer hover:opacity-75 group"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (transaction.activity_id) {
@@ -438,13 +472,41 @@ export function TransactionTable({
                         }
                       }}
                     >
-                      <div className="text-sm font-normal text-foreground line-clamp-2">
-                        {transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
+                      <div className="flex items-start gap-1">
+                        <div className="text-sm font-normal text-foreground line-clamp-2 flex-1">
+                          {transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const activityTitle = transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity';
+                                    copyToClipboard(activityTitle, 'title', transaction.uuid || transaction.id);
+                                  }}
+                                >
+                                  {copiedId === `${transaction.uuid || transaction.id}-title` ? (
+                                    <Check className="h-3 w-3 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="right">
+                                <p className="text-sm">Copy activity title</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
-                      {(transaction.activity?.iati_id || transaction.activity?.id) && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <span className="truncate">
-                            {transaction.activity?.iati_id || `${transaction.activity.id.slice(0, 8)}...`}
+                      {/* Transaction Reference (if exists) */}
+                      {transaction.transaction_reference && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                          <span>
+                            {transaction.transaction_reference}
                           </span>
                           <TooltipProvider>
                             <Tooltip>
@@ -452,19 +514,25 @@ export function TransactionTable({
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-4 w-4 p-0"
+                                  className="h-4 w-4 p-0 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigator.clipboard.writeText(
-                                      transaction.activity?.iati_id || transaction.activity?.id || ''
+                                    copyToClipboard(
+                                      transaction.transaction_reference || '',
+                                      'reference',
+                                      transaction.uuid || transaction.id
                                     );
                                   }}
                                 >
-                                  <Copy className="h-3 w-3" />
+                                  {copiedId === `${transaction.uuid || transaction.id}-reference` ? (
+                                    <Check className="h-3 w-3 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-3 w-3" />
+                                  )}
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent side="right">
-                                <p className="text-sm">Click to copy full ID</p>
+                                <p className="text-sm">Copy transaction reference</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -503,9 +571,7 @@ export function TransactionTable({
                     </Tooltip>
                   </TooltipProvider>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-center">
-                  {getStatusIcon(transaction.status || transaction.transaction_status)}
-              </td>
+
                 <td className="px-4 py-3">
                   <div className="text-sm font-normal text-foreground">
                     <div className="flex items-center gap-2">
@@ -646,6 +712,7 @@ export function TransactionTable({
                     </Tooltip>
                   </TooltipProvider>
                 </td>
+
               <td className="px-4 py-3 whitespace-nowrap text-right actions-cell">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -658,17 +725,27 @@ export function TransactionTable({
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {onEdit && (
-                      <DropdownMenuItem onClick={() => {
+                  <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+                    <DropdownMenuItem onSelect={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (onEdit) {
+                        // If onEdit is provided, use it (for modal editing)
                         onEdit(transaction);
-                      }}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                    )}
+                      } else if (transaction.activity_id) {
+                        // Fallback to navigation if no onEdit handler
+                        router.push(`/activities/new?id=${transaction.activity_id}&section=finances`);
+                      } else {
+                        console.error('No activity_id found for transaction:', transaction);
+                      }
+                    }}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      {onEdit ? 'Edit' : 'Edit in Activity Editor'}
+                    </DropdownMenuItem>
                     {onDelete && (
-                      <DropdownMenuItem onClick={() => {
+                      <DropdownMenuItem onSelect={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         onDelete(transaction.uuid || transaction.id);
                       }} className="text-red-600">
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -685,4 +762,4 @@ export function TransactionTable({
       </Table>
     </div>
   );
-} 
+}

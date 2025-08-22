@@ -154,7 +154,7 @@ export function ProfilePhotoUpload({
         className={cn(
           "relative group cursor-pointer transition-all duration-200",
           isDragging && "scale-105",
-          disabled && "cursor-not-allowed opacity-50"
+          disabled && "cursor-not-allowed"
         )}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -213,36 +213,38 @@ export function ProfilePhotoUpload({
         disabled={disabled}
       />
 
-      <div className="text-center space-y-2">
-        <Label className="text-sm font-medium">Profile Photo</Label>
-        <div className="flex flex-col gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleButtonClick}
-            disabled={disabled || isUploading}
-            className="w-full"
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4 mr-2" />
-                Choose Photo
-              </>
-            )}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Drag & drop or click to upload
-            <br />
-            Max 5MB • JPEG, PNG, GIF, WebP
-          </p>
+      {!disabled && (
+        <div className="text-center space-y-2">
+          <Label className="text-sm font-medium">Profile Photo</Label>
+          <div className="flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleButtonClick}
+              disabled={disabled || isUploading}
+              className="w-full"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Choose Photo
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Drag & drop or click to upload
+              <br />
+              Max 5MB • JPEG, PNG, GIF, WebP
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 } 

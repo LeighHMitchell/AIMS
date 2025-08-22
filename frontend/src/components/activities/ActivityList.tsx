@@ -16,6 +16,7 @@ interface Activity {
   title: string;
   iati_id?: string;
   description?: string;
+  acronym?: string;
   activity_status?: string;
   publication_status?: string;
   planned_start_date?: string;

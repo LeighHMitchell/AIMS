@@ -88,12 +88,27 @@ export default function TransactionDetailPage() {
   };
 
   const formatCurrency = (value: number, currency: string = "USD") => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
+    // Ensure currency is a valid 3-letter code, fallback to USD
+    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase()) 
+      ? currency.toUpperCase() 
+      : "USD";
+    
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: safeCurrency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch (error) {
+      console.warn(`[TransactionDetailPage] Invalid currency "${currency}", using USD:`, error);
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    }
   };
 
   if (loading) {

@@ -410,7 +410,20 @@ export async function POST(request: NextRequest) {
       receiver_org_ref: body.receiver_org_ref ?? '',
       value: parseFloat(body.value?.toString() || '0') || 0,
       currency: body.currency || 'USD',
-      status: body.status || 'actual',
+      status: (() => {
+        // If status is explicitly provided, use it
+        if (body.status) return body.status;
+        
+        // Auto-submit transactions from government and development partners
+        // These should be ready for validation by default
+        const userRole = body.userRole || body.user_role;
+        if (userRole && ['dev_partner_tier_1', 'dev_partner_tier_2', 'gov_partner_tier_1', 'gov_partner_tier_2'].includes(userRole)) {
+          return 'submitted';
+        }
+        
+        // Default to draft for other users
+        return 'draft';
+      })(),
       transaction_date: cleanDateValue(body.transaction_date) || new Date().toISOString().split('T')[0],
       value_date: (() => {
         const valueDate = cleanDateValue(body.value_date);

@@ -29,6 +29,9 @@ interface ActivityMetadata {
   sync_status?: string;
   last_sync_time?: string;
   auto_sync?: boolean;
+  reporting_org_id?: string;
+  created_by_org_name?: string;
+  created_by_org_acronym?: string;
 }
 
 interface ActivityLog {
@@ -94,7 +97,8 @@ export async function GET(
         created_by,
         last_edited_by,
         created_by_org_name,
-        created_by_org_acronym
+        created_by_org_acronym,
+        reporting_org_id
       `)
       .eq('id', id)
       .single();
@@ -217,7 +221,10 @@ export async function GET(
       version: 1,
       sync_status: 'never',
       last_sync_time: undefined,
-      auto_sync: false
+      auto_sync: false,
+      reporting_org_id: activityData.reporting_org_id,
+      created_by_org_name: activityData.created_by_org_name,
+      created_by_org_acronym: activityData.created_by_org_acronym
     };
 
     // Transform logs data

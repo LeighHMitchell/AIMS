@@ -47,7 +47,7 @@ import { formatReportedBy, formatSubmittedBy } from "@/utils/format-helpers";
 import { 
   Plus, Download, Edit2, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { Transaction } from "@/types/transaction";
@@ -111,6 +111,7 @@ type Organization = {
 type Activity = {
   id: string;
   title: string;
+  acronym?: string; // Activity acronym/abbreviation
   activityStatus?: string; // IATI activity status (planning, implementation, etc.)
   publicationStatus?: string; // Publication status (draft, published)
   submissionStatus?: string; // Changed to string to match interface
@@ -581,10 +582,10 @@ function ActivitiesPageContent() {
 
   // Track when we've successfully loaded data at least once
   useEffect(() => {
-    if (!loading && !userLoading && (totalActivitiesCount > 0 || error)) {
+    if (!loading && !userLoading) {
       setHasLoadedOnce(true);
     }
-  }, [loading, userLoading, totalActivitiesCount, error]);
+  }, [loading, userLoading]);
 
   // Don't refetch on filter changes - we do client-side filtering
   // Only refetch if we need fresh data
@@ -1071,7 +1072,8 @@ function ActivitiesPageContent() {
             <div className="text-slate-500">No matching activities found</div>
           ) : (
             <div className="space-y-4">
-              <div className="text-slate-500">No activities yet</div>
+              <Blocks className="h-16 w-16 text-slate-400 mx-auto" />
+              <div className="text-slate-500">No activities yet. Create a new activity to get started.</div>
               <Button onClick={() => router.push("/activities/new")} className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Activity
@@ -1083,44 +1085,44 @@ function ActivitiesPageContent() {
         <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
           <div className="overflow-x-auto">
             <table className="w-full table-fixed border-collapse min-w-[1300px]">
-              <thead className="bg-muted border-b">
+              <thead className="bg-muted/50 border-b border-border">
                 <tr>
                   <th 
-                    className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left cursor-pointer hover:bg-gray-200 w-[30%]"
+                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[30%]"
                     onClick={() => handleSort('title')}
                   >
                     <div className="flex items-center gap-1">
-                      Activity Title
+                      <span>Activity Title</span>
                       {getSortIcon('title')}
                     </div>
                   </th>
                   <th 
-                    className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left cursor-pointer hover:bg-gray-200 w-[120px]"
+                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[120px]"
                     onClick={() => handleSort('activityStatus')}
                   >
                     <div className="flex items-center gap-1">
-                      Activity Status
+                      <span>Activity Status</span>
                       {getSortIcon('activityStatus')}
                     </div>
                   </th>
-                  <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-center w-[120px]">
+                  <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
                     Publication Status
                   </th>
                   <th 
-                    className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left min-w-[140px] cursor-pointer hover:bg-gray-200"
+                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[140px]"
                     onClick={() => handleSort('createdBy')}
                   >
                     <div className="flex items-center gap-1">
-                      Reported by
+                      <span>Reported by</span>
                       {getSortIcon('createdBy')}
                     </div>
                   </th>
                   <th 
-                    className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[120px]"
+                    className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[120px]"
                     onClick={() => handleSort('commitments')}
                   >
                     <div className="flex items-center justify-end gap-1">
-                      Total Budgeted
+                      <span>Total Budgeted</span>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -1137,11 +1139,11 @@ function ActivitiesPageContent() {
                     </div>
                   </th>
                   <th 
-                    className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[100px]"
+                    className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
                     onClick={() => handleSort('disbursements')}
                   >
                     <div className="flex items-center justify-end gap-1">
-                      Total Disbursed
+                      <span>Total Disbursed</span>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -1159,18 +1161,18 @@ function ActivitiesPageContent() {
                   </th>
 
                   <th 
-                    className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[100px]"
+                    className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
                     onClick={() => handleSort('updatedAt')}
                   >
                     <div className="flex items-center justify-end gap-1">
-                      Last Edited
+                      <span>Last Edited</span>
                       {getSortIcon('updatedAt')}
                     </div>
                   </th>
-                  <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-center w-[120px]">
+                  <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
                     Default Aid Modality
                   </th>
-                  <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right w-[80px]">
+                  <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[80px]">
                     Actions
                   </th>
                 </tr>
@@ -1197,6 +1199,25 @@ function ActivitiesPageContent() {
                           <div className="space-y-1 pr-2">
                             <h3 className="font-medium text-foreground leading-tight line-clamp-2" title={activity.title}>
                               {activity.title}
+                              {activity.acronym && (
+                                <span>
+                                  {' '}({activity.acronym})
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(activity.acronym!, 'acronym', activity.id);
+                                    }}
+                                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                    title="Copy Acronym"
+                                  >
+                                    {copiedId === `${activity.id}-acronym` ? (
+                                      <Check className="w-3 h-3 text-green-500" />
+                                    ) : (
+                                      <Copy className="w-3 h-3" />
+                                    )}
+                                  </button>
+                                </span>
+                              )}
                             </h3>
                             {(activity.partnerId || activity.iatiIdentifier) && (
                               <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
@@ -1412,6 +1433,7 @@ function ActivitiesPageContent() {
             title: activity.title,
             iati_id: activity.iatiIdentifier || activity.iatiId,
             description: activity.description,
+            acronym: activity.acronym,
             activity_status: activity.activityStatus,
             publication_status: activity.publicationStatus,
             planned_start_date: activity.plannedStartDate,

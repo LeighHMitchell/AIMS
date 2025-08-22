@@ -166,9 +166,17 @@ export interface Transaction {
   created_at?: string;
   updated_at?: string;
   created_by?: string; // User ID who created the transaction (null for imports)
+  updated_by?: string; // User ID who last updated the transaction
   organization_id?: string; // Organization that owns this transaction
   activity_iati_ref?: string; // IATI identifier of parent activity
   fx_differs?: boolean; // Flag if FX settlement date differs
+  
+  // Validation fields
+  validated_by?: string; // User ID who validated the transaction
+  validated_at?: string; // ISO timestamp when validated
+  rejected_by?: string; // User ID who rejected the transaction
+  rejected_at?: string; // ISO timestamp when rejected
+  validation_comments?: string; // Comments from validator/rejector
   
   // Language fields for multilingual support
   description_language?: string;
@@ -231,6 +239,24 @@ export const TIED_STATUS_LABELS: Record<TiedStatus, string> = {
   '3': 'Partially tied',
   '4': 'Tied',
   '5': 'Untied'
+};
+
+export const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
+  'draft': 'Draft',
+  'submitted': 'Submitted',
+  'validated': 'Validated',
+  'rejected': 'Rejected',
+  'published': 'Published',
+  'actual': 'Actual'
+};
+
+export const TRANSACTION_STATUS_COLORS: Record<TransactionStatus, string> = {
+  'draft': 'gray',
+  'submitted': 'blue',
+  'validated': 'green',
+  'rejected': 'red',
+  'published': 'purple',
+  'actual': 'emerald'
 };
 
 // Form validation schema (using a type for now, can be converted to Zod later)

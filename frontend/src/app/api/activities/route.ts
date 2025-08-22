@@ -1116,14 +1116,32 @@ export async function POST(request: Request) {
       
       try {
         transactionsData = body.transactions.map((transaction: any, index: number) => {
+          // Enhanced transaction debugging
+          console.log(`[AIMS] Processing transaction ${index + 1}:`, {
+            type: transaction.transaction_type || transaction.type,
+            value: transaction.value,
+            date: transaction.transaction_date || transaction.transactionDate,
+            currency: transaction.currency,
+            providerOrgId: transaction.provider_org_id,
+            receiverOrgId: transaction.receiver_org_id,
+            hasTransactionRef: !!transaction.transaction_reference
+          });
+          
           // Get organization_id with fallback
           const organizationId = cleanUUIDValue(body.createdByOrg) || 
                                 cleanUUIDValue(body.user?.organizationId) || 
                                 cleanUUIDValue(insertData.reporting_org_id);
           
+          console.log(`[AIMS] Organization ID resolution for transaction ${index + 1}:`, {
+            organizationId,
+            createdByOrg: body.createdByOrg,
+            userOrgId: body.user?.organizationId,
+            reportingOrgId: insertData.reporting_org_id
+          });
+          
           // Log warning if no organization_id
           if (!organizationId) {
-            console.warn(`[AIMS] Transaction ${index} has no organization_id. createdByOrg: ${body.createdByOrg}, user.organizationId: ${body.user?.organizationId}`);
+            console.warn(`[AIMS] Transaction ${index + 1} has no organization_id. createdByOrg: ${body.createdByOrg}, user.organizationId: ${body.user?.organizationId}`);
             transactionWarnings.push(`Transaction ${index + 1}: Missing organization ID`);
           }
           
@@ -1206,6 +1224,12 @@ export async function POST(request: Request) {
             details: insertError.details,
             hint: insertError.hint
           });
+          // For new activities, continue with activity creation but warn about transaction failures
+          console.warn('[AIMS] Transaction insertion failed but continuing with activity creation to preserve user work');
+          transactionWarnings.push(`Transaction insertion failed: ${insertError.message}`);
+          
+          // Don't fail the entire activity creation - just warn
+          console.warn('[AIMS] Activity will be created without transactions due to validation errors');
         } else {
           console.log(`[AIMS] Successfully inserted ${validTransactions.length} transactions for new activity`);
           if (insertedData) {
@@ -1667,6 +1691,7 @@ export async function GET(request: NextRequest) {
         iati_identifier,
         title_narrative,
         description_narrative,
+        acronym,
         created_by_org_name,
         created_by_org_acronym,
         collaboration_type,
@@ -1705,9 +1730,10 @@ export async function GET(request: NextRequest) {
         searchConditions.push(`id.eq.${searchQuery}`);
       }
       
-      // Always search in iati_identifier and title_narrative
+      // Always search in iati_identifier, title_narrative, and acronym
       searchConditions.push(`iati_identifier.ilike.%${searchQuery}%`);
       searchConditions.push(`title_narrative.ilike.%${searchQuery}%`);
+      searchConditions.push(`acronym.ilike.%${searchQuery}%`);
       
       // Apply the OR condition - must be on single line for Supabase
       query = query.or(searchConditions.join(','));

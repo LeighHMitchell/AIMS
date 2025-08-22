@@ -145,6 +145,14 @@ export default function ActivityDetailPage() {
   const { user } = useUser()
   const searchParams = useSearchParams()
   
+  // Set initial tab from URL parameter
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+  
   // Check if user is trying to join as contributor
   const isJoinAction = searchParams?.get('action') === 'join'
   
@@ -583,6 +591,17 @@ export default function ActivityDetailPage() {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export Profile
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  fetchActivity(false);
+                  loadAllPartners();
+                }}
+                className="border-slate-300 text-slate-700 hover:bg-slate-100"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
               </Button>
               <Button 
                 onClick={handleEdit}

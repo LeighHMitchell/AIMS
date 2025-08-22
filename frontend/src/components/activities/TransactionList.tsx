@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -35,7 +35,8 @@ import {
   ArrowUp,
   ArrowDown,
   FileClock,
-  CheckCircle
+  CheckCircle,
+  Frown
 } from "lucide-react";
 import { format } from "date-fns";
 import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData } from '@/types/transaction';
@@ -44,12 +45,15 @@ import { TransactionDocumentIndicator } from '../TransactionDocumentIndicator';
 import { TransactionValueDisplay } from '@/components/currency/TransactionValueDisplay';
 import { useCurrencyConverter } from '@/hooks/useCurrencyConverter';
 import { toast } from 'sonner';
-import {
+import { 
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useUser } from '@/hooks/useUser';
+import { getUserPermissions } from '@/types/user';
+import financeTypesData from '@/data/finance-types.json';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -69,6 +73,70 @@ interface TransactionListProps {
 
 type SortField = 'transaction_date' | 'transaction_type' | 'value' | 'provider_org_name' | 'receiver_org_name';
 type SortDirection = 'asc' | 'desc';
+
+// Create finance type labels mapping from JSON data
+const FINANCE_TYPE_LABELS = financeTypesData.reduce((acc, item) => {
+  acc[item.code] = item.name;
+  return acc;
+}, {} as Record<string, string>);
+
+// Validation Status Cell Component
+function ValidationStatusCell({ transaction }: { transaction: Transaction }) {
+  const { user } = useUser();
+  const isValidated = transaction.status === 'validated';
+  const canValidate = user && getUserPermissions(user.role).canValidateActivities;
+  
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex justify-center items-center h-full">
+              {isValidated ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="sr-only">Validated Transaction</span>
+                </>
+              ) : (
+                <>
+                  <FileClock className="h-4 w-4 text-gray-400" />
+                  <span className="sr-only">Unvalidated Transaction</span>
+                </>
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isValidated ? 'Validated Transaction' : 'Unvalidated Transaction'}
+            {canValidate && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Click edit to change validation status
+              </div>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      
+      {/* Status badges */}
+      <div className="flex flex-col items-center gap-1">
+        {isValidated && (
+          <Badge variant="outline" className="w-fit text-xs bg-green-50 border-green-200 text-green-700">
+            Validated
+          </Badge>
+        )}
+        {!transaction.created_by && (
+          <Badge variant="outline" className="w-fit text-xs bg-blue-50 border-blue-200 text-blue-700">
+            Imported
+          </Badge>
+        )}
+        {(!transaction.currency || transaction.value <= 0) && (
+          <Badge variant="outline" className="w-fit text-xs bg-amber-50 border-amber-200 text-amber-700">
+            Needs Review
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function TransactionList({
   transactions,
@@ -140,24 +208,44 @@ export default function TransactionList({
     return stats;
   }, [transactions, currency]);
 
-  // Custom sort order for transaction types
-  const TRANSACTION_TYPE_SORT_ORDER = ['12', '2', '3', '4'];
-  const sortedTransactions = [...transactions].sort((a, b) => {
-    const aTypeIdx = TRANSACTION_TYPE_SORT_ORDER.indexOf(a.transaction_type);
-    const bTypeIdx = TRANSACTION_TYPE_SORT_ORDER.indexOf(b.transaction_type);
-    if (aTypeIdx !== -1 && bTypeIdx !== -1) {
-      // Both are in the preferred order, sort by order then date
-      if (aTypeIdx !== bTypeIdx) return aTypeIdx - bTypeIdx;
-      return new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime();
-    } else if (aTypeIdx !== -1) {
-      return -1;
-    } else if (bTypeIdx !== -1) {
-      return 1;
-    } else {
-      // Neither is in the preferred order, sort by date
-      return new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime();
-    }
-  });
+  // Client-side sorting with comprehensive field support
+  const sortedTransactions = React.useMemo(() => {
+    if (!transactions.length) return transactions;
+    
+    return [...transactions].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'transaction_date':
+          aValue = new Date(a.transaction_date).getTime();
+          bValue = new Date(b.transaction_date).getTime();
+          break;
+        case 'transaction_type':
+          aValue = a.transaction_type;
+          bValue = b.transaction_type;
+          break;
+        case 'value':
+          aValue = a.value || 0;
+          bValue = b.value || 0;
+          break;
+        case 'provider_org_name':
+          aValue = (a.provider_org_name || '').toLowerCase();
+          bValue = (b.provider_org_name || '').toLowerCase();
+          break;
+        case 'receiver_org_name':
+          aValue = (a.receiver_org_name || '').toLowerCase();
+          bValue = (b.receiver_org_name || '').toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [transactions, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -195,7 +283,7 @@ export default function TransactionList({
   };
 
   const handleEdit = (transaction: Transaction) => {
-    console.log('[TransactionList] Editing transaction:', transaction);
+    console.log('[TransactionList] handleEdit called for transaction:', transaction.uuid || transaction.id);
     setEditingTransaction(transaction);
     setShowForm(true);
   };
@@ -252,12 +340,27 @@ export default function TransactionList({
   };
 
   const formatCurrency = (value: number, curr: string = currency) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: curr,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+    // Ensure currency is a valid 3-letter code, fallback to USD
+    const safeCurrency = curr && curr.length === 3 && /^[A-Z]{3}$/.test(curr.toUpperCase()) 
+      ? curr.toUpperCase() 
+      : "USD";
+    
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: safeCurrency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(value);
+    } catch (error) {
+      console.warn(`[TransactionList] Invalid currency "${curr}", using USD:`, error);
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(value);
+    }
   };
 
   const getTransactionTypeColor = (type: string) => {
@@ -370,8 +473,8 @@ export default function TransactionList({
           {/* Transactions Table */}
           {transactions.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>No transactions recorded yet</p>
+              <Frown className="h-16 w-16 mx-auto mb-4 text-slate-400" />
+              <p>No transactions yet. Create a new activity or open an existing one to add transactions.</p>
               {!readOnly && (
                 <Button 
                   onClick={() => setShowForm(true)} 
@@ -387,30 +490,30 @@ export default function TransactionList({
           ) : (
             <div className="rounded-md border">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-muted/50 border-b border-border">
                   <TableRow>
                     <TableHead 
-                      className="cursor-pointer hover:bg-gray-50"
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
                       onClick={() => handleSort('transaction_date')}
                     >
                       <div className="flex items-center gap-1">
-                        Date
+                        <span>Date</span>
                         {getSortIcon('transaction_date')}
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-gray-50"
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
                       onClick={() => handleSort('transaction_type')}
                     >
                       <div className="flex items-center gap-1">
-                        Type
+                        <span>Type</span>
                         {getSortIcon('transaction_type')}
                       </div>
                     </TableHead>
-                    <TableHead>Aid Type</TableHead>
-                    <TableHead>Finance Type</TableHead>
+                    <TableHead className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Aid Type</TableHead>
+                    <TableHead className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Finance Type</TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-gray-50"
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
                       onClick={() => handleSort('provider_org_name')}
                     >
                       <div className="flex items-center gap-1">
@@ -419,26 +522,25 @@ export default function TransactionList({
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-gray-50"
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
                       onClick={() => handleSort('receiver_org_name')}
                     >
                       <div className="flex items-center gap-1">
-                        Receiver
+                        <span>Receiver</span>
                         {getSortIcon('receiver_org_name')}
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-gray-50 text-right"
+                      className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
                       onClick={() => handleSort('value')}
                     >
                       <div className="flex items-center justify-end gap-1">
-                        Value
+                        <span>Reported Value</span>
                         {getSortIcon('value')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-right">Original Value</TableHead>
-                    <TableHead className="text-right">USD Value</TableHead>
-                    <TableHead className="text-center w-16 px-2">
+                    <TableHead className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground">USD Value</TableHead>
+                    <TableHead className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-16 px-2">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
@@ -450,17 +552,28 @@ export default function TransactionList({
                         </Tooltip>
                       </TooltipProvider>
                     </TableHead>
-                    <TableHead className="text-center w-10 px-2">Status</TableHead>
-                    {!readOnly && <TableHead className="w-[50px]"></TableHead>}
+                    <TableHead className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-10 px-2">Validation Status</TableHead>
+                    {!readOnly && <TableHead className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[50px]"></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {validTransactions.map((transaction) => {
+                  {sortedTransactions.filter(t => {
+                    const isValid = (t.uuid && t.uuid !== 'undefined') || (t.id && t.id !== 'undefined');
+                    if (!isValid) {
+                      console.warn('[TransactionList] Transaction without valid identifier found:', t);
+                    }
+                    return isValid;
+                  }).map((transaction) => {
                     console.log('Transaction provider_org_id:', transaction.provider_org_id, 'receiver_org_id:', transaction.receiver_org_id);
                     return (
                     <TableRow 
                       key={transaction.uuid || transaction.id} 
                       className={`hover:bg-gray-50 ${!transaction.created_by ? 'bg-blue-50/50' : ''}`}
+                      onClick={(e) => {
+                        // Prevent any row click navigation
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
                     >
                       <TableCell className="font-medium">
                         {format(new Date(transaction.transaction_date), 'MMM d, yyyy')}
@@ -474,7 +587,11 @@ export default function TransactionList({
                         {transaction.aid_type || <span className="text-gray-400">-</span>}
                       </TableCell>
                       <TableCell>
-                        {transaction.finance_type || <span className="text-gray-400">-</span>}
+                        {transaction.finance_type ? (
+                          FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="max-w-[200px]">
@@ -512,15 +629,8 @@ export default function TransactionList({
                             onConvert={handleConvertCurrency}
                             showConvertButton={!readOnly}
                             compact={true}
-                            variant="full"
+                            variant="original-only"
                           />
-                        ) : (
-                          <span className="text-red-600">Invalid</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {transaction.value > 0 ? (
-                          <span>{formatCurrency(transaction.value, transaction.currency)}</span>
                         ) : (
                           <span className="text-red-600">Invalid</span>
                         )}
@@ -539,40 +649,7 @@ export default function TransactionList({
                         />
                       </TableCell>
                       <TableCell className="text-center w-10 px-2">
-                        <div className="flex flex-col items-center gap-1">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="flex justify-center items-center h-full">
-                                  {transaction.status === 'published' ? (
-                                    <>
-                                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                                      <span className="sr-only">Published Transaction</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <FileClock className="h-4 w-4 text-muted-foreground" />
-                                      <span className="sr-only">Draft Transaction</span>
-                                    </>
-                                  )}
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {transaction.status === 'published' ? 'Published Transaction' : 'Draft Transaction'}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          {!transaction.created_by && (
-                            <Badge variant="outline" className="w-fit text-xs bg-blue-50 border-blue-200 text-blue-700">
-                              Imported
-                            </Badge>
-                          )}
-                          {(!transaction.currency || transaction.value <= 0) && (
-                            <Badge variant="outline" className="w-fit text-xs bg-amber-50 border-amber-200 text-amber-700">
-                              Needs Review
-                            </Badge>
-                          )}
-                        </div>
+                        <ValidationStatusCell transaction={transaction} />
                       </TableCell>
                       {!readOnly && (
                         <TableCell>
@@ -582,13 +659,21 @@ export default function TransactionList({
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEdit(transaction)}>
+                            <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+                              <DropdownMenuItem 
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleEdit(transaction);
+                                }}
+                              >
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem 
-                                onClick={() => {
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
                                   console.log('[TransactionList] Delete button clicked for transaction:', {
                                     id: transaction.id,
                                     uuid: transaction.uuid,

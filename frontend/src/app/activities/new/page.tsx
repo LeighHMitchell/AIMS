@@ -1346,6 +1346,34 @@ function NewActivityPageContent() {
       console.error('[AIMS] Error refreshing transactions:', error);
     }
   }, [searchParams]);
+
+  // Listen for reporting org updates from MetadataTab
+  useEffect(() => {
+    const handleReportingOrgUpdate = (event: CustomEvent) => {
+      const { activityId: updatedActivityId, organizationData } = event.detail;
+      if (updatedActivityId === general.id && organizationData) {
+        console.log('[ActivityEditor] Reporting org updated, refreshing data...');
+        // Update the general data with new org information
+        setGeneral(prev => ({
+          ...prev,
+          created_by_org_name: organizationData.created_by_org_name,
+          created_by_org_acronym: organizationData.created_by_org_acronym,
+          createdByOrg: organizationData.reporting_org_id
+        }));
+      }
+    };
+
+    window.addEventListener('reporting-org-updated', handleReportingOrgUpdate as EventListener);
+    return () => window.removeEventListener('reporting-org-updated', handleReportingOrgUpdate as EventListener);
+  }, [general.id]);
+  
+  // Set initial section from URL parameter
+  useEffect(() => {
+    const sectionParam = searchParams?.get('section');
+    if (sectionParam) {
+      setActiveSection(sectionParam);
+    }
+  }, [searchParams]);
   const [extendingPartners, setExtendingPartners] = useState<any[]>([]);
   const [implementingPartners, setImplementingPartners] = useState<any[]>([]);
   const [governmentPartners, setGovernmentPartners] = useState<any[]>([]);
@@ -2173,9 +2201,19 @@ function NewActivityPageContent() {
     }
     setSubmitting(true);
     try {
-      // Always construct a fresh payload for each call
+      // Store large data separately to avoid payload size issues
+      const largeFields = {
+        banner: general.banner,
+        icon: general.icon,
+        documents: documents
+      };
+
+      // Always construct a fresh payload for each call - EXCLUDE large base64 data
       const payload = {
         ...general,
+        // EXPLICITLY EXCLUDE large base64 fields to prevent payload size issues
+        banner: undefined,
+        icon: undefined,
         // Map frontend fields to API fields
         partnerId: general.otherIdentifier || "", // Map otherIdentifier to partnerId for API
         // Ensure organization fields are populated for new activities
@@ -2207,7 +2245,8 @@ function NewActivityPageContent() {
           coverageAreas
         },
         activityScope,
-        documents,
+        // EXCLUDE documents from main payload - handle separately
+        documents: [],
         // Handle status fields
         activityStatus: general.activityStatus || "1",
         publicationStatus: publish ? "published" : "draft",
@@ -2228,6 +2267,36 @@ function NewActivityPageContent() {
       if (general.id) {
         payload.id = general.id;
       }
+
+      // Debug payload size to identify large fields
+      const payloadString = JSON.stringify(payload);
+      const payloadSizeBytes = new TextEncoder().encode(payloadString).length;
+      const payloadSizeMB = payloadSizeBytes / (1024 * 1024);
+      
+      console.log("[AIMS] Payload size analysis:", {
+        totalSizeMB: payloadSizeMB.toFixed(2),
+        totalSizeBytes: payloadSizeBytes,
+        isLarge: payloadSizeMB > 5
+      });
+      
+      // Analyze individual field sizes
+      Object.keys(payload).forEach(key => {
+        try {
+          const fieldString = JSON.stringify((payload as any)[key]);
+          const fieldSizeBytes = new TextEncoder().encode(fieldString).length;
+          const fieldSizeMB = fieldSizeBytes / (1024 * 1024);
+          if (fieldSizeMB > 0.1) { // Log fields larger than 100KB
+            console.log(`[AIMS] Large field '${key}':`, {
+              sizeMB: fieldSizeMB.toFixed(2),
+              sizeBytes: fieldSizeBytes,
+              type: typeof (payload as any)[key],
+              isArray: Array.isArray((payload as any)[key])
+            });
+          }
+        } catch (e) {
+          console.log(`[AIMS] Could not analyze field '${key}':`, e);
+        }
+      });
 
       console.log("[AIMS] Submitting activity payload:", payload);
       console.log("[AIMS] Activity status being saved:", payload.activityStatus);
@@ -2254,6 +2323,15 @@ function NewActivityPageContent() {
         const data = await res.json();
         console.log("[AIMS] Response data:", data);
         
+        // Handle transaction warnings if present
+        if (data.warnings && data.warnings.length > 0) {
+          console.warn("[AIMS] Transaction warnings received:", data.warnings);
+          toast.warning("Activity saved with transaction issues", {
+            description: data.warnings.join('. '),
+            duration: 8000
+          });
+        }
+        
         // Verify the activity was actually saved
         if (data.id) {
           console.log("[AIMS] Verifying activity persistence...");
@@ -2264,6 +2342,69 @@ function NewActivityPageContent() {
           }
           const verifyData = await verifyRes.json();
           console.log("[AIMS] Verification successful:", verifyData.title);
+          
+          // Now save large fields separately to avoid payload size issues
+          console.log("[AIMS] Saving large fields separately...");
+          
+          // Save banner if present using field-level API
+          if (largeFields.banner && largeFields.banner.startsWith('data:')) {
+            try {
+              console.log("[AIMS] Saving banner separately...");
+              const bannerRes = await fetch(`/api/activities/field`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                  activityId: data.id,
+                  field: 'banner',
+                  value: largeFields.banner,
+                  user: user ? {
+                    id: user.id,
+                    name: user.name,
+                    role: user.role,
+                    organizationId: user.organizationId
+                  } : null
+                }),
+              });
+              if (bannerRes.ok) {
+                console.log("[AIMS] Banner saved successfully");
+              } else {
+                console.warn("[AIMS] Banner save failed:", bannerRes.status);
+              }
+            } catch (bannerError) {
+              console.error("[AIMS] Banner save error:", bannerError);
+            }
+          }
+          
+          // Save icon if present using field-level API
+          if (largeFields.icon && largeFields.icon.startsWith('data:')) {
+            try {
+              console.log("[AIMS] Saving icon separately...");
+              const iconRes = await fetch(`/api/activities/field`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                  activityId: data.id,
+                  field: 'icon',
+                  value: largeFields.icon,
+                  user: user ? {
+                    id: user.id,
+                    name: user.name,
+                    role: user.role,
+                    organizationId: user.organizationId
+                  } : null
+                }),
+              });
+              if (iconRes.ok) {
+                console.log("[AIMS] Icon saved successfully");
+              } else {
+                console.warn("[AIMS] Icon save failed:", iconRes.status);
+              }
+            } catch (iconError) {
+              console.error("[AIMS] Icon save error:", iconError);
+            }
+          }
+          
+          console.log("[AIMS] Large fields processing complete");
         }
         
         // Update the state with the response data
@@ -2298,8 +2439,8 @@ function NewActivityPageContent() {
           plannedEndDate: data.plannedEndDate || "",
           actualStartDate: data.actualStartDate || "",
           actualEndDate: data.actualEndDate || "",
-          banner: data.banner || "",
-          icon: data.icon || "",
+          banner: largeFields.banner || data.banner || "",
+          icon: largeFields.icon || data.icon || "",
           createdBy: data.createdBy || undefined,
           createdByOrg: data.createdByOrg || "",
           createdAt: data.createdAt || "",
@@ -2390,7 +2531,26 @@ function NewActivityPageContent() {
       } else {
         const errorData = await res.json();
         console.error("[AIMS] Save failed with response:", errorData);
-        throw new Error(errorData.error || "Failed to save activity");
+        
+        // Provide more specific error messages for transaction failures
+        if (errorData.error?.includes('Failed to save some transactions')) {
+          let errorMessage = "Failed to save some transactions";
+          
+          if (errorData.warnings && errorData.warnings.length > 0) {
+            errorMessage += "\n\nValidation Issues:\n• " + errorData.warnings.join('\n• ');
+          }
+          
+          if (errorData.transactionError) {
+            errorMessage += `\n\nDatabase Error: ${errorData.transactionError.message}`;
+            if (errorData.transactionError.hint) {
+              errorMessage += `\nSuggestion: ${errorData.transactionError.hint}`;
+            }
+          }
+          
+          throw new Error(errorMessage);
+        } else {
+          throw new Error(errorData.error || "Failed to save activity");
+        }
       }
     } catch (err: any) {
       console.error("[AIMS] Error saving activity:", err);
@@ -2557,20 +2717,27 @@ function NewActivityPageContent() {
                     <div className="space-y-1">
                       <div className="text-gray-500">Reported by:</div>
                       <div className="flex items-center gap-2">
-                        {user?.organization?.logo && (
-                          <div className="flex-shrink-0">
-                            <Image
-                              src={user.organization.logo}
-                              alt={`${user.organization.name} logo`}
-                              width={20}
-                              height={20}
-                              className="rounded-sm object-contain"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          </div>
-                        )}
+                        {(() => {
+                          // Find the reporting organization from the cache
+                          const reportingOrgId = general.createdByOrg;
+                          const reportingOrg = organizationsCache.data?.find((org: any) => org.id === reportingOrgId);
+                          const logoSrc = reportingOrg?.logo;
+                          
+                          return logoSrc ? (
+                            <div className="flex-shrink-0">
+                              <Image
+                                src={logoSrc}
+                                alt={`${reportingOrg.name} logo`}
+                                width={20}
+                                height={20}
+                                className="rounded-sm object-contain"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          ) : null;
+                        })()}
                         {user?.organization ? (
                           <a 
                             href={`/organizations/${user.organization.id}`}

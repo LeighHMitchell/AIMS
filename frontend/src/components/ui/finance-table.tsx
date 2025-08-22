@@ -134,14 +134,14 @@ export function FinanceTable({
   return (
     <div className="overflow-x-auto">
       <Table className={cn("w-full", className)}>
-        <TableHeader>
+        <TableHeader className="bg-muted/50 border-b border-border">
           <TableRow>
             {columns.map((column, index) => (
               <TableHead 
                 key={index} 
                 className={cn(
-                  "px-4 py-2 text-left text-sm font-medium text-muted-foreground",
-                  column.sortable && "cursor-pointer hover:bg-muted/20",
+                  "h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground",
+                  column.sortable && "cursor-pointer hover:bg-muted/80 transition-colors",
                   column.className
                 )}
                 onClick={() => column.sortable && onSort?.(column.accessor || column.header)}

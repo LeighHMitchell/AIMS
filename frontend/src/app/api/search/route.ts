@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
     const searchTerm = `%${query.toLowerCase()}%`
 
-    // Search activities - only activity names (title_narrative)
+    // Search activities - by title_narrative and acronym
     const { data: activities, error: activitiesError, count: activitiesCount } = await supabase
       .from('activities')
       .select(`
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         created_by_org_acronym,
         icon
       `, { count: 'exact' })
-      .ilike('title_narrative', searchTerm)
+      .or(`title_narrative.ilike.${searchTerm},acronym.ilike.${searchTerm}`)
       .range(offset, offset + limit - 1)
       .order('updated_at', { ascending: false })
 

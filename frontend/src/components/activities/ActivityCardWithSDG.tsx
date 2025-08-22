@@ -44,7 +44,8 @@ const FINANCE_TYPE_LABELS: Record<string, string> = {
   '310': 'Capital subscription on deposit basis',
   '311': 'Capital subscription on encashment basis',
   '410': 'Aid loan excluding debt reorganisation',
-  '421': 'Reimbursable grant'
+  '421': 'Standard loan',
+  '422': 'Reimbursable grant'
 };
 
 const FLOW_TYPE_LABELS: Record<string, string> = {
@@ -80,6 +81,7 @@ interface ActivityCardWithSDGProps {
     title: string;
     iati_id?: string;
     description?: string;
+    acronym?: string;
     activity_status?: string;
     publication_status?: string;
     submission_status?: string;
@@ -335,6 +337,21 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
             <div className="space-y-3">
               <h3 className="font-medium text-foreground leading-tight line-clamp-2 pt-8">
                 {activity.title}
+                {activity.acronym && (
+                  <span className="text-gray-600">
+                    ({activity.acronym})
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(activity.acronym!);
+                      }}
+                      className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                      title="Copy Acronym"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
               </h3>
               
               {/* Activity ID and IATI ID - Always displayed */}
@@ -409,7 +426,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                 <div className="flex justify-between items-center py-2 min-h-[3.5rem] border-t border-b border-gray-200">
                   <span className="text-sm font-medium text-gray-700">Reported by</span>
                   <span className="text-sm text-gray-900 text-right flex items-center">
-                    {activity.created_by_org_acronym || activity.created_by_org_name}
+                    {activity.created_by_org_name || activity.created_by_org_acronym}
                   </span>
                 </div>
               )}

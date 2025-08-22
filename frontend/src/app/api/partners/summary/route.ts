@@ -41,6 +41,7 @@ interface GroupData {
   totalOrganizations: number;
   totalAmount: number;
   totalActiveProjects: number;
+  logo?: string;
 }
 
 // IATI type code to group mapping
@@ -68,7 +69,7 @@ const PARTNER_GROUPS = [
   { 
     id: 'bilateral', 
     name: 'Bilateral Partners', 
-    description: 'National development agencies and government donors',
+    description: 'External government ministries and development agencies',
     sortOrder: 1
   },
   { 
@@ -201,7 +202,7 @@ export async function GET(request: NextRequest) {
     console.log('[AIMS] Fetching activities...');
     const { data: activities, error: activitiesError } = await getSupabaseAdmin()
       .from('activities')
-      .select('id, activity_status, created_by_org')
+      .select('id, activity_status, reporting_org_id, created_by_org_name, created_by_org_acronym')
       .in('activity_status', ['2', '3']); // 2=Implementation, 3=Finalisation
 
     if (activitiesError) {
@@ -209,58 +210,94 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[AIMS] Found active activities:', activities?.length || 0);
+    
+    // Debug: Log all activity org names to see what we're working with
+    const activityOrgNames = new Set();
+    activities?.forEach((activity: any) => {
+      if (activity.created_by_org_name) activityOrgNames.add(activity.created_by_org_name);
+      if (activity.created_by_org_acronym) activityOrgNames.add(activity.created_by_org_acronym);
+    });
+    console.log('[AIMS] Activity org names found:', Array.from(activityOrgNames));
+    
+    // Debug: Log organization names to see what we're matching against
+    const orgNames = organizations?.map(org => `${org.name} (${org.acronym || 'no acronym'})`);
+    console.log('[AIMS] Organization names in database:', orgNames);
+    
+          // Debug: Show UNDP-related organizations specifically
+      const undpOrgs = organizations?.filter(org => 
+        org.name?.toLowerCase().includes('undp') || 
+        org.acronym?.toLowerCase().includes('undp') ||
+        org.name?.toLowerCase().includes('united nations development')
+      );
+      console.log('[AIMS] UNDP-related organizations:', undpOrgs?.map(org => ({
+        id: org.id,
+        name: org.name,
+        acronym: org.acronym
+      })));
+      
+      // Debug: Show activities with UNDP-related org names
+      const undpActivities = activities?.filter(activity => 
+        activity.created_by_org_name?.toLowerCase().includes('undp') ||
+        activity.created_by_org_acronym?.toLowerCase().includes('undp')
+      );
+      console.log('[AIMS] UNDP-related activities:', undpActivities?.map(activity => ({
+        id: activity.id,
+        created_by_org_name: activity.created_by_org_name,
+        created_by_org_acronym: activity.created_by_org_acronym,
+        reporting_org_id: activity.reporting_org_id
+      })));
 
+    // Map frontend transaction type to IATI codes
+    const transactionTypeCodes = transactionType === 'C' ? ['1', '2', '11'] : ['3', '4']; // C = Commitments (1=Incoming, 2=Outgoing, 11=Incoming Commitment), D = Disbursements (3=Disbursement, 4=Expenditure)
+    
     // Fetch all transactions for financial calculations
-    console.log('[AIMS] Fetching transactions...');
+    console.log('[AIMS] Fetching transactions with type codes:', transactionTypeCodes);
     const { data: transactions, error: transactionsError } = await getSupabaseAdmin()
       .from('transactions')
-      .select('activity_id, organization_id, provider_org, receiver_org, value, transaction_date')
-      .eq('transaction_type', transactionType);
+      .select('activity_id, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, value, transaction_date, value_usd, transaction_type')
+      .in('transaction_type', transactionTypeCodes);
 
     if (transactionsError) {
       console.error('[AIMS] Error fetching transactions:', transactionsError);
     }
 
     console.log('[AIMS] Found transactions:', transactions?.length || 0);
+    
 
-    // Fetch activity contributors for project counting
-    console.log('[AIMS] Fetching activity contributors...');
-    const { data: contributors, error: contributorsError } = await getSupabaseAdmin()
-      .from('activity_contributors')
-      .select('activity_id, organization_id')
-      .eq('status', 'accepted');
+    
 
-    if (contributorsError) {
-      console.error('[AIMS] Error fetching contributors:', contributorsError);
-    }
 
-    console.log('[AIMS] Found contributors:', contributors?.length || 0);
+    // Note: Only counting activities where organization is the reporting organization
+    // No need to fetch contributors or participating organizations for this count
 
     // Calculate metrics for each organization using ONLY Organizations table data
     const organizationMetrics: OrganizationMetrics[] = organizations.map((org: Organization) => {
       console.log(`[AIMS] Processing org: ${org.name} (ID: ${org.id})`);
       
-      // Count active projects where this organization is involved (by UUID reference)
-      const activeProjects = activities?.filter((activity: any) => {
-        // Check if organization is creator by UUID
-        const isCreatedByOrg = activity.reporting_org_id === org.id;
+
+      
+      // Count active projects where this organization is the reporting organization
+      // STRICT: Only count activities directly reported by this organization
+      const matchedActivities = activities?.filter((activity: any) => {
+        // ONLY Method 1: Check if organization matches by UUID (reporting_org_id)
+        // This is the most reliable method as it uses database relationships
+        if (activity.reporting_org_id === org.id) {
+          return true;
+        }
         
-        // Check if organization is contributor by UUID
-        const isContributor = contributors?.some((contrib: any) => 
-          contrib.organization_id === org.id && contrib.activity_id === activity.id
-        );
-        
-        // Check if organization is in transactions (by UUID or name fallback)
-        const isInTransactions = transactions?.some((trans: any) => 
-          trans.activity_id === activity.id && (
-            trans.organization_id === org.id ||      // UUID reference (preferred)
-            trans.provider_org === org.name ||       // Name fallback
-            trans.receiver_org === org.name          // Name fallback
-          )
-        );
-        
-        return isCreatedByOrg || isContributor || isInTransactions;
-      }).length || 0;
+        // No fallback methods - only count if there's a proper UUID link
+        return false;
+      }) || [];
+      
+      const activeProjects = matchedActivities.length;
+      
+      // Debug logging for organizations with matched activities
+      if (activeProjects > 0) {
+        console.log(`[AIMS] ${org.name} (${org.acronym || 'no acronym'}) matched ${activeProjects} activities:`);
+        matchedActivities.forEach((activity: any) => {
+          console.log(`  - Activity: ${activity.id}, created_by_org_name: "${activity.created_by_org_name}", created_by_org_acronym: "${activity.created_by_org_acronym}", reporting_org_id: "${activity.reporting_org_id}"`);
+        });
+      }
 
       // Calculate financial data by year (2022-2027)
       const financialData: Record<string, number> = {};
@@ -271,30 +308,43 @@ export async function GET(request: NextRequest) {
         financialData[year.toString()] = 0;
       });
       
-      // Calculate yearly totals
+      // Calculate yearly totals by aggregating transactions where this organization is involved
       years.forEach(year => {
-        const yearTotal = transactions?.filter((trans: any) => {
-          if (!trans.transaction_date) return false;
+        const yearTotal = (transactions || []).reduce((sum: number, trans: any) => {
+          if (!trans.transaction_date) return sum;
           
           try {
             const transYear = new Date(trans.transaction_date).getFullYear();
-            const isCorrectYear = transYear === year;
+            if (transYear !== year) return sum;
             
-            // Match by UUID (preferred) or name (fallback)
-            const isOrgMatch = trans.organization_id === org.id ||
-                              trans.provider_org === org.name || 
-                              trans.receiver_org === org.name;
+            // Check if this organization is involved in the transaction
+            // For commitments: organization must be the provider
+            // For disbursements: organization can be provider or receiver
+            let isInvolved = false;
+            if (transactionType === 'C') {
+              // For commitments, only count if organization is the provider
+              isInvolved = trans.provider_org_id === org.id || trans.provider_org_name === org.name;
+            } else {
+              // For disbursements, count if organization is provider or receiver
+              isInvolved = trans.provider_org_id === org.id || 
+                          trans.receiver_org_id === org.id ||
+                          trans.provider_org_name === org.name || 
+                          trans.receiver_org_name === org.name;
+            }
             
-            return isCorrectYear && isOrgMatch;
+            if (isInvolved) {
+              // Use USD value if available, otherwise use original value
+              const transValue = trans.value_usd || trans.value;
+              const amount = (typeof transValue === 'number' && !isNaN(transValue)) ? transValue : 0;
+              return sum + amount;
+            }
+            
+            return sum;
           } catch (dateError) {
             console.warn('[AIMS] Invalid transaction date:', trans.transaction_date);
-            return false;
+            return sum;
           }
-        }).reduce((sum: number, trans: any) => {
-          const transValue = trans.value;
-          const amount = (typeof transValue === 'number' && !isNaN(transValue)) ? transValue : 0;
-          return sum + amount;
-        }, 0) || 0;
+        }, 0);
         
         financialData[year.toString()] = yearTotal;
       });
@@ -331,10 +381,67 @@ export async function GET(request: NextRequest) {
     let groupedData: GroupData[];
     
     if (groupBy === 'custom') {
-      // For now, return empty custom groups - this would be enhanced later
-      // when organization_groups table is properly implemented
-      console.log('[AIMS] Custom grouping requested - returning empty groups');
-      groupedData = [];
+      // Fetch custom groups and their member organizations
+      console.log('[AIMS] Custom grouping requested - fetching custom groups');
+      
+      try {
+        // Fetch custom groups
+        const { data: customGroups, error: customGroupsError } = await getSupabaseAdmin()
+          .from('custom_groups')
+          .select('*')
+          .order('name');
+
+        if (customGroupsError) {
+          console.error('[AIMS] Error fetching custom groups:', customGroupsError);
+          groupedData = [];
+        } else {
+          console.log('[AIMS] Found custom groups:', customGroups?.length || 0);
+
+          // Fetch memberships for all custom groups
+          const { data: memberships, error: membershipsError } = await getSupabaseAdmin()
+            .from('custom_group_memberships')
+            .select('group_id, organization_id');
+
+          if (membershipsError) {
+            console.error('[AIMS] Error fetching group memberships:', membershipsError);
+            groupedData = [];
+          } else {
+            // Map custom groups to the GroupData format
+            groupedData = (customGroups || []).map(group => {
+              // Get organization IDs that belong to this group
+              const groupOrgIds = (memberships || [])
+                .filter(m => m.group_id === group.id)
+                .map(m => m.organization_id);
+
+              // Get the actual organization metrics for this group
+              const groupOrganizations = organizationMetrics.filter(org => 
+                groupOrgIds.includes(org.id)
+              );
+
+              return {
+                id: group.id,
+                name: group.name,
+                description: group.description || `Custom group: ${group.name}`,
+                type: 'custom' as const,
+                organizations: groupOrganizations,
+                totalOrganizations: groupOrganizations.length,
+                totalAmount: groupOrganizations.reduce((sum, org) => {
+                  const amount = (typeof org.totalAmount === 'number' && !isNaN(org.totalAmount)) ? org.totalAmount : 0;
+                  return sum + amount;
+                }, 0),
+                totalActiveProjects: groupOrganizations.reduce((sum, org) => {
+                  const projects = (typeof org.activeProjects === 'number' && !isNaN(org.activeProjects)) ? org.activeProjects : 0;
+                  return sum + projects;
+                }, 0),
+                logo: group.logo
+              };
+            });
+          }
+        }
+      } catch (error) {
+        console.error('[AIMS] Error in custom groups processing:', error);
+        groupedData = [];
+      }
     } else {
       // Group by IATI-based categories
       console.log('[AIMS] Grouping by IATI-based partner types');
@@ -345,6 +452,18 @@ export async function GET(request: NextRequest) {
           
           // Map IATI code to group
           const mappedGroup = IATI_TYPE_TO_GROUP[orgType] || 'other';
+          
+          // Special filtering for bilateral partners: exclude Myanmar government organizations
+          if (group.id === 'bilateral' && mappedGroup === 'bilateral') {
+            const orgCountry = (org.country_represented || org.country || '').toLowerCase().trim();
+            const isMyanmarGov = (orgType === '10' || orgType === '11') && orgCountry === 'myanmar';
+            
+            // Only include external government organizations in bilateral partners
+            if (isMyanmarGov) {
+              console.log(`[AIMS] Excluding Myanmar government org from bilateral: ${org.name}`);
+              return false;
+            }
+          }
           
           // Log unmapped types for debugging
           if (!IATI_TYPE_TO_GROUP[orgType] && orgType) {
@@ -394,13 +513,28 @@ export async function GET(request: NextRequest) {
       return sum + amount;
     }, 0);
 
-    console.log('[AIMS] Summary stats:', { totalOrganizations, totalActiveProjects, totalAmount });
+    // Always fetch custom groups count regardless of groupBy parameter
+    let customGroupsCount = 0;
+    try {
+      const { data: customGroups, error: customGroupsError } = await getSupabaseAdmin()
+        .from('custom_groups')
+        .select('id');
+      
+      if (!customGroupsError && customGroups) {
+        customGroupsCount = customGroups.length;
+      }
+    } catch (error) {
+      console.error('[AIMS] Error fetching custom groups count:', error);
+    }
+
+    console.log('[AIMS] Summary stats:', { totalOrganizations, totalActiveProjects, totalAmount, customGroupsCount });
 
     return NextResponse.json({
       groups: groupedData,
       totalOrganizations,
       totalActiveProjects,
       totalAmount,
+      customGroupsCount,
       lastUpdated: new Date().toISOString(),
       transactionType,
       groupBy

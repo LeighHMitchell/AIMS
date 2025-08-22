@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
   Download,
   ChevronUp,
   ChevronDown,
+  ChevronRight,
   ChevronsUpDown,
   Eye,
   FolderOpen,
@@ -71,6 +72,7 @@ interface GroupData {
   totalOrganizations: number;
   totalAmount: number;
   totalActiveProjects: number;
+  logo?: string;
 }
 
 interface SummaryData {
@@ -78,6 +80,7 @@ interface SummaryData {
   totalOrganizations: number;
   totalActiveProjects: number;
   totalAmount: number;
+  customGroupsCount: number;
   lastUpdated: string;
   transactionType: string;
   groupBy: string;
@@ -101,6 +104,8 @@ export default function PartnersPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [showOrgDialog, setShowOrgDialog] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<OrganizationMetrics | null>(null);
+  const [expandedOrgs, setExpandedOrgs] = useState<Set<string>>(new Set());
+  const [orgActivities, setOrgActivities] = useState<Record<string, any[]>>({});
 
   // Fetch summary data
   const fetchSummaryData = async () => {
@@ -109,7 +114,7 @@ export default function PartnersPage() {
       setError(null);
       
       const response = await fetch(
-        `/api/partners/summary?groupBy=${groupBy}&transactionType=${transactionType}`,
+        `/api/partners/summary?groupBy=${groupBy}&transactionType=${transactionType}&_t=${Date.now()}`,
         { cache: 'no-store' }
       );
       
@@ -134,6 +139,9 @@ export default function PartnersPage() {
 
   useEffect(() => {
     fetchSummaryData();
+    // Clear organization activities cache when transaction type changes
+    setOrgActivities({});
+    setExpandedOrgs(new Set());
   }, [transactionType, groupBy]);
 
   // Toggle group expansion
@@ -145,6 +153,37 @@ export default function PartnersPage() {
       newExpanded.add(groupId);
     }
     setExpandedGroups(newExpanded);
+  };
+
+  // Toggle organization expansion
+  const toggleOrganization = async (orgId: string) => {
+    const newExpanded = new Set(expandedOrgs);
+    if (newExpanded.has(orgId)) {
+      newExpanded.delete(orgId);
+    } else {
+      newExpanded.add(orgId);
+      // Always fetch activities to ensure we have the latest data for current transaction type
+      await fetchOrgActivities(orgId);
+    }
+    setExpandedOrgs(newExpanded);
+  };
+
+  // Fetch activities for a specific organization
+  const fetchOrgActivities = async (orgId: string) => {
+    try {
+      const response = await fetch(`/api/organizations/${orgId}/activities?transactionType=${transactionType}`);
+      if (response.ok) {
+        const activities = await response.json();
+        setOrgActivities(prev => ({
+          ...prev,
+          [orgId]: activities
+        }));
+      } else {
+        console.error('Failed to fetch organization activities');
+      }
+    } catch (error) {
+      console.error('Error fetching organization activities:', error);
+    }
   };
 
   // Sorting logic
@@ -236,9 +275,9 @@ export default function PartnersPage() {
       .reduce((sum, g) => sum + g.totalOrganizations, 0);
   }, [summaryData]);
 
-  const activeGroupsCount = useMemo(() => {
+  const customGroupsCount = useMemo(() => {
     if (!summaryData) return 0;
-    return summaryData.groups.filter(g => g.totalOrganizations > 0).length;
+    return summaryData.customGroupsCount || 0;
   }, [summaryData]);
 
   // Export to CSV
@@ -305,6 +344,102 @@ export default function PartnersPage() {
     }
   };
 
+  // Render organization row with expandable activities
+  const renderOrganizationRow = (org: OrganizationMetrics) => {
+    const isOrgExpanded = expandedOrgs.has(org.id);
+    const orgActivitiesList = orgActivities[org.id] || [];
+
+    return (
+      <React.Fragment key={org.id}>
+        <tr className="border-b border-gray-200 hover:bg-blue-50 bg-gray-50">
+          <td className="py-3 px-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => toggleOrganization(org.id)}
+                className="p-1 hover:bg-gray-300 rounded transition-colors"
+                title={isOrgExpanded ? "Collapse activities" : "Expand activities"}
+              >
+                {isOrgExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-gray-500" />
+                )}
+              </button>
+              <a
+                href={`/organizations/${org.id}`}
+                className="text-left text-blue-700 hover:text-blue-900 hover:underline font-semibold"
+              >
+                {org.fullName && org.acronym 
+                  ? `${org.fullName} (${org.acronym})`
+                  : org.name
+                }
+              </a>
+            </div>
+          </td>
+          <td className="py-3 px-2 text-center font-semibold">
+            {org.activeProjects || 0}
+          </td>
+          <td className="py-3 px-2 text-center font-semibold">
+            {formatCurrency(org.financialData['2022'])}
+          </td>
+          <td className="py-3 px-2 text-center font-semibold">
+            {formatCurrency(org.financialData['2023'])}
+          </td>
+          <td className="py-3 px-2 text-center font-semibold">
+            {formatCurrency(org.financialData['2024'])}
+          </td>
+          <td className="py-3 px-2 text-center font-semibold">
+            {formatCurrency(org.financialData['2025'])}
+          </td>
+          <td className="py-3 px-2 text-center font-semibold">
+            {formatCurrency(org.financialData['2026'])}
+          </td>
+          <td className="py-3 px-2 text-center font-semibold">
+            {formatCurrency(org.financialData['2027'])}
+          </td>
+        </tr>
+        {isOrgExpanded && orgActivitiesList.map((activity: any) => (
+          <tr key={`activity-${activity.id}`} className="hover:bg-gray-50">
+            <td className="py-2 px-2 pl-16">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-px bg-gray-300"></div>
+                <a
+                  href={`/activities/${activity.id}`}
+                  className="text-left text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
+                >
+                  {activity.activity_title || activity.title || 'Untitled Activity'}
+                  {activity.acronym && ` (${activity.acronym})`}
+                </a>
+              </div>
+            </td>
+            <td className="py-2 px-2 text-center text-sm">
+              {/* Individual activity doesn't show project count */}
+              -
+            </td>
+            <td className="py-2 px-2 text-center text-sm">
+              {formatCurrency(activity.financialData?.['2022'] || 0)}
+            </td>
+            <td className="py-2 px-2 text-center text-sm">
+              {formatCurrency(activity.financialData?.['2023'] || 0)}
+            </td>
+            <td className="py-2 px-2 text-center text-sm">
+              {formatCurrency(activity.financialData?.['2024'] || 0)}
+            </td>
+            <td className="py-2 px-2 text-center text-sm">
+              {formatCurrency(activity.financialData?.['2025'] || 0)}
+            </td>
+            <td className="py-2 px-2 text-center text-sm">
+              {formatCurrency(activity.financialData?.['2026'] || 0)}
+            </td>
+            <td className="py-2 px-2 text-center text-sm">
+              {formatCurrency(activity.financialData?.['2027'] || 0)}
+            </td>
+          </tr>
+        ))}
+      </React.Fragment>
+    );
+  };
+
   if (loading) {
     return (
       <MainLayout>
@@ -332,7 +467,7 @@ export default function PartnersPage() {
   return (
     <MainLayout>
       <div className="min-h-screen bg-gray-50">
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Partner Summary</h1>
@@ -382,13 +517,13 @@ export default function PartnersPage() {
             <Card className="bg-white border border-gray-200">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-gray-700">Groups with organizations</CardTitle>
+                  <CardTitle className="text-sm font-medium text-gray-700">Custom Groups</CardTitle>
                   <FolderOpen className="h-4 w-4 text-gray-500" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{activeGroupsCount}</div>
-                <p className="text-xs text-gray-500 mt-1">Groups with organizations</p>
+                <div className="text-2xl font-bold text-gray-900">{customGroupsCount}</div>
+                <p className="text-xs text-gray-500 mt-1">Custom groups available</p>
               </CardContent>
             </Card>
           </div>
@@ -399,11 +534,11 @@ export default function PartnersPage() {
               <TabsList className="grid w-auto grid-cols-2">
                 <TabsTrigger value="type" className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
-                  Organization Type
+                  Development Partners
                 </TabsTrigger>
                 <TabsTrigger value="custom" className="flex items-center gap-2">
                   <FolderOpen className="h-4 w-4" />
-                  Organization Groups
+                  Custom Groups
                 </TabsTrigger>
               </TabsList>
 
@@ -477,9 +612,9 @@ export default function PartnersPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             {isExpanded ? (
-                              <ChevronUp className="h-4 w-4 text-gray-400" />
-                            ) : (
                               <ChevronDown className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-gray-400" />
                             )}
                             <div>
                               <CardTitle className="text-lg font-semibold text-gray-900">
@@ -584,42 +719,7 @@ export default function PartnersPage() {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {sortedOrgs.map((org) => (
-                                    <tr key={org.id} className="border-b border-gray-100 hover:bg-gray-50">
-                                      <td className="py-3 px-2">
-                                        <button
-                                          onClick={() => router.push(`/organizations/${org.id}`)}
-                                          className="text-left text-blue-600 hover:text-blue-800 hover:underline"
-                                        >
-                                          {org.fullName && org.acronym 
-                                            ? `${org.fullName} (${org.acronym})`
-                                            : org.name
-                                          }
-                                        </button>
-                                      </td>
-                                      <td className="py-3 px-2 text-center">
-                                        {org.activeProjects || 0}
-                                      </td>
-                                      <td className="py-3 px-2 text-center">
-                                        {formatCurrency(org.financialData['2022'])}
-                                      </td>
-                                      <td className="py-3 px-2 text-center">
-                                        {formatCurrency(org.financialData['2023'])}
-                                      </td>
-                                      <td className="py-3 px-2 text-center">
-                                        {formatCurrency(org.financialData['2024'])}
-                                      </td>
-                                      <td className="py-3 px-2 text-center">
-                                        {formatCurrency(org.financialData['2025'])}
-                                      </td>
-                                      <td className="py-3 px-2 text-center">
-                                        {formatCurrency(org.financialData['2026'])}
-                                      </td>
-                                      <td className="py-3 px-2 text-center">
-                                        {formatCurrency(org.financialData['2027'])}
-                                      </td>
-                                    </tr>
-                                  ))}
+                                  {sortedOrgs.map((org) => renderOrganizationRow(org))}
                                 </tbody>
                               </table>
                             </div>
@@ -663,18 +763,23 @@ export default function PartnersPage() {
                           <div className="flex items-center justify-between">
                                                          <div className="flex items-center gap-3">
                                {isExpanded ? (
-                                 <ChevronUp className="h-4 w-4 text-gray-400" />
-                               ) : (
                                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                               ) : (
+                                 <ChevronRight className="h-4 w-4 text-gray-400" />
                                )}
-                               <FolderOpen className="h-5 w-5 text-blue-600" />
+                               {group.logo ? (
+                                 <img 
+                                   src={group.logo} 
+                                   alt={group.name}
+                                   className="h-8 w-8 object-contain rounded"
+                                 />
+                               ) : (
+                                 <FolderOpen className="h-5 w-5 text-blue-600" />
+                               )}
                               <div>
                                 <CardTitle className="text-lg font-semibold text-gray-900">
                                   {group.name}
                                 </CardTitle>
-                                <CardDescription className="text-gray-600">
-                                  {group.description}
-                                </CardDescription>
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -770,44 +875,9 @@ export default function PartnersPage() {
                                       </th>
                                     </tr>
                                   </thead>
-                                  <tbody>
-                                    {sortedOrgs.map((org) => (
-                                      <tr key={org.id} className="border-b border-gray-100 hover:bg-gray-50">
-                                        <td className="py-3 px-2">
-                                          <button
-                                            onClick={() => router.push(`/organizations/${org.id}`)}
-                                            className="text-left text-blue-600 hover:text-blue-800 hover:underline"
-                                          >
-                                            {org.fullName && org.acronym 
-                                              ? `${org.fullName} (${org.acronym})`
-                                              : org.name
-                                            }
-                                          </button>
-                                        </td>
-                                        <td className="py-3 px-2 text-center">
-                                          {org.activeProjects || 0}
-                                        </td>
-                                        <td className="py-3 px-2 text-center">
-                                          {formatCurrency(org.financialData['2022'])}
-                                        </td>
-                                        <td className="py-3 px-2 text-center">
-                                          {formatCurrency(org.financialData['2023'])}
-                                        </td>
-                                        <td className="py-3 px-2 text-center">
-                                          {formatCurrency(org.financialData['2024'])}
-                                        </td>
-                                        <td className="py-3 px-2 text-center">
-                                          {formatCurrency(org.financialData['2025'])}
-                                        </td>
-                                        <td className="py-3 px-2 text-center">
-                                          {formatCurrency(org.financialData['2026'])}
-                                        </td>
-                                        <td className="py-3 px-2 text-center">
-                                          {formatCurrency(org.financialData['2027'])}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
+                                                                  <tbody>
+                                  {sortedOrgs.map((org) => renderOrganizationRow(org))}
+                                </tbody>
                                 </table>
                               </div>
                             )}

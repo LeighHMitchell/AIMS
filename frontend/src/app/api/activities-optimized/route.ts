@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
         iati_identifier,
         title_narrative,
         description_narrative,
+        acronym,
         created_by_org_name,
         created_by_org_acronym,
         activity_status,
@@ -99,6 +100,7 @@ export async function GET(request: NextRequest) {
       
       searchConditions.push(`iati_identifier.ilike.%${search}%`);
       searchConditions.push(`title_narrative.ilike.%${search}%`);
+      searchConditions.push(`acronym.ilike.%${search}%`);
       
       const orCondition = searchConditions.join(',');
       if (countQuery) countQuery = countQuery.or(orCondition);

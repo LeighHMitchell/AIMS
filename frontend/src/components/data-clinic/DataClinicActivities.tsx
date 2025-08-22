@@ -504,10 +504,10 @@ export function DataClinicActivities() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="border-b bg-gray-50">
+              <thead className="bg-muted/50 border-b border-border">
                 <tr>
                   {isSuperUser && (
-                    <th className="p-4 text-left">
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">
                       <Checkbox
                         checked={selectedActivities.size === filteredActivities.length && filteredActivities.length > 0}
                         onCheckedChange={(checked) => {
@@ -520,13 +520,13 @@ export function DataClinicActivities() {
                       />
                     </th>
                   )}
-                  <th className="p-4 text-left text-sm font-medium">Title</th>
-                  <th className="p-4 text-left text-sm font-medium">IATI ID</th>
-                  <th className="p-4 text-left text-sm font-medium">Aid Type</th>
-                  <th className="p-4 text-left text-sm font-medium">Finance Type</th>
-                  <th className="p-4 text-left text-sm font-medium">Flow Type</th>
-                  <th className="p-4 text-left text-sm font-medium">Status</th>
-                  <th className="p-4 text-left text-sm font-medium">Sectors</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Title</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">IATI ID</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Aid Type</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Finance Type</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Flow Type</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Status</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Sectors</th>
                 </tr>
               </thead>
               <tbody>

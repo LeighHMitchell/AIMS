@@ -21,7 +21,8 @@ import {
   DollarSign,
   Hash,
   Globe,
-  History
+  History,
+  Building
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +31,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { LockedOrganizationField } from '@/components/ui/locked-organization-field';
+import { useOrganizations } from '@/hooks/use-organizations';
+import { useUser } from '@/hooks/useUser';
+import { USER_ROLES } from '@/types/user';
+import { toast } from 'sonner';
 
 interface MetadataTabProps {
   activityId: string;
@@ -63,6 +69,9 @@ interface ActivityMetadata {
   sync_status?: string;
   last_sync_time?: string;
   auto_sync?: boolean;
+  reporting_org_id?: string;
+  created_by_org_name?: string;
+  created_by_org_acronym?: string;
 }
 
 interface ActivityLog {
@@ -195,6 +204,62 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
   const [data, setData] = useState<MetadataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [savingReportingOrg, setSavingReportingOrg] = useState(false);
+  
+  const { user } = useUser();
+  const { organizations, loading: organizationsLoading } = useOrganizations();
+
+  const handleReportingOrgSave = async (newReportingOrgId: string) => {
+    setSavingReportingOrg(true);
+    try {
+      const response = await fetch(`/api/activities/${activityId}/reporting-org`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reporting_org_id: newReportingOrgId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update reporting organization');
+      }
+
+      const result = await response.json();
+      
+      // Update the local data with the new values
+      if (data) {
+        setData({
+          ...data,
+          metadata: {
+            ...data.metadata,
+            reporting_org_id: result.data.reporting_org_id,
+            created_by_org_name: result.data.created_by_org_name,
+            created_by_org_acronym: result.data.created_by_org_acronym
+          }
+        });
+      }
+
+      toast.success('Reporting organization updated successfully');
+      
+      // Refresh metadata to ensure UI is synchronized
+      await fetchMetadata();
+      
+      // Also trigger a page refresh to update other parts of the UI
+      window.dispatchEvent(new CustomEvent('reporting-org-updated', { 
+        detail: { 
+          activityId, 
+          newReportingOrgId,
+          organizationData: result.data 
+        } 
+      }));
+    } catch (error) {
+      console.error('[AIMS] Error updating reporting organization:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update reporting organization');
+    } finally {
+      setSavingReportingOrg(false);
+    }
+  };
 
   const fetchMetadata = async () => {
     try {
@@ -202,7 +267,13 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       setError(null);
       
       console.log('[MetadataTab] Fetching metadata for activity ID:', activityId);
-      const response = await fetch(`/api/activities/${activityId}/metadata`);
+      const response = await fetch(`/api/activities/${activityId}/metadata`, {
+        cache: 'no-store', // Force fresh data, no caching
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       
       if (!response.ok) {
         const errorBody = await response.text();
@@ -212,6 +283,11 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       
       const result = await response.json();
       console.log('[MetadataTab] Received metadata:', result);
+      console.log('[MetadataTab] Reporting org data:', {
+        reporting_org_id: result.metadata?.reporting_org_id,
+        created_by_org_name: result.metadata?.created_by_org_name,
+        created_by_org_acronym: result.metadata?.created_by_org_acronym
+      });
       setData(result);
     } catch (err) {
       console.error('[AIMS] Error fetching activity metadata:', err);
@@ -228,6 +304,19 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       setLoading(false);
       setError('No activity ID provided');
     }
+  }, [activityId]);
+
+  // Also refresh when the component becomes visible (tab is selected)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && activityId) {
+        console.log('[MetadataTab] Tab became visible, refreshing data...');
+        fetchMetadata();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [activityId]);
 
   if (loading) {
@@ -370,6 +459,42 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                 {metadata.activity_status || 'planning'}
               </Badge>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Reporting Organization */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Building className="h-5 w-5 text-gray-600" />
+              Reporting Organization
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <LockedOrganizationField
+              label="Reported by"
+              value={metadata.reporting_org_id || ""}
+              onChange={() => {}} // Handled by onSave
+              organizations={organizations}
+              onSave={handleReportingOrgSave}
+              saving={savingReportingOrg}
+              isSuperUser={user?.role === USER_ROLES.SUPER_USER}
+              placeholder="Select reporting organization..."
+              lockTooltip="This field is locked and can only be edited by super users"
+              unlockTooltip="Click to unlock and change the reporting organization"
+              disabled={organizationsLoading}
+            />
+            {(metadata.created_by_org_name || metadata.created_by_org_acronym) && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <div className="text-sm font-medium text-gray-600 mb-1">Current Organization</div>
+                <div className="text-sm text-gray-900">
+                  {metadata.created_by_org_name}
+                  {metadata.created_by_org_acronym && metadata.created_by_org_name !== metadata.created_by_org_acronym && (
+                    <span className="text-gray-600"> ({metadata.created_by_org_acronym})</span>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

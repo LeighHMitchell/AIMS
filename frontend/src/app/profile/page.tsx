@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { ROLE_LABELS, USER_ROLES } from "@/types/user";
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 import { PhoneFields } from "@/components/ui/phone-fields";
-import { AddressSearch, AddressComponents } from "@/components/ui/address-search";
+import { AddressComponents } from "@/components/ui/address-search";
 import { EmailChangeConfirmDialog } from "@/components/EmailChangeConfirmDialog";
 import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
 import { supabase } from "@/lib/supabase";
@@ -41,14 +41,14 @@ import {
   X,
   Check,
   Clock,
-  MapPin,
   Briefcase,
   Users,
   Key,
   Download,
   Upload,
   Eye,
-  EyeOff
+  EyeOff,
+  Printer
 } from "lucide-react";
 
 // Helper function to split telephone into country code and phone number
@@ -72,12 +72,67 @@ const splitTelephone = (telephone: string) => {
     if (telephone.startsWith(country.code)) {
       return {
         countryCode: country.code,
-        phoneNumber: telephone.substring(country.code.length)
+        phoneNumber: telephone.substring(country.code.length).trim()
       };
     }
   }
   
   return { countryCode: "+95", phoneNumber: telephone };
+};
+
+// Helper function to format phone number for display with proper spacing
+const formatPhoneNumber = (phoneNumber: string) => {
+  if (!phoneNumber) return "";
+  
+  const countries = [
+    { code: "+95", name: "Myanmar" },
+    { code: "+1", name: "US/Canada" },
+    { code: "+44", name: "UK" },
+    { code: "+33", name: "France" },
+    { code: "+49", name: "Germany" },
+    { code: "+81", name: "Japan" },
+    { code: "+86", name: "China" },
+    { code: "+91", name: "India" },
+    { code: "+61", name: "Australia" },
+    { code: "+55", name: "Brazil" }
+  ];
+  
+  for (const country of countries) {
+    if (phoneNumber.startsWith(country.code)) {
+      const localNumber = phoneNumber.substring(country.code.length).trim();
+      return localNumber ? `${country.code} ${localNumber}` : country.code;
+    }
+  }
+  
+  return phoneNumber;
+};
+
+// Helper function to check if phone/fax number is complete (has both country code and local number)
+const isCompletePhoneNumber = (phoneNumber: string) => {
+  if (!phoneNumber) return false;
+  
+  const countries = [
+    { code: "+95", name: "Myanmar" },
+    { code: "+1", name: "US/Canada" },
+    { code: "+44", name: "UK" },
+    { code: "+33", name: "France" },
+    { code: "+49", name: "Germany" },
+    { code: "+81", name: "Japan" },
+    { code: "+86", name: "China" },
+    { code: "+91", name: "India" },
+    { code: "+61", name: "Australia" },
+    { code: "+55", name: "Brazil" }
+  ];
+  
+  for (const country of countries) {
+    if (phoneNumber.startsWith(country.code)) {
+      const localNumber = phoneNumber.substring(country.code.length).trim();
+      return localNumber.length > 0; // Only return true if there's actual local number
+    }
+  }
+  
+  // If no country code match, consider it complete if it has content
+  return phoneNumber.trim().length > 0;
 };
 
 // Helper function to convert mailing address string to address components
@@ -405,7 +460,7 @@ export default function ProfilePage() {
         job_title: formData.jobTitle,
         department: formData.department,
         organisation: formData.organisation,
-        telephone: formData.countryCode + formData.phoneNumber,
+        telephone: formData.countryCode + (formData.phoneNumber ? ' ' + formData.phoneNumber : ''),
         website: formData.website,
         mailing_address: formatMailingAddress(formData.addressComponents),
         bio: formData.bio,
@@ -413,7 +468,7 @@ export default function ProfilePage() {
         timezone: formData.timezone,
         avatar_url: profilePhoto,
         contact_type: formData.contactType,
-        fax_number: formData.faxCountryCode + formData.faxPhoneNumber,
+        fax_number: formData.faxCountryCode + (formData.faxPhoneNumber ? ' ' + formData.faxPhoneNumber : ''),
         notes: formData.notes,
       };
 
@@ -542,29 +597,8 @@ export default function ProfilePage() {
     <MainLayout>
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">My Profile</h1>
-              <p className="text-muted-foreground mt-1">Manage your account settings and information</p>
-            </div>
-            {!isEditing ? (
-              <Button onClick={handleEditClick}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Profile
-              </Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleCancel}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-                <Button onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </Button>
-              </div>
-            )}
-          </div>
+          <h1 className="text-3xl font-bold">My Profile</h1>
+          <p className="text-muted-foreground mt-1">Manage your account settings and information</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -572,10 +606,6 @@ export default function ProfilePage() {
             <TabsTrigger value="personal" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Personal Info
-            </TabsTrigger>
-            <TabsTrigger value="contact" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Address & Website
             </TabsTrigger>
             <TabsTrigger value="system" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -597,10 +627,25 @@ export default function ProfilePage() {
                       Your complete profile and contact details
                 </CardDescription>
                   </div>
-                  <Badge variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"}>
-                    <Shield className="h-3 w-3 mr-1" />
-                    {ROLE_LABELS[user.role] || user.role}
-                  </Badge>
+                  <div>
+                    {!isEditing ? (
+                      <Button onClick={handleEditClick} size="sm">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Profile
+                      </Button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button variant="outline" onClick={handleCancel} size="sm">
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel
+                        </Button>
+                        <Button onClick={handleSave} size="sm">
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -763,29 +808,51 @@ export default function ProfilePage() {
                         }}
                       >
                                     <SelectTrigger id="organisation" className="h-9">
-                          <SelectValue placeholder="Select organisation" />
+                          <SelectValue placeholder="Select organisation">
+                            {selectedOrgId && (() => {
+                              const selectedOrg = organizations.find(o => o.id === selectedOrgId);
+                              return selectedOrg ? (
+                                <div className="flex items-center gap-2">
+                                  {selectedOrg.logo && (
+                                    <img
+                                      src={selectedOrg.logo}
+                                      alt={`${selectedOrg.name} logo`}
+                                      className="w-4 h-4 object-contain rounded-sm flex-shrink-0"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                  <span className="text-sm truncate">
+                                    {selectedOrg.name} {selectedOrg.acronym && `(${selectedOrg.acronym})`}
+                                  </span>
+                                </div>
+                              ) : null;
+                            })()}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {organizations.map((org) => (
                             <SelectItem key={org.id} value={org.id}>
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
                                 {org.logo && (
                                   <img
                                     src={org.logo}
                                     alt={`${org.name} logo`}
-                                    className="w-8 h-8 object-contain rounded-sm flex-shrink-0"
+                                    className="w-6 h-6 object-contain rounded-sm flex-shrink-0"
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
                                       target.style.display = 'none';
                                     }}
                                   />
                                 )}
-                                <div className="flex flex-col">
-                                  <div className="text-sm">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <div className="text-sm truncate">
                                     {org.name} {org.acronym && `(${org.acronym})`}
                                   </div>
                                   {org.iati_org_id && (
-                                    <div className="text-xs text-muted-foreground">
+                                    <div className="text-xs text-muted-foreground truncate">
                                       IATI: {org.iati_org_id}
                                     </div>
                                   )}
@@ -799,12 +866,12 @@ export default function ProfilePage() {
                 ) : (
                   <>
                                   <Label className="text-xs">Organisation</Label>
-                                  <div className="h-9 px-3 py-2 border rounded-md bg-muted flex items-center gap-3">
+                                  <div className="h-9 px-3 py-2 border rounded-md bg-muted flex items-center gap-2">
                                     {user.organization?.logo && (
                                       <img
                                         src={user.organization.logo}
                                         alt={`${user.organization.name} logo`}
-                                        className="w-6 h-6 object-contain rounded-sm flex-shrink-0"
+                                        className="w-5 h-5 object-contain rounded-sm flex-shrink-0"
                                         onError={(e) => {
                                           const target = e.target as HTMLImageElement;
                                           target.style.display = 'none';
@@ -827,26 +894,13 @@ export default function ProfilePage() {
                           <div className="space-y-3">
                         <div>
                               <Label htmlFor="email" className="text-xs mb-2 block">Primary Email</Label>
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  id="email"
-                                  type="email"
-                                  value={formData.email}
-                                  disabled
-                                  className="bg-muted h-9 flex-1"
-                                />
-                                {user.role === 'super_user' && (
-                                  <Button
-                                    type="button"
-                                    variant="default"
-                                    size="sm"
-                                    onClick={() => setEmailChangeDialogOpen(true)}
-                                    className="bg-orange-600 hover:bg-orange-700 text-white h-9 text-xs shrink-0"
-                                  >
-                                    Change Email
-                                  </Button>
-                                )}
-                              </div>
+                              <Input
+                                id="email"
+                                type="email"
+                                value={formData.email}
+                                disabled
+                                className="bg-muted h-9"
+                              />
                       </div>
                             
                             {/* Phone and Fax on same line */}
@@ -896,12 +950,18 @@ export default function ProfilePage() {
                         <div className="space-y-6">
                           {/* Name and Position */}
                           <div>
-                            <h3 className="font-medium text-lg mb-1">
-                              {user.title && user.title !== "none" ? `${user.title} ` : ""}
-                              {user.firstName && user.lastName 
-                                ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}` 
-                                : user.name || "Not specified"}
-                            </h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-medium text-lg">
+                                {user.title && user.title !== "none" ? `${user.title} ` : ""}
+                                {user.firstName && user.lastName 
+                                  ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}${user.suffix && user.suffix !== "none" ? ` ${user.suffix}` : ''}` 
+                                  : user.name || "Not specified"}
+                              </h3>
+                              <Badge variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"} className="text-xs">
+                                <Shield className="h-3 w-3 mr-1" />
+                                {ROLE_LABELS[user.role] || user.role}
+                              </Badge>
+                            </div>
                         <p className="text-sm text-muted-foreground">
                               {user.jobTitle || "Position not specified"} 
                               {user.department && ` • ${user.department}`}
@@ -926,11 +986,6 @@ export default function ProfilePage() {
                               )}
                               <div>
                                 <p className="text-sm font-medium">{user.organization?.name || user.organisation || "No organization"}</p>
-                                {user.contactType && (
-                                  <p className="text-xs text-muted-foreground">
-                                    {CONTACT_TYPES.find(t => t.code === user.contactType)?.name || "Contact Type"}
-                                  </p>
-                                )}
                               </div>
                             </div>
                           )}
@@ -945,13 +1000,20 @@ export default function ProfilePage() {
                               </div>
                             </div>
 
-                            {(user.telephone || user.faxNumber) && (
+                            {user.telephone && (
                               <div className="flex items-start gap-3">
                                 <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                <div className="space-y-1">
-                                  {user.telephone && <p className="text-sm">{user.telephone}</p>}
+                                <div>
+                                  <p className="text-sm">{formatPhoneNumber(user.telephone)}</p>
+                                </div>
+                              </div>
+                            )}
 
-                                  {user.faxNumber && <p className="text-sm text-muted-foreground">{user.faxNumber} (Fax)</p>}
+                            {user.faxNumber && isCompletePhoneNumber(user.faxNumber) && (
+                              <div className="flex items-start gap-3">
+                                <Printer className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                <div>
+                                  <p className="text-sm text-muted-foreground">{formatPhoneNumber(user.faxNumber)} (Fax)</p>
                                 </div>
                               </div>
                             )}
@@ -960,7 +1022,6 @@ export default function ProfilePage() {
                           {/* Notes */}
                           {user.notes && (
                             <div className="border-t pt-4">
-                              <h4 className="text-sm font-medium text-muted-foreground mb-2">Notes</h4>
                               <p className="text-sm">{user.notes}</p>
                             </div>
                           )}
@@ -973,85 +1034,7 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* Contact & Address Tab */}
-          <TabsContent value="contact" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Address & Website
-                </CardTitle>
-                <CardDescription>
-                  Your mailing address and website information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {isEditing ? (
-                  <>
-                    {/* Editing Mode */}
-                    <div>
-                      <Label htmlFor="website">Website</Label>
-                      <Input
-                        id="website"
-                        value={formData.website}
-                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                        placeholder="https://example.com"
-                        className="h-9"
-                      />
-                    </div>
 
-                    <div>
-                      <AddressSearch
-                        value={formData.addressComponents}
-                        onChange={(address) => setFormData({ 
-                          ...formData, 
-                          addressComponents: address,
-                          mailingAddress: formatMailingAddress(address)
-                        })}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* View Mode */}
-                    <div className="space-y-4">
-                      {user.website && (
-                        <div className="flex items-start gap-3">
-                          <Globe className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Website</p>
-                            <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
-                              {user.website}
-                            </a>
-                      </div>
-                    </div>
-                      )}
-
-                    {user.mailingAddress && (
-                        <div className="flex items-start gap-3">
-                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Mailing Address</p>
-                            <p className="text-sm">{user.mailingAddress}</p>
-                          </div>
-                      </div>
-                    )}
-
-                      {!user.website && !user.mailingAddress && (
-                        <div className="text-center py-8">
-                          <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                          <p className="text-muted-foreground">No address or website information</p>
-                          <p className="text-sm text-muted-foreground">
-                            Click 'Edit Profile' to add your address and website
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
 
 
