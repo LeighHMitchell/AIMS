@@ -3,7 +3,7 @@
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
-import { Calendar, MoreVertical, Edit3, Trash2, Clock, Download } from 'lucide-react';
+import { Calendar, MoreVertical, Edit3, Trash2, Clock, Download, Copy } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
