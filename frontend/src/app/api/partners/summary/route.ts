@@ -220,27 +220,27 @@ export async function GET(request: NextRequest) {
     console.log('[AIMS] Activity org names found:', Array.from(activityOrgNames));
     
     // Debug: Log organization names to see what we're matching against
-    const orgNames = organizations?.map(org => `${org.name} (${org.acronym || 'no acronym'})`);
+    const orgNames = organizations?.map((org: any) => `${org.name} (${org.acronym || 'no acronym'})`);
     console.log('[AIMS] Organization names in database:', orgNames);
     
           // Debug: Show UNDP-related organizations specifically
-      const undpOrgs = organizations?.filter(org => 
+      const undpOrgs = organizations?.filter((org: any) => 
         org.name?.toLowerCase().includes('undp') || 
         org.acronym?.toLowerCase().includes('undp') ||
         org.name?.toLowerCase().includes('united nations development')
       );
-      console.log('[AIMS] UNDP-related organizations:', undpOrgs?.map(org => ({
+      console.log('[AIMS] UNDP-related organizations:', undpOrgs?.map((org: any) => ({
         id: org.id,
         name: org.name,
         acronym: org.acronym
       })));
       
       // Debug: Show activities with UNDP-related org names
-      const undpActivities = activities?.filter(activity => 
+      const undpActivities = activities?.filter((activity: any) => 
         activity.created_by_org_name?.toLowerCase().includes('undp') ||
         activity.created_by_org_acronym?.toLowerCase().includes('undp')
       );
-      console.log('[AIMS] UNDP-related activities:', undpActivities?.map(activity => ({
+      console.log('[AIMS] UNDP-related activities:', undpActivities?.map((activity: any) => ({
         id: activity.id,
         created_by_org_name: activity.created_by_org_name,
         created_by_org_acronym: activity.created_by_org_acronym,
@@ -407,7 +407,7 @@ export async function GET(request: NextRequest) {
             groupedData = [];
           } else {
             // Map custom groups to the GroupData format
-            groupedData = (customGroups || []).map(group => {
+            groupedData = (customGroups || []).map((group: any) => {
               // Get organization IDs that belong to this group
               const groupOrgIds = (memberships || [])
                 .filter(m => m.group_id === group.id)
