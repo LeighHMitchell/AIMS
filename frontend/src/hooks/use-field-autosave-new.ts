@@ -715,6 +715,15 @@ export function useDefaultAidModalityAutosave(activityId?: string, userId?: stri
   });
 }
 
+export function useDefaultAidModalityAutosaveSilent(activityId?: string, userId?: string) {
+  return useFieldAutosave('defaultAidModality', {
+    activityId,
+    userId,
+    debounceMs: 1000,
+    // No onSuccess callback = no toast notification
+  });
+}
+
 export function useDefaultAidModalityOverrideAutosave(activityId?: string, userId?: string) {
   return useFieldAutosave('defaultAidModalityOverride', {
     activityId,
@@ -722,6 +731,17 @@ export function useDefaultAidModalityOverrideAutosave(activityId?: string, userI
     debounceMs: 1000,
     onSuccess: () => {
       toast.success('Default Aid Modality Override saved', { position: 'top-right' });
+    },
+  });
+}
+
+export function useDefaultDisbursementChannelAutosave(activityId?: string, userId?: string) {
+  return useFieldAutosave('defaultDisbursementChannel', {
+    activityId,
+    userId,
+    debounceMs: 1000,
+    onSuccess: () => {
+      toast.success('Default Disbursement Channel saved', { position: 'top-right' });
     },
   });
 }

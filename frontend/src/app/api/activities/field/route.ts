@@ -193,6 +193,12 @@ export async function POST(request: Request) {
         updateData.default_aid_modality_override = body.value || false;
         break;
         
+      case 'defaultDisbursementChannel':
+        oldValue = existingActivity.default_disbursement_channel;
+        newValue = body.value;
+        updateData.default_disbursement_channel = body.value || null;
+        break;
+        
       case 'sectors':
         // Handle sectors using the activity_sectors table instead of a direct column
         oldValue = existingActivity.sectors; // Keep for logging purposes

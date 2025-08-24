@@ -47,10 +47,10 @@ import { formatReportedBy, formatSubmittedBy } from "@/utils/format-helpers";
 import { 
   Plus, Download, Edit2, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
-import { Transaction } from "@/types/transaction";
+import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
 import { LEGACY_TRANSACTION_TYPE_MAP } from "@/utils/transactionMigrationHelper";
 import { USER_ROLES } from "@/types/user";
 import { ActivityListSkeleton } from '@/components/ui/skeleton-loader';
@@ -93,12 +93,35 @@ const FLOW_TYPE_LABELS: Record<string, string> = {
   '50': 'Other flows'
 };
 
-// Tied Status mappings
-const TIED_STATUS_LABELS: Record<string, string> = {
-  '3': 'Partially tied',
-  '4': 'Tied',
-  '5': 'Untied'
+// Finance Type mappings
+const FINANCE_TYPE_LABELS: Record<string, string> = {
+  '110': 'Standard grant',
+  '111': 'Subsidies to national private investors',
+  '210': 'Interest subsidy',
+  '211': 'Interest subsidy to national private exporters',
+  '310': 'Capital subscription on deposit basis',
+  '311': 'Capital subscription on encashment basis',
+  '410': 'Aid loan excluding debt reorganisation',
+  '411': 'Investment-related loan to developing countries',
+  '412': 'Loan in a joint venture with the recipient',
+  '413': 'Loan to national private investor',
+  '421': 'Standard loan',
+  '422': 'Reimbursable grant',
+  '510': 'Bonds',
+  '520': 'Asset-backed securities',
+  '530': 'Other debt securities'
 };
+
+// Modality mappings
+const MODALITY_LABELS: Record<string, string> = {
+  '1': 'Grant',
+  '2': 'Loan',
+  '3': 'Technical Assistance',
+  '4': 'Reimbursable Grant or Other',
+  '5': 'Investment/Guarantee'
+};
+
+// Tied Status mappings imported from @/types/transaction
 
 type Organization = {
   id: string;
@@ -170,7 +193,8 @@ type Activity = {
   default_finance_type?: string;
   default_flow_type?: string;
   default_tied_status?: string;
-  default_modality?: string;
+  default_aid_modality?: string;
+  default_aid_modality_override?: boolean;
   tied_status?: string; // Legacy field
 };
 
@@ -1051,36 +1075,27 @@ function ActivitiesPageContent() {
       
 
       {/* Activities Content */}
-      {loading || userLoading || !hasLoadedOnce ? (
+      {loading || userLoading || !hasLoadedOnce || totalActivities === 0 ? (
         <ActivityListSkeleton />
-      ) : totalActivities === 0 ? (
+      ) : error ? (
         <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
-          {error ? (
-            <div className="space-y-4">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-              <div>
-                <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Activities</h3>
-                <p className="text-slate-500 mb-4">{error}</p>
-                <Button 
-                  onClick={() => usingOptimization ? safeOptimizedData.refetch() : fetchActivities(1, true)} 
-                  variant="outline"
-                >
-                  Try Again
-                </Button>
-              </div>
-            </div>
-          ) : filterStatus !== "all" || filterValidation !== "all" ? (
-            <div className="text-slate-500">No matching activities found</div>
-          ) : (
-            <div className="space-y-4">
-              <Blocks className="h-16 w-16 text-slate-400 mx-auto" />
-              <div className="text-slate-500">No activities yet. Create a new activity to get started.</div>
-              <Button onClick={() => router.push("/activities/new")} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Activity
+          <div className="space-y-4">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+            <div>
+              <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Activities</h3>
+              <p className="text-slate-500 mb-4">{error}</p>
+              <Button 
+                onClick={() => usingOptimization ? safeOptimizedData.refetch() : fetchActivities(1, true)} 
+                variant="outline"
+              >
+                Try Again
               </Button>
             </div>
-          )}
+          </div>
+        </div>
+      ) : filterStatus !== "all" || filterValidation !== "all" ? (
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+          <div className="text-slate-500">No matching activities found</div>
         </div>
       ) : viewMode === 'table' ? (
         <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
@@ -1171,7 +1186,7 @@ function ActivitiesPageContent() {
                     </div>
                   </th>
                   <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
-                    Default Aid Modality
+                    Modality & Classification
                   </th>
                   <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[80px]">
                     Actions
@@ -1374,12 +1389,20 @@ function ActivitiesPageContent() {
                                   <span className="text-sm"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
+                                  <DollarSign className="h-4 w-4" />
+                                  <span className="text-sm"><span className="font-semibold">Default Finance Type:</span> {activity.default_finance_type ? FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type : 'Not specified'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
                                   <Shuffle className="h-4 w-4" />
                                   <span className="text-sm"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <Link2 className="h-4 w-4" />
                                   <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status : 'Not specified'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Settings className="h-4 w-4" />
+                                  <span className="text-sm"><span className="font-semibold">Default Modality:</span> {activity.default_aid_modality ? MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality : 'Not specified'}</span>
                                 </div>
                               </div>
                             </TooltipContent>
@@ -1448,6 +1471,8 @@ function ActivitiesPageContent() {
             default_finance_type: activity.default_finance_type,
             default_flow_type: activity.default_flow_type,
             default_tied_status: activity.default_tied_status,
+            default_aid_modality: activity.default_aid_modality,
+            default_aid_modality_override: activity.default_aid_modality_override,
             // Add financial and reporting fields
             created_by_org_name: activity.created_by_org_name,
             created_by_org_acronym: activity.created_by_org_acronym,

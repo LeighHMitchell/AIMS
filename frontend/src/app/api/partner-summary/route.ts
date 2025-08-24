@@ -413,9 +413,8 @@ export async function GET(request: NextRequest) {
         if (financialMode === 'commitments') {
           if (transaction.provider_organization_id === org.id) shouldCount = true;
         } else { // disbursements
-          if (transaction.provider_organization_id === org.id || transaction.receiver_organization_id === org.id) {
-            shouldCount = true;
-          }
+          // For disbursements, only count if organization is the provider (not the receiver)
+          if (transaction.provider_organization_id === org.id) shouldCount = true;
         }
 
         if (shouldCount && year && amount > 0) {

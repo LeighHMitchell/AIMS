@@ -1705,6 +1705,8 @@ export async function GET(request: NextRequest) {
         default_currency,
         default_tied_status,
         default_flow_type,
+        default_aid_modality,
+        default_aid_modality_override,
         general_info,
         reporting_org_id,
         hierarchy,

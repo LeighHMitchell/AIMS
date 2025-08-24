@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Plus, Trash2, AlertCircle, Info, Upload, Copy, BarChart2, PieChart } from 'lucide-react';
+import { Search, Plus, Trash2, AlertCircle, Info, Upload, Copy, BarChart2, PieChart, HelpCircle } from 'lucide-react';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { SectorAllocation, SectorValidation, DAC5Sector } from '@/types/sector';
 import { searchDACCodes } from '@/data/dac-codes';
 import SectorDonutChart from './SectorDonutChart';
@@ -363,7 +364,12 @@ export default function SectorAllocationForm({
         <div className="space-y-4">
           {/* Visualization toggle */}
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Sector Allocation Visualization</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-medium">Sector Allocation Visualization</h3>
+              <HelpTextTooltip content="Interactive sunburst chart showing sector allocation hierarchy and relationships">
+                <HelpCircle className="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-help" />
+              </HelpTextTooltip>
+            </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setVisualizationType('donut')}

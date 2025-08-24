@@ -30,9 +30,13 @@ export async function GET(
         activities!related_activity_id (
           id,
           title_narrative,
+          acronym,
+          other_identifier,
           iati_identifier,
           activity_status,
-          created_by_org_name
+          created_by_org_name,
+          created_by_org_acronym,
+          icon
         )
       `)
       .eq('activity_id', activityId);
@@ -44,6 +48,8 @@ export async function GET(
       id: link.id,
       activityId: link.related_activity_id,
       activityTitle: link.activities?.title_narrative || 'Unknown Activity',
+      acronym: link.activities?.acronym || '',
+      otherIdentifier: link.activities?.other_identifier || '',
       iatiIdentifier: link.activities?.iati_identifier || '',
       relationshipType: link.relationship_type,
       relationshipTypeLabel: getRelationshipTypeName(link.relationship_type),
@@ -53,6 +59,8 @@ export async function GET(
       createdAt: link.created_at,
       direction: 'outgoing',
       organizationName: link.activities?.created_by_org_name,
+      organizationAcronym: link.activities?.created_by_org_acronym,
+      icon: link.activities?.icon,
       status: link.activities?.activity_status
     }));
 
@@ -69,9 +77,13 @@ export async function GET(
         activities!activity_id (
           id,
           title_narrative,
+          acronym,
+          other_identifier,
           iati_identifier,
           activity_status,
-          created_by_org_name
+          created_by_org_name,
+          created_by_org_acronym,
+          icon
         )
       `)
       .eq('related_activity_id', activityId);
@@ -82,6 +94,8 @@ export async function GET(
       id: link.id,
       activityId: link.activity_id,
       activityTitle: link.activities?.title_narrative || 'Unknown Activity',
+      acronym: link.activities?.acronym || '',
+      otherIdentifier: link.activities?.other_identifier || '',
       iatiIdentifier: link.activities?.iati_identifier || '',
       relationshipType: link.relationship_type,
       relationshipTypeLabel: getRelationshipTypeName(link.relationship_type),
@@ -91,6 +105,8 @@ export async function GET(
       createdAt: link.created_at,
       direction: 'incoming',
       organizationName: link.activities?.created_by_org_name,
+      organizationAcronym: link.activities?.created_by_org_acronym,
+      icon: link.activities?.icon,
       status: link.activities?.activity_status
     }));
 

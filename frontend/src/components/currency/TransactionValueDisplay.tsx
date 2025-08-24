@@ -211,7 +211,7 @@ export function TransactionValueDisplay({
   if (variant === 'usd-only' && conversionData.usd_amount !== null) {
     return (
       <div className="flex items-center space-x-2">
-        <DollarSign className={monotone ? "h-4 w-4 text-foreground" : "h-4 w-4 text-green-600"} />
+        {!monotone && <DollarSign className="h-4 w-4 text-green-600" />}
         <span className={monotone ? "font-medium text-foreground" : "font-medium text-green-600"}>
           {formatCurrency(conversionData.usd_amount, 'USD')}
         </span>
@@ -271,7 +271,7 @@ export function TransactionValueDisplay({
       {/* USD Value */}
       {conversionData.usd_amount !== null && conversionData.usd_amount !== transaction.value && (
         <div className="flex items-center space-x-2">
-          <DollarSign className={monotone ? "h-4 w-4 text-foreground" : "h-4 w-4 text-green-600"} />
+          {!monotone && <DollarSign className="h-4 w-4 text-green-600" />}
           <span className={monotone ? "text-lg font-semibold text-foreground" : "text-lg font-semibold text-green-600"}>
             {formatCurrency(conversionData.usd_amount, 'USD')}
           </span>

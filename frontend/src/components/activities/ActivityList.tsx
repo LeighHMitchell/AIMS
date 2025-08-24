@@ -30,7 +30,8 @@ interface Activity {
   default_finance_type?: string;
   default_flow_type?: string;
   default_tied_status?: string;
-  default_modality?: string;
+  default_aid_modality?: string;
+  default_aid_modality_override?: boolean;
   // Financial and reporting fields
   created_by_org_name?: string;
   totalBudget?: number;

@@ -22,6 +22,7 @@ import { DefaultFieldsAutosave } from '@/components/forms/DefaultFieldsAutosave'
 import { useUser } from '@/hooks/useUser';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { Loader2 } from 'lucide-react';
+import { areAllDefaultFieldsCompleted } from '@/utils/defaultFieldsValidation';
 
 interface FinancesSectionProps {
   activityId?: string;
@@ -34,9 +35,11 @@ interface FinancesSectionProps {
   defaultFlowType?: string;
   defaultCurrency?: string;
   defaultTiedStatus?: string;
+  defaultDisbursementChannel?: string;
   onDefaultsChange?: (field: string, value: string) => void;
   defaults?: {
     default_modality?: string;
+    default_aid_modality?: string;
   };
   tabCompletionStatus?: Record<string, { isComplete: boolean }>;
 }
@@ -327,6 +330,7 @@ export default function FinancesSection({
   defaultFlowType,
   defaultCurrency,
   defaultTiedStatus,
+  defaultDisbursementChannel,
   onDefaultsChange = () => {},
   defaults,
   tabCompletionStatus
@@ -338,6 +342,17 @@ export default function FinancesSection({
   const [chartData, setChartData] = useState<{ trendData: any[]; cumulativeData: any[] } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if all default fields are completed
+  const allDefaultsCompleted = areAllDefaultFieldsCompleted({
+    defaultAidType,
+    defaultFinanceType,
+    defaultFlowType,
+    defaultCurrency,
+    defaultTiedStatus,
+    default_aid_modality: defaults?.default_aid_modality,
+    defaultDisbursementChannel,
+  });
 
   // Helper function to safely format dates
   const formatDate = (dateStr: string) => {
@@ -591,8 +606,8 @@ export default function FinancesSection({
           <TabsTrigger value="linked-transactions">Linked Transactions</TabsTrigger>
           <TabsTrigger value="defaults" className="flex items-center gap-2">
             Defaults
-            {/* Only show checkmark if finances_defaults is complete, passed as a prop if needed */}
-            {tabCompletionStatus?.finances_defaults?.isComplete && (
+            {/* Show checkmark if all default fields are completed */}
+            {allDefaultsCompleted && (
               <CheckCircle className="h-4 w-4 text-green-500" />
             )}
           </TabsTrigger>
@@ -610,6 +625,7 @@ export default function FinancesSection({
             defaultCurrency={defaultCurrency}
             defaultTiedStatus={defaultTiedStatus}
             defaultFlowType={defaultFlowType}
+            defaultDisbursementChannel={defaultDisbursementChannel}
           />
           {/* Move toggles here: below transaction list, above charts */}
           <div className="flex flex-wrap gap-4 items-center mb-4 mt-4">
@@ -783,6 +799,7 @@ export default function FinancesSection({
                 defaultFlowType,
                 defaultCurrency,
                 defaultTiedStatus,
+                defaultDisbursementChannel,
               }}
               onDefaultsChange={onDefaultsChange}
             />

@@ -94,6 +94,12 @@ import FocalPointsTab from "@/components/activities/FocalPointsTab";
 import { DocumentsAndImagesTabInline } from "@/components/activities/DocumentsAndImagesTabInline";
 import { IatiDocumentLink } from "@/lib/iatiDocumentLink";
 
+// Utility function to format date without timezone conversion
+const formatDateToString = (date: Date | null): string => {
+  if (!date) return '';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
 // Separate component for General section to properly use hooks
 function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState }: any) {
   const hasShownInitialToast = useRef(false);
@@ -905,7 +911,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               value={general.plannedStartDate ? new Date(general.plannedStartDate + 'T00:00:00') : undefined}
               onChange={(date) => {
                 if (!fieldLockStatus.isLocked) {
-                  const dateString = date ? date.toISOString().split('T')[0] : '';
+                  const dateString = formatDateToString(date);
                   setGeneral((g: any) => ({ ...g, plannedStartDate: dateString }));
                   plannedStartDateAutosave.triggerFieldSave(dateString);
                 }
@@ -946,7 +952,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               value={general.plannedEndDate ? new Date(general.plannedEndDate + 'T00:00:00') : undefined}
               onChange={(date) => {
                 if (!fieldLockStatus.isLocked) {
-                  const dateString = date ? date.toISOString().split('T')[0] : '';
+                  const dateString = formatDateToString(date);
                   setGeneral((g: any) => ({ ...g, plannedEndDate: dateString }));
                   plannedEndDateAutosave.triggerFieldSave(dateString);
                 }
@@ -987,7 +993,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               value={general.actualStartDate ? new Date(general.actualStartDate + 'T00:00:00') : undefined}
               onChange={(date) => {
                 if (!fieldLockStatus.isLocked && getDateFieldStatus().actualStartDate) {
-                  const dateString = date ? date.toISOString().split('T')[0] : '';
+                  const dateString = formatDateToString(date);
                   setGeneral((g: any) => ({ ...g, actualStartDate: dateString }));
                   actualStartDateAutosave.triggerFieldSave(dateString);
                 }
@@ -1028,7 +1034,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               value={general.actualEndDate ? new Date(general.actualEndDate + 'T00:00:00') : undefined}
               onChange={(date) => {
                 if (!fieldLockStatus.isLocked && getDateFieldStatus().actualEndDate) {
-                  const dateString = date ? date.toISOString().split('T')[0] : '';
+                  const dateString = formatDateToString(date);
                   setGeneral((g: any) => ({ ...g, actualEndDate: dateString }));
                   actualEndDateAutosave.triggerFieldSave(dateString);
                 }
@@ -1083,12 +1089,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "sectors":
       return (
         <div className="w-full">
-          <h3 className="text-xl font-semibold text-gray-900">Sectors</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Assign sectors to this activity and allocate percentage shares to show how the budget is distributed.
-          </p>
-          <div className="mt-6">
-            <ImprovedSectorAllocationForm
+          <ImprovedSectorAllocationForm
               allocations={sectors}
               onChange={(newSectors) => {
                 console.log('🎯 [AIMS] === SECTORS CHANGED IN FORM ===');
@@ -1099,7 +1100,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
               onValidationChange={setSectorValidation}
               activityId={general.id}
             />
-          </div>
         </div>
       );
     case "contributors":
@@ -1159,6 +1159,10 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         defaultFlowType={general.defaultFlowType}
         defaultCurrency={general.defaultCurrency}
         defaultTiedStatus={general.defaultTiedStatus}
+        defaultDisbursementChannel={general.defaultDisbursementChannel}
+        defaults={{
+          default_aid_modality: general.default_aid_modality
+        }}
         onDefaultsChange={(field, value) => {
           console.log('[AIMS DEBUG] Default field changed:', field, '=', value);
           console.log('[AIMS DEBUG] Current general.id:', general.id);
@@ -1285,6 +1289,7 @@ function NewActivityPageContent() {
     partnerId: "",
     iatiId: "",
     title: "",
+    acronym: "",
     description: "",
     created_by_org_name: "",
     created_by_org_acronym: "",
@@ -1295,6 +1300,8 @@ function NewActivityPageContent() {
     defaultCurrency: "",
     defaultFlowType: "",
     defaultTiedStatus: "",
+    defaultDisbursementChannel: "",
+    default_aid_modality: "",
     publicationStatus: "draft",
     submissionStatus: "draft" as 'draft' | 'submitted' | 'validated' | 'rejected' | 'published',
     submittedBy: "",
@@ -1674,6 +1681,7 @@ function NewActivityPageContent() {
             partnerId: data.partnerId || "",
             iatiId: data.iatiId || "",
             title: data.title || "",
+            acronym: data.acronym || "",
             description: data.description || "",
             created_by_org_name: data.created_by_org_name || "",
             created_by_org_acronym: data.created_by_org_acronym || "",
@@ -1684,6 +1692,8 @@ function NewActivityPageContent() {
             defaultCurrency: data.defaultCurrency || "",
             defaultFlowType: data.defaultFlowType || "",
             defaultTiedStatus: data.defaultTiedStatus || "",
+            defaultDisbursementChannel: data.defaultDisbursementChannel || "",
+            default_aid_modality: data.default_aid_modality || "",
             publicationStatus: data.publicationStatus || "draft",
             submissionStatus: data.submissionStatus || "draft",
             submittedBy: data.submittedBy || "",
@@ -1866,7 +1876,7 @@ function NewActivityPageContent() {
       locations: "Activity Locations",
       subnational_breakdown: "Subnational Breakdown",
       organisations: "Organisations",
-      contributors: "Contributors",
+      contributors: "Activity Contributors",
       contacts: "Contacts",
       focal_points: "Focal Points",
       linked_activities: "Linked Activities",
@@ -1883,6 +1893,21 @@ function NewActivityPageContent() {
       "planned-disbursements": "Planned Disbursements"
     };
     return sectionLabels[sectionId] || sectionId;
+  };
+
+  const getSectionHelpText = (sectionId: string): string => {
+    const sectionHelpTexts: Record<string, string> = {
+      general: "This tab brings together the core details that define the activity, including its identifiers, title, description, imagery, collaboration type, status, and dates. Completing this section establishes the basic profile of the activity and provides a clear reference point for all other information entered elsewhere.",
+      iati: "This tab controls synchronisation with the IATI Registry and Datastore. Enabling sync ensures that updates made to the activity in this system are reflected in your published IATI file, maintaining consistency between internal records and the official public dataset.",
+      locations: "This tab records where the activity takes place. You can add locations using the map or by entering coordinates manually. Each location can include a name, type, address, and description, along with subnational breakdowns. These details establish the geographic footprint of the activity and allow analysis at the national, regional, or project-site level.",
+      sectors: "This tab defines the focus areas of the activity. You select sub-sectors, and the system automatically links each choice to its corresponding sector and sector category. You can assign multiple sub-sectors and use percentage shares to show how the activity budget is divided. The allocations must add up to 100 percent, and a visual summary displays the distribution.",
+      organisations: "This tab records the official roles of organisations involved in the activity. Participating organisations may be listed as extending partners, implementing partners, or government partners. Extending partners are entities that channel funds onward, implementing partners are responsible for delivering the activity, and government partners provide oversight or maintain responsibility under agreements such as MoUs. These roles define the structure of participation for reporting, while data entry permissions are managed separately in the Contributors tab.",
+              contributors: "The Contributors tab identifies organisations that are permitted to add or update information within the activity record. Contributors can enter their own financial transactions, results, and implementation details, but this does not alter their formal role in the activity, which is defined in the Organisations tab. Each contributor sees and manages only their own entries, while the activity creator and designated government validators retain visibility across all contributions.",
+      contacts: "The Contacts tab records key individuals associated with the activity, including their name, role, organisation, and contact details. It can also include a short narrative description of their responsibilities or function within the project. Adding contacts helps identify focal points for communication and coordination, while multiple entries allow both general enquiries and specific role-based contacts to be captured.",
+      "focal_points": "The Focal Points tab designates the individuals accountable for maintaining and validating the activity record. Recipient government focal points are officials who review or endorse the activity, while development partner focal points are the main contacts responsible for updating and managing the information on behalf of their organisations. Assigning focal points ensures clarity on who is responsible for the accuracy and upkeep of the record.",
+      "linked_activities": "The Linked Activities tab shows connections between this activity and others, defined through recognised relationship types such as parent, child, or related projects. Each linked activity is displayed with its title, identifier, and reporting organisation, along with its relationship to the current activity. A relationship visualisation provides a clear overview of how activities are structured and connected across partners."
+    };
+    return sectionHelpTexts[sectionId] || "Complete this section to provide additional details about your activity.";
   };
 
   // Get permissions for current activity
@@ -2413,6 +2438,7 @@ function NewActivityPageContent() {
           partnerId: data.partnerId || "",
           iatiId: data.iatiId || "",
           title: data.title || "",
+          acronym: data.acronym || "",
           description: data.description || "",
           created_by_org_name: data.created_by_org_name || "",
           created_by_org_acronym: data.created_by_org_acronym || "",
@@ -2423,6 +2449,8 @@ function NewActivityPageContent() {
           defaultCurrency: data.defaultCurrency || "",
           defaultFlowType: data.defaultFlowType || "",
           defaultTiedStatus: data.defaultTiedStatus || "",
+          defaultDisbursementChannel: data.defaultDisbursementChannel || "",
+          default_aid_modality: data.default_aid_modality || "",
           publicationStatus: data.publicationStatus || "draft",
           submissionStatus: data.submissionStatus || "draft",
           submittedBy: data.submittedBy || "",
@@ -2921,7 +2949,7 @@ function NewActivityPageContent() {
             <section>
               <div className="flex items-center gap-3 mb-6">
                 <h2 className="text-2xl font-semibold">{getSectionLabel(activeSection)}</h2>
-                <HelpTextTooltip content="Minimum required for publishing: Activity Title, Description, Activity Status, Planned Start Date, and Planned End Date. Complete these basic fields to enable the publish option.">
+                <HelpTextTooltip content={getSectionHelpText(activeSection)}>
                   <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
                 </HelpTextTooltip>
               </div>

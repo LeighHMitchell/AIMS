@@ -76,14 +76,14 @@ interface GroupData {
 }
 
 interface SummaryData {
-  groups: GroupData[];
+  predefinedGroups: GroupData[];
+  customGroups: GroupData[];
   totalOrganizations: number;
   totalActiveProjects: number;
   totalAmount: number;
   customGroupsCount: number;
   lastUpdated: string;
   transactionType: string;
-  groupBy: string;
 }
 
 export default function PartnersPage() {
@@ -97,7 +97,7 @@ export default function PartnersPage() {
   
   // UI state
   const [searchTerm, setSearchTerm] = useState("");
-  const [transactionType, setTransactionType] = useState<'C' | 'D'>('C'); // C = Commitments, D = Disbursements
+  const [transactionType, setTransactionType] = useState<'C' | 'D'>('D'); // C = Commitments, D = Disbursements
   const [groupBy, setGroupBy] = useState<'type' | 'custom'>('type');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>('name');
@@ -113,21 +113,39 @@ export default function PartnersPage() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(
-        `/api/partners/summary?groupBy=${groupBy}&transactionType=${transactionType}&_t=${Date.now()}`,
-        { cache: 'no-store' }
-      );
+      // Fetch both predefined and custom groups in parallel
+      const [predefinedResponse, customResponse] = await Promise.all([
+        fetch(`/api/partners/summary?groupBy=type&transactionType=${transactionType}&_t=${Date.now()}`, { cache: 'no-store' }),
+        fetch(`/api/partners/summary?groupBy=custom&transactionType=${transactionType}&_t=${Date.now()}`, { cache: 'no-store' })
+      ]);
       
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      if (!predefinedResponse.ok || !customResponse.ok) {
+        throw new Error(`API Error: ${predefinedResponse.status} or ${customResponse.status}`);
       }
       
-      const data = await response.json();
-      setSummaryData(data);
+      const [predefinedData, customData] = await Promise.all([
+        predefinedResponse.json(),
+        customResponse.json()
+      ]);
       
-      // Auto-expand all groups initially
-      if (data.groups) {
-        setExpandedGroups(new Set(data.groups.map((g: GroupData) => g.id)));
+      // Combine the data
+      const combinedData: SummaryData = {
+        predefinedGroups: predefinedData.groups || [],
+        customGroups: customData.groups || [],
+        totalOrganizations: predefinedData.totalOrganizations || 0,
+        totalActiveProjects: predefinedData.totalActiveProjects || 0,
+        totalAmount: predefinedData.totalAmount || 0,
+        customGroupsCount: customData.customGroupsCount || customData.groups?.length || 0,
+        lastUpdated: predefinedData.lastUpdated || new Date().toISOString(),
+        transactionType: predefinedData.transactionType || transactionType
+      };
+      
+      setSummaryData(combinedData);
+      
+      // Auto-expand predefined groups only, keep custom groups collapsed
+      if (combinedData.predefinedGroups) {
+        const predefinedGroupIds = combinedData.predefinedGroups.map((g: GroupData) => g.id);
+        setExpandedGroups(new Set(predefinedGroupIds));
       }
     } catch (err) {
       console.error('Error fetching summary data:', err);
@@ -142,7 +160,7 @@ export default function PartnersPage() {
     // Clear organization activities cache when transaction type changes
     setOrgActivities({});
     setExpandedOrgs(new Set());
-  }, [transactionType, groupBy]);
+  }, [transactionType]); // Remove groupBy dependency since we load both types
 
   // Toggle group expansion
   const toggleGroup = (groupId: string) => {
@@ -256,23 +274,23 @@ export default function PartnersPage() {
   // Calculate metrics
   const bilateralPartnersCount = useMemo(() => {
     if (!summaryData) return 0;
-    return summaryData.groups
-      .filter(g => g.id === 'bilateral')
-      .reduce((sum, g) => sum + g.totalOrganizations, 0);
+    return summaryData.predefinedGroups
+      .filter((g: GroupData) => g.id === 'bilateral')
+      .reduce((sum: number, g: GroupData) => sum + g.totalOrganizations, 0);
   }, [summaryData]);
 
   const multilateralPartnersCount = useMemo(() => {
     if (!summaryData) return 0;
-    return summaryData.groups
-      .filter(g => g.id === 'multilateral')
-      .reduce((sum, g) => sum + g.totalOrganizations, 0);
+    return summaryData.predefinedGroups
+      .filter((g: GroupData) => g.id === 'multilateral')
+      .reduce((sum: number, g: GroupData) => sum + g.totalOrganizations, 0);
   }, [summaryData]);
 
   const otherPartnersCount = useMemo(() => {
     if (!summaryData) return 0;
-    return summaryData.groups
-      .filter(g => g.id === 'other')
-      .reduce((sum, g) => sum + g.totalOrganizations, 0);
+    return summaryData.predefinedGroups
+      .filter((g: GroupData) => g.id === 'other')
+      .reduce((sum: number, g: GroupData) => sum + g.totalOrganizations, 0);
   }, [summaryData]);
 
   const customGroupsCount = useMemo(() => {
@@ -284,8 +302,9 @@ export default function PartnersPage() {
   const exportToCSV = () => {
     if (!summaryData) return;
     
-    const allOrganizations = summaryData.groups.flatMap(group => 
-      group.organizations.map(org => ({
+    const allGroups = [...summaryData.predefinedGroups, ...summaryData.customGroups];
+    const allOrganizations = allGroups.flatMap((group: GroupData) => 
+      group.organizations.map((org: OrganizationMetrics) => ({
         'Group': group.name,
         'Organization Name': org.name,
         'Full Name': org.fullName,
@@ -580,7 +599,9 @@ export default function PartnersPage() {
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    const allGroupIds = summaryData.groups.map(g => g.id);
+                    const predefinedIds = summaryData.predefinedGroups.map((g: GroupData) => g.id);
+                    const customIds = summaryData.customGroups.map((g: GroupData) => g.id);
+                    const allGroupIds = [...predefinedIds, ...customIds];
                     setExpandedGroups(new Set(allGroupIds));
                   }}
                 >
@@ -598,7 +619,7 @@ export default function PartnersPage() {
 
             <TabsContent value="type">
               <div className="space-y-4">
-                {summaryData.groups.map((group) => {
+                {summaryData.predefinedGroups.map((group: GroupData) => {
                   const isExpanded = expandedGroups.has(group.id);
                   const filteredOrgs = filterOrganizations(group.organizations);
                   const sortedOrgs = sortOrganizations(filteredOrgs);
@@ -734,7 +755,7 @@ export default function PartnersPage() {
 
             <TabsContent value="custom">
               <div className="space-y-4">
-                {summaryData.groups.length === 0 ? (
+                {summaryData.customGroups.length === 0 ? (
                   <Card className="bg-white border border-gray-200">
                     <CardContent className="py-12 text-center">
                       <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -749,7 +770,7 @@ export default function PartnersPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  summaryData.groups.filter(g => g.type === 'custom').map((group) => {
+                  summaryData.customGroups.map((group: GroupData) => {
                     const isExpanded = expandedGroups.has(group.id);
                     const filteredOrgs = filterOrganizations(group.organizations);
                     const sortedOrgs = sortOrganizations(filteredOrgs);

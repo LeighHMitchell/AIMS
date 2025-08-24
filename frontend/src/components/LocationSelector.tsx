@@ -200,21 +200,27 @@ const MYANMAR_GEOJSON = {
 function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
   if (typeof window === 'undefined' || !useMapEventsHook) return null;
   
-  const map = useMapEventsHook({
-    click(e: any) {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
+  try {
+    const map = useMapEventsHook({
+      click(e: any) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      },
+    });
+    return null;
+  } catch (error) {
+    console.warn('MapEvents hook failed:', error);
+    return null;
+  }
 }
 
 // Heat map component for location density visualization
 function HeatMapLayer({ locations }: { locations: Location[] }) {
   if (typeof window === 'undefined' || !useMap) return null;
   
-  const map = useMap();
-  
-  React.useEffect(() => {
+  try {
+    const map = useMap();
+    
+    React.useEffect(() => {
     if (!map || typeof window === 'undefined' || !L || !L.heatLayer) return;
     
     const validLocations = locations.filter(loc => loc.latitude && loc.longitude);
@@ -255,8 +261,12 @@ function HeatMapLayer({ locations }: { locations: Location[] }) {
       }
     };
   }, [map, locations]);
-  
-  return null;
+    
+    return null;
+  } catch (error) {
+    console.warn('HeatMapLayer hook failed:', error);
+    return null;
+  }
 }
 
 // Map thumbnail component

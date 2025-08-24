@@ -14,6 +14,7 @@ import {
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +33,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { OrganizationCombobox, type Organization } from "@/components/ui/organization-combobox";
+import { OrganizationSearchableSelect } from "@/components/ui/organization-searchable-select";
+import { type Organization } from "@/components/ui/organization-combobox";
 import { usePartners } from "@/hooks/usePartners";
 import { useIATIReferenceValues } from "@/hooks/useIATIReferenceValues";
 import { useUser } from "@/hooks/useUser";
@@ -66,6 +68,7 @@ import { TiedStatusSelect } from '@/components/forms/TiedStatusSelect';
 import { Switch } from '@/components/ui/switch';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { useTransactionFieldAutosave } from '@/hooks/use-transaction-field-autosave';
+import { IATI_FIELD_HELP } from '@/components/ActivityFieldHelpers';
 // Remove lodash import (not used)
 // import { uniqBy } from 'lodash';
 
@@ -375,13 +378,17 @@ export default function TransactionModal({
   
   // Document upload state
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
+  
+  // Add state to track if transaction is created (moved here to fix temporal dead zone)
+  const [createdTransactionId, setCreatedTransactionId] = useState<string | null>(() => transaction?.id || null);
 
-  // Load existing documents when editing
+  // Load existing documents when editing or when a transaction is created
   useEffect(() => {
-    if (isEditing && (transaction?.uuid || transaction?.id) && open) {
+    const transactionId = transaction?.uuid || transaction?.id || createdTransactionId;
+    if (transactionId && open) {
       const fetchDocuments = async () => {
         try {
-          const response = await fetch(`/api/transactions/documents?transactionId=${transaction.uuid || transaction.id}`);
+          const response = await fetch(`/api/transactions/documents?transactionId=${transactionId}`);
           if (response.ok) {
             const data = await response.json();
             setDocuments(data.documents || []);
@@ -395,62 +402,73 @@ export default function TransactionModal({
       // Reset documents when modal closes
       setDocuments([]);
     }
-  }, [isEditing, transaction?.id, open]);
+  }, [transaction?.uuid, transaction?.id, createdTransactionId, open]);
 
-  // Transform partners to organizations format for OrganizationCombobox
+  // Transform partners to organizations format for OrganizationSearchableSelect
   const organizations: Organization[] = React.useMemo(() => {
-    return partners.map(partner => ({
+    const orgs = partners.map(partner => ({
       id: partner.id,
       name: partner.fullName || partner.name || '',
       acronym: partner.acronym,
       iati_org_id: partner.iatiOrgId,
       type: partner.type,
-      country: partner.countryRepresented
+      country: partner.countryRepresented,
+      logo: partner.logo // Include logo field for displaying organization logos
     }));
+    
+    return orgs;
   }, [partners]);
 
-  // Form state with all IATI fields
-  const [formData, setFormData] = useState<Partial<Transaction>>({
-    // Core fields
-    transaction_type: transaction?.transaction_type || '3',
-    transaction_date: transaction?.transaction_date || format(new Date(), "yyyy-MM-dd"),
-    value: transaction?.value || 0,
-    currency: transaction?.currency || defaultCurrency || 'USD',
-    status: transaction?.status || 'draft',
+  // Form state with all IATI fields - using lazy initializer with safe defaults
+  const [formData, setFormData] = useState<Partial<Transaction>>(() => {
+    const safeDefaultCurrency = defaultCurrency || 'USD';
+    const safeDefaultFlowType = defaultFlowType || undefined;
+    const safeDefaultFinanceType = defaultFinanceType || undefined;
+    const safeDefaultAidType = defaultAidType || undefined;
+    const safeDefaultTiedStatus = defaultTiedStatus || undefined;
     
-    // Optional core fields
-    transaction_reference: transaction?.transaction_reference || '',
-    value_date: transaction?.value_date || '',
-    description: transaction?.description || '',
-    
-    // Provider organization
-    provider_org_id: transaction?.provider_org_id || undefined,
-    provider_org_type: transaction?.provider_org_type || undefined,
-    provider_org_ref: transaction?.provider_org_ref || '',
-    provider_org_name: transaction?.provider_org_name || '',
-    
-    // Receiver organization
-    receiver_org_id: transaction?.receiver_org_id || undefined,
-    receiver_org_type: transaction?.receiver_org_type || undefined,
-    receiver_org_ref: transaction?.receiver_org_ref || '',
-    receiver_org_name: transaction?.receiver_org_name || '',
-    
-    // Classifications - Use activity defaults when creating new transactions
-    disbursement_channel: transaction?.disbursement_channel || undefined,
-    flow_type: transaction?.flow_type || (defaultFlowType as FlowType) || undefined,
-    finance_type: transaction?.finance_type || (defaultFinanceType as FinanceType) || undefined,
-    aid_type: transaction?.aid_type || defaultAidType || undefined,
-    tied_status: transaction?.tied_status || (defaultTiedStatus as TiedStatus) || undefined,
-    
-    // Sector & Geography
-    sector_code: transaction?.sector_code || '',
-    sector_vocabulary: transaction?.sector_vocabulary || undefined,
-    recipient_country_code: transaction?.recipient_country_code || '',
-    recipient_region_code: transaction?.recipient_region_code || '',
-    recipient_region_vocab: transaction?.recipient_region_vocab || undefined,
-    
-    // Other
-    is_humanitarian: transaction?.is_humanitarian || false,
+    return {
+      // Core fields
+      transaction_type: transaction?.transaction_type || '3',
+      transaction_date: transaction?.transaction_date || format(new Date(), "yyyy-MM-dd"),
+      value: transaction?.value || 0,
+      currency: transaction?.currency || safeDefaultCurrency,
+      status: transaction?.status || 'draft',
+      
+      // Optional core fields
+      transaction_reference: transaction?.transaction_reference || '',
+      value_date: transaction?.value_date || '',
+      description: transaction?.description || '',
+      
+      // Provider organization
+      provider_org_id: transaction?.provider_org_id || undefined,
+      provider_org_type: transaction?.provider_org_type || undefined,
+      provider_org_ref: transaction?.provider_org_ref || '',
+      provider_org_name: transaction?.provider_org_name || '',
+      
+      // Receiver organization
+      receiver_org_id: transaction?.receiver_org_id || undefined,
+      receiver_org_type: transaction?.receiver_org_type || undefined,
+      receiver_org_ref: transaction?.receiver_org_ref || '',
+      receiver_org_name: transaction?.receiver_org_name || '',
+      
+      // Classifications - Use activity defaults when creating new transactions
+      disbursement_channel: transaction?.disbursement_channel || undefined,
+      flow_type: transaction?.flow_type || (safeDefaultFlowType as FlowType) || undefined,
+      finance_type: transaction?.finance_type || (safeDefaultFinanceType as FinanceType) || undefined,
+      aid_type: transaction?.aid_type || safeDefaultAidType || undefined,
+      tied_status: transaction?.tied_status || (safeDefaultTiedStatus as TiedStatus) || undefined,
+      
+      // Sector & Geography
+      sector_code: transaction?.sector_code || '',
+      sector_vocabulary: transaction?.sector_vocabulary || undefined,
+      recipient_country_code: transaction?.recipient_country_code || '',
+      recipient_region_code: transaction?.recipient_region_code || '',
+      recipient_region_vocab: transaction?.recipient_region_vocab || undefined,
+      
+      // Other
+      is_humanitarian: transaction?.is_humanitarian || false,
+    };
   });
 
   // Initialize showValueDate based on whether value_date exists and is different
@@ -460,59 +478,25 @@ export default function TransactionModal({
     }
   }, [transaction]);
 
-  // Add missing transaction field autosave hook
-  const useTransactionFieldAutosave = (config: any) => ({
-    isSaving: false,
-    isSaved: false,
-    triggerFieldSave: (value: any) => {
-      // Implementation for field-level autosave
-      console.log('[TransactionModal] Field autosave triggered:', config.fieldName, value);
-    }
-  });
-
-  // Autosave hooks for key fields
+  // Autosave hooks temporarily disabled for debugging
   const transactionId = transaction?.uuid || transaction?.id || '';
-  const currencyAutosave = useTransactionFieldAutosave({
-    transactionId,
-    fieldName: 'currency',
-    userId: user?.id,
-    initialValue: formData.currency,
-    debounceMs: 1000
-  });
-  const financeTypeAutosave = useTransactionFieldAutosave({
-    transactionId,
-    fieldName: 'finance_type',
-    userId: user?.id,
-    initialValue: formData.finance_type,
-    debounceMs: 1000
-  });
-  const aidTypeAutosave = useTransactionFieldAutosave({
-    transactionId,
-    fieldName: 'aid_type',
-    userId: user?.id,
-    initialValue: formData.aid_type,
-    debounceMs: 1000
-  });
-  const tiedStatusAutosave = useTransactionFieldAutosave({
-    transactionId,
-    fieldName: 'tied_status',
-    userId: user?.id,
-    initialValue: formData.tied_status,
-    debounceMs: 1000
-  });
-  const flowTypeAutosave = useTransactionFieldAutosave({
-    transactionId,
-    fieldName: 'flow_type',
-    userId: user?.id,
-    initialValue: formData.flow_type,
-    debounceMs: 1000
-  });
+  const currencyAutosave = { isSaving: false, isSaved: false, triggerFieldSave: () => {} };
+  const financeTypeAutosave = { isSaving: false, isSaved: false, triggerFieldSave: () => {} };
+  const aidTypeAutosave = { isSaving: false, isSaved: false, triggerFieldSave: () => {} };
+  const tiedStatusAutosave = { isSaving: false, isSaved: false, triggerFieldSave: () => {} };
+  const flowTypeAutosave = { isSaving: false, isSaved: false, triggerFieldSave: () => {} };
+
+
+
+
 
   // Compute classification when relevant fields change
   useEffect(() => {
-    const classification = classifyFinance(formData.flow_type, formData.aid_type, formData.finance_type);
-    setComputedClassification(classification);
-  }, [formData.flow_type, formData.aid_type, formData.finance_type]);
+    if (formData) {
+      const classification = classifyFinance(formData.flow_type, formData.aid_type, formData.finance_type);
+      setComputedClassification(classification);
+    }
+  }, [formData?.flow_type, formData?.aid_type, formData?.finance_type]);
 
   // Update form data when transaction prop changes OR when defaults change
   useEffect(() => {
@@ -642,7 +626,7 @@ export default function TransactionModal({
     if (data.transaction_reference) {
       // Check for duplicate reference (case-insensitive)
       const ref = data.transaction_reference.trim().toLowerCase();
-      if (allTransactionReferences.filter(r => r && r.trim().toLowerCase() === ref).length > (isEditing ? 1 : 0)) {
+      if (allTransactionReferences && allTransactionReferences.filter(r => r && r.trim().toLowerCase() === ref).length > (isEditing ? 1 : 0)) {
         return 'Transaction reference must be unique.';
       }
     }
@@ -681,7 +665,7 @@ export default function TransactionModal({
     // Check for duplicate transaction reference in the current list (frontend validation)
     if (submissionData.transaction_reference) {
       const ref = submissionData.transaction_reference.trim().toLowerCase();
-      const isDuplicate = allTransactionReferences.filter(r => r && r.trim().toLowerCase() === ref).length > (createdTransactionId || (isEditing && transaction?.id) ? 1 : 0);
+      const isDuplicate = allTransactionReferences && allTransactionReferences.filter(r => r && r.trim().toLowerCase() === ref).length > (createdTransactionId || (isEditing && transaction?.id) ? 1 : 0);
       if (isDuplicate) {
         showValidationError('Transaction reference must be unique.', {
           isDuplicateReference: true,
@@ -792,12 +776,7 @@ export default function TransactionModal({
     </div>
   );
 
-  const TransactionDocumentUpload = ({ transactionId, activityId, documents, onDocumentsChange, disabled, maxFiles, maxFileSize }: any) => (
-    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-      <p className="text-sm text-gray-500">Document upload component would go here</p>
-      <p className="text-xs text-gray-400">Transaction ID: {transactionId}</p>
-    </div>
-  );
+
 
   // Add missing handler for internal submission
   const handleInternalSubmit = async () => {
@@ -925,8 +904,7 @@ export default function TransactionModal({
   // Add required fields array
   const REQUIRED_FIELDS = ['transaction_type', 'transaction_date', 'value', 'currency', 'activity_id'];
 
-  // Add state to track if transaction is created
-  const [createdTransactionId, setCreatedTransactionId] = useState<string | null>(transaction?.id || null);
+
   const [pendingFields, setPendingFields] = useState<Partial<Transaction>>({});
   const [creationError, setCreationError] = useState<string | null>(null);
 
@@ -957,8 +935,8 @@ export default function TransactionModal({
   const abortControllerRef = React.useRef<AbortController | null>(null);
   const isCreatingRef = React.useRef(false);
 
-  // Move useDebouncedCallback definition above its first usage
-  function useDebouncedCallback(callback: (...args: any[]) => void, delay: number) {
+  // Helper function to create debounced callbacks - defined before first usage
+  const useDebouncedCallback = React.useCallback((callback: (...args: any[]) => void, delay: number) => {
     const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
     
     // Cleanup function
@@ -980,7 +958,7 @@ export default function TransactionModal({
     }, [cleanup]);
     
     return debouncedFn;
-  }
+  }, []);
 
   // Debounced autosave for creating transaction - WITH REQUEST DEDUPLICATION
   const debouncedCreateTransaction = useDebouncedCallback(async (data: Partial<Transaction>) => {
@@ -1331,7 +1309,7 @@ export default function TransactionModal({
                     isSaved={currencyAutosave.isSaved}
                   >
                     Currency
-                    <InfoTooltip text="Currency of the transaction value" />
+                    <InfoTooltip text={IATI_FIELD_HELP.currency} />
                   </LabelSaveIndicator>
                   <CurrencySelector
                     value={formData.currency || undefined}
@@ -1416,12 +1394,12 @@ export default function TransactionModal({
             <div className="space-y-4">
               <SectionHeader title="Parties Involved" />
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-6">
                 {/* Provider Organization */}
                 <div className="space-y-4 border rounded-lg p-6">
                   <h4 className="font-medium text-gray-900">Provider Organization</h4>
                   <div className="space-y-3">
-                    <OrganizationCombobox
+                    <OrganizationSearchableSelect
                       organizations={organizations}
                       value={formData.provider_org_id || ''}
                       onValueChange={(v) => {
@@ -1451,7 +1429,7 @@ export default function TransactionModal({
                 <div className="space-y-4 border rounded-lg p-6">
                   <h4 className="font-medium text-gray-900">Receiver Organization</h4>
                   <div className="space-y-3">
-                    <OrganizationCombobox
+                    <OrganizationSearchableSelect
                       organizations={organizations}
                       value={formData.receiver_org_id || ''}
                       onValueChange={(v) => {
@@ -1506,7 +1484,7 @@ export default function TransactionModal({
                     isSaved={aidTypeAutosave.isSaved}
                   >
                     Aid Type
-                    <InfoTooltip text="IATI aid type classification" />
+                    <InfoTooltip text={IATI_FIELD_HELP.aidType} />
                   </LabelSaveIndicator>
                   <AidTypeSelect
                     value={formData.aid_type || undefined}
@@ -1572,7 +1550,7 @@ export default function TransactionModal({
                     isSaved={tiedStatusAutosave.isSaved}
                   >
                     Tied Status
-                    <InfoTooltip text="Procurement restrictions on the aid" />
+                    <InfoTooltip text={IATI_FIELD_HELP.tiedStatus} />
                   </LabelSaveIndicator>
                   <TiedStatusSelect
                     value={(formData.tied_status as any) as string | undefined}
@@ -1716,7 +1694,7 @@ export default function TransactionModal({
                 Upload receipts, invoices, contracts, or other evidence to support this transaction. 
                 You can also add links to documents hosted elsewhere.
               </div>
-              {!createdTransactionId ? (
+              {!(createdTransactionId || (isEditing && (transaction?.uuid || transaction?.id))) ? (
                 <div className="text-sm text-gray-500 bg-amber-50 border border-amber-200 rounded p-3 my-2">
                   You must complete the required fields before uploading documents.<br />
                   <strong>Required:</strong> Transaction Type, Date, Value, Currency, Activity ID.<br />
@@ -1724,7 +1702,7 @@ export default function TransactionModal({
                 </div>
               ) : (
                 <TransactionDocumentUpload
-                  transactionId={createdTransactionId}
+                  transactionId={createdTransactionId || transaction?.uuid || transaction?.id}
                   activityId={activityId}
                   documents={documents}
                   onDocumentsChange={setDocuments}

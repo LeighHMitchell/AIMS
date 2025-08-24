@@ -97,7 +97,7 @@ export async function GET(
           // Try to get user info with flexible column selection
           const { data: users } = await supabase
             .from('users')
-            .select('id, email, username, full_name, first_name, last_name')
+            .select('id, email, username, full_name, first_name, last_name, name')
             .in('id', userIds);
           
           enrichedContributors = enrichedContributors.map((contributor: any) => {
@@ -105,12 +105,19 @@ export async function GET(
             let userName = 'Unknown User';
             
             if (user) {
-              // Try different possible name fields
-              userName = user.full_name || 
+              // Try different possible name fields in order of preference
+              userName = user.name || 
+                        user.full_name || 
                         (user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '') ||
                         user.username || 
                         user.email || 
                         `User ID: ${user.id}`;
+              
+              // Clean up the name and ensure it's not empty
+              userName = userName.trim();
+              if (!userName || userName === '') {
+                userName = 'Unknown User';
+              }
             }
             
             return {
@@ -120,6 +127,17 @@ export async function GET(
           });
         }
       }
+      
+      // Also ensure existing contributors have proper nominated_by_name
+      enrichedContributors = enrichedContributors.map((contributor: any) => {
+        // If nominated_by_name is missing or is 'Unknown User' but we have nominated_by, try to populate it
+        if ((!contributor.nominated_by_name || contributor.nominated_by_name === 'Unknown User') && contributor.nominated_by) {
+          // This will be handled by the above logic if the column doesn't exist
+          // For existing records with the column, we'll keep the current value
+          return contributor;
+        }
+        return contributor;
+      });
     }
 
     console.log('[AIMS] Found contributors:', enrichedContributors?.length || 0);
@@ -200,6 +218,7 @@ export async function POST(
     console.log('[AIMS] Table has organization_name:', hasOrganizationName);
     console.log('[AIMS] Table has nominated_by_name:', hasNominatedByName);
 
+    // Build the contributor data with proper user information
     const contributorData: any = {
       activity_id: activityId,
       organization_id: organizationId,
@@ -210,12 +229,19 @@ export async function POST(
       can_view_other_drafts: canViewOtherDrafts
     };
 
-    // Only add these fields if the columns exist
+    // Always add organization_name if the column exists
     if (hasOrganizationName) {
       contributorData.organization_name = organizationName;
     }
+    
+    // Always add nominated_by_name if the column exists, with proper fallback logic
     if (hasNominatedByName) {
-      contributorData.nominated_by_name = nominatedByName || null;
+      // Ensure we have a valid user name
+      let finalNominatedByName = nominatedByName;
+      if (!finalNominatedByName || finalNominatedByName.trim() === '') {
+        finalNominatedByName = 'Unknown User';
+      }
+      contributorData.nominated_by_name = finalNominatedByName.trim();
     }
 
     console.log('[AIMS] Creating contributor with data:', contributorData);

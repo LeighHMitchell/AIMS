@@ -20,19 +20,29 @@ export interface ActivityContributor {
 
 export function useContributors(activityId: string | undefined) {
   const [contributors, setContributors] = useState<ActivityContributor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false to prevent initial loading flicker
   const [error, setError] = useState<string | null>(null);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
 
   // Fetch contributors
-  const fetchContributors = useCallback(async () => {
+  const fetchContributors = useCallback(async (forceRefresh = false) => {
     if (!activityId) {
       setContributors([]);
       setLoading(false);
+      setHasInitiallyLoaded(true);
+      return;
+    }
+
+    // Prevent unnecessary re-fetching if already loaded and not forcing refresh
+    if (hasInitiallyLoaded && !forceRefresh) {
       return;
     }
 
     try {
-      setLoading(true);
+      // Only show loading state on initial load or forced refresh
+      if (!hasInitiallyLoaded || forceRefresh) {
+        setLoading(true);
+      }
       setError(null);
       
       console.log('[useContributors] Fetching contributors for activity:', activityId);
@@ -45,14 +55,18 @@ export function useContributors(activityId: string | undefined) {
       const data = await response.json();
       console.log('[useContributors] Fetched contributors:', data);
       setContributors(data || []);
+      setHasInitiallyLoaded(true);
     } catch (err) {
       console.error('[useContributors] Error fetching contributors:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch contributors');
-      setContributors([]);
+      // Only clear contributors on error if we haven't loaded before (prevents flicker)
+      if (!hasInitiallyLoaded) {
+        setContributors([]);
+      }
     } finally {
       setLoading(false);
     }
-  }, [activityId]);
+  }, [activityId, hasInitiallyLoaded]);
 
   // Add contributor
   const addContributor = useCallback(async (contributorData: {
@@ -174,13 +188,20 @@ export function useContributors(activityId: string | undefined) {
 
   // Refresh contributors data
   const refreshContributors = useCallback(() => {
-    fetchContributors();
+    fetchContributors(true); // Force refresh when explicitly requested
   }, [fetchContributors]);
 
-  // Fetch contributors when activityId changes
+  // Fetch contributors when activityId changes (only on initial load)
   useEffect(() => {
-    fetchContributors();
-  }, [fetchContributors]);
+    if (activityId && !hasInitiallyLoaded) {
+      fetchContributors();
+    } else if (!activityId) {
+      // Reset state when activityId is cleared
+      setContributors([]);
+      setHasInitiallyLoaded(false);
+      setLoading(false);
+    }
+  }, [activityId, hasInitiallyLoaded, fetchContributors]);
 
   return {
     contributors,

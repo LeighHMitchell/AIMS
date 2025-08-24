@@ -1,86 +1,95 @@
-# AIMS Dashboard Deployment Guide
+# Deployment Guide
 
-## Pre-Deployment Checklist
+## Prerequisites
 
-### 1. Fix Critical Issues
-- [ ] API response size (currently >10MB, should be <2MB)
-- [ ] Database query timeouts (add indexes, optimize queries)
-- [ ] Memory usage optimization
+1. **Supabase Project**: You need a Supabase project with the database schema set up
+2. **Vercel Account**: Connected to your GitHub repository
+3. **Environment Variables**: Configured in Vercel dashboard
 
-### 2. Environment Variables
-Create a `.env.production` file with:
+## Environment Variables
+
+Set these environment variables in your Vercel project settings:
+
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+NODE_ENV=production
 ```
 
-## Deployment Options
-
-### Option 1: Vercel (Recommended)
+Optional:
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy to production
-vercel --prod
-
-# Set environment variables in Vercel dashboard
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 ```
 
-### Option 2: Docker Deployment
-```bash
-# Build Docker image
-docker build -t aims-dashboard .
+## Vercel Configuration
 
-# Run locally to test
-docker run -p 3000:3000 \
-  -e NEXT_PUBLIC_SUPABASE_URL=your-url \
-  -e NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key \
-  -e SUPABASE_SERVICE_ROLE_KEY=your-service-key \
-  aims-dashboard
+The project includes:
+- `vercel.json` - Vercel deployment configuration
+- `.vercelignore` - Files to exclude from deployment
+- `next.config.js` - Next.js configuration optimized for Vercel
 
-# Push to registry
-docker tag aims-dashboard your-registry/aims-dashboard:latest
-docker push your-registry/aims-dashboard:latest
-```
+## Database Setup
 
-### Option 3: Traditional Server
-```bash
-# Run deployment script
-npm run deploy
+1. Run Supabase migrations in the `supabase/migrations/` directory
+2. Ensure all required tables and functions are created
+3. Set up Row Level Security (RLS) policies if needed
 
-# Copy to server
-scp -r .next public package*.json user@server:/path/to/app/
+## Deployment Process
 
-# On server
-cd /path/to/app
-npm ci --production
-npm run start
-```
+1. **Push to GitHub**: All changes are automatically deployed via Vercel
+2. **Manual Deploy**: Use Vercel CLI or dashboard to trigger deployment
+3. **Environment Check**: Verify all environment variables are set
 
-## Performance Monitoring
+## Build Configuration
 
-### 1. Add Application Monitoring
-```javascript
-// Install monitoring
-npm install @sentry/nextjs
-```
+- **Framework**: Next.js 14.2.29
+- **Node Version**: 18.x (recommended)
+- **Build Command**: `npm run build`
+- **Output Directory**: `.next`
 
-### 2. Setup Health Checks
-Create `/api/health` endpoint to monitor:
-- Database connectivity
-- Response times
-- Memory usage
+## Post-Deployment Checklist
 
-## Post-Deployment
+- [ ] Verify database connection works
+- [ ] Test authentication flow
+- [ ] Check API endpoints respond correctly
+- [ ] Verify file uploads work (if applicable)
+- [ ] Test responsive design on mobile devices
 
-1. **Monitor Application**
-   - Check error logs
-   - Monitor response times
-   - Track memory usage
+## Troubleshooting
 
-2. **Update Documentation**
-   - Document deployment process
-   - Update environment variables
-   - Note any custom configurations 
+### Common Issues
+
+1. **Environment Variables**: Check Vercel dashboard settings
+2. **Database Connection**: Verify Supabase URL and keys
+3. **Build Errors**: Check build logs in Vercel dashboard
+4. **CORS Issues**: Verify API headers configuration
+
+### Debug Endpoints
+
+- `/api/test` - Basic API health check
+- `/api/debug-simple` - Database connection test
+
+## Performance Optimization
+
+The app includes:
+- Image optimization via Next.js
+- API route caching headers
+- Static asset optimization
+- Bundle analysis (run `npm run build:analyze`)
+
+## Security Headers
+
+Security headers are configured in `vercel.json`:
+- Content Security Policy
+- CORS headers
+- XSS Protection
+- Frame Options
+
+## Monitoring
+
+Consider setting up:
+- Vercel Analytics
+- Error tracking (Sentry, etc.)
+- Performance monitoring
+- Database monitoring via Supabase dashboard

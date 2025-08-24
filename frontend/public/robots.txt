@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Disallow sensitive areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /debug/
+Disallow: /test/
+
+# Allow health checks
+Allow: /api/health-check
+Allow: /api/health
+
+# Sitemap (if you add one later)
+# Sitemap: https://yourdomain.com/sitemap.xml

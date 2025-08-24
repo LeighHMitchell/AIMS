@@ -31,6 +31,9 @@ export const IATI_FIELD_HELP = {
   currency: "The default currency for all financial values in this activity. Use ISO 4217 currency codes.",
   tiedStatus: "Whether the activity is tied, untied, or partially tied according to OECD definitions",
   systemUuid: "System-generated unique identifier for internal database reference. This is not the IATI identifier.",
+  locations: "This tab records where the activity takes place. You can add locations using the map or by entering coordinates manually. Each location can include a name, type, address, and description, along with subnational breakdowns. These details establish the geographic footprint of the activity and allow analysis at the national, regional, or project-site level.",
+  sectors: "This tab defines the focus areas of the activity. You select sub-sectors, and the system automatically links each choice to its corresponding sector and sector category. You can assign multiple sub-sectors and use percentage shares to show how the activity budget is divided. The allocations must add up to 100 percent, and a visual summary displays the distribution.",
+  linkedActivities: "The Linked Activities tab shows connections between this activity and others, defined through recognised relationship types such as parent, child, or related projects. Each linked activity is displayed with its title, identifier, and reporting organisation, along with its relationship to the current activity. A relationship visualisation provides a clear overview of how activities are structured and connected across partners.",
 };
 
 // Required fields for publishing

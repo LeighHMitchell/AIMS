@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -35,20 +35,6 @@ export default function OrganisationsSection({
   activityId,
   onParticipatingOrganizationsChange,
 }: OrganisationsSectionProps) {
-  // Early return if no activityId to prevent errors
-  if (!activityId) {
-    return (
-      <div className="max-w-4xl space-y-8 bg-white border border-gray-200 rounded-lg p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-600">Participating Organisations</h2>
-        </div>
-        <div className="text-center text-gray-500">
-          Loading activity data...
-        </div>
-      </div>
-    );
-  }
-
   const { user } = useUser();
   const [nominationModal, setNominationModal] = useState<{open: boolean, organization: Organization | null}>({open: false, organization: null});
   const [openDropdown, setOpenDropdown] = useState<'extending' | 'implementing' | 'government' | null>(null);
@@ -76,16 +62,47 @@ export default function OrganisationsSection({
   });
 
   // Debug logging (after all hooks are defined)
+  // Early return if no activityId to prevent errors
+  if (!activityId) {
+    return (
+      <div className="max-w-4xl space-y-8 bg-white border border-gray-200 rounded-lg p-6">
+        <div className="text-center text-gray-500">
+          Loading activity data...
+        </div>
+      </div>
+    );
+  }
+
   console.log('[OrganisationsSection] organizationsLoading:', organizationsLoading, 'organizations:', organizations.length);
   console.log('[OrganisationsSection] activityId:', activityId);
   console.log('[OrganisationsSection] participatingOrganizations:', participatingOrganizations.length);
 
-  // Notify parent of participating organizations count changes
-  React.useEffect(() => {
-    if (onParticipatingOrganizationsChange) {
-      console.log('[OrganisationsSection] Notifying parent of count change:', participatingOrganizations.length);
-      onParticipatingOrganizationsChange(participatingOrganizations.length);
+  // Notify parent of participating organizations count changes (with debouncing to prevent flicker)
+  const stableOrgsCount = useRef(participatingOrganizations.length);
+  const notifyTimeoutRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    // Clear any pending notification
+    if (notifyTimeoutRef.current) {
+      clearTimeout(notifyTimeoutRef.current);
     }
+
+    // Only notify if the count has actually changed and stabilized
+    if (stableOrgsCount.current !== participatingOrganizations.length) {
+      notifyTimeoutRef.current = setTimeout(() => {
+        stableOrgsCount.current = participatingOrganizations.length;
+        if (onParticipatingOrganizationsChange) {
+          console.log('[OrganisationsSection] Notifying parent of count change:', participatingOrganizations.length);
+          onParticipatingOrganizationsChange(participatingOrganizations.length);
+        }
+      }, 100); // Small delay to prevent flicker during loading
+    }
+
+    return () => {
+      if (notifyTimeoutRef.current) {
+        clearTimeout(notifyTimeoutRef.current);
+      }
+    };
   }, [participatingOrganizations.length, onParticipatingOrganizationsChange]);
 
   // Get organizations by role type
@@ -173,14 +190,27 @@ export default function OrganisationsSection({
       return;
     }
 
+    // Build the user's display name with fallbacks
+    let nominatedByName = 'Unknown User';
+    if (user) {
+      if (user.name && user.name.trim() !== '') {
+        nominatedByName = user.name.trim();
+      } else if (user.firstName || user.lastName) {
+        const nameParts = [user.firstName, user.lastName].filter(Boolean);
+        nominatedByName = nameParts.join(' ').trim();
+      } else if (user.email) {
+        nominatedByName = user.email.split('@')[0]; // Use part before @
+      }
+    }
+
     const newContributor: ActivityContributor = {
       id: `contrib_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       organizationId: organization.id,
       organizationName: organization.name,
       status: 'nominated',
       role: 'partner', // Default role for nominated contributors
-      nominatedBy: 'current-user', // Would be actual user ID
-      nominatedByName: 'Activity Creator', // Would be actual user name
+      nominatedBy: user?.id || 'unknown-user',
+      nominatedByName: nominatedByName,
       nominatedAt: new Date().toISOString(),
       canEditOwnData: true,
       canViewOtherDrafts: false,
@@ -274,18 +304,9 @@ export default function OrganisationsSection({
 
   return (
     <div className="max-w-4xl space-y-8 bg-white border border-gray-200 rounded-lg p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-600">Participating Organisations</h2>
-      </div>
 
-      {/* Clarifying Alert */}
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          Organisations listed here define their official roles in this activity for reporting purposes (e.g. implementing, extending, or government partner). 
-          This does not affect who can contribute data in the system — that is managed in the Contributors tab.
-        </AlertDescription>
-      </Alert>
+
+
 
       {/* Extending Partners */}
       <Card>
@@ -296,8 +317,6 @@ export default function OrganisationsSection({
               <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
             ) : extendingOrgs.length > 0 ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
-            ) : participatingLoading ? (
-              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
             ) : null}
           </CardTitle>
         </CardHeader>
@@ -347,8 +366,6 @@ export default function OrganisationsSection({
               <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
             ) : implementingOrgs.length > 0 ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
-            ) : participatingLoading ? (
-              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
             ) : null}
           </CardTitle>
         </CardHeader>
@@ -398,8 +415,6 @@ export default function OrganisationsSection({
               <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
             ) : governmentOrgs.length > 0 ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
-            ) : participatingLoading ? (
-              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
             ) : null}
           </CardTitle>
         </CardHeader>

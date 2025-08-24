@@ -2,7 +2,7 @@
   "name": "frontend",
   "version": "1.0.0",
   "private": true,
-  "//": "Deploy trigger - force Vercel rebuild v2",
+  "//": "Deploy trigger - force Vercel rebuild v3 - Ready for production",
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "dev-safe": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev -H 0.0.0.0",

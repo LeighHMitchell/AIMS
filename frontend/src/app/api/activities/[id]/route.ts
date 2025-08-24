@@ -275,7 +275,9 @@ export async function GET(
       defaultFlowType: activity.default_flow_type, // <-- Add this line
       flowType: activity.default_flow_type, // (optional: keep for backward compatibility)
       defaultAidModality: activity.default_aid_modality,
+      default_aid_modality: activity.default_aid_modality,
       defaultAidModalityOverride: activity.default_aid_modality_override,
+      defaultDisbursementChannel: activity.default_disbursement_channel,
       banner: activity.banner,
       icon: activity.icon,
       hierarchy: activity.hierarchy,

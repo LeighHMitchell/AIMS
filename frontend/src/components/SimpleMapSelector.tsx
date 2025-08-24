@@ -585,7 +585,7 @@ export default function SimpleMapSelector({
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<Partial<Location>>({
     location_type: 'site',
-    site_type: 'SD1'
+    site_type: ''
   });
   const [isAddingLocation, setIsAddingLocation] = useState(false);
   const [editingLocation, setEditingLocation] = useState<string | null>(null);
@@ -713,7 +713,7 @@ export default function SimpleMapSelector({
       const newLocation: Partial<Location> = {
         location_name: '',
         location_type: 'site',
-        site_type: 'SD1',
+        site_type: '',
         latitude: lat,
         longitude: lng,
         address: data.display_name || `${lat}, ${lng}`,
@@ -865,7 +865,7 @@ export default function SimpleMapSelector({
         id: Date.now().toString(),
         location_name: selectedLocation.location_name || '',
         location_type: selectedLocation.location_type || 'site',
-        site_type: selectedLocation.site_type || 'SD1',
+        site_type: selectedLocation.site_type || '',
         latitude: selectedLocation.latitude || 0,
         longitude: selectedLocation.longitude || 0,
         address: selectedLocation.address || '',
@@ -889,7 +889,7 @@ export default function SimpleMapSelector({
 
     setSelectedLocation({
       location_type: 'site',
-      site_type: 'SD1'
+      site_type: ''
     });
     setIsAddingLocation(false);
   };
@@ -1143,7 +1143,7 @@ export default function SimpleMapSelector({
                           const newLocation: Partial<Location> = {
                             location_name: result.name || displayParts[0],
                             location_type: 'site',
-                            site_type: 'SD1',
+                            site_type: '',
                             latitude: parseFloat(result.lat),
                             longitude: parseFloat(result.lon),
                             address: result.display_name,
@@ -1161,6 +1161,13 @@ export default function SimpleMapSelector({
                             township_code: address.township_code || '',
                             village_name: address.village || address.hamlet || address.suburb || address.neighbourhood || '',
                           };
+                          
+                          // Center the map on the selected search result
+                          if (mapRef.current) {
+                            const map = mapRef.current;
+                            map.setView([parseFloat(result.lat), parseFloat(result.lon)], 14);
+                            console.log('🗺️ Map centered on search result:', result.name || displayParts[0]);
+                          }
                           
                           setSelectedLocation(newLocation);
                           setSearchQuery(result.name || displayParts[0]);
@@ -1186,10 +1193,19 @@ export default function SimpleMapSelector({
                       type="number"
                       step="any"
                       value={selectedLocation.latitude || ''}
-                      onChange={(e) => setSelectedLocation(prev => ({
-                        ...prev,
-                        latitude: parseFloat(e.target.value) || undefined
-                      }))}
+                      onChange={(e) => {
+                        const newLat = parseFloat(e.target.value) || undefined;
+                        setSelectedLocation(prev => {
+                          const updated = { ...prev, latitude: newLat };
+                          // Center map if both lat and lng are valid
+                          if (updated.latitude && updated.longitude && mapRef.current) {
+                            const map = mapRef.current;
+                            map.setView([updated.latitude, updated.longitude], 14);
+                            console.log('🗺️ Map centered on entered coordinates:', updated.latitude, updated.longitude);
+                          }
+                          return updated;
+                        });
+                      }}
                       placeholder="e.g., 16.8661"
                       className="text-sm"
                   />
@@ -1201,10 +1217,19 @@ export default function SimpleMapSelector({
                       type="number"
                       step="any"
                       value={selectedLocation.longitude || ''}
-                      onChange={(e) => setSelectedLocation(prev => ({
-                        ...prev,
-                        longitude: parseFloat(e.target.value) || undefined
-                      }))}
+                      onChange={(e) => {
+                        const newLng = parseFloat(e.target.value) || undefined;
+                        setSelectedLocation(prev => {
+                          const updated = { ...prev, longitude: newLng };
+                          // Center map if both lat and lng are valid
+                          if (updated.latitude && updated.longitude && mapRef.current) {
+                            const map = mapRef.current;
+                            map.setView([updated.latitude, updated.longitude], 14);
+                            console.log('🗺️ Map centered on entered coordinates:', updated.latitude, updated.longitude);
+                          }
+                          return updated;
+                        });
+                      }}
                       placeholder="e.g., 95.9560"
                       className="text-sm"
                   />
@@ -1226,7 +1251,7 @@ export default function SimpleMapSelector({
             <CardContent className="flex-1 space-y-4">
               {/* Location Name */}
               <div>
-                <Label htmlFor="location-name" className="text-xs">Location Name *</Label>
+                <Label htmlFor="location-name" className="text-xs">Location Name</Label>
                 <Input
                   id="location-name"
                   value={selectedLocation.location_name || ''}
@@ -1241,7 +1266,7 @@ export default function SimpleMapSelector({
 
               {/* Location Type */}
               <div>
-                <Label htmlFor="location-type" className="text-xs">Location Type *</Label>
+                <Label htmlFor="location-type" className="text-xs">Location Type</Label>
                 <LocationTypeSelect
                   value={selectedLocation.site_type || ''}
                   onValueChange={(value) => setSelectedLocation(prev => ({
@@ -1345,7 +1370,7 @@ export default function SimpleMapSelector({
               {/* Description */}
               <div>
                 <Label htmlFor="description" className="text-xs">Description</Label>
-                <Input
+                <Textarea
                   id="description"
                   value={selectedLocation.description || ''}
                   onChange={(e) => setSelectedLocation(prev => ({
@@ -1354,6 +1379,7 @@ export default function SimpleMapSelector({
                   }))}
                   placeholder="Additional details about this location"
                   className="text-sm"
+                  rows={2}
                 />
               </div>
 
@@ -1371,7 +1397,7 @@ export default function SimpleMapSelector({
                 onClick={() => {
                   setSelectedLocation({
                     location_type: 'site',
-                    site_type: 'SD1'
+                    site_type: ''
                   });
                     setIsAddingLocation(false);
                   setEditingLocation(null);
@@ -1481,7 +1507,7 @@ export default function SimpleMapSelector({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Location Name */}
                           <div className="md:col-span-2">
-                            <Label htmlFor={`edit-name-${location.id}`} className="text-xs">Location Name *</Label>
+                            <Label htmlFor={`edit-name-${location.id}`} className="text-xs">Location Name</Label>
                             <Input
                               id={`edit-name-${location.id}`}
                               value={editingLocationData.location_name || ''}
@@ -1493,7 +1519,7 @@ export default function SimpleMapSelector({
 
                           {/* Location Type */}
                           <div className="md:col-span-2">
-                            <Label htmlFor={`edit-type-${location.id}`} className="text-xs">Location Type *</Label>
+                            <Label htmlFor={`edit-type-${location.id}`} className="text-xs">Location Type</Label>
                             <LocationTypeSelect
                               value={editingLocationData.site_type || ''}
                               onValueChange={(value) => setEditingLocationData(prev => prev ? {...prev, site_type: value} : null)}

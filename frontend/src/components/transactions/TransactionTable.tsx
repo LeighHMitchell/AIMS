@@ -33,6 +33,7 @@ import {
   Check,
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
+import { TIED_STATUS_LABELS } from "@/types/transaction";
 
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -163,13 +164,8 @@ const FINANCE_TYPE_LABELS: Record<string, { short: string; full: string }> = {
   '1100': { short: 'Guarantee', full: 'Guarantees for private investors' }
 };
 
-// Tied Status mappings
-const TIED_STATUS_LABELS: Record<string, { short: string; full: string }> = {
-  '1': { short: 'Tied', full: 'Aid is tied' },
-  '2': { short: 'Partial', full: 'Partially tied' },
-  '3': { short: 'Untied', full: 'Aid is untied' },
-  '4': { short: 'Not reported', full: 'Tied status not reported' }
-};
+// Tied Status mappings - imported from types
+// Using centralized TIED_STATUS_LABELS from @/types/transaction
 
 // Disbursement Channel mappings
 const DISBURSEMENT_CHANNEL_LABELS: Record<string, { short: string; full: string }> = {
@@ -693,7 +689,7 @@ export function TransactionTable({
                               <span className="font-semibold text-gray-800">Tied Status:</span>
                             </div>
                             <span className="block text-sm text-gray-600 pl-6">
-                              {transaction.tied_status ? (TIED_STATUS_LABELS[transaction.tied_status]?.full || transaction.tied_status) : 'Not specified'}
+                              {transaction.tied_status ? (TIED_STATUS_LABELS[transaction.tied_status] || transaction.tied_status) : 'Not specified'}
                             </span>
                           </div>
                           

@@ -4,6 +4,7 @@ import React from "react"
 import { cn } from "@/lib/utils"
 import { Lock } from "lucide-react"
 import { TabCompletionIndicator } from "@/utils/tab-completion"
+import { StableTabCompletionIndicator } from "@/utils/stable-tab-completion"
 import {
   Tooltip,
   TooltipContent,
@@ -144,7 +145,20 @@ export default function ActivityEditorNavigation({
                         <span>{section.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <TabCompletionIndicator isComplete={isComplete} isInProgress={isInProgress} />
+                        {(section.id === 'contributors' || section.id === 'organisations') ? (
+                          <StableTabCompletionIndicator 
+                            tabId={section.id}
+                            currentStatus={tabCompletionStatus[section.id] ? {
+                              isComplete: isComplete,
+                              isInProgress: isInProgress,
+                              completedFields: [],
+                              missingFields: []
+                            } : null}
+                            isLoading={isInProgress}
+                          />
+                        ) : (
+                          <TabCompletionIndicator isComplete={isComplete} isInProgress={isInProgress} />
+                        )}
                       </div>
                     </div>
                   </button>

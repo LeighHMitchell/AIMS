@@ -587,7 +587,7 @@ export default function ActivityLocationEditor({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="locationName" className="text-sm font-medium">
-                Location Name <span className="text-red-500">*</span>
+                Location Name
               </Label>
               <Input
                 id="locationName"

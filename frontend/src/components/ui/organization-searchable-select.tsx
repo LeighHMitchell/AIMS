@@ -113,15 +113,15 @@ export function OrganizationSearchableSelect({
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <span className="font-medium text-foreground truncate">
             {org.name}
           </span>
-                     {org.acronym && (
-             <span className="font-medium text-foreground">
-               ({org.acronym})
-             </span>
-           )}
+          {org.acronym && (
+            <span className="font-medium text-foreground">
+              ({org.acronym})
+            </span>
+          )}
         </div>
         {(org.iati_org_id || org.country) && (
           <div className="flex items-center gap-1 mt-0.5">

@@ -28,6 +28,7 @@ interface SearchResult {
   title: string
   subtitle?: string
   metadata?: {
+    acronym?: string
     status?: string
     reporting_org?: string
     reporting_org_acronym?: string
@@ -35,6 +36,7 @@ interface SearchResult {
     tags?: string[]
     partner_id?: string
     iati_id?: string
+    iati_identifier?: string
     updated_at?: string
     sector_code?: string
     sector_category?: string
@@ -68,6 +70,8 @@ export function GlobalSearchBar({
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -80,6 +84,8 @@ export function GlobalSearchBar({
       setResults([])
       setError(null)
       setLoading(false)
+      setIsSearching(false)
+      setHasSearched(false)
       return
     }
 
@@ -92,7 +98,7 @@ export function GlobalSearchBar({
     abortControllerRef.current = new AbortController()
 
     try {
-      // Don't set loading here since it's already set in handleInputChange
+      setIsSearching(true)
       setError(null)
 
       const response = await fetch(
@@ -112,6 +118,7 @@ export function GlobalSearchBar({
 
       const data = await response.json()
       setResults(data.results || [])
+      setHasSearched(true)
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Request was cancelled, ignore
@@ -120,8 +127,10 @@ export function GlobalSearchBar({
       console.error('Search error:', err)
       setError('Failed to perform search')
       setResults([])
+      setHasSearched(true)
     } finally {
       setLoading(false)
+      setIsSearching(false)
     }
   }, [])
 
@@ -141,6 +150,7 @@ export function GlobalSearchBar({
       setLoading(true)
       setError(null)
       setResults([]) // Clear previous results immediately
+      setHasSearched(false) // Reset search state when starting new search
       
       // Set new timeout for debounced search with very fast delay
       searchTimeoutRef.current = setTimeout(() => {
@@ -151,6 +161,8 @@ export function GlobalSearchBar({
       setResults([])
       setError(null)
       setLoading(false)
+      setIsSearching(false)
+      setHasSearched(false)
     }
   }, [performSearch])
 
@@ -207,6 +219,9 @@ export function GlobalSearchBar({
     setQuery('')
     setResults([])
     setError(null)
+    setLoading(false)
+    setIsSearching(false)
+    setHasSearched(false)
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current)
     }
@@ -366,10 +381,10 @@ export function GlobalSearchBar({
             className="pl-10 pr-9 rounded-xl w-full"
           />
         </PopoverTrigger>
-        {loading && (
+        {(loading || isSearching) && (
           <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
         )}
-        {!loading && query && (
+        {!loading && !isSearching && query && (
           <Button
             variant="ghost"
             size="sm"
@@ -385,19 +400,19 @@ export function GlobalSearchBar({
         >
         <Command>
           <CommandList className="max-h-80 overflow-y-auto">
-            {loading && (
+            {(loading || isSearching) && (
               <div className="p-4 text-center text-sm text-muted-foreground">
                 Searching...
               </div>
             )}
             
-            {!loading && error && (
+            {!loading && !isSearching && error && (
               <div className="p-4 text-center text-sm text-destructive">
                 {error}
               </div>
             )}
             
-            {!loading && !error && query && results.length === 0 && query.trim().length > 0 && (
+            {!loading && !isSearching && !error && query && results.length === 0 && hasSearched && query.trim().length > 0 && (
               <CommandEmpty>No results found for "{query}"</CommandEmpty>
             )}
             
@@ -432,6 +447,12 @@ export function GlobalSearchBar({
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm truncate text-gray-900">
                                 {result.title}
+                                {result.type === 'organization' && result.metadata?.acronym && (
+                                  <span className="ml-2">({result.metadata.acronym})</span>
+                                )}
+                                {result.type === 'activity' && result.metadata?.acronym && (
+                                  <span className="ml-2">({result.metadata.acronym})</span>
+                                )}
                               </div>
                               {result.type === 'organization' && (
                                 <div className="text-xs text-gray-500 mt-1">

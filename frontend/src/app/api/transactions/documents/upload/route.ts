@@ -5,8 +5,11 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[Upload API] Starting document upload...');
+    
     const supabase = getSupabaseAdmin();
     if (!supabase) {
+      console.error('[Upload API] Database connection failed');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
@@ -20,6 +23,15 @@ export async function POST(request: NextRequest) {
     const activityId = formData.get('activityId') as string;
     const description = formData.get('description') as string;
     const documentType = formData.get('documentType') as string || 'evidence';
+
+    console.log('[Upload API] Parsed data:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      transactionId,
+      activityId,
+      documentType
+    });
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -86,6 +98,8 @@ export async function POST(request: NextRequest) {
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const storagePath = `transaction-documents/${transactionId}/${timestamp}_${sanitizedFileName}`;
 
+    console.log('[Upload API] Uploading to storage path:', storagePath);
+    
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('transaction-documents')
@@ -95,15 +109,22 @@ export async function POST(request: NextRequest) {
       });
 
     if (uploadError) {
-      console.error('Storage upload error:', uploadError);
-      return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+      console.error('[Upload API] Storage upload error:', uploadError);
+      return NextResponse.json({ 
+        error: 'Failed to upload file', 
+        details: uploadError.message || 'Unknown storage error' 
+      }, { status: 500 });
     }
+
+    console.log('[Upload API] Storage upload successful:', uploadData);
 
     // Get public URL for the uploaded file
     const { data: urlData } = supabase.storage
       .from('transaction-documents')
       .getPublicUrl(storagePath);
 
+    console.log('[Upload API] Saving document record to database...');
+    
     // Save document record to database
     const { data: document, error: dbError } = await supabase
       .from('transaction_documents')
@@ -122,15 +143,20 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (dbError) {
-      console.error('Database insert error:', dbError);
+      console.error('[Upload API] Database insert error:', dbError);
       
       // Clean up uploaded file if database insert fails
       await supabase.storage
         .from('transaction-documents')
         .remove([storagePath]);
 
-      return NextResponse.json({ error: 'Failed to save document record' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to save document record', 
+        details: dbError.message || 'Unknown database error' 
+      }, { status: 500 });
     }
+
+    console.log('[Upload API] Document saved successfully:', document);
 
     return NextResponse.json({
       id: document.id,

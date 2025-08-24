@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { Check, ChevronsUpDown, Building2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -28,6 +29,7 @@ export interface Organization {
   type?: string
   country?: string
   iati_org_id?: string
+  logo?: string
 }
 
 interface OrganizationComboboxProps {
@@ -51,6 +53,20 @@ export function OrganizationCombobox({
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+
+  // Debug: Log organization data to see logo availability
+  React.useEffect(() => {
+    if (organizations.length > 0) {
+      const orgsWithLogos = organizations.filter(org => org.logo);
+      const orgsWithoutLogos = organizations.filter(org => !org.logo);
+      console.log(`[OrganizationCombobox] Total organizations: ${organizations.length}`);
+      console.log(`[OrganizationCombobox] Organizations with logos: ${orgsWithLogos.length}`);
+      console.log(`[OrganizationCombobox] Organizations without logos: ${orgsWithoutLogos.length}`);
+      if (orgsWithLogos.length > 0) {
+        console.log(`[OrganizationCombobox] Sample org with logo:`, orgsWithLogos[0]);
+      }
+    }
+  }, [organizations]);
 
   // Find selected organization
   const selectedOrg = organizations.find(org => org.id === value)
@@ -111,16 +127,39 @@ export function OrganizationCombobox({
             const selected = organizations.find((o) => o.id === value);
             if (selected) {
               return (
-                <span className="flex flex-col min-w-0 text-left leading-relaxed">
-                  <span className="truncate font-medium text-base leading-relaxed">
-                    {getOrganizationDisplay(selected)}
-                  </span>
-                  {getIatiCountryLine(selected) && (
-                    <span className="text-sm text-gray-500 truncate mt-1 leading-relaxed">
-                      {getIatiCountryLine(selected)}
-                    </span>
+                <div className="flex items-center gap-3 text-left w-full min-w-0">
+                  {/* Organization logo - only show if logo exists */}
+                  {selected.logo ? (
+                    <div className="w-6 h-6 flex-shrink-0">
+                      <Image
+                        src={selected.logo}
+                        alt={`${selected.name} logo`}
+                        width={24}
+                        height={24}
+                        className="rounded-sm object-contain"
+                        onError={(e) => {
+                          console.log(`[OrganizationCombobox] Selected logo failed to load for ${selected.name}:`, selected.logo);
+                          (e.target as HTMLImageElement).style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-sm">
+                      <Building2 className="h-4 w-4 text-gray-400" />
+                    </div>
                   )}
-                </span>
+                  
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="truncate font-medium text-base leading-relaxed">
+                      {getOrganizationDisplay(selected)}
+                    </span>
+                    {getIatiCountryLine(selected) && (
+                      <span className="text-sm text-gray-500 truncate mt-1 leading-relaxed">
+                        {getIatiCountryLine(selected)}
+                      </span>
+                    )}
+                  </div>
+                </div>
               );
             }
             // Show fallback reference if no organization found but we have a ref
@@ -172,15 +211,38 @@ export function OrganizationCombobox({
                       }}
                       className="py-3"
                     >
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-900 text-base">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
-                        {(org.iati_org_id || org.country) && (
-                          <span className="text-xs text-gray-500 truncate">
-                            {org.iati_org_id}
-                            {org.iati_org_id && org.country ? ' · ' : ''}
-                            {org.country}
-                          </span>
+                      <div className="flex items-center gap-3 w-full">
+                        {/* Organization logo - only show if logo exists */}
+                        {org.logo ? (
+                          <div className="w-6 h-6 flex-shrink-0">
+                            <Image
+                              src={org.logo}
+                              alt={`${org.name} logo`}
+                              width={24}
+                              height={24}
+                              className="rounded-sm object-contain"
+                              onError={(e) => {
+                                console.log(`[OrganizationCombobox] Logo failed to load for ${org.name}:`, org.logo);
+                                (e.target as HTMLImageElement).style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-sm">
+                            <Building2 className="h-4 w-4 text-gray-400" />
+                          </div>
                         )}
+                        
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="font-medium text-gray-900 text-base truncate hover:text-gray-900">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
+                          {(org.iati_org_id || org.country) && (
+                            <span className="text-xs text-gray-500 truncate hover:text-gray-500">
+                              {org.iati_org_id}
+                              {org.iati_org_id && org.country ? ' · ' : ''}
+                              {org.country}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </CommandItem>
                   ))}

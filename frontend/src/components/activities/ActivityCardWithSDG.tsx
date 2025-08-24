@@ -17,6 +17,7 @@ import { ActivityCardSkeleton } from './ActivityCardSkeleton';
 import { SDGImageGrid } from '@/components/ui/SDGImageGrid';
 import { formatReportedBy } from '@/utils/format-helpers';
 import { StatusIcon } from '@/components/ui/status-icon';
+import { TIED_STATUS_LABELS } from '@/types/transaction';
 
 
 // Aid modality label mappings
@@ -61,11 +62,15 @@ const FLOW_TYPE_LABELS: Record<string, string> = {
   '50': 'Other flows'
 };
 
-const TIED_STATUS_LABELS: Record<string, string> = {
-  '3': 'Partially tied',
-  '4': 'Tied',
-  '5': 'Untied'
+const MODALITY_LABELS: Record<string, string> = {
+  '1': 'Grant',
+  '2': 'Loan',
+  '3': 'Technical Assistance',
+  '4': 'Reimbursable Grant or Other',
+  '5': 'Investment/Guarantee'
 };
+
+// Tied Status mappings imported from @/types/transaction
 
 interface SDGMapping {
   id?: string;
@@ -96,7 +101,8 @@ interface ActivityCardWithSDGProps {
     default_finance_type?: string;
     default_flow_type?: string;
     default_tied_status?: string;
-    default_modality?: string;
+    default_aid_modality?: string;
+    default_aid_modality_override?: boolean;
     // Financial and reporting fields
     created_by_org_name?: string;
     created_by_org_acronym?: string;
@@ -338,8 +344,8 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               <h3 className="font-medium text-foreground leading-tight line-clamp-2 pt-8">
                 {activity.title}
                 {activity.acronym && (
-                  <span className="text-gray-600">
-                    ({activity.acronym})
+                  <span>
+                    {' '}({activity.acronym})
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -406,10 +412,10 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                   className="ml-1"
                 />
               )}
-              {activity.default_modality && (
+              {activity.default_aid_modality && (
                 <StatusIcon 
                   type="aid-modality" 
-                  status={activity.default_modality} 
+                  status={activity.default_aid_modality} 
                   isPublished={activity.publication_status === 'published'}
                   className="ml-1"
                 />
@@ -425,8 +431,14 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               {(activity.created_by_org_acronym || activity.created_by_org_name) && (
                 <div className="flex justify-between items-center py-2 min-h-[3.5rem] border-t border-b border-gray-200">
                   <span className="text-sm font-medium text-gray-700">Reported by</span>
-                  <span className="text-sm text-gray-900 text-right flex items-center">
-                    {activity.created_by_org_name || activity.created_by_org_acronym}
+                  <span className="text-sm text-gray-900 text-right">
+                    {activity.created_by_org_name}
+                    {activity.created_by_org_acronym && activity.created_by_org_name !== activity.created_by_org_acronym && (
+                      <span> ({activity.created_by_org_acronym})</span>
+                    )}
+                    {!activity.created_by_org_name && activity.created_by_org_acronym && (
+                      <span>{activity.created_by_org_acronym}</span>
+                    )}
                   </span>
                 </div>
               )}
@@ -434,26 +446,38 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                 <div className="text-sm font-medium text-gray-700">Total Budgeted</div>
                 <div className="text-sm text-gray-900">{formatCurrency(activity.totalBudget || 0)}</div>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-200">
                 <div className="text-sm font-medium text-gray-700">Total Disbursed</div>
                 <div className="text-sm text-gray-900">{formatCurrency(activity.totalDisbursed || 0)}</div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Aid Type</span>
+                <span className="text-sm font-medium text-gray-700">Default Aid Type</span>
                 <span className="text-sm text-gray-900">
                   {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Flow Type</span>
+                <span className="text-sm font-medium text-gray-700">Default Finance Type</span>
+                <span className="text-sm text-gray-900">
+                  {activity.default_finance_type ? (FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type) : 'Not reported'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700">Default Flow Type</span>
                 <span className="text-sm text-gray-900">
                   {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Tied Status</span>
+                <span className="text-sm font-medium text-gray-700">Default Tied Status</span>
                 <span className="text-sm text-gray-900">
                   {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status) : 'Not reported'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700">Default Modality</span>
+                <span className="text-sm text-gray-900">
+                  {activity.default_aid_modality ? (MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality) : 'Not reported'}
                 </span>
               </div>
             </div>

@@ -113,6 +113,7 @@ interface Activity {
   defaultCurrency?: string
   defaultTiedStatus?: string
   defaultFlowType?: string
+  defaultDisbursementChannel?: string
   // IATI Sync fields
   iatiIdentifier?: string
   autoSync?: boolean
@@ -339,6 +340,17 @@ export default function ActivityDetailPage() {
   const requestToJoin = async () => {
     if (!activity || !user?.organizationId) return;
     
+    // Build the user's display name with fallbacks
+    let nominatedByName = 'Unknown User';
+    if (user.name && user.name.trim() !== '') {
+      nominatedByName = user.name.trim();
+    } else if (user.firstName || user.lastName) {
+      const nameParts = [user.firstName, user.lastName].filter(Boolean);
+      nominatedByName = nameParts.join(' ').trim();
+    } else if (user.email) {
+      nominatedByName = user.email.split('@')[0]; // Use part before @
+    }
+    
     const newContributor: ActivityContributor = {
       id: `contrib_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       organizationId: user.organizationId,
@@ -346,7 +358,7 @@ export default function ActivityDetailPage() {
       status: 'requested',
       role: 'contributor',
       nominatedBy: user.id,
-      nominatedByName: user.name,
+      nominatedByName: nominatedByName,
       nominatedAt: new Date().toISOString(),
       canEditOwnData: true,
       canViewOtherDrafts: false,

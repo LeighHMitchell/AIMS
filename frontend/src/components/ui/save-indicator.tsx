@@ -63,22 +63,31 @@ export function LabelSaveIndicator({
   isSaving, 
   isSaved,
   children,
-  className = ""
+  className = "",
+  hasValue = false
 }: {
   isSaving: boolean;
   isSaved: boolean;
   children: React.ReactNode;
   className?: string;
+  hasValue?: boolean;
 }) {
   return (
     <label className={`text-sm font-medium flex items-center ${className}`}>
       {children}
-      <SaveIndicator 
-        isSaving={isSaving} 
-        isSaved={isSaved} 
-        size="sm"
-        className="ml-2"
-      />
+      {/* Show saving indicator when saving */}
+      {isSaving && (
+        <SaveIndicator 
+          isSaving={isSaving} 
+          isSaved={false} 
+          size="sm"
+          className="ml-2"
+        />
+      )}
+      {/* Show green tick when field has a value (completed) and not saving */}
+      {hasValue && !isSaving && (
+        <CheckCircle className="h-3 w-3 text-green-500 ml-2" />
+      )}
     </label>
   );
 } 

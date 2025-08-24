@@ -209,6 +209,9 @@ export interface Transaction {
   usd_convertible?: boolean;
   usd_conversion_date?: string;
   exchange_rate_used?: number;
+  
+  // Transaction sector lines (new feature)
+  sector_lines?: TransactionSectorLine[];
 }
 
 // Helper type for creating new transactions
@@ -319,4 +322,63 @@ export interface TransactionSummary {
     total: number;
     count: number;
   }>;
+}
+
+// Transaction Sector Line interfaces for transaction-level sector allocation
+export interface TransactionSectorLine {
+  id: string;
+  transaction_id: string;
+  sector_vocabulary: string; // '1' = DAC 5-digit, '2' = DAC 3-digit, etc.
+  sector_code: string; // e.g., '11220'
+  sector_name: string; // e.g., 'Primary education'
+  percentage: number; // 0-100, must sum to 100% across all lines
+  amount_minor: number; // Amount in minor currency units (cents)
+  sort_order?: number;
+  created_by?: string;
+  updated_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string;
+}
+
+// Validation interface for transaction sector allocations
+export interface TransactionSectorValidation {
+  isValid: boolean;
+  errors: string[];
+  totalPercentage: number;
+  remainingPercentage: number;
+  totalAmount: number; // Computed total in major units
+  hasRoundingIssues?: boolean;
+}
+
+// Form data for creating/updating transaction sector lines
+export interface TransactionSectorLineFormData {
+  id?: string; // Optional for new lines
+  sector_vocabulary?: string; // Defaults to '1' (DAC 5-digit)
+  sector_code: string;
+  sector_name?: string; // Auto-populated from sector lookup
+  percentage: number;
+}
+
+// API response for transaction sectors
+export interface TransactionSectorsResponse {
+  sector_lines: TransactionSectorLine[];
+  metadata: {
+    transaction_id: string;
+    transaction_value: number;
+    transaction_currency: string;
+    total_allocated_percentage: number;
+    validation: TransactionSectorValidation;
+  };
+}
+
+// API request for updating transaction sectors
+export interface UpdateTransactionSectorsRequest {
+  sector_lines: TransactionSectorLineFormData[];
+}
+
+// Copy from activity request
+export interface CopyFromActivityRequest {
+  activity_id: string;
+  scale_to_transaction: boolean;
 } 

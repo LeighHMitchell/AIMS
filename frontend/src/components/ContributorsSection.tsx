@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, Plus, X, Check, AlertCircle, UserPlus } from "lucide-react";
+import { Users, Plus, X, Check, AlertCircle, UserPlus, CheckCircle } from "lucide-react";
 import { Partner } from "@/app/api/partners/route";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
@@ -42,12 +42,46 @@ export default function ContributorsSection({
   } = useContributors(activityId);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState("");
 
-  // Use database contributors if available, otherwise fall back to props
-  const contributors = dbContributors.length > 0 ? dbContributors : propsContributors;
+  // Optimistic contributor display: maintain existing contributors during loading
+  // to prevent checkmark flickering when switching tabs
+  const contributors = React.useMemo(() => {
+    // If we have database contributors (loaded), use those
+    if (dbContributors.length > 0) {
+      return dbContributors;
+    }
+    
+    // If we're loading and have props contributors, keep showing them
+    if (contributorsLoading && propsContributors.length > 0) {
+      return propsContributors;
+    }
+    
+    // Otherwise, show database contributors (which might be empty)
+    return dbContributors;
+  }, [dbContributors, propsContributors, contributorsLoading]);
 
-  // Notify parent when contributors count changes
+  // Notify parent when contributors count changes (with debouncing to prevent flicker)
+  const stableContributorsCount = useRef(contributors.length);
+  const notifyTimeoutRef = useRef<NodeJS.Timeout>();
+
   useEffect(() => {
-    onContributorsChange?.(contributors.length);
+    // Clear any pending notification
+    if (notifyTimeoutRef.current) {
+      clearTimeout(notifyTimeoutRef.current);
+    }
+
+    // Only notify if the count has actually changed and stabilized
+    if (stableContributorsCount.current !== contributors.length) {
+      notifyTimeoutRef.current = setTimeout(() => {
+        stableContributorsCount.current = contributors.length;
+        onContributorsChange?.(contributors.length);
+      }, 100); // Small delay to prevent flicker during loading
+    }
+
+    return () => {
+      if (notifyTimeoutRef.current) {
+        clearTimeout(notifyTimeoutRef.current);
+      }
+    };
   }, [contributors.length, onContributorsChange]);
 
   const nominateContributor = async () => {
@@ -63,50 +97,69 @@ export default function ContributorsSection({
     }
 
     try {
+      console.log('[Contributors] User object:', user);
+      console.log('[Contributors] User name:', user.name);
+      console.log('[Contributors] User firstName:', user.firstName);
+      console.log('[Contributors] User lastName:', user.lastName);
+      
+      // Build the user's display name with fallbacks
+      let nominatedByName = 'Unknown User';
+      if (user.name && user.name.trim() !== '') {
+        nominatedByName = user.name.trim();
+      } else if (user.firstName || user.lastName) {
+        const nameParts = [user.firstName, user.lastName].filter(Boolean);
+        nominatedByName = nameParts.join(' ').trim();
+      } else if (user.email) {
+        // Use email as fallback if no name fields
+        nominatedByName = user.email.split('@')[0]; // Use part before @
+      }
+      
+      console.log('[Contributors] Final nominatedByName:', nominatedByName);
+      
       await addContributor({
         organizationId: selectedOrganizationId,
         organizationName: organization.name,
         status: 'nominated',
         role: 'contributor',
         nominatedBy: user.id,
-        nominatedByName: user.name,
+        nominatedByName: nominatedByName,
         canEditOwnData: true,
         canViewOtherDrafts: false
       });
 
+      // Log contributor nomination
+      try {
+        import('@/lib/activity-logger').then(({ ActivityLogger }) => {
+          const newContributorForLog = {
+            id: `contrib_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            organization_id: selectedOrganizationId,
+            organization_name: organization.name,
+            activity_id: activityId || '',
+            status: 'nominated' as const,
+            role: 'contributor',
+            nominated_by: user.id,
+            nominated_by_name: nominatedByName,
+            nominated_at: new Date().toISOString(),
+            responded_at: null,
+            can_edit_own_data: true,
+            can_view_other_drafts: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          ActivityLogger.contactAdded(
+            newContributorForLog,
+            { id: activityId || 'current-activity', title: 'Current Activity' },
+            { id: user?.id || 'current-user', name: user?.name || 'Current User', role: user?.role || 'user' }
+          );
+        });
+      } catch (error) {
+        console.error('Failed to log contributor nomination:', error);
+      }
+
       setSelectedOrganizationId("");
     } catch (error) {
       console.error('[CONTRIBUTORS] Error nominating contributor:', error);
-    }
-    
-    // Log contributor nomination
-    try {
-      import('@/lib/activity-logger').then(({ ActivityLogger }) => {
-        const newContributorForLog = {
-          id: `contrib_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          organization_id: selectedOrganizationId,
-          organization_name: organization.name,
-          activity_id: activityId || '',
-          status: 'nominated' as const,
-          role: 'contributor',
-          nominated_by: user.id,
-          nominated_by_name: user.name,
-          nominated_at: new Date().toISOString(),
-          responded_at: null,
-          can_edit_own_data: true,
-          can_view_other_drafts: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        
-        ActivityLogger.contactAdded(
-          newContributorForLog,
-          { id: activityId || 'current-activity', title: 'Current Activity' },
-          { id: user?.id || 'current-user', name: user?.name || 'Current User', role: user?.role || 'user' }
-        );
-      });
-    } catch (error) {
-      console.error('Failed to log contributor nomination:', error);
     }
   };
 
@@ -157,27 +210,11 @@ export default function ContributorsSection({
     : null;
 
   return (
-    <Card className="max-w-4xl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Activity Contributors
-        </CardTitle>
-        <CardDescription>
-          Organizations contributing to this activity can add their own financial data and results
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Merged Help Text */}
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Contributors are organisations that can edit or add financial transactions, results, and implementation records. 
-            This does not change their official role in the activity — roles are defined in the Organisations tab. 
-            Contributors can add and edit their own financial transactions, results, and implementation details. 
-            Only the activity creator and government validators can view all contributions.
-          </AlertDescription>
-        </Alert>
+    <div className="pb-32">
+      <Card className="max-w-4xl min-h-[400px]">
+
+        <CardContent className="space-y-4 pt-6 h-full flex flex-col">
+          <div className="flex-1 space-y-4">
         {/* Pending Nomination Alert */}
         {pendingNomination && (
           <Alert>
@@ -241,7 +278,12 @@ export default function ContributorsSection({
 
         {/* Contributors List */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Current Contributors</label>
+          <label className="text-sm font-medium flex items-center gap-2">
+            Current Contributors
+            {contributors.length > 0 && (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            )}
+          </label>
           {contributors.length === 0 ? (
             <div className="text-sm text-muted-foreground py-4 text-center border rounded-lg">
               No contributors have been nominated yet
@@ -274,36 +316,48 @@ export default function ContributorsSection({
                     })()}
                     <Users className="h-8 w-8 text-muted-foreground flex-shrink-0 hidden" />
                     <div>
-                      <p className="font-medium">
-                        {(() => {
-                          // Find the organization details for formatting
-                          const organization = organizations.find(o => o.id === contributor.organization_id);
-                          if (organization) {
-                            // Format: [Name] ([Acronym]) - IATI: [identifier]
-                            let display = organization.name;
-                            if (organization.acronym) {
-                              display += ` (${organization.acronym})`;
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">
+                          {(() => {
+                            // Find the organization details for formatting
+                            const organization = organizations.find(o => o.id === contributor.organization_id);
+                            if (organization) {
+                              // Format: [Name] ([Acronym]) only
+                              let display = organization.name;
+                              if (organization.acronym) {
+                                display += ` (${organization.acronym})`;
+                              }
+                              return display;
                             }
-                            if (organization.iati_org_id) {
-                              display += ` - IATI: ${organization.iati_org_id}`;
-                            }
-                            return display;
-                          }
-                          return contributor.organization_name;
-                        })()}
-                      </p>
+                            return contributor.organization_name;
+                          })()}
+                        </p>
+                        <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        Nominated by {contributor.nominated_by_name} on{' '}
-                        {new Date(contributor.nominated_at).toLocaleDateString()}
+                        {(() => {
+                          const organization = organizations.find(o => o.id === contributor.organization_id);
+                          const iatiId = organization?.iati_org_id;
+                          const nominationText = `Nominated by ${contributor.nominated_by_name || 'Unknown User'} on ${new Date(contributor.nominated_at).toLocaleDateString()}`;
+                          
+                          return iatiId ? `${iatiId} • ${nominationText}` : nominationText;
+                        })()}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={
-                      contributor.status === 'accepted' ? 'default' :
-                      contributor.status === 'declined' ? 'secondary' :
-                      'outline'
-                    }>
+                    <Badge 
+                      variant={
+                        contributor.status === 'accepted' ? 'default' :
+                        contributor.status === 'declined' ? 'secondary' :
+                        'outline'
+                      }
+                      className={
+                        contributor.status === 'nominated' 
+                          ? 'bg-purple-100 text-purple-800 border-purple-200 rounded-full' 
+                          : ''
+                      }
+                    >
                       {contributor.status}
                     </Badge>
                     {permissions.canNominateContributors && (
@@ -322,8 +376,9 @@ export default function ContributorsSection({
           )}
         </div>
 
-
-      </CardContent>
-    </Card>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 } 

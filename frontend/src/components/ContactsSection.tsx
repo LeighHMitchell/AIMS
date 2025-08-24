@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ContactTypeSearchableSelect } from "@/components/forms/ContactTypeSearchableSelect";
 import { CONTACT_TYPES } from "@/data/contact-types";
-import { X, Plus, Phone, Mail, Printer, User, Building } from "lucide-react";
+import { X, Plus, Phone, Mail, Printer, User, Building, CheckCircle, Loader2, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { useContactsAutosave } from '@/hooks/use-field-autosave-new';
@@ -92,6 +92,7 @@ export default function ContactsSection({ contacts, onChange, activityId, report
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
+  const [savingContactId, setSavingContactId] = useState<string | null>(null);
   const { user } = useUser();
   const homeCountryData = useHomeCountryData();
   const [emailErrors, setEmailErrors] = useState({
@@ -107,10 +108,19 @@ export default function ContactsSection({ contacts, onChange, activityId, report
     console.log('[CONTACTS DEBUG] Autosave state changed:', contactsAutosave.state);
     if (contactsAutosave.state.error) {
       console.error('[CONTACTS DEBUG] Autosave error detected:', contactsAutosave.state.error);
-      toast.error(`Failed to save contacts: ${contactsAutosave.state.error}`);
+      // Clear saving contact indicator on error
+      setSavingContactId(null);
+      // Provide a more user-friendly error message
+      const errorMessage = contactsAutosave.state.error?.message || String(contactsAutosave.state.error);
+      const userFriendlyMessage = errorMessage?.includes('Load failed') || errorMessage?.includes('TypeError')
+        ? 'Failed to save contacts. Please try again.'
+        : `Failed to save contacts: ${errorMessage}`;
+      toast.error(userFriendlyMessage);
     }
     if (contactsAutosave.state.lastSaved) {
       console.log('[CONTACTS DEBUG] Contacts successfully saved at:', contactsAutosave.state.lastSaved);
+      // Clear saving indicator and show briefly saved state
+      setSavingContactId(null);
     }
   }, [contactsAutosave.state]);
 
@@ -212,6 +222,10 @@ export default function ContactsSection({ contacts, onChange, activityId, report
     console.log('[CONTACTS DEBUG] editingContact:', editingContact);
     
     if (!editingContact) return;
+    
+    // Set saving indicator for the contact being saved
+    const contactId = editingContact.id || `temp-${editingIndex}`;
+    setSavingContactId(contactId);
 
     if (!editingContact.firstName.trim() || !editingContact.lastName.trim()) {
       toast.error("First name and last name are required");
@@ -255,6 +269,8 @@ export default function ContactsSection({ contacts, onChange, activityId, report
               { id: 'current-activity', title: 'Current Activity' },
               { id: 'current-user', name: 'Current User', role: 'user' }
             );
+          }).catch((importError) => {
+            console.error('Failed to import activity logger:', importError);
           });
         } catch (error) {
           console.error('Failed to log contact addition:', error);
@@ -272,6 +288,8 @@ export default function ContactsSection({ contacts, onChange, activityId, report
               { id: 'current-activity', title: 'Current Activity' },
               { id: 'current-user', name: 'Current User', role: 'user' }
             );
+          }).catch((importError) => {
+            console.error('Failed to import activity logger:', importError);
           });
         } catch (error) {
           console.error('Failed to log contact edit:', error);
@@ -305,6 +323,8 @@ export default function ContactsSection({ contacts, onChange, activityId, report
             { id: 'current-activity', title: 'Current Activity' },
             { id: 'current-user', name: 'Current User', role: 'user' }
           );
+        }).catch((importError) => {
+          console.error('Failed to import activity logger:', importError);
         });
       } catch (error) {
         console.error('Failed to log contact removal:', error);
@@ -340,6 +360,25 @@ export default function ContactsSection({ contacts, onChange, activityId, report
     setEditingIndex(null);
     // Reset email errors when canceling
     setEmailErrors({ primary: "", secondary: "" });
+  };
+
+  // Contact status indicator component
+  const ContactStatusIndicator = ({ contact, index }: { contact: Contact; index: number }) => {
+    const contactId = contact.id || `temp-${index}`;
+    const isSaving = contactsAutosave.state.isSaving && savingContactId === contactId;
+    const recentlySaved = contactsAutosave.state.lastSaved && !contactsAutosave.state.isSaving && savingContactId === null;
+    const isSavedToDatabase = contact.id && !contact.id.startsWith('temp-') && !contact.id.startsWith('contact-');
+    
+    if (isSaving) {
+      return <Loader2 className="h-4 w-4 text-orange-500 animate-spin ml-2 flex-shrink-0" />;
+    }
+    
+    // Show green checkmark for contacts saved to database or recently saved
+    if (isSavedToDatabase || recentlySaved) {
+      return <CheckCircle className="h-4 w-4 text-green-500 ml-2 flex-shrink-0" />;
+    }
+    
+    return null;
   };
 
   const ProfilePhotoUpload = ({ photo, onChange }: { photo?: string; onChange: (photo: string) => void }) => {
@@ -403,30 +442,18 @@ export default function ContactsSection({ contacts, onChange, activityId, report
 
   return (
     <div className="max-w-4xl space-y-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          ACTIVITY CONTACTS
-          {contactsAutosave.state.isSaving && (
-            <span className="text-xs text-blue-600">Saving...</span>
-          )}
-          {contactsAutosave.state.lastSaved && !contactsAutosave.state.isSaving && (
-            <span className="text-xs text-green-600">Saved</span>
-          )}
-          {contactsAutosave.state.error && (
-            <span className="text-xs text-red-600">Save failed</span>
-          )}
-        </h2>
-        <p className="text-gray-600 mt-2">
-          Add contact information for key personnel involved in this activity
-        </p>
-      </div>
 
       {/* Autosave error details */}
       {contactsAutosave.state.error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Failed to save contacts: {contactsAutosave.state.error.message}
+            {(() => {
+              const errorMessage = contactsAutosave.state.error?.message || String(contactsAutosave.state.error);
+              return errorMessage?.includes('Load failed') || errorMessage?.includes('TypeError')
+                ? 'Failed to save contacts. Please refresh the page and try again.'
+                : `Failed to save contacts: ${errorMessage}`;
+            })()}
           </AlertDescription>
         </Alert>
       )}
@@ -479,7 +506,7 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                       </Select>
                     </div>
                     <div className="col-span-3">
-                      <label className="text-sm font-medium">First Name *</label>
+                      <label className="text-sm font-medium">First Name</label>
                       <Input
                         value={editingContact.firstName}
                         onChange={(e) =>
@@ -499,7 +526,7 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                       />
                     </div>
                     <div className="col-span-4">
-                      <label className="text-sm font-medium">Last Name *</label>
+                      <label className="text-sm font-medium">Last Name</label>
                       <Input
                         value={editingContact.lastName}
                         onChange={(e) =>
@@ -513,7 +540,7 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                   {/* Position/Role and Contact Type - on one line */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium">Position/Role *</label>
+                      <label className="text-sm font-medium">Position/Role</label>
                       <Input
                         value={editingContact.position}
                         onChange={(e) =>
@@ -523,7 +550,7 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Contact Type *</label>
+                      <label className="text-sm font-medium">Contact Type</label>
                       <ContactTypeSearchableSelect
                         value={editingContact.type}
                         onValueChange={(value) =>
@@ -657,25 +684,42 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                         <img
                           src={contact.profilePhoto}
                           alt={`${contact.firstName} ${contact.lastName}`}
-                          className="w-16 h-16 rounded-lg object-cover"
+                          className="w-20 h-20 rounded-lg object-cover"
                         />
                       ) : (
-                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <User className="h-8 w-8 text-gray-400" />
+                        <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <User className="h-10 w-10 text-gray-400" />
                         </div>
                       )}
                       <div className="space-y-1">
-                        <h3 className="font-semibold">
+                        <h3 className="font-semibold flex items-center">
                           {contact.title} {contact.firstName} {contact.middleName} {contact.lastName}
+                          <ContactStatusIndicator contact={contact} index={index} />
                         </h3>
                         <p className="text-sm text-gray-600">{contact.position}</p>
-                        <p className="text-sm text-gray-500">{getContactTypeName(contact.type)}</p>
-                        {contact.organisation && (
-                          <p className="text-sm text-gray-500 flex items-center gap-1">
-                            <Building className="h-3 w-3" />
-                            {contact.organisation}
-                          </p>
-                        )}
+                        {(() => {
+                          const org = organizations.find(o => o.id === contact.organisationId);
+                          if (org) {
+                            return (
+                              <p className="text-sm text-gray-500 flex items-center gap-1">
+                                <Building className="h-3 w-3" />
+                                {org.name}{org.acronym && ` (${org.acronym})`}
+                              </p>
+                            );
+                          } else if (contact.organisation) {
+                            return (
+                              <p className="text-sm text-gray-500 flex items-center gap-1">
+                                <Building className="h-3 w-3" />
+                                {contact.organisation}
+                              </p>
+                            );
+                          }
+                          return null;
+                        })()}
+                        <p className="text-sm text-gray-500 flex items-center gap-1">
+                          <UserCheck className="h-3 w-3" />
+                          {getContactTypeName(contact.type)}
+                        </p>
                         <div className="flex flex-wrap gap-3 mt-2">
                           {(contact.phone || (contact.countryCode && contact.phoneNumber)) && (
                             <span className="text-sm text-gray-600 flex items-center gap-1">
@@ -684,10 +728,13 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                             </span>
                           )}
                           {contact.email && (
-                            <span className="text-sm text-gray-600 flex items-center gap-1">
+                            <a 
+                              href={`mailto:${contact.email}`}
+                              className="text-sm text-gray-600 flex items-center gap-1 hover:text-blue-600 transition-colors"
+                            >
                               <Mail className="h-3 w-3" />
                               {contact.email}
-                            </span>
+                            </a>
                           )}
                           {(contact.fax || (contact.faxCountryCode && contact.faxNumber)) && (
                             <span className="text-sm text-gray-600 flex items-center gap-1">
@@ -716,9 +763,11 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                     </div>
                   </div>
                   {contact.notes && (
-                    <p className="text-sm text-gray-600 mt-3">
-                      {contact.notes}
-                    </p>
+                    <div className="mt-3 ml-24">
+                      <p className="text-sm text-gray-600">
+                        {contact.notes}
+                      </p>
+                    </div>
                   )}
                 </>
               )}
@@ -781,7 +830,7 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                     </Select>
                   </div>
                   <div className="col-span-3">
-                    <label className="text-sm font-medium">First Name *</label>
+                    <label className="text-sm font-medium">First Name</label>
                     <Input
                       value={editingContact.firstName}
                       onChange={(e) =>
@@ -801,7 +850,7 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                     />
                   </div>
                   <div className="col-span-4">
-                    <label className="text-sm font-medium">Last Name *</label>
+                    <label className="text-sm font-medium">Last Name</label>
                     <Input
                       value={editingContact.lastName}
                       onChange={(e) =>
@@ -815,7 +864,7 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                 {/* Position/Role and Contact Type - on one line */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Position/Role *</label>
+                    <label className="text-sm font-medium">Position/Role</label>
                     <Input
                       value={editingContact.position}
                       onChange={(e) =>
@@ -825,7 +874,7 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Contact Type *</label>
+                    <label className="text-sm font-medium">Contact Type</label>
                     <ContactTypeSearchableSelect
                       value={editingContact.type}
                       onValueChange={(value) =>

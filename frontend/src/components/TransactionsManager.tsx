@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransactionTypeSelect } from "@/components/forms/TransactionTypeSelect";
-import { Plus, Trash2, Edit, Download, Filter, DollarSign, AlertCircle, FileText } from "lucide-react";
+import { FinanceTypeSelect } from "@/components/forms/FinanceTypeSelect";
+import { Plus, Trash2, Edit, Download, Filter, DollarSign, AlertCircle, FileText, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { usePartners } from "@/hooks/usePartners";
@@ -70,6 +71,7 @@ interface TransactionsManagerProps {
   defaultCurrency?: string;
   defaultTiedStatus?: string;
   defaultFlowType?: string;
+  defaultDisbursementChannel?: string;
 }
 
 export default function TransactionsManager({ 
@@ -81,7 +83,8 @@ export default function TransactionsManager({
   defaultAidType,
   defaultCurrency,
   defaultTiedStatus,
-  defaultFlowType
+  defaultFlowType,
+  defaultDisbursementChannel
 }: TransactionsManagerProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -91,6 +94,7 @@ export default function TransactionsManager({
   const [filters, setFilters] = useState({
     type: "all",
     status: "all",
+    financeType: "all",
     dateFrom: "",
     dateTo: ""
   });
@@ -270,6 +274,7 @@ export default function TransactionsManager({
   const filteredTransactions = transactions.filter(t => {
     if (filters.type !== "all" && t.transaction_type !== filters.type) return false;
     if (filters.status !== "all" && t.status !== filters.status) return false;
+    if (filters.financeType !== "all" && t.finance_type !== filters.financeType) return false;
     if (filters.dateFrom && t.transaction_date && t.transaction_date < filters.dateFrom) return false;
     if (filters.dateTo && t.transaction_date && t.transaction_date > filters.dateTo) return false;
     return true;
@@ -374,34 +379,74 @@ export default function TransactionsManager({
                 <Filter className="h-4 w-4" />
                 Filters
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                 <div className="relative">
                   <TransactionTypeSelect
                     value={filters.type}
-                    onValueChange={(value) => setFilters({...filters, type: value})}
+                    onValueChange={(value) => setFilters({...filters, type: value || "all"})}
                     placeholder="All Types"
                     className="w-full"
                   />
                 </div>
-                <Select value={filters.status} onValueChange={v => setFilters({...filters, status: v})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[9999]">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="actual">Actual</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Select value={filters.status} onValueChange={v => setFilters({...filters, status: v})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999]">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="actual">Actual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {filters.status !== "all" && (
+                    <button
+                      type="button"
+                      onClick={() => setFilters({...filters, status: "all"})}
+                      className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors z-10"
+                      aria-label="Clear status filter"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <FinanceTypeSelect
+                    value={filters.financeType === "all" ? undefined : filters.financeType}
+                    onChange={(value) => setFilters({...filters, financeType: value || "all"})}
+                    placeholder="All Finance Types"
+                    className="w-full h-10"
+                  />
+                  {filters.financeType !== "all" && (
+                    <button
+                      type="button"
+                      onClick={() => setFilters({...filters, financeType: "all"})}
+                      className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors z-10"
+                      aria-label="Clear finance type filter"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <Input
                     type="date"
                     placeholder="From date"
                     value={filters.dateFrom}
                     onChange={e => setFilters({...filters, dateFrom: e.target.value})}
-                    className="pl-12"
+                    className="pl-12 pr-8"
                   />
                   <label className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">From</label>
+                  {filters.dateFrom && (
+                    <button
+                      type="button"
+                      onClick={() => setFilters({...filters, dateFrom: ""})}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                      aria-label="Clear from date filter"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
                 <div className="relative">
                   <Input
@@ -409,17 +454,27 @@ export default function TransactionsManager({
                     placeholder="To date"
                     value={filters.dateTo}
                     onChange={e => setFilters({...filters, dateTo: e.target.value})}
-                    className="pl-10"
+                    className="pl-10 pr-8"
                   />
                   <label className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">To</label>
+                  {filters.dateTo && (
+                    <button
+                      type="button"
+                      onClick={() => setFilters({...filters, dateTo: ""})}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                      aria-label="Clear to date filter"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
               </div>
-              {(filters.type !== "all" || filters.status !== "all" || filters.dateFrom || filters.dateTo) && (
+              {(filters.type !== "all" || filters.status !== "all" || filters.financeType !== "all" || filters.dateFrom || filters.dateTo) && (
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setFilters({ type: "all", status: "all", dateFrom: "", dateTo: "" })}
+                    onClick={() => setFilters({ type: "all", status: "all", financeType: "all", dateFrom: "", dateTo: "" })}
                     className="text-xs"
                   >
                     Clear all filters
@@ -478,6 +533,7 @@ export default function TransactionsManager({
         defaultCurrency={defaultCurrency}
         defaultTiedStatus={defaultTiedStatus}
         defaultFlowType={defaultFlowType}
+        defaultDisbursementChannel={defaultDisbursementChannel}
         isSubmitting={submitting}
       />
     </div>

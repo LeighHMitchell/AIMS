@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { 
   Table,
   TableBody,
@@ -25,7 +26,8 @@ import {
   Sparkles,
   Info,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  HelpCircle
 } from 'lucide-react';
 import { HeroCard } from '@/components/ui/hero-card';
 import { SectorSelect, transformSectorGroups } from '@/components/forms/SectorSelect';
@@ -750,7 +752,7 @@ export default function ImprovedSectorAllocationForm({
                       <SortableHeader field="subSector">Sub-sector</SortableHeader>
                       <SortableHeader field="sector">Sector</SortableHeader>
                       <SortableHeader field="category">Sector Category</SortableHeader>
-                      <SortableHeader field="percentage" className="w-40 text-right">%</SortableHeader>
+                      <SortableHeader field="percentage" className="w-40 text-center">%</SortableHeader>
                       <TableHead className="w-20 text-center py-3"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -871,10 +873,12 @@ export default function ImprovedSectorAllocationForm({
         {allocations.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Sector Allocation Visualization</CardTitle>
-              <CardDescription>
-                Interactive sunburst chart showing sector allocation hierarchy and relationships
-              </CardDescription>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base">Sector Allocation Visualization</CardTitle>
+                <HelpTextTooltip content="Interactive sunburst chart showing sector allocation hierarchy and relationships">
+                  <HelpCircle className="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-help" />
+                </HelpTextTooltip>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="relative overflow-hidden">

@@ -28,19 +28,72 @@ interface Props {
   className?: string;
 }
 
-// Color palette - custom brand colors with darker/base/lighter variations
-const COLOR_PALETTE = [
-  { darker: '#C7303C', base: '#E3120B', lighter: '#FF6B6C' }, // Red
-  { darker: '#000000', base: '#0C0C0C', lighter: '#333333' }, // Black (using dark gray for lighter)
-  { darker: '#C21F25', base: '#DB444B', lighter: '#FF6D70' }, // DB Red
-  { darker: '#00588D', base: '#006BA2', lighter: '#1270A8' }, // Blue
-  { darker: '#0092A7', base: '#3EBCD2', lighter: '#25ADC2' }, // Cyan
-  { darker: '#00786B', base: '#379A8B', lighter: '#4DAD9E' }, // Green
-  { darker: '#8D6300', base: '#EBB434', lighter: '#C89608' }, // Yellow
-  { darker: '#667100', base: '#B4BA39', lighter: '#9DA521' }, // Olive
-  { darker: '#925977', base: '#9A607F', lighter: '#C98CAC' }, // Purple
-  { darker: '#826636', base: '#D1B07C', lighter: '#FFC2E3' }, // Gold
+// Extended color palette for unique colors per segment
+const BASE_COLORS = [
+  '#E3120B', '#006BA2', '#3EBCD2', '#379A8B', '#EBB434', '#B4BA39', '#9A607F', '#D1B07C',
+  '#FF6B6C', '#1270A8', '#25ADC2', '#4DAD9E', '#C89608', '#9DA521', '#C98CAC', '#FFC2E3',
+  '#C7303C', '#00588D', '#0092A7', '#00786B', '#8D6300', '#667100', '#925977', '#826636',
+  '#DB444B', '#0C4A6E', '#0E7490', '#065F46', '#A16207', '#4D7C0F', '#7C2D12', '#92400E',
+  '#F87171', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#FB7185', '#38BDF8', '#4ADE80',
+  '#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#22C55E',
+  '#DC2626', '#2563EB', '#059669', '#D97706', '#7C3AED', '#DB2777', '#0891B2', '#16A34A',
+  '#B91C1C', '#1D4ED8', '#047857', '#B45309', '#6D28D9', '#BE185D', '#0E7490', '#15803D'
 ];
+
+// Function to generate darker and lighter shades from a base color
+const generateShades = (baseColor: string) => {
+  // Convert hex to RGB
+  const hex = baseColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Generate darker shade (multiply by 0.7)
+  const darkerR = Math.round(r * 0.7);
+  const darkerG = Math.round(g * 0.7);
+  const darkerB = Math.round(b * 0.7);
+  
+  // Generate lighter shade (blend with white)
+  const lighterR = Math.round(r + (255 - r) * 0.4);
+  const lighterG = Math.round(g + (255 - g) * 0.4);
+  const lighterB = Math.round(b + (255 - b) * 0.4);
+  
+  return {
+    darker: `rgb(${darkerR}, ${darkerG}, ${darkerB})`,
+    base: baseColor,
+    lighter: `rgb(${lighterR}, ${lighterG}, ${lighterB})`
+  };
+};
+
+// Function to generate multiple shades within the same color family for different ring levels
+const generateVariedShades = (baseColor: string, shadeIndex: number, totalShades: number, ringLevel: 'sector' | 'subsector') => {
+  const hex = baseColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  let minLighten, maxLighten;
+  
+  if (ringLevel === 'sector') {
+    // Middle ring - moderate lightening range
+    minLighten = 0.1;
+    maxLighten = 0.3;
+  } else {
+    // Outer ring - lighter range
+    minLighten = 0.4;
+    maxLighten = 0.7;
+  }
+  
+  const lightenFactor = totalShades === 1 ? 
+    (minLighten + maxLighten) / 2 : // Use middle value if only one shade
+    minLighten + (maxLighten - minLighten) * (shadeIndex / (totalShades - 1));
+  
+  const lighterR = Math.round(r + (255 - r) * lightenFactor);
+  const lighterG = Math.round(g + (255 - g) * lightenFactor);
+  const lighterB = Math.round(b + (255 - b) * lightenFactor);
+  
+  return `rgb(${lighterR}, ${lighterG}, ${lighterB})`;
+};
 
 export default function SectorSunburstVisualization({ 
   allocations, 
@@ -195,14 +248,16 @@ export default function SectorSunburstVisualization({
 
     categories.forEach(([categoryCode, category], categoryIndex) => {
       const categoryAngle = (category.percentage / totalAllocated) * 360;
-      const colorSet = COLOR_PALETTE[categoryIndex % COLOR_PALETTE.length];
+      // Each category gets its own base color - this will be the family color for all its children
+      const categoryBaseColor = BASE_COLORS[categoryIndex % BASE_COLORS.length];
+      const categoryColorSet = generateShades(categoryBaseColor);
 
       // Inner ring - Categories (DAC Groups) - use darker shade
       const categoryPath = createArc(currentAngle, currentAngle + categoryAngle, innerRadius, middleInnerRadius);
       if (categoryPath) {
         g.append('path')
           .attr('d', categoryPath)
-          .attr('fill', colorSet.darker) // Use darker shade for inner ring
+          .attr('fill', categoryColorSet.darker) // Use darker shade for inner ring
           .attr('stroke', '#fff')
           .attr('stroke-width', 2)
           .style('cursor', 'pointer')
@@ -229,15 +284,17 @@ export default function SectorSunburstVisualization({
       let sectorStartAngle = currentAngle;
       const sectors = Array.from(category.sectors.entries());
 
-      sectors.forEach(([sectorCode, sector]) => {
+      sectors.forEach(([sectorCode, sector], sectorIndex) => {
         const sectorAngle = (sector.percentage / totalAllocated) * 360;
+        // Each sector gets a different shade within the same color family (medium range)
+        const sectorColor = generateVariedShades(categoryBaseColor, sectorIndex, sectors.length, 'sector');
 
-        // Middle ring - Sectors (3-digit codes) - use base color
+        // Middle ring - Sectors (3-digit codes) - use varied medium shades
         const sectorPath = createArc(sectorStartAngle, sectorStartAngle + sectorAngle, middleInnerRadius, middleOuterRadius);
         if (sectorPath) {
           g.append('path')
             .attr('d', sectorPath)
-            .attr('fill', colorSet.base) // Use base color for middle ring
+            .attr('fill', sectorColor) // Use varied shade for middle ring
             .attr('stroke', '#fff')
             .attr('stroke-width', 1)
             .style('cursor', 'pointer')
@@ -262,15 +319,17 @@ export default function SectorSunburstVisualization({
 
         // Process subsectors within this sector
         let subsectorStartAngle = sectorStartAngle;
-        sector.subsectors.forEach((subsector) => {
+        sector.subsectors.forEach((subsector, subsectorIndex) => {
           const subsectorAngle = (subsector.percentage / totalAllocated) * 360;
+          // Each subsector gets a different shade within the same color family
+          const subsectorColor = generateVariedShades(categoryBaseColor, subsectorIndex, sector.subsectors.length, 'subsector');
 
-          // Outer ring - Subsectors (5-digit codes) - use lighter shade
+          // Outer ring - Subsectors (5-digit codes) - use varied lighter shades
           const subsectorPath = createArc(subsectorStartAngle, subsectorStartAngle + subsectorAngle, middleOuterRadius, outerOuterRadius);
           if (subsectorPath) {
             g.append('path')
               .attr('d', subsectorPath)
-              .attr('fill', colorSet.lighter) // Use lighter shade for outer ring
+              .attr('fill', subsectorColor) // Use varied shade for outer ring
               .attr('stroke', '#fff')
               .attr('stroke-width', 1)
               .style('cursor', 'pointer')
@@ -336,7 +395,7 @@ export default function SectorSunburstVisualization({
               <TableHead>Sector Name</TableHead>
               <TableHead>3-Digit Sector</TableHead>
               <TableHead>Sector Category</TableHead>
-              <TableHead className="text-right">% Allocation</TableHead>
+              <TableHead className="text-center">% Allocation</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

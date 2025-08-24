@@ -10,7 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-select';
 import { Textarea } from '@/components/ui/textarea';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,22 +25,28 @@ interface LinkedActivity {
   id: string;
   activityId: string | null;
   activityTitle: string;
+  acronym?: string;
+  otherIdentifier?: string;
   iatiIdentifier: string;
   relationshipType: string;
   relationshipTypeLabel: string;
   narrative?: string;
   isExternal: boolean;
   createdBy: string;
-  createdByEmail: string;
+  createdByEmail?: string;
   createdAt: string;
   direction: 'incoming' | 'outgoing';
   organizationName?: string;
+  organizationAcronym?: string;
+  icon?: string;
   status?: string;
 }
 
 interface Activity {
   id: string;
   title: string;
+  acronym?: string;
+  otherIdentifier?: string;
   iatiIdentifier: string;
   status: string;
   organizationName?: string;
@@ -165,6 +173,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
         const mappedActivities = (data.activities || []).map((activity: any) => ({
           id: activity.id,
           title: activity.title_narrative || activity.title || 'Untitled Activity',
+          acronym: activity.acronym || '',
+          otherIdentifier: activity.other_identifier || '',
           iatiIdentifier: activity.iati_identifier || activity.iatiIdentifier || '',
           status: activity.activity_status || activity.status || '',
           organizationName: activity.created_by_org_name || activity.organizationName || '',
@@ -295,23 +305,48 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     }
   };
 
+  // Get badge style for relationship type
+  const getRelationshipBadgeStyle = (type: string) => {
+    switch (type) {
+      case '1': return "border-purple-300 text-purple-700 bg-purple-50"; // Parent - Purple
+      case '2': return "border-blue-300 text-blue-700 bg-blue-50"; // Child - Blue
+      case '3': return "border-green-300 text-green-700 bg-green-50"; // Sibling - Green
+      case '4': return "border-orange-300 text-orange-700 bg-orange-50"; // Co-funded - Orange
+      case '5': return "border-teal-300 text-teal-700 bg-teal-50"; // Third Party - Teal
+      default: return "border-gray-300 text-gray-700 bg-gray-50"; // Default - Gray
+    }
+  };
+
       return (
     <div className="h-[calc(100vh-16rem)] overflow-y-auto">
       <div className="space-y-6">
         {/* Search & Link Activities - Full Width */}
-        <div className="bg-gray-50 rounded-lg p-6">
+        <div className="bg-white rounded-lg p-6 border border-gray-200">
                   <div className="mb-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Search & Link Activities</h3>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               type="text"
-              placeholder="Search by title, IATI ID, or organisation..."
+              placeholder="Search by title, acronym, Activity ID, IATI ID, or organisation..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10 border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+              className="pl-10 pr-10 border-gray-300 focus:border-gray-500 focus:ring-gray-500"
               disabled={!canEdit}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  handleSearch('');
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-400 hover:text-gray-600"
+                aria-label="Clear search"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
             </div>
         </div>
 
@@ -377,16 +412,20 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-gray-900 line-clamp-1">
                             {activity.title}
-                          </h4>
-                          <div className="mt-1 space-y-1">
-                            <p className="text-xs text-gray-600">
-                              {activity.iatiIdentifier}
-                            </p>
-                            {activity.organizationName && (
-                              <p className="text-xs text-gray-500">
-                                {activity.organizationName}
-                              </p>
+                            {activity.acronym && (
+                              <span className="font-medium text-gray-900"> ({activity.acronym})</span>
                             )}
+                          </h4>
+                          <div className="mt-1">
+                            <p className="text-xs text-gray-500 truncate">
+                              {[
+                                activity.otherIdentifier,
+                                activity.iatiIdentifier,
+                                activity.organizationName && activity.organizationAcronym 
+                                  ? `${activity.organizationName} (${activity.organizationAcronym})`
+                                  : activity.organizationName || (activity.organizationAcronym && `(${activity.organizationAcronym})`)
+                              ].filter(Boolean).join(' • ')}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -402,10 +441,10 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
         {/* Linked Activities - Full Width */}
         <div className="bg-white rounded-lg p-6 border border-gray-200">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Linked Activities</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Activities linked to this one through IATI relationship types
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              Established Links
+              <HelpTextTooltip content="Activities linked to this one through IATI relationship types" />
+            </h3>
           </div>
 
           {tableMissing && (
@@ -445,45 +484,91 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                     className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          {getRelationshipIcon(link.relationshipType)}
-                          <h4 className="font-medium text-gray-900">
-                            {link.activityTitle}
-                          </h4>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-4 text-xs text-gray-600">
-                            <span>{link.iatiIdentifier}</span>
-                            <Badge variant="outline" className="border-gray-300 text-gray-700">
-                              {getRelationshipTypeName(link.relationshipType)}
-                            </Badge>
-                              </div>
-                          {link.narrative && (
-                            <p className="text-sm text-gray-600 mt-2">{link.narrative}</p>
-                                )}
-                              </div>
+                      <div className="flex items-start gap-3 flex-1">
+                        {/* Activity Icon */}
+                        <div className="flex-shrink-0 mt-0.5">
+                          {link.icon ? (
+                            <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                              <img 
+                                src={link.icon} 
+                                alt="Activity icon" 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement
+                                  target.style.display = 'none'
+                                  target.parentElement!.innerHTML = `
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                      <span class="text-blue-600 font-semibold text-sm">A</span>
+                                    </div>
+                                  `
+                                }}
+                              />
                             </div>
-                      {canEdit && (
-                        <div className="flex items-center gap-1 ml-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(link)}
-                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(link.id)}
-                            className="h-8 w-8 p-0 text-gray-600 hover:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          ) : (
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-blue-600 font-semibold text-sm">A</span>
+                            </div>
+                          )}
                         </div>
-                      )}
+
+                        {/* Activity Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            {getRelationshipIcon(link.relationshipType)}
+                            <h4 className="font-medium text-gray-900 text-sm leading-tight break-words">
+                              {link.activityTitle}
+                              {link.acronym && (
+                                <span className="font-medium text-gray-900"> ({link.acronym})</span>
+                              )}
+                            </h4>
+                          </div>
+                          
+                          <div className="space-y-1 ml-6">
+                            <p className="text-xs text-gray-500 break-words">
+                              {[
+                                link.otherIdentifier,
+                                link.iatiIdentifier
+                              ].filter(Boolean).join(' • ')}
+                            </p>
+                            {(link.organizationName || link.organizationAcronym) && (
+                              <p className="text-xs text-gray-500 break-words">
+                                {link.organizationName && link.organizationAcronym 
+                                  ? `${link.organizationName} (${link.organizationAcronym})`
+                                  : link.organizationName || (link.organizationAcronym && `(${link.organizationAcronym})`)}
+                              </p>
+                            )}
+                            {link.narrative && (
+                              <p className="text-sm text-gray-600 mt-2">{link.narrative}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 ml-4">
+                        <Badge variant="outline" className={getRelationshipBadgeStyle(link.relationshipType)}>
+                          {getRelationshipTypeName(link.relationshipType)}
+                        </Badge>
+                        {canEdit && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(link)}
+                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(link.id)}
+                              className="h-8 w-8 p-0 text-gray-600 hover:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -507,7 +592,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
 
         {/* Add/Edit Modal */}
         <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-gray-900">
               {editingActivity ? 'Edit Link' : 'Link Activity'}
@@ -523,39 +608,86 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
             {/* Selected Activity Info */}
             {(selectedActivity || editingActivity) && (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <h4 className="font-medium text-gray-900">
-                  {editingActivity ? editingActivity.activityTitle : selectedActivity?.title}
-                </h4>
-                <p className="text-sm text-gray-600 mt-1">
-                  {editingActivity ? editingActivity.iatiIdentifier : selectedActivity?.iatiIdentifier}
-                </p>
+                <div className="flex items-start gap-3">
+                  {/* Activity Icon */}
+                  <div className="flex-shrink-0 mt-0.5">
+                    {selectedActivity?.icon ? (
+                      <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                        <img 
+                          src={selectedActivity.icon} 
+                          alt="Activity icon" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            target.parentElement!.innerHTML = `
+                              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span class="text-blue-600 font-semibold text-sm">A</span>
+                              </div>
+                            `
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 font-semibold text-sm">A</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Activity Details */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-gray-900 text-sm leading-tight break-words">
+                      {editingActivity ? editingActivity.activityTitle : selectedActivity?.title}
+                      {selectedActivity?.acronym && (
+                        <span className="font-medium text-gray-900"> ({selectedActivity.acronym})</span>
+                      )}
+                    </h4>
+                    <div className="mt-1 space-y-1">
+                      <p className="text-xs text-gray-500 break-words">
+                        {selectedActivity ? [
+                          selectedActivity.otherIdentifier,
+                          selectedActivity.iatiIdentifier
+                        ].filter(Boolean).join(' • ') : (editingActivity ? editingActivity.iatiIdentifier : '')}
+                      </p>
+                      {selectedActivity && (selectedActivity.organizationName || selectedActivity.organizationAcronym) && (
+                        <p className="text-xs text-gray-500 break-words">
+                          Reported by: {selectedActivity.organizationName && selectedActivity.organizationAcronym 
+                            ? `${selectedActivity.organizationName} (${selectedActivity.organizationAcronym})`
+                            : selectedActivity.organizationName || (selectedActivity.organizationAcronym && `(${selectedActivity.organizationAcronym})`)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Relationship Type */}
             <div className="space-y-2">
-              <Label htmlFor="relationship-type">Relationship Type *</Label>
-              <Select value={relationshipType} onValueChange={setRelationshipType}>
-                <SelectTrigger className="border-gray-300 focus:border-gray-500">
-                  <SelectValue placeholder="Select relationship type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {IATI_RELATIONSHIP_TYPES.map((type) => (
-                    <SelectItem key={type.code} value={type.code}>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{type.name}</span>
-                        <span className="text-xs text-gray-500">({type.code})</span>
-                      </div>
-                      <p className="text-xs text-gray-600 mt-1">{type.description}</p>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="relationship-type">Relationship Type</Label>
+              <div className="w-full">
+                <EnhancedSearchableSelect
+                  groups={[{
+                    label: "Relationship Types",
+                    options: IATI_RELATIONSHIP_TYPES.map(type => ({
+                      code: type.code,
+                      name: type.name,
+                      description: type.description
+                    }))
+                  }]}
+                  value={relationshipType}
+                  onValueChange={setRelationshipType}
+                  placeholder="Select relationship type..."
+                  searchPlaceholder="Search relationship types..."
+                  className="w-full [&_[cmdk-list]]:max-h-[400px]"
+                />
+              </div>
             </div>
 
             {/* Narrative */}
             <div className="space-y-2">
-              <Label htmlFor="narrative">Narrative (Optional)</Label>
+              <Label htmlFor="narrative">Narrative</Label>
               <Textarea
                 id="narrative"
                 value={narrative}

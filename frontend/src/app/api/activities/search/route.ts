@@ -23,7 +23,9 @@ export async function GET(request: NextRequest) {
       .from('activities')
       .select(`
         id, 
-        title_narrative, 
+        title_narrative,
+        acronym,
+        other_identifier,
         iati_identifier,
         activity_status,
         created_by_org_name,
@@ -35,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Add search filter if provided
     if (search) {
-      query = query.or(`title_narrative.ilike.%${search}%,iati_identifier.ilike.%${search}%,created_by_org_name.ilike.%${search}%`);
+      query = query.or(`title_narrative.ilike.%${search}%,acronym.ilike.%${search}%,other_identifier.ilike.%${search}%,iati_identifier.ilike.%${search}%,created_by_org_name.ilike.%${search}%`);
     }
 
     const { data, error } = await query;

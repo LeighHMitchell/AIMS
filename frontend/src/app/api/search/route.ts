@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         title_narrative,
+        acronym,
         other_identifier,
         iati_identifier,
         activity_status,
@@ -75,8 +76,8 @@ export async function GET(request: NextRequest) {
     // Search organizations - only names and acronyms
     const { data: organizations, error: orgsError, count: organizationsCount } = await supabase
       .from('organizations')
-      .select('id, name, acronym, type, country, logo, banner', { count: 'exact' })
-      .or(`name.ilike.${searchTerm},acronym.ilike.${searchTerm}`)
+      .select('id, name, acronym, iati_org_id, type, country, logo, banner', { count: 'exact' })
+      .or(`name.ilike.${searchTerm},acronym.ilike.${searchTerm},iati_org_id.ilike.${searchTerm}`)
       .range(offset, offset + limit - 1)
       .order('name')
 
@@ -214,6 +215,7 @@ export async function GET(request: NextRequest) {
         title: activity.title_narrative,
         subtitle: activity.other_identifier || activity.iati_identifier || undefined,
         metadata: {
+          acronym: activity.acronym || undefined,
           status: activity.activity_status,
           reporting_org: activity.created_by_org_name || undefined,
           reporting_org_acronym: activity.created_by_org_acronym || undefined,
@@ -230,8 +232,10 @@ export async function GET(request: NextRequest) {
         id: org.id,
         type: 'organization' as const,
         title: org.name,
-        subtitle: [org.acronym, org.type, org.country].filter(Boolean).join(' • ') || undefined,
+        subtitle: [org.iati_org_id, org.type, org.country].filter(Boolean).join(' • ') || undefined,
         metadata: {
+          acronym: org.acronym || undefined,
+          iati_identifier: org.iati_org_id || undefined,
           logo_url: org.logo || undefined,
           banner_url: org.banner || undefined
         }

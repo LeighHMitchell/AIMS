@@ -78,6 +78,8 @@ export async function GET(request: NextRequest) {
         default_finance_type,
         default_flow_type,
         default_tied_status,
+        default_aid_modality,
+        default_aid_modality_override,
         banner,
         icon,
         activity_sdg_mappings (

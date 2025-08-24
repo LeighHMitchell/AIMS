@@ -24,12 +24,26 @@ export function useParticipatingOrganizations({
   const [participatingOrganizations, setParticipatingOrganizations] = useState<ParticipatingOrganization[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
 
   // Fetch participating organizations
-  const fetchParticipatingOrganizations = useCallback(async () => {
-    if (!activityId) return;
+  const fetchParticipatingOrganizations = useCallback(async (forceRefresh = false) => {
+    if (!activityId) {
+      setParticipatingOrganizations([]);
+      setLoading(false);
+      setHasInitiallyLoaded(true);
+      return;
+    }
 
-    setLoading(true);
+    // Prevent unnecessary re-fetching if already loaded and not forcing refresh
+    if (hasInitiallyLoaded && !forceRefresh) {
+      return;
+    }
+
+    // Only show loading state on initial load or forced refresh
+    if (!hasInitiallyLoaded || forceRefresh) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -42,15 +56,20 @@ export function useParticipatingOrganizations({
 
       const data = await response.json();
       setParticipatingOrganizations(data);
+      setHasInitiallyLoaded(true);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch participating organizations';
       setError(errorMessage);
       onError?.(errorMessage);
       console.error('[AIMS] Error fetching participating organizations:', err);
+      // Only clear organizations on error if we haven't loaded before (prevents flicker)
+      if (!hasInitiallyLoaded) {
+        setParticipatingOrganizations([]);
+      }
     } finally {
       setLoading(false);
     }
-  }, [activityId, onError]);
+  }, [activityId, onError, hasInitiallyLoaded]);
 
   // Add participating organization
   const addParticipatingOrganization = useCallback(async (
@@ -141,16 +160,17 @@ export function useParticipatingOrganizations({
     );
   }, [participatingOrganizations]);
 
-  // Fetch on mount and when activityId changes
+  // Fetch on mount and when activityId changes (only on initial load)
   useEffect(() => {
-    if (activityId) {
+    if (activityId && !hasInitiallyLoaded) {
       fetchParticipatingOrganizations();
-    } else {
-      // Clear state if no activityId
+    } else if (!activityId) {
+      // Reset state when activityId is cleared
       setParticipatingOrganizations([]);
+      setHasInitiallyLoaded(false);
       setLoading(false);
     }
-  }, [activityId]);
+  }, [activityId, hasInitiallyLoaded, fetchParticipatingOrganizations]);
 
   return {
     participatingOrganizations,

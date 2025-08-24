@@ -318,18 +318,14 @@ export async function GET(request: NextRequest) {
             if (transYear !== year) return sum;
             
             // Check if this organization is involved in the transaction
-            // For commitments: organization must be the provider
-            // For disbursements: organization can be provider or receiver
+            // For both commitments and disbursements: organization must be the provider (the one making the payment)
             let isInvolved = false;
             if (transactionType === 'C') {
               // For commitments, only count if organization is the provider
               isInvolved = trans.provider_org_id === org.id || trans.provider_org_name === org.name;
             } else {
-              // For disbursements, count if organization is provider or receiver
-              isInvolved = trans.provider_org_id === org.id || 
-                          trans.receiver_org_id === org.id ||
-                          trans.provider_org_name === org.name || 
-                          trans.receiver_org_name === org.name;
+              // For disbursements, only count if organization is the provider (not the receiver)
+              isInvolved = trans.provider_org_id === org.id || trans.provider_org_name === org.name;
             }
             
             if (isInvolved) {

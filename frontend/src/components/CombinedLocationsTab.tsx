@@ -93,13 +93,6 @@ export default function CombinedLocationsTab({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Locations</h2>
-        <p className="text-gray-600 text-sm">
-          Manage activity locations and regional breakdown allocations
-        </p>
-      </div>
-
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="activity-locations" className="flex items-center gap-2">

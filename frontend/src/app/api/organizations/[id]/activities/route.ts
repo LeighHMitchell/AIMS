@@ -55,11 +55,11 @@ export async function GET(
 
     console.log('[AIMS] Found organization:', organization.name, '(', organization.acronym, ')');
 
-    // Get transactions involving this organization to find related activities and calculate financial data
+    // Get transactions where this organization is the provider (not receiver) to find activities they report/fund
     const { data: transactions, error: transError } = await getSupabaseAdmin()
       .from('transactions')
       .select('activity_id, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, value, value_usd, transaction_type, transaction_date')
-      .or(`provider_org_id.eq.${orgId},receiver_org_id.eq.${orgId},provider_org_name.eq.${organization.name},receiver_org_name.eq.${organization.name}`)
+      .or(`provider_org_id.eq.${orgId},provider_org_name.eq.${organization.name}`)
       .in('transaction_type', transactionTypeCodes);
 
     if (transError) {

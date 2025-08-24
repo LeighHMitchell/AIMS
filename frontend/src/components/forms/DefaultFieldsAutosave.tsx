@@ -7,7 +7,9 @@ import {
   useDefaultTiedStatusAutosave, 
   useDefaultFlowTypeAutosave,
   useDefaultAidModalityAutosave,
-  useDefaultAidModalityOverrideAutosave
+  useDefaultAidModalityAutosaveSilent,
+  useDefaultAidModalityOverrideAutosave,
+  useDefaultDisbursementChannelAutosave
 } from '@/hooks/use-field-autosave-new';
 import { AidTypeSelect } from '@/components/forms/AidTypeSelect';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
@@ -15,8 +17,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FlowTypeSelect } from '@/components/forms/FlowTypeSelect';
 import { FinanceTypeSelect } from '@/components/forms/FinanceTypeSelect';
 import { TiedStatusSelect } from '@/components/forms/TiedStatusSelect';
+import { DisbursementChannelSelect } from '@/components/forms/DisbursementChannelSelect';
 import { LabelSaveIndicator, SaveIndicator } from '@/components/ui/save-indicator';
 import { Switch } from '@/components/ui/switch';
+import { getFieldCompletionStatus, hasFieldValue } from '@/utils/defaultFieldsValidation';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { CheckCircle } from 'lucide-react';
 
 interface DefaultFieldsAutosaveProps {
   activityId: string;
@@ -29,6 +36,7 @@ interface DefaultFieldsAutosaveProps {
     defaultFlowType?: string;
     default_aid_modality?: string;
     default_aid_modality_override?: boolean;
+    defaultDisbursementChannel?: string;
   };
   onDefaultsChange?: (field: string, value: string) => void;
 }
@@ -47,7 +55,20 @@ export function DefaultFieldsAutosave({
   const tiedStatusAutosave = useDefaultTiedStatusAutosave(activityId, userId);
   const flowTypeAutosave = useDefaultFlowTypeAutosave(activityId, userId);
   const modalityAutosave = useDefaultAidModalityAutosave(activityId, userId);
+  const modalityAutosaveSilent = useDefaultAidModalityAutosaveSilent(activityId, userId);
   const modalityOverrideAutosave = useDefaultAidModalityOverrideAutosave(activityId, userId);
+  const disbursementChannelAutosave = useDefaultDisbursementChannelAutosave(activityId, userId);
+
+  // Calculate field completion status
+  const fieldCompletionStatus = getFieldCompletionStatus({
+    defaultAidType: defaults.defaultAidType,
+    defaultFinanceType: defaults.defaultFinanceType,
+    defaultFlowType: defaults.defaultFlowType,
+    defaultCurrency: defaults.defaultCurrency || 'USD', // Include fallback for completion check
+    defaultTiedStatus: defaults.defaultTiedStatus,
+    default_aid_modality: defaults.default_aid_modality,
+    defaultDisbursementChannel: defaults.defaultDisbursementChannel,
+  });
 
   // Handle field changes with autosave
   const handleAidTypeChange = (value: string | null) => {
@@ -82,6 +103,14 @@ export function DefaultFieldsAutosave({
     console.log('[DefaultFields] Flow type changed to:', stringValue);
     onDefaultsChange?.('defaultFlowType', stringValue);
     flowTypeAutosave.triggerFieldSave(stringValue);
+  };
+
+  const handleDisbursementChannelChange = (value: string | null) => {
+    const stringValue = value || '';
+    console.log('[DefaultFields] Disbursement channel changed to:', stringValue);
+    console.log('[DefaultFields] Disbursement channel autosave state:', disbursementChannelAutosave.state);
+    onDefaultsChange?.('defaultDisbursementChannel', stringValue);
+    disbursementChannelAutosave.triggerFieldSave(stringValue);
   };
 
   // --- Default Modality State ---
@@ -138,13 +167,24 @@ export function DefaultFieldsAutosave({
         defaults.defaultAidType || '',
         defaults.defaultFinanceType || ''
       );
-      setModality(String(newModality));
-      onDefaultsChange?.('default_aid_modality', String(newModality));
-      onDefaultsChange?.('default_aid_modality_override', 'false');
-      modalityAutosave.triggerFieldSave(String(newModality)); // <-- Add this line
+      const newModalityString = String(newModality);
+      
+      // Only update and save if the calculated modality is different from current
+      if (newModalityString !== modality) {
+        console.log('[DefaultFields] Modality auto-calculated:', { 
+          from: modality, 
+          to: newModalityString,
+          aidType: defaults.defaultAidType,
+          financeType: defaults.defaultFinanceType
+        });
+        setModality(newModalityString);
+        onDefaultsChange?.('default_aid_modality', newModalityString);
+        onDefaultsChange?.('default_aid_modality_override', 'false');
+        modalityAutosaveSilent.triggerFieldSave(newModalityString);
+      }
     }
     // eslint-disable-next-line
-  }, [defaults.defaultAidType, defaults.defaultFinanceType, modalityOverride]);
+  }, [defaults.defaultAidType, defaults.defaultFinanceType, modalityOverride, modality]);
 
   // --- Handler for user override toggle ---
   const handleOverrideToggle = (checked: boolean) => {
@@ -159,7 +199,7 @@ export function DefaultFieldsAutosave({
       );
       setModality(String(newModality));
       onDefaultsChange?.('default_aid_modality', String(newModality));
-      modalityAutosave.triggerFieldSave(String(newModality));
+      modalityAutosaveSilent.triggerFieldSave(String(newModality));
     }
   };
 
@@ -181,161 +221,222 @@ export function DefaultFieldsAutosave({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Default Aid Type */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={aidTypeAutosave.state.isSaving}
-            isSaved={!!aidTypeAutosave.state.lastSaved && !aidTypeAutosave.state.isSaving}
-            className="text-gray-700"
-          >
-            Default Aid Type
-          </LabelSaveIndicator>
-          <AidTypeSelect
-            value={defaults.defaultAidType || ''}
-            onValueChange={handleAidTypeChange}
-            placeholder="Select default aid type"
-          />
-          {aidTypeAutosave.state.error && (
-            <p className="text-xs text-red-600">Failed to save: {aidTypeAutosave.state.error.message}</p>
-          )}
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Column 1: Main Default Fields */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Row 1: Aid Type, Currency */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Default Aid Type */}
+            <div className="space-y-2">
+              <LabelSaveIndicator
+                isSaving={aidTypeAutosave.state.isSaving}
+                isSaved={!!aidTypeAutosave.state.lastSaved && !aidTypeAutosave.state.isSaving}
+                hasValue={fieldCompletionStatus.defaultAidType}
+                className="text-gray-700"
+              >
+                Default Aid Type
+              </LabelSaveIndicator>
+              <AidTypeSelect
+                value={defaults.defaultAidType || ''}
+                onValueChange={handleAidTypeChange}
+                placeholder="Select default aid type"
+              />
+              {aidTypeAutosave.state.error && (
+                <p className="text-xs text-red-600">Failed to save: {aidTypeAutosave.state.error.message}</p>
+              )}
+            </div>
 
-        {/* Default Flow Type */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={flowTypeAutosave.state.isSaving}
-            isSaved={!!flowTypeAutosave.state.lastSaved && !flowTypeAutosave.state.isSaving}
-            className="text-gray-700"
-          >
-            Default Flow Type
-          </LabelSaveIndicator>
-          <FlowTypeSelect
-            value={defaults.defaultFlowType || ''}
-            onValueChange={handleFlowTypeChange}
-            placeholder="Select default flow type"
-          />
-          {flowTypeAutosave.state.error && (
-            <p className="text-xs text-red-600">Failed to save: {flowTypeAutosave.state.error.message}</p>
-          )}
-        </div>
-
-        {/* Default Finance Type */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={financeTypeAutosave.state.isSaving}
-            isSaved={!!financeTypeAutosave.state.lastSaved && !financeTypeAutosave.state.isSaving}
-            className="text-gray-700"
-          >
-            Default Finance Type
-          </LabelSaveIndicator>
-          <FinanceTypeSelect
-            value={defaults.defaultFinanceType || ''}
-            onChange={handleFinanceTypeChange}
-            placeholder="Select default finance type"
-            disabled={financeTypeAutosave.state.isSaving}
-          />
-          {financeTypeAutosave.state.error && (
-            <p className="text-xs text-red-600">Failed to save: {financeTypeAutosave.state.error.message}</p>
-          )}
-        </div>
-
-        {/* Default Currency */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={currencyAutosave.state.isSaving}
-            isSaved={!!currencyAutosave.state.lastSaved && !currencyAutosave.state.isSaving}
-            className="text-gray-700"
-          >
-            Default Currency
-          </LabelSaveIndicator>
-          <CurrencySelector
-            value={defaults.defaultCurrency || 'USD'}
-            onValueChange={handleCurrencyChange}
-            placeholder="Select default currency"
-            className="w-full"
-          />
-          {currencyAutosave.state.error && (
-            <p className="text-xs text-red-600">Failed to save: {currencyAutosave.state.error.message}</p>
-          )}
-        </div>
-
-        {/* Default Tied Status */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={tiedStatusAutosave.state.isSaving}
-            isSaved={!!tiedStatusAutosave.state.lastSaved && !tiedStatusAutosave.state.isSaving}
-            className="text-gray-700"
-          >
-            Default Tied Status
-          </LabelSaveIndicator>
-          <TiedStatusSelect
-            value={defaults.defaultTiedStatus || ''}
-            onValueChange={handleTiedStatusChange}
-            placeholder="Select default tied status"
-            disabled={tiedStatusAutosave.state.isSaving}
-            className="w-full"
-          />
-          {tiedStatusAutosave.state.error && (
-            <p className="text-xs text-red-600">Failed to save: {tiedStatusAutosave.state.error.message}</p>
-          )}
-        </div>
-
-        {/* Default Modality */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={modalityAutosave.state.isSaving}
-            isSaved={!!modalityAutosave.state.lastSaved && !modalityAutosave.state.isSaving}
-            className="text-gray-700"
-          >
-            Default Modality
-          </LabelSaveIndicator>
-          <div className="flex items-center gap-2">
-            <Select
-              value={String(modality)}
-              onValueChange={handleModalityChange}
-              disabled={!modalityOverride}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select default modality" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">1</span>
-                  <span className="font-medium">Grant</span>
-                </SelectItem>
-                <SelectItem value="2">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">2</span>
-                  <span className="font-medium">Loan</span>
-                </SelectItem>
-                <SelectItem value="3">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">3</span>
-                  <span className="font-medium">Grant – Technical Assistance</span>
-                </SelectItem>
-                <SelectItem value="4">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">4</span>
-                  <span className="font-medium">Loan – Technical Assistance</span>
-                </SelectItem>
-                <SelectItem value="5">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">5</span>
-                  <span className="font-medium">Other / Needs Review</span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Default Currency */}
+            <div className="space-y-2">
+              <LabelSaveIndicator
+                isSaving={currencyAutosave.state.isSaving}
+                isSaved={!!currencyAutosave.state.lastSaved && !currencyAutosave.state.isSaving}
+                hasValue={fieldCompletionStatus.defaultCurrency}
+                className="text-gray-700"
+              >
+                Default Currency
+              </LabelSaveIndicator>
+              <CurrencySelector
+                value={defaults.defaultCurrency || 'USD'}
+                onValueChange={handleCurrencyChange}
+                placeholder="Select default currency"
+                className="w-full"
+              />
+              {currencyAutosave.state.error && (
+                <p className="text-xs text-red-600">Failed to save: {currencyAutosave.state.error.message}</p>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2 mt-1">
-            <Switch
-              checked={modalityOverride}
-              onCheckedChange={handleOverrideToggle}
-              id="modality-override"
-            />
-            <label htmlFor="modality-override" className="text-xs text-gray-600">
-              Override Auto Modality
-            </label>
+
+          {/* Row 2: Flow Type, Tied Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Default Flow Type */}
+            <div className="space-y-2">
+              <LabelSaveIndicator
+                isSaving={flowTypeAutosave.state.isSaving}
+                isSaved={!!flowTypeAutosave.state.lastSaved && !flowTypeAutosave.state.isSaving}
+                hasValue={fieldCompletionStatus.defaultFlowType}
+                className="text-gray-700"
+              >
+                Default Flow Type
+              </LabelSaveIndicator>
+              <FlowTypeSelect
+                value={defaults.defaultFlowType || ''}
+                onValueChange={handleFlowTypeChange}
+                placeholder="Select default flow type"
+              />
+              {flowTypeAutosave.state.error && (
+                <p className="text-xs text-red-600">Failed to save: {flowTypeAutosave.state.error.message}</p>
+              )}
+            </div>
+
+            {/* Default Tied Status */}
+            <div className="space-y-2">
+              <LabelSaveIndicator
+                isSaving={tiedStatusAutosave.state.isSaving}
+                isSaved={!!tiedStatusAutosave.state.lastSaved && !tiedStatusAutosave.state.isSaving}
+                hasValue={fieldCompletionStatus.defaultTiedStatus}
+                className="text-gray-700"
+              >
+                Default Tied Status
+              </LabelSaveIndicator>
+              <TiedStatusSelect
+                value={defaults.defaultTiedStatus || ''}
+                onValueChange={handleTiedStatusChange}
+                placeholder="Select default tied status"
+                disabled={tiedStatusAutosave.state.isSaving}
+                className="w-full"
+              />
+              {tiedStatusAutosave.state.error && (
+                <p className="text-xs text-red-600">Failed to save: {tiedStatusAutosave.state.error.message}</p>
+              )}
+            </div>
           </div>
-          <div className="text-xs text-gray-500 mt-1">
-            Auto-calculated from Finance and Aid Types. You may override if needed.
+
+          {/* Row 3: Finance Type, Disbursement Channel */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Default Finance Type */}
+            <div className="space-y-2">
+              <LabelSaveIndicator
+                isSaving={financeTypeAutosave.state.isSaving}
+                isSaved={!!financeTypeAutosave.state.lastSaved && !financeTypeAutosave.state.isSaving}
+                hasValue={fieldCompletionStatus.defaultFinanceType}
+                className="text-gray-700"
+              >
+                Default Finance Type
+              </LabelSaveIndicator>
+              <FinanceTypeSelect
+                value={defaults.defaultFinanceType || ''}
+                onChange={handleFinanceTypeChange}
+                placeholder="Select default finance type"
+                disabled={financeTypeAutosave.state.isSaving}
+              />
+              {financeTypeAutosave.state.error && (
+                <p className="text-xs text-red-600">Failed to save: {financeTypeAutosave.state.error.message}</p>
+              )}
+            </div>
+
+            {/* Default Disbursement Channel */}
+            <div className="space-y-2">
+              <LabelSaveIndicator
+                isSaving={disbursementChannelAutosave.state.isSaving}
+                isSaved={!!disbursementChannelAutosave.state.lastSaved && !disbursementChannelAutosave.state.isSaving}
+                hasValue={fieldCompletionStatus.defaultDisbursementChannel}
+                className="text-gray-700"
+              >
+                Default Disbursement Channel
+              </LabelSaveIndicator>
+              <DisbursementChannelSelect
+                value={defaults.defaultDisbursementChannel || ''}
+                onValueChange={handleDisbursementChannelChange}
+                placeholder="Select default disbursement channel"
+                disabled={disbursementChannelAutosave.state.isSaving}
+                className="w-full"
+              />
+              {disbursementChannelAutosave.state.error && (
+                <p className="text-xs text-red-600">Failed to save: {disbursementChannelAutosave.state.error.message}</p>
+              )}
+            </div>
           </div>
+        </div>
+
+        {/* Column 3: Modality Card */}
+        <div className="lg:col-span-1">
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center">
+                Default Modality
+                {/* Show green tick when both Finance Type and Aid Type are completed (required for modality calculation) */}
+                {fieldCompletionStatus.defaultFinanceType && fieldCompletionStatus.defaultAidType && (
+                  <CheckCircle className="h-4 w-4 text-green-500 ml-2" />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pb-8">
+              {/* Default Modality */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <LabelSaveIndicator
+                    isSaving={modalityAutosave.state.isSaving}
+                    isSaved={!!modalityAutosave.state.lastSaved && !modalityAutosave.state.isSaving}
+                    hasValue={fieldCompletionStatus.default_aid_modality}
+                    className="text-gray-700"
+                  >
+                    Modality
+                  </LabelSaveIndicator>
+                  <HelpTextTooltip text="Auto-calculated from Finance and Aid Types. You may override if needed." />
+                </div>
+                <Select
+                  value={String(modality)}
+                  onValueChange={handleModalityChange}
+                  disabled={!modalityOverride}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select default modality" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">1</span>
+                      <span className="font-medium">Grant</span>
+                    </SelectItem>
+                    <SelectItem value="2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">2</span>
+                      <span className="font-medium">Loan</span>
+                    </SelectItem>
+                    <SelectItem value="3">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">3</span>
+                      <span className="font-medium">Grant – Technical Assistance</span>
+                    </SelectItem>
+                    <SelectItem value="4">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">4</span>
+                      <span className="font-medium">Loan – Technical Assistance</span>
+                    </SelectItem>
+                    <SelectItem value="5">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">5</span>
+                      <span className="font-medium">Other / Needs Review</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Override Auto Modality */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Override Auto Modality
+                </label>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={modalityOverride}
+                    onCheckedChange={handleOverrideToggle}
+                    id="modality-override"
+                  />
+                  <label htmlFor="modality-override" className="text-xs text-gray-600">
+                    Override Auto Modality
+                  </label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

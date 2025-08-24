@@ -4,6 +4,7 @@ import React, { useRef, forwardRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, DollarSign, Globe } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { TIED_STATUS_LABELS } from '@/types/transaction';
 // Aid modality label mappings
 const AID_TYPE_LABELS: Record<string, string> = {
   'A01': 'General budget support',
@@ -36,11 +37,7 @@ const FLOW_TYPE_LABELS: Record<string, string> = {
   '50': 'Other flows'
 };
 
-const TIED_STATUS_LABELS: Record<string, string> = {
-  '3': 'Partially tied',
-  '4': 'Tied',
-  '5': 'Untied'
-};
+// Tied Status mappings imported from @/types/transaction
 import { SDGImageGrid } from '@/components/ui/SDGImageGrid';
 import { formatReportedBy } from '@/utils/format-helpers';
 
@@ -237,11 +234,19 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
               </div>
               
               <div className="space-y-3">
-                {activity.created_by_org_name && (
+                {(activity.created_by_org_name || activity.created_by_org_acronym) && (
                   <div className="bg-gray-50 rounded-lg p-3 border">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Reported by</div>
-                    <div className="text-sm font-medium text-gray-900 text-right py-2 min-h-[3.5rem] flex items-center justify-end">
-                      {activity.created_by_org_name}
+                    <div className="flex justify-between items-center py-2 min-h-[3.5rem]">
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reported by</div>
+                      <div className="text-sm font-medium text-gray-900 text-right">
+                        {activity.created_by_org_name}
+                        {activity.created_by_org_acronym && activity.created_by_org_name !== activity.created_by_org_acronym && (
+                          <span> ({activity.created_by_org_acronym})</span>
+                        )}
+                        {!activity.created_by_org_name && activity.created_by_org_acronym && (
+                          <span>{activity.created_by_org_acronym}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}

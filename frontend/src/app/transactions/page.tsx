@@ -473,28 +473,23 @@ export default function TransactionsPage() {
         )}
 
         {/* Transactions Table */}
-        {loading ? (
+        {loading || transactions.total === 0 ? (
           <TransactionsListSkeleton />
-        ) : transactions.total === 0 ? (
+        ) : error ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
-            {error ? (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Transactions</h3>
-                  <p className="text-slate-500 mb-4">{error}</p>
-                  <Button onClick={() => window.location.reload()} variant="outline">
-                    Try Again
-                  </Button>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Transactions</h3>
+                <p className="text-slate-500 mb-4">{error}</p>
+                <Button onClick={() => window.location.reload()} variant="outline">
+                  Try Again
+                </Button>
               </div>
-            ) : searchQuery || filters.transactionType !== "all" || filters.status !== "all" || filters.organization !== "all" ? (
-              <div className="text-slate-500">No matching transactions found</div>
-            ) : (
-              <div className="space-y-4">
-                <Frown className="h-16 w-16 mx-auto text-slate-400" />
-                <div className="text-slate-500">No transactions yet. Create a new activity or open an existing one to add transactions.</div>
-              </div>
-            )}
+            </div>
+          </div>
+        ) : searchQuery || filters.transactionType !== "all" || filters.status !== "all" || filters.organization !== "all" ? (
+          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+            <div className="text-slate-500">No matching transactions found</div>
           </div>
         ) : viewMode === 'table' ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">

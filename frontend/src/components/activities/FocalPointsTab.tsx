@@ -160,19 +160,11 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Focal Points</h2>
-        <p className="text-gray-600">
-          Assign individuals who are responsible for the activity, for keeping it up to date, and for validating data entered.
-        </p>
-      </div>
-
       {/* Focal Points Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-32">
         {/* Government Focal Points */}
-        <Card>
-          <CardContent className="p-4">
+        <Card className="min-h-[400px]">
+          <CardContent className="p-4 h-full flex flex-col">
             <div className="mb-3">
               <h3 className="text-lg font-medium flex items-center gap-2">
                 <User className="h-5 w-5 text-gray-600" />
@@ -183,21 +175,23 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
                 The government official(s) responsible for reviewing or endorsing this activity.
               </p>
             </div>
-            <FocalPointDropdown
-              activityId={activityId}
-              type="government_focal_point"
-              currentAssignments={data.government_focal_points}
-              onAssignmentChange={fetchFocalPoints}
-              onAssignmentAdded={(newAssignment) => handleAssignmentAdded(newAssignment, 'government_focal_point')}
-              onAssignmentRemoved={(contactId) => handleAssignmentRemoved(contactId, 'government_focal_point')}
-              placeholder="Select government focal point..."
-            />
+            <div className="flex-1">
+              <FocalPointDropdown
+                activityId={activityId}
+                type="government_focal_point"
+                currentAssignments={data.government_focal_points}
+                onAssignmentChange={fetchFocalPoints}
+                onAssignmentAdded={(newAssignment) => handleAssignmentAdded(newAssignment, 'government_focal_point')}
+                onAssignmentRemoved={(contactId) => handleAssignmentRemoved(contactId, 'government_focal_point')}
+                placeholder="Select government focal point..."
+              />
+            </div>
           </CardContent>
         </Card>
         
         {/* Development Partner Focal Points */}
-        <Card>
-          <CardContent className="p-4">
+        <Card className="min-h-[400px]">
+          <CardContent className="p-4 h-full flex flex-col">
             <div className="mb-3">
               <h3 className="text-lg font-medium flex items-center gap-2">
                 <User className="h-5 w-5 text-gray-600" />
@@ -208,15 +202,17 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
                 The main contact(s) responsible for maintaining or updating this activity on behalf of the development partner organisation(s).
               </p>
             </div>
-            <FocalPointDropdown
-              activityId={activityId}
-              type="development_partner_focal_point"
-              currentAssignments={data.development_partner_focal_points}
-              onAssignmentChange={fetchFocalPoints}
-              onAssignmentAdded={(newAssignment) => handleAssignmentAdded(newAssignment, 'development_partner_focal_point')}
-              onAssignmentRemoved={(contactId) => handleAssignmentRemoved(contactId, 'development_partner_focal_point')}
-              placeholder="Select development partner focal point..."
-            />
+            <div className="flex-1">
+              <FocalPointDropdown
+                activityId={activityId}
+                type="development_partner_focal_point"
+                currentAssignments={data.development_partner_focal_points}
+                onAssignmentChange={fetchFocalPoints}
+                onAssignmentAdded={(newAssignment) => handleAssignmentAdded(newAssignment, 'development_partner_focal_point')}
+                onAssignmentRemoved={(contactId) => handleAssignmentRemoved(contactId, 'development_partner_focal_point')}
+                placeholder="Select development partner focal point..."
+              />
+            </div>
           </CardContent>
         </Card>
       </div>
