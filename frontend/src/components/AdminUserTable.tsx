@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { mockUsers } from "@/hooks/useUser"
 import { User, ROLE_LABELS, USER_ROLES, Organization } from "@/types/user"
+import { getRoleBadgeVariant } from "@/lib/role-badge-utils"
 import { Search, UserPlus, Edit, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { supabase } from "@/lib/supabase"
@@ -169,27 +170,7 @@ export function AdminUserTable() {
     setFilteredUsers(filtered)
   }, [searchQuery, roleFilter, orgFilter, users])
 
-  const getRoleBadgeVariant = (role: string): "default" | "secondary" | "destructive" | "outline" | "dark-blue" | "light-blue" | "dark-green" | "light-green" => {
-    switch (role) {
-      case USER_ROLES.SUPER_USER:
-        return "destructive"
-      
-      // Development Partner colors (blue shades)
-      case USER_ROLES.DEV_PARTNER_TIER_1:
-        return "dark-blue"
-      case USER_ROLES.DEV_PARTNER_TIER_2:
-        return "light-blue"
-      
-      // Government Partner colors (green shades)
-      case USER_ROLES.GOV_PARTNER_TIER_1:
-        return "dark-green"
-      case USER_ROLES.GOV_PARTNER_TIER_2:
-        return "light-green"
-
-      default:
-        return "outline"
-    }
-  }
+  // Removed local getRoleBadgeVariant function - now using unified utility
 
   const handleEditUser = (userId: string) => {
     const userToEdit = users.find(user => user.id === userId)

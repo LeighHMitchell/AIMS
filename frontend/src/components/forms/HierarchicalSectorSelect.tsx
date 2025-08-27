@@ -204,29 +204,9 @@ export function HierarchicalSectorSelect({
               {selectedSubsectors.length === 0 ? (
                 <span className="text-muted-foreground">{placeholder}</span>
               ) : (
-                <>
-                  {selectedSubsectors.slice(0, 2).map(subsector => (
-                    <Badge
-                      key={subsector.code}
-                      variant="secondary"
-                      className="text-xs font-mono"
-                    >
-                      {subsector.code}
-                      <X
-                        className="ml-1 h-3 w-3 cursor-pointer hover:text-red-500"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemove(subsector.code);
-                        }}
-                      />
-                    </Badge>
-                  ))}
-                  {selectedSubsectors.length > 2 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{selectedSubsectors.length - 2} more
-                    </Badge>
-                  )}
-                </>
+                <span className="text-sm text-gray-700">
+                  {selectedSubsectors.length} sector{selectedSubsectors.length !== 1 ? 's' : ''} selected
+                </span>
               )}
             </div>
             <div className="flex items-center gap-2 ml-2">

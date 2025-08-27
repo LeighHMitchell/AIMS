@@ -343,15 +343,27 @@ export default function FinancesSection({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if all default fields are completed
+  // Check if all default fields are completed (include fallback for currency)
   const allDefaultsCompleted = areAllDefaultFieldsCompleted({
     defaultAidType,
     defaultFinanceType,
     defaultFlowType,
-    defaultCurrency,
+    defaultCurrency: defaultCurrency || 'USD', // Use fallback like the UI does
     defaultTiedStatus,
     default_aid_modality: defaults?.default_aid_modality,
-    defaultDisbursementChannel,
+    defaultDisbursementChannel: defaults?.defaultDisbursementChannel || defaultDisbursementChannel,
+  });
+  
+  // Debug log to check values (include fallback for currency)
+  console.log('[FinancesSection] Default fields check:', {
+    defaultAidType,
+    defaultFinanceType,
+    defaultFlowType,
+    defaultCurrency: defaultCurrency || 'USD',
+    defaultTiedStatus,
+    default_aid_modality: defaults?.default_aid_modality,
+    defaultDisbursementChannel: defaults?.defaultDisbursementChannel || defaultDisbursementChannel,
+    allDefaultsCompleted
   });
 
   // Helper function to safely format dates

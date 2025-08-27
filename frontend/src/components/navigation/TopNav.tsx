@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { 
@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { FolderPlus, User, LogOut, Briefcase, Settings, Shield } from "lucide-react"
+import { FolderPlus, User, LogOut, Briefcase, Settings, Shield, MessageSquare } from "lucide-react"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
+import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
+import { FeedbackModal } from "@/components/ui/feedback-modal"
 
 interface TopNavProps {
   user?: {
@@ -41,6 +43,8 @@ interface TopNavProps {
 }
 
 export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+
   // Function to construct full name with title, middle name, and suffix
   const getFullName = (user: TopNavProps['user']) => {
     if (!user) return "User";
@@ -122,10 +126,10 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
                         <div className="border-t border-gray-200 mx-1"></div>
                         <div className="px-1">
                           <Badge 
-                            variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"} 
+                            variant={getRoleBadgeVariant(user.role)} 
                             className="w-fit"
                           >
-                            {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
+                            {getRoleDisplayLabel(user.role)}
                           </Badge>
                         </div>
                         <div className="border-t border-gray-200 mx-1"></div>
@@ -146,6 +150,10 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
                     <span>My Portfolio</span>
                   </DropdownMenuItem>
                 </Link>
+                <DropdownMenuItem onClick={() => setIsFeedbackModalOpen(true)}>
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  <span>Feedback</span>
+                </DropdownMenuItem>
                 {user.role === USER_ROLES.SUPER_USER && (
                   <Link href="/admin">
                     <DropdownMenuItem>
@@ -164,6 +172,12 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
           )}
         </div>
       </div>
+      
+      {/* Feedback Modal */}
+      <FeedbackModal 
+        isOpen={isFeedbackModalOpen} 
+        onClose={() => setIsFeedbackModalOpen(false)} 
+      />
     </nav>
   )
 }

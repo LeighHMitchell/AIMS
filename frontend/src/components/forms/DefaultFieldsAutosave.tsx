@@ -19,11 +19,12 @@ import { FinanceTypeSelect } from '@/components/forms/FinanceTypeSelect';
 import { TiedStatusSelect } from '@/components/forms/TiedStatusSelect';
 import { DisbursementChannelSelect } from '@/components/forms/DisbursementChannelSelect';
 import { LabelSaveIndicator, SaveIndicator } from '@/components/ui/save-indicator';
+import { CheckCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { getFieldCompletionStatus, hasFieldValue } from '@/utils/defaultFieldsValidation';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
+
 
 interface DefaultFieldsAutosaveProps {
   activityId: string;
@@ -213,12 +214,12 @@ export function DefaultFieldsAutosave({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       <div className="border-b border-gray-200 pb-4">
-        <h3 className="text-lg font-medium text-gray-900">Default Values</h3>
-        <p className="text-sm text-gray-600 mt-1">
-          These defaults will be automatically applied to new transactions in this activity.
-        </p>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-medium text-gray-900">Default Values</h3>
+          <HelpTextTooltip content="These defaults will be automatically applied to new transactions in this activity." />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -228,14 +229,18 @@ export function DefaultFieldsAutosave({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Default Aid Type */}
             <div className="space-y-2">
-              <LabelSaveIndicator
-                isSaving={aidTypeAutosave.state.isSaving}
-                isSaved={!!aidTypeAutosave.state.lastSaved && !aidTypeAutosave.state.isSaving}
-                hasValue={fieldCompletionStatus.defaultAidType}
-                className="text-gray-700"
-              >
-                Default Aid Type
-              </LabelSaveIndicator>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Default Aid Type
+                </label>
+                <HelpTextTooltip content="Specifies the type of assistance being provided, such as project-type interventions, budget support, or debt relief. This value applies to all financial transactions under an activity unless specified otherwise." />
+                <SaveIndicator 
+                  isSaving={aidTypeAutosave.state.isSaving}
+                  isSaved={!!aidTypeAutosave.state.lastSaved || fieldCompletionStatus.defaultAidType}
+                  size="sm"
+                  className=""
+                />
+              </div>
               <AidTypeSelect
                 value={defaults.defaultAidType || ''}
                 onValueChange={handleAidTypeChange}
@@ -248,14 +253,18 @@ export function DefaultFieldsAutosave({
 
             {/* Default Currency */}
             <div className="space-y-2">
-              <LabelSaveIndicator
-                isSaving={currencyAutosave.state.isSaving}
-                isSaved={!!currencyAutosave.state.lastSaved && !currencyAutosave.state.isSaving}
-                hasValue={fieldCompletionStatus.defaultCurrency}
-                className="text-gray-700"
-              >
-                Default Currency
-              </LabelSaveIndicator>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Default Currency
+                </label>
+                <HelpTextTooltip content="Indicates the ISO 4217 three-letter currency code used for all financial values in a report. If no default is set, each monetary value must have its own currency." />
+                <SaveIndicator 
+                  isSaving={currencyAutosave.state.isSaving}
+                  isSaved={!!currencyAutosave.state.lastSaved || fieldCompletionStatus.defaultCurrency}
+                  size="sm"
+                  className=""
+                />
+              </div>
               <CurrencySelector
                 value={defaults.defaultCurrency || 'USD'}
                 onValueChange={handleCurrencyChange}
@@ -272,14 +281,18 @@ export function DefaultFieldsAutosave({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Default Flow Type */}
             <div className="space-y-2">
-              <LabelSaveIndicator
-                isSaving={flowTypeAutosave.state.isSaving}
-                isSaved={!!flowTypeAutosave.state.lastSaved && !flowTypeAutosave.state.isSaving}
-                hasValue={fieldCompletionStatus.defaultFlowType}
-                className="text-gray-700"
-              >
-                Default Flow Type
-              </LabelSaveIndicator>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Default Flow Type
+                </label>
+                <HelpTextTooltip content="Classifies the resource flow, for example, as concessional aid, other official flows, or private development finance. This setting applies by default across transactions unless a different flow type is recorded." />
+                <SaveIndicator 
+                  isSaving={flowTypeAutosave.state.isSaving}
+                  isSaved={!!flowTypeAutosave.state.lastSaved || fieldCompletionStatus.defaultFlowType}
+                  size="sm"
+                  className=""
+                />
+              </div>
               <FlowTypeSelect
                 value={defaults.defaultFlowType || ''}
                 onValueChange={handleFlowTypeChange}
@@ -292,14 +305,18 @@ export function DefaultFieldsAutosave({
 
             {/* Default Tied Status */}
             <div className="space-y-2">
-              <LabelSaveIndicator
-                isSaving={tiedStatusAutosave.state.isSaving}
-                isSaved={!!tiedStatusAutosave.state.lastSaved && !tiedStatusAutosave.state.isSaving}
-                hasValue={fieldCompletionStatus.defaultTiedStatus}
-                className="text-gray-700"
-              >
-                Default Tied Status
-              </LabelSaveIndicator>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Default Tied Status
+                </label>
+                <HelpTextTooltip content="Shows whether the aid is untied, tied, or partially tied. This default can be overridden at the transaction level, but ensures clarity on restrictions that may apply to funding." />
+                <SaveIndicator 
+                  isSaving={tiedStatusAutosave.state.isSaving}
+                  isSaved={!!tiedStatusAutosave.state.lastSaved || fieldCompletionStatus.defaultTiedStatus}
+                  size="sm"
+                  className=""
+                />
+              </div>
               <TiedStatusSelect
                 value={defaults.defaultTiedStatus || ''}
                 onValueChange={handleTiedStatusChange}
@@ -317,14 +334,18 @@ export function DefaultFieldsAutosave({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Default Finance Type */}
             <div className="space-y-2">
-              <LabelSaveIndicator
-                isSaving={financeTypeAutosave.state.isSaving}
-                isSaved={!!financeTypeAutosave.state.lastSaved && !financeTypeAutosave.state.isSaving}
-                hasValue={fieldCompletionStatus.defaultFinanceType}
-                className="text-gray-700"
-              >
-                Default Finance Type
-              </LabelSaveIndicator>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Default Finance Type
+                </label>
+                <HelpTextTooltip content="Defines the financial mechanism being used, such as grants, loans, equity, or debt relief. This value is set as the default for all financial transactions in an activity." />
+                <SaveIndicator 
+                  isSaving={financeTypeAutosave.state.isSaving}
+                  isSaved={!!financeTypeAutosave.state.lastSaved || fieldCompletionStatus.defaultFinanceType}
+                  size="sm"
+                  className=""
+                />
+              </div>
               <FinanceTypeSelect
                 value={defaults.defaultFinanceType || ''}
                 onChange={handleFinanceTypeChange}
@@ -337,15 +358,19 @@ export function DefaultFieldsAutosave({
             </div>
 
             {/* Default Disbursement Channel */}
-            <div className="space-y-2">
-              <LabelSaveIndicator
-                isSaving={disbursementChannelAutosave.state.isSaving}
-                isSaved={!!disbursementChannelAutosave.state.lastSaved && !disbursementChannelAutosave.state.isSaving}
-                hasValue={fieldCompletionStatus.defaultDisbursementChannel}
-                className="text-gray-700"
-              >
-                Default Disbursement Channel
-              </LabelSaveIndicator>
+            <div className="space-y-2 pb-12">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Default Disbursement Channel
+                </label>
+                <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies. This provides clarity on how resources reach the implementing body." />
+                <SaveIndicator 
+                  isSaving={disbursementChannelAutosave.state.isSaving}
+                  isSaved={!!disbursementChannelAutosave.state.lastSaved || fieldCompletionStatus.defaultDisbursementChannel}
+                  size="sm"
+                  className=""
+                />
+              </div>
               <DisbursementChannelSelect
                 value={defaults.defaultDisbursementChannel || ''}
                 onValueChange={handleDisbursementChannelChange}
@@ -364,28 +389,26 @@ export function DefaultFieldsAutosave({
         <div className="lg:col-span-1">
           <Card className="h-fit">
             <CardHeader>
-              <CardTitle className="text-base flex items-center">
+              <CardTitle className="text-base flex items-center gap-2">
                 Default Modality
+                <HelpTextTooltip content="Provides an overarching classification that combines aid type, flow type, finance type, and tied status. It offers a simplified summary view of how resources are structured and delivered by default across an activity." />
                 {/* Show green tick when both Finance Type and Aid Type are completed (required for modality calculation) */}
                 {fieldCompletionStatus.defaultFinanceType && fieldCompletionStatus.defaultAidType && (
-                  <CheckCircle className="h-4 w-4 text-green-500 ml-2" />
+                  <CheckCircle className="h-4 w-4 text-green-500" />
                 )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pb-8">
               {/* Default Modality */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <LabelSaveIndicator
-                    isSaving={modalityAutosave.state.isSaving}
-                    isSaved={!!modalityAutosave.state.lastSaved && !modalityAutosave.state.isSaving}
-                    hasValue={fieldCompletionStatus.default_aid_modality}
-                    className="text-gray-700"
-                  >
-                    Modality
-                  </LabelSaveIndicator>
-                  <HelpTextTooltip text="Auto-calculated from Finance and Aid Types. You may override if needed." />
-                </div>
+                <LabelSaveIndicator
+                  isSaving={modalityAutosave.state.isSaving}
+                  isSaved={!!modalityAutosave.state.lastSaved && !modalityAutosave.state.isSaving}
+                  hasValue={fieldCompletionStatus.default_aid_modality}
+                  className="text-gray-700"
+                >
+                  Modality
+                </LabelSaveIndicator>
                 <Select
                   value={String(modality)}
                   onValueChange={handleModalityChange}

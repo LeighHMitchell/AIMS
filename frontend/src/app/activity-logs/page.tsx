@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ActivityLog } from '@/app/api/activity-logs/route';
 import { useUser } from '@/hooks/useUser';
+import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils";
 import { format } from 'date-fns';
 import { 
   Search, 
@@ -128,33 +129,10 @@ const getActionDescription = (log: ActivityLog) => {
   }
 };
 
-// Get role badge variant
-const getRoleBadgeVariant = (role: string) => {
-  if (role === 'super_user') return 'destructive';
-  
-  // Development Partner colors (blue shades)
-  if (role === 'dev_partner_tier_1') return 'dark-blue';
-  if (role === 'dev_partner_tier_2') return 'light-blue';
-  
-  // Government Partner colors (green shades)
-  if (role === 'gov_partner_tier_1') return 'dark-green';
-  if (role === 'gov_partner_tier_2') return 'light-green';
-  
-  return 'outline';
-};
+// Removed local getRoleBadgeVariant function - now using unified utility
 
 // Format role for display
-const formatRole = (role: string) => {
-  const roleMap: Record<string, string> = {
-    super_user: 'Super User',
-    dev_partner_tier_1: 'Data Submission',
-    dev_partner_tier_2: 'Review & Approval',
-    gov_partner_tier_1: 'Gov Partner T1',
-    gov_partner_tier_2: 'Gov Partner T2',
-    orphan: 'Orphan User',
-  };
-  return roleMap[role] || role;
-};
+// Removed local formatRole function - now using unified utility
 
 export default function ActivityLogsPage() {
   const { user } = useUser();
@@ -239,7 +217,7 @@ export default function ActivityLogsPage() {
     const dataToExport = filteredLogs.map(log => ({
       'Timestamp': format(new Date(log.timestamp), 'yyyy-MM-dd HH:mm:ss'),
       'User': log.user?.name || 'Unknown User',
-      'Role': formatRole(log.user?.role || 'unknown'),
+      'Role': getRoleDisplayLabel(log.user?.role || 'unknown'),
       'Action': log.actionType,
       'Entity Type': log.entityType,
       'Description': getActionDescription(log),
@@ -433,7 +411,7 @@ export default function ActivityLogsPage() {
                             </span>
                             <span className="text-xs text-muted-foreground">•</span>
                             <Badge variant={getRoleBadgeVariant(log.user?.role || 'unknown')} className="text-xs h-5">
-                              {formatRole(log.user?.role || 'unknown')}
+                              {getRoleDisplayLabel(log.user?.role || 'unknown')}
                             </Badge>
                             {log.activityId && (
                               <>

@@ -5,9 +5,13 @@ import { DefaultFinanceTypeSelect } from './DefaultFinanceTypeSelect';
 import { FlowTypeSelect } from './FlowTypeSelect';
 import { CurrencySelector } from './CurrencySelector';
 import { TiedStatusSelect } from './TiedStatusSelect';
+import { DisbursementChannelSelect } from './DisbursementChannelSelect';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { areAllDefaultFieldsCompleted } from '@/utils/defaultFieldsValidation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface DefaultFieldsSectionProps {
   activityId: string | null;
@@ -17,6 +21,8 @@ interface DefaultFieldsSectionProps {
     default_flow_type?: string | null;
     default_currency?: string | null;
     default_tied_status?: string | null;
+    default_disbursement_channel?: string | null;
+    default_aid_modality?: string | null;
   };
   onFieldUpdate?: (field: string, value: string | null) => void;
   disabled?: boolean;
@@ -52,6 +58,18 @@ export function DefaultFieldsSection({
       console.error(`[DefaultFieldsSection] Error updating ${field}:`, error);
     }
   });
+
+  // Check if all core fields are completed for green tick
+  // Note: Only checking the 5 core fields managed by useActivityDefaults hook
+  const coreFieldsCompleted = Boolean(
+    values.default_aid_type && 
+    values.default_finance_type && 
+    values.default_flow_type && 
+    values.default_currency && 
+    values.default_tied_status &&
+    initialValues?.default_disbursement_channel &&
+    initialValues?.default_aid_modality
+  );
 
   const handleAidTypeChange = async (value: string | null) => {
     console.log('[DefaultFieldsSection] Aid Type changing to:', value);
@@ -102,7 +120,13 @@ export function DefaultFieldsSection({
     <Card className="w-full">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Default Values</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg font-semibold">Default Values</CardTitle>
+            <HelpTextTooltip content="These defaults will be automatically applied to new transactions in this activity." />
+            {coreFieldsCompleted && (
+              <CheckCircle className="h-5 w-5 text-green-500" />
+            )}
+          </div>
           <div className="flex items-center gap-2">
             {hasUnsavedChanges && (
               <Badge variant="outline" className="text-orange-600 border-orange-600">
@@ -113,9 +137,6 @@ export function DefaultFieldsSection({
             <span className="text-sm text-gray-500">{getUpdateStatusText()}</span>
           </div>
         </div>
-        <p className="text-sm text-gray-600">
-          Set default values that will be applied to new transactions for this activity.
-        </p>
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -133,9 +154,12 @@ export function DefaultFieldsSection({
         {/* Row 1: Aid Type and Finance Type */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Default Aid Type
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Default Aid Type
+              </label>
+              <HelpTextTooltip content="Specifies the type of assistance being provided, such as project-type interventions, budget support, or debt relief. This value applies to all financial transactions under an activity unless specified otherwise." />
+            </div>
             <AidTypeSelect
               id="default-aid-type"
               value={values.default_aid_type || ''}
@@ -151,9 +175,12 @@ export function DefaultFieldsSection({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Default Finance Type
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Default Finance Type
+              </label>
+              <HelpTextTooltip content="Defines the financial mechanism being used, such as grants, loans, equity, or debt relief. This value is set as the default for all financial transactions in an activity." />
+            </div>
             <DefaultFinanceTypeSelect
               id="default-finance-type"
               value={values.default_finance_type || ''}
@@ -172,9 +199,12 @@ export function DefaultFieldsSection({
         {/* Row 2: Flow Type and Currency */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Default Flow Type
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Default Flow Type
+              </label>
+              <HelpTextTooltip content="Classifies the resource flow, for example, as concessional aid, other official flows, or private development finance. This setting applies by default across transactions unless a different flow type is recorded." />
+            </div>
             <FlowTypeSelect
               id="default-flow-type"
               value={values.default_flow_type || ''}
@@ -190,9 +220,12 @@ export function DefaultFieldsSection({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Default Currency
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Default Currency
+              </label>
+              <HelpTextTooltip content="Indicates the ISO 4217 three-letter currency code used for all financial values in a report. If no default is set, each monetary value must have its own currency." />
+            </div>
             <CurrencySelector
               id="default-currency"
               value={values.default_currency || ''}
@@ -209,12 +242,15 @@ export function DefaultFieldsSection({
           </div>
         </div>
 
-        {/* Row 3: Tied Status */}
+        {/* Row 3: Tied Status and Disbursement Channel */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Default Tied Status
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Default Tied Status
+              </label>
+              <HelpTextTooltip content="Shows whether the aid is untied, tied, or partially tied. This default can be overridden at the transaction level, but ensures clarity on restrictions that may apply to funding." />
+            </div>
             <TiedStatusSelect
               id="default-tied-status"
               value={values.default_tied_status || ''}
@@ -225,6 +261,59 @@ export function DefaultFieldsSection({
             {showDebugInfo && (
               <div className="text-xs text-gray-500">
                 Current: {values.default_tied_status || 'null'}
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Default Disbursement Channel
+              </label>
+              <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies. This provides clarity on how resources reach the implementing body." />
+            </div>
+            <DisbursementChannelSelect
+              id="default-disbursement-channel"
+              value={initialValues?.default_disbursement_channel || ''}
+              onValueChange={(value) => onFieldUpdate?.('default_disbursement_channel', value)}
+              placeholder="Select Disbursement Channel"
+              disabled={disabled || isUpdating}
+            />
+            {showDebugInfo && (
+              <div className="text-xs text-gray-500">
+                Current: {initialValues?.default_disbursement_channel || 'null'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Row 4: Modality */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Default Modality
+              </label>
+              <HelpTextTooltip content="Provides an overarching classification that combines aid type, flow type, finance type, and tied status. It offers a simplified summary view of how resources are structured and delivered by default across an activity." />
+            </div>
+            <Select
+              value={initialValues?.default_aid_modality || ''}
+              onValueChange={(value) => onFieldUpdate?.('default_aid_modality', value)}
+              disabled={disabled || isUpdating}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Default Modality" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="budget_support">Budget Support</SelectItem>
+                <SelectItem value="project_intervention">Project-type Interventions</SelectItem>
+                <SelectItem value="technical_assistance">Technical Assistance</SelectItem>
+                <SelectItem value="humanitarian_aid">Humanitarian Aid</SelectItem>
+                <SelectItem value="debt_relief">Debt Relief</SelectItem>
+              </SelectContent>
+            </Select>
+            {showDebugInfo && (
+              <div className="text-xs text-gray-500">
+                Current: {initialValues?.default_aid_modality || 'null'}
               </div>
             )}
           </div>

@@ -36,6 +36,8 @@ interface CollaborationTypeSelectProps {
   disabled?: boolean
   className?: string
   dropdownId?: string // Unique identifier for this dropdown instance
+  side?: "top" | "bottom" | "left" | "right"
+  align?: "start" | "center" | "end"
 }
 
 export function CollaborationTypeSelect({
@@ -45,6 +47,8 @@ export function CollaborationTypeSelect({
   disabled = false,
   className,
   dropdownId = "collaboration-type-select",
+  side,
+  align,
 }: CollaborationTypeSelectProps) {
   return (
     <CollaborationTypeSearchableSelect
@@ -54,6 +58,8 @@ export function CollaborationTypeSelect({
       disabled={disabled}
       className={className}
       dropdownId={dropdownId}
+      side={side}
+      align={align}
     />
   )
 }

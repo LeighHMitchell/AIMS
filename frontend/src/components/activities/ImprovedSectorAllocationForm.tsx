@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
@@ -34,6 +35,8 @@ import { SectorSelect, transformSectorGroups } from '@/components/forms/SectorSe
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
 import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization';
+import SectorTreeMapVisualization from '@/components/charts/SectorTreeMapVisualization';
+import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization';
 import { toast } from 'sonner';
 
 interface Sector {
@@ -239,6 +242,7 @@ export default function ImprovedSectorAllocationForm({
   const sectorsAutosave = useSectorsAutosave(activityId, user?.id);
   const [sortField, setSortField] = useState<SortField>('subSector');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [activeVisualizationTab, setActiveVisualizationTab] = useState<'sunburst' | 'treemap' | 'sankey'>('sunburst');
 
   // Handle column sorting
   const handleSort = (field: SortField) => {
@@ -515,8 +519,20 @@ export default function ImprovedSectorAllocationForm({
   // Distribute percentages equally
   const distributeEqually = () => {
     if (allocations.length === 0) return;
-    const equalPercentage = 100 / allocations.length;
-    const updated = allocations.map(a => ({ ...a, percentage: equalPercentage }));
+    
+    const equalShare = 100 / allocations.length;
+    const updated = allocations.map(a => ({
+      ...a,
+      percentage: parseFloat(equalShare.toFixed(2))
+    }));
+    
+    // Handle rounding errors to ensure total equals exactly 100%
+    const total = updated.reduce((sum, alloc) => sum + alloc.percentage, 0);
+    if (total !== 100 && updated.length > 0) {
+      updated[0].percentage += (100 - total);
+      updated[0].percentage = parseFloat(updated[0].percentage.toFixed(2));
+    }
+    
     onChange(updated);
   };
 
@@ -575,6 +591,13 @@ export default function ImprovedSectorAllocationForm({
   const totalAllocated = allocations.reduce((sum, a) => sum + (a.percentage || 0), 0);
   const totalUnallocated = Math.max(0, 100 - totalAllocated);
   
+  // Format unallocated percentage - show precise value for amounts less than 1%
+  const formatUnallocatedValue = (value: number): number => {
+    if (value === 0) return 0;
+    if (value < 1) return parseFloat(value.toFixed(2)); // Show 2 decimal places for values < 1%
+    return Math.round(value * 10) / 10; // Show 1 decimal place for values >= 1%
+  };
+  
   // Count different levels properly - count unique values
   const uniqueCategories = new Set();
   const unique3DigitSectors = new Set();
@@ -616,10 +639,11 @@ export default function ImprovedSectorAllocationForm({
             <TooltipTrigger asChild>
               <HeroCard
                 title="% Unallocated"
-                value={Math.round(totalUnallocated * 10) / 10}
+                value={formatUnallocatedValue(totalUnallocated)}
                 currency=""
                 suffix="%"
                 subtitle="Remaining allocation"
+                variant={totalUnallocated > 0 ? 'error' : 'default'}
               />
             </TooltipTrigger>
             <TooltipContent>
@@ -838,12 +862,12 @@ export default function ImprovedSectorAllocationForm({
                     
                     {/* Unallocated Row */}
                     {totalUnallocated > 0 && (
-                      <TableRow className="text-gray-500 bg-gray-50">
-                        <TableCell colSpan={3} className="py-2 px-4">
+                      <TableRow className="text-red-600 bg-red-50 border-red-200">
+                        <TableCell colSpan={3} className="py-2 px-4 font-medium">
                           Unallocated
                         </TableCell>
-                        <TableCell className="text-center font-mono py-2">
-                          {totalUnallocated.toFixed(1)}%
+                        <TableCell className="text-center font-mono py-2 font-semibold">
+                          {formatUnallocatedValue(totalUnallocated)}%
                         </TableCell>
                         <TableCell></TableCell>
                       </TableRow>
@@ -869,24 +893,52 @@ export default function ImprovedSectorAllocationForm({
           </Alert>
         )}
 
-        {/* Visualization - Interactive Chart */}
+        {/* Visualization - Interactive Charts */}
         {allocations.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base">Sector Allocation Visualization</CardTitle>
-                <HelpTextTooltip content="Interactive sunburst chart showing sector allocation hierarchy and relationships">
+                <HelpTextTooltip content="Interactive charts showing sector allocation hierarchy and relationships in different formats">
                   <HelpCircle className="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-help" />
                 </HelpTextTooltip>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="relative overflow-hidden">
-                <SectorSunburstVisualization 
-                  allocations={allocations}
-                  onSegmentClick={handleSunburstSegmentClick}
-                />
-              </div>
+              <Tabs value={activeVisualizationTab} onValueChange={(value) => setActiveVisualizationTab(value as 'sunburst' | 'treemap' | 'sankey')}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="sunburst">Sunburst</TabsTrigger>
+                  <TabsTrigger value="treemap">Tree Map</TabsTrigger>
+                  <TabsTrigger value="sankey">Sankey Flow</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="sunburst" className="mt-4">
+                  <div className="relative overflow-hidden">
+                    <SectorSunburstVisualization 
+                      allocations={allocations}
+                      onSegmentClick={handleSunburstSegmentClick}
+                    />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="treemap" className="mt-4">
+                  <div className="relative overflow-hidden">
+                    <SectorTreeMapVisualization 
+                      allocations={allocations}
+                      onSegmentClick={handleSunburstSegmentClick}
+                    />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="sankey" className="mt-4">
+                  <div className="relative overflow-hidden">
+                    <SectorSankeyVisualization 
+                      allocations={allocations}
+                      onSegmentClick={handleSunburstSegmentClick}
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         )}

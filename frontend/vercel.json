@@ -2,6 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
+  "installCommand": "npm ci",
   "functions": {
     "src/pages/api/**/*.ts": {
       "maxDuration": 30
@@ -35,7 +36,14 @@
   "rewrites": [
     {
       "source": "/api/health",
-      "destination": "/api/test"
+      "destination": "/api/health-check"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/health",
+      "destination": "/api/health-check",
+      "permanent": false
     }
   ],
   "crons": []

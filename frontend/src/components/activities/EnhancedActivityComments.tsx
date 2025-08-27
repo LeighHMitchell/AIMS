@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ActivityComment, CommentReply } from '@/types/comment';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
-import { ROLE_LABELS } from '@/components/rolodex/utils/roleLabels';
+import { getRoleBadgeVariant, getRoleDisplayLabel } from '@/lib/role-badge-utils';
 import {
   MessageSquare,
   Send,
@@ -281,8 +281,8 @@ export function EnhancedActivityComments({
       author: {
         userId: comment.user_id || comment.userId || '',
         name: comment.user_name || comment.author?.name || comment.userName || 'Unknown User',
-        role: ROLE_LABELS[comment.user_role || comment.author?.role || comment.userRole] ? ROLE_LABELS[comment.user_role || comment.author?.role || comment.userRole].label : (comment.user_role || comment.author?.role || comment.userRole || 'user'),
-        roleColor: ROLE_LABELS[comment.user_role || comment.author?.role || comment.userRole] ? ROLE_LABELS[comment.user_role || comment.author?.role || comment.userRole].color : 'bg-gray-100 text-gray-800',
+        role: getRoleDisplayLabel(comment.user_role || comment.author?.role || comment.userRole),
+        roleColor: '', // No longer needed - using Badge variants
         profilePicture: user?.profilePicture || comment.user_avatar_url?.avatar_url || comment.user_avatar_url || comment.author?.profilePicture || comment.userProfilePicture
       },
       message: comment.message || comment.content || '',
@@ -317,8 +317,8 @@ export function EnhancedActivityComments({
         author: {
           userId: reply.user_id || reply.userId || '',
           name: reply.author.name || reply.userName || 'Unknown User',
-          role: ROLE_LABELS[reply.author.role || reply.userRole] ? ROLE_LABELS[reply.author.role || reply.userRole].label : (reply.author.role || reply.userRole || 'user'),
-          roleColor: ROLE_LABELS[reply.author.role || reply.userRole] ? ROLE_LABELS[reply.author.role || reply.userRole].color : 'bg-gray-100 text-gray-800',
+          role: getRoleDisplayLabel(reply.author.role || reply.userRole),
+          roleColor: '', // No longer needed - using Badge variants
           profilePicture: user?.profilePicture || reply.author?.profilePicture || reply.user_avatar_url?.avatar_url || reply.user_avatar_url || reply.userProfilePicture
         },
         message: reply.message || reply.content || '',
@@ -443,7 +443,6 @@ export function EnhancedActivityComments({
       await fetchComments();
       setNewComment('');
       setAttachments([]);
-      toast.success('Comment added successfully');
       
       if (user) {
         fetchNotifications();
@@ -457,6 +456,10 @@ export function EnhancedActivityComments({
   const handleSubmitReply = async (parentCommentId: string) => {
     if (!replyContent.trim() || !user) return;
 
+    // Find the parent comment to inherit its type
+    const parentComment = comments.find(c => c.id === parentCommentId);
+    const inheritedType = parentComment?.type || 'Feedback';
+
     try {
       const res = await fetch(`/api/activities/${activityId}/comments`, {
         method: 'POST',
@@ -464,7 +467,7 @@ export function EnhancedActivityComments({
         body: JSON.stringify({
           user,
           content: replyContent,
-          type: replyType,
+          type: inheritedType,
           parentCommentId,
         }),
       });
@@ -474,7 +477,6 @@ export function EnhancedActivityComments({
       await fetchComments();
       setReplyContent('');
       setReplyingTo(null);
-      toast.success('Reply added successfully');
     } catch (error) {
       console.error('Error adding reply:', error);
       toast.error('Failed to add reply');
@@ -1008,7 +1010,7 @@ function CommentCard({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm truncate">{comment.author.name}</span>
-                      <Badge className={`text-xs ${comment.author.roleColor || 'bg-gray-100 text-gray-800'}`}>
+                      <Badge variant={getRoleBadgeVariant(comment.author.role)} className="text-xs">
                         {comment.author.role}
                       </Badge>
                     </div>
@@ -1201,20 +1203,8 @@ function CommentCard({
           {/* Reply Form */}
           {replyingTo === comment.id && (
             <div className="ml-6 border-l-2 border-blue-200 pl-4 space-y-3">
-              <div className="flex gap-2">
-                <Select value={replyType} onValueChange={(value) => setReplyType(value as 'Question' | 'Feedback')}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Question">Question</SelectItem>
-                    <SelectItem value="Feedback">Feedback</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
               <Textarea
-                placeholder={`Add a ${replyType.toLowerCase()}...`}
+                placeholder="Write your reply..."
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
                 rows={2}
@@ -1257,9 +1247,6 @@ function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
     <div className="bg-gray-50 rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Badge variant={reply.type === 'Question' ? 'default' : 'secondary'} className="text-xs">
-            {reply.type}
-          </Badge>
           <Avatar className="h-6 w-6">
             <AvatarImage src={reply.author.profilePicture} />
             <AvatarFallback className="text-xs">
@@ -1267,7 +1254,7 @@ function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
             </AvatarFallback>
           </Avatar>
           <span className="text-sm font-medium">{reply.author.name}</span>
-          <Badge className={`text-xs ml-2 ${reply.author.roleColor || 'bg-gray-100 text-gray-800'}`}>
+          <Badge variant={getRoleBadgeVariant(reply.author.role)} className="text-xs ml-2">
             {reply.author.role}
           </Badge>
           <span className="text-xs text-gray-500">

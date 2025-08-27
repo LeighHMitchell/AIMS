@@ -182,7 +182,14 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           icon: activity.icon || null
         }));
 
-        setSearchResults(mappedActivities.filter((a: Activity) => a.id !== activityId));
+        // Filter out current activity and already linked activities
+        const linkedActivityIds = linkedActivities
+          .map(la => la.activityId)
+          .filter((id): id is string => id !== null);
+        
+        setSearchResults(mappedActivities.filter((a: Activity) => 
+          a.id !== activityId && !linkedActivityIds.includes(a.id)
+        ));
     } catch (error) {
         console.error('Search error:', error);
         toast.error('Search failed');
@@ -190,7 +197,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
       setSearching(false);
     }
     }, 300);
-  }, [activityId]);
+  }, [activityId, linkedActivities]);
 
   // Use search results when searching, otherwise empty
   const displayActivities = searchQuery.trim() ? searchResults : [];
@@ -202,6 +209,9 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     setNarrative('');
     setEditingActivity(null);
     setShowModal(true);
+    // Clear search after selection
+    setSearchQuery('');
+    setSearchResults([]);
   };
 
   // Handle edit
@@ -562,7 +572,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDelete(link.id)}
-                              className="h-8 w-8 p-0 text-gray-600 hover:text-red-600"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -581,7 +591,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
         {currentActivity && (
           <div className="bg-white rounded-lg p-6 border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Relationship Visualization</h3>
-            <div className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden" style={{ height: '400px' }}>
+            <div className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden" style={{ height: '600px' }}>
               <LinkedActivitiesGraph
                 currentActivity={currentActivity}
                 linkedActivities={linkedActivities}
@@ -611,10 +621,10 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                 <div className="flex items-start gap-3">
                   {/* Activity Icon */}
                   <div className="flex-shrink-0 mt-0.5">
-                    {selectedActivity?.icon ? (
+                    {(selectedActivity?.icon || editingActivity?.icon) ? (
                       <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
                         <img 
-                          src={selectedActivity.icon} 
+                          src={selectedActivity?.icon || editingActivity?.icon} 
                           alt="Activity icon" 
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -639,8 +649,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-gray-900 text-sm leading-tight break-words">
                       {editingActivity ? editingActivity.activityTitle : selectedActivity?.title}
-                      {selectedActivity?.acronym && (
-                        <span className="font-medium text-gray-900"> ({selectedActivity.acronym})</span>
+                      {(selectedActivity?.acronym || editingActivity?.acronym) && (
+                        <span className="font-medium text-gray-900"> ({selectedActivity?.acronym || editingActivity?.acronym})</span>
                       )}
                     </h4>
                     <div className="mt-1 space-y-1">
@@ -648,13 +658,23 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                         {selectedActivity ? [
                           selectedActivity.otherIdentifier,
                           selectedActivity.iatiIdentifier
-                        ].filter(Boolean).join(' • ') : (editingActivity ? editingActivity.iatiIdentifier : '')}
+                        ].filter(Boolean).join(' • ') : (editingActivity ? [
+                          editingActivity.otherIdentifier,
+                          editingActivity.iatiIdentifier
+                        ].filter(Boolean).join(' • ') : '')}
                       </p>
-                      {selectedActivity && (selectedActivity.organizationName || selectedActivity.organizationAcronym) && (
+                      {((selectedActivity && (selectedActivity.organizationName || selectedActivity.organizationAcronym)) ||
+                        (editingActivity && (editingActivity.organizationName || editingActivity.organizationAcronym))) && (
                         <p className="text-xs text-gray-500 break-words">
-                          Reported by: {selectedActivity.organizationName && selectedActivity.organizationAcronym 
-                            ? `${selectedActivity.organizationName} (${selectedActivity.organizationAcronym})`
-                            : selectedActivity.organizationName || (selectedActivity.organizationAcronym && `(${selectedActivity.organizationAcronym})`)}
+                          Reported by: {selectedActivity ? (
+                            selectedActivity.organizationName && selectedActivity.organizationAcronym 
+                              ? `${selectedActivity.organizationName} (${selectedActivity.organizationAcronym})`
+                              : selectedActivity.organizationName || (selectedActivity.organizationAcronym && `(${selectedActivity.organizationAcronym})`)
+                          ) : editingActivity ? (
+                            editingActivity.organizationName && editingActivity.organizationAcronym 
+                              ? `${editingActivity.organizationName} (${editingActivity.organizationAcronym})`
+                              : editingActivity.organizationName || (editingActivity.organizationAcronym && `(${editingActivity.organizationAcronym})`)
+                          ) : ''}
                         </p>
                       )}
                     </div>

@@ -29,6 +29,8 @@ interface CollaborationTypeSearchableSelectProps {
   disabled?: boolean;
   className?: string;
   dropdownId?: string; // Unique identifier for this dropdown instance
+  side?: "top" | "bottom" | "left" | "right";
+  align?: "start" | "center" | "end";
 }
 
 export function CollaborationTypeSearchableSelect({
@@ -38,6 +40,8 @@ export function CollaborationTypeSearchableSelect({
   disabled = false,
   className,
   dropdownId = "collaboration-type-select",
+  side,
+  align = "start",
 }: CollaborationTypeSearchableSelectProps) {
   // Use shared dropdown state if dropdownId is provided
   const { isOpen, setOpen } = useDropdownState(dropdownId);
@@ -107,7 +111,8 @@ export function CollaborationTypeSearchableSelect({
         </PopoverTrigger>
         <PopoverContent 
           className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border"
-          align="start"
+          align={align}
+          side={side}
           sideOffset={4}
         >
           <Command>

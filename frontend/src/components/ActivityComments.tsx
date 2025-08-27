@@ -309,7 +309,6 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
       const normalizedComments = updatedComments.map(normalizeComment);
       setComments(normalizedComments);
       setNewComment('');
-      toast.success('Comment added successfully');
       
       // Refresh notifications
       if (user) {
@@ -324,6 +323,10 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
   const handleSubmitReply = async (parentCommentId: string) => {
     if (!replyContent.trim() || !user) return;
 
+    // Find the parent comment to inherit its type
+    const parentComment = comments.find(c => c.id === parentCommentId);
+    const inheritedType = parentComment?.type || 'Feedback';
+
     try {
       const res = await fetch(`/api/activities/${activityId}/comments`, {
         method: 'POST',
@@ -331,7 +334,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
         body: JSON.stringify({
           user,
           content: replyContent,
-          type: replyType,
+          type: inheritedType,
           parentCommentId,
         }),
       });
@@ -344,7 +347,6 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
       setComments(normalizedComments);
       setReplyContent('');
       setReplyingTo(null);
-      toast.success('Reply added successfully');
       
       // Refresh notifications
       if (user) {
@@ -707,12 +709,6 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                           <Badge variant="outline" className="text-xs">
                             {reply.author?.role || 'user'}
                           </Badge>
-                          <Badge 
-                            variant={reply.type === 'Question' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {reply.type}
-                          </Badge>
                           <span className="text-xs text-gray-500">
                             {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
                           </span>
@@ -797,17 +793,6 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                 {/* Reply form */}
                 {replyingTo === comment.id && (
                   <div className="mt-3 space-y-2">
-                    <div className="flex gap-2">
-                      <Select value={replyType} onValueChange={(v: any) => setReplyType(v)}>
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Question">Question</SelectItem>
-                          <SelectItem value="Feedback">Feedback</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                     <Textarea
                       placeholder="Write your reply..."
                       value={replyContent}

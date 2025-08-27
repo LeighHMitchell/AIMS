@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCircle } from 'lucide-react';
 import LocationsTab from './LocationsTab';
-import { SubnationalBreakdownTab } from './activities/SubnationalBreakdownTab';
+import { EnhancedSubnationalBreakdown } from './activities/EnhancedSubnationalBreakdown';
 
 // Re-export types for compatibility
 interface SpecificLocation {
@@ -122,7 +122,7 @@ export default function CombinedLocationsTab({
         </TabsContent>
 
         <TabsContent value="subnational-breakdown" className="mt-6">
-          <SubnationalBreakdownTab
+          <EnhancedSubnationalBreakdown
             activityId={activityId}
             canEdit={canEdit}
             onDataChange={handleSubnationalDataChange}

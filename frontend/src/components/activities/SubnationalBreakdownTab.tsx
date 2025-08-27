@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Check, AlertTriangle, MapPin, Trash2 } from 'lucide-react'
 import { MYANMAR_REGIONS, type MyanmarRegion } from "@/data/myanmar-regions"
 import { toast } from "sonner"
+import MyanmarAdminMap from "@/components/MyanmarAdminMap"
 
 interface SubnationalBreakdown {
   id?: string
@@ -337,7 +338,23 @@ export function SubnationalBreakdownTab({
 
   return (
     <div className="space-y-6">
-      <Card>
+      {/* Two-column layout: Map on left, Form on right */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Map */}
+        <MyanmarAdminMap 
+          breakdowns={breakdowns}
+          onRegionClick={(regionName) => {
+            // Focus on the region input when clicked
+            const input = document.querySelector(`input[data-region="${regionName}"]`) as HTMLInputElement;
+            if (input) {
+              input.focus();
+              input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }}
+        />
+        
+        {/* Right Column - Form */}
+        <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
@@ -413,6 +430,7 @@ export function SubnationalBreakdownTab({
                         value={inputValues[region.name] ?? (breakdowns[region.name]?.toString() || '')}
                         onChange={(e) => handlePercentageChange(region.name, e.target.value)}
                         onBlur={(e) => handlePercentageBlur(region.name, e.target.value)}
+                        data-region={region.name}
                         onFocus={(e) => {
                           (e.target as HTMLInputElement).select()
                           // Ensure selection works on mobile/touch devices
@@ -437,6 +455,7 @@ export function SubnationalBreakdownTab({
 
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 }

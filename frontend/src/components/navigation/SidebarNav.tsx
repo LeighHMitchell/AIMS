@@ -17,7 +17,8 @@ import {
   Map,
   Briefcase,
   Database,
-  Shield
+  Shield,
+  HelpCircle
 } from "lucide-react"
 
 interface SidebarNavProps {
@@ -113,6 +114,12 @@ export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavPr
       name: "Data Clinic",
       href: "/data-clinic",
       icon: Database,
+      show: true
+    },
+    {
+      name: "FAQ",
+      href: "/faq",
+      icon: HelpCircle,
       show: true
     },
 

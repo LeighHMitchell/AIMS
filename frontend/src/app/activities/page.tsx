@@ -44,6 +44,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatReportedBy, formatSubmittedBy } from "@/utils/format-helpers";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { 
   Plus, Download, Edit2, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
@@ -345,8 +346,7 @@ function ActivitiesPageContent() {
       setAidType: optimizedData?.filters?.setAidType || (() => {}),
       flowType: optimizedData?.filters?.flowType || 'all',
       setFlowType: optimizedData?.filters?.setFlowType || (() => {}),
-      tiedStatus: optimizedData?.filters?.tiedStatus || 'all',
-      setTiedStatus: optimizedData?.filters?.setTiedStatus || (() => {})
+
     }
   };
   
@@ -384,8 +384,7 @@ function ActivitiesPageContent() {
   const setFilterAidType = usingOptimization ? safeOptimizedData.filters.setAidType : () => {};
   const filterFlowType = usingOptimization ? safeOptimizedData.filters.flowType : 'all';
   const setFilterFlowType = usingOptimization ? safeOptimizedData.filters.setFlowType : () => {};
-  const filterTiedStatus = usingOptimization ? safeOptimizedData.filters.tiedStatus : 'all';
-  const setFilterTiedStatus = usingOptimization ? safeOptimizedData.filters.setTiedStatus : () => {};
+
 
   // Memoized helper functions - must be defined before use in other memos
   const getCreatorOrganization = useCallback((activity: Activity): string => {
@@ -911,8 +910,12 @@ function ActivitiesPageContent() {
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-800">Activities</h1>
-          <p className="text-slate-500">View key information about each activity. Users with appropriate permissions can update or remove activities from this list.</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold text-slate-800">Activities</h1>
+            <HelpTextTooltip 
+              content="View key information about each activity. Users with appropriate permissions can update or remove activities from this list."
+            />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -935,11 +938,11 @@ function ActivitiesPageContent() {
               value={filterStatus}
               onValueChange={setFilterStatus}
               placeholder="Status"
-              className="w-[140px]"
+              className="w-[180px]"
             />
 
             <Select value={filterValidation} onValueChange={setFilterValidation}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Validation" />
               </SelectTrigger>
               <SelectContent>
@@ -952,7 +955,7 @@ function ActivitiesPageContent() {
 
             {/* Reported By Filter */}
             <Select value={filterReportedBy} onValueChange={setFilterReportedBy}>
-              <SelectTrigger className="w-[140px] pl-0">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Organisation" />
               </SelectTrigger>
               <SelectContent>
@@ -971,7 +974,7 @@ function ActivitiesPageContent() {
         <div className="flex flex-wrap items-center gap-3 lg:mx-8">
           {/* Aid Type Filter */}
           <Select value={filterAidType} onValueChange={setFilterAidType}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Aid Type" />
               </SelectTrigger>
               <SelectContent>
@@ -987,7 +990,7 @@ function ActivitiesPageContent() {
 
             {/* Flow Type Filter */}
             <Select value={filterFlowType} onValueChange={setFilterFlowType}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Flow Type" />
               </SelectTrigger>
               <SelectContent>
@@ -1001,21 +1004,7 @@ function ActivitiesPageContent() {
               </SelectContent>
             </Select>
 
-            {/* Tied Status Filter */}
-            <Select value={filterTiedStatus} onValueChange={setFilterTiedStatus}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Tied Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Tied Status Types</SelectItem>
-                {Object.entries(TIED_STATUS_LABELS).map(([code, label]) => (
-                  <SelectItem key={code} value={code}>
-                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
             
         </div>
 

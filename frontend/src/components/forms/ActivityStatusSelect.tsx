@@ -11,6 +11,8 @@ interface ActivityStatusSelectProps {
   disabled?: boolean
   id?: string
   dropdownId?: string // Unique identifier for this dropdown instance
+  side?: "top" | "bottom" | "left" | "right"
+  align?: "start" | "center" | "end"
 }
 
 export function ActivityStatusSelect({
@@ -20,6 +22,8 @@ export function ActivityStatusSelect({
   disabled = false,
   id,
   dropdownId = "activity-status-select",
+  side,
+  align,
 }: ActivityStatusSelectProps) {
   return (
     <EnhancedSearchableSelect
@@ -31,6 +35,8 @@ export function ActivityStatusSelect({
       disabled={disabled}
       className="w-full"
       dropdownId={dropdownId}
+      side={side}
+      align={align}
     />
   )
 }

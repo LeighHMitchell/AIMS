@@ -147,6 +147,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       toast.success('Collaboration Type saved', { position: 'top-right' });
     },
   });
+
+
   const publicationStatusAutosave = useFieldAutosave('publicationStatus', { 
     activityId: effectiveActivityId, 
     userId: user?.id,
@@ -448,7 +450,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-8 min-h-[800px]">
       {/* Banner and Icon Upload */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
         <div className="lg:col-span-3 flex flex-col">
@@ -517,12 +519,83 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         </div>
       </div>
 
+      {/* Field-level Autosave for Title and Acronym */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+        {/* Activity Title - takes up 3 columns */}
+        <div className="lg:col-span-3 space-y-2">
+          <LabelSaveIndicator
+            isSaving={titleAutosave.state.isSaving}
+            isSaved={titleAutosave.state.isPersistentlySaved}
+            className="text-gray-700"
+          >
+            <div className="flex items-center gap-2">
+              Activity Title
+              <HelpTextTooltip>
+                A short, human-readable title that provides a meaningful summary of the activity. It should be clear, descriptive, and consistent with the reporting organisation's titles used in published projects.
+              </HelpTextTooltip>
+            </div>
+          </LabelSaveIndicator>
+          <div>
+            <Input
+              id="title"
+              value={general.title || ''}
+              onChange={(e) => {
+                setGeneral((g: any) => ({ ...g, title: e.target.value }));
+                titleAutosave.triggerFieldSave(e.target.value);
+              }}
+              placeholder="Enter activity title"
+              className="w-full"
+            />
+            {titleAutosave.state.error && (
+              <p className="text-xs text-red-600 mt-1">{titleAutosave.state.error.toString()}</p>
+            )}
+          </div>
+        </div>
+        
+        {/* Activity Acronym - takes up 1 column */}
+        <div className="space-y-2">
+          <LabelSaveIndicator
+            isSaving={acronymAutosave.state.isSaving}
+            isSaved={acronymAutosave.state.isPersistentlySaved}
+            className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}`}
+          >
+            <div className="flex items-center gap-2">
+              Activity Acronym
+              <HelpTextTooltip>
+                This field is used to record a short acronym or abbreviation for the activity. It helps users quickly identify and reference the activity across the application, especially in lists, cards, and summaries.
+              </HelpTextTooltip>
+            </div>
+          </LabelSaveIndicator>
+          <div 
+            className={`${!general.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={() => !general.title?.trim() && handleDisabledFieldClick('Activity Acronym')}
+          >
+            <Input
+              id="acronym"
+              value={general.acronym || ''}
+              onChange={(e) => {
+                if (general.title?.trim()) {
+                  setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
+                  if (general.id) acronymAutosave.triggerFieldSave(e.target.value);
+                }
+              }}
+              placeholder="Enter acronym"
+              className="w-full"
+              disabled={!general.title?.trim()}
+            />
+            {acronymAutosave.state.error && (
+              <p className="text-xs text-red-600 mt-1">{acronymAutosave.state.error.toString()}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Activity ID, IATI Identifier, and UUID Fields */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={activityIdAutosave.state.isSaving}
-            isSaved={!!general.otherIdentifier?.trim()}
+            isSaved={activityIdAutosave.state.isPersistentlySaved}
             className={!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}
           >
             <div className="flex items-center gap-2">
@@ -571,7 +644,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={iatiIdentifierAutosave.state.isSaving}
-            isSaved={!!general.iatiIdentifier?.trim()}
+            isSaved={iatiIdentifierAutosave.state.isPersistentlySaved}
             className={!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}
           >
             <div className="flex items-center gap-2">
@@ -627,6 +700,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               <span className="text-sm font-medium text-gray-700">
                 Universally Unique Identifier
               </span>
+              <Lock className="h-3 w-3 text-gray-400" />
               <HelpTextTooltip>
                 This field is auto-generated and locked. Every activity has a Universally Unique Identifier (UUID) that is assigned automatically by the system. It cannot be edited to ensure consistency across the application.
               </HelpTextTooltip>
@@ -655,82 +729,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         </div>
       </div>
 
-      {/* Field-level Autosave for Title and Acronym */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Activity Title - takes up 3 columns */}
-        <div className="lg:col-span-3 space-y-2">
-          <LabelSaveIndicator
-            isSaving={titleAutosave.state.isSaving}
-            isSaved={!titleAutosave.state.isSaving && !titleAutosave.state.hasUnsavedChanges && titleAutosave.state.lastSaved !== null}
-            className="text-gray-700"
-          >
-            <div className="flex items-center gap-2">
-              Activity Title
-              <HelpTextTooltip>
-                A short, human-readable title that provides a meaningful summary of the activity. It should be clear, descriptive, and consistent with the reporting organisation's titles used in published projects.
-              </HelpTextTooltip>
-            </div>
-          </LabelSaveIndicator>
-          <div>
-            <Input
-              id="title"
-              value={general.title || ''}
-              onChange={(e) => {
-                setGeneral((g: any) => ({ ...g, title: e.target.value }));
-                titleAutosave.triggerFieldSave(e.target.value);
-              }}
-              placeholder="Enter activity title"
-              className="w-full"
-            />
-            {titleAutosave.state.error && (
-              <p className="text-xs text-red-600 mt-1">{titleAutosave.state.error.toString()}</p>
-            )}
-          </div>
-        </div>
-        
-        {/* Activity Acronym - takes up 1 column */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={acronymAutosave.state.isSaving}
-            isSaved={!!general.acronym?.trim()}
-            className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}`}
-          >
-            <div className="flex items-center gap-2">
-              Activity Acronym
-              <HelpTextTooltip>
-                This field is used to record a short acronym or abbreviation for the activity. It helps users quickly identify and reference the activity across the application, especially in lists, cards, and summaries.
-              </HelpTextTooltip>
-            </div>
-          </LabelSaveIndicator>
-          <div 
-            className={`${!general.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={() => !general.title?.trim() && handleDisabledFieldClick('Activity Acronym')}
-          >
-            <Input
-              id="acronym"
-              value={general.acronym || ''}
-              onChange={(e) => {
-                if (general.title?.trim()) {
-                  setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
-                  if (general.id) acronymAutosave.triggerFieldSave(e.target.value);
-                }
-              }}
-              placeholder="Enter acronym"
-              className="w-full"
-              disabled={!general.title?.trim()}
-            />
-            {acronymAutosave.state.error && (
-              <p className="text-xs text-red-600 mt-1">{acronymAutosave.state.error.toString()}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Description with field-level autosave */}
       <div className="space-y-2">
         <LabelSaveIndicator
           isSaving={descriptionAutosave.state.isSaving}
-          isSaved={!!general.description?.trim()}
+          isSaved={descriptionAutosave.state.isPersistentlySaved}
           className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
         >
                       <div className="flex items-center gap-2">
@@ -779,7 +782,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="w-full space-y-2">
             <LabelSaveIndicator
               isSaving={collaborationTypeAutosave.state.isSaving}
-              isSaved={!!general.collaborationType}
+              isSaved={collaborationTypeAutosave.state.isPersistentlySaved}
               className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
             >
               <div className="flex items-center gap-2">
@@ -806,7 +809,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 value={general.collaborationType}
                 onValueChange={(value) => {
                   if (!fieldLockStatus.isLocked) {
-                    console.log('[AIMS DEBUG] CollaborationType changed from', general.collaborationType, 'to', value);
                     setGeneral((g: any) => ({ ...g, collaborationType: value }));
                     collaborationTypeAutosave.triggerFieldSave(value);
                   }
@@ -819,18 +821,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             {collaborationTypeAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {collaborationTypeAutosave.state.error.message}</p>}
           </div>
           <div className="w-full space-y-2">
-            <LabelSaveIndicator
-              isSaving={false}
-              isSaved={!!general.activityStatus}
-              className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">Activity Status</span>
-                <HelpTextTooltip>
-                  Indicates the current phase of the activity. This field should be regularly updated to reflect the activity's progress over time.
-                </HelpTextTooltip>
-              </div>
-            </LabelSaveIndicator>
             <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
               <ActivityEditorFieldAutosave
                 activityId={general.id || ''}
@@ -885,7 +875,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={plannedStartDateAutosave.state.isSaving}
-              isSaved={!!general.plannedStartDate}
+              isSaved={plannedStartDateAutosave.state.isPersistentlySaved}
               className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
             >
               <div className="flex items-center gap-2">
@@ -926,7 +916,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={plannedEndDateAutosave.state.isSaving}
-              isSaved={!!general.plannedEndDate}
+              isSaved={plannedEndDateAutosave.state.isPersistentlySaved}
               className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
             >
               <div className="flex items-center gap-2">
@@ -967,7 +957,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={actualStartDateAutosave.state.isSaving}
-              isSaved={!!general.actualStartDate}
+              isSaved={actualStartDateAutosave.state.isPersistentlySaved}
               className={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate ? 'text-gray-400' : 'text-gray-700'}
             >
               <div className="flex items-center gap-2">
@@ -1008,7 +998,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={actualEndDateAutosave.state.isSaving}
-              isSaved={!!general.actualEndDate}
+              isSaved={actualEndDateAutosave.state.isPersistentlySaved}
               className={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate ? 'text-gray-400' : 'text-gray-700'}
             >
               <div className="flex items-center gap-2">
@@ -1210,12 +1200,24 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         defaultLanguage="en"
       />;
     case "contacts":
+      // Debug logging for partner data
+      console.log('[ACTIVITY EDITOR DEBUG] Passing partner data to ContactsSection:', {
+        extendingPartners,
+        implementingPartners,
+        governmentPartners,
+        contributors
+      });
+      
       return <ContactsSection 
         contacts={contacts} 
         onChange={updateContacts} 
         activityId={general.id} 
         reportingOrgId={general.createdByOrg || general.reportingOrgId}
         reportingOrgName={general.created_by_org_name || general.created_by_org_acronym}
+        extendingPartners={extendingPartners}
+        implementingPartners={implementingPartners}
+        governmentPartners={governmentPartners}
+        contributors={contributors}
       />;
     case "focal_points":
       return <FocalPointsTab 
@@ -1877,7 +1879,7 @@ function NewActivityPageContent() {
       subnational_breakdown: "Subnational Breakdown",
       organisations: "Organisations",
       contributors: "Activity Contributors",
-      contacts: "Contacts",
+      contacts: "Activity Contacts",
       focal_points: "Focal Points",
       linked_activities: "Linked Activities",
       finances: "Finances",
@@ -3241,8 +3243,8 @@ function NewActivityPageContent() {
       
       {/* Debug Panel - Disabled for field-level autosave */}
       
-      {/* Debug Panel */}
-      <DebugPanel />
+      {/* Debug Panel - Temporarily disabled to fix loading issue */}
+      {/* <DebugPanel /> */}
         </div>
       </DropdownProvider>
     </MainLayout>

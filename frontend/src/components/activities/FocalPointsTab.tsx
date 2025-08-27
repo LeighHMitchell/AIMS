@@ -171,15 +171,13 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
                 Recipient Government Focal Point(s)
                 <HelpTextTooltip content="Government focal points are responsible for reviewing, endorsing, and validating activity data. Multiple focal points can be assigned as needed and will receive notifications about activity updates and changes." />
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                The government official(s) responsible for reviewing or endorsing this activity.
-              </p>
             </div>
             <div className="flex-1">
               <FocalPointDropdown
                 activityId={activityId}
                 type="government_focal_point"
                 currentAssignments={data.government_focal_points}
+                allFocalPointAssignments={[...data.government_focal_points, ...data.development_partner_focal_points]}
                 onAssignmentChange={fetchFocalPoints}
                 onAssignmentAdded={(newAssignment) => handleAssignmentAdded(newAssignment, 'government_focal_point')}
                 onAssignmentRemoved={(contactId) => handleAssignmentRemoved(contactId, 'government_focal_point')}
@@ -198,15 +196,13 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
                 Development Partner Focal Point(s)
                 <HelpTextTooltip content="Development partner focal points maintain and update activity information for their organizations. Both types of focal points ensure data accuracy and keep activity information current. Multiple focal points can be assigned as needed." />
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                The main contact(s) responsible for maintaining or updating this activity on behalf of the development partner organisation(s).
-              </p>
             </div>
             <div className="flex-1">
               <FocalPointDropdown
                 activityId={activityId}
                 type="development_partner_focal_point"
                 currentAssignments={data.development_partner_focal_points}
+                allFocalPointAssignments={[...data.government_focal_points, ...data.development_partner_focal_points]}
                 onAssignmentChange={fetchFocalPoints}
                 onAssignmentAdded={(newAssignment) => handleAssignmentAdded(newAssignment, 'development_partner_focal_point')}
                 onAssignmentRemoved={(contactId) => handleAssignmentRemoved(contactId, 'development_partner_focal_point')}

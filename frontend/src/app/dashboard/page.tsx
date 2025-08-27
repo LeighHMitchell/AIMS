@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/hooks/useUser"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
+import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
 import { ActivityFeed } from "@/components/ActivityFeed"
 import { 
   Activity, 
@@ -386,8 +387,8 @@ export default function Dashboard() {
                 <h1 className="text-3xl font-bold">Dashboard</h1>
                 <div className="flex items-center gap-2 mt-2">
                   <p className="text-muted-foreground">Welcome back, {user?.name}</p>
-                  <Badge variant={user?.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"}>
-                    {user?.role && ROLE_LABELS[user.role]}
+                  <Badge variant={getRoleBadgeVariant(user?.role)}>
+                    {getRoleDisplayLabel(user?.role)}
                   </Badge>
                 </div>
               </div>

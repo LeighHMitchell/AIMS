@@ -10,6 +10,7 @@ import { useUser } from '@/hooks/useUser';
 import { OrganizationSearchableSelect, Organization } from "@/components/ui/organization-searchable-select";
 import { useParticipatingOrganizations } from "@/hooks/use-participating-organizations";
 import { useOrganizations } from "@/hooks/use-organizations";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import Image from "next/image";
 
 interface OrganisationsSectionProps {
@@ -313,6 +314,7 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Extending Partners
+            <HelpTextTooltip content="The organisation that receives funds from the financing partner and passes them on to the implementing partner. It acts as a channel for resources rather than the direct implementer. This role ensures funding flows are properly managed and recorded." />
             {savingState.extending ? (
               <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
             ) : extendingOrgs.length > 0 ? (
@@ -321,10 +323,6 @@ export default function OrganisationsSection({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-gray-600">
-            This is the government entity or development partner agency receiving funds from financing partner(s) for
-            channeling to implementing partner(s).
-          </p>
 
           <div className="space-y-3">
             {extendingOrgs.map((participatingOrg) => 
@@ -362,6 +360,7 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Implementing Partners
+            <HelpTextTooltip content="The organisation responsible for carrying out the activity on the ground. It holds the primary responsibility for delivering outputs and results. Implementing partners are accountable for the execution of the activity." />
             {savingState.implementing ? (
               <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
             ) : implementingOrgs.length > 0 ? (
@@ -370,10 +369,6 @@ export default function OrganisationsSection({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-gray-600">
-            The implementer of the activity is the organisation(s) which is/are principally responsible for delivering this
-            activity.
-          </p>
 
           <div className="space-y-3">
             {implementingOrgs.map((participatingOrg) => 
@@ -411,6 +406,7 @@ export default function OrganisationsSection({
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             Government Partners
+            <HelpTextTooltip content="The government entity responsible for overseeing or stewarding the activity. This is often the ministry or agency that signs a formal agreement, such as an MoU. The partner provides official recognition and ensures alignment with national systems." />
             {savingState.government ? (
               <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
             ) : governmentOrgs.length > 0 ? (
@@ -419,11 +415,6 @@ export default function OrganisationsSection({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-gray-600">
-            The government entity or entities responsible for oversight or maintenance of the activity. Often this will be
-            the government entity with which a MoU or similar agreement is signed. In many cases, the MoU will be
-            signed directly with the implementing partner.
-          </p>
 
           <div className="space-y-3">
             {governmentOrgs.map((participatingOrg) => 

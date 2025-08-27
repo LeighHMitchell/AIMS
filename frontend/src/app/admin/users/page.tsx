@@ -15,6 +15,7 @@ import { usePartners } from "@/hooks/usePartners";
 import { useOrganizations } from "@/hooks/use-organizations";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { User, UserRole, USER_ROLES, ROLE_LABELS } from "@/types/user";
+import { getRoleBadgeVariant } from "@/lib/role-badge-utils";
 import { 
   Users, 
   Edit, 
@@ -122,20 +123,7 @@ const formatMailingAddress = (address: AddressComponents): string => {
   return parts.length > 0 ? parts.join(', ') : '';
 };
 
-// Role badge color mapping with custom colors for different partner types
-const getRoleBadgeVariant = (role: UserRole | 'admin'): "default" | "secondary" | "destructive" | "outline" | "dark-blue" | "light-blue" | "dark-green" | "light-green" => {
-  if (role === USER_ROLES.SUPER_USER || role === 'admin') return "destructive";
-  
-  // Development Partner colors (blue shades)
-  if (role === USER_ROLES.DEV_PARTNER_TIER_1) return "dark-blue";
-  if (role === USER_ROLES.DEV_PARTNER_TIER_2) return "light-blue";
-  
-  // Government Partner colors (green shades)
-  if (role === USER_ROLES.GOV_PARTNER_TIER_1) return "dark-green";
-  if (role === USER_ROLES.GOV_PARTNER_TIER_2) return "light-green";
-  
-  return "outline";
-};
+// Removed local getRoleBadgeVariant function - now using unified utility
 
 export default function UserManagement() {
   const { user: currentUser, permissions } = useUser();

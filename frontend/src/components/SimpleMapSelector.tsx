@@ -154,8 +154,8 @@ type MapLayerType = 'streets' | 'satellite' | 'terrain';
 const MAP_LAYERS = {
   streets: {
     name: 'Streets',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '© OpenStreetMap contributors, © CARTO',
     icon: Layers
   },
   satellite: {
@@ -1046,6 +1046,10 @@ export default function SimpleMapSelector({
                 <MapBounds locations={locations} />
                 <MapInitializer />
                 <MapEvents onMapClick={handleMapClick} />
+                <MapReset 
+                  shouldReset={shouldResetMap} 
+                  onResetComplete={() => setShouldResetMap(false)} 
+                />
                 
                 {showHeatmap && <HeatmapLayer locations={locations} />}
               </MapContainer>

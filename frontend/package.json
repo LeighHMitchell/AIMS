@@ -2,7 +2,7 @@
   "name": "frontend",
   "version": "1.0.0",
   "private": true,
-  "//": "Deploy trigger - force Vercel rebuild v3 - Ready for production",
+  "//": "Deploy trigger - force Vercel rebuild v4 - Production ready with GitHub Actions",
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "dev-safe": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev -H 0.0.0.0",
@@ -42,7 +42,9 @@
     "clean:all": "rm -rf .next node_modules package-lock.json && npm install",
     "dev:clean": "npm run clean && npm run dev",
     "dev:reset": "pkill -f 'next dev' || true && rm -rf .next && npm cache clean --force && npm run dev",
-    "dev:hard-reset": "pkill -f node || true && rm -rf .next && rm -rf node_modules && npm cache clean --force && npm install && npm run dev"
+    "dev:hard-reset": "pkill -f node || true && rm -rf .next && rm -rf node_modules && npm cache clean --force && npm install && npm run dev",
+    "validate-production": "node scripts/validate-production.js",
+    "prepare-deployment": "npm run validate-production && npm run type-check && npm run lint && npm run build"
   },
   "keywords": [],
   "author": "",

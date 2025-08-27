@@ -268,7 +268,6 @@ export function CommentsDrawer({
       setNewComment('');
       setCommentType('Feedback');
       await fetchComments();
-      toast.success('Comment added successfully');
     } catch (error) {
       console.error('Error submitting comment:', error);
       toast.error('Failed to add comment');
@@ -280,6 +279,10 @@ export function CommentsDrawer({
   const handleSubmitReply = async (commentId: string) => {
     if (!replyContent.trim() || !user) return;
     
+    // Find the parent comment to inherit its type
+    const parentComment = comments.find(c => c.id === commentId);
+    const inheritedType = parentComment?.type || 'Feedback';
+    
     setSubmitting(true);
     try {
       const response = await fetch(`/api/activities/${activityId}/comments/${commentId}/replies`, {
@@ -288,7 +291,7 @@ export function CommentsDrawer({
         body: JSON.stringify({
           user,
           content: replyContent.trim(),
-          type: 'Feedback',
+          type: inheritedType,
         }),
       });
       
@@ -299,7 +302,6 @@ export function CommentsDrawer({
       setReplyContent('');
       setReplyingTo(null);
       await fetchComments();
-      toast.success('Reply added successfully');
     } catch (error) {
       console.error('Error submitting reply:', error);
       toast.error('Failed to add reply');

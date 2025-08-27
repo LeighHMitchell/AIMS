@@ -7,9 +7,10 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
+import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
 
 export default function AdminPage() {
   const { user, isLoading } = useUser()
@@ -83,6 +84,10 @@ export default function AdminPage() {
               <AlertCircle className="h-4 w-4" />
               Pending Validations
             </TabsTrigger>
+            <TabsTrigger value="feedback" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Feedback
+            </TabsTrigger>
             <TabsTrigger value="systems" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Systems Settings
@@ -131,6 +136,10 @@ export default function AdminPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="feedback" className="space-y-6">
+            <FeedbackManagement />
           </TabsContent>
 
           <TabsContent value="systems" className="space-y-6">

@@ -10,6 +10,21 @@ import { Globe, Save, CheckCircle, AlertCircle } from "lucide-react"
 import { countries } from "@/data/countries"
 import { useSystemSettings } from "@/hooks/useSystemSettings"
 
+// Flag component to match the rest of the application
+const CountryFlag = ({ countryCode }: { countryCode: string }) => {
+  return (
+    <img
+      src={`https://flagcdn.com/w20/${countryCode.toLowerCase()}.png`}
+      alt={`${countryCode} flag`}
+      className="w-4 h-3 object-cover rounded-sm"
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        target.style.display = 'none';
+      }}
+    />
+  )
+}
+
 export function SystemsSettings() {
   const { settings, loading, error, updateSettings } = useSystemSettings()
   const [saving, setSaving] = useState(false)
@@ -111,29 +126,7 @@ export function SystemsSettings() {
               <SelectValue>
                 {selectedCountry ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">
-                      {selectedCountry.code === 'MM' ? '🇲🇲' : 
-                       selectedCountry.code === 'RW' ? '🇷🇼' :
-                       selectedCountry.code === 'TH' ? '🇹🇭' :
-                       selectedCountry.code === 'KH' ? '🇰🇭' :
-                       selectedCountry.code === 'VN' ? '🇻🇳' :
-                       selectedCountry.code === 'LA' ? '🇱🇦' :
-                       selectedCountry.code === 'PH' ? '🇵🇭' :
-                       selectedCountry.code === 'ID' ? '🇮🇩' :
-                       selectedCountry.code === 'MY' ? '🇲🇾' :
-                       selectedCountry.code === 'SG' ? '🇸🇬' :
-                       selectedCountry.code === 'US' ? '🇺🇸' :
-                       selectedCountry.code === 'GB' ? '🇬🇧' :
-                       selectedCountry.code === 'FR' ? '🇫🇷' :
-                       selectedCountry.code === 'DE' ? '🇩🇪' :
-                       selectedCountry.code === 'AU' ? '🇦🇺' :
-                       selectedCountry.code === 'CA' ? '🇨🇦' :
-                       selectedCountry.code === 'JP' ? '🇯🇵' :
-                       selectedCountry.code === 'KR' ? '🇰🇷' :
-                       selectedCountry.code === 'CN' ? '🇨🇳' :
-                       selectedCountry.code === 'IN' ? '🇮🇳' :
-                       '🌍'}
-                    </span>
+                    <CountryFlag countryCode={selectedCountry.code} />
                     <span>{selectedCountry.name}</span>
                   </div>
                 ) : (
@@ -145,29 +138,7 @@ export function SystemsSettings() {
               {countries.map((country) => (
                 <SelectItem key={country.code} value={country.code}>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">
-                      {country.code === 'MM' ? '🇲🇲' : 
-                       country.code === 'RW' ? '🇷🇼' :
-                       country.code === 'TH' ? '🇹🇭' :
-                       country.code === 'KH' ? '🇰🇭' :
-                       country.code === 'VN' ? '🇻🇳' :
-                       country.code === 'LA' ? '🇱🇦' :
-                       country.code === 'PH' ? '🇵🇭' :
-                       country.code === 'ID' ? '🇮🇩' :
-                       country.code === 'MY' ? '🇲🇾' :
-                       country.code === 'SG' ? '🇸🇬' :
-                       country.code === 'US' ? '🇺🇸' :
-                       country.code === 'GB' ? '🇬🇧' :
-                       country.code === 'FR' ? '🇫🇷' :
-                       country.code === 'DE' ? '🇩🇪' :
-                       country.code === 'AU' ? '🇦🇺' :
-                       country.code === 'CA' ? '🇨🇦' :
-                       country.code === 'JP' ? '🇯🇵' :
-                       country.code === 'KR' ? '🇰🇷' :
-                       country.code === 'CN' ? '🇨🇳' :
-                       country.code === 'IN' ? '🇮🇳' :
-                       '🌍'}
-                    </span>
+                    <CountryFlag countryCode={country.code} />
                     <span>{country.name}</span>
                   </div>
                 </SelectItem>

@@ -207,16 +207,16 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       ${className}
     `}>
       {/* Action Menu - Better positioned */}
-      <div className="absolute top-3 right-3 z-10">
+      <div className="absolute bottom-4 right-4 z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="secondary"
-              size="sm"
-              className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm shadow-sm focus:bg-blue-500 focus:text-white hover:bg-blue-50"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 bg-white hover:bg-gray-50 shadow-md border border-gray-300 rounded-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreVertical className="h-3.5 w-3.5" />
+              <MoreVertical className="h-4 w-4 text-gray-600" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
@@ -440,7 +440,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               </div>
             </div>
 
-            {/* Dates Section - At bottom of card */}
+            {/* Dates Section */}
             <div className="mt-4 pt-3 border-t border-gray-200 space-y-1">
               <div className="flex items-center gap-1 text-xs leading-normal text-gray-500">
                 <Calendar className="w-3 h-3 flex-shrink-0" />
@@ -461,16 +461,19 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                   )}
                 </span>
               </div>
-              
-              {activity.updated_at && (
-                <div className="flex items-center gap-1 text-xs leading-normal text-gray-400">
-                  <Clock className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">
-                    Updated {formatRelativeTime(activity.updated_at)}
-                  </span>
-                </div>
-              )}
             </div>
+
+      {/* Last Updated - Bottom left */}
+      {activity.updated_at && (
+        <div className="absolute bottom-4 left-4 z-10">
+          <div className="flex items-center gap-1 text-xs leading-normal text-gray-400">
+            <Clock className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate">
+              Updated {formatRelativeTime(activity.updated_at)}
+            </span>
+          </div>
+        </div>
+      )}
           </div>
         </div>
       </Link>

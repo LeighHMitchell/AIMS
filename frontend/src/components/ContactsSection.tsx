@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ContactTypeSearchableSelect } from "@/components/forms/ContactTypeSearchableSelect";
 import { CONTACT_TYPES } from "@/data/contact-types";
-import { X, Plus, Phone, Mail, Printer, User, Building, CheckCircle, Loader2, UserCheck } from "lucide-react";
+import { X, Plus, Phone, Mail, Printer, User, Building, CheckCircle, Loader2, UserCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { useContactsAutosave } from '@/hooks/use-field-autosave-new';
@@ -16,6 +16,7 @@ import { AlertCircle } from 'lucide-react';
 import { OrganizationSearchableSelect, type Organization } from "@/components/ui/organization-searchable-select";
 import { PhoneFields } from "@/components/ui/phone-fields";
 import { useHomeCountryData } from '@/contexts/SystemSettingsContext';
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 
 interface Contact {
   id?: string;
@@ -45,6 +46,10 @@ interface ContactsSectionProps {
   activityId?: string;
   reportingOrgId?: string;
   reportingOrgName?: string;
+  extendingPartners?: Array<{ orgId: string; name: string }>;
+  implementingPartners?: Array<{ orgId: string; name: string }>;
+  governmentPartners?: Array<{ orgId: string; name: string }>;
+  contributors?: Array<{ orgId: string; name: string }>;
 }
 
 // Remove this as we now use the data from contact-types.ts
@@ -87,7 +92,7 @@ const splitPhoneNumber = (phone: string) => {
   return { countryCode: "", phoneNumber: phone };
 };
 
-export default function ContactsSection({ contacts, onChange, activityId, reportingOrgId, reportingOrgName }: ContactsSectionProps) {
+export default function ContactsSection({ contacts, onChange, activityId, reportingOrgId, reportingOrgName, extendingPartners = [], implementingPartners = [], governmentPartners = [], contributors = [] }: ContactsSectionProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -123,6 +128,46 @@ export default function ContactsSection({ contacts, onChange, activityId, report
       setSavingContactId(null);
     }
   }, [contactsAutosave.state]);
+
+  // Create prioritized organizations list with partners at the top
+  const prioritizedOrganizations = useMemo(() => {
+    if (!organizations.length) return [];
+
+    // Debug logging
+    console.log('[CONTACTS DEBUG] Partner data:', {
+      extendingPartners,
+      implementingPartners,
+      governmentPartners,
+      contributors,
+      organizationsCount: organizations.length
+    });
+
+    // Get all partner organization IDs
+    const partnerOrgIds = new Set([
+      ...extendingPartners.map(p => p.orgId),
+      ...implementingPartners.map(p => p.orgId),
+      ...governmentPartners.map(p => p.orgId),
+      ...contributors.map(p => p.orgId)
+    ]);
+
+    console.log('[CONTACTS DEBUG] Partner org IDs:', Array.from(partnerOrgIds));
+
+    // Separate partner organizations from others
+    const partnerOrgs = organizations.filter(org => partnerOrgIds.has(org.id));
+    const otherOrgs = organizations.filter(org => !partnerOrgIds.has(org.id));
+
+    console.log('[CONTACTS DEBUG] Found partner orgs:', partnerOrgs.map(o => ({ id: o.id, name: o.name })));
+
+    // Sort partner orgs by name and other orgs by name
+    const sortedPartnerOrgs = partnerOrgs.sort((a, b) => a.name.localeCompare(b.name));
+    const sortedOtherOrgs = otherOrgs.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Return partners first, then others
+    const result = [...sortedPartnerOrgs, ...sortedOtherOrgs];
+    console.log('[CONTACTS DEBUG] Final prioritized list (first 5):', result.slice(0, 5).map(o => ({ id: o.id, name: o.name })));
+    
+    return result;
+  }, [organizations, extendingPartners, implementingPartners, governmentPartners, contributors]);
 
   // Fetch organizations on component mount
   useEffect(() => {
@@ -406,21 +451,41 @@ export default function ContactsSection({ contacts, onChange, activityId, report
 
     return (
       <div className="space-y-2">
-        <label className="text-sm font-medium">Profile Photo</label>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">Profile Photo</label>
+          <HelpTextTooltip content="Recommended: Square images (1:1 ratio) in JPG, PNG, or GIF format. Maximum file size: 5MB. Images will be automatically resized to 128x128 pixels for optimal display." />
+        </div>
         {photo ? (
-          <div className="relative w-32 h-32">
+          <div className="relative w-32 h-32 rounded-lg overflow-hidden group">
             <img
               src={photo}
               alt="Profile"
               className="w-full h-full object-cover rounded-lg border"
             />
-            <button
-              type="button"
-              onClick={() => onChange("")}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-            >
-              <X className="h-3 w-3" />
-            </button>
+            <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+              <div {...getRootProps()}>
+                <input {...getInputProps()} />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={false}
+                  className="px-2 py-1 h-7 text-xs"
+                >
+                  <Upload className="h-3 w-3 mr-1" />
+                  Replace
+                </Button>
+              </div>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => onChange("")}
+                disabled={false}
+                className="px-2 py-1 h-7 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Delete
+              </Button>
+            </div>
           </div>
         ) : (
           <div
@@ -716,10 +781,6 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                           }
                           return null;
                         })()}
-                        <p className="text-sm text-gray-500 flex items-center gap-1">
-                          <UserCheck className="h-3 w-3" />
-                          {getContactTypeName(contact.type)}
-                        </p>
                         <div className="flex flex-wrap gap-3 mt-2">
                           {(contact.phone || (contact.countryCode && contact.phoneNumber)) && (
                             <span className="text-sm text-gray-600 flex items-center gap-1">
@@ -728,13 +789,18 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                             </span>
                           )}
                           {contact.email && (
-                            <a 
-                              href={`mailto:${contact.email}`}
-                              className="text-sm text-gray-600 flex items-center gap-1 hover:text-blue-600 transition-colors"
-                            >
-                              <Mail className="h-3 w-3" />
-                              {contact.email}
-                            </a>
+                            <span className="text-sm text-gray-600 flex items-center gap-1">
+                              <span className="text-gray-500 flex items-center gap-1">
+                                <UserCheck className="h-3 w-3" />
+                                {getContactTypeName(contact.type)}
+                              </span>
+                              <a 
+                                href={`mailto:${contact.email}`}
+                                className="hover:text-blue-600 transition-colors"
+                              >
+                                {contact.email}
+                              </a>
+                            </span>
                           )}
                           {(contact.fax || (contact.faxCountryCode && contact.faxNumber)) && (
                             <span className="text-sm text-gray-600 flex items-center gap-1">
@@ -891,10 +957,10 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                 <div className="-mt-4">
                   <label className="text-sm font-medium">Organisation</label>
                   <OrganizationSearchableSelect
-                    organizations={organizations}
+                    organizations={prioritizedOrganizations}
                     value={editingContact.organisationId || ""}
                     onValueChange={(value) => {
-                      const selectedOrg = organizations.find(org => org.id === value);
+                      const selectedOrg = prioritizedOrganizations.find(org => org.id === value);
                       setEditingContact({ 
                         ...editingContact, 
                         organisationId: value,

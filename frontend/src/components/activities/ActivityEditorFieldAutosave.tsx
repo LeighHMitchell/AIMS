@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { toast } from 'sonner';
 
 interface ActivityEditorFieldAutosaveProps {
@@ -142,27 +143,48 @@ export function ActivityEditorFieldAutosave({
       {/* Status Field with Autosave */}
       {shouldShowStatus && (
         <div className="space-y-2">
-          {!showOnlyStatus && (
-            <LabelSaveIndicator
-              isSaving={statusAutosave.state.isSaving}
-              isSaved={statusAutosave.state.isPersistentlySaved}
-              className={fieldLockStatus?.isLocked ? 'text-gray-400' : 'text-gray-700'}
-            >
-              Activity Status
-              {fieldLockStatus?.isLocked && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Lock className="h-3 w-3 ml-2 text-gray-400" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{fieldLockStatus.tooltipMessage}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </LabelSaveIndicator>
-          )}
+          <LabelSaveIndicator
+            isSaving={statusAutosave.state.isSaving}
+            isSaved={statusAutosave.state.isPersistentlySaved}
+            className={fieldLockStatus?.isLocked ? 'text-gray-400' : 'text-gray-700'}
+          >
+            {!showOnlyStatus ? (
+              <>
+                Activity Status
+                {fieldLockStatus?.isLocked && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{fieldLockStatus.tooltipMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Activity Status</span>
+                <HelpTextTooltip>
+                  Indicates the current phase of the activity. This field should be regularly updated to reflect the activity's progress over time.
+                </HelpTextTooltip>
+                {fieldLockStatus?.isLocked && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{fieldLockStatus.tooltipMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            )}
+          </LabelSaveIndicator>
           <div className={fieldLockStatus?.isLocked ? 'opacity-50' : ''}>
             <ActivityStatusSelect
               value={activity.activityStatus || ''}

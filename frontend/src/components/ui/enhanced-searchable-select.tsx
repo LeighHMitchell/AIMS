@@ -29,6 +29,8 @@ interface EnhancedSearchableSelectProps {
   emptyStateMessage?: string;
   emptyStateSubMessage?: string;
   dropdownId?: string; // Unique identifier for this dropdown instance
+  side?: "top" | "bottom" | "left" | "right";
+  align?: "start" | "center" | "end";
 }
 
 export function EnhancedSearchableSelect({
@@ -42,6 +44,8 @@ export function EnhancedSearchableSelect({
   emptyStateMessage = "No options found.",
   emptyStateSubMessage = "Try adjusting your search terms",
   dropdownId = "enhanced-searchable-select",
+  side,
+  align = "start",
 }: EnhancedSearchableSelectProps) {
   // Use shared dropdown state if dropdownId is provided
   const { isOpen, setOpen } = useDropdownState(dropdownId);
@@ -136,7 +140,8 @@ export function EnhancedSearchableSelect({
         </PopoverTrigger>
         <PopoverContent
           className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border"
-          align="start"
+          align={align}
+          side={side}
           sideOffset={4}
         >
           <Command>

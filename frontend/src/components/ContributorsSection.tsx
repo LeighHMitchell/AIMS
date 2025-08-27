@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { OrganizationSearchableSelect } from "@/components/ui/organization-searchable-select";
 import { useOrganizations } from "@/hooks/use-organizations";
 import { useContributors, ActivityContributor } from "@/hooks/use-contributors";
+import { isOrganizationContributor, getContributorOrganizationId } from "@/lib/contributor-utils";
 
 interface ContributorsSectionProps {
   contributors: ActivityContributor[];
@@ -91,7 +92,7 @@ export default function ContributorsSection({
     if (!organization) return;
 
     // Check if already nominated
-    if (contributors.some(c => c.organization_id === selectedOrganizationId)) {
+    if (isOrganizationContributor(contributors, selectedOrganizationId)) {
       toast.error("This organization is already a contributor");
       return;
     }
@@ -182,7 +183,7 @@ export default function ContributorsSection({
     if (!user || !user.organizationId) return;
 
     const contributor = contributors.find(c => c.id === contributorId);
-    if (!contributor || contributor.organization_id !== user.organizationId) return;
+    if (!contributor || getContributorOrganizationId(contributor) !== user.organizationId) return;
 
     try {
       await updateContributor(contributorId, {
@@ -206,7 +207,7 @@ export default function ContributorsSection({
 
   // Check if current user has a pending nomination
   const pendingNomination = user?.organizationId 
-    ? contributors.find(c => c.organization_id === user.organizationId && c.status === 'nominated')
+    ? contributors.find(c => getContributorOrganizationId(c) === user.organizationId && c.status === 'nominated')
     : null;
 
   return (
@@ -254,7 +255,7 @@ export default function ContributorsSection({
                   <OrganizationSearchableSelect
                     organizations={organizations.filter(org => 
                       org.id !== user?.organizationId && 
-                      !contributors.some(c => c.organization_id === org.id)
+                      !isOrganizationContributor(contributors, org.id)
                     )}
                     value={selectedOrganizationId}
                     onValueChange={setSelectedOrganizationId}
@@ -320,7 +321,7 @@ export default function ContributorsSection({
                         <p className="font-medium">
                           {(() => {
                             // Find the organization details for formatting
-                            const organization = organizations.find(o => o.id === contributor.organization_id);
+                            const organization = organizations.find(o => o.id === getContributorOrganizationId(contributor));
                             if (organization) {
                               // Format: [Name] ([Acronym]) only
                               let display = organization.name;
@@ -336,7 +337,7 @@ export default function ContributorsSection({
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {(() => {
-                          const organization = organizations.find(o => o.id === contributor.organization_id);
+                          const organization = organizations.find(o => o.id === getContributorOrganizationId(contributor));
                           const iatiId = organization?.iati_org_id;
                           const nominationText = `Nominated by ${contributor.nominated_by_name || 'Unknown User'} on ${new Date(contributor.nominated_at).toLocaleDateString()}`;
                           

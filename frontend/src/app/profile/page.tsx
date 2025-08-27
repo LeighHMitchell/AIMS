@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ROLE_LABELS, USER_ROLES } from "@/types/user";
+import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils";
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 import { PhoneFields } from "@/components/ui/phone-fields";
 import { AddressComponents } from "@/components/ui/address-search";
@@ -957,9 +958,9 @@ export default function ProfilePage() {
                                   ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}${user.suffix && user.suffix !== "none" ? ` ${user.suffix}` : ''}` 
                                   : user.name || "Not specified"}
                               </h3>
-                              <Badge variant={user.role === USER_ROLES.SUPER_USER ? "destructive" : "secondary"} className="text-xs">
+                              <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
                                 <Shield className="h-3 w-3 mr-1" />
-                                {ROLE_LABELS[user.role] || user.role}
+                                {getRoleDisplayLabel(user.role)}
                               </Badge>
                             </div>
                         <p className="text-sm text-muted-foreground">

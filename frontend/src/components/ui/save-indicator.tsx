@@ -75,17 +75,17 @@ export function LabelSaveIndicator({
   return (
     <label className={`text-sm font-medium flex items-center ${className}`}>
       {children}
-      {/* Show saving indicator when saving */}
-      {isSaving && (
+      {/* Show save indicator (orange when saving, green when saved) */}
+      {(isSaving || isSaved) && (
         <SaveIndicator 
           isSaving={isSaving} 
-          isSaved={false} 
+          isSaved={isSaved} 
           size="sm"
           className="ml-2"
         />
       )}
-      {/* Show green tick when field has a value (completed) and not saving */}
-      {hasValue && !isSaving && (
+      {/* Show green tick when field has a value (completed) and not saving - fallback for legacy usage */}
+      {hasValue && !isSaving && !isSaved && (
         <CheckCircle className="h-3 w-3 text-green-500 ml-2" />
       )}
     </label>

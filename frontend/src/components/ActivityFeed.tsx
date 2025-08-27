@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
+import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils";
 import { ActivityLog } from '@/app/api/activity-logs/route';
 import {
   FileText,
@@ -122,34 +123,9 @@ const getActionDescription = (log: ActivityLog) => {
   }
 };
 
-// Get role badge variant
-const getRoleBadgeVariant = (role: string) => {
-  if (!role) return 'outline';
-  if (role === 'super_user') return 'destructive';
-  
-  // Development Partner colors (blue shades)
-  if (role === 'dev_partner_tier_1') return 'dark-blue';
-  if (role === 'dev_partner_tier_2') return 'light-blue';
-  
-  // Government Partner colors (green shades)
-  if (role === 'gov_partner_tier_1') return 'dark-green';
-  if (role === 'gov_partner_tier_2') return 'light-green';
-  
-  return 'outline';
-};
+// Removed local getRoleBadgeVariant function - now using unified utility
 
-// Format role for display
-const formatRole = (role: string) => {
-  const roleMap: Record<string, string> = {
-    super_user: 'Super User',
-    dev_partner_tier_1: 'Data Submission',
-    dev_partner_tier_2: 'Review & Approval',
-    gov_partner_tier_1: 'Gov Partner T1',
-    gov_partner_tier_2: 'Gov Partner T2',
-    orphan: 'Orphan User',
-  };
-  return roleMap[role] || role;
-};
+// Removed local formatRole function - now using unified utility
 
 interface ActivityFeedProps {
   limit?: number;
@@ -325,7 +301,7 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
                         <span className="text-xs text-muted-foreground">•</span>
                         {log.user?.role && (
                           <Badge variant={getRoleBadgeVariant(log.user.role)} className="text-xs h-5">
-                            {formatRole(log.user.role)}
+                            {getRoleDisplayLabel(log.user.role)}
                           </Badge>
                         )}
                       </div>

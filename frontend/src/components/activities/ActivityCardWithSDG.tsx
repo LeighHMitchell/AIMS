@@ -191,6 +191,14 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
     'submitted': 'default'
   } as const;
 
+  const modalityColors = {
+    '1': 'success',     // Grant - green
+    '2': 'destructive', // Loan - red  
+    '3': 'blue',        // Technical Assistance - blue
+    '4': 'secondary',   // Reimbursable Grant - gray
+    '5': 'warning'      // Investment/Guarantee - yellow
+  } as const;
+
   if (isLoading) {
     return <ActivityCardSkeleton className={className} />;
   }
@@ -234,17 +242,29 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
       relative group shadow-sm
       ${className}
     `}>
+      {/* Last Updated - Bottom left */}
+      {activity.updated_at && (
+        <div className="absolute bottom-4 left-4 z-10">
+          <div className="flex items-center gap-1 text-xs leading-normal text-gray-400">
+            <Clock className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate">
+              Updated {formatRelativeTime(activity.updated_at)}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Action Menu - Bottom right */}
-      <div className="absolute bottom-3 right-3 z-10">
+      <div className="absolute bottom-4 right-4 z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="secondary"
-              size="sm"
-              className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm shadow-sm focus:bg-blue-500 focus:text-white hover:bg-blue-50"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 bg-white hover:bg-gray-50 shadow-md border border-gray-300 rounded-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreVertical className="h-3.5 w-3.5" />
+              <MoreVertical className="h-4 w-4 text-gray-600" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
@@ -268,18 +288,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
         </DropdownMenu>
       </div>
 
-      {/* SDG Display Section - Bottom left with tooltips that can overflow */}
-      {hasSDGs && (
-        <div className="absolute bottom-3 left-3 z-20" style={{ zIndex: 9999 }}>
-          <SDGImageGrid 
-            sdgCodes={sdgGoals} 
-            size="sm" 
-            maxDisplay={maxSDGDisplay}
-            showTooltips={true}
-            className="flex-shrink-0"
-          />
-        </div>
-      )}
+
 
       <Link href={`/activities/${activity.id}`} className="block overflow-hidden rounded-xl">
         {/* Banner Image */}
@@ -341,7 +350,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
           <div className="space-y-4">
             {/* Title and IDs Section */}
             <div className="space-y-3">
-              <h3 className="font-medium text-foreground leading-tight line-clamp-2 pt-8">
+              <h3 className="text-lg font-semibold text-foreground leading-tight line-clamp-2 pt-8">
                 {activity.title}
                 {activity.acronym && (
                   <span>
@@ -383,6 +392,29 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                   </button>
                 )}
               </div>
+
+              {/* Dates Section - Under IDs */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-1 text-xs leading-normal text-gray-500">
+                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">
+                    {activity.planned_start_date || activity.planned_end_date ? (
+                      <>
+                        {formatDateRange(activity.planned_start_date, activity.planned_end_date)}
+                        {activity.planned_start_date && activity.planned_end_date && (
+                          <span className="text-gray-400 hidden sm:inline">
+                            • {calculateDuration(activity.planned_start_date, activity.planned_end_date)}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-gray-400">
+                        Start date not reported • End date not reported
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Status Pills Section */}
@@ -406,19 +438,20 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                 </Badge>
               )}
               {activity.publication_status && (
-                <StatusIcon 
-                  type="publication" 
-                  status={activity.publication_status} 
-                  className="ml-1"
-                />
+                <Badge 
+                  variant={activity.publication_status === 'published' ? 'success' : 'secondary'}
+                  className="text-xs font-medium leading-tight"
+                >
+                  {activity.publication_status === 'published' ? 'Published' : 'Draft'}
+                </Badge>
               )}
               {activity.default_aid_modality && (
-                <StatusIcon 
-                  type="aid-modality" 
-                  status={activity.default_aid_modality} 
-                  isPublished={activity.publication_status === 'published'}
-                  className="ml-1"
-                />
+                <Badge 
+                  variant={modalityColors[activity.default_aid_modality as keyof typeof modalityColors] || 'outline'}
+                  className="text-xs font-medium leading-tight"
+                >
+                  {MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality}
+                </Badge>
               )}
             </div>
 
@@ -474,45 +507,21 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                   {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status) : 'Not reported'}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Default Modality</span>
-                <span className="text-sm text-gray-900">
-                  {activity.default_aid_modality ? (MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality) : 'Not reported'}
-                </span>
-              </div>
+
             </div>
 
-            {/* Dates Section - At bottom of card */}
-            <div className="mt-4 pt-3 border-t border-gray-200 space-y-1">
-              <div className="flex items-center gap-1 text-xs leading-normal text-gray-500">
-                <Calendar className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">
-                  {activity.planned_start_date || activity.planned_end_date ? (
-                    <>
-                      {formatDateRange(activity.planned_start_date, activity.planned_end_date)}
-                      {activity.planned_start_date && activity.planned_end_date && (
-                        <span className="text-gray-400 hidden sm:inline">
-                          • {calculateDuration(activity.planned_start_date, activity.planned_end_date)}
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-gray-400">
-                      Start date not reported • End date not reported
-                    </span>
-                  )}
-                </span>
+            {/* SDG Display Section - Move to after Activity Details, no border */}
+            {hasSDGs && (
+              <div className="pt-3">
+                <SDGImageGrid 
+                  sdgCodes={sdgGoals} 
+                  size="sm" 
+                  maxDisplay={maxSDGDisplay}
+                  showTooltips={true}
+                  className="flex-shrink-0"
+                />
               </div>
-              
-              {activity.updated_at && (
-                <div className="flex items-center gap-1 text-xs leading-normal text-gray-400">
-                  <Clock className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">
-                    Updated {formatRelativeTime(activity.updated_at)}
-                  </span>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </Link>

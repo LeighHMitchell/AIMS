@@ -7,7 +7,7 @@ import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { ROLE_LABELS } from "@/components/rolodex/utils/roleLabels";
+import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils";
 
 // User Avatar Component
 const UserAvatar = ({ user, size = "sm" }: { user: User; size?: "xs" | "sm" | "md" }) => {
@@ -90,6 +90,7 @@ interface FocalPointDropdownProps {
   activityId: string;
   type: 'government_focal_point' | 'development_partner_focal_point';
   currentAssignments: any[];
+  allFocalPointAssignments?: any[]; // All focal point assignments (both government and development partner)
   onAssignmentChange: () => void;
   onAssignmentAdded?: (newAssignment: any) => void;
   onAssignmentRemoved?: (removedContactId: string) => void;
@@ -101,6 +102,7 @@ export function FocalPointDropdown({
   activityId,
   type,
   currentAssignments,
+  allFocalPointAssignments,
   onAssignmentChange,
   onAssignmentAdded,
   onAssignmentRemoved,
@@ -238,7 +240,9 @@ export function FocalPointDropdown({
   };
 
   // Filter out already assigned users by email (since assignments don't have user_id)
-  const assignedEmails = currentAssignments.map(a => a.email);
+  // Use allFocalPointAssignments if provided, otherwise fall back to currentAssignments
+  const assignmentsToCheck = allFocalPointAssignments || currentAssignments;
+  const assignedEmails = assignmentsToCheck.map(a => a.email);
   const availableUsers = users.filter(user => !assignedEmails.includes(user.email));
 
      const filteredUsers = React.useMemo(() => {
@@ -257,13 +261,7 @@ export function FocalPointDropdown({
      );
    }, [availableUsers, searchQuery]);
 
-  const getRoleLabel = (role: string): string => {
-    return ROLE_LABELS[role]?.label || role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const getRoleColor = (role: string): string => {
-    return ROLE_LABELS[role]?.color || 'bg-gray-100 text-gray-800';
-  };
+  // Removed local getRoleLabel and getRoleColor functions - now using unified utilities
 
   const formatUserName = (user: User): string => {
     const parts = [];
@@ -328,8 +326,8 @@ export function FocalPointDropdown({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-foreground">{formatUserName(assignment)}</span>
-                    <Badge className={`text-xs ${getRoleColor(assignment.role)}`}>
-                      {getRoleLabel(assignment.role)}
+                    <Badge variant={getRoleBadgeVariant(assignment.role)} className="text-xs">
+                      {getRoleDisplayLabel(assignment.role)}
                     </Badge>
                   </div>
 
@@ -371,7 +369,7 @@ export function FocalPointDropdown({
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[var(--radix-popover-trigger-width)] min-w-[500px] p-0 shadow-lg border"
+          className="w-[var(--radix-popover-trigger-width)] min-w-[500px] p-0 shadow-lg border z-50"
           align="start"
           sideOffset={4}
         >
@@ -434,8 +432,8 @@ export function FocalPointDropdown({
                         <div className="flex-1 ml-3 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-medium text-foreground">{formatUserName(user)}</span>
-                            <Badge className={`text-xs ${getRoleColor(user.role)}`}>
-                              {getRoleLabel(user.role)}
+                            <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
+                              {getRoleDisplayLabel(user.role)}
                             </Badge>
                           </div>
 

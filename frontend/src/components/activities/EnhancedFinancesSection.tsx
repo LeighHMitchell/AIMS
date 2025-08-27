@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { SelectContent, SelectItem } from '@/components/ui/select';
+import { CheckCircle } from 'lucide-react';
+import { areAllDefaultFieldsCompleted } from '@/utils/defaultFieldsValidation';
 
 // Enhanced components with Supabase integration
 const SupabaseAidTypeSelect = withSupabaseIntegration(AidTypeSelect);
@@ -26,6 +28,8 @@ interface EnhancedFinancesSectionProps {
     defaultFlowType?: string | null;
     defaultCurrency?: string | null;
     defaultTiedStatus?: string | null;
+    defaultDisbursementChannel?: string | null;
+    default_aid_modality?: string | null;
   };
   onDefaultsChange?: (field: string, value: string | null) => void;
   transactions?: any[];
@@ -46,6 +50,17 @@ export function EnhancedFinancesSection({
     successfulUpdates: 0,
     failedUpdates: 0,
     lastUpdate: null as Date | null
+  });
+
+  // Check if all fields are completed for green tick
+  const allFieldsCompleted = areAllDefaultFieldsCompleted({
+    defaultAidType: general.defaultAidType,
+    defaultFinanceType: general.defaultFinanceType,
+    defaultFlowType: general.defaultFlowType,
+    defaultCurrency: general.defaultCurrency,
+    defaultTiedStatus: general.defaultTiedStatus,
+    defaultDisbursementChannel: general.defaultDisbursementChannel,
+    default_aid_modality: general.default_aid_modality,
   });
 
   const handleFieldUpdate = (field: string, value: string | null) => {
@@ -98,7 +113,12 @@ export function EnhancedFinancesSection({
 
       <Tabs defaultValue="defaults" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="defaults">Default Values</TabsTrigger>
+          <TabsTrigger value="defaults" className="flex items-center gap-2">
+            Defaults
+            {allFieldsCompleted && (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+          </TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="debug">Debug Info</TabsTrigger>
         </TabsList>
@@ -122,7 +142,9 @@ export function EnhancedFinancesSection({
                   default_finance_type: general.defaultFinanceType,
                   default_flow_type: general.defaultFlowType,
                   default_currency: general.defaultCurrency,
-                  default_tied_status: general.defaultTiedStatus
+                  default_tied_status: general.defaultTiedStatus,
+                  default_disbursement_channel: general.defaultDisbursementChannel,
+                  default_aid_modality: general.default_aid_modality
                 }}
                 onFieldUpdate={handleFieldUpdate}
                 disabled={disabled}

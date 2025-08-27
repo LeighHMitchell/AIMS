@@ -29,7 +29,7 @@ import {
   Edit,
   User
 } from 'lucide-react';
-import { getRoleLabel } from './utils/roleLabels';
+import { getRoleBadgeVariant, getRoleDisplayLabel } from '@/lib/role-badge-utils';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useRouter } from 'next/navigation';
 import { EditContactModal } from './EditContactModal';
@@ -52,7 +52,7 @@ export function PersonCard({
   const router = useRouter();
   const [isContactEditModalOpen, setIsContactEditModalOpen] = useState(false);
   const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false);
-  const roleInfo = getRoleLabel(person.role_label || '');
+  // Use unified role utilities for consistent styling
   
   // Generate initials for avatar
   const getInitials = (name: string) => {
@@ -223,13 +223,13 @@ export function PersonCard({
             
             <div className="space-y-1">
               {/* Role Pill - only for Users (but not super users since they have their own badge) */}
-              {person.source === 'user' && person.role && !isPersonSuperUser && roleInfo.label && (
+              {person.source === 'user' && person.role && !isPersonSuperUser && (
                 <div>
                   <Badge 
-                    variant="outline" 
-                    className={`text-xs ${roleInfo.color}`}
+                    variant={getRoleBadgeVariant(person.role)} 
+                    className="text-xs"
                   >
-                    {roleInfo.label}
+                    {getRoleDisplayLabel(person.role)}
                   </Badge>
                 </div>
               )}

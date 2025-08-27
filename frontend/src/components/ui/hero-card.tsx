@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle, RefreshCw, HelpCircle } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +28,7 @@ interface HeroCardProps<T = any> {
   animate?: boolean;
   onValueChange?: (newValue: number) => void;
   variant?: 'default' | 'success' | 'warning' | 'error';
+  helpText?: string;
   // Legacy support for simple value prop
   value?: string | number;
 }
@@ -94,6 +95,7 @@ export function HeroCard<T = any>({
   animate = true,
   onValueChange,
   variant = 'default',
+  helpText,
   // Legacy support
   value,
 }: HeroCardProps<T>) {
@@ -171,9 +173,33 @@ export function HeroCard<T = any>({
     return formatted;
   };
 
-  // All variants use the same neutral/monochrome style for consistency
-  const cardClass = 'border-gray-200 bg-white';
-  const valueClass = 'text-gray-900';
+  // Variant-based styling
+  const getVariantClasses = () => {
+    switch (variant) {
+      case 'error':
+        return {
+          cardClass: 'border-red-200 bg-red-50',
+          valueClass: 'text-red-600'
+        };
+      case 'warning':
+        return {
+          cardClass: 'border-yellow-200 bg-yellow-50',
+          valueClass: 'text-yellow-600'
+        };
+      case 'success':
+        return {
+          cardClass: 'border-green-200 bg-green-50',
+          valueClass: 'text-green-600'
+        };
+      default:
+        return {
+          cardClass: 'border-gray-200 bg-white',
+          valueClass: 'text-gray-900'
+        };
+    }
+  };
+  
+  const { cardClass, valueClass } = getVariantClasses();
 
   return (
     <TooltipProvider>
@@ -181,7 +207,19 @@ export function HeroCard<T = any>({
         <CardContent className="p-6">
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">{title}</p>
+              <div className="flex items-center gap-1">
+                <p className="text-sm font-medium text-gray-600">{title}</p>
+                {helpText && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <div className="text-sm whitespace-pre-line">{helpText}</div>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
               <div className="flex items-center gap-1">
                 {(isUpdating || isAnimating) && (
                   <Tooltip>

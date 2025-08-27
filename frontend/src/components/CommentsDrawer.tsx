@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { ROLE_LABELS } from '@/components/rolodex/utils/roleLabels';
+import { getRoleBadgeVariant, getRoleDisplayLabel } from '@/lib/role-badge-utils';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -97,9 +97,8 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
 
   // Normalize comment format for backward compatibility
   const normalizeComment = (comment: any): Comment => {
-    // Get role label from ROLE_LABELS or fallback to raw role
+    // Get role using unified utilities
     const role = comment.user_role || comment.author?.role || comment.userRole || 'user';
-    const roleInfo = ROLE_LABELS[role] || { label: role, color: 'bg-gray-100 text-gray-800' };
     
     const normalized = {
       id: comment.id,
@@ -107,8 +106,8 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       author: {
         userId: comment.user_id || comment.userId || '',
         name: comment.user_name || comment.author?.name || comment.userName || 'Unknown User',
-        role: roleInfo.label,
-        roleColor: roleInfo.color,
+        role: getRoleDisplayLabel(role),
+        roleColor: '', // No longer needed - using Badge variants
         profilePicture: user?.profilePicture || comment.author?.profilePicture || comment.user_avatar_url?.avatar_url || comment.user_avatar_url || comment.userProfilePicture
       },
       message: comment.message || comment.content || '',
@@ -118,15 +117,15 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       isArchived: comment.is_archived || comment.isArchived || false,
       replies: (comment.replies || []).map((reply: any) => {
         const replyRole = reply.user_role || reply.author?.role || reply.userRole || 'user';
-        const replyRoleInfo = ROLE_LABELS[replyRole] || { label: replyRole, color: 'bg-gray-100 text-gray-800' };
+        // Use unified role utilities
         
         return {
           id: reply.id,
           author: {
             userId: reply.user_id || reply.userId || '',
             name: reply.user_name || reply.author?.name || reply.userName || 'Unknown User',
-            role: replyRoleInfo.label,
-            roleColor: replyRoleInfo.color,
+            role: getRoleDisplayLabel(replyRole),
+            roleColor: '', // No longer needed - using Badge variants
             profilePicture: reply.author?.profilePicture || reply.user_avatar_url?.avatar_url || reply.user_avatar_url || reply.userProfilePicture
           },
           message: reply.message || reply.content || '',
@@ -215,7 +214,6 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       const normalizedComments = Array.isArray(updatedComments) ? updatedComments.map(normalizeComment) : [];
       setComments(normalizedComments);
       setNewComment('');
-      toast.success('Comment added successfully');
     } catch (err) {
       console.error('Error adding comment:', err);
       toast.error('Failed to add comment');
@@ -227,6 +225,10 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
   const handleSubmitReply = async (parentCommentId: string) => {
     if (!replyContent.trim() || !user || !activityId) return;
 
+    // Find the parent comment to inherit its type
+    const parentComment = comments.find(c => c.id === parentCommentId);
+    const inheritedType = parentComment?.type || 'Feedback';
+
     setSubmitting(true);
     try {
       const res = await fetch(`/api/activities/${activityId}/comments`, {
@@ -235,7 +237,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
         body: JSON.stringify({
           user,
           content: replyContent,
-          type: replyType,
+          type: inheritedType,
           parentCommentId,
         }),
       });
@@ -249,7 +251,6 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       setComments(normalizedComments);
       setReplyContent('');
       setReplyingTo(null);
-      toast.success('Reply added successfully');
     } catch (err) {
       console.error('Error adding reply:', err);
       toast.error('Failed to add reply');
@@ -491,7 +492,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm truncate">{comment.author?.name || 'Unknown User'}</span>
-                        <Badge className={`text-xs ${comment.author?.roleColor || 'bg-gray-100 text-gray-800'}`}>
+                        <Badge variant={getRoleBadgeVariant(comment.author?.role)} className="text-xs">
                           {comment.author?.role || 'user'}
                         </Badge>
                       </div>
@@ -505,11 +506,6 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                       {comment.replies.map((reply) => (
                         <div key={reply.id} className="bg-gray-50 p-2 rounded space-y-2">
                           <div className="flex items-start justify-between">
-                            {/* Top Left: Reply Type Badge */}
-                            <Badge variant={reply.type === 'Question' ? 'default' : 'secondary'} className="text-xs h-5">
-                              {reply.type}
-                            </Badge>
-                            
                             {/* Top Right: Date/Time */}
                             <p className="text-xs text-gray-400">{formatDate(reply.createdAt)}</p>
                           </div>
@@ -525,7 +521,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-xs truncate">{reply.author?.name || 'Unknown User'}</span>
-                                <Badge className={`text-xs h-4 ${reply.author?.roleColor || 'bg-gray-100 text-gray-800'}`}>
+                                <Badge variant={getRoleBadgeVariant(reply.author?.role)} className="text-xs h-4">
                                   {reply.author?.role || 'user'}
                                 </Badge>
                               </div>

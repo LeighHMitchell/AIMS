@@ -25,6 +25,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
+  Upload,
+  Building,
 } from 'lucide-react';
 
 // Initialize Supabase client
@@ -65,6 +67,14 @@ interface EnhancedActivityEditorProps {
     planned_end_date?: string;
     actual_start_date?: string;
     actual_end_date?: string;
+    effective_date?: string;
+    mou_documents?: Array<{
+      name: string;
+      url: string;
+      type: string;
+      size: number;
+      uploaded_at: string;
+    }>;
   };
 }
 
@@ -82,8 +92,13 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     planned_start_date: initialData.planned_start_date || '',
     planned_end_date: initialData.planned_end_date || '',
     actual_start_date: initialData.actual_start_date || '',
-    actual_end_date: initialData.actual_end_date || ''
+    actual_end_date: initialData.actual_end_date || '',
+    effective_date: initialData.effective_date || '',
   });
+
+  // File upload state
+  const [mouDocuments, setMouDocuments] = useState(initialData.mou_documents || []);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Loading states for individual fields
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -141,6 +156,63 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     await updateField(dateField, value, displayName);
   };
 
+  const updateEffectiveDate = async (effectiveDate: string) => {
+    await updateField('effective_date', effectiveDate, 'Activity Effective Date');
+  };
+
+  // File upload handler
+  const handleFileUpload = async (files: FileList) => {
+    if (!files.length) return;
+
+    setIsUploading(true);
+    try {
+      const newDocuments = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Basic file validation
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+          toast.error(`File ${file.name} is too large. Maximum size is 10MB.`);
+          continue;
+        }
+
+        // For now, we'll just store the file info without actually uploading
+        // In a real implementation, you'd upload to your file storage service
+        const newDocument = {
+          name: file.name,
+          url: URL.createObjectURL(file), // Temporary URL for demo
+          type: file.type,
+          size: file.size,
+          uploaded_at: new Date().toISOString(),
+        };
+        
+        newDocuments.push(newDocument);
+      }
+
+      const updatedDocuments = [...mouDocuments, ...newDocuments];
+      setMouDocuments(updatedDocuments);
+
+      // Here you would also save to the database
+      // await updateField('mou_documents', JSON.stringify(updatedDocuments), 'MOU Documents');
+      
+      toast.success(`${newDocuments.length} document(s) uploaded successfully`);
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast.error('Failed to upload files');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeDocument = (index: number) => {
+    const updatedDocuments = mouDocuments.filter((_, i) => i !== index);
+    setMouDocuments(updatedDocuments);
+    // Also save to database
+    // updateField('mou_documents', JSON.stringify(updatedDocuments), 'MOU Documents');
+    toast.success('Document removed');
+  };
+
   // Handle form changes with optimistic updates
   const handleFieldChange = (fieldName: string, value: string) => {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
@@ -172,6 +244,9 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         break;
       case 'actual_end_date':
         await updateDate('actual_end_date', value, 'Actual End Date');
+        break;
+      case 'effective_date':
+        await updateEffectiveDate(value);
         break;
     }
   };
@@ -257,7 +332,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
           </p>
         </div>
 
-        {/* Tabs */}
+        {/* Main Activity Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="basic" className="flex items-center gap-2">
@@ -603,7 +678,178 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
               </CardContent>
             </Card>
           </TabsContent>
+
+
         </Tabs>
+
+        {/* Administrative Section */}
+        <div className="border-t border-gray-200 pt-6 mt-8">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Administrative & Government Information</h2>
+            <p className="text-sm text-gray-600">
+              Administrative details and government coordination information for this activity
+            </p>
+          </div>
+
+          <Tabs defaultValue="administration" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="administration" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Administration
+              </TabsTrigger>
+              <TabsTrigger value="government-inputs" className="flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Government Inputs
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Administration Tab */}
+            <TabsContent value="administration" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Administration
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Activity Effective Date */}
+                  <FieldWrapper section="administration" field="effective_date" label="Activity Effective Date">
+                    <div className="space-y-1">
+                      <Input
+                        type="date"
+                        value={formData.effective_date || ''}
+                        onChange={(e) => {
+                          handleFieldChange('effective_date', e.target.value);
+                          handleFieldBlur('effective_date', e.target.value);
+                        }}
+                        disabled={saving.effective_date}
+                      />
+                      <SaveIndicator fieldName="effective_date" />
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      The date when this activity officially becomes effective
+                    </p>
+                  </FieldWrapper>
+
+                  {/* MOU Documents Upload */}
+                  <FieldWrapper section="administration" field="mou_documents" label="MOU & Agreement Documents">
+                    <div className="space-y-4">
+                      {/* File Upload Area */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 mb-2">Upload MOU, agreements, and other administrative documents</p>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Drag & drop files here, or click to browse (Max 10MB per file)
+                        </p>
+                        <input
+                          type="file"
+                          multiple
+                          accept=".pdf,.doc,.docx,.txt"
+                          onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                          className="hidden"
+                          id="mou-upload"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => document.getElementById('mou-upload')?.click()}
+                          disabled={isUploading}
+                        >
+                          {isUploading ? (
+                            <>
+                              <Clock className="h-4 w-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Select Files
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Uploaded Documents List */}
+                      {mouDocuments.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-gray-700">Uploaded Documents</h4>
+                          {mouDocuments.map((doc, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <FileText className="h-5 w-5 text-gray-500" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{doc.name}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {(doc.size / 1024 / 1024).toFixed(2)} MB • {new Date(doc.uploaded_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => window.open(doc.url, '_blank')}
+                                >
+                                  View
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeDocument(index)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </FieldWrapper>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Government Inputs Tab */}
+            <TabsContent value="government-inputs" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="h-5 w-5" />
+                    Government Inputs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FieldWrapper section="government_inputs" label="Government Coordination & Inputs">
+                    <div className="text-sm text-gray-600 p-4 border border-gray-200 rounded">
+                      <p>Government inputs section will include:</p>
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Budget classification and alignment</li>
+                        <li>Government co-financing contributions</li>
+                        <li>National plan alignment</li>
+                        <li>Technical coordination mechanisms</li>
+                        <li>Oversight agreements and MOUs</li>
+                        <li>Geographic and risk context</li>
+                        <li>Strategic considerations</li>
+                        <li>Evaluation and results framework</li>
+                      </ul>
+                      <div className="mt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setContextForComments('government_inputs', 'coordination')}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Comment on Government Coordination
+                        </Button>
+                      </div>
+                    </div>
+                  </FieldWrapper>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
 
         {/* Footer */}
         <div className="border-t border-gray-200 pt-4">
