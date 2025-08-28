@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { FEEDBACK_TYPES } from '@/data/feedback-types';
 
-// Mock user ID to database user ID mapping (same pattern as other routes)
+// Mock user ID to database user ID mapping (using actual existing user IDs)
 const USER_ID_MAP: Record<string, string> = {
-  "1": "85a65398-5d71-4633-a50b-2f167a0b6f7a",
-  "2": "0864da76-2323-44a5-ac33-b27786da024e", 
-  "3": "e75c1196-8daa-41f7-b9dd-e8b0bb62981f",
-  "4": "ab800211-10a9-4d2f-8cfb-bb007fe01c51",
-  "5": "0420c51c-eb0c-44c6-8dd8-380e88e9e6ed",
-  "leigh": "4bc8e3ca-b34b-4c7d-b599-f7e26119cd54", // Leigh Mitchell
+  "1": "8f26db11-07f0-4708-aedc-63b7bb88b1af", // Yadanar Mitchell (super_user)
+  "2": "3d0bc8e0-3330-4b71-8d71-91c611930ee8", // Jane Smith (dev_partner_tier_1)
+  "3": "bb56c9f5-da9e-4ddd-9adc-e1f1ce94be98", // Su Wai (gov_partner_tier_1)
+  "4": "3ae961fa-a5c1-49b7-81e7-567ffcd3b85d", // Min Aung (gov_partner_tier_2)
+  "5": "6369d451-00c6-4fd8-a3fb-ee96ea60b2ec", // James Brown (dev_partner_tier_2)
+  "admin": "8f26db11-07f0-4708-aedc-63b7bb88b1af", // Admin maps to super_user
+  "leigh": "8f26db11-07f0-4708-aedc-63b7bb88b1af", // Leigh Mitchell
 };
 
 function isValidUUID(uuid: string): boolean {
@@ -82,7 +83,13 @@ export async function GET(request: NextRequest) {
     
     let query = supabase
       .from('feedback')
-      .select('*')
+      .select(`
+        *,
+        attachment_url,
+        attachment_filename,
+        attachment_type,
+        attachment_size
+      `)
       .order('created_at', { ascending: false });
 
     if (status) {
@@ -103,6 +110,23 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[AIMS Feedback API] Found', feedback?.length || 0, 'feedback items');
+    
+    // Debug: Check if any feedback has attachment data
+    const feedbackWithAttachments = feedback?.filter((item: any) => item.attachment_url) || [];
+    console.log('[AIMS Feedback API] Feedback with attachments:', feedbackWithAttachments.length);
+    if (feedbackWithAttachments.length > 0) {
+      console.log('[AIMS Feedback API] Sample attachment data:', feedbackWithAttachments[0]);
+    }
+    
+    // Debug: Show all feedback data structure
+    console.log('[AIMS Feedback API] All feedback data structure:', feedback?.map((item: any) => ({
+      id: item.id,
+      subject: item.subject,
+      hasAttachmentUrl: !!item.attachment_url,
+      attachmentUrl: item.attachment_url,
+      attachmentType: item.attachment_type,
+      attachmentFilename: item.attachment_filename
+    })));
 
     // If we have feedback, get user details for each one
     let enrichedFeedback = feedback || [];
@@ -111,7 +135,7 @@ export async function GET(request: NextRequest) {
       console.log('[AIMS Feedback API] Enriching feedback with user details...');
       
       // Get unique user IDs
-      const userIds = [...new Set(feedback.map(f => f.user_id))];
+      const userIds = Array.from(new Set(feedback.map((f: any) => f.user_id)));
       
       // Fetch user details
       const { data: users, error: usersError } = await supabase
@@ -126,13 +150,13 @@ export async function GET(request: NextRequest) {
         console.log('[AIMS Feedback API] Found user details for', users?.length || 0, 'users');
         
         // Create user lookup map
-        const userMap = (users || []).reduce((acc, user) => {
+        const userMap = (users || []).reduce((acc: any, user: any) => {
           acc[user.id] = user;
           return acc;
         }, {} as Record<string, any>);
         
         // Enrich feedback with user details
-        enrichedFeedback = feedback.map(item => ({
+        enrichedFeedback = feedback.map((item: any) => ({
           ...item,
           user: userMap[item.user_id] || {
             id: item.user_id,
@@ -185,6 +209,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
+    // Test database connection
+    try {
+      const { data: testData, error: testError } = await supabase
+        .from('users')
+        .select('id')
+        .limit(1);
+      
+      if (testError) {
+        console.error('[AIMS Feedback API] Database connection test failed:', testError);
+        return NextResponse.json({ 
+          error: 'Database connection test failed',
+          details: testError.message 
+        }, { status: 500 });
+      }
+      
+      console.log('[AIMS Feedback API] Database connection test passed');
+    } catch (dbError) {
+      console.error('[AIMS Feedback API] Database connection error:', dbError);
+      return NextResponse.json({ 
+        error: 'Database connection error',
+        details: dbError instanceof Error ? dbError.message : 'Unknown error'
+      }, { status: 500 });
+    }
+
+    // Test if feedback table exists
+    try {
+      const { data: feedbackTest, error: feedbackTestError } = await supabase
+        .from('feedback')
+        .select('id')
+        .limit(1);
+      
+      if (feedbackTestError) {
+        console.error('[AIMS Feedback API] Feedback table test failed:', feedbackTestError);
+        return NextResponse.json({ 
+          error: 'Feedback table not accessible',
+          details: feedbackTestError.message 
+        }, { status: 500 });
+      }
+      
+      console.log('[AIMS Feedback API] Feedback table test passed');
+    } catch (tableError) {
+      console.error('[AIMS Feedback API] Feedback table error:', tableError);
+      return NextResponse.json({ 
+        error: 'Feedback table error',
+        details: tableError instanceof Error ? tableError.message : 'Unknown error'
+      }, { status: 500 });
+    }
+
     // Map mock user ID to real database user ID if needed
     let realUserId = userId;
     if (!isValidUUID(userId)) {
@@ -192,33 +264,114 @@ export async function POST(request: NextRequest) {
     }
     
     if (!isValidUUID(realUserId)) {
-      realUserId = "85a65398-5d71-4633-a50b-2f167a0b6f7a"; // fallback
+      realUserId = "8f26db11-07f0-4708-aedc-63b7bb88b1af"; // fallback to existing super_user
     }
 
-    // Insert feedback with attachment data
+    // The feedback table might reference auth.users instead of public.users
+    // Let's check what the current authenticated user ID is
+    console.log('[AIMS Feedback API] Checking user authentication and table structure');
+    
+    // For now, let's try to use a known working approach
+    // If the feedback table references auth.users, we need to use auth.uid()
+    // Let's try to insert without checking user existence first
+    console.log('[AIMS Feedback API] Attempting direct insert with user ID:', realUserId);
+
+    // Insert feedback with attachment fields
+    const insertData: any = {
+      user_id: realUserId,
+      category,
+      subject: subject?.trim() || null,
+      message: message.trim(),
+      status: 'open',
+      priority: 'medium'
+    };
+
+    // Check if attachment columns exist by trying to get a sample feedback record
+    let hasAttachmentColumns = false;
+    try {
+      const { data: sampleFeedback, error: sampleError } = await supabase
+        .from('feedback')
+        .select('*')
+        .limit(1);
+      
+      if (!sampleError && sampleFeedback && sampleFeedback.length > 0) {
+        hasAttachmentColumns = 'attachment_url' in sampleFeedback[0] && 
+                              'attachment_filename' in sampleFeedback[0] && 
+                              'attachment_type' in sampleFeedback[0] && 
+                              'attachment_size' in sampleFeedback[0];
+      }
+      
+      console.log('[AIMS Feedback API] Attachment columns exist:', hasAttachmentColumns);
+    } catch (error) {
+      console.warn('[AIMS Feedback API] Could not check for attachment columns:', error);
+      // Assume columns exist to avoid blocking attachment uploads
+      hasAttachmentColumns = true;
+    }
+
+    // Include attachment fields if provided and columns exist
+    if (attachment_url && hasAttachmentColumns) {
+      insertData.attachment_url = attachment_url;
+      insertData.attachment_filename = attachment_filename;
+      insertData.attachment_type = attachment_type;
+      insertData.attachment_size = attachment_size;
+    } else if (attachment_url && !hasAttachmentColumns) {
+      console.warn('[AIMS Feedback API] Attachment provided but columns do not exist. Please run the database migration to add attachment support.');
+    }
+
+    console.log('[AIMS Feedback API] Inserting feedback with attachment data:', {
+      hasAttachment: !!attachment_url,
+      filename: attachment_filename,
+      attachmentUrl: attachment_url,
+      attachmentType: attachment_type,
+      attachmentSize: attachment_size,
+      hasAttachmentColumns,
+      insertData: {
+        user_id: insertData.user_id,
+        category: insertData.category,
+        hasSubject: !!insertData.subject,
+        messageLength: insertData.message?.length || 0,
+        attachmentFields: {
+          attachment_url: insertData.attachment_url,
+          attachment_filename: insertData.attachment_filename,
+          attachment_type: insertData.attachment_type,
+          attachment_size: insertData.attachment_size
+        }
+      }
+    });
+
+    // Log the actual insertData object being sent to database
+    console.log('[AIMS Feedback API] Final insertData object:', JSON.stringify(insertData, null, 2));
+
     const { data: feedback, error: insertError } = await supabase
       .from('feedback')
-      .insert({
-        user_id: realUserId,
-        category,
-        subject: subject?.trim() || null,
-        message: message.trim(),
-        status: 'open',
-        priority: 'medium',
-        attachment_url: attachment_url || null,
-        attachment_filename: attachment_filename || null,
-        attachment_type: attachment_type || null,
-        attachment_size: attachment_size || null
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (insertError) {
       console.error('[AIMS Feedback API] Error inserting feedback:', insertError);
+      
+      // Provide more specific error information
+      let errorMessage = 'Failed to submit feedback';
+      if (insertError.message) {
+        errorMessage += `: ${insertError.message}`;
+      }
+      if (insertError.code) {
+        console.error('[AIMS Feedback API] Error code:', insertError.code);
+      }
+      if (insertError.details) {
+        console.error('[AIMS Feedback API] Error details:', insertError.details);
+      }
+      
       return NextResponse.json({ 
-        error: 'Failed to submit feedback' 
+        error: errorMessage,
+        code: insertError.code,
+        details: insertError.details
       }, { status: 500 });
     }
+
+    // Log what was actually saved to the database
+    console.log('[AIMS Feedback API] Feedback saved successfully. Database record:', JSON.stringify(feedback, null, 2));
 
     console.log('[AIMS Feedback API] Feedback submitted successfully');
     return NextResponse.json({ 

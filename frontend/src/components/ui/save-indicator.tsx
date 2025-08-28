@@ -15,9 +15,9 @@ export function SaveIndicator({
   size = 'sm' 
 }: SaveIndicatorProps) {
   const sizeClasses = {
-    sm: 'h-3 w-3',
-    md: 'h-4 w-4', 
-    lg: 'h-5 w-5'
+    sm: 'w-4 h-4', // Match help text icon size
+    md: 'w-5 h-5', 
+    lg: 'w-6 h-6'
   };
 
   const iconSize = sizeClasses[size];
@@ -72,21 +72,18 @@ export function LabelSaveIndicator({
   className?: string;
   hasValue?: boolean;
 }) {
+  // Show green tick if actively saved OR if field has existing data
+  const showGreenTick = isSaved || hasValue;
+  
   return (
     <label className={`text-sm font-medium flex items-center ${className}`}>
       {children}
-      {/* Show save indicator (orange when saving, green when saved) */}
-      {(isSaving || isSaved) && (
-        <SaveIndicator 
-          isSaving={isSaving} 
-          isSaved={isSaved} 
-          size="sm"
-          className="ml-2"
-        />
+      {/* Show save indicator (orange when saving, green when saved or has data) */}
+      {isSaving && (
+        <CircleDashed className="w-4 h-4 text-orange-600 animate-spin ml-2" />
       )}
-      {/* Show green tick when field has a value (completed) and not saving - fallback for legacy usage */}
-      {hasValue && !isSaving && !isSaved && (
-        <CheckCircle className="h-3 w-3 text-green-500 ml-2" />
+      {!isSaving && showGreenTick && (
+        <CheckCircle className="w-4 h-4 text-green-600 ml-2" />
       )}
     </label>
   );

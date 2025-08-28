@@ -67,45 +67,42 @@ export function AdminUserTable() {
         return
       }
 
-      // Fetch users first
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (usersError) {
-        throw usersError
+      // Fetch users using the API endpoint that includes organization data
+      const response = await fetch('/api/users')
+      if (!response.ok) {
+        throw new Error('Failed to fetch users')
       }
+      const usersData = await response.json()
 
       // Map the data to our User interface
       const mappedUsers: ExtendedUser[] = (usersData || []).map((user: any) => ({
         id: user.id,
         email: user.email,
-        name: [user.first_name, user.middle_name, user.last_name].filter(Boolean).join(' ') || user.name || 'Unnamed User',
-        firstName: user.first_name,
-        middleName: user.middle_name,
-        lastName: user.last_name,
+        name: user.name || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ') || 'Unnamed User',
+        firstName: user.firstName || user.first_name,
+        middleName: user.middleName || user.middle_name,
+        lastName: user.lastName || user.last_name,
         title: user.title,
         role: user.role as any,
-        organizationId: user.organization_id,
-        organization: undefined, // Will fetch separately if needed
+        organizationId: user.organizationId || user.organization_id,
+        organization: user.organization, // Now includes organization data from API
         organisation: user.organisation,
         department: user.department,
-        jobTitle: user.position || user.job_title,
-        contactType: user.contact_type,
+        jobTitle: user.jobTitle || user.job_title,
+        contactType: user.contactType || user.contact_type,
         telephone: user.telephone,
         phone: user.telephone,
-        secondaryEmail: user.secondary_email,
-        secondaryPhone: user.secondary_phone,
-        faxNumber: user.fax_number,
+        secondaryEmail: user.secondaryEmail || user.secondary_email,
+        secondaryPhone: user.secondaryPhone || user.secondary_phone,
+        faxNumber: user.faxNumber || user.fax_number,
         website: user.website,
-        mailingAddress: user.mailing_address,
+        mailingAddress: user.mailingAddress || user.mailing_address,
         notes: user.notes,
-        profilePicture: user.avatar_url,
-        isActive: user.is_active ?? true,
-        lastLogin: user.last_login,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at
+        profilePicture: user.profilePicture || user.avatar_url,
+        isActive: user.isActive ?? user.is_active ?? true,
+        lastLogin: user.lastLogin || user.last_login,
+        createdAt: user.createdAt || user.created_at,
+        updatedAt: user.updatedAt || user.updated_at
       }))
 
       console.log('[AdminUserTable] Fetched users:', mappedUsers.length)

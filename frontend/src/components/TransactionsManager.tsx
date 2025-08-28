@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransactionTypeSelect } from "@/components/forms/TransactionTypeSelect";
 import { FinanceTypeSelect } from "@/components/forms/FinanceTypeSelect";
-import { Plus, Trash2, Edit, Download, Filter, DollarSign, AlertCircle, FileText, X } from "lucide-react";
+import { Plus, Trash2, Edit, Download, Filter, DollarSign, AlertCircle, FileText, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { usePartners } from "@/hooks/usePartners";
@@ -63,6 +63,7 @@ const DISBURSEMENT_CHANNELS: Record<string, string> = {
 
 interface TransactionsManagerProps {
   activityId: string;
+  activityPartnerId?: string; // User-assigned Activity ID from General tab
   transactions: Transaction[];
   onTransactionsChange: (transactions: Transaction[]) => void;
   onRefreshNeeded?: () => Promise<void>;
@@ -76,6 +77,7 @@ interface TransactionsManagerProps {
 
 export default function TransactionsManager({ 
   activityId, 
+  activityPartnerId,
   transactions: initialTransactions = [], 
   onTransactionsChange,
   onRefreshNeeded,
@@ -91,6 +93,9 @@ export default function TransactionsManager({
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [sortColumn, setSortColumn] = useState<string>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [fetchedActivityPartnerId, setFetchedActivityPartnerId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [filters, setFilters] = useState({
     type: "all",
     status: "all",
@@ -117,6 +122,24 @@ export default function TransactionsManager({
   useEffect(() => {
     setTransactions(initialTransactions.map(convertLegacyTransaction));
   }, [initialTransactions]);
+
+  // Fetch activity data to get partner_id if not provided as prop
+  useEffect(() => {
+    if (!activityPartnerId && activityId && activityId !== 'new') {
+      const fetchActivityData = async () => {
+        try {
+          const response = await fetch(`/api/activities/${activityId}`);
+          if (response.ok) {
+            const activityData = await response.json();
+            setFetchedActivityPartnerId(activityData.partner_id || null);
+          }
+        } catch (error) {
+          console.error('Error fetching activity data:', error);
+        }
+      };
+      fetchActivityData();
+    }
+  }, [activityId, activityPartnerId]);
 
   const handleSubmit = async (formData: Partial<Transaction>) => {
     setSubmitting(true);
@@ -306,6 +329,23 @@ export default function TransactionsManager({
     if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
     return 0;
   });
+
+  // Pagination logic
+  const totalTransactions = sortedTransactions.length;
+  const totalPages = Math.ceil(totalTransactions / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalTransactions);
+  const paginatedTransactions = sortedTransactions.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  // Reset to page 1 when page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [pageSize]);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -497,14 +537,14 @@ export default function TransactionsManager({
           ) : (
             <>
               <TransactionTable
-                transactions={sortedTransactions}
+                transactions={paginatedTransactions}
                 loading={false}
                 error={null}
                 sortField={sortColumn}
                 sortOrder={sortDirection}
                 onSort={handleSort}
                 onRowClick={(transactionId) => {
-                  const transaction = sortedTransactions.find(t => t.id === transactionId);
+                  const transaction = paginatedTransactions.find(t => t.id === transactionId);
                   if (transaction) handleEdit(transaction);
                 }}
                 onEdit={(transaction: any) => handleEdit(transaction as Transaction)}
@@ -512,6 +552,99 @@ export default function TransactionsManager({
                 variant="compact"
               />
 
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-2 py-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>
+                        Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredTransactions.length)} of {filteredTransactions.length} transactions
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Show:</span>
+                      <Select value={pageSize.toString()} onValueChange={(value) => {
+                        setPageSize(parseInt(value));
+                        setCurrentPage(1); // Reset to first page when changing page size
+                      }}>
+                        <SelectTrigger className="w-20 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="25">25</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      First
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Last
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
             </>
           )}
@@ -527,6 +660,7 @@ export default function TransactionsManager({
         }}
         transaction={editingTransaction}
         activityId={activityId}
+        activityPartnerId={activityPartnerId || fetchedActivityPartnerId || undefined}
         onSubmit={handleSubmit}
         defaultFinanceType={defaultFinanceType}
         defaultAidType={defaultAidType}

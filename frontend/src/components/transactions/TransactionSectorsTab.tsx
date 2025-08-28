@@ -31,7 +31,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useTransactionSectors } from '@/hooks/use-transaction-sectors';
 import { SectorSelect } from '@/components/forms/SectorSelect';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/format';
 
 interface TransactionSectorsTabProps {
   transactionId: string;
@@ -383,12 +383,18 @@ export default function TransactionSectorsTab({
           </CardHeader>
           <CardContent>
             <SectorSelect
-              onSectorSelect={(sector) => {
-                handleAddSector(sector.code, sector.name);
+              value={[]}
+              onValueChange={(values) => {
+                if (values.length > 0) {
+                  const sectorCode = values[0];
+                  // For now, use the code as the name - ideally we'd have a lookup
+                  handleAddSector(sectorCode, sectorCode);
+                  setShowSectorSelect(false);
+                }
               }}
-              excludeCodes={sectorLines.map(line => line.sector_code)}
               placeholder="Search for a sector..."
               className="w-full"
+              maxSelections={1}
             />
             <div className="flex justify-end gap-2 mt-4">
               <Button 

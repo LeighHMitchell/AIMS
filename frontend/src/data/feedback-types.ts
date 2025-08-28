@@ -49,7 +49,8 @@ export const FEEDBACK_STATUS_TYPES = [
   { code: 'open', name: 'Open', color: 'blue' },
   { code: 'in_progress', name: 'In Progress', color: 'yellow' },
   { code: 'resolved', name: 'Resolved', color: 'green' },
-  { code: 'closed', name: 'Closed', color: 'gray' }
+  { code: 'closed', name: 'Closed', color: 'gray' },
+  { code: 'archived', name: 'Archived', color: 'gray' }
 ];
 
 export const FEEDBACK_PRIORITY_TYPES = [

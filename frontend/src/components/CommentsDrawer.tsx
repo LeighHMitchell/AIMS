@@ -86,8 +86,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
   const [commentTypeOpen, setCommentTypeOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
-  const [replyType, setReplyType] = useState<'Question' | 'Feedback'>('Feedback');
-  const [replyTypeOpen, setReplyTypeOpen] = useState(false);
+
   const [showArchived, setShowArchived] = useState(false);
 
   // Helper function to get user initials
@@ -577,57 +576,6 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                   {/* Reply form */}
                   {replyingTo === comment.id && (
                     <div className="mt-3 space-y-2 bg-gray-50 p-3 rounded">
-                      <div className="flex gap-2">
-                        <Popover open={replyTypeOpen} onOpenChange={setReplyTypeOpen}>
-                          <PopoverTrigger
-                            className={cn(
-                              "flex h-8 w-32 items-center justify-between rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
-                            )}
-                          >
-                            <span className="truncate">
-                              {(() => {
-                                const selectedOption = COMMENT_TYPE_OPTIONS.find(option => option.value === replyType);
-                                return selectedOption ? (
-                                  <span className="font-medium">{selectedOption.label}</span>
-                                ) : (
-                                  <span className="text-muted-foreground">Select type...</span>
-                                );
-                              })()}
-                            </span>
-                            <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" />
-                          </PopoverTrigger>
-                          <PopoverContent 
-                            className="w-[var(--radix-popover-trigger-width)] min-w-[180px] p-0 shadow-lg border"
-                            align="start"
-                            sideOffset={4}
-                          >
-                            <Command>
-                              <CommandList>
-                                <CommandGroup>
-                                  {COMMENT_TYPE_OPTIONS.map((option) => (
-                                    <CommandItem
-                                      key={option.value}
-                                      onSelect={() => {
-                                        setReplyType(option.value);
-                                        setReplyTypeOpen(false);
-                                      }}
-                                      className="flex items-center gap-2 py-1.5 px-2 cursor-pointer hover:bg-accent text-xs"
-                                    >
-                                      <div className="flex flex-col">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-xs text-muted-foreground">{option.description}</span>
-                                      </div>
-                                      {replyType === option.value && (
-                                        <Check className="ml-auto h-3 w-3" />
-                                      )}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
                       <textarea
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}

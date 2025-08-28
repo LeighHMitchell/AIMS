@@ -35,7 +35,7 @@ import { SectorSelect, transformSectorGroups } from '@/components/forms/SectorSe
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
 import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization';
-import SectorTreeMapVisualization from '@/components/charts/SectorTreeMapVisualization';
+
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization';
 import { toast } from 'sonner';
 
@@ -242,7 +242,7 @@ export default function ImprovedSectorAllocationForm({
   const sectorsAutosave = useSectorsAutosave(activityId, user?.id);
   const [sortField, setSortField] = useState<SortField>('subSector');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [activeVisualizationTab, setActiveVisualizationTab] = useState<'sunburst' | 'treemap' | 'sankey'>('sunburst');
+  const [activeVisualizationTab, setActiveVisualizationTab] = useState<'sunburst' | 'sankey'>('sunburst');
 
   // Handle column sorting
   const handleSort = (field: SortField) => {
@@ -905,10 +905,9 @@ export default function ImprovedSectorAllocationForm({
               </div>
             </CardHeader>
             <CardContent>
-              <Tabs value={activeVisualizationTab} onValueChange={(value) => setActiveVisualizationTab(value as 'sunburst' | 'treemap' | 'sankey')}>
-                <TabsList className="grid w-full grid-cols-3">
+              <Tabs value={activeVisualizationTab} onValueChange={(value) => setActiveVisualizationTab(value as 'sunburst' | 'sankey')}>
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="sunburst">Sunburst</TabsTrigger>
-                  <TabsTrigger value="treemap">Tree Map</TabsTrigger>
                   <TabsTrigger value="sankey">Sankey Flow</TabsTrigger>
                 </TabsList>
                 
@@ -921,14 +920,7 @@ export default function ImprovedSectorAllocationForm({
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="treemap" className="mt-4">
-                  <div className="relative overflow-hidden">
-                    <SectorTreeMapVisualization 
-                      allocations={allocations}
-                      onSegmentClick={handleSunburstSegmentClick}
-                    />
-                  </div>
-                </TabsContent>
+
                 
                 <TabsContent value="sankey" className="mt-4">
                   <div className="relative overflow-hidden">

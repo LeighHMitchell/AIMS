@@ -192,11 +192,11 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
   } as const;
 
   const modalityColors = {
-    '1': 'success',     // Grant - green
-    '2': 'destructive', // Loan - red  
-    '3': 'blue',        // Technical Assistance - blue
-    '4': 'secondary',   // Reimbursable Grant - gray
-    '5': 'warning'      // Investment/Guarantee - yellow
+    '1': 'purple',      // Grant - purple (unique color)
+    '2': 'orange',      // Loan - orange (unique color)
+    '3': 'teal',        // Technical Assistance - teal (unique color)
+    '4': 'indigo',      // Reimbursable Grant - indigo (unique color)
+    '5': 'rose'         // Investment/Guarantee - rose (unique color)
   } as const;
 
   if (isLoading) {

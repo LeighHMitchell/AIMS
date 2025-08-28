@@ -11,7 +11,7 @@ import { SimpleSectorSelect, getSectorLabel, getSectorDescription } from '@/comp
 import { SectorValidation } from '@/types/sector';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import SectorAllocationPieChart from '@/components/charts/SectorAllocationPieChart';
+
 
 interface SectorAllocation {
   id: string;
@@ -325,7 +325,23 @@ export default function SimpleSectorAllocationForm({
       {allocations.length > 0 && (
         <Card>
           <CardContent className="pt-6">
-            <SectorAllocationPieChart allocations={allocations} />
+                              <div className="w-full">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {allocations.map((allocation, index) => (
+                        <div key={index} className="p-4 border rounded-lg bg-gray-50">
+                          <div className="font-medium text-sm text-gray-900">
+                            {allocation.code}
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            {allocation.name}
+                          </div>
+                          <div className="text-lg font-semibold text-blue-600 mt-2">
+                            {allocation.percentage}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
           </CardContent>
         </Card>
       )}

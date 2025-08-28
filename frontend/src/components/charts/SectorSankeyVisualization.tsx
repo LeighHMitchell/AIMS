@@ -30,6 +30,15 @@ interface SankeyNode {
   color: string;
 }
 
+interface PositionedNode extends SankeyNode {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+  width: number;
+  height: number;
+}
+
 interface SankeyLink {
   source: string;
   target: string;
@@ -37,16 +46,71 @@ interface SankeyLink {
   color: string;
 }
 
-// Generate colors for categories
-const generateCategoryColor = (index: number, total: number) => {
-  const hue = (index * 360) / total;
-  return d3.hsl(hue, 0.7, 0.6).toString();
+// Extended color palette for unique colors per segment (same as sunburst)
+const BASE_COLORS = [
+  '#E3120B', '#006BA2', '#3EBCD2', '#379A8B', '#EBB434', '#B4BA39', '#9A607F', '#D1B07C',
+  '#FF6B6C', '#1270A8', '#25ADC2', '#4DAD9E', '#C89608', '#9DA521', '#C98CAC', '#FFC2E3',
+  '#C7303C', '#00588D', '#0092A7', '#00786B', '#8D6300', '#667100', '#925977', '#826636',
+  '#DB444B', '#0C4A6E', '#0E7490', '#065F46', '#A16207', '#4D7C0F', '#7C2D12', '#92400E',
+  '#F87171', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#FB7185', '#38BDF8', '#4ADE80',
+  '#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#22C55E',
+  '#DC2626', '#2563EB', '#059669', '#D97706', '#7C3AED', '#DB2777', '#0891B2', '#16A34A',
+  '#B91C1C', '#1D4ED8', '#047857', '#B45309', '#6D28D9', '#BE185D', '#0E7490', '#15803D'
+];
+
+// Function to generate darker and lighter shades from a base color (same as sunburst)
+const generateShades = (baseColor: string) => {
+  // Convert hex to RGB
+  const hex = baseColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Generate darker shade (multiply by 0.7)
+  const darkerR = Math.round(r * 0.7);
+  const darkerG = Math.round(g * 0.7);
+  const darkerB = Math.round(b * 0.7);
+  
+  // Generate lighter shade (blend with white)
+  const lighterR = Math.round(r + (255 - r) * 0.4);
+  const lighterG = Math.round(g + (255 - g) * 0.4);
+  const lighterB = Math.round(b + (255 - b) * 0.4);
+  
+  return {
+    darker: `rgb(${darkerR}, ${darkerG}, ${darkerB})`,
+    base: baseColor,
+    lighter: `rgb(${lighterR}, ${lighterG}, ${lighterB})`
+  };
 };
 
-// Generate lighter shades for subcategories
-const generateSubColor = (baseColor: string, opacity: number = 0.6) => {
-  const color = d3.hsl(baseColor);
-  return `${color.toString()}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`;
+// Function to generate multiple shades within the same color family for different ring levels (same as sunburst)
+const generateVariedShades = (baseColor: string, shadeIndex: number, totalShades: number, ringLevel: 'sector' | 'subsector') => {
+  const hex = baseColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  let minLighten, maxLighten;
+  
+  if (ringLevel === 'sector') {
+    // Middle ring - moderate lightening range
+    minLighten = 0.1;
+    maxLighten = 0.3;
+  } else {
+    // Outer ring - lighter range
+    minLighten = 0.4;
+    maxLighten = 0.7;
+  }
+  
+  const lightenFactor = totalShades === 1 ? 
+    (minLighten + maxLighten) / 2 : // Use middle value if only one shade
+    minLighten + (maxLighten - minLighten) * (shadeIndex / (totalShades - 1));
+  
+  const lighterR = Math.round(r + (255 - r) * lightenFactor);
+  const lighterG = Math.round(g + (255 - g) * lightenFactor);
+  const lighterB = Math.round(b + (255 - b) * lightenFactor);
+  
+  return `rgb(${lighterR}, ${lighterG}, ${lighterB})`;
 };
 
 export default function SectorSankeyVisualization({ 
@@ -122,9 +186,6 @@ export default function SectorSankeyVisualization({
     const links: SankeyLink[] = [];
     
     const categories = Array.from(categoryMap.entries());
-    const categoryColors = categories.map((_, index) => 
-      generateCategoryColor(index, categories.length)
-    );
 
     // Add root node
     nodes.push({
@@ -137,55 +198,64 @@ export default function SectorSankeyVisualization({
 
     // Add category nodes and links
     categories.forEach(([categoryCode, category], categoryIndex) => {
-      const baseColor = categoryColors[categoryIndex];
+      // Each category gets its own base color from the same palette as sunburst
+      const categoryBaseColor = BASE_COLORS[categoryIndex % BASE_COLORS.length];
+      const categoryColorSet = generateShades(categoryBaseColor);
       
       nodes.push({
         id: `cat-${categoryCode}`,
         name: category.name,
         level: 'category',
         value: category.percentage,
-        color: baseColor
+        color: categoryColorSet.darker // Use darker shade for categories (same as sunburst inner ring)
       });
 
       links.push({
         source: 'root',
         target: `cat-${categoryCode}`,
         value: category.percentage,
-        color: generateSubColor(baseColor, 0.4)
+        color: categoryColorSet.base
       });
 
       // Add sector nodes and links
-      Array.from(category.sectors.entries()).forEach(([sectorCode, sector]) => {
+      const sectors = Array.from(category.sectors.entries());
+      sectors.forEach(([sectorCode, sector], sectorIndex) => {
+        // Generate varied shade for sector within the same color family
+        const sectorColor = generateVariedShades(categoryBaseColor, sectorIndex, sectors.length, 'sector');
+        
         nodes.push({
           id: `sec-${sectorCode}`,
           name: sector.name,
           level: 'sector',
           value: sector.percentage,
-          color: generateSubColor(baseColor, 0.8)
+          color: sectorColor
         });
 
         links.push({
           source: `cat-${categoryCode}`,
           target: `sec-${sectorCode}`,
           value: sector.percentage,
-          color: generateSubColor(baseColor, 0.3)
+          color: sectorColor
         });
 
         // Add subsector nodes and links
-        sector.subsectors.forEach(subsector => {
+        sector.subsectors.forEach((subsector, subsectorIndex) => {
+          // Generate varied shade for subsector within the same color family
+          const subsectorColor = generateVariedShades(categoryBaseColor, subsectorIndex, sector.subsectors.length, 'subsector');
+          
           nodes.push({
             id: `sub-${subsector.code}`,
             name: subsector.name,
             level: 'subsector',
             value: subsector.percentage,
-            color: generateSubColor(baseColor, 1.0)
+            color: subsectorColor
           });
 
           links.push({
             source: `sec-${sectorCode}`,
             target: `sub-${subsector.code}`,
             value: subsector.percentage,
-            color: generateSubColor(baseColor, 0.2)
+            color: subsectorColor
           });
         });
       });
@@ -238,15 +308,15 @@ export default function SectorSankeyVisualization({
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Define color scale
-    const color = d3.scaleOrdinal(d3.schemeCategory10);
-
-    // Create tooltip
+    // Create tooltip with enhanced styling for wrapped text
     const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute invisible bg-gray-900 text-white p-3 rounded-lg shadow-lg text-sm pointer-events-none z-50')
-      .style('opacity', 0);
+      .attr('class', 'absolute invisible bg-gray-900 text-white p-4 rounded-lg shadow-lg text-sm pointer-events-none z-50 max-w-xs')
+      .style('opacity', 0)
+      .style('word-wrap', 'break-word')
+      .style('white-space', 'normal')
+      .style('line-height', '1.4');
 
-    // Manual layout for Sankey-style positioning
+    // Manual layout for Sankey-style positioning with proper flow conservation
     const nodeWidth = 20;
     const nodePadding = 8;
     const levelCount = 4; // root, category, sector, subsector
@@ -260,28 +330,33 @@ export default function SectorSankeyVisualization({
       subsector: sankeyData.nodes.filter(n => n.level === 'subsector')
     };
 
-    // Calculate positions for each level
-    const positionedNodes = [];
+    // Calculate total value for consistent scaling
+    const totalValue = nodesByLevel.root[0]?.value || 100;
+    const availableHeight = innerHeight - (nodePadding * Math.max(nodesByLevel.category.length, nodesByLevel.sector.length, nodesByLevel.subsector.length));
+    const valueToHeightScale = availableHeight / totalValue;
 
-    // Position root node
+    // Calculate positions for each level
+    const positionedNodes: PositionedNode[] = [];
+
+    // Position root node - height should match total outgoing flow
     nodesByLevel.root.forEach(node => {
+      const nodeHeight = Math.max(40, node.value * valueToHeightScale);
       const positioned = {
         ...node,
         x0: 0,
         x1: nodeWidth,
-        y0: innerHeight / 2 - 30,
-        y1: innerHeight / 2 + 30,
+        y0: (innerHeight - nodeHeight) / 2,
+        y1: (innerHeight - nodeHeight) / 2 + nodeHeight,
         width: nodeWidth,
-        height: 60
+        height: nodeHeight
       };
       positionedNodes.push(positioned);
     });
 
-    // Position category nodes
-    const totalCategoryValue = nodesByLevel.category.reduce((sum, n) => sum + n.value, 0);
+    // Position category nodes - heights proportional to their values
     let categoryY = 0;
     nodesByLevel.category.forEach(node => {
-      const nodeHeight = Math.max(20, (node.value / totalCategoryValue) * innerHeight * 0.8);
+      const nodeHeight = Math.max(20, node.value * valueToHeightScale);
       const positioned = {
         ...node,
         x0: levelWidth,
@@ -295,11 +370,10 @@ export default function SectorSankeyVisualization({
       categoryY += nodeHeight + nodePadding;
     });
 
-    // Position sector nodes
-    const totalSectorValue = nodesByLevel.sector.reduce((sum, n) => sum + n.value, 0);
+    // Position sector nodes - heights proportional to their values
     let sectorY = 0;
     nodesByLevel.sector.forEach(node => {
-      const nodeHeight = Math.max(15, (node.value / totalSectorValue) * innerHeight * 0.7);
+      const nodeHeight = Math.max(15, node.value * valueToHeightScale);
       const positioned = {
         ...node,
         x0: levelWidth * 2,
@@ -313,11 +387,10 @@ export default function SectorSankeyVisualization({
       sectorY += nodeHeight + nodePadding;
     });
 
-    // Position subsector nodes
-    const totalSubsectorValue = nodesByLevel.subsector.reduce((sum, n) => sum + n.value, 0);
+    // Position subsector nodes - heights proportional to their values
     let subsectorY = 0;
     nodesByLevel.subsector.forEach(node => {
-      const nodeHeight = Math.max(12, (node.value / totalSubsectorValue) * innerHeight * 0.6);
+      const nodeHeight = Math.max(12, node.value * valueToHeightScale);
       const positioned = {
         ...node,
         x0: levelWidth * 3,
@@ -334,22 +407,109 @@ export default function SectorSankeyVisualization({
     // Create a map for quick node lookup
     const nodeMap = new Map(positionedNodes.map(n => [n.id, n]));
 
-    // Custom link path generator
-    const linkPath = (source, target) => {
+    // Helper function to get detailed node information for tooltips
+    const getNodeDetails = (node: PositionedNode) => {
+      if (node.id === 'root') {
+        return {
+          title: 'Total Budget',
+          category: null,
+          sector: null,
+          subsector: null,
+          level: 'Total'
+        };
+      }
+
+      const nodeId = node.id.replace(/^(cat-|sec-|sub-)/, '');
+      
+      if (node.id.startsWith('cat-')) {
+        // Category node - find in sankeyData
+        const categoryNode = sankeyData.nodes.find(n => n.id === `cat-${nodeId}`);
+        return {
+          title: categoryNode?.name || node.name,
+          category: categoryNode?.name || node.name,
+          sector: null,
+          subsector: null,
+          level: 'DAC Category'
+        };
+      } else if (node.id.startsWith('sec-')) {
+        // Sector node - find parent category through links
+        const sectorNode = sankeyData.nodes.find(n => n.id === `sec-${nodeId}`);
+        const parentLink = sankeyData.links.find(l => l.target === `sec-${nodeId}`);
+        const parentCategoryNode = parentLink ? sankeyData.nodes.find(n => n.id === parentLink.source) : null;
+        
+        return {
+          title: sectorNode?.name || node.name,
+          category: parentCategoryNode?.name || null,
+          sector: sectorNode?.name || node.name,
+          subsector: null,
+          level: 'DAC Sector'
+        };
+      } else if (node.id.startsWith('sub-')) {
+        // Subsector node - find parent sector and category through links
+        const subsectorNode = sankeyData.nodes.find(n => n.id === `sub-${nodeId}`);
+        const parentSectorLink = sankeyData.links.find(l => l.target === `sub-${nodeId}`);
+        const parentSectorNode = parentSectorLink ? sankeyData.nodes.find(n => n.id === parentSectorLink.source) : null;
+        const parentCategoryLink = parentSectorNode ? sankeyData.links.find(l => l.target === parentSectorNode.id) : null;
+        const parentCategoryNode = parentCategoryLink ? sankeyData.nodes.find(n => n.id === parentCategoryLink.source) : null;
+        
+        return {
+          title: subsectorNode?.name || node.name,
+          category: parentCategoryNode?.name || null,
+          sector: parentSectorNode?.name || null,
+          subsector: subsectorNode?.name || node.name,
+          level: '5-Digit Sector'
+        };
+      }
+      
+      return {
+        title: node.name,
+        category: null,
+        sector: null,
+        subsector: null,
+        level: 'Unknown'
+      };
+    };
+
+
+    // Calculate link positions for proper flow conservation
+    const calculateLinkPositions = () => {
+      const linkPositions = new Map();
+      
+      // Track cumulative heights for each node's incoming and outgoing flows
+      const nodeIncomingY = new Map();
+      const nodeOutgoingY = new Map();
+      
+      // Initialize positions
+      positionedNodes.forEach(node => {
+        nodeIncomingY.set(node.id, node.y0);
+        nodeOutgoingY.set(node.id, node.y0);
+      });
+      
+      return { nodeIncomingY, nodeOutgoingY };
+    };
+    
+    const { nodeIncomingY, nodeOutgoingY } = calculateLinkPositions();
+
+    // Custom link path generator with proper flow positioning
+    const linkPath = (source: PositionedNode, target: PositionedNode, linkHeight: number, sourceY: number, targetY: number) => {
       const x0 = source.x1;
       const x1 = target.x0;
-      const y0 = source.y0 + source.height / 2;
-      const y1 = target.y0 + target.height / 2;
+      const y0s = sourceY;
+      const y0e = sourceY + linkHeight;
+      const y1s = targetY;
+      const y1e = targetY + linkHeight;
+      
       const xi = d3.interpolateNumber(x0, x1);
       const x2 = xi(0.5);
       const x3 = xi(0.5);
-      return `M${x0},${y0}C${x2},${y0} ${x3},${y1} ${x1},${y1}`;
+      
+      return `M${x0},${y0s}C${x2},${y0s} ${x3},${y1s} ${x1},${y1s}L${x1},${y1e}C${x3},${y1e} ${x2},${y0e} ${x0},${y0e}Z`;
     };
 
     // Draw links first (so they appear behind nodes)
     const linkGroup = g.append('g')
-      .attr('fill', 'none')
-      .attr('stroke-opacity', 0.6);
+      .attr('fill-opacity', 0.6)
+      .attr('stroke', 'none');
 
     sankeyData.links.forEach((link, i) => {
       const source = nodeMap.get(link.source);
@@ -357,7 +517,16 @@ export default function SectorSankeyVisualization({
       
       if (!source || !target) return;
 
-      const linkWidth = Math.max(2, (link.value / 100) * 40);
+      // Calculate link height based on the same scale as nodes
+      const linkHeight = Math.max(2, link.value * valueToHeightScale);
+      
+      // Get current positions for source outgoing and target incoming
+      const sourceY = nodeOutgoingY.get(source.id);
+      const targetY = nodeIncomingY.get(target.id);
+      
+      // Update positions for next links
+      nodeOutgoingY.set(source.id, sourceY + linkHeight);
+      nodeIncomingY.set(target.id, targetY + linkHeight);
       
       // Create gradient for each link
       const gradientId = `gradient-${i}`;
@@ -369,34 +538,39 @@ export default function SectorSankeyVisualization({
 
       gradient.append('stop')
         .attr('offset', '0%')
-        .attr('stop-color', color(source.level));
+        .attr('stop-color', source.color);
 
       gradient.append('stop')
         .attr('offset', '100%')
-        .attr('stop-color', color(target.level));
+        .attr('stop-color', target.color);
 
-      // Draw the link path
+      // Draw the link path with proper flow conservation
       linkGroup.append('path')
-        .attr('d', linkPath(source, target))
-        .attr('stroke', `url(#${gradientId})`)
-        .attr('stroke-width', linkWidth)
+        .attr('d', linkPath(source, target, linkHeight, sourceY, targetY))
+        .attr('fill', `url(#${gradientId})`)
         .style('cursor', 'pointer')
         .on('mouseover', function(event) {
-          d3.select(this).attr('stroke-opacity', 0.9);
+          d3.select(this).attr('fill-opacity', 0.9);
           
           tooltip.transition()
             .duration(200)
             .style('opacity', .95);
           
+          const sourceDetails = getNodeDetails(source);
+          const targetDetails = getNodeDetails(target);
+          
           tooltip.html(`
-            <div class="font-semibold text-white">${source.name} → ${target.name}</div>
-            <div class="text-sm mt-1 text-blue-200">${format(link.value)}%</div>
+            <div class="font-semibold text-white mb-2" style="word-wrap: break-word;">
+              ${sourceDetails.title} → ${targetDetails.title}
+            </div>
+            <div class="text-xs text-gray-300 mb-2">Flow: ${sourceDetails.level} to ${targetDetails.level}</div>
+            <div class="text-lg font-bold text-green-300">${format(link.value)}%</div>
           `)
             .style('left', (event.pageX + 10) + 'px')
             .style('top', (event.pageY - 28) + 'px');
         })
         .on('mouseout', function() {
-          d3.select(this).attr('stroke-opacity', 0.6);
+          d3.select(this).attr('fill-opacity', 0.6);
           
           tooltip.transition()
             .duration(300)
@@ -416,7 +590,7 @@ export default function SectorSankeyVisualization({
     nodeGroup.append('rect')
       .attr('width', d => d.width)
       .attr('height', d => d.height)
-      .attr('fill', d => color(d.level))
+      .attr('fill', d => d.color)
       .attr('stroke', '#ffffff')
       .attr('stroke-width', 1.5)
       .attr('rx', 3)
@@ -428,9 +602,24 @@ export default function SectorSankeyVisualization({
           .duration(200)
           .style('opacity', .95);
         
+        const details = getNodeDetails(d);
+        let hierarchyHtml = '';
+        
+        // Build hierarchy display
+        if (details.category) {
+          hierarchyHtml += `<div class="text-xs text-blue-200 mb-1">Category: ${details.category}</div>`;
+        }
+        if (details.sector) {
+          hierarchyHtml += `<div class="text-xs text-green-200 mb-1">Sector: ${details.sector}</div>`;
+        }
+        if (details.subsector) {
+          hierarchyHtml += `<div class="text-xs text-yellow-200 mb-1">Sub-sector: ${details.subsector}</div>`;
+        }
+        
         tooltip.html(`
-          <div class="font-semibold text-white">${d.name}</div>
-          <div class="text-sm mt-1 text-blue-200">${d.level}</div>
+          <div class="font-semibold text-white mb-2" style="word-wrap: break-word;">${details.title}</div>
+          <div class="text-xs text-gray-300 mb-2">${details.level}</div>
+          ${hierarchyHtml}
           <div class="text-lg font-bold mt-2 text-green-300">${format(d.value)}%</div>
         `)
           .style('left', (event.pageX + 10) + 'px')

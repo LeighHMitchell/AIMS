@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -80,8 +81,30 @@ interface EnhancedActivityEditorProps {
 
 export default function EnhancedActivityEditor({ activityId, initialData = {} }: EnhancedActivityEditorProps) {
   const { user } = useUser();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('basic');
   const [commentsContext, setCommentsContext] = useState({ section: '', field: '' });
+
+  // Set initial tab from URL parameter
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  // Handle tab change with URL synchronization
+  const handleTabChange = (tabValue: string) => {
+    setActiveTab(tabValue);
+    
+    // Update URL with the new tab parameter
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    params.set('tab', tabValue);
+    
+    // Use replace to avoid adding to browser history for each tab switch
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
   
   // Form state
   const [formData, setFormData] = useState({
@@ -254,7 +277,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
   // Context-aware commenting helper
   const setContextForComments = (section: string, field?: string) => {
     setCommentsContext({ section, field: field || '' });
-    setActiveTab('comments');
+    handleTabChange('comments');
   };
 
   // Save indicator component
@@ -333,7 +356,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         </div>
 
         {/* Main Activity Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />

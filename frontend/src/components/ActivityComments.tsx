@@ -56,7 +56,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
   const [commentType, setCommentType] = useState<'Question' | 'Feedback'>('Feedback');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
-  const [replyType, setReplyType] = useState<'Question' | 'Feedback'>('Feedback');
+
   const [activeTab, setActiveTab] = useState<'open' | 'resolved'>('open');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
   const [filterType, setFilterType] = useState<'all' | 'question' | 'feedback'>('all');

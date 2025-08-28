@@ -94,6 +94,8 @@ import FocalPointsTab from "@/components/activities/FocalPointsTab";
 import { DocumentsAndImagesTabInline } from "@/components/activities/DocumentsAndImagesTabInline";
 import { IatiDocumentLink } from "@/lib/iatiDocumentLink";
 
+import GovernmentEndorsementTab from "@/components/activities/GovernmentEndorsementTab";
+
 // Utility function to format date without timezone conversion
 const formatDateToString = (date: Date | null): string => {
   if (!date) return '';
@@ -456,7 +458,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <div className="lg:col-span-3 flex flex-col">
           <LabelSaveIndicator
             isSaving={bannerAutosave.state.isSaving}
-            isSaved={!!general.banner}
+            isSaved={bannerAutosave.state.isPersistentlySaved}
+            hasValue={!!general.banner}
             className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'} mb-2`}
           >
             <div className="flex items-center gap-2">
@@ -488,7 +491,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <div className="flex flex-col">
           <LabelSaveIndicator
             isSaving={iconAutosave.state.isSaving}
-            isSaved={!!general.icon}
+            isSaved={iconAutosave.state.isPersistentlySaved}
+            hasValue={!!general.icon}
             className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'} mb-2`}
           >
             <div className="flex items-center gap-2">
@@ -526,6 +530,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={titleAutosave.state.isSaving}
             isSaved={titleAutosave.state.isPersistentlySaved}
+            hasValue={!!general.title?.trim()}
             className="text-gray-700"
           >
             <div className="flex items-center gap-2">
@@ -557,6 +562,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={acronymAutosave.state.isSaving}
             isSaved={acronymAutosave.state.isPersistentlySaved}
+            hasValue={!!general.acronym?.trim()}
             className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}`}
           >
             <div className="flex items-center gap-2">
@@ -596,6 +602,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={activityIdAutosave.state.isSaving}
             isSaved={activityIdAutosave.state.isPersistentlySaved}
+            hasValue={!!general.otherIdentifier?.trim()}
             className={!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}
           >
             <div className="flex items-center gap-2">
@@ -645,6 +652,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={iatiIdentifierAutosave.state.isSaving}
             isSaved={iatiIdentifierAutosave.state.isPersistentlySaved}
+            hasValue={!!general.iatiIdentifier?.trim()}
             className={!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}
           >
             <div className="flex items-center gap-2">
@@ -693,7 +701,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={uuidAutosave.state.isSaving}
-            isSaved={!!general.uuid}
+            isSaved={uuidAutosave.state.isPersistentlySaved}
+            hasValue={!!general.uuid}
             className="text-gray-700"
           >
             <div className="flex items-center gap-2">
@@ -734,6 +743,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <LabelSaveIndicator
           isSaving={descriptionAutosave.state.isSaving}
           isSaved={descriptionAutosave.state.isPersistentlySaved}
+          hasValue={!!general.description?.trim()}
           className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
         >
                       <div className="flex items-center gap-2">
@@ -783,6 +793,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <LabelSaveIndicator
               isSaving={collaborationTypeAutosave.state.isSaving}
               isSaved={collaborationTypeAutosave.state.isPersistentlySaved}
+              hasValue={!!general.collaborationType}
               className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
             >
               <div className="flex items-center gap-2">
@@ -876,6 +887,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <LabelSaveIndicator
               isSaving={plannedStartDateAutosave.state.isSaving}
               isSaved={plannedStartDateAutosave.state.isPersistentlySaved}
+              hasValue={!!general.plannedStartDate}
               className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
             >
               <div className="flex items-center gap-2">
@@ -917,6 +929,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <LabelSaveIndicator
               isSaving={plannedEndDateAutosave.state.isSaving}
               isSaved={plannedEndDateAutosave.state.isPersistentlySaved}
+              hasValue={!!general.plannedEndDate}
               className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
             >
               <div className="flex items-center gap-2">
@@ -958,6 +971,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <LabelSaveIndicator
               isSaving={actualStartDateAutosave.state.isSaving}
               isSaved={actualStartDateAutosave.state.isPersistentlySaved}
+              hasValue={!!general.actualStartDate}
               className={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate ? 'text-gray-400' : 'text-gray-700'}
             >
               <div className="flex items-center gap-2">
@@ -999,6 +1013,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <LabelSaveIndicator
               isSaving={actualEndDateAutosave.state.isSaving}
               isSaved={actualEndDateAutosave.state.isPersistentlySaved}
+              hasValue={!!general.actualEndDate}
               className={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate ? 'text-gray-400' : 'text-gray-700'}
             >
               <div className="flex items-center gap-2">
@@ -1228,6 +1243,11 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       return <GovernmentInputsSectionEnhanced 
         governmentInputs={governmentInputs} 
         onChange={setGovernmentInputs} 
+      />;
+    case "government_endorsement":
+      return <GovernmentEndorsementTab 
+        activityId={general.id}
+        readOnly={!permissions?.canEditActivity}
       />;
     case "documents":
       return <DocumentsAndImagesTabInline
@@ -1871,7 +1891,7 @@ function NewActivityPageContent() {
   
   const getSectionLabel = (sectionId: string): string => {
     const sectionLabels: Record<string, string> = {
-      metadata: "Administration",
+      metadata: "Metadata",
       general: "General Information",
       iati: "IATI Sync",
       sectors: "Sectors",
@@ -1889,6 +1909,7 @@ function NewActivityPageContent() {
       working_groups: "Working Groups",
       policy_markers: "Policy Markers",
       government: "Government Inputs",
+      government_endorsement: "Government Endorsement",
       documents: "Documents & Images",
       aid_effectiveness: "Aid Effectiveness",
       budgets: "Budgets",
@@ -2676,8 +2697,15 @@ function NewActivityPageContent() {
       title: "Supporting Info",
       sections: [
         { id: "documents", label: "Documents & Images" },
-        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
         { id: "aid_effectiveness", label: "Aid Effectiveness" }
+      ]
+    },
+    {
+      title: "Administration",
+      sections: [
+        { id: "metadata", label: "Metadata" },
+        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
+        ...(showGovernmentInputs ? [{ id: "government_endorsement", label: "Government Endorsement" }] : [])
       ]
     }
   ];

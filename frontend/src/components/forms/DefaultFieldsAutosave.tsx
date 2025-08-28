@@ -19,7 +19,7 @@ import { FinanceTypeSelect } from '@/components/forms/FinanceTypeSelect';
 import { TiedStatusSelect } from '@/components/forms/TiedStatusSelect';
 import { DisbursementChannelSelect } from '@/components/forms/DisbursementChannelSelect';
 import { LabelSaveIndicator, SaveIndicator } from '@/components/ui/save-indicator';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, X } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { getFieldCompletionStatus, hasFieldValue } from '@/utils/defaultFieldsValidation';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
@@ -213,6 +213,14 @@ export function DefaultFieldsAutosave({
     modalityOverrideAutosave.triggerFieldSave('true');
   };
 
+  // --- Handler for clearing modality ---
+  const handleModalityClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setModality('');
+    onDefaultsChange?.('default_aid_modality', '');
+    modalityAutosave.triggerFieldSave('');
+  };
+
   return (
     <div className="space-y-6 pb-24">
       <div className="border-b border-gray-200 pb-4">
@@ -394,58 +402,71 @@ export function DefaultFieldsAutosave({
                 <HelpTextTooltip content="Provides an overarching classification that combines aid type, flow type, finance type, and tied status. It offers a simplified summary view of how resources are structured and delivered by default across an activity." />
                 {/* Show green tick when both Finance Type and Aid Type are completed (required for modality calculation) */}
                 {fieldCompletionStatus.defaultFinanceType && fieldCompletionStatus.defaultAidType && (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-green-500" />
                 )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pb-8">
               {/* Default Modality */}
               <div className="space-y-2">
-                <LabelSaveIndicator
-                  isSaving={modalityAutosave.state.isSaving}
-                  isSaved={!!modalityAutosave.state.lastSaved && !modalityAutosave.state.isSaving}
-                  hasValue={fieldCompletionStatus.default_aid_modality}
-                  className="text-gray-700"
-                >
-                  Modality
-                </LabelSaveIndicator>
-                <Select
-                  value={String(modality)}
-                  onValueChange={handleModalityChange}
-                  disabled={!modalityOverride}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select default modality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">1</span>
-                      <span className="font-medium">Grant</span>
-                    </SelectItem>
-                    <SelectItem value="2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">2</span>
-                      <span className="font-medium">Loan</span>
-                    </SelectItem>
-                    <SelectItem value="3">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">3</span>
-                      <span className="font-medium">Grant – Technical Assistance</span>
-                    </SelectItem>
-                    <SelectItem value="4">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">4</span>
-                      <span className="font-medium">Loan – Technical Assistance</span>
-                    </SelectItem>
-                    <SelectItem value="5">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">5</span>
-                      <span className="font-medium">Other / Needs Review</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <SaveIndicator 
+                    isSaving={modalityAutosave.state.isSaving}
+                    isSaved={!!modalityAutosave.state.lastSaved && !modalityAutosave.state.isSaving}
+                    size="sm"
+                    className=""
+                  />
+                </div>
+                <div className="relative">
+                  <Select
+                    value={String(modality)}
+                    onValueChange={handleModalityChange}
+                    disabled={!modalityOverride}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select default modality" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">1</span>
+                        <span className="font-medium">Grant</span>
+                      </SelectItem>
+                      <SelectItem value="2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">2</span>
+                        <span className="font-medium">Loan</span>
+                      </SelectItem>
+                      <SelectItem value="3">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">3</span>
+                        <span className="font-medium">Grant – Technical Assistance</span>
+                      </SelectItem>
+                      <SelectItem value="4">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">4</span>
+                        <span className="font-medium">Loan – Technical Assistance</span>
+                      </SelectItem>
+                      <SelectItem value="5">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">5</span>
+                        <span className="font-medium">Other / Needs Review</span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {modality && modalityOverride && (
+                    <button
+                      type="button"
+                      onClick={handleModalityClear}
+                      className="absolute right-7 top-1/2 transform -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                      aria-label="Clear selection"
+                      tabIndex={-1}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Override Auto Modality */}
+              {/* Override Default Modality */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
-                  Override Auto Modality
+                  Override Default Modality
                 </label>
                 <div className="flex items-center gap-2">
                   <Switch
@@ -453,9 +474,6 @@ export function DefaultFieldsAutosave({
                     onCheckedChange={handleOverrideToggle}
                     id="modality-override"
                   />
-                  <label htmlFor="modality-override" className="text-xs text-gray-600">
-                    Override Auto Modality
-                  </label>
                 </div>
               </div>
             </CardContent>

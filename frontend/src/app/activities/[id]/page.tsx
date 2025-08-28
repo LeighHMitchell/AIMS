@@ -71,7 +71,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
-import SectorAllocationPieChart from "@/components/charts/SectorAllocationPieChart"
+
 
 interface Activity {
   id: string
@@ -153,6 +153,18 @@ export default function ActivityDetailPage() {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
+
+  // Handle tab change with URL synchronization
+  const handleTabChange = (tabValue: string) => {
+    setActiveTab(tabValue);
+    
+    // Update URL with the new tab parameter
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    params.set('tab', tabValue);
+    
+    // Use replace to avoid adding to browser history for each tab switch
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
   
   // Check if user is trying to join as contributor
   const isJoinAction = searchParams?.get('action') === 'join'
@@ -881,7 +893,7 @@ export default function ActivityDetailPage() {
 
           {/* Main Content Tabs */}
           <Card className="border-slate-200">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-10' : 'grid-cols-9'} bg-slate-50 border-b border-slate-200`}>
                 <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Overview
@@ -1125,23 +1137,31 @@ export default function ActivityDetailPage() {
                   {/* Sector Allocation Visualization */}
                   {activity.sectors && activity.sectors.length > 0 ? (
                     <>
-                      {/* Treemap Visualization */}
+                      {/* Sector Allocation */}
                       <Card className="border-slate-200">
                         <CardHeader>
                           <CardTitle className="text-slate-900">Sector Allocation</CardTitle>
                           <CardDescription>
-                            Interactive visualization of sector allocations grouped by DAC categories
+                            Overview of sector allocations for this activity
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <div className="w-full" style={{ height: '800px' }}>
-                            <SectorAllocationPieChart 
-                              allocations={activity.sectors.map((s: any) => ({
-                                id: s.id,
-                                code: s.sector_code || s.code,
-                                percentage: s.percentage
-                              }))}
-                            />
+                          <div className="w-full">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {activity.sectors.map((s: any, index: number) => (
+                                <div key={index} className="p-4 border rounded-lg bg-gray-50">
+                                  <div className="font-medium text-sm text-gray-900">
+                                    {s.sector_code || s.code}
+                                  </div>
+                                  <div className="text-xs text-gray-600 mt-1">
+                                    {s.sector_name || s.name}
+                                  </div>
+                                  <div className="text-lg font-semibold text-blue-600 mt-2">
+                                    {s.percentage}%
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </CardContent>
                       </Card>

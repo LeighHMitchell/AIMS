@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Lock } from "lucide-react"
 import { TabCompletionIndicator } from "@/utils/tab-completion"
@@ -38,11 +39,25 @@ export default function ActivityEditorNavigation({
   activityCreated = false,
   tabCompletionStatus = {}
 }: ActivityEditorNavigationProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Enhanced section change handler that updates URL
+  const handleSectionChange = (sectionId: string) => {
+    // Call the original onSectionChange handler
+    onSectionChange(sectionId)
+    
+    // Update URL with the new section parameter
+    const params = new URLSearchParams(searchParams?.toString() || '')
+    params.set('section', sectionId)
+    
+    // Use replace to avoid adding to browser history for each tab switch
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }
   const navigationGroups: NavigationGroup[] = [
     {
       title: "Activity Overview",
       sections: [
-        { id: "metadata", label: "Administration" },
         { id: "general", label: "General" },
         { id: "iati", label: "IATI Sync" },
         { id: "sectors", label: "Sectors" },
@@ -81,8 +96,15 @@ export default function ActivityEditorNavigation({
       title: "Supporting Info",
       sections: [
         { id: "documents", label: "Documents & Images" },
-        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
         { id: "aid_effectiveness", label: "Aid Effectiveness" }
+      ]
+    },
+    {
+      title: "Administration",
+      sections: [
+        { id: "metadata", label: "Metadata" },
+        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
+        ...(showGovernmentInputs ? [{ id: "government_endorsement", label: "Government Endorsement" }] : [])
       ]
     }
   ]
@@ -123,7 +145,7 @@ export default function ActivityEditorNavigation({
                   <button
                     key={section.id}
                     type="button"
-                    onClick={() => !isLocked && onSectionChange(section.id)}
+                    onClick={() => !isLocked && handleSectionChange(section.id)}
                     disabled={isLocked}
                     className={cn(
                       "w-full text-left py-2 px-3 rounded text-sm font-normal transition-all duration-200 ease-in-out",

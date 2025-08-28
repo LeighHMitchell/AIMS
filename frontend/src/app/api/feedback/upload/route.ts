@@ -23,6 +23,11 @@ export async function POST(request: NextRequest) {
       userId
     });
 
+    // Debug: Check if it's a screenshot
+    if (file.name.toLowerCase().includes('screenshot') || file.name.toLowerCase().includes('screen shot')) {
+      console.log('[Feedback Upload] Screenshot detected:', file.name);
+    }
+
     // Validate file type - allow images and common document types
     const allowedTypes = [
       'image/jpeg',
@@ -39,8 +44,21 @@ export async function POST(request: NextRequest) {
     
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({
-        error: 'Invalid file type. Please upload images, PDFs, or text documents.'
+        error: `Invalid file type: ${file.type}. Please upload images, PDFs, or text documents.`
       }, { status: 400 });
+    }
+
+    // Use a more permissive content type for Supabase storage
+    // Supabase storage can be strict about MIME types
+    let supabaseContentType = 'application/octet-stream';
+    
+    if (file.type.startsWith('image/')) {
+      supabaseContentType = file.type;
+    } else if (file.type === 'application/pdf') {
+      supabaseContentType = 'application/pdf';
+    } else {
+      // For other file types, use octet-stream to avoid MIME type restrictions
+      supabaseContentType = 'application/octet-stream';
     }
 
     // Validate file size (max 10MB for feedback attachments)
@@ -55,7 +73,17 @@ export async function POST(request: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
+    console.log('[Feedback Upload] Supabase config check:', {
+      hasUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      urlLength: supabaseUrl?.length || 0
+    });
+    
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[Feedback Upload] Missing Supabase configuration:', {
+        supabaseUrl: !!supabaseUrl,
+        supabaseServiceKey: !!supabaseServiceKey
+      });
       return NextResponse.json({
         error: 'File upload service not configured'
       }, { status: 500 });
@@ -79,7 +107,7 @@ export async function POST(request: NextRequest) {
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('uploads')
       .upload(storagePath, fileBuffer, {
-        contentType: file.type,
+        contentType: supabaseContentType,
         cacheControl: '3600',
         upsert: false
       });

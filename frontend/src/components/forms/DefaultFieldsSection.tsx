@@ -124,7 +124,7 @@ export function DefaultFieldsSection({
             <CardTitle className="text-lg font-semibold">Default Values</CardTitle>
             <HelpTextTooltip content="These defaults will be automatically applied to new transactions in this activity." />
             {coreFieldsCompleted && (
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-green-500" />
             )}
           </div>
           <div className="flex items-center gap-2">

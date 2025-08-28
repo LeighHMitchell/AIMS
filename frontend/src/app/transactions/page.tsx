@@ -38,6 +38,7 @@ export default function TransactionsPage() {
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [organizations, setOrganizations] = useState<any[]>([]);
+  const [activityPartnerId, setActivityPartnerId] = useState<string | null>(null);
   
   const [filters, setFilters] = useState<FilterState>({
     transactionType: "all",
@@ -88,6 +89,27 @@ export default function TransactionsPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filters]);
+
+  // Fetch activity data when editing a transaction to get partner_id
+  useEffect(() => {
+    if (editingTransaction?.activity_id) {
+      const fetchActivityData = async () => {
+        try {
+          const response = await fetch(`/api/activities/${editingTransaction.activity_id}`);
+          if (response.ok) {
+            const activityData = await response.json();
+            setActivityPartnerId(activityData.partner_id || null);
+          }
+        } catch (error) {
+          console.error('Error fetching activity data:', error);
+          setActivityPartnerId(null);
+        }
+      };
+      fetchActivityData();
+    } else {
+      setActivityPartnerId(null);
+    }
+  }, [editingTransaction?.activity_id]);
 
   // Client-side sorting function
   const handleSort = (field: string) => {
@@ -556,6 +578,7 @@ export default function TransactionsPage() {
           onSubmit={handleTransactionSubmit}
           transaction={editingTransaction}
           activityId={editingTransaction?.activity_id || ''}
+          activityPartnerId={activityPartnerId || undefined}
         />
       </div>
     </MainLayout>

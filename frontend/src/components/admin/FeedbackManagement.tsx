@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FEEDBACK_TYPES, FEEDBACK_STATUS_TYPES, FEEDBACK_PRIORITY_TYPES } from '@/data/feedback-types';
-import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText } from 'lucide-react';
+import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
@@ -93,6 +94,7 @@ export function FeedbackManagement() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [showArchived, setShowArchived] = useState(false);
 
   // Fetch feedback
   const fetchFeedback = async () => {
@@ -114,6 +116,23 @@ export function FeedbackManagement() {
       if (response.ok) {
         const data = await response.json();
         console.log('[FeedbackManagement] Fetched feedback:', data);
+        
+        // Debug: Check if any feedback has attachments
+        const feedbackWithAttachments = (data.feedback || []).filter((item: any) => item.attachment_url);
+        console.log('[FeedbackManagement] Feedback items with attachments:', feedbackWithAttachments.length);
+        if (feedbackWithAttachments.length > 0) {
+          console.log('[FeedbackManagement] Sample attachment data:', feedbackWithAttachments[0]);
+        }
+        
+        // Debug: Show all feedback data structure
+        console.log('[FeedbackManagement] All feedback data structure:', (data.feedback || []).map((item: any) => ({
+          id: item.id,
+          subject: item.subject,
+          hasAttachmentUrl: !!item.attachment_url,
+          attachmentUrl: item.attachment_url,
+          attachmentType: item.attachment_type,
+          attachmentFilename: item.attachment_filename
+        })));
         
         // Ensure each feedback item has proper user data structure
         const feedbackWithSafeUsers = (data.feedback || []).map((item: any) => ({
@@ -174,6 +193,20 @@ export function FeedbackManagement() {
       toast.error("Failed to update feedback. Please try again.");
     }
   };
+
+  // Archive/unarchive feedback
+  const toggleArchive = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'archived' ? 'open' : 'archived';
+    await updateFeedback(id, { status: newStatus });
+  };
+
+  // Filter feedback based on status, category, and archived state
+  const filteredFeedback = feedback.filter(item => {
+    const statusMatch = filterStatus === 'all' || item.status === filterStatus;
+    const categoryMatch = filterCategory === 'all' || item.category === filterCategory;
+    const archivedMatch = showArchived ? item.status === 'archived' : item.status !== 'archived';
+    return statusMatch && categoryMatch && archivedMatch;
+  });
 
   const getStatusBadgeVariant = (status: string) => {
     const statusType = FEEDBACK_STATUS_TYPES.find(s => s.code === status);
@@ -249,95 +282,189 @@ export function FeedbackManagement() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">View</label>
+              <div className="flex gap-2">
+                <Button
+                  variant={!showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(false)}
+                  className="flex-1"
+                >
+                  Active
+                </Button>
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(true)}
+                  className="flex-1"
+                >
+                  <Archive className="h-4 w-4 mr-1" />
+                  Archived
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Feedback List */}
-      <div className="space-y-4">
-        {loading ? (
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center text-muted-foreground">
-                Loading feedback...
-              </div>
-            </CardContent>
-          </Card>
-        ) : feedback.length === 0 ? (
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center text-muted-foreground">
-                <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p>No feedback found</p>
-                <p className="text-sm mt-2">Feedback submitted by users will appear here</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          feedback.map((item) => {
-            const categoryInfo = getCategoryInfo(item.category);
-            const CategoryIcon = getIconComponent(categoryInfo.icon);
-            return (
-              <Card key={item.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <CategoryIcon className="h-5 w-5 text-gray-600" />
-                        <div>
-                          <h3 className="font-medium">
-                            {item.subject || `${categoryInfo.name} from ${getUserDisplayName(item.user)}`}
-                          </h3>
-                          <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                            <User className="h-3 w-3" />
-                            {getUserDisplayName(item.user)} ({item.user?.email || 'Unknown'})
-                            <Calendar className="h-3 w-3 ml-2" />
-                            {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
-                          </p>
+      {/* Feedback Table */}
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="py-8 text-center text-muted-foreground">
+              Loading feedback...
+            </div>
+          ) : filteredFeedback.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground">
+              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p>No feedback found</p>
+              <p className="text-sm mt-2">
+                {showArchived ? 'No archived feedback' : 'Feedback submitted by users will appear here'}
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]">Type</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Attachment</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="w-[200px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredFeedback.map((item) => {
+                  const categoryInfo = getCategoryInfo(item.category);
+                  const CategoryIcon = getIconComponent(categoryInfo.icon);
+                  return (
+                    <TableRow key={item.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          <CategoryIcon className="h-4 w-4 text-gray-600" />
                         </div>
-                      </div>
-                      
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {item.message}
-                      </p>
-                      
-                      <div className="flex items-center gap-2">
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-[300px]">
+                          <div className="font-medium truncate">
+                            {item.subject || `${categoryInfo.name} from ${getUserDisplayName(item.user)}`}
+                          </div>
+                          <div className="text-sm text-gray-500 line-clamp-2 mt-1">
+                            {item.message}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="font-medium">{getUserDisplayName(item.user)}</div>
+                          <div className="text-gray-500">{item.user?.email || 'Unknown'}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <Badge variant={getStatusBadgeVariant(item.status)}>
                           {FEEDBACK_STATUS_TYPES.find(s => s.code === item.status)?.name || item.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
                         <Badge variant={getPriorityBadgeVariant(item.priority)}>
                           {FEEDBACK_PRIORITY_TYPES.find(p => p.code === item.priority)?.name || item.priority}
                         </Badge>
-                        <Badge variant="outline">
-                          {categoryInfo.name}
-                        </Badge>
-                        {item.attachment_url && (
-                          <Badge variant="secondary" className="flex items-center gap-1">
-                            <Paperclip className="h-3 w-3" />
-                            Attachment
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedFeedback(item);
-                        setIsDetailModalOpen(true);
-                      }}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          // Debug logging for attachment data
+                          if (item.attachment_url) {
+                            console.log('[FeedbackTable] Item with attachment:', {
+                              id: item.id,
+                              attachment_url: item.attachment_url,
+                              attachment_type: item.attachment_type,
+                              attachment_filename: item.attachment_filename
+                            });
+                          }
+                          
+                          return item.attachment_url ? (
+                            <div className="flex items-center gap-2">
+                              {item.attachment_type?.startsWith('image/') ? (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedFeedback(item);
+                                      setIsDetailModalOpen(true);
+                                    }}
+                                    className="hover:opacity-80 transition-opacity"
+                                    title="Click to view full size"
+                                  >
+                                    <img 
+                                      src={item.attachment_url} 
+                                      alt="Thumbnail"
+                                      className="w-16 h-16 object-cover rounded border cursor-pointer hover:shadow-md transition-shadow"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        console.error('[FeedbackTable] Image load error for:', item.attachment_url);
+                                        target.style.display = 'none';
+                                      }}
+                                      onLoad={() => {
+                                        console.log('[FeedbackTable] Image loaded successfully:', item.attachment_url);
+                                      }}
+                                    />
+                                  </button>
+                                  <Image className="h-4 w-4 text-gray-500" />
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-8 w-8 text-gray-500" />
+                                  <span className="text-xs text-gray-500">{item.attachment_filename}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          );
+                        })()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-500">
+                          {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedFeedback(item);
+                              setIsDetailModalOpen(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleArchive(item.id, item.status)}
+                            title={item.status === 'archived' ? 'Restore' : 'Archive'}
+                          >
+                            {item.status === 'archived' ? (
+                              <ArchiveRestore className="h-4 w-4" />
+                            ) : (
+                              <Archive className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Detail Modal */}
       <FeedbackDetailModal
@@ -427,15 +554,25 @@ function FeedbackDetailModal({
                       )}
                     </div>
                     <div className="border rounded-lg overflow-hidden bg-gray-50">
-                      <img 
-                        src={feedback.attachment_url} 
-                        alt="Feedback attachment"
-                        className="max-w-full max-h-64 object-contain mx-auto"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
+                      <button
+                        onClick={() => {
+                          // Open image in new tab for full size viewing
+                          window.open(feedback.attachment_url, '_blank');
                         }}
-                      />
+                        className="w-full hover:opacity-90 transition-opacity cursor-pointer"
+                        title="Click to view full size in new tab"
+                      >
+                        <img 
+                          src={feedback.attachment_url} 
+                          alt="Feedback attachment"
+                          className="max-w-full max-h-96 object-contain mx-auto cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                      </button>
+                      <p className="text-xs text-gray-500 text-center mt-2">Click image to view full size</p>
                     </div>
                     <Button variant="outline" size="sm" asChild>
                       <a href={feedback.attachment_url} target="_blank" rel="noopener noreferrer">

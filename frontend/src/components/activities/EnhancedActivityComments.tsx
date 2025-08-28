@@ -109,7 +109,7 @@ export function EnhancedActivityComments({
   const [commentType, setCommentType] = useState<'Question' | 'Feedback'>('Feedback');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
-  const [replyType, setReplyType] = useState<'Question' | 'Feedback'>('Feedback');
+
   const [activeTab, setActiveTab] = useState<'open' | 'resolved' | 'archived'>('open');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
   const [filterType, setFilterType] = useState<'all' | 'question' | 'feedback'>('all');
@@ -891,8 +891,6 @@ export function EnhancedActivityComments({
                     replyingTo={replyingTo}
                     replyContent={replyContent}
                     setReplyContent={setReplyContent}
-                    replyType={replyType}
-                    setReplyType={setReplyType}
                     onSubmitReply={handleSubmitReply}
                     reactionDisplay={getReactionDisplay(comment.id)}
                     user={user}
@@ -928,8 +926,6 @@ interface CommentCardProps {
   replyingTo: string | null;
   replyContent: string;
   setReplyContent: (content: string) => void;
-  replyType: 'Question' | 'Feedback';
-  setReplyType: (type: 'Question' | 'Feedback') => void;
   onSubmitReply: (parentId: string) => void;
   reactionDisplay: Record<string, { count: number; users: string[]; hasUserReacted: boolean }>;
   user: any;
@@ -947,8 +943,6 @@ function CommentCard({
   replyingTo,
   replyContent,
   setReplyContent,
-  replyType,
-  setReplyType,
   onSubmitReply,
   reactionDisplay,
   user,

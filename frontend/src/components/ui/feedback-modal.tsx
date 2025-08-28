@@ -32,12 +32,13 @@ const getIconComponent = (iconName: string) => {
 export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const { user } = useUser();
   const { toast } = useToast();
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('comment');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const selectedType = FEEDBACK_TYPES.find(type => type.code === selectedCategory);
 
@@ -69,6 +70,49 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      // Validate file type
+      const allowedTypes = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+        'application/pdf', 'text/plain', 'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Please upload images, PDFs, or text documents only.");
+        return;
+      }
+
+      // Validate file size (10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error("File size must be less than 10MB.");
+        return;
+      }
+
+      setSelectedFile(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,7 +151,9 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
           attachmentData = await uploadResponse.json();
           console.log('[FeedbackModal] File uploaded successfully:', attachmentData);
         } else {
-          throw new Error('Failed to upload attachment');
+          const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown upload error' }));
+          console.error('[FeedbackModal] Upload failed:', errorData);
+          throw new Error(`Failed to upload attachment: ${errorData.error || 'Unknown error'}`);
         }
         
         setIsUploading(false);
@@ -135,16 +181,20 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         toast.success("Thank you for your feedback! We'll review it and get back to you if needed.");
         
         // Reset form
-        setSelectedCategory('');
+        setSelectedCategory('comment');
         setSubject('');
         setMessage('');
         setSelectedFile(null);
         onClose();
       } else {
-        throw new Error('Failed to submit feedback');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown submission error' }));
+        console.error('[FeedbackModal] Submission failed:', errorData);
+        throw new Error(`Failed to submit feedback: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      toast.error("There was an error submitting your feedback. Please try again.");
+      console.error('[FeedbackModal] Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`There was an error submitting your feedback: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
       setIsUploading(false);
@@ -153,7 +203,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   const handleClose = () => {
     if (isSubmitting) return;
-    setSelectedCategory('');
+    setSelectedCategory('comment');
     setSubject('');
     setMessage('');
     setSelectedFile(null);
@@ -188,7 +238,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="category">What type of feedback is this? *</Label>
+            <Label htmlFor="category">What type of feedback is this?</Label>
             <Select value={selectedCategory} onValueChange={setSelectedCategory} required>
               <SelectTrigger>
                 <SelectValue placeholder="Select a category..." />
@@ -200,10 +250,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     <SelectItem key={type.code} value={type.code}>
                       <div className="flex items-center gap-2">
                         <IconComponent className="h-4 w-4" />
-                        <div>
-                          <div className="font-medium">{type.name}</div>
-                          <div className="text-xs text-muted-foreground">{type.description}</div>
-                        </div>
+                        <div className="font-medium">{type.name}</div>
                       </div>
                     </SelectItem>
                   );
@@ -238,12 +285,21 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
           {/* File Upload Section */}
           <div className="space-y-2">
-            <Label htmlFor="attachment">Attachment (optional)</Label>
+            <Label htmlFor="attachment">Attachment</Label>
             <div className="space-y-3">
               {!selectedFile ? (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                    isDragOver 
+                      ? 'border-blue-400 bg-blue-50' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   <div className="space-y-2">
-                    <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                    <Upload className={`mx-auto h-8 w-8 ${isDragOver ? 'text-blue-500' : 'text-gray-400'}`} />
                     <div>
                       <label htmlFor="file-upload" className="cursor-pointer">
                         <span className="text-sm font-medium text-blue-600 hover:text-blue-500">

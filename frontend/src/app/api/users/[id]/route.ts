@@ -56,7 +56,15 @@ export async function PUT(
       .from('users')
       .update(updateData)
       .eq('id', params.id)
-      .select()
+      .select(`
+        *,
+        organizations:organization_id (
+          id,
+          name,
+          type,
+          country
+        )
+      `)
       .single()
     
     if (error) {
@@ -68,7 +76,25 @@ export async function PUT(
     }
     
     console.log('[AIMS] Updated user in Supabase:', data.email)
-    return NextResponse.json(data, { status: 200 })
+    
+    // Transform data to match frontend User type expectations
+    const transformedData = {
+      ...data,
+      name: data.name || `${data.first_name || ''} ${data.middle_name ? data.middle_name + ' ' : ''}${data.last_name || ''}`.trim() || data.email,
+      firstName: data.first_name,
+      middleName: data.middle_name,
+      lastName: data.last_name,
+      suffix: data.suffix,
+      gender: data.gender,
+      profilePicture: data.avatar_url, // Map avatar_url to profilePicture
+      organisation: data.organisation || data.organizations?.name,
+      organization: data.organizations,
+      contactType: data.contact_type,
+      faxNumber: data.fax_number,
+      notes: data.notes
+    };
+    
+    return NextResponse.json(transformedData, { status: 200 })
     
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error)
