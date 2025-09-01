@@ -129,8 +129,11 @@ export function useFieldAutosave(
         // Map field names to their database equivalents
         const fieldMappings: Record<string, string> = {
           'title': 'title',
+          'acronym': 'acronym',
           'description': 'description',
           'collaborationType': 'collaborationType',
+          'activityScope': 'activityScope',
+          'language': 'language',
           'activityStatus': 'activityStatus',
           'publicationStatus': 'publicationStatus',
           'plannedStartDate': 'plannedStartDate',

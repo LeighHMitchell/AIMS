@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activity xml:lang="en" default-currency="USD" last-updated-datetime="2024-12-20T10:00:00Z">
+  
+  <!-- BASIC INFO -->
+  <iati-identifier>GB-GOV-1-WATERPROJECT-001</iati-identifier>
+  
+  <title>
+    <narrative xml:lang="en">Rural Water Supply Project - Phase 1</narrative>
+  </title>
+  
+  <description type="1">
+    <narrative xml:lang="en">Construction of 25 water wells and installation of solar-powered water pumping systems in rural communities of Northern Region, providing clean water access to approximately 5,000 beneficiaries.</narrative>
+  </description>
+  
+  <activity-status code="2" />
+  <collaboration-type code="1" />
+  <activity-scope code="4" />
+  
+  <!-- FINANCIAL INFO -->
+  <default-finance-type code="110" />
+  <default-flow-type code="10" />
+  <default-aid-type code="C01" />
+  <default-tied-status code="5" />
+  
+  <!-- DATES -->
+  <activity-date iso-date="2024-01-15" type="1">
+    <narrative>Planned start date</narrative>
+  </activity-date>
+  
+  <activity-date iso-date="2024-02-01" type="2">
+    <narrative>Actual start date</narrative>
+  </activity-date>
+  
+  <activity-date iso-date="2025-01-14" type="3">
+    <narrative>Planned end date</narrative>
+  </activity-date>
+  
+  <activity-date iso-date="2025-01-31" type="4">
+    <narrative>Actual end date</narrative>
+  </activity-date>
+  
+  <!-- ORGANIZATIONS/PARTNERS -->
+  <reporting-org ref="GB-GOV-1" type="10">
+    <narrative>UK Department for International Development</narrative>
+  </reporting-org>
+  
+  <participating-org role="1" type="10" ref="GB-GOV-1">
+    <narrative>UK Department for International Development</narrative>
+  </participating-org>
+  
+  <participating-org role="4" type="21" ref="UG-NGO-001">
+    <narrative>Uganda Water Development Foundation</narrative>
+  </participating-org>
+  
+  <!-- LOCATIONS -->
+  <recipient-country code="UG" percentage="100">
+    <narrative>Uganda</narrative>
+  </recipient-country>
+  
+  <recipient-region vocabulary="1" code="298" percentage="100">
+    <narrative>Africa</narrative>
+  </recipient-region>
+  
+  <!-- SECTORS -->
+  <sector vocabulary="1" code="14030" percentage="80">
+    <narrative>Basic drinking water supply</narrative>
+  </sector>
+  
+  <sector vocabulary="1" code="14081" percentage="20">
+    <narrative>Education and training in water supply and sanitation</narrative>
+  </sector>
+  
+  <!-- POLICY MARKERS -->
+  <policy-marker vocabulary="1" code="1" significance="2">
+    <narrative>Gender Equality</narrative>
+  </policy-marker>
+  
+  <policy-marker vocabulary="1" code="2" significance="1">
+    <narrative>Aid to Environment</narrative>
+  </policy-marker>
+  
+  <!-- BUDGETS -->
+  <budget type="1" status="1">
+    <period>
+      <period-start iso-date="2024-01-01" />
+      <period-end iso-date="2024-12-31" />
+    </period>
+    <value currency="USD" value-date="2024-01-01">200000</value>
+  </budget>
+  
+  <budget type="1" status="1">
+    <period>
+      <period-start iso-date="2025-01-01" />
+      <period-end iso-date="2025-12-31" />
+    </period>
+    <value currency="USD" value-date="2025-01-01">150000</value>
+  </budget>
+  
+  <!-- TRANSACTIONS -->
+  <transaction ref="TXN-001">
+    <transaction-type code="1" />
+    <transaction-date iso-date="2024-02-15" />
+    <value currency="USD" value-date="2024-02-15">150000</value>
+    <description>
+      <narrative>Initial disbursement for equipment procurement</narrative>
+    </description>
+    <provider-org provider-activity-id="GB-GOV-1-PARENT">
+      <narrative>UK Department for International Development</narrative>
+    </provider-org>
+    <receiver-org receiver-activity-id="UG-NGO-001-IMPL">
+      <narrative>Uganda Water Development Foundation</narrative>
+    </receiver-org>
+  </transaction>
+  
+  <transaction ref="TXN-002">
+    <transaction-type code="3" />
+    <transaction-date iso-date="2024-06-30" />
+    <value currency="USD" value-date="2024-06-30">75000</value>
+    <description>
+      <narrative>Second disbursement for construction activities</narrative>
+    </description>
+  </transaction>
+  
+  <!-- RESULTS -->
+  <result type="1">
+    <title>
+      <narrative>Improved access to clean water</narrative>
+    </title>
+    <description>
+      <narrative>Increase the percentage of population with access to clean water sources</narrative>
+    </description>
+    <indicator measure="1">
+      <title>
+        <narrative>Number of people with access to clean water</narrative>
+      </title>
+      <description>
+        <narrative>Total number of beneficiaries with reliable access to clean water within 1km</narrative>
+      </description>
+      <baseline year="2023" value="500">
+        <comment>
+          <narrative>Baseline assessment conducted in December 2023</narrative>
+        </comment>
+      </baseline>
+      <target value="5500">
+        <period>
+          <period-start iso-date="2024-01-01" />
+          <period-end iso-date="2025-12-31" />
+        </period>
+        <comment>
+          <narrative>Target for project completion</narrative>
+        </comment>
+      </target>
+    </indicator>
+  </result>
+  
+  <!-- CONTACT INFO -->
+  <contact-info type="1">
+    <organisation>
+      <narrative>Uganda Water Development Foundation</narrative>
+    </organisation>
+    <department>
+      <narrative>Project Management Office</narrative>
+    </department>
+    <person-name>
+      <narrative>Sarah Nakamura</narrative>
+    </person-name>
+    <job-title>
+      <narrative>Project Coordinator</narrative>
+    </job-title>
+    <telephone>+256-123-456-789</telephone>
+    <email>sarah.nakamura@uwdf.org</email>
+    <mailing-address>
+      <narrative>PO Box 12345, Kampala, Uganda</narrative>
+    </mailing-address>
+  </contact-info>
+  
+</iati-activity>

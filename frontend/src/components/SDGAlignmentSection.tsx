@@ -76,10 +76,33 @@ export default function SDGAlignmentSection({
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [hasUserEdited, setHasUserEdited] = useState(false);
+  const [savedMappings, setSavedMappings] = useState<SDGMapping[]>([]);
 
   // Calculate total contribution percentage
   const totalContribution = mappings.reduce((sum, m) => sum + (m.contributionPercent || 0), 0);
   const isValidContribution = contributionMode === 'simple' || totalContribution === 100;
+
+  // Helper function to check if an SDG goal has been saved
+  const isGoalSaved = (goalId: number): boolean => {
+    const currentGoalMappings = mappings.filter(m => m.sdgGoal === goalId);
+    const savedGoalMappings = savedMappings.filter(m => m.sdgGoal === goalId);
+    
+    // If no current mappings for this goal, it's considered "saved" (empty state)
+    if (currentGoalMappings.length === 0) {
+      return savedGoalMappings.length === 0;
+    }
+    
+    // Check if current mappings match saved mappings
+    return currentGoalMappings.length === savedGoalMappings.length &&
+           currentGoalMappings.every(current => 
+             savedGoalMappings.some(saved => 
+               saved.sdgGoal === current.sdgGoal &&
+               saved.sdgTarget === current.sdgTarget &&
+               saved.contributionPercent === current.contributionPercent &&
+               saved.notes === current.notes
+             )
+           );
+  };
 
   // Debounced save function
   const debouncedSave = async (updatedMappings: SDGMapping[]) => {
@@ -102,6 +125,7 @@ export default function SDGAlignmentSection({
         
         if (response.ok) {
           setLastSaved(new Date());
+          setSavedMappings([...updatedMappings]); // Track which mappings are saved
           toast.success('SDG mappings saved successfully', { 
             position: 'top-right',
             duration: 2000 
@@ -134,6 +158,7 @@ export default function SDGAlignmentSection({
     const goals = Array.from(new Set(sdgMappings.map(m => m.sdgGoal)));
     setSelectedGoals(goals);
     setMappings(sdgMappings);
+    setSavedMappings([...sdgMappings]); // Initialize with current data as "saved"
     setHasInitialized(true);
   }, [sdgMappings]);
 
@@ -307,7 +332,12 @@ export default function SDGAlignmentSection({
                           className="w-full h-full"
                         />
                         {selectedGoals.includes(goal.id) && (
-                          <div className="absolute bottom-2 right-2 bg-blue-600 rounded-full p-1 shadow-lg">
+                          <div className={cn(
+                            "absolute bottom-2 right-2 rounded-full p-1 shadow-lg",
+                            isGoalSaved(goal.id) 
+                              ? "bg-green-600" 
+                              : "bg-blue-600"
+                          )}>
                             <Check className="h-4 w-4 text-white" />
                           </div>
                         )}
@@ -350,7 +380,7 @@ export default function SDGAlignmentSection({
               const goalTargetMappings = getGoalTargetMappings(goalId);
 
               return (
-                <div key={goalId} className="border rounded-lg p-4">
+                <div key={goalId} className="border rounded-lg p-4 relative">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
                       <div className="w-16 h-16 flex-shrink-0">
@@ -361,7 +391,12 @@ export default function SDGAlignmentSection({
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold">Goal {goal.id}: {goal.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold">Goal {goal.id}: {goal.name}</h4>
+                          {isGoalSaved(goalId) && (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>
                       </div>
                     </div>

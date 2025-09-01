@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { ChevronsUpDown, Check, Search, X, User } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { ChevronsUpDown, Check, Search, X, User, CheckCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
@@ -329,6 +329,8 @@ export function FocalPointDropdown({
                     <Badge variant={getRoleBadgeVariant(assignment.role)} className="text-xs">
                       {getRoleDisplayLabel(assignment.role)}
                     </Badge>
+                    {/* Green tick to show focal point is saved */}
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
                   </div>
 
                   {orgDisplay && (
@@ -346,7 +348,7 @@ export function FocalPointDropdown({
                 <button
                   type="button"
                   onClick={() => handleRemoveUser(assignment.id, assignment.name)}
-                  className="h-6 w-6 rounded-full hover:bg-red-100 flex items-center justify-center transition-colors text-red-600 hover:text-red-700"
+                  className="h-6 w-6 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-600 hover:text-gray-700"
                   aria-label="Remove focal point"
                 >
                   <X className="h-4 w-4" />

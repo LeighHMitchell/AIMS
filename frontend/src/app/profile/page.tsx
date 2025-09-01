@@ -213,7 +213,7 @@ const languages = [
 ];
 
 export default function ProfilePage() {
-  const { user, setUser } = useUser();
+  const { user, setUser, refreshUser } = useUser();
   const [activeTab, setActiveTab] = useState("personal");
   const [isEditing, setIsEditing] = useState(false);
   const [emailChangeDialogOpen, setEmailChangeDialogOpen] = useState(false);

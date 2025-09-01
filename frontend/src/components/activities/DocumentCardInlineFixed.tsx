@@ -305,13 +305,7 @@ export function DocumentCardInlineFixed({
                 )}
                 </div>
 
-                {/* Second row: URL (truncated) */}
-                <div className="text-xs text-gray-500 flex items-center gap-1">
-                  <Globe className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate font-mono">{formData.url}</span>
-                </div>
-
-                {/* Third row: Action buttons */}
+                {/* Action buttons */}
                 <div className="flex gap-1 pt-1">
                   <Button
                     size="sm"
@@ -321,27 +315,6 @@ export function DocumentCardInlineFixed({
             >
               <Edit className="w-3 h-3" />
               Edit
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleCopyXml}
-              disabled={!validation.ok}
-                    className="text-xs gap-1 h-7 px-2"
-            >
-              <Copy className="w-3 h-3" />
-              {copyFeedback === 'xml' ? 'Copied!' : 'XML'}
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleCopyJson}
-                    className="text-xs gap-1 h-7 px-2"
-            >
-              <Copy className="w-3 h-3" />
-              {copyFeedback === 'json' ? 'Copied!' : 'JSON'}
             </Button>
             
             <Button

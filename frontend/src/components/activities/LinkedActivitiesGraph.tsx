@@ -84,13 +84,28 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
       }))
     ];
 
-    // Create links data
-    const links = linkedActivities.map(link => ({
-      source: currentActivity.id,
-      target: link.id,
-      type: link.relationshipType,
-      label: getRelationshipTypeName(link.relationshipType)
-    }));
+    // Create links data with correct arrow direction
+    const links = linkedActivities.map(link => {
+      // For Parent relationships (type '1'), the linked activity is the parent
+      // So the arrow should point FROM the parent TO the current activity
+      if (link.relationshipType === '1') {
+        return {
+          source: link.id, // Parent points to child
+          target: currentActivity.id, // Current activity is the child
+          type: link.relationshipType,
+          label: getRelationshipTypeName(link.relationshipType)
+        };
+      }
+      
+      // For all other relationships (Child, Sibling, Co-funded, Third Party)
+      // The arrow points FROM the current activity TO the linked activity
+      return {
+        source: currentActivity.id,
+        target: link.id,
+        type: link.relationshipType,
+        label: getRelationshipTypeName(link.relationshipType)
+      };
+    });
 
     // Create SVG and root group for zoom/pan
     const svg = d3.select(svgRef.current)

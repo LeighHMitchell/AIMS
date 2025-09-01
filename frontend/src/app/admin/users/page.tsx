@@ -28,7 +28,9 @@ import {
   Key,
   Mail,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  User as UserIcon,
+  ExternalLink
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
@@ -43,6 +45,8 @@ import { format } from "date-fns";
 import { UserManagementSkeleton } from "@/components/skeletons";
 import { ResetPasswordModal } from "@/components/ResetPasswordModal";
 import { EmailChangeConfirmDialog } from "@/components/EmailChangeConfirmDialog";
+import { useRouter } from "next/navigation";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Helper function to split telephone into country code and phone number
 const splitTelephone = (telephone: string) => {
@@ -129,6 +133,7 @@ export default function UserManagement() {
   const { user: currentUser, permissions } = useUser();
   const { partners, getDevelopmentPartners, loading: partnersLoading } = usePartners();
   const { organizations, loading: organizationsLoading } = useOrganizations();
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
@@ -147,6 +152,36 @@ export default function UserManagement() {
   });
 
   const developmentPartners = getDevelopmentPartners();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[Admin] Current user context:', {
+      userId: currentUser?.id,
+      userEmail: currentUser?.email,
+      userName: currentUser?.name
+    });
+  }, [currentUser]);
+
+  const handleEditUser = (user: User) => {
+    console.log('[Admin] Attempting to edit user:', {
+      targetUserId: user.id,
+      targetUserEmail: user.email,
+      currentUserId: currentUser?.id,
+      currentUserEmail: currentUser?.email,
+      match: currentUser?.id === user.id
+    });
+    
+    if (currentUser?.id === user.id) {
+      // Redirect to profile page for self-editing
+      console.log('[Admin] Redirecting to profile for self-edit');
+      toast.info("Use 'My Profile' to edit your own details");
+      router.push("/profile");
+    } else {
+      // Allow editing other users
+      console.log('[Admin] Opening edit modal for other user');
+      setEditingUser(user);
+    }
+  };
 
   // Fetch users from API
   useEffect(() => {
@@ -744,15 +779,32 @@ export default function UserManagement() {
                               </td>
                               <td className="p-4 w-32">
                                 <div className="flex justify-end gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => setEditingUser(user)}
-                                    title="Edit user"
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleEditUser(user)}
+                                          className={`h-8 w-8 p-0 ${currentUser?.id === user.id ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' : ''}`}
+                                        >
+                                          {currentUser?.id === user.id ? (
+                                            <div className="flex items-center">
+                                              <UserIcon className="h-4 w-4" />
+                                              <ExternalLink className="h-2 w-2 ml-0.5" />
+                                            </div>
+                                          ) : (
+                                            <Edit className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {currentUser?.id === user.id 
+                                          ? "Go to My Profile to edit your own details" 
+                                          : "Edit user details"}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                   {currentUser?.role === 'super_user' && user.id && (
                                     <Button
                                       size="sm"

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
 
@@ -302,35 +303,8 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
   return (
     <TooltipProvider>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-            <Hash className="w-5 h-5" />
-            Tags
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-sm">
-                <div className="space-y-2">
-                  <p className="font-medium text-sm">Tagging Guidelines</p>
-                  <ul className="text-xs space-y-1">
-                    <li>• Use descriptive, specific tags (e.g., "water-infrastructure" instead of just "water")</li>
-                    <li>• Tags are case-insensitive and will be stored in lowercase</li>
-                    <li>• Reuse existing tags when possible for consistency</li>
-                    <li>• Tags help with searching and reporting across activities</li>
-                  </ul>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Add custom tags to categorize and improve searchability of this activity. Click tags to edit them inline.
-          </p>
-        </div>
-
         {/* Tag Input */}
         <div className="space-y-2">
-          <Label htmlFor="tag-input">Add Tags</Label>
           <div className="relative">
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger className="w-full">
@@ -411,7 +385,6 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
 
         {/* Selected Tags */}
         <div className="space-y-4">
-          <Label>Selected Tags ({tags.length})</Label>
           {tags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {tags.map((tag, index) => {

@@ -8,6 +8,7 @@ interface UserContextType {
   user: User | null;
   permissions: UserPermissions;
   setUser: (user: User | null) => void;
+  refreshUser: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -80,6 +81,27 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const permissions = user ? getUserPermissions(user.role) : getUserPermissions(USER_ROLES.DEV_PARTNER_TIER_2);
 
+  const refreshUser = async () => {
+    if (!user?.email) return;
+    
+    try {
+      console.log('[useUser] Refreshing user data from API');
+      const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`);
+      if (response.ok) {
+        const data = await response.json();
+        // Handle both array and single object responses
+        const users = Array.isArray(data) ? data : [data];
+        const refreshedUser = users.find((u: User) => u.email === user.email);
+        if (refreshedUser) {
+          console.log('[useUser] User data refreshed successfully');
+          handleSetUser(refreshedUser);
+        }
+      }
+    } catch (error) {
+      console.error('[useUser] Failed to refresh user data:', error);
+    }
+  };
+
   const logout = async () => {
     try {
       // Call Supabase logout endpoint
@@ -95,7 +117,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ user, permissions, setUser: handleSetUser, logout, isLoading }}>
+    <UserContext.Provider value={{ user, permissions, setUser: handleSetUser, refreshUser, logout, isLoading }}>
       {children}
     </UserContext.Provider>
   );

@@ -253,11 +253,12 @@ export default function OrganisationsSection({
             <span className="font-medium text-foreground truncate">
               {org.name}
             </span>
-                         {org.acronym && (
-               <span className="font-medium text-foreground">
-                 ({org.acronym})
-               </span>
-             )}
+            {org.acronym && (
+              <span className="font-medium text-foreground">
+                ({org.acronym})
+              </span>
+            )}
+            <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
           </div>
           {(org.iati_org_id || org.country) && (
             <div className="flex items-center gap-1 mt-0.5">
@@ -315,11 +316,9 @@ export default function OrganisationsSection({
           <CardTitle className="text-xl flex items-center gap-2">
             Extending Partners
             <HelpTextTooltip content="The organisation that receives funds from the financing partner and passes them on to the implementing partner. It acts as a channel for resources rather than the direct implementer. This role ensures funding flows are properly managed and recorded." />
-            {savingState.extending ? (
+            {savingState.extending && (
               <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
-            ) : extendingOrgs.length > 0 ? (
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            ) : null}
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -361,11 +360,9 @@ export default function OrganisationsSection({
           <CardTitle className="text-xl flex items-center gap-2">
             Implementing Partners
             <HelpTextTooltip content="The organisation responsible for carrying out the activity on the ground. It holds the primary responsibility for delivering outputs and results. Implementing partners are accountable for the execution of the activity." />
-            {savingState.implementing ? (
+            {savingState.implementing && (
               <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
-            ) : implementingOrgs.length > 0 ? (
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            ) : null}
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -407,11 +404,9 @@ export default function OrganisationsSection({
           <CardTitle className="text-xl flex items-center gap-2">
             Government Partners
             <HelpTextTooltip content="The government entity responsible for overseeing or stewarding the activity. This is often the ministry or agency that signs a formal agreement, such as an MoU. The partner provides official recognition and ensures alignment with national systems." />
-            {savingState.government ? (
+            {savingState.government && (
               <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
-            ) : governmentOrgs.length > 0 ? (
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            ) : null}
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

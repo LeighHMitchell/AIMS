@@ -73,16 +73,6 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
-      <div>
-        <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Working Group Mapping
-        </h3>
-        <p className="text-sm text-gray-600 mt-1">
-          Map this activity to relevant Technical or Sector Working Groups for coordination and reporting
-        </p>
-      </div>
-
       {/* Working Groups Searchable Select */}
       <div className="space-y-4">
         <Label htmlFor="working-groups">Select Working Groups</Label>
@@ -97,7 +87,6 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
 
       {/* Selected Working Groups */}
       <div className="space-y-4">
-        <Label>Selected Working Groups ({selectedCodes.length})</Label>
         {selectedCodes.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {selectedCodes.map((code) => {

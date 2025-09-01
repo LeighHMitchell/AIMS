@@ -25,8 +25,9 @@ export async function GET(request: NextRequest) {
     const userId = url.searchParams.get('userId');
     const status = url.searchParams.get('status') || undefined;
     const category = url.searchParams.get('category') || undefined;
-    const limit = parseInt(url.searchParams.get('limit') || '50');
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '25');
+    const offset = (page - 1) * limit;
     
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -38,6 +39,54 @@ export async function GET(request: NextRequest) {
     if (!supabase) {
       console.error('[AIMS Feedback API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
+    // Test database connection first
+    try {
+      const { data: testData, error: testError } = await supabase
+        .from('users')
+        .select('id')
+        .limit(1);
+      
+      if (testError) {
+        console.error('[AIMS Feedback API] Database connection test failed:', testError);
+        return NextResponse.json({ 
+          error: 'Database connection test failed',
+          details: testError.message 
+        }, { status: 500 });
+      }
+      
+      console.log('[AIMS Feedback API] Database connection test passed');
+    } catch (dbError) {
+      console.error('[AIMS Feedback API] Database connection error:', dbError);
+      return NextResponse.json({ 
+        error: 'Database connection error',
+        details: dbError instanceof Error ? dbError.message : 'Unknown error'
+      }, { status: 500 });
+    }
+
+    // Test if feedback table exists and is accessible
+    try {
+      const { data: feedbackTest, error: feedbackTestError } = await supabase
+        .from('feedback')
+        .select('id')
+        .limit(1);
+      
+      if (feedbackTestError) {
+        console.error('[AIMS Feedback API] Feedback table test failed:', feedbackTestError);
+        return NextResponse.json({ 
+          error: 'Feedback table not accessible',
+          details: feedbackTestError.message 
+        }, { status: 500 });
+      }
+      
+      console.log('[AIMS Feedback API] Feedback table test passed');
+    } catch (tableError) {
+      console.error('[AIMS Feedback API] Feedback table error:', tableError);
+      return NextResponse.json({ 
+        error: 'Feedback table error',
+        details: tableError instanceof Error ? tableError.message : 'Unknown error'
+      }, { status: 500 });
     }
 
     // Map mock user ID to real database user ID if needed
@@ -81,15 +130,29 @@ export async function GET(request: NextRequest) {
     // Build query - using simpler approach to avoid foreign key issues
     console.log('[AIMS Feedback API] Building feedback query...');
     
+    // First, get total count
+    let countQuery = supabase
+      .from('feedback')
+      .select('*', { count: 'exact', head: true });
+
+    if (status) {
+      countQuery = countQuery.eq('status', status);
+    }
+
+    if (category) {
+      countQuery = countQuery.eq('category', category);
+    }
+
+    const { count: totalCount, error: countError } = await countQuery;
+
+    if (countError) {
+      console.error('[AIMS Feedback API] Error getting count:', countError);
+    }
+    
+    // Then get the actual data
     let query = supabase
       .from('feedback')
-      .select(`
-        *,
-        attachment_url,
-        attachment_filename,
-        attachment_type,
-        attachment_size
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (status) {
@@ -111,65 +174,34 @@ export async function GET(request: NextRequest) {
 
     console.log('[AIMS Feedback API] Found', feedback?.length || 0, 'feedback items');
     
-    // Debug: Check if any feedback has attachment data
-    const feedbackWithAttachments = feedback?.filter((item: any) => item.attachment_url) || [];
-    console.log('[AIMS Feedback API] Feedback with attachments:', feedbackWithAttachments.length);
-    if (feedbackWithAttachments.length > 0) {
-      console.log('[AIMS Feedback API] Sample attachment data:', feedbackWithAttachments[0]);
-    }
-    
-    // Debug: Show all feedback data structure
-    console.log('[AIMS Feedback API] All feedback data structure:', feedback?.map((item: any) => ({
-      id: item.id,
-      subject: item.subject,
-      hasAttachmentUrl: !!item.attachment_url,
-      attachmentUrl: item.attachment_url,
-      attachmentType: item.attachment_type,
-      attachmentFilename: item.attachment_filename
-    })));
-
-    // If we have feedback, get user details for each one
+    // Get user details for all feedback items
     let enrichedFeedback = feedback || [];
     
     if (feedback && feedback.length > 0) {
-      console.log('[AIMS Feedback API] Enriching feedback with user details...');
+      console.log('[AIMS Feedback API] Starting user enrichment...');
       
-      // Get unique user IDs
-      const userIds = Array.from(new Set(feedback.map((f: any) => f.user_id)));
+      // For now, just create basic user objects to get the API working
+      enrichedFeedback = feedback.map((item: any) => ({
+        ...item,
+        user: {
+          id: item.user_id || 'unknown',
+          email: 'User ID: ' + (item.user_id || 'Unknown'),
+          first_name: null,
+          last_name: null,
+          full_name: 'User ID: ' + (item.user_id || 'Unknown')
+        }
+      }));
       
-      // Fetch user details
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('id, email, first_name, last_name, full_name')
-        .in('id', userIds);
-      
-      if (usersError) {
-        console.error('[AIMS Feedback API] Error fetching users:', usersError);
-        // Continue without user details
-      } else {
-        console.log('[AIMS Feedback API] Found user details for', users?.length || 0, 'users');
-        
-        // Create user lookup map
-        const userMap = (users || []).reduce((acc: any, user: any) => {
-          acc[user.id] = user;
-          return acc;
-        }, {} as Record<string, any>);
-        
-        // Enrich feedback with user details
-        enrichedFeedback = feedback.map((item: any) => ({
-          ...item,
-          user: userMap[item.user_id] || {
-            id: item.user_id,
-            email: 'Unknown',
-            first_name: null,
-            last_name: null,
-            full_name: null
-          }
-        }));
-      }
+      console.log('[AIMS Feedback API] Basic user enrichment completed');
     }
 
-    return NextResponse.json({ feedback: enrichedFeedback });
+    return NextResponse.json({ 
+      feedback: enrichedFeedback,
+      total: totalCount || 0,
+      page,
+      limit,
+      totalPages: Math.ceil((totalCount || 0) / limit)
+    });
   } catch (error) {
     console.error('[AIMS Feedback API] Error in GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -180,7 +212,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, category, subject, message, attachment_url, attachment_filename, attachment_type, attachment_size } = body;
+    const { userId, category, feature, subject, message, attachment_url, attachment_filename, attachment_type, attachment_size } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -280,6 +312,7 @@ export async function POST(request: NextRequest) {
     const insertData: any = {
       user_id: realUserId,
       category,
+      feature: feature?.trim() || null,
       subject: subject?.trim() || null,
       message: message.trim(),
       status: 'open',
@@ -453,6 +486,8 @@ export async function PUT(request: NextRequest) {
       updateData.resolved_at = null;
     }
 
+    console.log('[AIMS Feedback API] Attempting to update feedback with data:', updateData);
+    
     const { data: feedback, error: updateError } = await supabase
       .from('feedback')
       .update(updateData)
@@ -462,7 +497,27 @@ export async function PUT(request: NextRequest) {
 
     if (updateError) {
       console.error('[AIMS Feedback API] Error updating feedback:', updateError);
-      return NextResponse.json({ error: 'Failed to update feedback' }, { status: 500 });
+      console.error('[AIMS Feedback API] Error details:', {
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint
+      });
+      
+      // Provide more specific error information
+      let errorMessage = 'Failed to update feedback';
+      if (updateError.code === '23514') { // Check constraint violation
+        errorMessage = 'Invalid status value. The status must be one of: open, in_progress, resolved, closed, archived';
+      } else if (updateError.message) {
+        errorMessage += `: ${updateError.message}`;
+      }
+      
+      return NextResponse.json({ 
+        error: errorMessage,
+        code: updateError.code,
+        details: updateError.details,
+        hint: updateError.hint
+      }, { status: 500 });
     }
 
     console.log('[AIMS Feedback API] Feedback updated successfully');
@@ -473,6 +528,82 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error('[AIMS Feedback API] Error in PUT:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// DELETE - Delete feedback (for admin users)
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { userId, id } = body;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: 'Feedback ID is required' }, { status: 400 });
+    }
+
+    console.log('[AIMS Feedback API] DELETE request for user:', userId, 'feedback:', id);
+
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      console.error('[AIMS Feedback API] Supabase admin client is null');
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
+    // Map mock user ID to real database user ID if needed
+    let realUserId = userId;
+    if (!isValidUUID(userId)) {
+      realUserId = USER_ID_MAP[userId] || userId;
+    }
+    
+    if (!isValidUUID(realUserId)) {
+      realUserId = "85a65398-5d71-4633-a50b-2f167a0b6f7a"; // fallback
+    }
+
+    // Get user role to check permissions
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', realUserId)
+      .single();
+
+    if (userError || !user) {
+      console.error('[AIMS Feedback API] User not found:', userError);
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Allow super users and dev partners to delete feedback
+    const allowedRoles = ['super_user', 'dev_partner_tier_1', 'dev_partner_tier_2'];
+    if (!allowedRoles.includes(user.role)) {
+      console.log('[AIMS Feedback API] Delete access denied - user role is:', user.role, 'but requires one of:', allowedRoles);
+      return NextResponse.json({ 
+        error: 'Insufficient permissions',
+        details: `Your role is '${user.role}' but one of these roles is required: ${allowedRoles.join(', ')}` 
+      }, { status: 403 });
+    }
+
+    // Delete the feedback
+    const { error: deleteError } = await supabase
+      .from('feedback')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      console.error('[AIMS Feedback API] Error deleting feedback:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete feedback' }, { status: 500 });
+    }
+
+    console.log('[AIMS Feedback API] Feedback deleted successfully');
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Feedback deleted successfully' 
+    });
+  } catch (error) {
+    console.error('[AIMS Feedback API] Error in DELETE:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

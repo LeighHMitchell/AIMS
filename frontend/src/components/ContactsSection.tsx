@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ContactTypeSearchableSelect } from "@/components/forms/ContactTypeSearchableSelect";
 import { CONTACT_TYPES } from "@/data/contact-types";
-import { X, Plus, Phone, Mail, Printer, User, Building, CheckCircle, Loader2, UserCheck, Upload } from "lucide-react";
+import { X, Plus, Phone, Mail, Printer, User, Building, CheckCircle, Loader2, UserCheck, Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { useContactsAutosave } from '@/hooks/use-field-autosave-new';
@@ -823,8 +823,9 @@ export default function ContactsSection({ contacts, onChange, activityId, report
                         variant="ghost"
                         size="sm"
                         onClick={() => handleRemoveContact(index)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
-                        <X className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

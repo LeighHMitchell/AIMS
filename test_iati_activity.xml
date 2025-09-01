@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activity xml:lang="en" default-currency="USD" last-updated-datetime="2024-12-20T10:00:00Z">
+  
+  <!-- IATI Identifier -->
+  <iati-identifier>GB-GOV-1-WATERPROJECT-001</iati-identifier>
+  
+  <!-- Activity Title -->
+  <title>
+    <narrative xml:lang="en">Rural Water Supply Project - Phase 1</narrative>
+  </title>
+  
+  <!-- Activity Description -->
+  <description type="1">
+    <narrative xml:lang="en">Construction of 25 water wells and installation of solar-powered water pumping systems in rural communities of Northern Region, providing clean water access to approximately 5,000 beneficiaries.</narrative>
+  </description>
+  
+  <!-- Activity Status -->
+  <activity-status code="2" />
+  
+  <!-- Collaboration Type -->
+  <collaboration-type code="1" />
+  
+  <!-- Activity Dates -->
+  <activity-date iso-date="2024-01-15" type="1">
+    <narrative>Planned start date</narrative>
+  </activity-date>
+  
+  <activity-date iso-date="2024-02-01" type="2">
+    <narrative>Actual start date</narrative>
+  </activity-date>
+  
+  <activity-date iso-date="2025-01-14" type="3">
+    <narrative>Planned end date</narrative>
+  </activity-date>
+  
+  <activity-date iso-date="2025-01-31" type="4">
+    <narrative>Actual end date</narrative>
+  </activity-date>
+  
+  <!-- Sectors -->
+  <sector vocabulary="1" code="14030" percentage="80">
+    <narrative>Basic drinking water supply</narrative>
+  </sector>
+  
+  <sector vocabulary="1" code="14081" percentage="20">
+    <narrative>Education and training in water supply and sanitation</narrative>
+  </sector>
+  
+  <!-- Recipient Countries -->
+  <recipient-country code="UG" percentage="100">
+    <narrative>Uganda</narrative>
+  </recipient-country>
+  
+  <!-- Sample Transaction -->
+  <transaction ref="TXN-001">
+    <transaction-type code="1" />
+    <transaction-date iso-date="2024-02-15" />
+    <value currency="USD" value-date="2024-02-15">150000</value>
+    <description>
+      <narrative>Initial disbursement for equipment procurement</narrative>
+    </description>
+  </transaction>
+  
+  <transaction ref="TXN-002">
+    <transaction-type code="3" />
+    <transaction-date iso-date="2024-06-30" />
+    <value currency="USD" value-date="2024-06-30">75000</value>
+    <description>
+      <narrative>Second disbursement for construction activities</narrative>
+    </description>
+  </transaction>
+  
+  <!-- Reporting Organisation -->
+  <reporting-org ref="GB-GOV-1" type="10">
+    <narrative>UK Department for International Development</narrative>
+  </reporting-org>
+  
+  <!-- Implementing Partner -->
+  <participating-org role="4" type="21" ref="UG-NGO-001">
+    <narrative>Uganda Water Development Foundation</narrative>
+  </participating-org>
+  
+</iati-activity>

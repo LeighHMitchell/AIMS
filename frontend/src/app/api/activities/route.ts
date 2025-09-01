@@ -133,6 +133,8 @@ export async function POST(request: Request) {
           created_by_org_name: body.created_by_org_name,
           created_by_org_acronym: body.created_by_org_acronym,
           collaboration_type: body.collaborationType,
+          activity_scope: body.activityScope,
+          language: body.language,
           activity_status: body.activityStatus || existingActivity.activity_status,
           publication_status: body.publicationStatus || existingActivity.publication_status,
           submission_status: body.submissionStatus || existingActivity.submission_status,
@@ -214,6 +216,8 @@ export async function POST(request: Request) {
           created_by_org_name: updatedActivity.created_by_org_name,
           created_by_org_acronym: updatedActivity.created_by_org_acronym,
           collaborationType: updatedActivity.collaboration_type,
+          activityScope: updatedActivity.activity_scope,
+          language: updatedActivity.language,
           activityStatus: updatedActivity.activity_status,
           publicationStatus: updatedActivity.publication_status,
           submissionStatus: updatedActivity.submission_status,
@@ -824,6 +828,8 @@ export async function POST(request: Request) {
         created_by_org_name: updatedActivity.created_by_org_name,
         created_by_org_acronym: updatedActivity.created_by_org_acronym,
         collaborationType: updatedActivity.collaboration_type,
+        activityScope: updatedActivity.activity_scope,
+        language: updatedActivity.language,
         activityStatus: updatedActivity.activity_status,
         publicationStatus: updatedActivity.publication_status,
         submissionStatus: updatedActivity.submission_status,
@@ -954,6 +960,14 @@ export async function POST(request: Request) {
           
           if (userData.organizations) {
             console.log('[AIMS API] Found user organization data:', userData.organizations);
+            console.log('[AIMS API DEBUG] User organization details:', {
+              user_id: userData.id,
+              user_email: userData.email,
+              organization_id: userData.organization_id,
+              org_name: userData.organizations?.name,
+              org_acronym: userData.organizations?.acronym,
+              org_id: userData.organizations?.id
+            });
             userOrgData = {
               created_by_org_name: userData.organizations.name || userOrgData.created_by_org_name,
               created_by_org_acronym: userData.organizations.acronym || userOrgData.created_by_org_acronym,
@@ -971,6 +985,13 @@ export async function POST(request: Request) {
             
             if (orgData) {
               console.log('[AIMS API] Found organization data:', orgData);
+              console.log('[AIMS API DEBUG] Direct organization fetch:', {
+                user_id: userData.id,
+                user_organization_id: userData.organization_id,
+                fetched_org_name: orgData?.name,
+                fetched_org_acronym: orgData?.acronym,
+                fetched_org_id: orgData?.id
+              });
               userOrgData = {
                 created_by_org_name: orgData.name || userOrgData.created_by_org_name,
                 created_by_org_acronym: orgData.acronym || userOrgData.created_by_org_acronym,
@@ -1015,6 +1036,8 @@ export async function POST(request: Request) {
         created_by_org_name: userOrgData.created_by_org_name,
         created_by_org_acronym: userOrgData.created_by_org_acronym,
         collaboration_type: body.collaborationType,
+        activity_scope: body.activityScope || '4',
+        language: body.language,
         activity_status: body.activityStatus || '1',
         publication_status: body.publicationStatus || 'draft',
         submission_status: body.submissionStatus || 'draft',
@@ -1045,6 +1068,12 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log('[AIMS API DEBUG] Final organization data for activity creation:', {
+      created_by_org_name: insertData.created_by_org_name,
+      created_by_org_acronym: insertData.created_by_org_acronym,
+      reporting_org_id: insertData.reporting_org_id,
+      user_id: body.user?.id
+    });
     console.log('[AIMS API] Attempting to create new activity with data:', JSON.stringify(insertData, null, 2));
     const { data: newActivity, error: insertError } = await getSupabaseAdmin()
       .from('activities')
@@ -1527,6 +1556,8 @@ export async function POST(request: Request) {
       created_by_org_name: newActivity.created_by_org_name,
       created_by_org_acronym: newActivity.created_by_org_acronym,
       collaborationType: newActivity.collaboration_type,
+      activityScope: newActivity.activity_scope,
+      language: newActivity.language,
       activityStatus: newActivity.activity_status,
       publicationStatus: newActivity.publication_status,
       submissionStatus: newActivity.submission_status,
@@ -2026,6 +2057,8 @@ export async function GET(request: NextRequest) {
       created_by_org_name: activity.created_by_org_name,
       created_by_org_acronym: activity.created_by_org_acronym,
       collaborationType: activity.collaboration_type,
+      activityScope: activity.activity_scope,
+      language: activity.language,
       activityStatus: activity.activity_status,
       publicationStatus: activity.publication_status,
       submissionStatus: activity.submission_status,

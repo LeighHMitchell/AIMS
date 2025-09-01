@@ -36,6 +36,8 @@ import { useOrganizations } from '@/hooks/use-organizations';
 import { useUser } from '@/hooks/useUser';
 import { USER_ROLES } from '@/types/user';
 import { toast } from 'sonner';
+import { LanguageSearchableSelect } from '@/components/forms/LanguageSearchableSelect';
+import { useFieldAutosave } from '@/hooks/use-field-autosave-new';
 
 interface MetadataTabProps {
   activityId: string;
@@ -72,6 +74,7 @@ interface ActivityMetadata {
   reporting_org_id?: string;
   created_by_org_name?: string;
   created_by_org_acronym?: string;
+  language?: string;
 }
 
 interface ActivityLog {
@@ -205,9 +208,18 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingReportingOrg, setSavingReportingOrg] = useState(false);
+  const [language, setLanguage] = useState<string>('en');
   
   const { user } = useUser();
   const { organizations, loading: organizationsLoading } = useOrganizations();
+
+  const languageAutosave = useFieldAutosave('language', {
+    activityId,
+    userId: user?.id,
+    onSuccess: () => {
+      toast.success('Language saved', { position: 'top-right' });
+    },
+  });
 
   const handleReportingOrgSave = async (newReportingOrgId: string) => {
     setSavingReportingOrg(true);
@@ -289,6 +301,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
         created_by_org_acronym: result.metadata?.created_by_org_acronym
       });
       setData(result);
+      setLanguage(result.metadata?.language || 'en');
     } catch (err) {
       console.error('[AIMS] Error fetching activity metadata:', err);
       setError(err instanceof Error ? err.message : 'Failed to load metadata');
@@ -540,6 +553,18 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                   {metadata.sync_status || 'never'}
                 </Badge>
               </div>
+            </div>
+            <div className="pt-4 border-t border-gray-100">
+              <div className="font-medium text-gray-600 mb-2">Language</div>
+              <LanguageSearchableSelect
+                value={language}
+                onValueChange={(value) => {
+                  setLanguage(value);
+                  languageAutosave.triggerFieldSave(value);
+                }}
+                placeholder="Select language"
+                dropdownId="metadata-language"
+              />
             </div>
             {metadata.last_sync_time && (
               <div>

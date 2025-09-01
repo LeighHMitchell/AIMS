@@ -32,6 +32,7 @@ interface ActivityMetadata {
   reporting_org_id?: string;
   created_by_org_name?: string;
   created_by_org_acronym?: string;
+  language?: string;
 }
 
 interface ActivityLog {
@@ -98,7 +99,8 @@ export async function GET(
         last_edited_by,
         created_by_org_name,
         created_by_org_acronym,
-        reporting_org_id
+        reporting_org_id,
+        language
       `)
       .eq('id', id)
       .single();
@@ -224,7 +226,8 @@ export async function GET(
       auto_sync: false,
       reporting_org_id: activityData.reporting_org_id,
       created_by_org_name: activityData.created_by_org_name,
-      created_by_org_acronym: activityData.created_by_org_acronym
+      created_by_org_acronym: activityData.created_by_org_acronym,
+      language: activityData.language
     };
 
     // Transform logs data

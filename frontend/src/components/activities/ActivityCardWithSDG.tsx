@@ -355,18 +355,18 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                 {activity.acronym && (
                   <span>
                     {' '}({activity.acronym})
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(activity.acronym!);
-                      }}
-                      className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
-                      title="Copy Acronym"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </button>
                   </span>
                 )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(activity.acronym || activity.title);
+                  }}
+                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                  title={activity.acronym ? "Copy Acronym" : "Copy Activity Title"}
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
               </h3>
               
               {/* Activity ID and IATI ID - Always displayed */}

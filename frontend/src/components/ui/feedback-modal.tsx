@@ -11,6 +11,7 @@ import { FEEDBACK_TYPES, FeedbackType } from '@/data/feedback-types';
 import { useUser } from '@/hooks/useUser';
 import { MessageSquareIcon, SendIcon, Loader2Icon, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Upload, X, Image, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AppFeatureSearchableSelect } from '@/components/forms/AppFeatureSearchableSelect';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const { user } = useUser();
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState<string>('comment');
+  const [selectedFeature, setSelectedFeature] = useState<string>('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -168,6 +170,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         body: JSON.stringify({
           userId: user.id,
           category: selectedCategory,
+          feature: selectedFeature || null,
           subject: subject.trim() || null,
           message: message.trim(),
           attachment_url: attachmentData?.url || null,
@@ -182,6 +185,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         
         // Reset form
         setSelectedCategory('comment');
+        setSelectedFeature('');
         setSubject('');
         setMessage('');
         setSelectedFile(null);
@@ -204,6 +208,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const handleClose = () => {
     if (isSubmitting) return;
     setSelectedCategory('comment');
+    setSelectedFeature('');
     setSubject('');
     setMessage('');
     setSelectedFile(null);
@@ -225,7 +230,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquareIcon className="h-5 w-5" />
@@ -257,6 +262,16 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 })}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="feature">Which feature/functionality is this about? (Optional)</Label>
+            <AppFeatureSearchableSelect
+              value={selectedFeature}
+              onValueChange={setSelectedFeature}
+              placeholder="Select the specific feature or area..."
+              dropdownId="feedback-feature-select"
+            />
           </div>
 
           <div className="space-y-2">

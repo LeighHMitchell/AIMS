@@ -75,6 +75,7 @@ export default function SDGAlignmentSectionSimplified({
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [hasUserEdited, setHasUserEdited] = useState(false);
+  const [savedMappings, setSavedMappings] = useState<SDGMapping[]>([]);
 
   // Debounced save function
   const debouncedSave = async (updatedMappings: SDGMapping[]) => {
@@ -95,6 +96,7 @@ export default function SDGAlignmentSectionSimplified({
         
         if (response.ok) {
           setLastSaved(new Date());
+          setSavedMappings([...updatedMappings]); // Track which mappings are saved
           toast.success('SDG mappings saved successfully', { 
             position: 'top-right',
             duration: 2000 
@@ -113,6 +115,28 @@ export default function SDGAlignmentSectionSimplified({
     setSaveTimeout(timeout);
   };
 
+  // Helper function to check if an SDG goal has been saved
+  const isGoalSaved = (goalId: number): boolean => {
+    const currentGoalMappings = mappings.filter(m => m.sdgGoal === goalId);
+    const savedGoalMappings = savedMappings.filter(m => m.sdgGoal === goalId);
+    
+    // If no current mappings for this goal, it's considered "saved" (empty state)
+    if (currentGoalMappings.length === 0) {
+      return savedGoalMappings.length === 0;
+    }
+    
+    // Check if current mappings match saved mappings
+    return currentGoalMappings.length === savedGoalMappings.length &&
+           currentGoalMappings.every(current => 
+             savedGoalMappings.some(saved => 
+               saved.sdgGoal === current.sdgGoal &&
+               saved.sdgTarget === current.sdgTarget &&
+               saved.contributionPercent === current.contributionPercent &&
+               saved.notes === current.notes
+             )
+           );
+  };
+
   // Update parent and trigger save when mappings change
   useEffect(() => {
     onUpdate(mappings);
@@ -127,6 +151,7 @@ export default function SDGAlignmentSectionSimplified({
     const goals = Array.from(new Set(sdgMappings.map(m => m.sdgGoal)));
     setSelectedGoals(goals);
     setMappings(sdgMappings);
+    setSavedMappings([...sdgMappings]); // Initialize with current data as "saved"
     
     // Auto-expand goals that have targets
     const initialExpanded: { [key: number]: boolean } = {};
@@ -271,7 +296,12 @@ export default function SDGAlignmentSectionSimplified({
                           className="w-full h-full"
                         />
                         {selectedGoals.includes(goal.id) && (
-                          <div className="absolute bottom-1 right-1 bg-blue-600 rounded-full p-0.5 shadow-lg">
+                          <div className={cn(
+                            "absolute bottom-1 right-1 rounded-full p-0.5 shadow-lg",
+                            isGoalSaved(goal.id) 
+                              ? "bg-green-600" 
+                              : "bg-blue-600"
+                          )}>
                             <Check className="h-3 w-3 text-white" />
                           </div>
                         )}
@@ -314,12 +344,22 @@ export default function SDGAlignmentSectionSimplified({
                         />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-lg">Goal {goal.id}: {goal.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-lg">Goal {goal.id}: {goal.name}</h4>
+                          {isGoalSaved(goalId) && (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
                           {goalTargetMappings.length > 0 && (
                             <span className="text-sm text-muted-foreground">
                               {goalTargetMappings.length} target{goalTargetMappings.length !== 1 ? 's' : ''} selected
                             </span>
+                          )}
+                          {isGoalSaved(goalId) && (
+                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                              Saved
+                            </Badge>
                           )}
                         </div>
                       </div>

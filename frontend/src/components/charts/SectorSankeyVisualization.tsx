@@ -308,13 +308,10 @@ export default function SectorSankeyVisualization({
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Create tooltip with enhanced styling for wrapped text
+    // Create tooltip
     const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute invisible bg-gray-900 text-white p-4 rounded-lg shadow-lg text-sm pointer-events-none z-50 max-w-xs')
-      .style('opacity', 0)
-      .style('word-wrap', 'break-word')
-      .style('white-space', 'normal')
-      .style('line-height', '1.4');
+      .attr('class', 'absolute bg-gray-900 text-white p-3 rounded-lg shadow-lg text-sm pointer-events-none z-50')
+      .style('opacity', 0);
 
     // Manual layout for Sankey-style positioning with proper flow conservation
     const nodeWidth = 20;
@@ -415,7 +412,8 @@ export default function SectorSankeyVisualization({
           category: null,
           sector: null,
           subsector: null,
-          level: 'Total'
+          level: 'Total',
+          code: null
         };
       }
 
@@ -429,7 +427,8 @@ export default function SectorSankeyVisualization({
           category: categoryNode?.name || node.name,
           sector: null,
           subsector: null,
-          level: 'DAC Category'
+          level: 'Sector Category',
+          code: nodeId
         };
       } else if (node.id.startsWith('sec-')) {
         // Sector node - find parent category through links
@@ -442,7 +441,8 @@ export default function SectorSankeyVisualization({
           category: parentCategoryNode?.name || null,
           sector: sectorNode?.name || node.name,
           subsector: null,
-          level: 'DAC Sector'
+          level: 'Sector',
+          code: nodeId
         };
       } else if (node.id.startsWith('sub-')) {
         // Subsector node - find parent sector and category through links
@@ -457,7 +457,8 @@ export default function SectorSankeyVisualization({
           category: parentCategoryNode?.name || null,
           sector: parentSectorNode?.name || null,
           subsector: subsectorNode?.name || node.name,
-          level: '5-Digit Sector'
+          level: 'Sub-sector',
+          code: nodeId
         };
       }
       
@@ -466,7 +467,8 @@ export default function SectorSankeyVisualization({
         category: null,
         sector: null,
         subsector: null,
-        level: 'Unknown'
+        level: 'Unknown',
+        code: node.id || ''
       };
     };
 
@@ -552,29 +554,22 @@ export default function SectorSankeyVisualization({
         .on('mouseover', function(event) {
           d3.select(this).attr('fill-opacity', 0.9);
           
-          tooltip.transition()
-            .duration(200)
-            .style('opacity', .95);
+          tooltip.style('opacity', 1);
           
           const sourceDetails = getNodeDetails(source);
           const targetDetails = getNodeDetails(target);
           
           tooltip.html(`
-            <div class="font-semibold text-white mb-2" style="word-wrap: break-word;">
-              ${sourceDetails.title} → ${targetDetails.title}
-            </div>
-            <div class="text-xs text-gray-300 mb-2">Flow: ${sourceDetails.level} to ${targetDetails.level}</div>
-            <div class="text-lg font-bold text-green-300">${format(link.value)}%</div>
+            <div class="font-semibold">${sourceDetails.code && sourceDetails.code.trim() ? `<span class="font-mono">${sourceDetails.code}</span> - ` : ''}${sourceDetails.title} → ${targetDetails.code && targetDetails.code.trim() ? `<span class="font-mono">${targetDetails.code}</span> - ` : ''}${targetDetails.title}</div>
+            <div class="text-lg font-bold text-gray-300">${format(link.value)}%</div>
           `)
             .style('left', (event.pageX + 10) + 'px')
-            .style('top', (event.pageY - 28) + 'px');
+            .style('top', (event.pageY - 10) + 'px');
         })
         .on('mouseout', function() {
           d3.select(this).attr('fill-opacity', 0.6);
           
-          tooltip.transition()
-            .duration(300)
-            .style('opacity', 0);
+          tooltip.style('opacity', 0);
         });
     });
 
@@ -595,42 +590,36 @@ export default function SectorSankeyVisualization({
       .attr('stroke-width', 1.5)
       .attr('rx', 3)
       .attr('ry', 3)
-      .on('mouseover', function(event, d) {
+              .on('mouseover', function(event, d) {
         d3.select(this).style('filter', 'brightness(1.2)');
         
-        tooltip.transition()
-          .duration(200)
-          .style('opacity', .95);
+        tooltip.style('opacity', 1);
         
         const details = getNodeDetails(d);
         let hierarchyHtml = '';
         
-        // Build hierarchy display
+        // Build hierarchy display with codes in monotype font
         if (details.category) {
-          hierarchyHtml += `<div class="text-xs text-blue-200 mb-1">Category: ${details.category}</div>`;
+          hierarchyHtml += `<div class="text-xs text-blue-200 mb-1">Category: <span class="font-mono">${details.code}</span> - ${details.category}</div>`;
         }
         if (details.sector) {
-          hierarchyHtml += `<div class="text-xs text-green-200 mb-1">Sector: ${details.sector}</div>`;
+          hierarchyHtml += `<div class="text-xs text-green-200 mb-1">Sector: <span class="font-mono">${details.code}</span> - ${details.sector}</div>`;
         }
         if (details.subsector) {
-          hierarchyHtml += `<div class="text-xs text-yellow-200 mb-1">Sub-sector: ${details.subsector}</div>`;
+          hierarchyHtml += `<div class="text-xs text-yellow-200 mb-1">Sub-sector: <span class="font-mono">${details.code}</span> - ${details.subsector}</div>`;
         }
         
         tooltip.html(`
-          <div class="font-semibold text-white mb-2" style="word-wrap: break-word;">${details.title}</div>
-          <div class="text-xs text-gray-300 mb-2">${details.level}</div>
-          ${hierarchyHtml}
-          <div class="text-lg font-bold mt-2 text-green-300">${format(d.value)}%</div>
+          <div class="font-semibold">${details.code && details.code.trim() ? `<span class="font-mono">${details.code}</span> - ` : ''}${details.title}</div>
+          <div class="text-lg font-bold mt-2 text-gray-300">${format(d.value)}%</div>
         `)
           .style('left', (event.pageX + 10) + 'px')
-          .style('top', (event.pageY - 28) + 'px');
+          .style('top', (event.pageY - 10) + 'px');
       })
       .on('mouseout', function() {
         d3.select(this).style('filter', 'none');
         
-        tooltip.transition()
-          .duration(300)
-          .style('opacity', 0);
+        tooltip.style('opacity', 0);
       })
       .on('click', function(event, d) {
         if (onSegmentClick && d.id !== 'root') {

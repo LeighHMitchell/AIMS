@@ -78,9 +78,17 @@ export function getSupabaseAdmin() {
     return null
   }
   
-  // During build time, environment variables might not be available
-  if (process.env.NODE_ENV === 'production' && (!supabaseUrl || !supabaseServiceRoleKey)) {
-    console.warn('[Supabase] Environment variables not available during build')
+  // Check if we have the required environment variables
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    console.error('[Supabase] Missing required environment variables for admin client')
+    console.error('- NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'Present' : 'Missing')
+    console.error('- SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceRoleKey ? 'Present' : 'Missing')
+    return null
+  }
+  
+  // Validate URL format
+  if (!isValidUrl(supabaseUrl)) {
+    console.error('[Supabase] Invalid Supabase URL format:', supabaseUrl)
     return null
   }
   

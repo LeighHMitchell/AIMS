@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Info, Leaf, Users, Wrench } from 'lucide-react';
+import { Info, Leaf, Users, Wrench, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { PolicyMarkerScoreSelect } from '@/components/forms/PolicyMarkerScoreSelect';
@@ -84,8 +84,9 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
   
   const [availableMarkers, setAvailableMarkers] = useState<PolicyMarker[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState('environmental');
   const [selectedMarkers, setSelectedMarkers] = useState<Map<string, ActivityPolicyMarker>>(new Map());
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   // Initialize selected markers from props
   useEffect(() => {
@@ -170,13 +171,17 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
     }
   };
 
-  // Toggle section expansion
-  const toggleSection = (sectionType: string) => {
-    setExpandedSections(prev =>
-      prev.includes(sectionType)
-        ? prev.filter(s => s !== sectionType)
-        : [...prev, sectionType]
-    );
+  // Toggle card expansion
+  const toggleCard = (markerId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(markerId)) {
+        newSet.delete(markerId);
+      } else {
+        newSet.add(markerId);
+      }
+      return newSet;
+    });
   };
 
   // Group markers by type
@@ -206,145 +211,288 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900">Policy Markers</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Assign OECD DAC and IATI-compliant policy markers to indicate how this activity addresses cross-cutting issues
-          </p>
-        </div>
-        <HelpText 
-          title="About Policy Markers"
-          content={HELP_CONTENT}
-          className="mt-1"
-        />
-      </div>
-
       <TooltipProvider>
-        <div className="space-y-3">
-          {Object.entries(MARKER_TYPE_LABELS).map(([type, label]) => (
-            <Collapsible
-              key={type}
-              open={expandedSections.includes(type)}
-              onOpenChange={() => toggleSection(type)}
-            >
-              <CollapsibleTrigger className="flex items-center gap-3 w-full p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group">
-                <div className="flex items-center gap-3 flex-1">
-                  {MARKER_TYPE_ICONS[type as keyof typeof MARKER_TYPE_ICONS]}
-                  <span className="font-medium text-gray-900">{label}</span>
-                  <Badge variant="secondary" className="ml-auto">
-                    {markersByType[type]?.length || 0}
-                  </Badge>
-                </div>
-                {expandedSections.includes(type) ? (
-                  <ChevronDown className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
-                )}
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent className="mt-3 space-y-3">
-                <div className="grid gap-4 pl-4 border-l-2 border-gray-100">
-                  {markersByType[type]?.map((marker) => {
-                    const selected = selectedMarkers.get(marker.id);
-                    const score = selected?.score || 0;
-                    
-                    return (
-                      <div
-                        key={marker.id}
-                        className={`p-5 border rounded-lg transition-all ${
-                          score > 0 ? 'border-gray-300 bg-gray-50' : 'border-gray-200 bg-white'
-                        }`}
-                      >
-                        <div className="space-y-4">
-                          {/* Marker Header */}
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900 flex items-center gap-2">
-                                {marker.name}
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                                  </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs">
-                                    <p>{marker.description}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </h4>
-                              <p className="text-xs text-gray-500 mt-1">Code: {marker.code}</p>
-                            </div>
-                          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="environmental" className="flex items-center gap-2">
+              {MARKER_TYPE_ICONS.environmental}
+              <span className="hidden sm:inline">Environmental (Rio Markers)</span>
+              <span className="sm:hidden">Environmental</span>
+              <Badge variant="secondary" className="ml-auto">
+                {markersByType.environmental?.length || 0}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="social_governance" className="flex items-center gap-2">
+              {MARKER_TYPE_ICONS.social_governance}
+              <span className="hidden sm:inline">Social & Governance</span>
+              <span className="sm:hidden">Social</span>
+              <Badge variant="secondary" className="ml-auto">
+                {markersByType.social_governance?.length || 0}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="other" className="flex items-center gap-2">
+              {MARKER_TYPE_ICONS.other}
+              <span className="hidden sm:inline">Other Cross-Cutting Issues</span>
+              <span className="sm:hidden">Other</span>
+              <Badge variant="secondary" className="ml-auto">
+                {markersByType.other?.length || 0}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
 
-                          {/* Score Selection Dropdown */}
-                          <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">
-                              Policy Marker Score
+          {/* Environmental (Rio Markers) Tab */}
+          <TabsContent value="environmental" className="mt-6 space-y-4">
+            <div className="space-y-4">
+              {markersByType.environmental?.map((marker) => {
+                const selected = selectedMarkers.get(marker.id);
+                const score = selected?.score || 0;
+                const isExpanded = expandedCards.has(marker.id);
+                
+                return (
+                  <div
+                    key={marker.id}
+                    className={`border rounded-lg transition-all ${
+                      score > 0 ? 'border-gray-300 bg-gray-50' : 'border-gray-200 bg-white'
+                    }`}
+                  >
+                    {/* Card Header - Clickable to expand/collapse */}
+                    <div 
+                      className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => toggleCard(marker.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                            {marker.name}
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p>{marker.description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {score > 0 && (
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                            )}
+                          </h4>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-gray-500" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Expanded Content */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
+                        {/* Score Selection Dropdown */}
+                        <div className="space-y-2 pt-4">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Policy Marker Score
+                          </Label>
+                          <PolicyMarkerScoreSelect
+                            value={score}
+                            onValueChange={(newScore) => updateMarkerScore(marker.id, newScore as 0 | 1 | 2)}
+                            placeholder="Select relevance score..."
+                          />
+                        </div>
+
+                        {/* Rationale Field - Only show when score > 0 */}
+                        {score > 0 && (
+                          <div className="space-y-2 pt-2 border-t border-gray-100">
+                            <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-gray-700">
+                              Rationale for Scoring (Optional)
                             </Label>
-                            <PolicyMarkerScoreSelect
-                              value={score}
-                              onValueChange={(newScore) => updateMarkerScore(marker.id, newScore as 0 | 1 | 2)}
-                              placeholder="Select relevance score..."
+                            <Textarea
+                              id={`${marker.id}-rationale`}
+                              placeholder="Explain how this activity addresses this policy marker..."
+                              value={selected?.rationale || ''}
+                              onChange={(e) => updateMarkerRationale(marker.id, e.target.value)}
+                              rows={3}
+                              className="text-sm"
                             />
                           </div>
-
-                          {/* Rationale Field - Only show when score > 0 */}
-                          {score > 0 && (
-                            <div className="space-y-2 pt-2 border-t border-gray-100">
-                              <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-gray-700">
-                                Rationale for Scoring (Optional)
-                              </Label>
-                              <Textarea
-                                id={`${marker.id}-rationale`}
-                                placeholder="Explain how this activity addresses this policy marker..."
-                                value={selected?.rationale || ''}
-                                onChange={(e) => updateMarkerRationale(marker.id, e.target.value)}
-                                rows={3}
-                                className="text-sm"
-                              />
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
-        </div>
-      </TooltipProvider>
-
-      {/* Summary of Selected Markers */}
-      {selectedMarkers.size > 0 && (
-        <div className="mt-6 p-5 bg-gray-50 border border-gray-200 rounded-lg">
-          <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-            <span>Selected Policy Markers</span>
-            <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-              {selectedMarkers.size}
-            </Badge>
-          </h4>
-          <div className="space-y-2">
-            {Array.from(selectedMarkers.entries()).map(([markerId, marker]) => {
-              const markerInfo = availableMarkers.find(m => m.id === markerId);
-              return markerInfo ? (
-                <div key={markerId} className="flex items-center justify-between text-sm text-gray-800 bg-white rounded px-3 py-2 border border-gray-200">
-                  <span className="font-medium">{markerInfo.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700">
-                      {SCORE_LABELS[marker.score]}
-                    </span>
-                    {marker.rationale && (
-                      <span className="text-xs text-gray-600">
-                        (with rationale)
-                      </span>
                     )}
                   </div>
-                </div>
-              ) : null;
-            })}
-          </div>
-        </div>
-      )}
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          {/* Social & Governance Tab */}
+          <TabsContent value="social_governance" className="mt-6 space-y-4">
+            <div className="space-y-4">
+              {markersByType.social_governance?.map((marker) => {
+                const selected = selectedMarkers.get(marker.id);
+                const score = selected?.score || 0;
+                const isExpanded = expandedCards.has(marker.id);
+                
+                return (
+                  <div
+                    key={marker.id}
+                    className={`border rounded-lg transition-all ${
+                      score > 0 ? 'border-gray-300 bg-gray-50' : 'border-gray-200 bg-white'
+                    }`}
+                  >
+                    {/* Card Header - Clickable to expand/collapse */}
+                    <div 
+                      className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => toggleCard(marker.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                            {marker.name}
+                            {score > 0 && (
+                              <CheckCircle className="w-5 h-5 text-green-600" />
+                            )}
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p>{marker.description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </h4>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-gray-500" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Expanded Content */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
+                        {/* Score Selection Dropdown */}
+                        <div className="space-y-2 pt-4">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Policy Marker Score
+                          </Label>
+                          <PolicyMarkerScoreSelect
+                            value={score}
+                            onValueChange={(newScore) => updateMarkerScore(marker.id, newScore as 0 | 1 | 2)}
+                            placeholder="Select relevance score..."
+                          />
+                        </div>
+
+                        {/* Rationale Field - Only show when score > 0 */}
+                        {score > 0 && (
+                          <div className="space-y-2 pt-2 border-t border-gray-100">
+                            <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-gray-700">
+                              Rationale for Scoring (Optional)
+                            </Label>
+                            <Textarea
+                              id={`${marker.id}-rationale`}
+                              placeholder="Explain how this activity addresses this policy marker..."
+                              value={selected?.rationale || ''}
+                              onChange={(e) => updateMarkerRationale(marker.id, e.target.value)}
+                              rows={3}
+                              className="text-sm"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          {/* Other Cross-Cutting Issues Tab */}
+          <TabsContent value="other" className="mt-6 space-y-4">
+            <div className="space-y-4">
+              {markersByType.other?.map((marker) => {
+                const selected = selectedMarkers.get(marker.id);
+                const score = selected?.score || 0;
+                const isExpanded = expandedCards.has(marker.id);
+                
+                return (
+                  <div
+                    key={marker.id}
+                    className={`border rounded-lg transition-all ${
+                      score > 0 ? 'border-gray-300 bg-gray-50' : 'border-gray-200 bg-white'
+                    }`}
+                  >
+                    {/* Card Header - Clickable to expand/collapse */}
+                    <div 
+                      className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => toggleCard(marker.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                            {marker.name}
+                            {score > 0 && (
+                              <CheckCircle className="w-5 h-5 text-green-600" />
+                            )}
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p>{marker.description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </h4>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-gray-500" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Expanded Content */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
+                        {/* Score Selection Dropdown */}
+                        <div className="space-y-2 pt-4">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Policy Marker Score
+                          </Label>
+                          <PolicyMarkerScoreSelect
+                            value={score}
+                            onValueChange={(newScore) => updateMarkerScore(marker.id, newScore as 0 | 1 | 2)}
+                            placeholder="Select relevance score..."
+                          />
+                        </div>
+
+                        {/* Rationale Field - Only show when score > 0 */}
+                        {score > 0 && (
+                          <div className="space-y-2 pt-2 border-t border-gray-100">
+                            <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-gray-700">
+                              Rationale for Scoring (Optional)
+                            </Label>
+                            <Textarea
+                              id={`${marker.id}-rationale`}
+                              placeholder="Explain how this activity addresses this policy marker..."
+                              value={selected?.rationale || ''}
+                              onChange={(e) => updateMarkerRationale(marker.id, e.target.value)}
+                              rows={3}
+                              className="text-sm"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </TooltipProvider>
     </div>
   );
 }

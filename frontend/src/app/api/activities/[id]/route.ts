@@ -22,6 +22,40 @@ export async function PATCH(
     console.log('[AIMS API] PATCH /api/activities/[id] - Updating activity:', id);
     console.log('[AIMS API] Update data:', JSON.stringify(body, null, 2));
     
+    // Handle basic activity field updates (title, description, dates, etc.)
+    const activityFields: any = {};
+    const fieldsToUpdate = [
+      'title_narrative', 'description_narrative', 'planned_start_date', 'planned_end_date',
+      'actual_start_date', 'actual_end_date', 'activity_status', 'collaboration_type',
+      'iati_identifier', 'default_currency', 'default_aid_type', 'default_finance_type',
+      'default_flow_type', 'default_tied_status', 'activity_scope', 'language'
+    ];
+    
+    fieldsToUpdate.forEach(field => {
+      if (body[field] !== undefined) {
+        activityFields[field] = body[field];
+      }
+    });
+    
+    // Update basic activity fields if any were provided
+    if (Object.keys(activityFields).length > 0) {
+      activityFields.updated_at = new Date().toISOString();
+      
+      console.log('[AIMS API] Updating basic activity fields:', JSON.stringify(activityFields, null, 2));
+      
+      const { error: activityUpdateError } = await getSupabaseAdmin()
+        .from('activities')
+        .update(activityFields)
+        .eq('id', id);
+      
+      if (activityUpdateError) {
+        console.error('[AIMS API] Error updating activity fields:', activityUpdateError);
+        throw activityUpdateError;
+      }
+      
+      console.log('[AIMS API] Basic activity fields updated successfully');
+    }
+    
     // Handle SDG mappings update
     if (body.sdgMappings !== undefined) {
       // First, delete existing SDG mappings
@@ -114,14 +148,16 @@ export async function PATCH(
       console.log('[AIMS API] Working groups updated successfully');
     }
     
-    // Update activity updated_at timestamp
-    const { error: updateError } = await getSupabaseAdmin()
-      .from('activities')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', id);
-    
-    if (updateError) {
-      console.error('[AIMS API] Error updating activity timestamp:', updateError);
+    // Update activity updated_at timestamp only if no basic fields were updated
+    if (Object.keys(activityFields).length === 0) {
+      const { error: updateError } = await getSupabaseAdmin()
+        .from('activities')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', id);
+      
+      if (updateError) {
+        console.error('[AIMS API] Error updating activity timestamp:', updateError);
+      }
     }
     
     return NextResponse.json({ success: true });
@@ -274,6 +310,8 @@ export async function GET(
       defaultTiedStatus: activity.default_tied_status,
       defaultFlowType: activity.default_flow_type, // <-- Add this line
       flowType: activity.default_flow_type, // (optional: keep for backward compatibility)
+      activityScope: activity.activity_scope,
+      language: activity.language,
       defaultAidModality: activity.default_aid_modality,
       default_aid_modality: activity.default_aid_modality,
       defaultAidModalityOverride: activity.default_aid_modality_override,

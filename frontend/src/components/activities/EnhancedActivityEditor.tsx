@@ -13,6 +13,9 @@ import { EnhancedActivityComments } from './EnhancedActivityComments';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import { LinkedActivityTitle } from '@/components/ui/linked-activity-title';
+import IatiLinkTab from './IatiLinkTab';
+import XmlImportTab from './XmlImportTab';
+import { ActivityScopeSearchableSelect } from '@/components/forms/ActivityScopeSearchableSelect';
 import {
   Save,
   Calendar,
@@ -28,6 +31,8 @@ import {
   AlertCircle,
   Upload,
   Building,
+  Link2,
+  FileCode,
 } from 'lucide-react';
 
 // Initialize Supabase client
@@ -63,12 +68,14 @@ interface EnhancedActivityEditorProps {
     title?: string;
     description?: string;
     collaboration_type?: string;
+    activity_scope?: string;
     activity_status?: string;
     planned_start_date?: string;
     planned_end_date?: string;
     actual_start_date?: string;
     actual_end_date?: string;
     effective_date?: string;
+    iati_identifier?: string;
     mou_documents?: Array<{
       name: string;
       url: string;
@@ -111,12 +118,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     title: initialData.title || '',
     description: initialData.description || '',
     collaboration_type: initialData.collaboration_type || '',
+    activity_scope: initialData.activity_scope || '',
     activity_status: initialData.activity_status || '1',
     planned_start_date: initialData.planned_start_date || '',
     planned_end_date: initialData.planned_end_date || '',
     actual_start_date: initialData.actual_start_date || '',
     actual_end_date: initialData.actual_end_date || '',
     effective_date: initialData.effective_date || '',
+    iati_identifier: initialData.iati_identifier || '',
   });
 
   // File upload state
@@ -169,6 +178,10 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
 
   const updateCollaborationType = async (collaborationType: string) => {
     await updateField('collaboration_type', collaborationType, 'Collaboration Type');
+  };
+
+  const updateActivityScope = async (activityScope: string) => {
+    await updateField('activity_scope', activityScope, 'Activity Scope');
   };
 
   const updateActivityStatus = async (status: string) => {
@@ -252,6 +265,9 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         break;
       case 'collaboration_type':
         await updateCollaborationType(value);
+        break;
+      case 'activity_scope':
+        await updateActivityScope(value);
         break;
       case 'activity_status':
         await updateActivityStatus(value);
@@ -357,7 +373,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
 
         {/* Main Activity Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Basic Info
@@ -368,7 +384,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
             </TabsTrigger>
             <TabsTrigger value="finances" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
-              Finances
+              Financial Information
             </TabsTrigger>
             <TabsTrigger value="locations" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
@@ -381,6 +397,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
             <TabsTrigger value="partners" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Partners
+            </TabsTrigger>
+            <TabsTrigger value="iati" className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              IATI Link
+            </TabsTrigger>
+            <TabsTrigger value="xml-import" className="flex items-center gap-2">
+              <FileCode className="h-4 w-4" />
+              XML Import
             </TabsTrigger>
             <TabsTrigger value="comments" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
@@ -481,6 +505,23 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                     <SaveIndicator fieldName="collaboration_type" />
                   </div>
                 </FieldWrapper>
+
+                {/* Activity Scope */}
+                <FieldWrapper section="basic_info" field="activity_scope" label="Activity Scope">
+                  <div className="space-y-1">
+                    <ActivityScopeSearchableSelect
+                      value={formData.activity_scope}
+                      onValueChange={(value) => {
+                        handleFieldChange('activity_scope', value);
+                        handleFieldBlur('activity_scope', value);
+                      }}
+                      disabled={saving.activity_scope}
+                      placeholder="Select activity scope..."
+                      dropdownId="activity-scope-editor"
+                    />
+                    <SaveIndicator fieldName="activity_scope" />
+                  </div>
+                </FieldWrapper>
               </CardContent>
             </Card>
           </TabsContent>
@@ -567,12 +608,6 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
           {/* Finances Tab */}
           <TabsContent value="finances" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Financial Information
-                </CardTitle>
-              </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <FieldWrapper section="finances" label="Budget & Transactions" showCommentButton={true}>
@@ -673,6 +708,21 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                 </FieldWrapper>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* IATI Link Tab */}
+          <TabsContent value="iati" className="space-y-6">
+            <IatiLinkTab 
+              activityId={activityId}
+              iatiIdentifier={formData.iati_identifier}
+            />
+          </TabsContent>
+
+          {/* XML Import Tab */}
+          <TabsContent value="xml-import" className="space-y-6">
+            <XmlImportTab 
+              activityId={activityId}
+            />
           </TabsContent>
 
           {/* Comments Tab */}

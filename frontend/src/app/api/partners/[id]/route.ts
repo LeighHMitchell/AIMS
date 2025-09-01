@@ -2,22 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { calculateCooperationModality } from '@/components/OrganizationFieldHelpers';
-import fs from 'fs/promises';
-import path from 'path';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
 
-// Path to the system settings JSON file
-const SETTINGS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'system-settings.json');
-
-// Get system home country
-async function getSystemHomeCountry(): Promise<string> {
+// Get system home country from database
+async function getSystemHomeCountry(supabaseAdmin: any): Promise<string> {
   try {
-    // Try file-based storage (fallback for development)
-    const fileContent = await fs.readFile(SETTINGS_FILE_PATH, 'utf-8');
-    const settings = JSON.parse(fileContent);
-    return settings.homeCountry || 'RW';
+    const { data: settings, error } = await supabaseAdmin
+      .from('system_settings')
+      .select('home_country')
+      .single();
+
+    if (error) {
+      console.log('Error fetching system settings, using default:', error.message);
+      return 'RW'; // Default fallback
+    }
+
+    return settings?.home_country || 'RW';
   } catch (error) {
     console.log('System settings not found, using default');
     return 'RW'; // Default fallback
@@ -55,7 +57,8 @@ export async function OPTIONS() {
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
-    const homeCountry = await getSystemHomeCountry();
+    const supabaseAdmin = getSupabaseAdmin();
+    const homeCountry = await getSystemHomeCountry(supabaseAdmin);
 
     console.log('[AIMS] GET /api/partners/[id] - Fetching:', id);
 
@@ -67,9 +70,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     try {
       console.log('[AIMS] Attempting Supabase fetch...');
       
-      // Create Supabase client
-      const supabaseAdmin = getSupabaseAdmin();
-
       const { data, error } = await supabaseAdmin
         .from('organizations')
         .select('*')
@@ -177,7 +177,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
-    const homeCountry = await getSystemHomeCountry();
+    const supabaseAdmin = getSupabaseAdmin();
+    const homeCountry = await getSystemHomeCountry(supabaseAdmin);
     const body = await request.json();
     const { user, ...updates } = body;  // Extract user separately so it's not included in updates
 

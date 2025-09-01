@@ -43,11 +43,8 @@ interface EditUserForm {
   organisation?: string
   contactType?: string
   email: string
-
   countryCode?: string
   phoneNumber?: string
-  secondaryCountryCode?: string
-
   faxCountryCode?: string
   faxNumber?: string
   website?: string
@@ -57,7 +54,6 @@ interface EditUserForm {
   role: UserRole
   isActive: boolean
   createdBy?: string
-  reportedByOrgId?: string
 }
 
 // Helper function to parse phone number into country code and number
@@ -81,7 +77,7 @@ const parsePhoneNumber = (fullPhone: string): { countryCode: string; phoneNumber
 }
 
 export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizations = [] }: EditUserModalProps) {
-  const { user: currentUser } = useUser()
+  const { user: currentUser, refreshUser } = useUser()
   const [form, setForm] = useState<EditUserForm | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -117,8 +113,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         profilePicture: user.profilePicture || "",
         role: user.role as UserRole,
         isActive: user.isActive,
-        createdBy: user.createdBy || currentUser?.name || "",
-        reportedByOrgId: user.reportedByOrgId || user.organizationId
+        createdBy: user.createdBy || currentUser?.name || ""
       })
     }
   }, [user, isOpen])
@@ -195,7 +190,6 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         department: form.department?.trim() || null,
         contact_type: form.contactType === 'none' ? null : form.contactType,
         telephone: primaryPhone.trim() || null,
-
         fax_number: faxPhone.trim() || null,
         website: form.website?.trim() || null,
         mailing_address: form.mailingAddress?.trim() || null,
@@ -203,7 +197,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         avatar_url: form.profilePicture || null,
         updated_at: new Date().toISOString(),
         created_by: form.createdBy?.trim() || null,
-        reported_by_org_id: form.reportedByOrgId || null
+        reported_by_org_id: form.organizationId || null // Use same org for reporting
       }
 
       console.log('[EditUserModal] Updating user:', form.email)
@@ -255,11 +249,16 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         lastLogin: result.last_login,
         createdAt: result.created_at,
         updatedAt: result.updated_at,
-        createdBy: result.created_by || form.createdBy,
-        reportedByOrgId: result.reported_by_org_id || form.reportedByOrgId
+        createdBy: result.created_by || form.createdBy
       }
 
       toast.success(`User ${updatedUser.email} updated successfully!`)
+      
+      // If the updated user is the current user, refresh the user context
+      if (currentUser?.id === updatedUser.id) {
+        console.log('[EditUserModal] Refreshing current user context after self-update')
+        await refreshUser()
+      }
       
       // Notify parent component
       onUserUpdated(updatedUser)
@@ -448,42 +447,16 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                   name: org.name,
                   acronym: org.acronym,
                   type: org.type,
-                  country: undefined,
-                  iati_org_id: undefined
+                  country: org.country,
+                  iati_org_id: org.iati_org_id
                 })) || []}
                 value={form.organizationId}
                 onValueChange={handleOrganizationChange}
                 placeholder="Select or search for an organization"
               />
-            </div>
-
-            <div>
-              <Label htmlFor="organisation">Organization Name (if not in list)</Label>
-              <Input
-                id="organisation"
-                value={form.organisation}
-                onChange={(e) => handleFormChange("organisation", e.target.value)}
-                placeholder="Enter organization name"
-              />
-            </div>
-
-            {/* Reported by Organization Dropdown */}
-            <div>
-              <Label htmlFor="reportedByOrg">Reported by Organization</Label>
-              <OrganizationDropdownWithLogo
-                organizations={organizations?.map(org => ({
-                  id: org.id,
-                  name: org.name,
-                  acronym: org.acronym,
-                  type: org.type,
-                  country: org.country,
-                  iati_org_id: org.iati_org_id,
-                  logo: org.logo
-                })) || []}
-                value={form.reportedByOrgId}
-                onValueChange={(value) => handleFormChange("reportedByOrgId", value)}
-                placeholder="Select reporting organization..."
-              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Select the organization this user belongs to. This determines their access and reporting scope.
+              </p>
             </div>
           </div>
 

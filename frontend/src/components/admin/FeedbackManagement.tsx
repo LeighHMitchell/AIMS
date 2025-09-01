@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FEEDBACK_TYPES, FEEDBACK_STATUS_TYPES, FEEDBACK_PRIORITY_TYPES } from '@/data/feedback-types';
-import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore } from 'lucide-react';
+import { ALL_APP_FEATURES } from '@/data/app-features';
+import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, RefreshCw, Clock, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
@@ -17,6 +18,7 @@ import { useUser } from '@/hooks/useUser';
 interface Feedback {
   id: string;
   category: string;
+  feature: string | null;
   subject: string | null;
   message: string;
   status: string;
@@ -85,6 +87,48 @@ const getAttachmentIcon = (type: string | null) => {
   return FileText;
 };
 
+// Helper function to get priority icon and color
+const getPriorityIcon = (priority: string) => {
+  switch (priority) {
+    case 'low':
+      return { icon: Circle, color: 'text-gray-400' };
+    case 'medium':
+      return { icon: Circle, color: 'text-yellow-500' };
+    case 'high':
+      return { icon: AlertCircle, color: 'text-orange-500' };
+    case 'urgent':
+      return { icon: XCircle, color: 'text-red-600' };
+    default:
+      return { icon: Circle, color: 'text-gray-400' };
+  }
+};
+
+// Helper function to get sort icon
+const getSortIcon = (field: string, currentSortField: string, currentSortDirection: 'asc' | 'desc') => {
+  if (field !== currentSortField) {
+    return ArrowUpDown;
+  }
+  return currentSortDirection === 'asc' ? ArrowUp : ArrowDown;
+};
+
+// Helper function to get status icon and color
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'open':
+      return { icon: Circle, color: 'text-blue-600' };
+    case 'in_progress':
+      return { icon: Circle, color: 'text-yellow-500' };
+    case 'resolved':
+      return { icon: CheckCircle, color: 'text-green-600' };
+    case 'closed':
+      return { icon: CheckCircle, color: 'text-gray-600' };
+    case 'archived':
+      return { icon: Archive, color: 'text-gray-500' };
+    default:
+      return { icon: Circle, color: 'text-gray-400' };
+  }
+};
+
 export function FeedbackManagement() {
   const { user } = useUser();
   const { toast } = useToast();
@@ -95,6 +139,17 @@ export function FeedbackManagement() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
+  
+  // Sorting state
+  const [sortField, setSortField] = useState<string>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Fetch feedback
   const fetchFeedback = async () => {
@@ -102,37 +157,17 @@ export function FeedbackManagement() {
     
     setLoading(true);
     try {
-      console.log('[FeedbackManagement] Fetching feedback for user:', user.id, 'Role:', user.role);
-      
       const params = new URLSearchParams();
       params.append('userId', user.id);
       if (filterStatus !== 'all') params.append('status', filterStatus);
       if (filterCategory !== 'all') params.append('category', filterCategory);
+      params.append('page', currentPage.toString());
+      params.append('limit', pageSize.toString());
       
       const response = await fetch(`/api/feedback?${params}`);
       
-      console.log('[FeedbackManagement] API Response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('[FeedbackManagement] Fetched feedback:', data);
-        
-        // Debug: Check if any feedback has attachments
-        const feedbackWithAttachments = (data.feedback || []).filter((item: any) => item.attachment_url);
-        console.log('[FeedbackManagement] Feedback items with attachments:', feedbackWithAttachments.length);
-        if (feedbackWithAttachments.length > 0) {
-          console.log('[FeedbackManagement] Sample attachment data:', feedbackWithAttachments[0]);
-        }
-        
-        // Debug: Show all feedback data structure
-        console.log('[FeedbackManagement] All feedback data structure:', (data.feedback || []).map((item: any) => ({
-          id: item.id,
-          subject: item.subject,
-          hasAttachmentUrl: !!item.attachment_url,
-          attachmentUrl: item.attachment_url,
-          attachmentType: item.attachment_type,
-          attachmentFilename: item.attachment_filename
-        })));
         
         // Ensure each feedback item has proper user data structure
         const feedbackWithSafeUsers = (data.feedback || []).map((item: any) => ({
@@ -147,6 +182,8 @@ export function FeedbackManagement() {
         }));
         
         setFeedback(feedbackWithSafeUsers);
+        setTotalCount(data.total || feedbackWithSafeUsers.length);
+        setTotalPages(Math.ceil((data.total || feedbackWithSafeUsers.length) / pageSize));
       } else {
         const errorData = await response.json();
         console.error('[FeedbackManagement] API Error:', errorData);
@@ -167,30 +204,46 @@ export function FeedbackManagement() {
 
   useEffect(() => {
     if (user?.id) {
+      setCurrentPage(1); // Reset to first page when filters change
       fetchFeedback();
     }
   }, [filterStatus, filterCategory, user?.id]);
+
+  // Separate effect for pagination changes
+  useEffect(() => {
+    if (user?.id) {
+      fetchFeedback();
+    }
+  }, [currentPage, pageSize, user?.id]);
+
+
 
   // Update feedback status
   const updateFeedback = async (id: string, updates: Partial<Feedback>) => {
     if (!user?.id) return;
     
     try {
+      const requestBody = { userId: user.id, id, ...updates };
+      
       const response = await fetch('/api/feedback', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, id, ...updates }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
+        const responseData = await response.json();
         toast.success("Feedback updated successfully");
         fetchFeedback();
         setIsDetailModalOpen(false);
       } else {
-        throw new Error('Failed to update feedback');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[FeedbackManagement] Update error response:', response.status, errorData);
+        throw new Error(errorData.error || `Failed to update feedback (${response.status})`);
       }
     } catch (error) {
-      toast.error("Failed to update feedback. Please try again.");
+      console.error('[FeedbackManagement] Update error:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to update feedback. Please try again.");
     }
   };
 
@@ -200,32 +253,87 @@ export function FeedbackManagement() {
     await updateFeedback(id, { status: newStatus });
   };
 
+  // Handle sorting
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1); // Reset to first page when sorting changes
+  };
+
+  // Delete feedback
+  const deleteFeedback = async (id: string) => {
+    if (!user?.id) return;
+    
+    // Show confirmation dialog
+    if (!confirm('Are you sure you want to delete this feedback? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, id }),
+      });
+
+      if (response.ok) {
+        toast.success("Feedback deleted successfully");
+        fetchFeedback();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete feedback');
+      }
+    } catch (error) {
+      console.error('[FeedbackManagement] Delete error:', error);
+      toast.error("Failed to delete feedback. Please try again.");
+    }
+  };
+
+  // Sort feedback based on current sort field and direction
+  const sortedFeedback = React.useMemo(() => {
+    const sorted = [...feedback].sort((a, b) => {
+      let aValue: any = a[sortField as keyof Feedback];
+      let bValue: any = b[sortField as keyof Feedback];
+      
+      // Handle special cases
+      if (sortField === 'user') {
+        aValue = getUserDisplayName(a.user);
+        bValue = getUserDisplayName(b.user);
+      } else if (sortField === 'created_at' || sortField === 'updated_at') {
+        aValue = new Date(aValue).getTime();
+        bValue = new Date(bValue).getTime();
+      }
+      
+      // Handle null/undefined values
+      if (aValue === null || aValue === undefined) aValue = '';
+      if (bValue === null || bValue === undefined) bValue = '';
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+      
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+    
+    return sorted;
+  }, [feedback, sortField, sortDirection]);
+
   // Filter feedback based on status, category, and archived state
-  const filteredFeedback = feedback.filter(item => {
+  const filteredFeedback = sortedFeedback.filter(item => {
     const statusMatch = filterStatus === 'all' || item.status === filterStatus;
     const categoryMatch = filterCategory === 'all' || item.category === filterCategory;
     const archivedMatch = showArchived ? item.status === 'archived' : item.status !== 'archived';
     return statusMatch && categoryMatch && archivedMatch;
   });
 
-  const getStatusBadgeVariant = (status: string) => {
-    const statusType = FEEDBACK_STATUS_TYPES.find(s => s.code === status);
-    switch (statusType?.color) {
-      case 'green': return 'default';
-      case 'yellow': return 'secondary';
-      case 'blue': return 'outline';
-      default: return 'secondary';
-    }
-  };
 
-  const getPriorityBadgeVariant = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'destructive';
-      case 'high': return 'secondary';
-      case 'medium': return 'outline';
-      default: return 'secondary';
-    }
-  };
 
 
 
@@ -305,6 +413,29 @@ export function FeedbackManagement() {
               </div>
             </div>
           </div>
+          
+          {/* Refresh Controls */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  fetchFeedback();
+                  setLastRefresh(Date.now());
+                }}
+                disabled={loading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Clock className="h-4 w-4" />
+              Last updated: {formatDistanceToNow(lastRefresh, { addSuffix: true })}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -328,12 +459,79 @@ export function FeedbackManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]">Type</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Priority</TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleSort('subject')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Subject
+                      {(() => {
+                        const SortIcon = getSortIcon('subject', sortField, sortDirection);
+                        return <SortIcon className="h-4 w-4" />;
+                      })()}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleSort('feature')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Feature
+                      {(() => {
+                        const SortIcon = getSortIcon('feature', sortField, sortDirection);
+                        return <SortIcon className="h-4 w-4" />;
+                      })()}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleSort('user')}
+                  >
+                    <div className="flex items-center gap-2">
+                      User
+                      {(() => {
+                        const SortIcon = getSortIcon('user', sortField, sortDirection);
+                        return <SortIcon className="h-4 w-4" />;
+                      })()}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Status
+                      {(() => {
+                        const SortIcon = getSortIcon('status', sortField, sortDirection);
+                        return <SortIcon className="h-4 w-4" />;
+                      })()}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleSort('priority')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Priority
+                      {(() => {
+                        const SortIcon = getSortIcon('priority', sortField, sortDirection);
+                        return <SortIcon className="h-4 w-4" />;
+                      })()}
+                    </div>
+                  </TableHead>
                   <TableHead>Attachment</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleSort('created_at')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Created
+                      {(() => {
+                        const SortIcon = getSortIcon('created_at', sortField, sortDirection);
+                        return <SortIcon className="h-4 w-4" />;
+                      })()}
+                    </div>
+                  </TableHead>
                   <TableHead className="w-[200px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -360,32 +558,46 @@ export function FeedbackManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div className="font-medium">{getUserDisplayName(item.user)}</div>
-                          <div className="text-gray-500">{item.user?.email || 'Unknown'}</div>
+                          {item.feature ? (
+                            <div className="max-w-[200px]">
+                              <div className="font-medium text-blue-600 truncate">
+                                {ALL_APP_FEATURES.find(f => f.code === item.feature)?.name || item.feature}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {ALL_APP_FEATURES.find(f => f.code === item.feature)?.group || 'Unknown'}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">Not specified</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusBadgeVariant(item.status)}>
-                          {FEEDBACK_STATUS_TYPES.find(s => s.code === item.status)?.name || item.status}
-                        </Badge>
+                        <div className="text-sm">
+                          <div className="font-medium">{getUserDisplayName(item.user)}</div>
+                          {item.user?.email && item.user.email !== getUserDisplayName(item.user) && (
+                            <div className="text-gray-500">{item.user.email}</div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getPriorityBadgeVariant(item.priority)}>
-                          {FEEDBACK_PRIORITY_TYPES.find(p => p.code === item.priority)?.name || item.priority}
-                        </Badge>
+                        <div className="flex items-center justify-center">
+                          {(() => {
+                            const { icon: StatusIcon, color } = getStatusIcon(item.status);
+                            return <StatusIcon className={`h-5 w-5 ${color}`} />;
+                          })()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          {(() => {
+                            const { icon: PriorityIcon, color } = getPriorityIcon(item.priority);
+                            return <PriorityIcon className={`h-5 w-5 ${color}`} />;
+                          })()}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {(() => {
-                          // Debug logging for attachment data
-                          if (item.attachment_url) {
-                            console.log('[FeedbackTable] Item with attachment:', {
-                              id: item.id,
-                              attachment_url: item.attachment_url,
-                              attachment_type: item.attachment_type,
-                              attachment_filename: item.attachment_filename
-                            });
-                          }
-                          
                           return item.attachment_url ? (
                             <div className="flex items-center gap-2">
                               {item.attachment_type?.startsWith('image/') ? (
@@ -399,16 +611,12 @@ export function FeedbackManagement() {
                                     title="Click to view full size"
                                   >
                                     <img 
-                                      src={item.attachment_url} 
+                                      src={item.attachment_url || ''} 
                                       alt="Thumbnail"
                                       className="w-16 h-16 object-cover rounded border cursor-pointer hover:shadow-md transition-shadow"
                                       onError={(e) => {
                                         const target = e.target as HTMLImageElement;
-                                        console.error('[FeedbackTable] Image load error for:', item.attachment_url);
                                         target.style.display = 'none';
-                                      }}
-                                      onLoad={() => {
-                                        console.log('[FeedbackTable] Image loaded successfully:', item.attachment_url);
                                       }}
                                     />
                                   </button>
@@ -436,7 +644,9 @@ export function FeedbackManagement() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               setSelectedFeedback(item);
                               setIsDetailModalOpen(true);
                             }}
@@ -446,7 +656,11 @@ export function FeedbackManagement() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => toggleArchive(item.id, item.status)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleArchive(item.id, item.status);
+                            }}
                             title={item.status === 'archived' ? 'Restore' : 'Archive'}
                           >
                             {item.status === 'archived' ? (
@@ -454,6 +668,19 @@ export function FeedbackManagement() {
                             ) : (
                               <Archive className="h-4 w-4" />
                             )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              deleteFeedback(item.id);
+                            }}
+                            title="Delete"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                          >
+                            <Trash className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -465,6 +692,104 @@ export function FeedbackManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} feedback items
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Items per page:</label>
+                <Select value={pageSize.toString()} onValueChange={(value) => {
+                  setPageSize(parseInt(value));
+                  setCurrentPage(1);
+                }}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Detail Modal */}
       <FeedbackDetailModal
@@ -539,6 +864,28 @@ function FeedbackDetailModal({
             </div>
           </div>
 
+          {/* Feature Information */}
+          {feedback.feature && (
+            <div>
+              <h4 className="font-medium mb-2">Related Feature</h4>
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="flex-1">
+                    <div className="font-medium text-blue-900">
+                      {ALL_APP_FEATURES.find(f => f.code === feedback.feature)?.name || feedback.feature}
+                    </div>
+                    <div className="text-sm text-blue-700 mt-1">
+                      {ALL_APP_FEATURES.find(f => f.code === feedback.feature)?.group || 'Unknown Group'}
+                    </div>
+                    <div className="text-sm text-blue-600 mt-2">
+                      {ALL_APP_FEATURES.find(f => f.code === feedback.feature)?.description || 'No description available'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Attachment */}
           {feedback.attachment_url && (
             <div>
@@ -557,13 +904,15 @@ function FeedbackDetailModal({
                       <button
                         onClick={() => {
                           // Open image in new tab for full size viewing
-                          window.open(feedback.attachment_url, '_blank');
+                          if (feedback.attachment_url) {
+                            window.open(feedback.attachment_url, '_blank');
+                          }
                         }}
                         className="w-full hover:opacity-90 transition-opacity cursor-pointer"
                         title="Click to view full size in new tab"
                       >
                         <img 
-                          src={feedback.attachment_url} 
+                          src={feedback.attachment_url || ''} 
                           alt="Feedback attachment"
                           className="max-w-full max-h-96 object-contain mx-auto cursor-pointer"
                           onError={(e) => {
@@ -575,7 +924,7 @@ function FeedbackDetailModal({
                       <p className="text-xs text-gray-500 text-center mt-2">Click image to view full size</p>
                     </div>
                     <Button variant="outline" size="sm" asChild>
-                      <a href={feedback.attachment_url} target="_blank" rel="noopener noreferrer">
+                      <a href={feedback.attachment_url || '#'} target="_blank" rel="noopener noreferrer">
                         <Download className="h-4 w-4 mr-2" />
                         Download Original
                       </a>
@@ -596,7 +945,7 @@ function FeedbackDetailModal({
                       </div>
                     </div>
                     <Button variant="outline" size="sm" asChild>
-                      <a href={feedback.attachment_url} target="_blank" rel="noopener noreferrer">
+                      <a href={feedback.attachment_url || '#'} target="_blank" rel="noopener noreferrer">
                         <Download className="h-4 w-4 mr-2" />
                         Download
                       </a>

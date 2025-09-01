@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Edit2, Trash2, ArrowRight, ArrowLeft, ArrowUpDown } from 'lucide-react';
+import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Edit2, Trash2, ArrowRight, ArrowLeft, ArrowUpDown, CheckCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -79,6 +79,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
   const [narrative, setNarrative] = useState('');
   const [currentActivity, setCurrentActivity] = useState<Activity | null>(null);
   const [tableMissing, setTableMissing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch current activity details
@@ -231,6 +233,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     }
 
     try {
+      setSaving(true);
+      
       if (editingActivity) {
         // Update existing link
         const response = await fetch(`/api/activities/${activityId}/linked/${editingActivity.id}`, {
@@ -274,6 +278,9 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
       // Refresh data
       await fetchLinkedActivities();
       
+      // Update last saved timestamp
+      setLastSaved(new Date());
+      
       // Reset modal
       setShowModal(false);
       setSelectedActivity(null);
@@ -283,6 +290,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     } catch (error: any) {
       console.error('Error saving link:', error);
       toast.error(error.message || 'Failed to save link');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -291,6 +300,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     if (!confirm('Are you sure you want to remove this link?')) return;
     
     try {
+      setSaving(true);
+      
       const response = await fetch(`/api/activities/${activityId}/linked/${linkedActivityId}`, {
         method: 'DELETE'
       });
@@ -299,9 +310,14 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
       
       toast.success('Link removed successfully');
       await fetchLinkedActivities();
+      
+      // Update last saved timestamp
+      setLastSaved(new Date());
     } catch (error) {
       console.error('Error deleting link:', error);
       toast.error('Failed to remove link');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -454,6 +470,13 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               Established Links
               <HelpTextTooltip content="Activities linked to this one through IATI relationship types" />
+              {/* Save indicator */}
+              {saving && (
+                <Loader2 className="h-4 w-4 text-orange-600 animate-spin" />
+              )}
+              {!saving && lastSaved && linkedActivities.length > 0 && (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              )}
             </h3>
           </div>
 
@@ -531,6 +554,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                                 <span className="font-medium text-gray-900"> ({link.acronym})</span>
                               )}
                             </h4>
+                            {/* Green tick to show this link is saved to backend */}
+                            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
                           </div>
                           
                           <div className="space-y-1 ml-6">
@@ -729,10 +754,13 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           </Button>
           <Button
               onClick={handleSave}
-              disabled={!relationshipType}
+              disabled={!relationshipType || saving}
               className="bg-gray-900 text-white hover:bg-gray-800"
             >
-              {editingActivity ? 'Update' : 'Create'} Link
+              {saving && (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              )}
+              {saving ? 'Saving...' : `${editingActivity ? 'Update' : 'Create'} Link`}
           </Button>
           </DialogFooter>
         </DialogContent>

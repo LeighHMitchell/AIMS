@@ -59,7 +59,8 @@ export default function ActivityEditorNavigation({
       title: "Activity Overview",
       sections: [
         { id: "general", label: "General" },
-        { id: "iati", label: "IATI Sync" },
+        { id: "iati", label: "IATI Link" },
+        { id: "xml-import", label: "XML Import" },
         { id: "sectors", label: "Sectors" },
         { id: "locations", label: "Locations" },
       ]

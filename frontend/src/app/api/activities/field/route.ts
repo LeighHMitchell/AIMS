@@ -510,6 +510,18 @@ export async function POST(request: Request) {
         updateData.collaboration_type = body.value;
         break;
         
+      case 'activityScope':
+        oldValue = existingActivity.activity_scope;
+        newValue = body.value;
+        updateData.activity_scope = body.value;
+        break;
+        
+      case 'language':
+        oldValue = existingActivity.language;
+        newValue = body.value;
+        updateData.language = body.value;
+        break;
+        
       case 'otherIdentifier':
         oldValue = existingActivity.other_identifier;
         newValue = body.value;
@@ -968,6 +980,8 @@ export async function POST(request: Request) {
       actualStartDate: updatedActivity.actual_start_date,
       actualEndDate: updatedActivity.actual_end_date,
       collaborationType: updatedActivity.collaboration_type,
+      activityScope: updatedActivity.activity_scope,
+      language: updatedActivity.language,
       otherIdentifier: updatedActivity.other_identifier,
       iatiIdentifier: updatedActivity.iati_identifier,
       updatedAt: updatedActivity.updated_at

@@ -264,7 +264,7 @@ export default function SectorSunburstVisualization({
           .on('mouseover', function(event) {
             d3.select(this).attr('opacity', 0.8);
             tooltip.html(`<div class="font-semibold">${category.code} – ${category.name}</div>
-                         <div class="text-gray-300">DAC Category</div>
+                         <div class="text-gray-300">Sector Category</div>
                          <div class="text-gray-300">${category.percentage.toFixed(1)}% of total</div>`)
               .style('left', `${event.pageX + 10}px`)
               .style('top', `${event.pageY - 10}px`)
@@ -278,6 +278,24 @@ export default function SectorSunburstVisualization({
           .on('click', function() {
             onSegmentClick?.(category.code, 'category');
           });
+        
+        // Add text label for category code
+        const categoryMidAngle = currentAngle + (categoryAngle / 2);
+        const categoryTextRadius = innerRadius + (ringWidth / 2);
+        const categoryTextX = centerX + (categoryTextRadius * Math.cos((categoryMidAngle - 90) * (Math.PI / 180)));
+        const categoryTextY = centerY + (categoryTextRadius * Math.sin((categoryMidAngle - 90) * (Math.PI / 180)));
+        
+        g.append('text')
+          .attr('x', categoryTextX)
+          .attr('y', categoryTextY)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('class', 'font-mono text-xs font-bold fill-white')
+          .style('font-family', 'monospace')
+          .style('font-size', '10px')
+          .style('font-weight', 'bold')
+          .style('pointer-events', 'none')
+          .text(category.code);
       }
 
       // Process sectors within this category
@@ -301,7 +319,7 @@ export default function SectorSunburstVisualization({
             .on('mouseover', function(event) {
               d3.select(this).attr('opacity', 0.8);
               tooltip.html(`<div class="font-semibold">${sector.code} – ${sector.name}</div>
-                           <div class="text-gray-300">3-digit Sector</div>
+                           <div class="text-gray-300">Sector</div>
                            <div class="text-gray-300">${sector.percentage.toFixed(1)}% of total</div>`)
                 .style('left', `${event.pageX + 10}px`)
                 .style('top', `${event.pageY - 10}px`)
@@ -336,7 +354,7 @@ export default function SectorSunburstVisualization({
               .on('mouseover', function(event) {
                 d3.select(this).attr('opacity', 0.8);
                 tooltip.html(`<div class="font-semibold">${subsector.code} – ${subsector.name}</div>
-                             <div class="text-gray-300">5-digit Subsector</div>
+                             <div class="text-gray-300">Sub-sector</div>
                              <div class="text-gray-300">${subsector.percentage.toFixed(1)}% of total</div>`)
                   .style('left', `${event.pageX + 10}px`)
                   .style('top', `${event.pageY - 10}px`)

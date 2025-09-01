@@ -13,6 +13,13 @@ import {
   X,
   Cloud,
   ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Edit,
+  Trash2,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { DocumentCardInlineFixed } from './DocumentCardInlineFixed';
 import {
@@ -55,6 +62,14 @@ import { DocumentCategorySelect } from '@/components/forms/DocumentCategorySelec
 import { DocumentLanguagesSelect } from '@/components/forms/DocumentLanguagesSelect';
 import { RecipientCountriesSelect } from '@/components/forms/RecipientCountriesSelect';
 import { RecipientCountriesMultiSelect } from '@/components/forms/RecipientCountriesMultiSelect';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 // Document Type Filter Component
 interface DocumentTypeFilterProps {
@@ -396,6 +411,49 @@ export function DocumentsAndImagesTabInline({
     onChange(documents.filter(doc => doc.url !== url));
     toast.success('Document deleted successfully');
   };
+
+  const handleDownloadDocument = (doc: IatiDocumentLink) => {
+    console.log('Download clicked for document:', doc); // Debug log
+    try {
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = doc.url;
+      
+      // Extract filename from URL or use title
+      let filename = 'document';
+      if (doc.url) {
+        try {
+          const url = new URL(doc.url);
+          const pathParts = url.pathname.split('/');
+          filename = pathParts[pathParts.length - 1] || 'document';
+        } catch {
+          // If URL parsing fails, use title or default
+          filename = doc.title[0]?.text || 'document';
+        }
+      } else if (doc.title[0]?.text) {
+        filename = doc.title[0].text;
+      }
+      
+      // Add file extension if not present
+      if (doc.format && !filename.includes('.')) {
+        const extension = doc.format.split('/')[1] || 'bin';
+        filename += `.${extension}`;
+      }
+      
+      console.log('Downloading file:', filename); // Debug log
+      
+      link.download = filename;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Download started');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download document');
+    }
+  };
   
   const handleFileSelect = (files: FileList | null) => {
     if (!files || !activityId) return;
@@ -571,305 +629,396 @@ export function DocumentsAndImagesTabInline({
     }
   };
   
+  const [activeSubTab, setActiveSubTab] = React.useState('upload');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 10;
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentDocuments = filteredDocuments.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const resetPagination = () => {
+    setCurrentPage(1);
+  };
+
+  // Reset pagination when filters change
+  React.useEffect(() => {
+    resetPagination();
+  }, [searchTerm, filterFormat, filterCategory]);
+
   return (
     <div className="space-y-6">
-      {/* Header with Stats */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">Documents & Images</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Upload files or link to external documents
-          </p>
-        </div>
-        <div className="flex gap-4 text-sm text-gray-600">
-          <span className="flex items-center gap-1">
-            <FileText className="w-4 h-4" />
-            {stats.total} total
-          </span>
-          <span className="flex items-center gap-1">
-            <FileImage className="w-4 h-4" />
-            {stats.images} images
-          </span>
-          <span className="flex items-center gap-1">
-            <CheckCircle className="w-4 h-4" />
-            {stats.validated} validated
-          </span>
-          {stats.total > stats.validated && (
-            <span className="flex items-center gap-1 text-amber-600">
-              <AlertCircle className="w-4 h-4" />
-              {stats.total - stats.validated} need attention
-            </span>
-          )}
-        </div>
-      </div>
 
-      {/* Add Documents Section */}
-      <div className="w-full">
-        <div className="mt-4">
-          <div 
-            className={cn(
-              "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
-              isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-100",
-              !activityId && "opacity-50 cursor-not-allowed"
-            )}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => activityId && fileInputRef.current?.click()}
-          >
-            <div className="text-center max-w-md">
-              <div className="mb-6">
-                {isDragOver ? (
-                  <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
-                ) : (
-                  <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                )}
-              </div>
-              <h4 className="text-2xl font-medium text-gray-900 mb-3">
-                {isDragOver ? "Drop your files here" : "Upload Documents & Images"}
-              </h4>
-              <p className="text-gray-600 mb-6 text-lg">
-                Drag and drop files anywhere in this area, or click to browse your computer
-              </p>
-              <Button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (activityId) fileInputRef.current?.click();
-                }}
-                disabled={!activityId}
-                className="gap-2 text-lg px-6 py-3"
-                size="lg"
-              >
-                <Upload className="w-5 h-5" />
-                Choose Files
-              </Button>
-              <p className="text-sm text-gray-500 mt-4">
-                Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={(e) => handleFileSelect(e.target.files)}
-                className="hidden"
-                accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Search and Filter Section */}
-      {documents.length > 0 && (
-        <div className="bg-white border rounded-lg p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search documents..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-3">
-              <div className="w-64">
-                <DocumentCategoryFilter
-                  value={filterCategory}
-                  onValueChange={setFilterCategory}
-                />
-              </div>
-              
-              <div className="w-48">
-                <DocumentTypeFilter
-                  value={filterFormat}
-                  onValueChange={setFilterFormat}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Uploading Files */}
-      {uploadingFiles.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-700">Uploading Files</h4>
-          {uploadingFiles.map(upload => (
-            <div key={upload.id} className="bg-gray-50 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium truncate flex-1">
-                  {upload.file.name}
-                </span>
-                <span className="text-xs text-gray-500 ml-2">
-                  {upload.status === 'uploading' && `${Math.round(upload.progress)}%`}
-                  {upload.status === 'success' && 'Complete'}
-                  {upload.status === 'error' && 'Failed'}
-                </span>
-              </div>
-              <Progress 
-                value={upload.progress} 
+      {/* Sub-tabs for Upload and Library */}
+      <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upload">Upload</TabsTrigger>
+          <TabsTrigger value="library">Library</TabsTrigger>
+        </TabsList>
+
+        {/* Upload Tab */}
+        <TabsContent value="upload" className="mt-6">
+          {/* Add Documents Section */}
+          <div className="w-full">
+            <div className="mt-4">
+              <div 
                 className={cn(
-                  "h-2",
-                  upload.status === 'success' && "bg-gray-100",
-                  upload.status === 'error' && "bg-red-100"
+                  "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
+                  isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-100",
+                  !activityId && "opacity-50 cursor-not-allowed"
                 )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => activityId && fileInputRef.current?.click()}
+              >
+                <div className="text-center max-w-md">
+                  <div className="mb-6">
+                    {isDragOver ? (
+                      <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
+                    ) : (
+                      <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    )}
+                  </div>
+                  <h4 className="text-2xl font-medium text-gray-900 mb-3">
+                    {isDragOver ? "Drop your files here" : "Upload Documents & Images"}
+                  </h4>
+                  <p className="text-gray-600 mb-6 text-lg">
+                    Drag and drop files anywhere in this area, or click to browse your computer
+                  </p>
+                  <Button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (activityId) fileInputRef.current?.click();
+                    }}
+                    disabled={!activityId}
+                    className="gap-2 text-lg px-6 py-3"
+                    size="lg"
+                  >
+                    <Upload className="w-5 h-5" />
+                    Choose Files
+                  </Button>
+                  <p className="text-sm text-gray-500 mt-4">
+                    Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={(e) => handleFileSelect(e.target.files)}
+                    className="hidden"
+                    accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Uploading Files */}
+          {uploadingFiles.length > 0 && (
+            <div className="space-y-2 mt-6">
+              <h4 className="text-sm font-medium text-gray-700">Uploading Files</h4>
+              {uploadingFiles.map(upload => (
+                <div key={upload.id} className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium truncate flex-1">
+                      {upload.file.name}
+                    </span>
+                    <span className="text-xs text-gray-500 ml-2">
+                      {upload.status === 'uploading' && `${Math.round(upload.progress)}%`}
+                      {upload.status === 'success' && 'Complete'}
+                      {upload.status === 'error' && 'Failed'}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={upload.progress} 
+                    className={cn(
+                      "h-2",
+                      upload.status === 'success' && "bg-gray-100",
+                      upload.status === 'error' && "bg-red-100"
+                    )}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New Document Form */}
+          {newDocument && (
+            <div className="mt-6">
+              <DocumentCardInlineFixed
+                document={newDocument}
+                onSave={handleSaveNewDocument}
+                onDelete={handleCancelNewDocument}
+                fetchHead={fetchHead}
+                locale={locale}
+                isNew={true}
               />
             </div>
-          ))}
-        </div>
-      )}
-      
-      {/* New Document Form */}
-      {newDocument && (
-        <DocumentCardInlineFixed
-          document={newDocument}
-          onSave={handleSaveNewDocument}
-          onDelete={handleCancelNewDocument}
-          fetchHead={fetchHead}
-          locale={locale}
-          isNew={true}
-        />
-      )}
-      
-      {/* Documents List */}
-      {documents.length > 0 && (
-        <div className="space-y-6">
-          {filteredDocuments.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
-              <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium mb-2">No matching documents</h3>
-              <p>Try adjusting your search or filters</p>
+          )}
+        </TabsContent>
+
+        {/* Library Tab */}
+        <TabsContent value="library" className="mt-6">
+          {/* Search and Filter Section */}
+          {documents.length > 0 && (
+            <div className="bg-white border rounded-lg p-4 mb-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Search documents..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <div className="w-64">
+                    <DocumentCategoryFilter
+                      value={filterCategory}
+                      onValueChange={setFilterCategory}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Documents Table */}
+          {documents.length > 0 ? (
+            <div className="space-y-6">
+              {filteredDocuments.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
+                  <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-medium mb-2">No matching documents</h3>
+                  <p>Try adjusting your search or filters</p>
+                </div>
+              ) : (
+                <>
+                  {/* Separate uploaded files and linked documents */}
+                  {(() => {
+                    const uploadedDocs = filteredDocuments.filter(doc => isDocumentUploaded(doc));
+                    const linkedDocs = filteredDocuments.filter(doc => !isDocumentUploaded(doc));
+                    
+                    return (
+                      <>
+                        {uploadedDocs.length > 0 && (
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 pb-2 border-b">
+                              <Cloud className="w-5 h-5 text-gray-600" />
+                              <h4 className="font-medium text-gray-900">Uploaded Files</h4>
+                            </div>
+                            
+                            {/* Uploaded Files Table */}
+                            <div className="bg-white border rounded-lg overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-12">Type</TableHead>
+                                    <TableHead>Title</TableHead>
+                                    <TableHead>Category</TableHead>
+                                    <TableHead>Languages</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="w-28">Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {uploadedDocs.slice(startIndex, endIndex).map((doc) => (
+                                    <TableRow key={doc.url}>
+                                      <TableCell>
+                                        <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center">
+                                          {isImageMime(doc.format) ? (
+                                            <FileImage className="w-4 h-4 text-gray-600" />
+                                          ) : (
+                                            <FileText className="w-4 h-4 text-gray-600" />
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="max-w-xs">
+                                          <div className="font-medium text-gray-900 truncate">
+                                            {doc.title[0]?.text || 'Untitled Document'}
+                                          </div>
+                                          {doc.description?.[0]?.text && (
+                                            <div className="text-sm text-gray-500 truncate">
+                                              {doc.description[0].text}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        {doc.categoryCode && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {DOCUMENT_CATEGORIES.find(cat => cat.code === doc.categoryCode)?.name || doc.categoryCode}
+                                          </Badge>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        {doc.languageCodes && doc.languageCodes.length > 0 && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {doc.languageCodes.join(', ')}
+                                          </Badge>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        {doc.documentDate && (
+                                          <span className="text-sm text-gray-600">
+                                            {new Date(doc.documentDate).toLocaleDateString()}
+                                          </span>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex gap-1">
+                                          {/* Download Button - Always visible */}
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleDownloadDocument(doc)}
+                                            className="h-7 w-7 p-0 hover:bg-blue-50"
+                                            title="Download"
+                                          >
+                                            <Download className="w-3 h-3 text-blue-600" />
+                                          </Button>
+                                          
+                                          {/* Edit Button */}
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleEditDocument(doc)}
+                                            className="h-7 w-7 p-0"
+                                            title="Edit"
+                                          >
+                                            <Edit className="w-3 h-3" />
+                                          </Button>
+                                          
+                                          {/* Delete Button */}
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleDeleteDocument(doc.url)}
+                                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                                            title="Delete"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+
+                            {/* Pagination for Uploaded Files */}
+                            {uploadedDocs.length > itemsPerPage && (
+                              <div className="flex items-center justify-between px-2">
+                                <div className="text-sm text-gray-700">
+                                  Showing {startIndex + 1} to {Math.min(endIndex, uploadedDocs.length)} of {uploadedDocs.length} uploaded files
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(1)}
+                                    disabled={currentPage === 1}
+                                  >
+                                    <ChevronsLeft className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                  >
+                                    <ChevronLeft className="h-4 w-4" />
+                                  </Button>
+                                  <span className="text-sm text-gray-700">
+                                    Page {currentPage} of {Math.ceil(uploadedDocs.length / itemsPerPage)}
+                                  </span>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage >= Math.ceil(uploadedDocs.length / itemsPerPage)}
+                                  >
+                                    <ChevronRight className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(Math.ceil(uploadedDocs.length / itemsPerPage))}
+                                    disabled={currentPage >= Math.ceil(uploadedDocs.length / itemsPerPage)}
+                                  >
+                                    <ChevronsRight className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {linkedDocs.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 pb-2 border-b">
+                              <ExternalLink className="w-5 h-5 text-gray-600" />
+                              <h4 className="font-medium text-gray-900">Linked Documents</h4>
+                            </div>
+                            <div className="space-y-3">
+                              {linkedDocs.map((doc, index) => (
+                                <div
+                                  key={doc.url}
+                                  className="bg-white border border-gray-200 rounded-lg p-1"
+                                >
+                                  <DocumentCardInlineFixed
+                                    document={doc}
+                                    onSave={handleSaveDocument}
+                                    onDelete={handleDeleteDocument}
+                                    fetchHead={fetchHead}
+                                    locale={locale}
+                                    isUploaded={false}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              )}
             </div>
           ) : (
-            <>
-              {/* Separate uploaded files and linked documents */}
-              {(() => {
-                const uploadedDocs = filteredDocuments.filter(doc => isDocumentUploaded(doc));
-                const linkedDocs = filteredDocuments.filter(doc => !isDocumentUploaded(doc));
-                
-                return (
-                  <>
-                    {uploadedDocs.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 pb-2 border-b">
-                          <Cloud className="w-5 h-5 text-gray-600" />
-                          <h4 className="font-medium text-gray-900">Uploaded Files ({uploadedDocs.length})</h4>
-                        </div>
-                        <div className="space-y-3">
-                          {uploadedDocs.map((doc, index) => (
-                            <div
-                              key={doc.url}
-                              className="bg-gray-50 border border-gray-200 rounded-lg p-0.5"
-                            >
-                              <DocumentCardInlineFixed
-                                document={doc}
-                                onSave={handleSaveDocument}
-                                onDelete={handleDeleteDocument}
-                                onEdit={() => handleEditDocument(doc)}
-                                fetchHead={fetchHead}
-                                locale={locale}
-                                isUploaded={true}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {linkedDocs.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 pb-2 border-b">
-                          <ExternalLink className="w-5 h-5 text-gray-600" />
-                          <h4 className="font-medium text-gray-900">Linked Documents ({linkedDocs.length})</h4>
-                        </div>
-                        <div className="space-y-3">
-                          {linkedDocs.map((doc, index) => (
-                                                      <div
-                            key={doc.url}
-                            className="bg-white border border-gray-200 rounded-lg p-1"
-                          >
-                              <DocumentCardInlineFixed
-                                document={doc}
-                                onSave={handleSaveDocument}
-                                onDelete={handleDeleteDocument}
-                                fetchHead={fetchHead}
-                                locale={locale}
-                                isUploaded={false}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </>
+            /* Empty State */
+            <div className="text-center py-16 text-gray-500">
+              <div className="flex justify-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <Cloud className="w-8 h-8 text-gray-400" />
+                </div>
+                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <ExternalLink className="w-8 h-8 text-gray-400" />
+                </div>
+              </div>
+              <h3 className="text-xl font-medium mb-2 text-gray-900">No documents yet</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Get started by uploading files from your computer or linking to documents hosted elsewhere
+              </p>
+            </div>
           )}
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
 
-      {/* Empty State */}
-      {documents.length === 0 && (
-        <div className="text-center py-16 text-gray-500">
-          <div className="flex justify-center gap-4 mb-6">
-            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-              <Cloud className="w-8 h-8 text-gray-400" />
-            </div>
-            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-              <ExternalLink className="w-8 h-8 text-gray-400" />
-            </div>
-          </div>
-          <h3 className="text-xl font-medium mb-2 text-gray-900">No documents yet</h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            Get started by uploading files from your computer or linking to documents hosted elsewhere
-          </p>
-
-        </div>
-      )}
-      
-      {/* Bulk Actions */}
-      {filteredDocuments.length > 0 && (
-        <div className="flex justify-between items-center pt-4 border-t">
-          <span className="text-sm text-gray-600">
-            Showing {filteredDocuments.length} of {documents.length} documents
-          </span>
-          
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const validDocs = documents.filter(doc => {
-                  try {
-                    return validateIatiDocument(doc).ok;
-                  } catch {
-                    return false;
-                  }
-                });
-                const xml = validDocs.map(doc => {
-                  try {
-                    return `<!-- ${doc.title[0]?.text || 'Untitled'} -->\n<!-- URL: ${doc.url} -->`;
-                  } catch {
-                    return '<!-- Invalid document -->';
-                  }
-                }).join('\n\n');
-                navigator.clipboard.writeText(xml);
-                toast.success('Document URLs copied to clipboard');
-              }}
-              className="gap-1"
-            >
-              <X className="w-3 h-3" />
-              Copy All URLs
-            </Button>
-          </div>
-        </div>
-      )}
-      
       {/* Document Metadata Modal */}
       {showMetadataModal && (pendingUploadedDocument || editingDocument) && (
         <DocumentMetadataModal

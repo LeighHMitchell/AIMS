@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { extractIatiMeta, IatiParseError } from '@/lib/iati/parseMeta';
+import { iatiAnalytics } from '@/lib/analytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,34 +84,166 @@ function getErrorMessage(error: unknown): string {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('[IATI Import] Starting import process');
-    console.log('[IATI Import] Running on server:', typeof window === 'undefined');
-    console.log('[IATI Import] getSupabaseAdmin() exists:', !!getSupabaseAdmin());
+    console.log('[IATI Import] Starting external publisher detection import process');
     
-    if (!getSupabaseAdmin()) {
-      console.error('[IATI Import] getSupabaseAdmin() is not initialized!');
+    // Parse multipart form data
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    const userId = formData.get('userId') as string;
+
+    if (!file) {
       return NextResponse.json(
-        { error: 'Database client not initialized', details: 'getSupabaseAdmin() is null' },
+        { error: 'No file provided' }, 
+        { status: 400 }
+      );
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID required' }, 
+        { status: 401 }
+      );
+    }
+
+    console.log('[IATI Import] Processing file:', file.name, 'Size:', file.size);
+
+    // Extract metadata from XML
+    let meta;
+    try {
+      meta = await extractIatiMeta(file);
+      iatiAnalytics.parsed(file.size, file.name);
+      console.log('[IATI Import] Parsed meta:', meta);
+    } catch (error) {
+      console.error('[IATI Import] Parse error:', error);
+      
+      if (error instanceof IatiParseError) {
+        iatiAnalytics.importFailed(error.message, 'parse');
+        return NextResponse.json(
+          { 
+            error: 'Parse failed',
+            message: error.message,
+            code: error.code
+          }, 
+          { status: 400 }
+        );
+      }
+      
+      iatiAnalytics.importFailed('Unknown parse error', 'parse');
+      return NextResponse.json(
+        { error: 'Failed to parse XML file' }, 
+        { status: 400 }
+      );
+    }
+
+    // Get user's publisher references
+    const supabase = getSupabaseAdmin();
+    const { data: userData, error: userError } = await supabase
+      .from('user_profiles')
+      .select('publisher_refs, org_name')
+      .eq('id', userId)
+      .single();
+
+    if (userError) {
+      console.error('[IATI Import] User lookup error:', userError);
+      return NextResponse.json(
+        { error: 'Failed to lookup user profile' }, 
         { status: 500 }
       );
     }
-    
-    // Test database connection
-    const { data: testData, error: testError } = await getSupabaseAdmin()
-      .from('organizations')
-      .select('count')
-      .limit(1);
-    
-    if (testError) {
-      console.error('[IATI Import] Database connection test failed:', testError);
-      return NextResponse.json(
-        { error: 'Database connection failed', details: getErrorMessage(testError) },
-        { status: 500 }
-      );
+
+    const userPublisherRefs: string[] = userData?.publisher_refs || [];
+    const userOrgName = userData?.org_name || 'Your Organisation';
+
+    console.log('[IATI Import] User refs:', userPublisherRefs, 'Activity ref:', meta.reportingOrgRef);
+
+    // Check if reporting org matches user's publisher refs
+    const isOwnedActivity = userPublisherRefs.includes(meta.reportingOrgRef);
+
+    if (isOwnedActivity) {
+      // Short-circuit: create as owned activity
+      console.log('[IATI Import] Creating as owned activity');
+      
+      try {
+        const { data: activity, error: createError } = await supabase
+          .from('activities')
+          .insert({
+            iati_identifier: meta.iatiId,
+            reporting_org_ref: meta.reportingOrgRef,
+            reporting_org_name: meta.reportingOrgName,
+            title_narrative: meta.reportingOrgName || meta.reportingOrgRef,
+            source_origin: 'owned',
+            include_in_totals: true,
+            edit_lock: false,
+            created_by: userId,
+            updated_by: userId
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          console.error('[IATI Import] Create error:', createError);
+          iatiAnalytics.importFailed(createError.message, 'create_owned');
+          return NextResponse.json(
+            { error: 'Failed to create activity' }, 
+            { status: 500 }
+          );
+        }
+
+        iatiAnalytics.importCompleted('owned', activity.id);
+        
+        return NextResponse.json({
+          status: 'owned',
+          createdId: activity.id,
+          meta
+        });
+
+      } catch (error) {
+        console.error('[IATI Import] Unexpected create error:', error);
+        iatiAnalytics.importFailed('Unexpected error', 'create_owned');
+        return NextResponse.json(
+          { error: 'Failed to create activity' }, 
+          { status: 500 }
+        );
+      }
     }
+
+    // External publisher detected
+    iatiAnalytics.externalDetected(meta.reportingOrgRef, userPublisherRefs);
+
+    // Check for existing activity with same IATI ID
+    const { data: existingActivity } = await supabase
+      .from('activities')
+      .select('id, iati_identifier, reporting_org_ref')
+      .eq('iati_identifier', meta.iatiId)
+      .eq('created_by', userId)
+      .single();
+
+    return NextResponse.json({
+      status: 'external',
+      meta,
+      userOrgName,
+      userPublisherRefs,
+      existingActivity: existingActivity ? {
+        id: existingActivity.id,
+        iatiId: existingActivity.iati_identifier,
+        reportingOrgRef: existingActivity.reporting_org_ref
+      } : null
+    });
+
+  } catch (error) {
+    console.error('[IATI Import] Unexpected error:', error);
+    iatiAnalytics.importFailed('Unexpected server error', 'server');
     
-    console.log('[IATI Import] Database connection verified');
-    
+    return NextResponse.json(
+      { error: 'Internal server error' }, 
+      { status: 500 }
+    );
+  }
+}
+
+// Legacy POST handler for bulk import (backward compatibility)
+export async function POST_LEGACY(request: NextRequest) {
+  try {
     const data: ImportRequest = await request.json();
     const { activities, organizations, transactions } = data;
     
