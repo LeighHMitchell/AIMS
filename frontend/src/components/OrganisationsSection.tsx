@@ -62,6 +62,38 @@ export default function OrganisationsSection({
     onError: (error) => toast.error(`Failed to manage participating organizations: ${error}`)
   });
 
+  // All hooks must be called before any early returns
+  const stableOrgsCount = useRef(participatingOrganizations.length);
+  const notifyTimeoutRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    // Clear any pending notification
+    if (notifyTimeoutRef.current) {
+      clearTimeout(notifyTimeoutRef.current);
+    }
+
+    // Only proceed if activityId exists and we have participating orgs data
+    if (!activityId || !onParticipatingOrganizationsChange) return;
+
+    const currentCount = participatingOrganizations.length;
+    
+    // Only notify if count has actually changed
+    if (stableOrgsCount.current !== currentCount) {
+      // Debounce the notification to prevent rapid updates
+      notifyTimeoutRef.current = setTimeout(() => {
+        console.log('[OrganisationsSection] Notifying parent of organization count change:', stableOrgsCount.current, '->', currentCount);
+        onParticipatingOrganizationsChange(currentCount);
+        stableOrgsCount.current = currentCount;
+      }, 300);
+    }
+
+    return () => {
+      if (notifyTimeoutRef.current) {
+        clearTimeout(notifyTimeoutRef.current);
+      }
+    };
+  }, [participatingOrganizations.length, onParticipatingOrganizationsChange, activityId]);
+
   // Early return after all hooks are called
   if (!activityId) {
     return (
@@ -76,34 +108,6 @@ export default function OrganisationsSection({
   console.log('[OrganisationsSection] organizationsLoading:', organizationsLoading, 'organizations:', organizations.length);
   console.log('[OrganisationsSection] activityId:', activityId);
   console.log('[OrganisationsSection] participatingOrganizations:', participatingOrganizations.length);
-
-  // Notify parent of participating organizations count changes (with debouncing to prevent flicker)
-  const stableOrgsCount = useRef(participatingOrganizations.length);
-  const notifyTimeoutRef = useRef<NodeJS.Timeout>();
-
-  useEffect(() => {
-    // Clear any pending notification
-    if (notifyTimeoutRef.current) {
-      clearTimeout(notifyTimeoutRef.current);
-    }
-
-    // Only notify if the count has actually changed and stabilized
-    if (stableOrgsCount.current !== participatingOrganizations.length) {
-      notifyTimeoutRef.current = setTimeout(() => {
-        stableOrgsCount.current = participatingOrganizations.length;
-        if (onParticipatingOrganizationsChange) {
-          console.log('[OrganisationsSection] Notifying parent of count change:', participatingOrganizations.length);
-          onParticipatingOrganizationsChange(participatingOrganizations.length);
-        }
-      }, 100); // Small delay to prevent flicker during loading
-    }
-
-    return () => {
-      if (notifyTimeoutRef.current) {
-        clearTimeout(notifyTimeoutRef.current);
-      }
-    };
-  }, [participatingOrganizations.length, onParticipatingOrganizationsChange]);
 
   // Get organizations by role type
   const extendingOrgs = getOrganizationsByRole('extending');

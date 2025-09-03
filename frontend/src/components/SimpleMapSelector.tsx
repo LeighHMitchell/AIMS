@@ -225,26 +225,27 @@ interface SimpleMapSelectorProps {
 
 // Map events component
 function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
-  if (!useMapEventsHook || typeof window === 'undefined') return null;
-  
-  const map = useMapEventsHook({
+  // Always call hooks first
+  const map = useMapEventsHook ? useMapEventsHook({
     click(e: any) {
-      const { lat, lng } = e.latlng;
-      onMapClick(lat, lng);
+      if (typeof window !== 'undefined') {
+        const { lat, lng } = e.latlng;
+        onMapClick(lat, lng);
+      }
     },
-  });
+  }) : null;
+  
   return null;
 }
 
 // Map initializer to ensure proper setup
 // Component to handle map reset
 function MapReset({ shouldReset, onResetComplete }: { shouldReset: boolean; onResetComplete: () => void }) {
-  if (!useMapEventsHook || typeof window === 'undefined') return null;
-  
-  const map = useMapEventsHook({});
+  // Always call hooks first
+  const map = useMapEventsHook ? useMapEventsHook({}) : null;
 
   useEffect(() => {
-    if (!map || !shouldReset) return;
+    if (!map || !shouldReset || !useMapEventsHook || typeof window === 'undefined') return;
     
     console.log('Resetting map view to Myanmar');
     map.setView([19.5, 96.0], 6);
@@ -256,12 +257,11 @@ function MapReset({ shouldReset, onResetComplete }: { shouldReset: boolean; onRe
 
 // Component to fit map bounds to locations
 function MapBounds({ locations }: { locations: Location[] }) {
-  if (!useMapEventsHook || typeof window === 'undefined') return null;
-  
-  const map = useMapEventsHook({});
+  // Always call hooks first
+  const map = useMapEventsHook ? useMapEventsHook({}) : null;
 
   useEffect(() => {
-    if (!map || !locations.length) return;
+    if (!map || !locations.length || !useMapEventsHook || typeof window === 'undefined') return;
     
     const validLocations = locations.filter(loc => 
       loc.latitude && loc.longitude && 
@@ -306,12 +306,11 @@ function MapBounds({ locations }: { locations: Location[] }) {
 }
 
 function MapInitializer() {
-  if (!useMapEventsHook || typeof window === 'undefined') return null;
-  
-  const map = useMapEventsHook({});
+  // Always call hooks first
+  const map = useMapEventsHook ? useMapEventsHook({}) : null;
 
   useEffect(() => {
-    if (map) {
+    if (map && useMapEventsHook && typeof window !== 'undefined') {
       console.log('🔧 MapInitializer: Forcing interaction setup...');
       
       // Force enable all interactions
@@ -355,13 +354,12 @@ function MapInitializer() {
 
 // Heatmap component
 function HeatmapLayer({ locations }: { locations: Location[] }) {
-  if (!useMapEventsHook || typeof window === 'undefined') return null;
-  
-  const map = useMapEventsHook({});
+  // Always call hooks first
+  const map = useMapEventsHook ? useMapEventsHook({}) : null;
   const heatLayerRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map || !useMapEventsHook || typeof window === 'undefined') return;
     
     // Load leaflet.heat plugin if available
     if (typeof window !== 'undefined') {

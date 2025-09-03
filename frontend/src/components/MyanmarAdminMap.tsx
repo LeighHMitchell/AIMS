@@ -64,12 +64,11 @@ interface MyanmarAdminMapProps {
 
 // Component to handle map reset
 function MapReset({ shouldReset, onResetComplete }: { shouldReset: boolean; onResetComplete: () => void }) {
-  if (!useMapEvents || typeof window === 'undefined') return null;
-  
-  const map = useMapEvents({});
+  // Always call hooks first
+  const map = useMapEvents ? useMapEvents({}) : null;
 
   useEffect(() => {
-    if (!map || !shouldReset) return;
+    if (!map || !shouldReset || !useMapEvents || typeof window === 'undefined') return;
     
     console.log('Resetting map view to Myanmar');
     map.setView([21.0, 96.0], 5.5);
