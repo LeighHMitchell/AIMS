@@ -227,18 +227,13 @@ interface SimpleMapSelectorProps {
 function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
   if (!useMapEventsHook || typeof window === 'undefined') return null;
   
-  try {
-    const map = useMapEventsHook({
-      click(e: any) {
-        const { lat, lng } = e.latlng;
-        onMapClick(lat, lng);
-      },
-    });
-    return null;
-  } catch (error) {
-    console.error('Error in MapEvents:', error);
-    return null;
-  }
+  const map = useMapEventsHook({
+    click(e: any) {
+      const { lat, lng } = e.latlng;
+      onMapClick(lat, lng);
+    },
+  });
+  return null;
 }
 
 // Map initializer to ensure proper setup
@@ -246,31 +241,25 @@ function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => v
 function MapReset({ shouldReset, onResetComplete }: { shouldReset: boolean; onResetComplete: () => void }) {
   if (!useMapEventsHook || typeof window === 'undefined') return null;
   
-  try {
-    const map = useMapEventsHook({});
-  
-    useEffect(() => {
-      if (!map || !shouldReset) return;
-      
-      console.log('Resetting map view to Myanmar');
-      map.setView([19.5, 96.0], 6);
-      onResetComplete();
-    }, [map, shouldReset, onResetComplete]);
+  const map = useMapEventsHook({});
+
+  useEffect(() => {
+    if (!map || !shouldReset) return;
     
-    return null;
-  } catch (error) {
-    console.error('Error in MapReset:', error);
-    return null;
-  }
+    console.log('Resetting map view to Myanmar');
+    map.setView([19.5, 96.0], 6);
+    onResetComplete();
+  }, [map, shouldReset, onResetComplete]);
+  
+  return null;
 }
 
 // Component to fit map bounds to locations
 function MapBounds({ locations }: { locations: Location[] }) {
   if (!useMapEventsHook || typeof window === 'undefined') return null;
   
-  try {
-    const map = useMapEventsHook({});
-  
+  const map = useMapEventsHook({});
+
   useEffect(() => {
     if (!map || !locations.length) return;
     
@@ -311,21 +300,16 @@ function MapBounds({ locations }: { locations: Location[] }) {
       
       map.fitBounds(bounds, { padding: [20, 20] });
     }
-    }, [map, locations]);
-    
-    return null;
-  } catch (error) {
-    console.error('Error in MapBounds:', error);
-    return null;
-  }
+  }, [map, locations]);
+  
+  return null;
 }
 
 function MapInitializer() {
   if (!useMapEventsHook || typeof window === 'undefined') return null;
   
-  try {
-    const map = useMapEventsHook({});
-  
+  const map = useMapEventsHook({});
+
   useEffect(() => {
     if (map) {
       console.log('🔧 MapInitializer: Forcing interaction setup...');
@@ -364,23 +348,18 @@ function MapInitializer() {
         }
       }, 200);
     }
-    }, [map]);
-    
-    return null;
-  } catch (error) {
-    console.error('Error in MapInitializer:', error);
-    return null;
-  }
+  }, [map]);
+  
+  return null;
 }
 
 // Heatmap component
 function HeatmapLayer({ locations }: { locations: Location[] }) {
   if (!useMapEventsHook || typeof window === 'undefined') return null;
   
-  try {
-    const map = useMapEventsHook({});
-    const heatLayerRef = useRef<any>(null);
-  
+  const map = useMapEventsHook({});
+  const heatLayerRef = useRef<any>(null);
+
   useEffect(() => {
     if (!map) return;
     
@@ -451,13 +430,9 @@ function HeatmapLayer({ locations }: { locations: Location[] }) {
         heatLayerRef.current = null;
       }
     };
-    }, [map, locations]);
-    
-    return null;
-  } catch (error) {
-    console.error('Error in HeatmapLayer:', error);
-    return null;
-  }
+  }, [map, locations]);
+  
+  return null;
 }
 
 // Map thumbnail component for location cards

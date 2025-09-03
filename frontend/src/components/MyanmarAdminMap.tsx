@@ -66,22 +66,17 @@ interface MyanmarAdminMapProps {
 function MapReset({ shouldReset, onResetComplete }: { shouldReset: boolean; onResetComplete: () => void }) {
   if (!useMapEvents || typeof window === 'undefined') return null;
   
-  try {
-    const map = useMapEvents({});
-  
-    useEffect(() => {
-      if (!map || !shouldReset) return;
-      
-      console.log('Resetting map view to Myanmar');
-      map.setView([21.0, 96.0], 5.5);
-      onResetComplete();
-    }, [map, shouldReset, onResetComplete]);
+  const map = useMapEvents({});
+
+  useEffect(() => {
+    if (!map || !shouldReset) return;
     
-    return null;
-  } catch (error) {
-    console.error('Error in MapReset:', error);
-    return null;
-  }
+    console.log('Resetting map view to Myanmar');
+    map.setView([21.0, 96.0], 5.5);
+    onResetComplete();
+  }, [map, shouldReset, onResetComplete]);
+  
+  return null;
 }
 
 export default function MyanmarAdminMap({ 

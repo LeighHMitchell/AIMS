@@ -1017,107 +1017,96 @@ export default function TransactionModal({
   const abortControllerRef = React.useRef<AbortController | null>(null);
   const isCreatingRef = React.useRef(false);
 
-  // Helper function to create debounced callbacks - defined before first usage
-  const useDebouncedCallback = React.useCallback((callback: (...args: any[]) => void, delay: number) => {
-    const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-    
-    // Cleanup function
-    const cleanup = React.useCallback(() => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    }, []);
-    
-    const debouncedFn = React.useCallback((...args: any[]) => {
-      cleanup();
-      timeoutRef.current = setTimeout(() => callback(...args), delay);
-    }, [callback, delay, cleanup]);
-    
-    // Cleanup on unmount
-    React.useEffect(() => {
-      return cleanup;
-    }, [cleanup]);
-    
-    return debouncedFn;
-  }, []);
+  // Debounced timeout ref for create transaction
+  const createTransactionTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Debounced autosave for creating transaction - WITH REQUEST DEDUPLICATION
-  const debouncedCreateTransaction = useDebouncedCallback(async (data: Partial<Transaction>) => {
-    // Prevent concurrent requests
-    if (isCreatingRef.current) {
-      console.log('[TransactionModal] Skipping concurrent autosave request');
-      return;
+  const debouncedCreateTransaction = React.useCallback(async (data: Partial<Transaction>) => {
+    // Clear any existing timeout
+    if (createTransactionTimeoutRef.current) {
+      clearTimeout(createTransactionTimeoutRef.current);
     }
     
-    if (!hasAllRequiredFields(data)) {
-      const missingFields = getMissingRequiredFields(data);
-      showValidationError(`Missing required fields: ${missingFields.join(', ')}`);
-      return;
-    }
-    
-    // Cancel any previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
-    isCreatingRef.current = true;
-    
-    try {
-      const payload = getTransactionPayload({ ...data, activity_id: activityId });
-      const response = await fetch('/api/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: abortControllerRef.current.signal
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        setCreationError(error.error || 'Failed to create transaction');
+    // Set new timeout
+    createTransactionTimeoutRef.current = setTimeout(async () => {
+      // Prevent concurrent requests
+      if (isCreatingRef.current) {
+        console.log('[TransactionModal] Skipping concurrent autosave request');
         return;
       }
       
-      const saved = await response.json();
-      setCreatedTransactionId(saved.id || saved.uuid);
-      setCreationError(null);
-      
-      // Update form data with the auto-generated transaction reference
-      if (saved.transaction_reference) {
-        setFormData(prev => ({ 
-          ...prev, 
-          transaction_reference: saved.transaction_reference 
-        }));
+      if (!hasAllRequiredFields(data)) {
+        const missingFields = getMissingRequiredFields(data);
+        showValidationError(`Missing required fields: ${missingFields.join(', ')}`);
+        return;
       }
       
-      showAutoCreateSuccess('Transaction saved! You can now upload documents.');
+      // Cancel any previous request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
       
-      // Save any pending fields (with same abort controller)
-      if (Object.keys(pendingFields).length > 0) {
-        await fetch('/api/transactions', {
-          method: 'PUT',
+      // Create new abort controller
+      abortControllerRef.current = new AbortController();
+      isCreatingRef.current = true;
+      
+      try {
+        const payload = getTransactionPayload({ ...data, activity_id: activityId });
+        const response = await fetch('/api/transactions', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...pendingFields, id: saved.id || saved.uuid }),
+          body: JSON.stringify(payload),
           signal: abortControllerRef.current.signal
         });
-        setPendingFields({});
+        
+        if (!response.ok) {
+          const error = await response.json();
+          setCreationError(error.error || 'Failed to create transaction');
+          return;
+        }
+        
+        const saved = await response.json();
+        setCreatedTransactionId(saved.id || saved.uuid);
+        setCreationError(null);
+        
+        // Update form data with the auto-generated transaction reference
+        if (saved.transaction_reference) {
+          setFormData(prev => ({ 
+            ...prev, 
+            transaction_reference: saved.transaction_reference 
+          }));
+        }
+        
+        showAutoCreateSuccess('Transaction saved! You can now upload documents.');
+        
+        // Save any pending fields (with same abort controller)
+        if (Object.keys(pendingFields).length > 0) {
+          await fetch('/api/transactions', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...pendingFields, id: saved.id || saved.uuid }),
+            signal: abortControllerRef.current.signal
+          });
+          setPendingFields({});
+        }
+      } catch (e: any) {
+        if (e.name !== 'AbortError') {
+          setCreationError(e.message || 'Failed to create transaction');
+        }
+      } finally {
+        isCreatingRef.current = false;
       }
-    } catch (e: any) {
-      if (e.name !== 'AbortError') {
-        setCreationError(e.message || 'Failed to create transaction');
-      }
-    } finally {
-      isCreatingRef.current = false;
-    }
-  }, 500);
+    }, 500);
+  }, [activityId, pendingFields]);
 
   // Cleanup on unmount to prevent crashes
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+      }
+      if (createTransactionTimeoutRef.current) {
+        clearTimeout(createTransactionTimeoutRef.current);
       }
       isCreatingRef.current = false;
     };

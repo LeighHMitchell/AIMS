@@ -45,7 +45,7 @@ export default function OrganisationsSection({
     government: false
   });
 
-  // Use the new hooks
+  // Use the new hooks - always call these hooks
   const { organizations, loading: organizationsLoading } = useOrganizations({
     onError: (error) => toast.error(`Failed to load organizations: ${error}`)
   });
@@ -62,8 +62,7 @@ export default function OrganisationsSection({
     onError: (error) => toast.error(`Failed to manage participating organizations: ${error}`)
   });
 
-  // Debug logging (after all hooks are defined)
-  // Early return if no activityId to prevent errors
+  // Early return after all hooks are called
   if (!activityId) {
     return (
       <div className="max-w-4xl space-y-8 bg-white border border-gray-200 rounded-lg p-6">
