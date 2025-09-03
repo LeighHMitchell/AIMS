@@ -196,91 +196,66 @@ export async function GET(
       );
     }
     
-    // Fetch the activity
-    const { data: activity, error } = await supabase
+    // OPTIMIZED: Fetch activity with all related data in a single query
+    console.log('[AIMS API] Using optimized single-query approach...');
+    
+    const { data: activityWithRelations, error } = await supabase
       .from('activities')
-      .select('*')
+      .select(`
+        *,
+        activity_sectors (
+          id, activity_id, sector_code, sector_name, percentage, level, 
+          category_code, category_name, type, created_at, updated_at
+        ),
+        transactions (*),
+        activity_contacts (*),
+        activity_locations (*),
+        activity_sdg_mappings (*),
+        activity_tags (
+          tag_id,
+          tags (id, name, created_by, created_at)
+        ),
+        activity_working_groups (
+          working_group_id,
+          vocabulary,
+          working_groups (id, code, label, description)
+        ),
+        activity_policy_markers (*)
+      `)
       .eq('id', id)
       .single();
     
-    if (error || !activity) {
+    if (error || !activityWithRelations) {
       console.error('[AIMS API] Activity not found:', error);
       return NextResponse.json(
         { error: 'Activity not found' },
         { status: 404 }
       );
     }
-    
-    // Fetch related data
-    const { data: sectors, error: sectorsError } = await getSupabaseAdmin()
-      .from('activity_sectors')
-      .select('id, activity_id, sector_code, sector_name, percentage, level, category_code, category_name, type, created_at, updated_at')
-      .eq('activity_id', id);
-    
-    if (sectorsError) {
-      console.error('[AIMS API] Error fetching sectors:', sectorsError);
-    }
-    
-    console.log('[AIMS API] Raw sectors from DB:', JSON.stringify(sectors, null, 2));
-    console.log('[AIMS API] Number of sectors fetched:', sectors?.length || 0);
-    
-    const { data: transactions } = await getSupabaseAdmin()
-      .from('transactions')
-      .select('*')
-      .eq('activity_id', id)
-      .order('transaction_date', { ascending: false });
-    
-    const { data: contacts } = await getSupabaseAdmin()
-      .from('activity_contacts')
-      .select('*')
-      .eq('activity_id', id);
-    
-    let { data: locations, error: locationsError } = await getSupabaseAdmin()
-      .from('activity_locations')
-      .select('*')
-      .eq('activity_id', id);
 
-    // Handle case where activity_locations table doesn't exist yet
-    if (locationsError && locationsError.message.includes('relation "activity_locations" does not exist')) {
-      console.warn('[AIMS API] activity_locations table does not exist, using empty locations');
-      // Set empty locations instead of failing
-      locations = null;
-      locationsError = null;
-    } else if (locationsError) {
-      console.error('[AIMS API] Error fetching locations:', locationsError);
-    }
+    console.log('[AIMS API] Single query completed successfully');
     
-    const { data: sdgMappings } = await getSupabaseAdmin()
-      .from('activity_sdg_mappings')
-      .select('*')
-      .eq('activity_id', id);
+    // Extract related data from the consolidated result
+    const activity = activityWithRelations;
+    const sectors = activity.activity_sectors || [];
+    const transactions = activity.transactions || [];
+    const contacts = activity.activity_contacts || [];
+    const locations = activity.activity_locations || [];
+    const sdgMappings = activity.activity_sdg_mappings || [];
+    const activityTags = activity.activity_tags || [];
+    const activityWorkingGroups = activity.activity_working_groups || [];
+    const activityPolicyMarkers = activity.activity_policy_markers || [];
     
-    // Fetch tags
-    const { data: activityTags } = await getSupabaseAdmin()
-      .from('activity_tags')
-      .select(`
-        tag_id,
-        tags (id, name, created_by, created_at)
-      `)
-      .eq('activity_id', id);
-
-    // Fetch working groups
-    const { data: activityWorkingGroups } = await getSupabaseAdmin()
-      .from('activity_working_groups')
-      .select(`
-        working_group_id,
-        vocabulary,
-        working_groups (id, code, label, description)
-      `)
-      .eq('activity_id', id);
-
-    // Fetch policy markers
-    const { data: activityPolicyMarkers } = await getSupabaseAdmin()
-      .from('activity_policy_markers')
-      .select('*')
-      .eq('activity_id', id);
-    
-    console.log('[AIMS API] Policy markers fetched:', activityPolicyMarkers?.length || 0);
+    console.log('[AIMS API] Extracted data counts:', {
+      sectors: sectors.length,
+      transactions: transactions.length,
+      contacts: contacts.length,
+      locations: locations.length,
+      sdgMappings: sdgMappings.length,
+      tags: activityTags.length,
+      workingGroups: activityWorkingGroups.length,
+      policyMarkers: activityPolicyMarkers.length
+    });
     
     // Transform to match frontend format
     const transformedActivity = {
@@ -290,6 +265,10 @@ export async function GET(
       // Map database fields to frontend fields
       title: activity.title_narrative,
       description: activity.description_narrative,
+      // Map IATI description types
+      descriptionObjectives: activity.description_objectives,
+      descriptionTargetGroups: activity.description_target_groups,
+      descriptionOther: activity.description_other,
       partnerId: activity.other_identifier,
       iatiId: activity.iati_identifier,
       iatiIdentifier: activity.iati_identifier,

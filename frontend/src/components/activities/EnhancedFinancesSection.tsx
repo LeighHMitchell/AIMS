@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DefaultFieldsSection } from '@/components/forms/DefaultFieldsSection';
 import { SupabaseSelect, withSupabaseIntegration } from '@/components/forms/SupabaseSelect';
 import LinkedTransactionsEditorTab from '@/components/activities/LinkedTransactionsEditorTab';
@@ -18,8 +18,10 @@ import { CheckCircle, BarChart3, CreditCard, Link, Settings } from 'lucide-react
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { ModalitySearchableSelect } from '@/components/forms/ModalitySearchableSelect';
 import { FinanceTypeSearchableSelect } from '@/components/forms/FinanceTypeSearchableSelect';
-import { DisbursementChannelSearchableSelect } from '@/components/forms/DisbursementChannelSearchableSelect';
+
 import { areAllDefaultFieldsCompleted } from '@/utils/defaultFieldsValidation';
+import { calculateModality } from '@/utils/modality-calculation';
+import { useSupabaseFieldUpdate } from '@/hooks/use-supabase-field-update';
 
 // Enhanced components with Supabase integration
 const SupabaseAidTypeSelect = withSupabaseIntegration(AidTypeSelect);
@@ -27,6 +29,8 @@ const SupabaseFinanceTypeSelect = withSupabaseIntegration(DefaultFinanceTypeSele
 const SupabaseFlowTypeSelect = withSupabaseIntegration(FlowTypeSelect);
 const SupabaseCurrencySelector = withSupabaseIntegration(CurrencySelector);
 const SupabaseTiedStatusSelect = withSupabaseIntegration(TiedStatusSelect);
+const SupabaseFinanceTypeSearchableSelect = withSupabaseIntegration(FinanceTypeSearchableSelect);
+const SupabaseModalitySearchableSelect = withSupabaseIntegration(ModalitySearchableSelect);
 
 interface EnhancedFinancesSectionProps {
   activityId: string | null;
@@ -36,9 +40,9 @@ interface EnhancedFinancesSectionProps {
     defaultFlowType?: string | null;
     defaultCurrency?: string | null;
     defaultTiedStatus?: string | null;
-    defaultDisbursementChannel?: string | null;
-    default_aid_modality?: string | null;
-    default_aid_modality_override?: boolean;
+    defaultModality?: string | null; // Changed to camelCase
+    defaultModalityOverride?: boolean; // Changed to camelCase
+    otherIdentifier?: string | null;
   };
   onDefaultsChange?: (field: string, value: string | null | boolean) => void;
   transactions?: any[];
@@ -63,19 +67,33 @@ export function EnhancedFinancesSection({
 
   // State for modality override toggle
   const [modalityOverride, setModalityOverride] = useState(
-    general.default_aid_modality_override ?? false
+    general.defaultModalityOverride ?? false
   );
 
-  // Check if all fields are completed for green tick
+  // Sync modalityOverride state when general data changes
+  useEffect(() => {
+    setModalityOverride(general.defaultModalityOverride ?? false);
+  }, [general.defaultModalityOverride]);
+
+  // Check if all fields are completed for green tick (excluding disbursement channel as it's not in backend)
   const allFieldsCompleted = areAllDefaultFieldsCompleted({
-    defaultAidType: general.defaultAidType,
-    defaultFinanceType: general.defaultFinanceType,
-    defaultFlowType: general.defaultFlowType,
-    defaultCurrency: general.defaultCurrency,
-    defaultTiedStatus: general.defaultTiedStatus,
-    defaultDisbursementChannel: general.defaultDisbursementChannel,
-    default_aid_modality: general.default_aid_modality,
+    defaultAidType: general.defaultAidType ?? undefined,
+    defaultFinanceType: general.defaultFinanceType ?? undefined,
+    defaultFlowType: general.defaultFlowType ?? undefined,
+    defaultCurrency: general.defaultCurrency ?? undefined,
+    defaultTiedStatus: general.defaultTiedStatus ?? undefined,
+    default_aid_modality: general.defaultModality ?? undefined, // Updated to camelCase
   });
+
+  // Get individual field completion status
+  const fieldCompletion = {
+    aidType: Boolean(general.defaultAidType),
+    financeType: Boolean(general.defaultFinanceType),
+    flowType: Boolean(general.defaultFlowType),
+    currency: Boolean(general.defaultCurrency),
+    tiedStatus: Boolean(general.defaultTiedStatus),
+    modality: Boolean(general.defaultModality), // Updated to camelCase
+  };
 
   const handleFieldUpdate = (field: string, value: string | null) => {
     console.log(`[EnhancedFinancesSection] Field updated: ${field} = ${value}`);
@@ -104,14 +122,85 @@ export function EnhancedFinancesSection({
     }));
   };
 
-  const handleModalityOverrideChange = (checked: boolean) => {
+  // Supabase field update hook for boolean fields (declared after handleFieldUpdate and handleFieldError)
+  const { updateField: updateSupabaseField } = useSupabaseFieldUpdate(activityId, {
+    tableName: 'activities',
+    onSuccess: handleFieldUpdate,
+    onError: (field, error) => {
+      // Handle missing column gracefully
+      if (error.message.includes('default_modality') && error.message.includes('schema cache')) {
+        console.warn(`[EnhancedFinancesSection] Column ${field} not yet added to Supabase. Skipping database save.`);
+        // Still update local state
+        handleFieldUpdate(field, null);
+      } else {
+        handleFieldError(field, error);
+      }
+    },
+    showSuccessToast: false,
+    showErrorToast: false // Disable error toasts for missing columns
+  });
+
+  // Auto-calculate modality when relevant fields change and override is off
+  useEffect(() => {
+    if (!modalityOverride && general.defaultAidType && general.defaultFinanceType) {
+      const calculatedModality = calculateModality(
+        general.defaultAidType,
+        general.defaultFinanceType
+      );
+      
+      // Only update if different from current value
+      if (calculatedModality !== general.defaultModality) {
+        console.log('[EnhancedFinancesSection] Auto-calculating modality:', {
+          aidType: general.defaultAidType,
+          financeType: general.defaultFinanceType,
+          calculated: calculatedModality,
+          current: general.defaultModality
+        });
+        
+        // Save to Supabase and update local state (gracefully handle missing columns)
+        updateSupabaseField('defaultModality', calculatedModality).catch(error => {
+          console.warn('[EnhancedFinancesSection] Could not save to database:', error.message);
+        });
+        onDefaultsChange?.('defaultModality', calculatedModality);
+      }
+    }
+  }, [general.defaultAidType, general.defaultFinanceType, modalityOverride, general.defaultModality, updateSupabaseField, onDefaultsChange]);
+
+  const handleModalityOverrideChange = async (checked: boolean) => {
     console.log(`[EnhancedFinancesSection] Modality override changed: ${checked}`);
     setModalityOverride(checked);
-    handleFieldUpdate('default_aid_modality_override', checked);
     
-    // If disabling override, clear the manual modality value
-    if (!checked) {
-      handleFieldUpdate('default_aid_modality', null);
+    // Save to Supabase (gracefully handle missing columns)
+    try {
+      await updateSupabaseField('defaultModalityOverride', checked);
+    } catch (error) {
+      console.warn('[EnhancedFinancesSection] Could not save modality override to database:', error.message);
+    }
+    
+    // Update local state
+    onDefaultsChange?.('defaultModalityOverride', checked);
+    
+    // If disabling override, recalculate modality automatically
+    if (!checked && general.defaultAidType && general.defaultFinanceType) {
+      const calculatedModality = calculateModality(
+        general.defaultAidType,
+        general.defaultFinanceType
+      );
+      console.log('[EnhancedFinancesSection] Recalculating modality after disabling override:', calculatedModality);
+      try {
+        await updateSupabaseField('defaultModality', calculatedModality);
+      } catch (error) {
+        console.warn('[EnhancedFinancesSection] Could not save calculated modality to database:', error.message);
+      }
+      onDefaultsChange?.('defaultModality', calculatedModality);
+    } else if (!checked) {
+      // Clear modality if we can't calculate it
+      try {
+        await updateSupabaseField('defaultModality', null);
+      } catch (error) {
+        console.warn('[EnhancedFinancesSection] Could not clear modality in database:', error.message);
+      }
+      onDefaultsChange?.('defaultModality', null);
     }
   };
 
@@ -120,18 +209,7 @@ export function EnhancedFinancesSection({
       {/* Status Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {updateStats.totalUpdates > 0 && (
-            <>
-              <Badge variant="outline" className="text-green-600">
-                {updateStats.successfulUpdates} saved
-              </Badge>
-              {updateStats.failedUpdates > 0 && (
-                <Badge variant="outline" className="text-red-600">
-                  {updateStats.failedUpdates} failed
-                </Badge>
-              )}
-            </>
-          )}
+          {/* Update statistics badges removed per user request */}
         </div>
       </div>
 
@@ -156,10 +234,7 @@ export function EnhancedFinancesSection({
               <CheckCircle className="h-4 w-4 text-green-500" />
             )}
           </TabsTrigger>
-          <TabsTrigger value="debug" className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            Debug Info
-          </TabsTrigger>
+
         </TabsList>
 
         {/* Default Values Tab */}
@@ -171,7 +246,9 @@ export function EnhancedFinancesSection({
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     Default Values
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    {allFieldsCompleted && (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -180,12 +257,14 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Aid Type
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        {fieldCompletion.aidType && (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        )}
                         <HelpTextTooltip content="The type of aid for this activity" />
                       </label>
                       <SupabaseAidTypeSelect
                         activityId={activityId}
-                        fieldName="default_aid_type"
+                        fieldName="defaultAidType"
                         value={general.defaultAidType}
                         onUpdateSuccess={handleFieldUpdate}
                         onUpdateError={handleFieldError}
@@ -198,12 +277,14 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Currency
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        {fieldCompletion.currency && (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        )}
                         <HelpTextTooltip content="The default currency for financial transactions" />
                       </label>
                       <SupabaseCurrencySelector
                         activityId={activityId}
-                        fieldName="default_currency"
+                        fieldName="defaultCurrency"
                         value={general.defaultCurrency}
                         onUpdateSuccess={handleFieldUpdate}
                         onUpdateError={handleFieldError}
@@ -216,12 +297,14 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Flow Type
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        {fieldCompletion.flowType && (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        )}
                         <HelpTextTooltip content="The flow type for this activity" />
                       </label>
                       <SupabaseFlowTypeSelect
                         activityId={activityId}
-                        fieldName="default_flow_type"
+                        fieldName="defaultFlowType"
                         value={general.defaultFlowType}
                         onUpdateSuccess={handleFieldUpdate}
                         onUpdateError={handleFieldError}
@@ -234,12 +317,14 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Tied Status
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        {fieldCompletion.tiedStatus && (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        )}
                         <HelpTextTooltip content="The tied status for this activity" />
                       </label>
                       <SupabaseTiedStatusSelect
                         activityId={activityId}
-                        fieldName="default_tied_status"
+                        fieldName="defaultTiedStatus"
                         value={general.defaultTiedStatus}
                         onUpdateSuccess={handleFieldUpdate}
                         onUpdateError={handleFieldError}
@@ -252,32 +337,26 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Finance Type
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        {fieldCompletion.financeType && (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        )}
                         <HelpTextTooltip content="The finance type for this activity" />
                       </label>
-                      <FinanceTypeSearchableSelect
+                      <SupabaseFinanceTypeSearchableSelect
+                        activityId={activityId}
+                        fieldName="defaultFinanceType"
                         value={general.defaultFinanceType || ""}
-                        onValueChange={(value) => handleFieldUpdate('defaultFinanceType', value)}
+                        onUpdateSuccess={handleFieldUpdate}
+                        onUpdateError={handleFieldError}
                         placeholder="Select Finance Type"
                         disabled={disabled}
                         dropdownId="default-finance-type-select"
                       />
                     </div>
 
-                    {/* Default Disbursement Channel */}
+                    {/* Placeholder for future field */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
-                        Default Disbursement Channel
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <HelpTextTooltip content="The disbursement channel for this activity" />
-                      </label>
-                      <DisbursementChannelSearchableSelect
-                        value={general.defaultDisbursementChannel || ""}
-                        onValueChange={(value) => handleFieldUpdate('defaultDisbursementChannel', value)}
-                        placeholder="Select Disbursement Channel"
-                        disabled={disabled}
-                        dropdownId="default-disbursement-channel-select"
-                      />
+                      {/* Future field can be added here */}
                     </div>
                   </div>
                 </CardContent>
@@ -290,7 +369,9 @@ export function EnhancedFinancesSection({
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     Default Modality
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    {fieldCompletion.modality && (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    )}
                     <HelpTextTooltip content="The default aid modality for this activity" />
                   </CardTitle>
                 </CardHeader>
@@ -313,9 +394,12 @@ export function EnhancedFinancesSection({
 
                   {/* Default Modality Field */}
                   <div className="space-y-2">
-                    <ModalitySearchableSelect
-                      value={general.default_aid_modality || ""}
-                      onValueChange={(value) => handleFieldUpdate('default_aid_modality', value)}
+                    <SupabaseModalitySearchableSelect
+                      activityId={activityId}
+                      fieldName="defaultModality"
+                      value={general.defaultModality || ""}
+                      onUpdateSuccess={handleFieldUpdate}
+                      onUpdateError={handleFieldError}
                       placeholder="Select default modality"
                       disabled={disabled || !modalityOverride}
                       dropdownId="default-modality-select"
@@ -331,6 +415,7 @@ export function EnhancedFinancesSection({
         <TabsContent value="transactions">
           <TransactionsManager
             activityId={activityId || "new"}
+            activityPartnerId={general.otherIdentifier}
             transactions={transactions}
             onTransactionsChange={onTransactionsChange}
             defaultFinanceType={general.defaultFinanceType}
@@ -366,53 +451,6 @@ export function EnhancedFinancesSection({
                   <li>Organization transaction breakdowns</li>
                   <li>Transaction type analysis</li>
                 </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Debug Tab */}
-        <TabsContent value="debug">
-          <Card>
-            <CardHeader>
-              <CardTitle>Debug Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-md text-sm">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <strong>Activity ID:</strong>
-                    <div className="font-mono text-xs">{activityId || 'None'}</div>
-                  </div>
-                  <div>
-                    <strong>Update Stats:</strong>
-                    <div className="text-xs">
-                      Total: {updateStats.totalUpdates} | 
-                      Success: {updateStats.successfulUpdates} | 
-                      Failed: {updateStats.failedUpdates}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-md text-sm">
-                <strong>Current General State:</strong>
-                <pre className="text-xs mt-2 overflow-auto">
-                  {JSON.stringify({
-                    defaultAidType: general.defaultAidType,
-                    defaultFinanceType: general.defaultFinanceType,
-                    defaultFlowType: general.defaultFlowType,
-                    defaultCurrency: general.defaultCurrency,
-                    defaultTiedStatus: general.defaultTiedStatus
-                  }, null, 2)}
-                </pre>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-md text-sm">
-                <strong>Last Update:</strong>
-                <div className="text-xs">
-                  {updateStats.lastUpdate ? updateStats.lastUpdate.toISOString() : 'Never'}
-                </div>
               </div>
             </CardContent>
           </Card>

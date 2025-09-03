@@ -17,6 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IATI_RELATIONSHIP_TYPES, getRelationshipTypeName } from '@/data/iati-relationship-types';
+import { fetchBasicActivityWithCache } from '@/lib/activity-cache';
 import LinkedActivitiesGraph from './LinkedActivitiesGraph';
 import { cn } from '@/lib/utils';
 import { CreateRelationshipsTableGuide } from './CreateRelationshipsTableGuide';
@@ -92,15 +93,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     
     try {
       console.log('Fetching activity:', activityId);
-      const response = await fetch(`/api/activities/${activityId}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Activity fetch error:', errorData);
-        throw new Error('Failed to fetch activity');
-      }
-      
-      const data = await response.json();
+      // OPTIMIZATION: Use cached basic activity data
+      const data = await fetchBasicActivityWithCache(activityId);
       console.log('Activity data:', data);
       
       setCurrentActivity({

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { setFieldSaved, isFieldSaved, clearFieldSaved } from '@/utils/persistentSave';
 import { toast } from 'sonner';
+import { invalidateActivityCache } from '@/lib/activity-cache';
 
 // Global lock to prevent multiple simultaneous activity creations
 const globalActivityCreationLock = {
@@ -220,6 +221,11 @@ export function useFieldAutosave(
 
       // Reset retry counter on successful save
       retryCountRef.current = 0;
+      
+      // OPTIMIZATION: Invalidate activity cache when field is updated
+      if (activityId && activityId !== 'NEW') {
+        invalidateActivityCache(activityId);
+      }
       
       onSuccess?.(responseData, isUserInitiatedRef.current);
       console.log(`[FieldAutosave] Field ${fieldName} saved successfully`);

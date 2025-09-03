@@ -33,6 +33,7 @@ import {
   Building,
   Link2,
   FileCode,
+  Eye,
 } from 'lucide-react';
 
 // Initialize Supabase client
@@ -66,6 +67,7 @@ interface EnhancedActivityEditorProps {
   activityId: string;
   initialData?: {
     title?: string;
+    acronym?: string;
     description?: string;
     collaboration_type?: string;
     activity_scope?: string;
@@ -101,6 +103,9 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     }
   }, [searchParams]);
 
+  // State for expandable activity details
+  const [showActivityDetails, setShowActivityDetails] = useState(false);
+
   // Handle tab change with URL synchronization
   const handleTabChange = (tabValue: string) => {
     setActiveTab(tabValue);
@@ -116,6 +121,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
   // Form state
   const [formData, setFormData] = useState({
     title: initialData.title || '',
+    acronym: initialData.acronym || '',
     description: initialData.description || '',
     collaboration_type: initialData.collaboration_type || '',
     activity_scope: initialData.activity_scope || '',
@@ -176,12 +182,48 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     await updateField('description_narrative', description, 'Activity Description');
   };
 
+  const updateAcronym = async (acronym: string) => {
+    await updateField('acronym', acronym, 'Activity Acronym');
+  };
+
   const updateCollaborationType = async (collaborationType: string) => {
     await updateField('collaboration_type', collaborationType, 'Collaboration Type');
   };
 
   const updateActivityScope = async (activityScope: string) => {
-    await updateField('activity_scope', activityScope, 'Activity Scope');
+    // Use the field API via fetch instead of direct Supabase update
+    setSaving(prev => ({ ...prev, activity_scope: true }));
+    
+    try {
+      const response = await fetch('/api/activities/field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          activityId,
+          field: 'activityScope', // Use camelCase to match API expectations
+          value: activityScope,
+          userId: user?.id
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save activity scope');
+      }
+
+      setFormData(prev => ({ ...prev, activity_scope: activityScope }));
+      setLastSaved(prev => ({ ...prev, activity_scope: new Date() }));
+      toast.success('Activity Scope saved successfully', {
+        position: 'top-right',
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error('Error saving activity scope:', error);
+      toast.error('Failed to save Activity Scope');
+      throw error;
+    } finally {
+      setSaving(prev => ({ ...prev, activity_scope: false }));
+    }
   };
 
   const updateActivityStatus = async (status: string) => {
@@ -370,6 +412,133 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
             All changes are saved automatically • Comments are context-aware
           </p>
         </div>
+
+        {/* Activity Information Header */}
+        <Card className="border-gray-200 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="mb-4">
+                  <h2 className="text-3xl font-bold text-gray-900 leading-tight">
+                    {formData.title || 'Untitled Activity'}
+                    {formData.acronym && (
+                      <span className="text-2xl font-medium text-gray-600 ml-2">({formData.acronym})</span>
+                    )}
+                  </h2>
+                </div>
+              </div>
+              
+              {/* Show More / Show Less Button */}
+              <div className="flex-shrink-0 ml-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowActivityDetails(!showActivityDetails)}
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                >
+                  {showActivityDetails ? (
+                    <>
+                      <Eye className="h-4 w-4 mr-1" />
+                      Show less
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4 mr-1" />
+                      Show more
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Expandable Details Section */}
+            {showActivityDetails && (
+              <div className="mt-6 space-y-6">
+                {/* Activity Status and Basic Info */}
+                <div className="flex items-center gap-2 mb-4">
+                  {formData.activity_status && (
+                    <Badge 
+                      className={
+                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Implementation" ? "bg-blue-100 text-blue-800" :
+                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Finalisation" ? "bg-green-100 text-green-800" :
+                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Closed" ? "bg-gray-100 text-gray-800" :
+                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Cancelled" ? "bg-red-100 text-red-800" : 
+                        "bg-slate-100 text-slate-800"
+                      }
+                    >
+                      {ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label || 'Pipeline'}
+                    </Badge>
+                  )}
+                  
+                  {formData.collaboration_type && (
+                    <Badge variant="outline" className="border-gray-300 text-gray-700">
+                      {COLLABORATION_TYPES.find(t => t.value === formData.collaboration_type)?.label}
+                    </Badge>
+                  )}
+                </div>
+                
+                {/* Activity Description */}
+                {formData.description && (
+                  <div>
+                    <p className="text-gray-600 max-w-3xl leading-relaxed">
+                      {formData.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-2 gap-4 text-sm border-t border-gray-200 pt-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500 shrink-0">Reported by:</span>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="text-gray-900 font-medium break-words min-w-0">
+                        {user?.organization?.name || user?.name || 'Current User'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center">
+                      <span className="text-gray-500">Activity Scope:</span>
+                      <span className="ml-1 text-gray-900">{formData.activity_scope || 'Not set'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Activity Dates */}
+                <div className="space-y-2 text-sm">
+                  {formData.planned_start_date && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3 w-3 text-gray-400" />
+                      <span className="font-medium text-gray-900">Planned Start:</span>
+                      <span className="text-gray-700">{formData.planned_start_date}</span>
+                    </div>
+                  )}
+                  {formData.planned_end_date && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3 w-3 text-gray-400" />
+                      <span className="font-medium text-gray-900">Planned End:</span>
+                      <span className="text-gray-700">{formData.planned_end_date}</span>
+                    </div>
+                  )}
+                  {formData.actual_start_date && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3 w-3 text-green-500" />
+                      <span className="font-medium text-gray-900">Actual Start:</span>
+                      <span className="text-gray-700">{formData.actual_start_date}</span>
+                    </div>
+                  )}
+                  {formData.actual_end_date && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3 w-3 text-green-500" />
+                      <span className="font-medium text-gray-900">Actual End:</span>
+                      <span className="text-gray-700">{formData.actual_end_date}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Main Activity Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange}>

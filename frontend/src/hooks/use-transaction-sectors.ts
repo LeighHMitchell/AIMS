@@ -378,7 +378,7 @@ export function useTransactionSectors({
     fetchSectorLines();
   }, [fetchSectorLines]);
   
-  const canSave = validation?.isValid && hasUnsavedChanges;
+  const canSave = (validation?.isValid ?? false) && hasUnsavedChanges;
   
   return {
     sectorLines,

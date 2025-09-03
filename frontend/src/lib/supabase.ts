@@ -158,6 +158,8 @@ export type Database = {
           default_aid_type: string | null
           default_finance_type: string | null
           default_flow_type: string | null
+          default_modality: number | null
+          default_modality_override: boolean | null
         }
         Insert: Omit<Database['public']['Tables']['activities']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['activities']['Insert']>

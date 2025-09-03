@@ -428,7 +428,7 @@ export default function SDGAlignmentSection({
                         </PopoverTrigger>
                         <PopoverContent className="w-[600px] p-0">
                           <Command>
-                            <CommandInput placeholder="Search targets..." />
+                            <CommandInput placeholder="Search targets..." autoFocus />
                             <CommandList>
                               <CommandEmpty>No target found.</CommandEmpty>
                               <CommandGroup>

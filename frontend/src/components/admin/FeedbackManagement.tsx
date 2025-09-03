@@ -10,10 +10,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FEEDBACK_TYPES, FEEDBACK_STATUS_TYPES, FEEDBACK_PRIORITY_TYPES } from '@/data/feedback-types';
 import { ALL_APP_FEATURES } from '@/data/app-features';
-import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, RefreshCw, Clock, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, RefreshCw, Clock, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Feedback {
   id: string;
@@ -91,15 +92,15 @@ const getAttachmentIcon = (type: string | null) => {
 const getPriorityIcon = (priority: string) => {
   switch (priority) {
     case 'low':
-      return { icon: Circle, color: 'text-gray-400' };
+      return { icon: Minus, color: 'text-gray-400' };
     case 'medium':
-      return { icon: Circle, color: 'text-yellow-500' };
+      return { icon: CircleDot, color: 'text-blue-500' };
     case 'high':
-      return { icon: AlertCircle, color: 'text-orange-500' };
+      return { icon: AlertTriangle, color: 'text-orange-500' };
     case 'urgent':
-      return { icon: XCircle, color: 'text-red-600' };
+      return { icon: Flame, color: 'text-red-600' };
     default:
-      return { icon: Circle, color: 'text-gray-400' };
+      return { icon: Minus, color: 'text-gray-400' };
   }
 };
 
@@ -115,18 +116,30 @@ const getSortIcon = (field: string, currentSortField: string, currentSortDirecti
 const getStatusIcon = (status: string) => {
   switch (status) {
     case 'open':
-      return { icon: Circle, color: 'text-blue-600' };
+      return { icon: CircleDot, color: 'text-blue-600' };
     case 'in_progress':
-      return { icon: Circle, color: 'text-yellow-500' };
+      return { icon: Play, color: 'text-yellow-500' };
     case 'resolved':
-      return { icon: CheckCircle, color: 'text-green-600' };
+      return { icon: CheckCircle2, color: 'text-green-600' };
     case 'closed':
-      return { icon: CheckCircle, color: 'text-gray-600' };
+      return { icon: Lock, color: 'text-gray-600' };
     case 'archived':
       return { icon: Archive, color: 'text-gray-500' };
     default:
-      return { icon: Circle, color: 'text-gray-400' };
+      return { icon: CircleDot, color: 'text-gray-400' };
   }
+};
+
+// Helper function to get status label
+const getStatusLabel = (status: string) => {
+  const statusType = FEEDBACK_STATUS_TYPES.find(type => type.code === status);
+  return statusType?.name || status.charAt(0).toUpperCase() + status.slice(1);
+};
+
+// Helper function to get priority label  
+const getPriorityLabel = (priority: string) => {
+  const priorityType = FEEDBACK_PRIORITY_TYPES.find(type => type.code === priority);
+  return priorityType?.name || priority.charAt(0).toUpperCase() + priority.slice(1);
 };
 
 export function FeedbackManagement() {
@@ -147,7 +160,7 @@ export function FeedbackManagement() {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -222,6 +235,15 @@ export function FeedbackManagement() {
   const updateFeedback = async (id: string, updates: Partial<Feedback>) => {
     if (!user?.id) return;
     
+    // Store original item for potential rollback
+    const originalItem = feedback.find(item => item.id === id);
+    if (!originalItem) return;
+    
+    // Optimistically update local state
+    setFeedback(prev => prev.map(item => 
+      item.id === id ? { ...item, ...updates } : item
+    ));
+    
     try {
       const requestBody = { userId: user.id, id, ...updates };
       
@@ -234,7 +256,6 @@ export function FeedbackManagement() {
       if (response.ok) {
         const responseData = await response.json();
         toast.success("Feedback updated successfully");
-        fetchFeedback();
         setIsDetailModalOpen(false);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -242,6 +263,10 @@ export function FeedbackManagement() {
         throw new Error(errorData.error || `Failed to update feedback (${response.status})`);
       }
     } catch (error) {
+      // Revert optimistic update on error
+      setFeedback(prev => prev.map(item => 
+        item.id === id ? originalItem : item
+      ));
       console.error('[FeedbackManagement] Update error:', error);
       toast.error(error instanceof Error ? error.message : "Failed to update feedback. Please try again.");
     }
@@ -250,7 +275,34 @@ export function FeedbackManagement() {
   // Archive/unarchive feedback
   const toggleArchive = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'archived' ? 'open' : 'archived';
-    await updateFeedback(id, { status: newStatus });
+    
+    // Optimistically update local state
+    setFeedback(prev => prev.map(item => 
+      item.id === id ? { ...item, status: newStatus } : item
+    ));
+    
+    try {
+      const requestBody = { userId: user?.id, id, status: newStatus };
+      
+      const response = await fetch('/api/feedback', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        toast.success(`Feedback ${newStatus === 'archived' ? 'archived' : 'restored'} successfully`);
+      } else {
+        throw new Error('Failed to update feedback');
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setFeedback(prev => prev.map(item => 
+        item.id === id ? { ...item, status: currentStatus } : item
+      ));
+      console.error('[FeedbackManagement] Archive error:', error);
+      toast.error("Failed to update feedback. Please try again.");
+    }
   };
 
   // Handle sorting
@@ -273,6 +325,14 @@ export function FeedbackManagement() {
       return;
     }
     
+    // Store the item for potential rollback
+    const itemToDelete = feedback.find(item => item.id === id);
+    if (!itemToDelete) return;
+    
+    // Optimistically remove from local state
+    setFeedback(prev => prev.filter(item => item.id !== id));
+    setTotalCount(prev => prev - 1);
+    
     try {
       const response = await fetch('/api/feedback', {
         method: 'DELETE',
@@ -282,12 +342,14 @@ export function FeedbackManagement() {
 
       if (response.ok) {
         toast.success("Feedback deleted successfully");
-        fetchFeedback();
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete feedback');
       }
     } catch (error) {
+      // Revert optimistic update on error - add the item back
+      setFeedback(prev => [...prev, itemToDelete]);
+      setTotalCount(prev => prev + 1);
       console.error('[FeedbackManagement] Delete error:', error);
       toast.error("Failed to delete feedback. Please try again.");
     }
@@ -338,7 +400,8 @@ export function FeedbackManagement() {
 
 
   return (
-    <div className="space-y-6">
+    <TooltipProvider>
+      <div className="space-y-6">
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -584,7 +647,16 @@ export function FeedbackManagement() {
                         <div className="flex items-center justify-center">
                           {(() => {
                             const { icon: StatusIcon, color } = getStatusIcon(item.status);
-                            return <StatusIcon className={`h-5 w-5 ${color}`} />;
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <StatusIcon className={`h-5 w-5 ${color}`} />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{getStatusLabel(item.status)}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            );
                           })()}
                         </div>
                       </TableCell>
@@ -592,7 +664,16 @@ export function FeedbackManagement() {
                         <div className="flex items-center justify-center">
                           {(() => {
                             const { icon: PriorityIcon, color } = getPriorityIcon(item.priority);
-                            return <PriorityIcon className={`h-5 w-5 ${color}`} />;
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <PriorityIcon className={`h-5 w-5 ${color}`} />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{getPriorityLabel(item.priority)}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            );
                           })()}
                         </div>
                       </TableCell>
@@ -801,7 +882,8 @@ export function FeedbackManagement() {
         }}
         onUpdate={updateFeedback}
       />
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
 

@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
       organizations:organization_id (
         id,
         name,
+        acronym,
         type,
         country
       )

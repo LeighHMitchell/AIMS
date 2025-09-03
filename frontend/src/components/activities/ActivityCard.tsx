@@ -361,11 +361,12 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 </Badge>
               )}
               {activity.publication_status && (
-                <StatusIcon 
-                  type="publication" 
-                  status={activity.publication_status} 
-                  className="ml-1"
-                />
+                <Badge 
+                  variant={activity.publication_status === 'published' ? 'success' : 'secondary'}
+                  className="text-xs font-medium leading-tight"
+                >
+                  {activity.publication_status === 'published' ? 'Published' : 'Unpublished'}
+                </Badge>
               )}
               {activity.default_aid_modality && (
                 <StatusIcon 
@@ -428,7 +429,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Default Tied Status</span>
                   <span className="text-sm text-gray-700">
-                    {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status) : 'Not reported'}
+                    {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status) : 'Not reported'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">

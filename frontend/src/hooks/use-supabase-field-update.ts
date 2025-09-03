@@ -47,16 +47,6 @@ export function useSupabaseFieldUpdate(
       return false;
     }
 
-    if (!supabase) {
-      const error = new Error('Supabase client not available');
-      console.error('[SupabaseFieldUpdate] Error:', error.message);
-      onError?.(field, error);
-      if (showErrorToast) {
-        toast.error('Database connection not available');
-      }
-      return false;
-    }
-
     setState(prev => ({ ...prev, isUpdating: true, error: null }));
 
     try {
@@ -67,22 +57,60 @@ export function useSupabaseFieldUpdate(
         type: typeof value
       });
 
-      // Prepare the update object
-      const updateData = { [field]: value };
+      // For activities table, use the API route to handle field mapping
+      if (tableName === 'activities') {
+        console.log(`[SupabaseFieldUpdate] Using API route for activities table field update`);
+        
+        const response = await fetch('/api/activities/field', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            activityId: recordId,
+            field,
+            value
+          })
+        });
 
-      // Perform the update
-      const { data, error } = await supabase
-        .from(tableName)
-        .update(updateData)
-        .eq(idField, recordId)
-        .select()
-        .single();
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`API update failed: ${errorData.error || response.statusText}`);
+        }
 
-      if (error) {
-        throw new Error(`Database update failed: ${error.message}`);
+        const result = await response.json();
+        console.log(`[SupabaseFieldUpdate] API update successful:`, result);
+      } else {
+        // For other tables, use direct Supabase update
+        console.log(`[SupabaseFieldUpdate] Using direct Supabase update for ${tableName}`);
+        
+        if (!supabase) {
+          const error = new Error('Supabase client not available');
+          console.error('[SupabaseFieldUpdate] Error:', error.message);
+          onError?.(field, error);
+          if (showErrorToast) {
+            toast.error('Database connection not available');
+          }
+          return false;
+        }
+
+        // Prepare the update object
+        const updateData = { [field]: value };
+
+        // Perform the update
+        const { data, error } = await supabase
+          .from(tableName)
+          .update(updateData)
+          .eq(idField, recordId)
+          .select()
+          .single();
+
+        if (error) {
+          throw new Error(`Database update failed: ${error.message}`);
+        }
+
+        console.log(`[SupabaseFieldUpdate] Successfully updated ${field}:`, data);
       }
-
-      console.log(`[SupabaseFieldUpdate] Successfully updated ${field}:`, data);
 
       setState(prev => ({
         ...prev,

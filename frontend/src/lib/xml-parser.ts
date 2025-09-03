@@ -140,8 +140,11 @@ export class IATIXMLParser {
 
   constructor(xmlContent: string) {
     try {
+      // Preprocess XML to handle common entity issues
+      const preprocessedXml = this.preprocessXmlContent(xmlContent);
+      
       const parser = new DOMParser();
-      this.xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+      this.xmlDoc = parser.parseFromString(preprocessedXml, 'text/xml');
       
       // Check for parsing errors
       const parseError = this.xmlDoc.querySelector('parsererror');
@@ -151,6 +154,40 @@ export class IATIXMLParser {
     } catch (error) {
       throw new Error(`Failed to parse XML: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /**
+   * Preprocess XML content to handle common entity and formatting issues
+   */
+  private preprocessXmlContent(xmlContent: string): string {
+    // Replace common HTML entities that aren't defined in XML
+    const entityReplacements: { [key: string]: string } = {
+      '&middot;': '·',
+      '&ndash;': '–',
+      '&mdash;': '—',
+      '&lsquo;': "'",
+      '&rsquo;': "'",
+      '&ldquo;': '"',
+      '&rdquo;': '"',
+      '&hellip;': '…',
+      '&nbsp;': ' ',
+      '&copy;': '©',
+      '&reg;': '®',
+      '&trade;': '™'
+    };
+
+    let processedContent = xmlContent;
+    
+    // Replace entities
+    for (const [entity, replacement] of Object.entries(entityReplacements)) {
+      processedContent = processedContent.replace(new RegExp(entity, 'g'), replacement);
+    }
+
+    // Clean up any remaining undefined entities by removing them
+    // This regex matches &entityname; patterns that aren't standard XML entities
+    processedContent = processedContent.replace(/&(?!lt;|gt;|amp;|quot;|apos;)[a-zA-Z][a-zA-Z0-9]*;/g, '');
+
+    return processedContent;
   }
 
   /**

@@ -24,6 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { getFieldCompletionStatus, hasFieldValue } from '@/utils/defaultFieldsValidation';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { calculateModality } from '@/utils/modality-calculation';
 
 
 interface DefaultFieldsAutosaveProps {
@@ -121,45 +122,6 @@ export function DefaultFieldsAutosave({
   const [modalityOverride, setModalityOverride] = React.useState(initialOverride);
 
   // --- Auto-calc logic (no longer uses Flow Type) ---
-  function calculateModality(aidType: string, financeType: string) {
-    // 1. Technical Assistance aid types
-    const technicalAssistanceAidTypes = ["D01", "D02", "E01", "E02"];
-    const isTA = technicalAssistanceAidTypes.includes(aidType);
-
-    // 2. Grant and Loan finance types
-    const grantFinanceTypes = [
-      "110", "111", "112", "113", "114", "115", "116", "117", "118", // Standard grants
-      "210", // Debt relief grant
-      "310", "311" // In-kind grants
-    ];
-    const loanFinanceTypes = [
-      "421", "422", "423", "424", "425", // Standard/concessional loans
-      "431", "433" // Other loan types
-    ];
-    // 3. Reimbursable/ambiguous/withdrawn types
-    const reimbursableOrAmbiguous = ["422"]; // Reimbursable grant
-    // 510+ and 600+ are investment/guarantee, so check prefix
-    const isInvestmentOrGuarantee = (code: string) => {
-      if (!code) return false;
-      const n = parseInt(code, 10);
-      return (n >= 510 && n < 600) || (n >= 600);
-    };
-
-    // 4. Combine logic
-    if (!financeType) return "5"; // Other / Needs Review
-    if (reimbursableOrAmbiguous.includes(financeType) || isInvestmentOrGuarantee(financeType)) return "5";
-
-    if (grantFinanceTypes.includes(financeType)) {
-      if (isTA) return "3"; // Grant – Technical Assistance
-      return "1"; // Grant
-    }
-    if (loanFinanceTypes.includes(financeType)) {
-      if (isTA) return "4"; // Loan – Technical Assistance
-      return "2"; // Loan
-    }
-    // All else
-    return "5"; // Other / Needs Review
-  }
 
   // --- Recalculate when relevant fields change and override is off ---
   React.useEffect(() => {

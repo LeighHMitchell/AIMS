@@ -193,7 +193,7 @@ export function OrganizationSearchableSelect({
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleKeyDown}
               className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
-              autoFocus={false}
+              autoFocus
             />
             {search && (
               <button

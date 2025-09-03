@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { fetchBasicActivityWithCache } from '@/lib/activity-cache';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -390,30 +391,28 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       if (!activityId) return;
       
       try {
-        const response = await fetch(`/api/activities/${activityId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setCurrentActivityData({
-            id: data.id,
-            title_narrative: data.title_narrative || data.title,
-            description_narrative: data.description_narrative || data.description,
-            planned_start_date: data.planned_start_date,
-            planned_end_date: data.planned_end_date,
-            actual_start_date: data.actual_start_date,
-            actual_end_date: data.actual_end_date,
-            activity_status: data.activity_status,
-            collaboration_type: data.collaboration_type,
-            activity_scope: data.activityScope || data.activity_scope,
-            language: data.language,
-            iati_identifier: data.iati_identifier,
-            default_currency: data.default_currency,
-            defaultAidType: data.defaultAidType,
-            defaultFinanceType: data.defaultFinanceType,
-            defaultFlowType: data.defaultFlowType,
-            defaultTiedStatus: data.defaultTiedStatus,
-            sectors: data.sectors || [],
-          });
-        }
+        // OPTIMIZATION: Use cached basic activity data
+        const data = await fetchBasicActivityWithCache(activityId);
+        setCurrentActivityData({
+          id: data.id,
+          title_narrative: data.title_narrative || data.title,
+          description_narrative: data.description_narrative || data.description,
+          planned_start_date: data.planned_start_date,
+          planned_end_date: data.planned_end_date,
+          actual_start_date: data.actual_start_date,
+          actual_end_date: data.actual_end_date,
+          activity_status: data.activity_status,
+          collaboration_type: data.collaboration_type,
+          activity_scope: data.activityScope || data.activity_scope,
+          language: data.language,
+          iati_identifier: data.iati_identifier,
+          default_currency: data.default_currency,
+          defaultAidType: data.defaultAidType,
+          defaultFinanceType: data.defaultFinanceType,
+          defaultFlowType: data.defaultFlowType,
+          defaultTiedStatus: data.defaultTiedStatus,
+          sectors: data.sectors || [],
+        });
       } catch (error) {
         console.error('Error fetching activity data:', error);
       }
@@ -458,32 +457,33 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     e.preventDefault();
   }, []);
 
-  // Fetch XML from URL
+  // Fetch XML from URL via server-side proxy to avoid CORS issues
   const fetchXmlFromUrl = async (url: string): Promise<string> => {
     try {
-      console.log('[XML Import Debug] Fetching XML from URL:', url);
-      const response = await fetch(url, {
-        method: 'GET',
+      console.log('[XML Import Debug] Fetching XML from URL via proxy:', url);
+      
+      // Use our server-side API to fetch the XML
+      const response = await fetch('/api/xml/fetch', {
+        method: 'POST',
         headers: {
-          'Accept': 'application/xml, text/xml, */*',
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ url }),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch XML: ${response.status} ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch XML: ${response.status} ${response.statusText}`);
       }
 
-      const contentType = response.headers.get('content-type') || '';
-      if (!contentType.includes('xml') && !contentType.includes('text')) {
-        console.warn('[XML Import Debug] Unexpected content type:', contentType);
-      }
-
-      const content = await response.text();
-      if (!content.trim()) {
+      const data = await response.json();
+      
+      if (!data.content || !data.content.trim()) {
         throw new Error('Empty XML content received from URL');
       }
 
-      return content;
+      console.log('[XML Import Debug] Successfully fetched XML via proxy, size:', data.size);
+      return data.content;
     } catch (error) {
       console.error('[XML Import Debug] Error fetching XML from URL:', error);
       throw new Error(`Failed to fetch XML from URL: ${error instanceof Error ? error.message : 'Unknown error'}`);

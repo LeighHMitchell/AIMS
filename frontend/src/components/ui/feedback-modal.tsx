@@ -265,12 +265,13 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="feature">Which feature/functionality is this about? (Optional)</Label>
+            <Label htmlFor="feature">Which feature/functionality is this about?</Label>
             <AppFeatureSearchableSelect
               value={selectedFeature}
               onValueChange={setSelectedFeature}
               placeholder="Select the specific feature or area..."
               dropdownId="feedback-feature-select"
+              className="w-full"
             />
           </div>
 

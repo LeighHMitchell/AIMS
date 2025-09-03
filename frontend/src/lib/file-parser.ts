@@ -9,9 +9,9 @@ export async function parseFile(file: File): Promise<{
   if (fileExtension === 'csv') {
     return parseCSV(file);
   } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
-    return parseExcel(file);
+    throw new Error('Excel file support temporarily disabled for security. Please convert to CSV format.');
   } else {
-    throw new Error('Unsupported file type. Please upload a CSV or Excel file.');
+    throw new Error('Unsupported file type. Please upload a CSV file.');
   }
 }
 
@@ -80,11 +80,12 @@ function parseCSVLine(line: string): string[] {
   return values;
 }
 
+/*
 async function parseExcel(file: File): Promise<{
   data: any[];
   columns: FileColumn[];
 }> {
-  // For Excel parsing, we'll use the XLSX library
+  // For Excel parsing, we'll use the XLSX library - DISABLED FOR SECURITY
   // This needs to be dynamically imported to avoid SSR issues
   const XLSX = await import('xlsx');
   
@@ -128,6 +129,7 @@ async function parseExcel(file: File): Promise<{
   
   return { data, columns };
 }
+*/
 
 // Fuzzy matching for auto-mapping
 export function calculateSimilarity(str1: string, str2: string): number {

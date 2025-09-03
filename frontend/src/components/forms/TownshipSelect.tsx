@@ -109,7 +109,7 @@ export function TownshipSelect({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search townships..." />
+          <CommandInput placeholder="Search townships..." autoFocus />
           <CommandEmpty>No township found.</CommandEmpty>
           <div className="max-h-96 overflow-auto">
             {stateId ? (

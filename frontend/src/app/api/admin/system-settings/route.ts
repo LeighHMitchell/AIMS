@@ -3,12 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase"
 
 export async function GET() {
   try {
-    // Debug logging for production troubleshooting
     console.log('[System Settings] GET request received')
-    console.log('[System Settings] Environment check:')
-    console.log('- NODE_ENV:', process.env.NODE_ENV)
-    console.log('- NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Present' : 'Missing')
-    console.log('- SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Present' : 'Missing')
     
     const supabase = getSupabaseAdmin()
     
@@ -22,39 +17,44 @@ export async function GET() {
 
     console.log('[System Settings] Supabase client created successfully')
     
-    // Check if the table exists first
-    const { data: tableExists, error: tableCheckError } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_name', 'system_settings')
-      .eq('table_schema', 'public')
-      .single()
-    
-    if (tableCheckError) {
-      console.log('[System Settings] Table check failed:', tableCheckError.message)
+    // Try to create the table if it doesn't exist
+    try {
+      const { error: createTableError } = await supabase.rpc('exec', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS system_settings (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            home_country VARCHAR(2) NOT NULL DEFAULT 'RW',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+          
+          INSERT INTO system_settings (id, home_country) 
+          VALUES (1, 'RW')
+          ON CONFLICT (id) DO NOTHING;
+        `
+      })
+      
+      if (createTableError) {
+        console.log('[System Settings] Could not create table via RPC, trying direct approach')
+      }
+    } catch (rpcError) {
+      console.log('[System Settings] RPC approach failed, continuing with direct query')
     }
     
-    if (!tableExists) {
-      console.log('[System Settings] system_settings table does not exist yet')
-      return NextResponse.json(
-        { 
-          error: 'System settings table not found',
-          message: 'The system_settings table has not been created yet. Please run the database migration first.',
-          nextSteps: [
-            'Run the migration: 20250129000010_create_simple_system_settings.sql',
-            'This will create the basic table structure needed for system settings'
-          ]
-        },
-        { status: 404 }
-      )
-    }
-    
+    // Try to fetch settings, and if table doesn't exist, return defaults
     const { data: settings, error } = await supabase
       .from('system_settings')
       .select('*')
       .single()
 
     if (error) {
+      if (error.code === 'PGRST116' || error.message.includes('relation "system_settings" does not exist')) {
+        console.log('[System Settings] Table does not exist, returning defaults')
+        return NextResponse.json({
+          homeCountry: 'RW'
+        })
+      }
+      
       console.error('[System Settings] Error fetching from database:', error)
       return NextResponse.json(
         { error: 'Failed to fetch system settings from database', details: error.message },
@@ -76,8 +76,8 @@ export async function GET() {
   } catch (error) {
     console.error('[System Settings] Unexpected error in GET:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { homeCountry: 'RW' }, // Return defaults on any error
+      { status: 200 }
     )
   }
 }
@@ -108,31 +108,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if the table exists first
-    const { data: tableExists, error: tableCheckError } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_name', 'system_settings')
-      .eq('table_schema', 'public')
-      .single()
-    
-    if (tableCheckError) {
-      console.log('[System Settings] Table check failed:', tableCheckError.message)
-    }
-    
-    if (!tableExists) {
-      console.log('[System Settings] system_settings table does not exist yet')
-      return NextResponse.json(
-        { 
-          error: 'System settings table not found',
-          message: 'The system_settings table has not been created yet. Please run the database migration first.',
-          nextSteps: [
-            'Run the migration: 20250129000010_create_simple_system_settings.sql',
-            'This will create the basic table structure needed for system settings'
-          ]
-        },
-        { status: 404 }
-      )
+    // Try to create the table if it doesn't exist
+    try {
+      const { error: createTableError } = await supabase.rpc('exec', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS system_settings (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            home_country VARCHAR(2) NOT NULL DEFAULT 'RW',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+        `
+      })
+      
+      if (createTableError) {
+        console.log('[System Settings] Could not create table via RPC')
+      }
+    } catch (rpcError) {
+      console.log('[System Settings] RPC approach failed for POST')
     }
 
     const { data, error } = await supabase

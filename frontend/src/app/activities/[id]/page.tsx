@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/table"
 import { useUser } from "@/hooks/useUser"
 import { ActivityComments } from "@/components/ActivityComments"
+import { fetchActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache'
 import { CommentsDrawer } from "@/components/activities/CommentsDrawer"
 import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
 import TransactionTab from "@/components/activities/TransactionTab"
@@ -178,6 +179,7 @@ export default function ActivityDetailPage() {
   
   const [showEditBanner, setShowEditBanner] = useState(false)
   const [banner, setBanner] = useState<string | null>(null)
+  const [showActivityDetails, setShowActivityDetails] = useState(false)
   
   const [partners, setPartners] = useState<Partner[]>([])
   const [allPartners, setAllPartners] = useState<Partner[]>([])
@@ -203,10 +205,9 @@ export default function ActivityDetailPage() {
     
     try {
       if (showLoading) setLoading(true)
-      const res = await fetch(`/api/activities/${params.id}`)
-      if (res.ok) {
-        const found = await res.json()
-        if (found) {
+      // OPTIMIZATION: Use cached activity data
+      const found = await fetchActivityWithCache(params.id)
+      if (found) {
           console.log('[ACTIVITY DETAIL DEBUG] Found activity:', found);
           console.log('[ACTIVITY DETAIL DEBUG] Activity contacts:', found.contacts);
           console.log('[ACTIVITY DETAIL DEBUG] Contacts count:', found.contacts?.length || 0);
@@ -254,18 +255,17 @@ export default function ActivityDetailPage() {
             })
           }
           
-          setPartners(allPartners)
+          setPartners(allPartners);
         } else {
-          toast.error("Activity not found")
+          toast.error("Activity not found");
         }
-      }
     } catch (error) {
-      console.error("Error fetching activity:", error)
-      toast.error("Failed to load activity")
+      console.error("Error fetching activity:", error);
+      toast.error("Failed to load activity");
     } finally {
-      if (showLoading) setLoading(false)
+      if (showLoading) setLoading(false);
     }
-  }
+  };
 
   const loadAllPartners = async () => {
     try {
@@ -662,175 +662,204 @@ export default function ActivityDetailPage() {
             
             <CardContent className="p-8">
               <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="mb-4">
-                        <h1 className="text-5xl font-bold text-slate-900 leading-tight">{activity.title}</h1>
-                      </div>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="mb-4">
+                      <h1 className="text-5xl font-bold text-slate-900 leading-tight">{activity.title}</h1>
+                    </div>
+                  </div>
+                  
+                  {/* See More / See Less Button */}
+                  <div className="flex-shrink-0 ml-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowActivityDetails(!showActivityDetails)}
+                      className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    >
+                      {showActivityDetails ? (
+                        <>
+                          <Eye className="h-4 w-4 mr-1" />
+                          See less
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-4 w-4 mr-1" />
+                          See more
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Expandable Details Section */}
+                {showActivityDetails && (
+                  <div className="mt-6 space-y-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge 
+                        className={
+                          activity.activityStatus === "completed" ? "bg-green-100 text-green-800" : 
+                          activity.activityStatus === "implementation" ? "bg-blue-100 text-blue-800" :
+                          activity.activityStatus === "cancelled" ? "bg-red-100 text-red-800" : 
+                          "bg-slate-100 text-slate-800"
+                        }
+                      >
+                        {(activity.activityStatus || "Planning").charAt(0).toUpperCase() + 
+                         (activity.activityStatus || "Planning").slice(1).toLowerCase()}
+                      </Badge>
                       
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge 
-                          className={
-                            activity.activityStatus === "completed" ? "bg-green-100 text-green-800" : 
-                            activity.activityStatus === "implementation" ? "bg-blue-100 text-blue-800" :
-                            activity.activityStatus === "cancelled" ? "bg-red-100 text-red-800" : 
-                            "bg-slate-100 text-slate-800"
-                          }
-                        >
-                          {(activity.activityStatus || "Planning").charAt(0).toUpperCase() + 
-                           (activity.activityStatus || "Planning").slice(1).toLowerCase()}
-                        </Badge>
-                        
-                        {/* IATI Sync Status */}
-                        {activity.iatiIdentifier && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="border-slate-300 text-slate-700">
-                                  {activity.syncStatus === 'live' ? (
-                                    <>
-                                      <RefreshCw className="h-3 w-3 mr-1 text-green-600" />
-                                      IATI Synced
-                                    </>
-                                  ) : activity.syncStatus === 'outdated' ? (
-                                    <>
-                                      <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />
-                                      IATI Outdated
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Globe className="h-3 w-3 mr-1 text-slate-600" />
-                                      IATI Linked
-                                    </>
-                                  )}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="text-xs space-y-1">
-                                  <p className="font-medium">IATI Sync Status</p>
-                                  {activity.lastSyncTime && (
-                                    <p>Last synced: {format(new Date(activity.lastSyncTime), 'dd MMM yyyy HH:mm')}</p>
-                                  )}
-                                  {activity.autoSync && (
-                                    <p className="text-green-600">Auto-sync enabled</p>
-                                  )}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-                      
-                      {activity.description && (
-                        <p className="text-slate-600 mt-3 max-w-3xl leading-relaxed">
+                      {/* IATI Sync Status */}
+                      {activity.iatiIdentifier && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="border-slate-300 text-slate-700">
+                                {activity.syncStatus === 'live' ? (
+                                  <>
+                                    <RefreshCw className="h-3 w-3 mr-1 text-green-600" />
+                                    IATI Synced
+                                  </>
+                                ) : activity.syncStatus === 'outdated' ? (
+                                  <>
+                                    <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />
+                                    IATI Outdated
+                                  </>
+                                ) : (
+                                  <>
+                                    <Globe className="h-3 w-3 mr-1 text-slate-600" />
+                                    IATI Linked
+                                  </>
+                                )}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="text-xs space-y-1">
+                                <p className="font-medium">IATI Sync Status</p>
+                                {activity.lastSyncTime && (
+                                  <p>Last synced: {format(new Date(activity.lastSyncTime), 'dd MMM yyyy HH:mm')}</p>
+                                )}
+                                {activity.autoSync && (
+                                  <p className="text-green-600">Auto-sync enabled</p>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                    
+                    {activity.description && (
+                      <div>
+                        <p className="text-slate-600 max-w-3xl leading-relaxed">
                           {activity.description}
                         </p>
-                      )}
-                      
-                      {/* SDG Goals Display */}
-                      {activity.sdgMappings && activity.sdgMappings.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-slate-200">
-                          <div className="flex items-center gap-3">
-                            <div className="text-slate-500 text-sm font-medium">SDG Goals:</div>
-                            <SDGImageGrid 
-                              sdgCodes={Array.from(new Set(activity.sdgMappings.map((m: any) => m.sdgGoal)))}
-                              size="md"
-                              showTooltips={true}
-                              maxDisplay={8}
-                              className="flex-wrap"
-                            />
-                          </div>
+                      </div>
+                    )}
+                    
+                    {/* SDG Goals Display */}
+                    {activity.sdgMappings && activity.sdgMappings.length > 0 && (
+                      <div className="pt-4 border-t border-slate-200">
+                        <div className="flex items-center gap-3">
+                          <div className="text-slate-500 text-sm font-medium">SDG Goals:</div>
+                          <SDGImageGrid 
+                            sdgCodes={Array.from(new Set(activity.sdgMappings.map((m: any) => m.sdgGoal)))}
+                            size="md"
+                            showTooltips={true}
+                            maxDisplay={8}
+                            className="flex-wrap"
+                          />
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Metadata Grid */}
-                  <div className="grid grid-cols-2 gap-4 mt-6 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-500 shrink-0">Reported by:</span>
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        {(() => {
-                          const creatorOrg = partners.find(p => p.id === activity.createdByOrg);
-                          return (
-                            <>
-                              {creatorOrg?.logo && (
-                                <div className="flex-shrink-0">
-                                  <Image
-                                    src={creatorOrg.logo}
-                                    alt={`${creatorOrg.name} logo`}
-                                    width={20}
-                                    height={20}
-                                    className="rounded-sm object-contain"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                    }}
-                                  />
-                                </div>
-                              )}
-                              {creatorOrg ? (
-                                <a 
-                                  href={`/organizations/${creatorOrg.id}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-black hover:text-black transition-colors font-medium break-words min-w-0"
-                                >
-                                  {creatorOrg.acronym || creatorOrg.code || creatorOrg.name}{" "}
-                                  <ExternalLink className="inline h-3 w-3" style={{ verticalAlign: "middle" }} />
-                                </a>
-                              ) : (
-                                <span className="text-slate-900 font-medium break-words min-w-0">
-                                  {activity.created_by_org_acronym || activity.created_by_org_name || 'Unknown Organization'}
-                                </span>
-                              )}
-                            </>
-                          );
-                        })()}
                       </div>
-                    </div>
-                    <div className="flex flex-wrap gap-4 text-sm">
-                      <div className="flex items-center">
-                        <span className="text-slate-500">Created:</span>
-                        <span className="ml-1 text-slate-900">{formatDate(activity.createdAt)}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="text-slate-500">Updated:</span>
-                        <span className="ml-1 text-slate-900">{formatDate(activity.updatedAt)}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Creator:</span>
-                      <span className="ml-2 text-slate-900">{activity.createdBy?.name || 'Unknown'}</span>
-                    </div>
-                  </div>
+                    )}
 
-                  {/* Activity Dates */}
-                  <div className="mt-4">
-                    {getDisplayDates(activity)}
-                  </div>
-
-                  {/* Contributors */}
-                  {activity.contributors && activity.contributors.length > 0 && (
-                    <div className="mt-4">
-                      <span className="text-sm text-slate-500">Contributors: </span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {activity.contributors
-                          .filter(c => c.status === 'accepted')
-                          .map((contributor, idx) => {
-                            const partner = allPartners.find(p => p.id === contributor.organizationId);
-                            const displayName = partner 
-                              ? `${partner.acronym || partner.code || partner.name}`
-                              : contributor.organizationName;
+                    {/* Metadata Grid */}
+                    <div className="grid grid-cols-2 gap-4 text-sm border-t border-slate-200 pt-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-500 shrink-0">Reported by:</span>
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          {(() => {
+                            const creatorOrg = partners.find(p => p.id === activity.createdByOrg);
                             return (
-                              <Badge key={contributor.id} variant="outline" className="text-xs border-slate-300 text-slate-700">
-                                {displayName}
-                              </Badge>
+                              <>
+                                {creatorOrg?.logo && (
+                                  <div className="flex-shrink-0">
+                                    <Image
+                                      src={creatorOrg.logo}
+                                      alt={`${creatorOrg.name} logo`}
+                                      width={20}
+                                      height={20}
+                                      className="rounded-sm object-contain"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                {creatorOrg ? (
+                                  <a 
+                                    href={`/organizations/${creatorOrg.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-black hover:text-black transition-colors font-medium break-words min-w-0"
+                                  >
+                                    {creatorOrg.acronym || creatorOrg.code || creatorOrg.name}{" "}
+                                    <ExternalLink className="inline h-3 w-3" style={{ verticalAlign: "middle" }} />
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-900 font-medium break-words min-w-0">
+                                    {activity.created_by_org_acronym || activity.created_by_org_name || 'Unknown Organization'}
+                                  </span>
+                                )}
+                              </>
                             );
-                          })}
+                          })()}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-4 text-sm">
+                        <div className="flex items-center">
+                          <span className="text-slate-500">Created:</span>
+                          <span className="ml-1 text-slate-900">{formatDate(activity.createdAt)}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-slate-500">Updated:</span>
+                          <span className="ml-1 text-slate-900">{formatDate(activity.updatedAt)}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Creator:</span>
+                        <span className="ml-2 text-slate-900">{activity.createdBy?.name || 'Unknown'}</span>
                       </div>
                     </div>
-                  )}
-                </div>
+
+                    {/* Activity Dates */}
+                    <div>
+                      {getDisplayDates(activity)}
+                    </div>
+
+                    {/* Contributors */}
+                    {activity.contributors && activity.contributors.length > 0 && (
+                      <div>
+                        <span className="text-sm text-slate-500">Contributors: </span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {activity.contributors
+                            .filter(c => c.status === 'accepted')
+                            .map((contributor, idx) => {
+                              const partner = allPartners.find(p => p.id === contributor.organizationId);
+                              const displayName = partner 
+                                ? `${partner.acronym || partner.code || partner.name}`
+                                : contributor.organizationName;
+                              return (
+                                <Badge key={contributor.id} variant="outline" className="text-xs border-slate-300 text-slate-700">
+                                  {displayName}
+                                </Badge>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 

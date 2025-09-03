@@ -98,6 +98,7 @@ export function CurrencyCombobox({
           <CommandInput
             placeholder="Search currency code or name..."
             onChange={(e) => setSearch(e.target.value)}
+            autoFocus
           />
           <CommandEmpty>
             {allowCustom && isValidCurrencyCode(search.toUpperCase()) ? (

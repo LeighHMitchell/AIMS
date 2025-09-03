@@ -659,20 +659,7 @@ export default function TransactionModal({
       financing_classification: isClassificationOverridden ? manualClassification : computedClassification
     });
     const validationError = validateTransaction(submissionData);
-    // Check for duplicate transaction reference in the current list (frontend validation)
-    if (submissionData.transaction_reference) {
-      const ref = submissionData.transaction_reference.trim().toLowerCase();
-      const isDuplicate = allTransactionReferences.filter(r => r && r.trim().toLowerCase() === ref).length > (createdTransactionId || (isEditing && transaction?.id) ? 1 : 0);
-      if (isDuplicate) {
-        showValidationError('Transaction reference must be unique.', {
-          isDuplicateReference: true,
-          onClearReference: () => {
-            setFormData(prev => ({ ...prev, transaction_reference: '' }));
-          }
-        });
-        return;
-      }
-    }
+    // Let the backend handle duplicate reference validation
     if (validationError) {
       const missingFields = getMissingRequiredFields(formData);
       if (missingFields.length > 0) {

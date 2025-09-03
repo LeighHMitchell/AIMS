@@ -7,7 +7,7 @@ BEGIN
     UPDATE organizations 
     SET is_development_partner = true,
         cooperation_modality = 'External'
-    WHERE name = 'Deutsche Gesellschaft für Internationale Zusammenarbeit (GIZ)' 
+    WHERE name ILIKE '%Deutsche Gesellschaft für Internationale Zusammenarbeit%'
        OR code = 'XM-DAC-41126'
        OR acronym = 'GIZ';
 

@@ -318,7 +318,7 @@ export function DocumentFormEnhanced({
                     </PopoverTrigger>
                     <PopoverContent className="w-[600px] p-0" align="start">
                       <Command>
-                        <CommandInput placeholder="Search formats..." className="h-9" />
+                        <CommandInput placeholder="Search formats..." className="h-9" autoFocus />
                         <CommandEmpty>No format found.</CommandEmpty>
                         <CommandList>
                           <CommandGroup>
@@ -385,7 +385,7 @@ export function DocumentFormEnhanced({
                       </PopoverTrigger>
                       <PopoverContent className="w-[400px] p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Search languages..." className="h-9" />
+                          <CommandInput placeholder="Search languages..." className="h-9" autoFocus />
                           <CommandEmpty>No language found.</CommandEmpty>
                           <CommandList>
                             <CommandGroup>
@@ -440,7 +440,7 @@ export function DocumentFormEnhanced({
                       </PopoverTrigger>
                       <PopoverContent className="w-[400px] p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Search languages..." className="h-9" />
+                          <CommandInput placeholder="Search languages..." className="h-9" autoFocus />
                           <CommandEmpty>No language found.</CommandEmpty>
                           <CommandList>
                             <CommandGroup>
@@ -491,7 +491,7 @@ export function DocumentFormEnhanced({
                     </PopoverTrigger>
                     <PopoverContent className="w-[600px] p-0" align="start">
                       <Command>
-                        <CommandInput placeholder="Search categories..." className="h-9" />
+                        <CommandInput placeholder="Search categories..." className="h-9" autoFocus />
                         <CommandEmpty>No category found.</CommandEmpty>
                         <CommandList>
                           <CommandGroup>

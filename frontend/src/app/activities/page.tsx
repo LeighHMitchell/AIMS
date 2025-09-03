@@ -1316,18 +1316,18 @@ function ActivitiesPageContent() {
                                     name: activity.created_by_org_name || "Unknown Organization", 
                                     shortName: activity.created_by_org_acronym 
                                   })}
+                                  {user && (
+                                    <span className="text-gray-600 font-normal">
+                                      {' '}Submitted by {formatSubmittedBy({
+                                        title: user.title,
+                                        firstName: user.firstName || '',
+                                        middleName: user.middleName,
+                                        lastName: user.lastName || '',
+                                        jobTitle: user.jobTitle
+                                      })} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
+                                    </span>
+                                  )}
                                 </p>
-                                {user && (
-                                  <p className="text-gray-600">
-                                    Submitted by {formatSubmittedBy({
-                                      title: user.title,
-                                      firstName: user.firstName || '',
-                                      middleName: user.middleName,
-                                      lastName: user.lastName || '',
-                                      jobTitle: user.jobTitle
-                                    })} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
-                                  </p>
-                                )}
                               </div>
                             </TooltipContent>
                           </Tooltip>
@@ -1387,7 +1387,7 @@ function ActivitiesPageContent() {
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <Link2 className="h-4 w-4" />
-                                  <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status : 'Not specified'}</span>
+                                  <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status : 'Not specified'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <Settings className="h-4 w-4" />

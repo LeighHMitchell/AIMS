@@ -127,7 +127,7 @@ export function MultiSelect({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search..." />
+          <CommandInput placeholder="Search..." autoFocus />
           <CommandEmpty>No items found.</CommandEmpty>
           {Object.entries(groupedOptions).map(([groupName, groupOptions]) => (
             <CommandGroup key={groupName} heading={groupName}>

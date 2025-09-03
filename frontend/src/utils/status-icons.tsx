@@ -65,7 +65,7 @@ export const getPublicationStatusIcon = (status: string): StatusIconConfig => {
     case 'draft': 
       return { 
         icon: <EyeOff className="h-4 w-4 text-black" />, 
-        tooltip: "Draft - Not published" 
+        tooltip: "Unpublished - Not published" 
       }
     case 'published': 
       return { 

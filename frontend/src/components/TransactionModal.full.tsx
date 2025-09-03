@@ -294,6 +294,9 @@ export default function TransactionModal({
   const { user } = useUser();
   const isEditing = !!transaction;
   
+  // Add state to track if transaction is created
+  const [createdTransactionId, setCreatedTransactionId] = useState<string | null>(() => transaction?.id || null);
+  
   // Fallback transaction types if IATI values fail to load
   const fallbackTransactionTypes = [
     { code: '1', name: 'Incoming Commitment' },
@@ -659,20 +662,7 @@ export default function TransactionModal({
       financing_classification: isClassificationOverridden ? manualClassification : computedClassification
     });
     const validationError = validateTransaction(submissionData);
-    // Check for duplicate transaction reference in the current list (frontend validation)
-    if (submissionData.transaction_reference) {
-      const ref = submissionData.transaction_reference.trim().toLowerCase();
-      const isDuplicate = allTransactionReferences.filter(r => r && r.trim().toLowerCase() === ref).length > (createdTransactionId || (isEditing && transaction?.id) ? 1 : 0);
-      if (isDuplicate) {
-        showValidationError('Transaction reference must be unique.', {
-          isDuplicateReference: true,
-          onClearReference: () => {
-            setFormData(prev => ({ ...prev, transaction_reference: '' }));
-          }
-        });
-        return;
-      }
-    }
+    // Let the backend handle duplicate reference validation
     if (validationError) {
       const missingFields = getMissingRequiredFields(formData);
       if (missingFields.length > 0) {
@@ -724,6 +714,15 @@ export default function TransactionModal({
       }
       const saved = await response.json();
       setCreatedTransactionId(saved.id || saved.uuid);
+      
+      // Update form data with the auto-generated transaction reference
+      if (saved.transaction_reference && (!formData.transaction_reference || formData.transaction_reference === '')) {
+        setFormData(prev => ({ 
+          ...prev, 
+          transaction_reference: saved.transaction_reference 
+        }));
+      }
+      
       showTransactionSuccess((isEditing || createdTransactionId) ? 'Transaction updated successfully' : 'Transaction added successfully');
       
       // Call onSubmit callback to notify parent component
@@ -900,9 +899,6 @@ export default function TransactionModal({
 
   // Add required fields array
   const REQUIRED_FIELDS = ['transaction_type', 'transaction_date', 'value', 'currency', 'activity_id'];
-
-  // Add state to track if transaction is created
-  const [createdTransactionId, setCreatedTransactionId] = useState<string | null>(() => transaction?.id || null);
   const [pendingFields, setPendingFields] = useState<Partial<Transaction>>({});
   const [creationError, setCreationError] = useState<string | null>(null);
 

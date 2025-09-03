@@ -8,7 +8,7 @@ BEGIN
     -- Ensure the organization does not already exist by checking its name or code.
     IF NOT EXISTS (
         SELECT 1 FROM organizations 
-        WHERE name = 'Deutsche Gesellschaft für Internationale Zusammenarbeit (GIZ)' 
+        WHERE name = 'Deutsche Gesellschaft für Internationale Zusammenarbeit' 
         OR code = 'XM-DAC-41126'
     ) THEN
         -- Insert the new organization record.
@@ -23,7 +23,7 @@ BEGIN
             email,
             address
         ) VALUES (
-            'Deutsche Gesellschaft für Internationale Zusammenarbeit (GIZ)',
+            'Deutsche Gesellschaft für Internationale Zusammenarbeit',
             'GIZ',
             '10', -- Code for 'Government' type.
             'XM-DAC-41126',

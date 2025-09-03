@@ -141,7 +141,6 @@ export function EnhancedSearchableSelect({
         <PopoverContent
           className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border"
           align={align}
-          side={side}
           sideOffset={4}
         >
           <Command>

@@ -782,105 +782,63 @@ export default function ProfilePage() {
 
                         {/* Organization Section */}
                       <div className="space-y-4">
-                          <Separator className="my-4" />
                           <h4 className="text-sm font-medium text-muted-foreground">Organization</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div>
                               <Label htmlFor="userRole" className="text-xs">User Role</Label>
-                              <Input
-                                id="userRole"
-                                value={ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
-                                disabled
-                                className="h-9 bg-muted"
-                              />
+                              <div className="relative">
+                                <Input
+                                  id="userRole"
+                                  value={ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
+                                  disabled
+                                  className="h-9 bg-muted pr-8"
+                                />
+                                <Lock className="h-3 w-3 text-muted-foreground absolute right-3 top-1/2 transform -translate-y-1/2" />
+                              </div>
                             </div>
                         <div>
                               {user.role === 'super_user' ? (
                                 <>
                                   <Label htmlFor="organisation" className="text-xs">Organisation</Label>
-                      <Select
-                        value={selectedOrgId}
-                        onValueChange={(value) => {
-                          setSelectedOrgId(value)
-                          const org = organizations.find(o => o.id === value)
-                          if (org) {
-                            setFormData(prev => ({ ...prev, organisation: org.name }))
-                          }
-                        }}
-                      >
-                                    <SelectTrigger id="organisation" className="h-9">
-                          <SelectValue placeholder="Select organisation">
-                            {selectedOrgId && (() => {
-                              const selectedOrg = organizations.find(o => o.id === selectedOrgId);
-                              return selectedOrg ? (
-                                <div className="flex items-center gap-2">
-                                  {selectedOrg.logo && (
-                                    <img
-                                      src={selectedOrg.logo}
-                                      alt={`${selectedOrg.name} logo`}
-                                      className="w-4 h-4 object-contain rounded-sm flex-shrink-0"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                      }}
-                                    />
-                                  )}
-                                  <span className="text-sm truncate">
-                                    {selectedOrg.name} {selectedOrg.acronym && `(${selectedOrg.acronym})`}
-                                  </span>
-                                </div>
-                              ) : null;
-                            })()}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {organizations.map((org) => (
-                            <SelectItem key={org.id} value={org.id}>
-                              <div className="flex items-center gap-2">
-                                {org.logo && (
-                                  <img
-                                    src={org.logo}
-                                    alt={`${org.name} logo`}
-                                    className="w-6 h-6 object-contain rounded-sm flex-shrink-0"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                    }}
-                                  />
-                                )}
-                                <div className="flex flex-col min-w-0 flex-1">
-                                  <div className="text-sm truncate">
-                                    {org.name} {org.acronym && `(${org.acronym})`}
-                                  </div>
-                                  {org.iati_org_id && (
-                                    <div className="text-xs text-muted-foreground truncate">
-                                      IATI: {org.iati_org_id}
+                                  <div className="relative">
+                                    <div className="h-9 px-3 py-2 pr-8 border rounded-md bg-muted flex items-center gap-2">
+                                      {user.organization?.logo && (
+                                        <img
+                                          src={user.organization.logo}
+                                          alt={`${user.organization.name} logo`}
+                                          className="w-5 h-5 object-contain rounded-sm flex-shrink-0"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                          }}
+                                        />
+                                      )}
+                                      <span className="text-sm">{user.organization?.name || formData.organisation || "Not assigned"}</span>
                                     </div>
-                                  )}
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                                    <Lock className="h-3 w-3 text-muted-foreground absolute right-3 top-1/2 transform -translate-y-1/2" />
+                                  </div>
+
                                 </>
                 ) : (
                   <>
                                   <Label className="text-xs">Organisation</Label>
-                                  <div className="h-9 px-3 py-2 border rounded-md bg-muted flex items-center gap-2">
-                                    {user.organization?.logo && (
-                                      <img
-                                        src={user.organization.logo}
-                                        alt={`${user.organization.name} logo`}
-                                        className="w-5 h-5 object-contain rounded-sm flex-shrink-0"
-                                        onError={(e) => {
-                                          const target = e.target as HTMLImageElement;
-                                          target.style.display = 'none';
-                                        }}
-                                      />
-                                    )}
-                                    <span className="text-sm">{user.organization?.name || formData.organisation || "Not assigned"}</span>
-                        </div>
+                                  <div className="relative">
+                                    <div className="h-9 px-3 py-2 pr-8 border rounded-md bg-muted flex items-center gap-2">
+                                      {user.organization?.logo && (
+                                        <img
+                                          src={user.organization.logo}
+                                          alt={`${user.organization.name} logo`}
+                                          className="w-5 h-5 object-contain rounded-sm flex-shrink-0"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                          }}
+                                        />
+                                      )}
+                                      <span className="text-sm">{user.organization?.name || formData.organisation || "Not assigned"}</span>
+                                    </div>
+                                    <Lock className="h-3 w-3 text-muted-foreground absolute right-3 top-1/2 transform -translate-y-1/2" />
+                                  </div>
                                 </>
                               )}
                             </div>
@@ -895,13 +853,16 @@ export default function ProfilePage() {
                           <div className="space-y-3">
                         <div>
                               <Label htmlFor="email" className="text-xs mb-2 block">Primary Email</Label>
-                              <Input
-                                id="email"
-                                type="email"
-                                value={formData.email}
-                                disabled
-                                className="bg-muted h-9"
-                              />
+                              <div className="relative">
+                                <Input
+                                  id="email"
+                                  type="email"
+                                  value={formData.email}
+                                  disabled
+                                  className="bg-muted h-9 pr-8"
+                                />
+                                <Lock className="h-3 w-3 text-muted-foreground absolute right-3 top-1/2 transform -translate-y-1/2" />
+                              </div>
                       </div>
                             
                             {/* Phone and Fax on same line */}

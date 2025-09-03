@@ -211,6 +211,18 @@ const getSectorInfo = (code: string): { name: string; description: string; categ
   };
 };
 
+// Helper function to detect if percentages are equally distributed
+const arePercentagesEquallyDistributed = (allocations: SectorAllocation[]): boolean => {
+  if (allocations.length <= 1) return true;
+  
+  const expectedEqual = 100 / allocations.length;
+  const tolerance = 0.1; // Allow small rounding differences
+  
+  return allocations.every(a => 
+    Math.abs(a.percentage - expectedEqual) <= tolerance
+  );
+};
+
 interface SectorOption {
   value: string;
   label: string;
@@ -454,7 +466,83 @@ export default function ImprovedSectorAllocationForm({
     
     // Remove
     newAllocations = newAllocations.filter(a => !toRemove.includes(a.code));
-    onChange(newAllocations);
+    
+    // Smart percentage distribution logic
+    if (newAllocations.length > 0) {
+      // Check if existing allocations appear to be manually customized
+      // (i.e., not equal distribution or all zeros)
+      const existingAllocations = newAllocations.filter(a => !toAdd.includes(a.code));
+      const hasCustomPercentages = existingAllocations.length > 1 && 
+        existingAllocations.some(a => a.percentage > 0) &&
+        !arePercentagesEquallyDistributed(existingAllocations);
+      
+      if (hasCustomPercentages && toAdd.length > 0) {
+        // User has customized percentages - only assign reasonable values to new sectors
+        const totalExisting = existingAllocations.reduce((sum, a) => sum + a.percentage, 0);
+        const remainingPercentage = Math.max(0, 100 - totalExisting);
+        const newSectorPercentage = toAdd.length > 0 ? 
+          parseFloat((remainingPercentage / toAdd.length).toFixed(2)) : 0;
+        
+        const smartAllocated = newAllocations.map(a => {
+          if (toAdd.includes(a.code)) {
+            return { ...a, percentage: newSectorPercentage };
+          }
+          return a; // Keep existing percentages unchanged
+        });
+        
+        console.log('[SectorForm] Smart allocation - preserving custom percentages:', {
+          totalExisting,
+          remainingPercentage,
+          newSectorPercentage,
+          smartAllocated: smartAllocated.map(a => ({ code: a.code, percentage: a.percentage }))
+        });
+        
+        onChange(smartAllocated);
+        
+        // Show toast if total doesn't equal 100%
+        const newTotal = smartAllocated.reduce((sum, a) => sum + a.percentage, 0);
+        if (Math.abs(newTotal - 100) > 0.01) {
+          setTimeout(() => {
+            toast.info(`Total allocation is ${newTotal.toFixed(1)}%. You may need to adjust percentages to reach 100%.`, {
+              position: 'top-right',
+              duration: 4000
+            });
+          }, 100);
+        }
+      } else {
+        // Auto-distribute equally (default behavior for new selections or equal distributions)
+        const equalShare = 100 / newAllocations.length;
+        const autoBalanced = newAllocations.map(a => ({
+          ...a,
+          percentage: parseFloat(equalShare.toFixed(2))
+        }));
+        
+        // Handle rounding errors by adjusting the first allocation
+        const total = autoBalanced.reduce((sum, a) => sum + a.percentage, 0);
+        if (total !== 100 && autoBalanced.length > 0) {
+          autoBalanced[0].percentage += (100 - total);
+          autoBalanced[0].percentage = parseFloat(autoBalanced[0].percentage.toFixed(2));
+        }
+        
+        console.log('[SectorForm] Auto-distributing percentages equally:', {
+          totalSectors: autoBalanced.length,
+          equalShare,
+          autoBalanced: autoBalanced.map(a => ({ code: a.code, percentage: a.percentage }))
+        });
+        
+        onChange(autoBalanced);
+      }
+      
+      // Trigger autosave with a small delay
+      setTimeout(() => {
+        if (sectorsAutosave && newAllocations.length > 0) {
+          console.log('[SectorForm] Triggering autosave after selection change');
+          sectorsAutosave.triggerFieldSave(newAllocations);
+        }
+      }, 100);
+    } else {
+      onChange(newAllocations);
+    }
   };
 
   // Calculate validation
@@ -500,7 +588,38 @@ export default function ImprovedSectorAllocationForm({
       categoryCode: option.code.substring(0, 3)
     };
     
-    onChange([...allocations, newAllocation]);
+    const updatedWithNew = [...allocations, newAllocation];
+    
+    // Auto-distribute percentages equally among all sectors
+    const equalShare = 100 / updatedWithNew.length;
+    const autoBalanced = updatedWithNew.map(a => ({
+      ...a,
+      percentage: parseFloat(equalShare.toFixed(2))
+    }));
+    
+    // Handle rounding errors by adjusting the first allocation
+    const total = autoBalanced.reduce((sum, a) => sum + a.percentage, 0);
+    if (total !== 100 && autoBalanced.length > 0) {
+      autoBalanced[0].percentage += (100 - total);
+      autoBalanced[0].percentage = parseFloat(autoBalanced[0].percentage.toFixed(2));
+    }
+    
+    console.log('[SectorForm] Auto-distributing percentages:', {
+      totalSectors: autoBalanced.length,
+      equalShare,
+      autoBalanced: autoBalanced.map(a => ({ code: a.code, percentage: a.percentage }))
+    });
+    
+    // Call onChange with auto-balanced percentages first
+    onChange(autoBalanced);
+    
+    // Then trigger autosave with a small delay to ensure onChange completes first
+    setTimeout(() => {
+      if (sectorsAutosave && autoBalanced.length > 0) {
+        console.log('[SectorForm] Triggering autosave after auto-balance:', autoBalanced);
+        sectorsAutosave.triggerFieldSave(autoBalanced);
+      }
+    }, 100);
   };
 
   // Update percentage for a specific allocation
@@ -513,7 +632,51 @@ export default function ImprovedSectorAllocationForm({
 
   // Remove a sector
   const removeSector = (id: string) => {
-    onChange(allocations.filter(a => a.id !== id));
+    const updated = allocations.filter(a => a.id !== id);
+    
+    // Auto-distribute percentages equally among remaining sectors
+    if (updated.length > 0) {
+      const equalShare = 100 / updated.length;
+      const autoBalanced = updated.map(a => ({
+        ...a,
+        percentage: parseFloat(equalShare.toFixed(2))
+      }));
+      
+      // Handle rounding errors by adjusting the first allocation
+      const total = autoBalanced.reduce((sum, a) => sum + a.percentage, 0);
+      if (total !== 100 && autoBalanced.length > 0) {
+        autoBalanced[0].percentage += (100 - total);
+        autoBalanced[0].percentage = parseFloat(autoBalanced[0].percentage.toFixed(2));
+      }
+      
+      console.log('[SectorForm] Auto-redistributing after removal:', {
+        remainingSectors: autoBalanced.length,
+        equalShare,
+        autoBalanced: autoBalanced.map(a => ({ code: a.code, percentage: a.percentage }))
+      });
+      
+      // Call onChange with auto-balanced percentages first
+      onChange(autoBalanced);
+      
+      // Then trigger autosave with a small delay to ensure onChange completes first
+      setTimeout(() => {
+        if (sectorsAutosave && autoBalanced.length > 0) {
+          console.log('[SectorForm] Triggering autosave after removal rebalance:', autoBalanced);
+          sectorsAutosave.triggerFieldSave(autoBalanced);
+        }
+      }, 100);
+    } else {
+      console.log('[SectorForm] All sectors removed');
+      onChange(updated);
+      
+      // Trigger autosave for empty state too
+      setTimeout(() => {
+        if (sectorsAutosave) {
+          console.log('[SectorForm] Triggering autosave for empty sectors');
+          sectorsAutosave.triggerFieldSave(updated);
+        }
+      }, 100);
+    }
   };
 
   // Distribute percentages equally
@@ -930,7 +1093,7 @@ export default function ImprovedSectorAllocationForm({
                           
                           {/* Percentage Input */}
                           <TableCell className="py-2">
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-5">
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>

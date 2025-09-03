@@ -60,7 +60,7 @@ export async function POST(
     }
     
     // Check if activity sectors sum to 100%
-    const totalActivityPercentage = activitySectors.reduce((sum, sector) => sum + (sector.percentage || 0), 0);
+    const totalActivityPercentage = activitySectors.reduce((sum: number, sector: any) => sum + (sector.percentage || 0), 0);
     if (Math.abs(totalActivityPercentage - 100) > 0.01) {
       return NextResponse.json(
         { 
@@ -86,7 +86,7 @@ export async function POST(
     }
     
     // Create new sector lines based on activity sectors
-    const newSectorLines = activitySectors.map((sector, index) => {
+    const newSectorLines = activitySectors.map((sector: any, index: number) => {
       const percentage = sector.percentage || 0;
       const amount = body.scale_to_transaction 
         ? (transaction.value * percentage / 100)
@@ -119,8 +119,8 @@ export async function POST(
     
     // Validate the result
     const lines = insertedLines || [];
-    const totalPercentage = lines.reduce((sum, line) => sum + line.percentage, 0);
-    const totalAmount = lines.reduce((sum, line) => sum + (line.amount_minor / 100), 0);
+    const totalPercentage = lines.reduce((sum: number, line: any) => sum + line.percentage, 0);
+    const totalAmount = lines.reduce((sum: number, line: any) => sum + (line.amount_minor / 100), 0);
     
     const validation = {
       isValid: Math.abs(totalPercentage - 100) <= 0.01,

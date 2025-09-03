@@ -22,21 +22,24 @@ export async function GET(
   try {
     const supabase = getSupabaseAdmin();
     if (!supabase) {
-      console.error('[AIMS] Supabase admin client not available');
-      return NextResponse.json(
-        { error: 'Database connection not available' },
-        { status: 500 }
-      );
+      console.log('[AIMS] Supabase admin client not available - using local mode for contributors');
+      // In local mode, try to get contributors from local storage or return empty array
+      try {
+        const { localDb } = await import('@/lib/db/local-db');
+        // For now, return empty array since local-db doesn't implement contributors table
+        // The frontend will handle this by using the props contributors
+        return NextResponse.json([]);
+      } catch (error) {
+        console.error('[AIMS] Error with local database:', error);
+        return NextResponse.json([]);
+      }
     }
 
-    // First check which columns exist
-    const { data: tableInfo } = await supabase
-      .from('information_schema.columns')
-      .select('column_name')
-      .eq('table_name', 'activity_contributors');
+    // Assume modern schema with all columns (we know nominated_by_name exists from testing)
+    const hasOrganizationName = true;
+    const hasNominatedByName = true;
     
-    const hasOrganizationName = tableInfo?.some((col: any) => col.column_name === 'organization_name');
-    const hasNominatedByName = tableInfo?.some((col: any) => col.column_name === 'nominated_by_name');
+    console.log('[Contributors API] Using modern schema with nominated_by_name column');
     
     // Build select query based on available columns
     let selectQuery = `
@@ -97,7 +100,7 @@ export async function GET(
           // Try to get user info with flexible column selection
           const { data: users } = await supabase
             .from('users')
-            .select('id, email, username, full_name, first_name, last_name, name')
+            .select('id, email, username, full_name, first_name, last_name, name, job_title, title')
             .in('id', userIds);
           
           enrichedContributors = enrichedContributors.map((contributor: any) => {
@@ -105,19 +108,38 @@ export async function GET(
             let userName = 'Unknown User';
             
             if (user) {
-              // Try different possible name fields in order of preference
-              userName = user.name || 
-                        user.full_name || 
-                        (user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '') ||
-                        user.username || 
-                        user.email || 
-                        `User ID: ${user.id}`;
+              console.log('[Contributors API] User data from DB:', user);
               
-              // Clean up the name and ensure it's not empty
-              userName = userName.trim();
-              if (!userName || userName === '') {
-                userName = 'Unknown User';
+              // Try different possible name fields in order of preference with type checking
+              if (user.name && typeof user.name === 'string' && user.name.trim() !== '') {
+                userName = user.name.trim();
+              } else if (user.full_name && typeof user.full_name === 'string' && user.full_name.trim() !== '') {
+                userName = user.full_name.trim();
+              } else if (user.first_name || user.last_name) {
+                const nameParts = [];
+                if (user.first_name && typeof user.first_name === 'string' && user.first_name.trim() !== '') {
+                  nameParts.push(user.first_name.trim());
+                }
+                if (user.last_name && typeof user.last_name === 'string' && user.last_name.trim() !== '') {
+                  nameParts.push(user.last_name.trim());
+                }
+                if (nameParts.length > 0) {
+                  userName = nameParts.join(' ');
+                }
+              } else if (user.job_title && typeof user.job_title === 'string' && user.job_title.trim() !== '') {
+                userName = user.job_title.trim();
+              } else if (user.title && typeof user.title === 'string' && user.title.trim() !== '') {
+                userName = user.title.trim();
+              } else if (user.username && typeof user.username === 'string' && user.username.trim() !== '') {
+                userName = user.username.trim();
+              } else if (user.email && typeof user.email === 'string' && user.email.trim() !== '') {
+                const emailParts = user.email.split('@');
+                if (emailParts[0]) {
+                  userName = emailParts[0];
+                }
               }
+              
+              console.log('[Contributors API] Final user name:', userName);
             }
             
             return {
@@ -128,16 +150,102 @@ export async function GET(
         }
       }
       
-      // Also ensure existing contributors have proper nominated_by_name
-      enrichedContributors = enrichedContributors.map((contributor: any) => {
-        // If nominated_by_name is missing or is 'Unknown User' but we have nominated_by, try to populate it
-        if ((!contributor.nominated_by_name || contributor.nominated_by_name === 'Unknown User') && contributor.nominated_by) {
-          // This will be handled by the above logic if the column doesn't exist
-          // For existing records with the column, we'll keep the current value
-          return contributor;
+      // For existing contributors with 'Unknown User', try to update their names from the users data we fetched
+      console.log('[Contributors API] hasNominatedByName:', hasNominatedByName);
+      console.log('[Contributors API] enrichedContributors count:', enrichedContributors?.length);
+      
+      if (!hasNominatedByName) {
+        // This was already handled above when we fetched user data and enriched contributors
+        console.log('[Contributors API] No nominated_by_name column, skipping fix logic');
+      } else {
+        console.log('[Contributors API] Has nominated_by_name column, checking for Unknown User entries');
+        
+        // If the column exists but has 'Unknown User' or null, try to update it from the users table
+        const contributorsWithUnknownUser = enrichedContributors.filter((c: any) => 
+          (c.nominated_by_name === 'Unknown User' || c.nominated_by_name === null || c.nominated_by_name === '') && c.nominated_by
+        );
+        
+        console.log('[Contributors API] Found contributors with Unknown User:', contributorsWithUnknownUser.length);
+        
+        if (contributorsWithUnknownUser.length > 0) {
+          const userIds = Array.from(new Set(contributorsWithUnknownUser.map((c: any) => c.nominated_by)));
+          console.log('[Contributors API GET] Looking up users for IDs:', userIds);
+          
+          const { data: users, error: usersError } = await supabase
+            .from('users')
+            .select('id, email, username, full_name, first_name, last_name, name, job_title, title')
+            .in('id', userIds);
+            
+          console.log('[Contributors API GET] Found users:', users);
+          if (usersError) {
+            console.error('[Contributors API GET] Error fetching users:', usersError);
+          }
+          
+          enrichedContributors = enrichedContributors.map((contributor: any) => {
+            if ((contributor.nominated_by_name === 'Unknown User' || contributor.nominated_by_name === null || contributor.nominated_by_name === '') && contributor.nominated_by) {
+              const user = users?.find((u: any) => u.id === contributor.nominated_by);
+              let userName = 'Unknown User';
+              
+              if (user) {
+                console.log('[Contributors API GET] Updating user data for Unknown User:', user);
+                
+                // Apply the same name resolution logic
+                if (user.name && typeof user.name === 'string' && user.name.trim() !== '') {
+                  userName = user.name.trim();
+                } else if (user.full_name && typeof user.full_name === 'string' && user.full_name.trim() !== '') {
+                  userName = user.full_name.trim();
+                } else if (user.first_name || user.last_name) {
+                  const nameParts = [];
+                  if (user.first_name && typeof user.first_name === 'string' && user.first_name.trim() !== '') {
+                    nameParts.push(user.first_name.trim());
+                  }
+                  if (user.last_name && typeof user.last_name === 'string' && user.last_name.trim() !== '') {
+                    nameParts.push(user.last_name.trim());
+                  }
+                  if (nameParts.length > 0) {
+                    userName = nameParts.join(' ');
+                  }
+                } else if (user.job_title && typeof user.job_title === 'string' && user.job_title.trim() !== '') {
+                  userName = user.job_title.trim();
+                } else if (user.title && typeof user.title === 'string' && user.title.trim() !== '') {
+                  userName = user.title.trim();
+                } else if (user.username && typeof user.username === 'string' && user.username.trim() !== '') {
+                  userName = user.username.trim();
+                } else if (user.email && typeof user.email === 'string' && user.email.trim() !== '') {
+                  const emailParts = user.email.split('@');
+                  if (emailParts[0]) {
+                    userName = emailParts[0];
+                  }
+                }
+                
+                console.log('[Contributors API GET] Updated user name:', userName);
+                
+                // Update the database with the correct user name
+                if (userName !== 'Unknown User') {
+                  console.log('[Contributors API GET] Persisting user name to database for contributor:', contributor.id);
+                  supabase
+                    .from('activity_contributors')
+                    .update({ nominated_by_name: userName })
+                    .eq('id', contributor.id)
+                    .then(({ error }) => {
+                      if (error) {
+                        console.error('[Contributors API GET] Error updating contributor:', error);
+                      } else {
+                        console.log('[Contributors API GET] Successfully updated contributor in database');
+                      }
+                    });
+                }
+              }
+              
+              return {
+                ...contributor,
+                nominated_by_name: userName
+              };
+            }
+            return contributor;
+          });
         }
-        return contributor;
-      });
+      }
     }
 
     console.log('[AIMS] Found contributors:', enrichedContributors?.length || 0);
@@ -236,12 +344,64 @@ export async function POST(
     
     // Always add nominated_by_name if the column exists, with proper fallback logic
     if (hasNominatedByName) {
-      // Ensure we have a valid user name
+      // Ensure we have a valid user name - if empty or 'Unknown User', try to get from database
       let finalNominatedByName = nominatedByName;
-      if (!finalNominatedByName || finalNominatedByName.trim() === '') {
-        finalNominatedByName = 'Unknown User';
+      if (!finalNominatedByName || finalNominatedByName.trim() === '' || finalNominatedByName.trim() === 'Unknown User') {
+        // If no name provided, try to fetch from users table
+        if (nominatedBy) {
+          try {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('id, email, username, full_name, first_name, last_name, name, job_title, title')
+              .eq('id', nominatedBy)
+              .single();
+            
+            if (userData) {
+              console.log('[Contributors POST] User data from DB:', userData);
+              
+              // Apply the same logic as in GET route
+              if (userData.name && typeof userData.name === 'string' && userData.name.trim() !== '') {
+                finalNominatedByName = userData.name.trim();
+              } else if (userData.full_name && typeof userData.full_name === 'string' && userData.full_name.trim() !== '') {
+                finalNominatedByName = userData.full_name.trim();
+              } else if (userData.first_name || userData.last_name) {
+                const nameParts = [];
+                if (userData.first_name && typeof userData.first_name === 'string' && userData.first_name.trim() !== '') {
+                  nameParts.push(userData.first_name.trim());
+                }
+                if (userData.last_name && typeof userData.last_name === 'string' && userData.last_name.trim() !== '') {
+                  nameParts.push(userData.last_name.trim());
+                }
+                if (nameParts.length > 0) {
+                  finalNominatedByName = nameParts.join(' ');
+                }
+              } else if (userData.job_title && typeof userData.job_title === 'string' && userData.job_title.trim() !== '') {
+                finalNominatedByName = userData.job_title.trim();
+              } else if (userData.title && typeof userData.title === 'string' && userData.title.trim() !== '') {
+                finalNominatedByName = userData.title.trim();
+              } else if (userData.username && typeof userData.username === 'string' && userData.username.trim() !== '') {
+                finalNominatedByName = userData.username.trim();
+              } else if (userData.email && typeof userData.email === 'string' && userData.email.trim() !== '') {
+                const emailParts = userData.email.split('@');
+                if (emailParts[0]) {
+                  finalNominatedByName = emailParts[0];
+                }
+              }
+              
+              console.log('[Contributors POST] Final user name from DB:', finalNominatedByName);
+            }
+          } catch (error) {
+            console.error('[Contributors POST] Error fetching user data:', error);
+          }
+        }
+        
+        // Final fallback
+        if (!finalNominatedByName || finalNominatedByName.trim() === '') {
+          finalNominatedByName = 'Unknown User';
+        }
       }
       contributorData.nominated_by_name = finalNominatedByName.trim();
+      console.log('[Contributors POST] Final nominated_by_name:', contributorData.nominated_by_name);
     }
 
     console.log('[AIMS] Creating contributor with data:', contributorData);

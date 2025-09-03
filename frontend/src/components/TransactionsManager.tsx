@@ -667,7 +667,6 @@ export default function TransactionsManager({
         defaultCurrency={defaultCurrency}
         defaultTiedStatus={defaultTiedStatus}
         defaultFlowType={defaultFlowType}
-        defaultDisbursementChannel={defaultDisbursementChannel}
         isSubmitting={submitting}
       />
     </div>

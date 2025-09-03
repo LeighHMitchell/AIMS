@@ -45,20 +45,15 @@ interface TopNavProps {
 export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
-  // Function to construct full name with title, middle name, and suffix
+  // Function to construct full name - only FirstName LastName
   const getFullName = (user: TopNavProps['user']) => {
     if (!user) return "User";
     
     const parts = [];
-    if (user.title && user.title !== 'none') parts.push(user.title);
     if (user.firstName) parts.push(user.firstName);
-    if (user.middleName) parts.push(user.middleName);
     if (user.lastName) parts.push(user.lastName);
     
-    let fullName = parts.join(' ');
-    if (user.suffix && user.suffix !== 'none') {
-      fullName += `, ${user.suffix}`;
-    }
+    const fullName = parts.join(' ');
     
     return fullName || user.name || "User";
   };
@@ -110,13 +105,11 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
                       <div className="flex flex-col space-y-1 flex-1">
                         <p className="text-sm font-medium leading-tight">{getFullName(user)}</p>
                         <p className="text-xs leading-tight text-muted-foreground">{user.email}</p>
-                        {/* Organization Context */}
-                        {(user.organization?.name || user.organisation) && (
-                          <p className="text-xs leading-tight text-muted-foreground font-light">
-                            {user.organization?.name || user.organisation}
-                            {user.organization?.acronym && ` (${user.organization.acronym})`}
-                          </p>
-                        )}
+                        {/* Organization Context - Always show */}
+                        <p className="text-xs leading-tight text-muted-foreground font-light">
+                          {user.organization?.name || user.organisation || 'No Organization'}
+                          {user.organization?.acronym ? ` (${user.organization.acronym})` : ''}
+                        </p>
                       </div>
                     </div>
                     

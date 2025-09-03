@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSupabaseFieldUpdate } from '@/hooks/use-supabase-field-update';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
@@ -200,14 +200,51 @@ export function withSupabaseIntegration<P extends Record<string, any>>(
       onUpdateSuccess,
       onUpdateError,
       onValueChange,
+      value: propValue,
       ...componentProps
     } = props;
+
+    // Local state to manage the display value with optimistic updates
+    const [localValue, setLocalValue] = useState<string | null | undefined>(propValue);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    // Sync local value with prop value, but prioritize local state during updates
+    useEffect(() => {
+      if (!isUpdating) {
+        setLocalValue(propValue);
+      }
+    }, [propValue, isUpdating]);
+
+    // Force sync after a delay if updating takes too long
+    useEffect(() => {
+      if (isUpdating) {
+        const timeout = setTimeout(() => {
+          console.log(`[withSupabaseIntegration] Force sync after timeout for ${fieldName}`);
+          setIsUpdating(false);
+          setLocalValue(propValue);
+        }, 3000); // 3 second timeout
+        
+        return () => clearTimeout(timeout);
+      }
+    }, [isUpdating, propValue, fieldName]);
 
     // Supabase field update hook
     const { updateField, state } = useSupabaseFieldUpdate(activityId, {
       tableName,
-      onSuccess: onUpdateSuccess,
-      onError: onUpdateError,
+      onSuccess: (field, value) => {
+        console.log(`[withSupabaseIntegration] Successfully saved ${field}:`, value);
+        // Ensure local value matches the saved value
+        setLocalValue(value);
+        setIsUpdating(false);
+        onUpdateSuccess?.(field, value);
+      },
+      onError: (field, error) => {
+        console.error(`[withSupabaseIntegration] Failed to save ${field}:`, error);
+        // Revert to original value on error
+        setLocalValue(propValue);
+        setIsUpdating(false);
+        onUpdateError?.(field, error);
+      },
       showSuccessToast: false,
       showErrorToast: true
     });
@@ -215,20 +252,29 @@ export function withSupabaseIntegration<P extends Record<string, any>>(
     const handleValueChange = useCallback(async (value: string | null) => {
       console.log(`[withSupabaseIntegration] ${fieldName} changing to:`, value);
       
+      // Optimistic update - immediately show the new value
+      setLocalValue(value);
+      setIsUpdating(true);
+      
       // Call original handler
       onValueChange?.(value);
 
       // Update in database
       if (activityId) {
         await updateField(fieldName, value);
+      } else {
+        // No activity ID, just update local state
+        setIsUpdating(false);
       }
-    }, [fieldName, onValueChange, activityId, updateField]);
+    }, [fieldName, onValueChange, activityId, updateField, propValue]);
 
     return (
       <Component
         {...(componentProps as any)}
         ref={ref}
+        value={localValue}
         onValueChange={handleValueChange}
+        key={`${fieldName}-${localValue}`} // Force re-render when local value changes
       />
     );
   });

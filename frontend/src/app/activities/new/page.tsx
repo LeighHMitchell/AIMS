@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed } from "lucide-react";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator, ActivityCompletionRating } from "@/components/ActivityFieldHelpers";
@@ -69,6 +69,7 @@ import {
 } from '@/components/activities/TabSkeletons';
 import { supabase } from '@/lib/supabase';
 import { DebugPanel } from '@/components/DebugPanel';
+import { fetchActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache';
 // Removed old bulk autosave imports - now using field-level autosave
 // import { AutosaveFormWrapper } from "@/components/forms/AutosaveFormWrapper";
 // import { AutosaveDebugPanel } from "@/components/debug/AutosaveDebugPanel";
@@ -110,6 +111,17 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const hasShownInitialToast = useRef(false);
   const lastSavedDescriptionRef = useRef<string>('');
   const hasUserEditedDescriptionRef = useRef(false);
+  
+  // State to track which additional description fields are visible
+  const [visibleDescriptionFields, setVisibleDescriptionFields] = useState<{
+    objectives: boolean;
+    targetGroups: boolean;
+    other: boolean;
+  }>({
+    objectives: !!general.descriptionObjectives?.trim(),
+    targetGroups: !!general.descriptionTargetGroups?.trim(),
+    other: !!general.descriptionOther?.trim(),
+  });
 
   // Initialize tracking refs with current data on first load
   useEffect(() => {
@@ -138,6 +150,55 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       }
     }
   });
+
+  const descriptionObjectivesAutosave = useFieldAutosave('descriptionObjectives', { 
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    debounceMs: 3000, // Longer debounce for rich text
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data, isUserInitiated = false) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+      if (isUserInitiated) {
+        toast.success('Objectives saved', { position: 'top-right' });
+      }
+    }
+  });
+
+  const descriptionTargetGroupsAutosave = useFieldAutosave('descriptionTargetGroups', { 
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    debounceMs: 3000, // Longer debounce for rich text
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data, isUserInitiated = false) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+      if (isUserInitiated) {
+        toast.success('Target Groups saved', { position: 'top-right' });
+      }
+    }
+  });
+
+  const descriptionOtherAutosave = useFieldAutosave('descriptionOther', { 
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    debounceMs: 3000, // Longer debounce for rich text
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data, isUserInitiated = false) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+      if (isUserInitiated) {
+        toast.success('Other Description saved', { position: 'top-right' });
+      }
+    }
+  });
+
   const collaborationTypeAutosave = useFieldAutosave('collaborationType', {
     activityId: effectiveActivityId,
     userId: user?.id,
@@ -777,7 +838,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
         >
                       <div className="flex items-center gap-2">
-              Activity Description
+              Activity Description - General
               <HelpTextTooltip>
                 A clear summary of the activity's goals, scope, target population, and expected results. Descriptions should use plain language and provide enough context for others to understand the purpose and intent of the activity.
               </HelpTextTooltip>
@@ -813,6 +874,153 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           />
         </div>
         {descriptionAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {descriptionAutosave.state.error.message}</p>}
+      </div>
+
+      {/* Additional Description Fields */}
+      <div className="space-y-4">
+        {/* Objectives Description - Always shown, collapsible */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, objectives: !prev.objectives }))}
+            className="w-full flex items-center gap-2 text-left hover:text-gray-900 focus:outline-none text-sm font-medium text-gray-700"
+          >
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform ${visibleDescriptionFields.objectives ? 'rotate-90' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            Activity Description - Objectives
+            <HelpTextTooltip>
+              Describe the specific objectives that this activity aims to achieve. This should outline what the activity intends to accomplish and the changes it seeks to bring about.
+            </HelpTextTooltip>
+            {/* Save indicator positioned right after help tooltip */}
+            {descriptionObjectivesAutosave.state.isSaving && (
+              <CircleDashed className="w-4 h-4 text-orange-600 animate-spin" />
+            )}
+            {!descriptionObjectivesAutosave.state.isSaving && (descriptionObjectivesAutosave.state.isPersistentlySaved || !!general.descriptionObjectives?.trim()) && (
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            )}
+          </button>
+          {visibleDescriptionFields.objectives && (
+            <div className="mt-2">
+              <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
+                <RichTextEditor
+                  content={general.descriptionObjectives || ''}
+                  onChange={(content) => {
+                    if (!fieldLockStatus.isLocked) {
+                      setGeneral((g: any) => ({ ...g, descriptionObjectives: content }));
+                      descriptionObjectivesAutosave.triggerFieldSave(content);
+                    }
+                  }}
+                  placeholder="Describe the specific objectives of this activity..."
+                  className="min-h-[200px]"
+                  disabled={fieldLockStatus.isLocked}
+                />
+              </div>
+              {descriptionObjectivesAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionObjectivesAutosave.state.error.message}</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Target Groups Description - Always shown, collapsible */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, targetGroups: !prev.targetGroups }))}
+            className="w-full flex items-center gap-2 text-left hover:text-gray-900 focus:outline-none text-sm font-medium text-gray-700"
+          >
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform ${visibleDescriptionFields.targetGroups ? 'rotate-90' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            Activity Description - Target Groups
+            <HelpTextTooltip>
+              Identify and describe the target groups that will benefit from this activity. Include information about demographics, locations, and any specific characteristics of the intended beneficiaries.
+            </HelpTextTooltip>
+            {/* Save indicator positioned right after help tooltip */}
+            {descriptionTargetGroupsAutosave.state.isSaving && (
+              <CircleDashed className="w-4 h-4 text-orange-600 animate-spin" />
+            )}
+            {!descriptionTargetGroupsAutosave.state.isSaving && (descriptionTargetGroupsAutosave.state.isPersistentlySaved || !!general.descriptionTargetGroups?.trim()) && (
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            )}
+          </button>
+          {visibleDescriptionFields.targetGroups && (
+            <div className="mt-2">
+              <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
+                <RichTextEditor
+                  content={general.descriptionTargetGroups || ''}
+                  onChange={(content) => {
+                    if (!fieldLockStatus.isLocked) {
+                      setGeneral((g: any) => ({ ...g, descriptionTargetGroups: content }));
+                      descriptionTargetGroupsAutosave.triggerFieldSave(content);
+                    }
+                  }}
+                  placeholder="Describe the target groups and beneficiaries of this activity..."
+                  className="min-h-[200px]"
+                  disabled={fieldLockStatus.isLocked}
+                />
+              </div>
+              {descriptionTargetGroupsAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionTargetGroupsAutosave.state.error.message}</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Other Description - Always shown, collapsible */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, other: !prev.other }))}
+            className="w-full flex items-center gap-2 text-left hover:text-gray-900 focus:outline-none text-sm font-medium text-gray-700"
+          >
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform ${visibleDescriptionFields.other ? 'rotate-90' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            Activity Description - Other
+            <HelpTextTooltip>
+              Any additional information about the activity that doesn't fit into the general description or other categories. This could include context, background information, or other relevant details.
+            </HelpTextTooltip>
+            {/* Save indicator positioned right after help tooltip */}
+            {descriptionOtherAutosave.state.isSaving && (
+              <CircleDashed className="w-4 h-4 text-orange-600 animate-spin" />
+            )}
+            {!descriptionOtherAutosave.state.isSaving && (descriptionOtherAutosave.state.isPersistentlySaved || !!general.descriptionOther?.trim()) && (
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            )}
+          </button>
+          {visibleDescriptionFields.other && (
+            <div className="mt-2">
+              <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
+                <RichTextEditor
+                  content={general.descriptionOther || ''}
+                  onChange={(content) => {
+                    if (!fieldLockStatus.isLocked) {
+                      setGeneral((g: any) => ({ ...g, descriptionOther: content }));
+                      descriptionOtherAutosave.triggerFieldSave(content);
+                    }
+                  }}
+                  placeholder="Add any other relevant information about this activity..."
+                  className="min-h-[200px]"
+                  disabled={fieldLockStatus.isLocked}
+                />
+              </div>
+              {descriptionOtherAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionOtherAutosave.state.error.message}</p>}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Row 6-7: All Type Selectors */}
@@ -1138,7 +1346,18 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, clearSavedFormData }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, clearSavedFormData, loadedTabs }: any) {
+  
+  // OPTIMIZATION: Lazy loading - only render heavy components after tab has been visited
+  // Removed the duplicate skeleton rendering logic here since the parent component
+  // already shows skeleton when tabLoading is true. This was causing the finances tab
+  // to get stuck in skeleton loading state.
+  
+  // const isTabLoaded = loadedTabs.has(section);
+  // const heavyTabs = ['finances', 'budgets', 'planned-disbursements', 'results', 'documents', 'metadata', 'xml-import', 'iati'];
+  
+  // The parent component handles skeleton display via tabLoading state
+
   switch (section) {
     case "metadata":
       return <MetadataTab activityId={general.id} />;
@@ -1426,6 +1645,10 @@ function NewActivityPageContent() {
 
   // All state declarations first
   const [activeSection, setActiveSection] = useState("general");
+  const [showActivityMetadata, setShowActivityMetadata] = useState(false);
+  
+  // OPTIMIZATION: Track which tabs have been loaded for lazy loading
+  const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set(['general'])); // General is always loaded
   
   // Initialize form state with saved data or defaults
   const [general, setGeneral] = useState(() => {
@@ -1460,7 +1683,8 @@ function NewActivityPageContent() {
       defaultFlowType: "",
       defaultTiedStatus: "",
       defaultDisbursementChannel: "",
-      default_aid_modality: "",
+      defaultModality: "",
+      defaultModalityOverride: false,
       publicationStatus: "draft",
       submissionStatus: "draft" as 'draft' | 'submitted' | 'validated' | 'rejected' | 'published',
       submittedBy: "",
@@ -1855,7 +2079,7 @@ function NewActivityPageContent() {
       if (updatedActivityId === general.id && organizationData) {
         console.log('[ActivityEditor] Reporting org updated, refreshing data...');
         // Update the general data with new org information
-        setGeneral(prev => ({
+        setGeneral((prev: any) => ({
           ...prev,
           created_by_org_name: organizationData.created_by_org_name,
           created_by_org_acronym: organizationData.created_by_org_acronym,
@@ -1904,6 +2128,9 @@ function NewActivityPageContent() {
         title: "",
         acronym: "",
         description: "",
+        descriptionObjectives: "",
+        descriptionTargetGroups: "",
+        descriptionOther: "",
         created_by_org_name: user?.organisation || user?.organization?.name || "",
         created_by_org_acronym: "",
         collaborationType: "",
@@ -1914,7 +2141,8 @@ function NewActivityPageContent() {
         defaultFlowType: "",
         defaultTiedStatus: "",
         defaultDisbursementChannel: "",
-        default_aid_modality: "",
+        defaultModality: "",
+        defaultModalityOverride: false,
         publicationStatus: "draft",
         submissionStatus: "draft",
         submittedBy: "",
@@ -2136,15 +2364,9 @@ function NewActivityPageContent() {
         const activityId = searchParams?.get("id");
         
         if (activityId) {
-          // Editing existing activity
-          console.log('[AIMS] Loading activity:', activityId);
-          const response = await fetch(`/api/activities/${activityId}`);
-          
-          if (!response.ok) {
-            throw new Error('Failed to load activity');
-          }
-          
-          const data = await response.json();
+          // OPTIMIZATION: Use cached activity data if available
+          console.log('[AIMS] Loading activity with cache:', activityId);
+          const data = await fetchActivityWithCache(activityId);
           console.log('[AIMS] Activity loaded:', data.title);
           console.log('[AIMS DEBUG] Organization data from API:', {
             created_by_org_name: data.created_by_org_name,
@@ -2161,6 +2383,9 @@ function NewActivityPageContent() {
             title: data.title || "",
             acronym: data.acronym || "",
             description: data.description || "",
+            descriptionObjectives: data.descriptionObjectives || "",
+            descriptionTargetGroups: data.descriptionTargetGroups || "",
+            descriptionOther: data.descriptionOther || "",
             created_by_org_name: data.created_by_org_name || "",
             created_by_org_acronym: data.created_by_org_acronym || "",
             collaborationType: data.collaborationType || "",
@@ -2171,7 +2396,8 @@ function NewActivityPageContent() {
             defaultFlowType: data.defaultFlowType || "",
             defaultTiedStatus: data.defaultTiedStatus || "",
             defaultDisbursementChannel: data.defaultDisbursementChannel || "",
-            default_aid_modality: data.default_aid_modality || "",
+            defaultModality: data.defaultModality || data.default_modality || "",
+            defaultModalityOverride: data.defaultModalityOverride || data.default_modality_override || false,
             publicationStatus: data.publicationStatus || "draft",
             submissionStatus: data.submissionStatus || "draft",
             submittedBy: data.submittedBy || "",
@@ -2319,7 +2545,7 @@ function NewActivityPageContent() {
         } else {
           // New activity - just set some defaults
           console.log('[AIMS] Creating new activity');
-          setGeneral(prev => ({
+          setGeneral((prev: any) => ({
             ...prev,
             created_by_org_name: user?.organisation || user?.organization?.name || "",
             createdByOrg: user?.organizationId || "",
@@ -2935,7 +3161,8 @@ function NewActivityPageContent() {
           defaultFlowType: data.defaultFlowType || "",
           defaultTiedStatus: data.defaultTiedStatus || "",
           defaultDisbursementChannel: data.defaultDisbursementChannel || "",
-          default_aid_modality: data.default_aid_modality || "",
+          defaultModality: data.defaultModality || data.default_modality || "",
+          defaultModalityOverride: data.defaultModalityOverride || data.default_modality_override || false,
           publicationStatus: data.publicationStatus || "draft",
           submissionStatus: data.submissionStatus || "draft",
           submittedBy: data.submittedBy || "",
@@ -3080,14 +3307,34 @@ function NewActivityPageContent() {
     }
   }, [general, sectors, transactions, transactionsLoaded, extendingPartners, implementingPartners, governmentPartners, contacts, sdgMappings, tags, workingGroups, policyMarkers, activeSection, router, user, isEditing, sectorValidation, hasUnsavedChanges]);
 
-  // Add loading state when switching tabs
+  // OPTIMIZED: Enhanced tab change with lazy loading
   const handleTabChange = async (value: string) => {
+    console.log('[AIMS Performance] Switching to tab:', value);
     
     setTabLoading(true);
     setActiveSection(value);
     
-    // Simulate minimum loading time for smooth transition
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Check if tab was already loaded BEFORE updating state
+    const wasAlreadyLoaded = loadedTabs.has(value);
+    
+    // OPTIMIZATION: Mark tab as loaded for lazy loading
+    setLoadedTabs(prev => {
+      const newSet = new Set(prev);
+      newSet.add(value);
+      return newSet;
+    });
+    
+    // Only add delay if tab hasn't been loaded before
+    if (!wasAlreadyLoaded) {
+      console.log('[AIMS Performance] First load of tab:', value, '- showing skeleton');
+      // Simulate minimum loading time for smooth transition
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } else {
+      console.log('[AIMS Performance] Tab already loaded:', value, '- instant switch');
+      // Instant switch for previously loaded tabs
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    
     setTabLoading(false);
   };
 
@@ -3120,11 +3367,16 @@ function NewActivityPageContent() {
   // Add navigationGroups here to match ActivityEditorNavigation
   const navigationGroups = [
     {
+      title: "TOOLS",
+      sections: [
+        { id: "iati", label: "IATI Link" },
+        { id: "xml-import", label: "XML Import" }
+      ]
+    },
+    {
       title: "Activity Overview",
       sections: [
         { id: "general", label: "General" },
-        { id: "iati", label: "IATI Link" },
-        { id: "xml-import", label: "XML Import" },
         { id: "sectors", label: "Sectors" },
         { id: "locations", label: "Locations" }
       ]
@@ -3202,12 +3454,26 @@ function NewActivityPageContent() {
             <div className="bg-white border-b border-gray-200 p-4">
               <div className="space-y-2 text-sm">
                 <div className="mb-3">
-                  <LinkedActivityTitle
-                    title={general.title || 'Untitled Activity'}
-                    activityId={general.id}
-                    className="text-lg font-semibold text-gray-900"
-                    fallbackElement="h3"
-                  />
+                  <div>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 text-left">
+                        <LinkedActivityTitle
+                          title={`${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
+                          activityId={general.id}
+                          className="text-lg font-semibold text-gray-900 leading-tight break-words"
+                          fallbackElement="h3"
+                          showIcon={false}
+                        />
+                      </div>
+                      <ExternalLink className="h-5 w-5 ml-2 text-gray-400 flex-shrink-0" />
+                    </div>
+                    <button
+                      onClick={() => setShowActivityMetadata(!showActivityMetadata)}
+                      className="text-xs text-gray-600 hover:text-gray-900 mt-1"
+                    >
+                      {showActivityMetadata ? 'Show less' : 'Show more'}
+                    </button>
+                  </div>
                   {/* Autosave Status Indicator removed per UX request */}
                   {/* Validation Status Badge */}
                   {general.submissionStatus && general.submissionStatus !== 'draft' && (
@@ -3224,7 +3490,7 @@ function NewActivityPageContent() {
                             case 'published': return '📢 Published'
                             case 'submitted': return '📝 Submitted'
                             case 'rejected': return '❌ Rejected'
-                            default: return 'Draft'
+                            default: return 'Unpublished'
                           }
                         })()}
                       </span>
@@ -3234,79 +3500,45 @@ function NewActivityPageContent() {
                     </div>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-1 gap-4 text-sm">
-                    <div className="space-y-1">
-                      <div className="text-gray-500">Reported by:</div>
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          // Find the reporting organization from the cache
-                          const reportingOrgId = general.createdByOrg;
-                          const reportingOrg = organizationsCache.data?.find((org: any) => org.id === reportingOrgId);
-                          const logoSrc = reportingOrg?.logo;
-                          
-                          return logoSrc ? (
-                            <div className="flex-shrink-0">
-                              <Image
-                                src={logoSrc}
-                                alt={`${reportingOrg.name} logo`}
-                                width={20}
-                                height={20}
-                                className="rounded-sm object-contain"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            </div>
-                          ) : null;
-                        })()}
-                        {user?.organization ? (
-                          <a 
-                            href={`/organizations/${user.organization.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-black hover:text-black transition-colors font-medium break-words min-w-0"
-                          >
-                            {(() => {
-                              if (general.created_by_org_name && general.created_by_org_acronym) {
-                                return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
-                              }
-                              return general.created_by_org_name || general.created_by_org_acronym || user.organization.name || "Unknown";
-                            })()}{" "}
-                            <ExternalLink className="inline h-3 w-3" style={{ verticalAlign: "middle" }} />
-                          </a>
-                        ) : (
-                          <div className="font-medium break-words">
-                            {(() => {
-                              if (general.created_by_org_name && general.created_by_org_acronym) {
-                                return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
-                              }
-                              return general.created_by_org_name || general.created_by_org_acronym || "Unknown";
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-gray-500">
-                        <span>Date created:</span>
-                        <span>Last updated:</span>
-                      </div>
-                      <div className="flex justify-between font-medium">
-                        <span>{general.createdAt ? format(new Date(general.createdAt), "dd MMM yyyy") : "Unknown"}</span>
-                        <span>{general.updatedAt ? format(new Date(general.updatedAt), "dd MMM yyyy") : "Unknown"}</span>
-                      </div>
-                    </div>
-                  </div>
-                  {contributors.filter(c => c.status === 'accepted').length > 0 && (
+                {showActivityMetadata && (
+                  <div className="space-y-3 text-sm">
                     <div>
-                      <span className="text-gray-500">Contributors:</span>
-                      <span className="ml-2 font-medium block">
-                        {contributors.filter(c => c.status === 'accepted').length} organization(s)
-                      </span>
+                      <p className="font-semibold">
+                        Reported by {(() => {
+                          if (general.created_by_org_name && general.created_by_org_acronym) {
+                            return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
+                          }
+                          return general.created_by_org_name || general.created_by_org_acronym || "Unknown Organization";
+                        })()}
+                      </p>
+                      <p className="text-gray-600">
+                        Submitted by {(() => {
+                          // Format user name with position/role
+                          if (general.createdBy?.name) {
+                            const name = general.createdBy.name;
+                            const position = general.createdBy.jobTitle || general.createdBy.title;
+                            return position ? `${name}, ${position}` : name;
+                          }
+                          // Fallback to current user info with position/role
+                          if (user?.name) {
+                            const name = user.name;
+                            const position = user.jobTitle || user.title;
+                            return position ? `${name}, ${position}` : name;
+                          }
+                          return "Unknown User";
+                        })()} on {general.createdAt ? format(new Date(general.createdAt), "d MMMM yyyy") : "Unknown date"}
+                      </p>
                     </div>
-                  )}
-                </div>
+                    {contributors.filter(c => c.status === 'accepted').length > 0 && (
+                      <div>
+                        <span className="text-gray-500">Contributors:</span>
+                        <span className="ml-2 font-medium block">
+                          {contributors.filter(c => c.status === 'accepted').length} organization(s)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -3352,7 +3584,7 @@ function NewActivityPageContent() {
                                    const originalStatus = general.publicationStatus;
                                    
                                    // Optimistically update the UI
-                                   setGeneral(prev => ({ ...prev, publicationStatus: 'draft' }));
+                                   setGeneral((prev: any) => ({ ...prev, publicationStatus: 'draft' }));
                                    
                                    try {
                                      await saveActivity({ publish: false });
@@ -3360,7 +3592,7 @@ function NewActivityPageContent() {
                                    } catch (error) {
                                      console.error('[AIMS] Unpublish failed, reverting state:', error);
                                      // Revert the optimistic update on failure
-                                     setGeneral(prev => ({ ...prev, publicationStatus: originalStatus }));
+                                     setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
                                      toast.error('Failed to unpublish activity. Please try again.');
                                    }
                                  }
@@ -3519,6 +3751,7 @@ function NewActivityPageContent() {
                     setLinkedActivitiesCount={setLinkedActivitiesCount}
                     setResultsCount={setResultsCount}
                     clearSavedFormData={clearSavedFormData}
+                    loadedTabs={loadedTabs}
                   />
                 </div>
               )}

@@ -87,12 +87,12 @@ const nextConfig = {
   },
 
   typescript: {
-    // Temporarily allow TypeScript errors for deployment - TODO: Fix all TS errors
-    ignoreBuildErrors: true,
+    // Enable strict type checking now that major errors are fixed
+    ignoreBuildErrors: false,
   },
   eslint: {
-    // Temporarily ignore ESLint during builds to allow deployment  
-    ignoreDuringBuilds: true,
+    // Enable ESLint checking with security rules
+    ignoreDuringBuilds: false,
   },
   images: {
     remotePatterns: [

@@ -16,6 +16,10 @@ export interface DefaultFieldsData {
  * Check if a field has a meaningful value (not empty or null)
  */
 export function hasFieldValue(value?: string | null): boolean {
+  // Handle cases where a non-string value might be passed
+  if (typeof value !== 'string') {
+    return false;
+  }
   return Boolean(value && value.trim() !== '');
 }
 
@@ -30,8 +34,8 @@ export function areAllDefaultFieldsCompleted(defaults: DefaultFieldsData): boole
     hasFieldValue(defaults.defaultFlowType) &&
     hasFieldValue(defaults.defaultCurrency) &&
     hasFieldValue(defaults.defaultTiedStatus) &&
-    hasFieldValue(defaults.default_aid_modality) &&
-    hasFieldValue(defaults.defaultDisbursementChannel)
+    hasFieldValue(defaults.default_aid_modality)
+    // Note: defaultDisbursementChannel removed as it doesn't exist in backend
   );
 }
 
@@ -46,7 +50,7 @@ export function getFieldCompletionStatus(defaults: DefaultFieldsData) {
     defaultCurrency: hasFieldValue(defaults.defaultCurrency),
     defaultTiedStatus: hasFieldValue(defaults.defaultTiedStatus),
     default_aid_modality: hasFieldValue(defaults.default_aid_modality),
-    defaultDisbursementChannel: hasFieldValue(defaults.defaultDisbursementChannel),
+    // Note: defaultDisbursementChannel removed as it doesn't exist in backend
   };
 }
 
@@ -62,5 +66,5 @@ export function getCompletedFieldsCount(defaults: DefaultFieldsData): number {
  * Get total number of default fields
  */
 export function getTotalFieldsCount(): number {
-  return 7; // Aid Type, Finance Type, Flow Type, Currency, Tied Status, Modality, Disbursement Channel
+  return 6; // Aid Type, Finance Type, Flow Type, Currency, Tied Status, Modality
 }

@@ -347,36 +347,20 @@ export async function POST(request: NextRequest) {
     }
     */
 
-    // Auto-generate transaction reference if not provided or empty
+    // Use provided transaction reference or generate one if empty
     let transactionReference = body.transaction_reference?.trim() || '';
     
+    // Only auto-generate if no reference is provided
     if (!transactionReference) {
-      try {
-        console.log('[Transactions API] Auto-generating transaction reference for activity:', body.activity_id);
-        
-        const { data: refData, error: refError } = await getSupabaseAdmin()
-          .rpc('generate_unique_transaction_reference', {
-            p_activity_id: body.activity_id,
-            p_base_reference: null
-          });
-        
-        if (refError) {
-          console.error('[Transactions API] Error generating transaction reference:', refError);
-          return NextResponse.json(
-            { error: 'Failed to generate transaction reference' },
-            { status: 500 }
-          );
-        }
-        
-        transactionReference = refData;
-        console.log('[Transactions API] Generated transaction reference:', transactionReference);
-      } catch (refGenError) {
-        console.error('[Transactions API] Exception generating transaction reference:', refGenError);
-        return NextResponse.json(
-          { error: 'Failed to generate transaction reference' },
-          { status: 500 }
-        );
-      }
+      // Generate a unique reference using timestamp + random + activity info
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 100000);
+      const activitySuffix = body.activity_id ? body.activity_id.slice(-8) : 'unknown';
+      
+      transactionReference = `TXN-${timestamp}-${random}-${activitySuffix}`;
+      console.log('[Transactions API] Generated transaction reference:', transactionReference);
+    } else {
+      console.log('[Transactions API] Using provided transaction reference:', transactionReference);
     }
 
     // tied_status mapping - database hasn't been migrated yet, so map to current enum values
@@ -460,6 +444,9 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('[Transactions API] Error inserting transaction:', error);
       
+      // TEMPORARILY DISABLE unique constraint error to debug
+      // TODO: Re-enable after identifying the root cause
+      /*
       // Enhanced error handling for unique constraint violations
       if (error.message && error.message.includes('unique_transaction_ref')) {
         return NextResponse.json(
@@ -470,6 +457,7 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
+      */
       
       return NextResponse.json(
         { error: error.message || 'Failed to save transaction' },

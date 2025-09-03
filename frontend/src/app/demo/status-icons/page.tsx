@@ -78,7 +78,7 @@ export default function StatusIconsDemoPage() {
                           <StatusIcon type="publication" status={status} />
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {status === 'draft' && 'Draft - Not published'}
+                          {status === 'draft' && 'Unpublished - Not published'}
                           {status === 'published' && 'Published - Publicly visible'}
                         </TableCell>
                       </TableRow>

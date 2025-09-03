@@ -56,11 +56,16 @@ export default function ActivityEditorNavigation({
   }
   const navigationGroups: NavigationGroup[] = [
     {
+      title: "TOOLS",
+      sections: [
+        { id: "iati", label: "IATI Link" },
+        { id: "xml-import", label: "XML Import" }
+      ]
+    },
+    {
       title: "Activity Overview",
       sections: [
         { id: "general", label: "General" },
-        { id: "iati", label: "IATI Link" },
-        { id: "xml-import", label: "XML Import" },
         { id: "sectors", label: "Sectors" },
         { id: "locations", label: "Locations" },
       ]

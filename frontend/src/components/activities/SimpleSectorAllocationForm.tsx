@@ -12,6 +12,17 @@ import { SectorValidation } from '@/types/sector';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 
+// Helper function to detect if percentages are equally distributed
+const arePercentagesEquallyDistributed = (allocations: SectorAllocation[]): boolean => {
+  if (allocations.length <= 1) return true;
+  
+  const expectedEqual = 100 / allocations.length;
+  const tolerance = 0.1; // Allow small rounding differences
+  
+  return allocations.every(a => 
+    Math.abs(a.percentage - expectedEqual) <= tolerance
+  );
+};
 
 interface SectorAllocation {
   id: string;
@@ -116,24 +127,66 @@ export default function SimpleSectorAllocationForm({
       return; // Already exists
     }
     
-    const validation = calculateValidation(allocations);
-    const remainingPercentage = Math.max(0, validation.remainingPercentage);
-    const suggestedPercentage = allocations.length === 0 ? 100 : 
-      Math.min(remainingPercentage, Math.round(remainingPercentage / (selectedSectors.length - allocations.length)));
-    
     const newAllocation: SectorAllocation = {
       id: uuidv4(),
       code: sectorCode,
       name: getSectorLabel(sectorCode),
-      percentage: suggestedPercentage
+      percentage: 0
     };
     
-    onChange([...allocations, newAllocation]);
+    const updatedWithNew = [...allocations, newAllocation];
+    
+    // Auto-distribute percentages equally among all sectors
+    const equalShare = 100 / updatedWithNew.length;
+    const autoBalanced = updatedWithNew.map(a => ({
+      ...a,
+      percentage: parseFloat(equalShare.toFixed(2))
+    }));
+    
+    // Handle rounding errors by adjusting the first allocation
+    const total = autoBalanced.reduce((sum, a) => sum + a.percentage, 0);
+    if (total !== 100 && autoBalanced.length > 0) {
+      autoBalanced[0].percentage += (100 - total);
+      autoBalanced[0].percentage = parseFloat(autoBalanced[0].percentage.toFixed(2));
+    }
+    
+    console.log('[SimpleSectorForm] Auto-distributing percentages:', {
+      totalSectors: autoBalanced.length,
+      equalShare,
+      autoBalanced: autoBalanced.map(a => ({ code: a.code, percentage: a.percentage }))
+    });
+    
+    onChange(autoBalanced);
   };
 
   const removeSector = (id: string) => {
-    // Simply update allocations - selectedSectors will be derived automatically
-    onChange(allocations.filter(a => a.id !== id));
+    const updated = allocations.filter(a => a.id !== id);
+    
+    // Auto-distribute percentages equally among remaining sectors
+    if (updated.length > 0) {
+      const equalShare = 100 / updated.length;
+      const autoBalanced = updated.map(a => ({
+        ...a,
+        percentage: parseFloat(equalShare.toFixed(2))
+      }));
+      
+      // Handle rounding errors by adjusting the first allocation
+      const total = autoBalanced.reduce((sum, a) => sum + a.percentage, 0);
+      if (total !== 100 && autoBalanced.length > 0) {
+        autoBalanced[0].percentage += (100 - total);
+        autoBalanced[0].percentage = parseFloat(autoBalanced[0].percentage.toFixed(2));
+      }
+      
+      console.log('[SimpleSectorForm] Auto-redistributing after removal:', {
+        remainingSectors: autoBalanced.length,
+        equalShare,
+        autoBalanced: autoBalanced.map(a => ({ code: a.code, percentage: a.percentage }))
+      });
+      
+      onChange(autoBalanced);
+    } else {
+      onChange(updated);
+    }
   };
 
   const updatePercentage = (id: string, percentage: number) => {
@@ -143,19 +196,94 @@ export default function SimpleSectorAllocationForm({
   };
 
   const handleSectorSelection = (sectors: string[]) => {
+    const currentCodes = allocations.map(a => a.code);
+    const toAdd = sectors.filter(code => !currentCodes.includes(code));
+    const toRemove = currentCodes.filter(code => !sectors.includes(code));
+    let newAllocations = [...allocations];
+    
     // Add new sectors
-    sectors.forEach(code => {
-      if (!allocations.find(a => a.code === code)) {
-        addSector(code);
+    toAdd.forEach(code => {
+      if (!newAllocations.find(a => a.code === code)) {
+        const newAllocation: SectorAllocation = {
+          id: uuidv4(),
+          code: code,
+          name: getSectorLabel(code),
+          percentage: 0
+        };
+        newAllocations.push(newAllocation);
       }
     });
     
     // Remove deselected sectors
-    allocations.forEach(allocation => {
-      if (!sectors.includes(allocation.code)) {
-        removeSector(allocation.id);
+    newAllocations = newAllocations.filter(a => !toRemove.includes(a.code));
+    
+    // Smart percentage distribution logic
+    if (newAllocations.length > 0) {
+      // Check if existing allocations appear to be manually customized
+      const existingAllocations = newAllocations.filter(a => !toAdd.includes(a.code));
+      const hasCustomPercentages = existingAllocations.length > 1 && 
+        existingAllocations.some(a => a.percentage > 0) &&
+        !arePercentagesEquallyDistributed(existingAllocations);
+      
+      if (hasCustomPercentages && toAdd.length > 0) {
+        // User has customized percentages - only assign reasonable values to new sectors
+        const totalExisting = existingAllocations.reduce((sum, a) => sum + a.percentage, 0);
+        const remainingPercentage = Math.max(0, 100 - totalExisting);
+        const newSectorPercentage = toAdd.length > 0 ? 
+          parseFloat((remainingPercentage / toAdd.length).toFixed(2)) : 0;
+        
+        const smartAllocated = newAllocations.map(a => {
+          if (toAdd.includes(a.code)) {
+            return { ...a, percentage: newSectorPercentage };
+          }
+          return a; // Keep existing percentages unchanged
+        });
+        
+        console.log('[SimpleSectorForm] Smart allocation - preserving custom percentages:', {
+          totalExisting,
+          remainingPercentage,
+          newSectorPercentage,
+          smartAllocated: smartAllocated.map(a => ({ code: a.code, percentage: a.percentage }))
+        });
+        
+        onChange(smartAllocated);
+        
+        // Show toast if total doesn't equal 100%
+        const newTotal = smartAllocated.reduce((sum, a) => sum + a.percentage, 0);
+        if (Math.abs(newTotal - 100) > 0.01) {
+          setTimeout(() => {
+            toast.info(`Total allocation is ${newTotal.toFixed(1)}%. You may need to adjust percentages to reach 100%.`, {
+              position: 'top-right',
+              duration: 4000
+            });
+          }, 100);
+        }
+      } else {
+        // Auto-distribute equally (default behavior for new selections or equal distributions)
+        const equalShare = 100 / newAllocations.length;
+        const autoBalanced = newAllocations.map(a => ({
+          ...a,
+          percentage: parseFloat(equalShare.toFixed(2))
+        }));
+        
+        // Handle rounding errors by adjusting the first allocation
+        const total = autoBalanced.reduce((sum, a) => sum + a.percentage, 0);
+        if (total !== 100 && autoBalanced.length > 0) {
+          autoBalanced[0].percentage += (100 - total);
+          autoBalanced[0].percentage = parseFloat(autoBalanced[0].percentage.toFixed(2));
+        }
+        
+        console.log('[SimpleSectorForm] Auto-distributing percentages equally:', {
+          totalSectors: autoBalanced.length,
+          equalShare,
+          autoBalanced: autoBalanced.map(a => ({ code: a.code, percentage: a.percentage }))
+        });
+        
+        onChange(autoBalanced);
       }
-    });
+    } else {
+      onChange(newAllocations);
+    }
   };
 
   const distributeEqually = () => {

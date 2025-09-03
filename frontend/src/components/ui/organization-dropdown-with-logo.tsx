@@ -208,6 +208,7 @@ export function OrganizationDropdownWithLogo({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border-0 focus:ring-0"
+            autoFocus
           />
           <CommandList>
             {search && filteredOrgs.length === 0 && (

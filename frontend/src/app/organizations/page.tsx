@@ -2262,20 +2262,30 @@ function OrganizationsPageContent() {
     setFetchError(null)
     
     try {
+      // Use bulk statistics endpoint for much better performance
       const [orgsResponse, summaryResponse] = await Promise.all([
-        fetch('/api/organizations', {
-          signal: mainFetchControllerRef.current.signal
+        fetch('/api/organizations/bulk-stats', {
+          signal: mainFetchControllerRef.current.signal,
+          headers: {
+            'Cache-Control': 'max-age=300', // 5 minute client cache
+          }
         }),
         fetch('/api/organizations/summary', {
-          signal: mainFetchControllerRef.current.signal
+          signal: mainFetchControllerRef.current.signal,
+          headers: {
+            'Cache-Control': 'max-age=300', // 5 minute client cache
+          }
         })
       ])
 
       if (orgsResponse.ok) {
-        const orgsData = await orgsResponse.json()
+        const response = await orgsResponse.json()
+        
+        // Handle both paginated and non-paginated responses for backward compatibility
+        const orgsWithActiveProjects = response.data || response;
         
         // Debug organizations with Global/Regional
-        const globalRegionalOrgs = orgsData.filter((org: any) => 
+        const globalRegionalOrgs = orgsWithActiveProjects.filter((org: any) => 
           org.country_represented?.toLowerCase().includes('global') || 
           org.country_represented?.toLowerCase().includes('regional')
         );
@@ -2283,9 +2293,7 @@ function OrganizationsPageContent() {
           console.log('[FetchOrgs] Organizations with Global/Regional:', globalRegionalOrgs);
         }
         
-        // Process organizations with optimized function
-        const orgsWithActiveProjects = await processOrganizationsOptimized(orgsData)
-        
+        // Organizations are already processed with statistics from bulk endpoint
         setOrganizations(orgsWithActiveProjects)
         
         // Update summary if needed
@@ -2331,99 +2339,8 @@ function OrganizationsPageContent() {
     }
   }
 
-  // Optimized function to calculate active projects and project breakdown
-  const processOrganizationsOptimized = async (orgsData: any[]): Promise<Organization[]> => {
-    try {
-      // Create a map to store organization statistics
-      const orgStatsMap = new Map();
-      
-      // Initialize all organizations with zero stats
-      orgsData.forEach(org => {
-        orgStatsMap.set(org.id, {
-          count: 0,
-          totalBudgeted: 0,
-          totalDisbursed: 0
-        });
-      });
-
-      // Fetch activity counts for each organization using their API endpoint
-      const orgStatsPromises = orgsData.map(async (org) => {
-        try {
-          const response = await fetch(`/api/organizations/${org.id}`);
-          if (response.ok) {
-            const orgData = await response.json();
-            return {
-              id: org.id,
-              activeProjects: orgData.active_project_count || 0
-            };
-          }
-        } catch (error) {
-          console.error(`Error fetching stats for org ${org.id}:`, error);
-        }
-        return { id: org.id, activeProjects: 0 };
-      });
-
-      // Wait for all organization stats to be fetched
-      const orgStats = await Promise.all(orgStatsPromises);
-      
-      // Update the stats map with fetched data
-      orgStats.forEach(stat => {
-        if (orgStatsMap.has(stat.id)) {
-          orgStatsMap.get(stat.id).count = stat.activeProjects;
-        }
-      });
-
-      // For now, set financial data to 0 since we need to implement proper calculation
-      // TODO: Implement proper financial calculations from activities and transactions
-
-      // Map organizations with calculated data
-      return orgsData.map((org: any) => {
-        // Debug country_represented values
-        if (org.country_represented?.toLowerCase().includes('global') || org.country_represented?.toLowerCase().includes('regional')) {
-          console.log('[ProcessOrgs] Organization with global/regional:', {
-            name: org.name,
-            country_represented: org.country_represented,
-            country: org.country
-          });
-        }
-        
-        // Get activity data for this organization
-        const activityData = orgStatsMap.get(org.id) || { count: 0, totalBudgeted: 0, totalDisbursed: 0 };
-        
-        return {
-          ...org,
-          // Ensure we use the correct organisation_type field
-          organisation_type: org.organisation_type || org.type,
-          activeProjects: activityData.count,
-          totalBudgeted: activityData.totalBudgeted,
-          totalDisbursed: activityData.totalDisbursed,
-          displayName: org.name && org.acronym ? `${org.name} (${org.acronym})` : org.name,
-          derived_category: deriveCategory(org.organisation_type || org.type, org.country_represented || org.country || ''),
-          // Initialize project status breakdown with active count
-          projectsByStatus: { 
-            active: activityData.count, 
-            pipeline: 0, 
-            completed: 0, 
-            cancelled: 0 
-          },
-          lastProjectActivity: org.updated_at,
-          totalDisbursement: 0
-        }
-      })
-    } catch (error) {
-      console.error('Error processing organizations:', error)
-      // Fallback: return organizations with default values
-      return orgsData.map((org: any) => ({
-        ...org,
-        activeProjects: 0,
-        displayName: org.name && org.acronym ? `${org.name} (${org.acronym})` : org.name,
-        derived_category: deriveCategory(org.organisation_type, org.country_represented || org.country || ''),
-        projectsByStatus: { active: 0, pipeline: 0, completed: 0, cancelled: 0 },
-        lastProjectActivity: undefined,
-        totalDisbursement: 0
-      }))
-    }
-  }
+  // Note: processOrganizationsOptimized function removed - statistics now calculated 
+  // efficiently in bulk via /api/organizations/bulk-stats endpoint
 
   const handleEditOrganization = (organization: Organization) => {
     setSelectedOrganization(organization)

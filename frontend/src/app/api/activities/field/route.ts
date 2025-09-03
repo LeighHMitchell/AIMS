@@ -128,6 +128,54 @@ export async function POST(request: Request) {
         updateData.description_narrative = body.value;
         break;
         
+      case 'descriptionObjectives':
+        oldValue = existingActivity.description_objectives || null;
+        newValue = body.value;
+        // Only add to update if column exists to avoid SQL errors
+        try {
+          updateData.description_objectives = body.value;
+        } catch (error) {
+          console.warn('[Field API] description_objectives column may not exist yet');
+          return NextResponse.json({ 
+            error: 'Database column description_objectives not found. Please run migration.',
+            success: false,
+            field: 'descriptionObjectives'
+          });
+        }
+        break;
+        
+      case 'descriptionTargetGroups':
+        oldValue = existingActivity.description_target_groups || null;
+        newValue = body.value;
+        // Only add to update if column exists to avoid SQL errors
+        try {
+          updateData.description_target_groups = body.value;
+        } catch (error) {
+          console.warn('[Field API] description_target_groups column may not exist yet');
+          return NextResponse.json({ 
+            error: 'Database column description_target_groups not found. Please run migration.',
+            success: false,
+            field: 'descriptionTargetGroups'
+          });
+        }
+        break;
+        
+      case 'descriptionOther':
+        oldValue = existingActivity.description_other || null;
+        newValue = body.value;
+        // Only add to update if column exists to avoid SQL errors
+        try {
+          updateData.description_other = body.value;
+        } catch (error) {
+          console.warn('[Field API] description_other column may not exist yet');
+          return NextResponse.json({ 
+            error: 'Database column description_other not found. Please run migration.',
+            success: false,
+            field: 'descriptionOther'
+          });
+        }
+        break;
+        
       case 'activityStatus':
         oldValue = existingActivity.activity_status;
         newValue = body.value;

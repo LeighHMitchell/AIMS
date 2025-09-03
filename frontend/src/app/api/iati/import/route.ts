@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        iatiAnalytics.importCompleted('owned', activity.id);
+        iatiAnalytics.importCompleted('reference', activity.id);
         
         return NextResponse.json({
           status: 'owned',
@@ -241,7 +241,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Legacy POST handler for bulk import (backward compatibility)
+/*
+// Legacy POST handler for bulk import (backward compatibility) - REMOVED FOR SECURITY
 export async function POST_LEGACY(request: NextRequest) {
   try {
     const data: ImportRequest = await request.json();
@@ -886,4 +887,5 @@ export async function POST_LEGACY(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
+*/

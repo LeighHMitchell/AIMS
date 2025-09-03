@@ -113,7 +113,7 @@ export function StateRegionSelect({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search states/regions..." />
+          <CommandInput placeholder="Search states/regions..." autoFocus />
           <CommandEmpty>No state/region found.</CommandEmpty>
           <CommandGroup className="max-h-96 overflow-auto">
             {myanmarData.states.map((state) => (

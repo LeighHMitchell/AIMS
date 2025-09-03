@@ -59,7 +59,7 @@ export default function AdminPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full">
         <div className="mb-8">
           <div className="flex items-center gap-3">
             <Shield className="h-8 w-8 text-gray-700" />

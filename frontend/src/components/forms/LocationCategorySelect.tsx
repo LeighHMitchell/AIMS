@@ -65,7 +65,7 @@ export function LocationCategorySelect({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search categories..." />
+          <CommandInput placeholder="Search categories..." autoFocus />
           <CommandEmpty>No category found.</CommandEmpty>
           <CommandGroup className="max-h-96 overflow-auto">
             {myanmarData.locationCategories.map((category) => (

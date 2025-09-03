@@ -258,7 +258,7 @@ export default function NewGroupPage() {
                   </PopoverTrigger>
                   <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Search organizations..." />
+                      <CommandInput placeholder="Search organizations..." autoFocus />
                       <CommandList>
                         <CommandEmpty>No organization found.</CommandEmpty>
                         <CommandGroup>

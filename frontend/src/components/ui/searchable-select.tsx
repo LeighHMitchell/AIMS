@@ -162,6 +162,7 @@ export function SearchableSelect({
                   // Prevent command from intercepting keyboard navigation
                   e.stopPropagation()
                 }}
+                autoFocus
               />
             </div>
             <CommandList>

@@ -170,8 +170,10 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
                 <User className="h-5 w-5 text-gray-600" />
                 Recipient Government Focal Point(s)
                 <HelpTextTooltip content="Government focal points are responsible for reviewing, endorsing, and validating activity data. Multiple focal points can be assigned as needed and will receive notifications about activity updates and changes." />
-                {/* Green tick to show focal points are saved */}
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                {/* Green tick to show focal points are saved - only show when focal points exist */}
+                {data.government_focal_points && data.government_focal_points.length > 0 && (
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                )}
               </h3>
             </div>
             <div className="flex-1">
@@ -197,8 +199,10 @@ export default function FocalPointsTab({ activityId, onFocalPointsChange }: Foca
                 <User className="h-5 w-5 text-gray-600" />
                 Development Partner Focal Point(s)
                 <HelpTextTooltip content="Development partner focal points maintain and update activity information for their organizations. Both types of focal points ensure data accuracy and keep activity information current. Multiple focal points can be assigned as needed." />
-                {/* Green tick to show focal points are saved */}
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                {/* Green tick to show focal points are saved - only show when focal points exist */}
+                {data.development_partner_focal_points && data.development_partner_focal_points.length > 0 && (
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                )}
               </h3>
             </div>
             <div className="flex-1">

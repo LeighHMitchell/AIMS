@@ -180,19 +180,44 @@ export async function GET(request: NextRequest) {
     if (feedback && feedback.length > 0) {
       console.log('[AIMS Feedback API] Starting user enrichment...');
       
-      // For now, just create basic user objects to get the API working
+      // Get unique user IDs
+      const userIds = Array.from(new Set(feedback.map((item: any) => item.user_id).filter(Boolean)));
+      
+      // Fetch user details for all user IDs
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, email, first_name, last_name')
+        .in('id', userIds);
+      
+      if (usersError) {
+        console.warn('[AIMS Feedback API] Could not fetch user details:', usersError);
+      }
+      
+      // Create a map of user ID to user details
+      const userMap = new Map();
+      (users || []).forEach((user: any) => {
+        userMap.set(user.id, {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          full_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email || 'Unknown User'
+        });
+      });
+      
+      // Enrich feedback with actual user data
       enrichedFeedback = feedback.map((item: any) => ({
         ...item,
-        user: {
+        user: userMap.get(item.user_id) || {
           id: item.user_id || 'unknown',
-          email: 'User ID: ' + (item.user_id || 'Unknown'),
+          email: 'Unknown User',
           first_name: null,
           last_name: null,
-          full_name: 'User ID: ' + (item.user_id || 'Unknown')
+          full_name: 'Unknown User'
         }
       }));
       
-      console.log('[AIMS Feedback API] Basic user enrichment completed');
+      console.log('[AIMS Feedback API] User enrichment completed');
     }
 
     return NextResponse.json({ 
@@ -308,16 +333,39 @@ export async function POST(request: NextRequest) {
     // Let's try to insert without checking user existence first
     console.log('[AIMS Feedback API] Attempting direct insert with user ID:', realUserId);
 
-    // Insert feedback with attachment fields
+    // Check if feature column exists by testing with a simple query first
+    let hasFeatureColumn = false;
+    try {
+      const { data: testData, error: testError } = await supabase
+        .from('feedback')
+        .select('*')
+        .limit(1);
+      
+      if (!testError && testData && testData.length > 0) {
+        hasFeatureColumn = 'feature' in testData[0];
+      }
+      
+      console.log('[AIMS Feedback API] Feature column exists:', hasFeatureColumn);
+    } catch (error) {
+      console.warn('[AIMS Feedback API] Could not check for feature column:', error);
+    }
+
+    // Insert feedback with conditional feature field
     const insertData: any = {
       user_id: realUserId,
       category,
-      feature: feature?.trim() || null,
       subject: subject?.trim() || null,
       message: message.trim(),
       status: 'open',
       priority: 'medium'
     };
+
+    // Only add feature field if the column exists
+    if (hasFeatureColumn && feature?.trim()) {
+      insertData.feature = feature.trim();
+    } else if (feature?.trim()) {
+      console.warn('[AIMS Feedback API] Feature value provided but column does not exist. Please run migration: ALTER TABLE feedback ADD COLUMN feature TEXT;');
+    }
 
     // Check if attachment columns exist by trying to get a sample feedback record
     let hasAttachmentColumns = false;

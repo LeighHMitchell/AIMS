@@ -14,6 +14,6 @@ export const formatReportedBy = (org: Org) =>
   join([org.name, org.shortName ? `(${org.shortName})` : null], " ");
 
 export const formatSubmittedBy = (user: User) => {
-  const fullName = join([user.title, user.firstName, user.middleName, user.lastName]);
+  const fullName = join([user.firstName, user.middleName, user.lastName]);
   return user.jobTitle ? `${fullName}, ${user.jobTitle}` : fullName;
 };

@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
     
     // Get search parameters
     const { searchParams } = new URL(request.url);
-    const groupBy = searchParams.get('groupBy') || 'type'; // 'type' or 'custom'
+    const groupBy = searchParams.get('groupBy') || 'type'; // 'type', 'custom', or 'country'
     const transactionType = searchParams.get('transactionType') || 'C'; // 'C' for commitments, 'D' for disbursements
     
     console.log('[AIMS] Request parameters:', { groupBy, transactionType });
@@ -376,7 +376,85 @@ export async function GET(request: NextRequest) {
     // Group organizations based on groupBy parameter
     let groupedData: GroupData[];
     
-    if (groupBy === 'custom') {
+    if (groupBy === 'country') {
+      // Group by country
+      console.log('[AIMS] Country grouping requested - grouping by countryRepresented');
+      
+      // Create a map of countries to organizations
+      const countryMap = new Map<string, OrganizationMetrics[]>();
+      
+      organizationMetrics.forEach(org => {
+        const country = org.countryRepresented || org.country || 'Unknown';
+        const cleanCountry = country.trim() || 'Unknown';
+        
+        if (!countryMap.has(cleanCountry)) {
+          countryMap.set(cleanCountry, []);
+        }
+        countryMap.get(cleanCountry)!.push(org);
+      });
+      
+      // Convert map to GroupData array
+      groupedData = Array.from(countryMap.entries()).map(([countryName, countryOrgs]) => {
+        // Get country flag emoji (simple mapping for common countries)
+        const getCountryFlag = (country: string): string => {
+          const flagMap: Record<string, string> = {
+            'Germany': '🇩🇪',
+            'United States': '🇺🇸',
+            'United Kingdom': '🇬🇧',
+            'Japan': '🇯🇵',
+            'Australia': '🇦🇺',
+            'Canada': '🇨🇦',
+            'France': '🇫🇷',
+            'Netherlands': '🇳🇱',
+            'Sweden': '🇸🇪',
+            'Norway': '🇳🇴',
+            'Denmark': '🇩🇰',
+            'Switzerland': '🇨🇭',
+            'Belgium': '🇧🇪',
+            'Finland': '🇫🇮',
+            'Myanmar': '🇲🇲',
+            'Global': '🌐',
+            'Global / Not Country-Specific': '🌐'
+          };
+          return flagMap[country] || '🏳️';
+        };
+
+        return {
+          id: `country-${countryName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+          name: countryName,
+          description: `Organizations based in ${countryName}`,
+          type: 'predefined' as const,
+          organizations: countryOrgs,
+          totalOrganizations: countryOrgs.length,
+          totalAmount: countryOrgs.reduce((sum, org) => {
+            const amount = (typeof org.totalAmount === 'number' && !isNaN(org.totalAmount)) ? org.totalAmount : 0;
+            return sum + amount;
+          }, 0),
+          totalActiveProjects: countryOrgs.reduce((sum, org) => {
+            const projects = (typeof org.activeProjects === 'number' && !isNaN(org.activeProjects)) ? org.activeProjects : 0;
+            return sum + projects;
+          }, 0)
+        };
+      });
+      
+      // Sort countries alphabetically, but put major donors first
+      const priorityCountries = ['Germany', 'United States', 'United Kingdom', 'Japan', 'Australia', 'Canada', 'France'];
+      groupedData.sort((a, b) => {
+        const priorityA = priorityCountries.indexOf(a.name);
+        const priorityB = priorityCountries.indexOf(b.name);
+        
+        if (priorityA !== -1 && priorityB !== -1) {
+          return priorityA - priorityB;
+        } else if (priorityA !== -1) {
+          return -1;
+        } else if (priorityB !== -1) {
+          return 1;
+        } else {
+          return a.name.localeCompare(b.name);
+        }
+      });
+      
+    } else if (groupBy === 'custom') {
       // Fetch custom groups and their member organizations
       console.log('[AIMS] Custom grouping requested - fetching custom groups');
       

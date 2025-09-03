@@ -102,17 +102,43 @@ export default function ContributorsSection({
       console.log('[Contributors] User name:', user.name);
       console.log('[Contributors] User firstName:', user.firstName);
       console.log('[Contributors] User lastName:', user.lastName);
+      console.log('[Contributors] User email:', user.email);
+      console.log('[Contributors] Full user object keys:', Object.keys(user));
+      console.log('[Contributors] User object JSON:', JSON.stringify(user, null, 2));
       
-      // Build the user's display name with fallbacks
+      // Build the user's display name with comprehensive fallbacks
       let nominatedByName = 'Unknown User';
-      if (user.name && user.name.trim() !== '') {
+      
+      // First try the computed 'name' field (should be firstName + lastName)
+      if (user.name && typeof user.name === 'string' && user.name.trim() !== '') {
         nominatedByName = user.name.trim();
-      } else if (user.firstName || user.lastName) {
-        const nameParts = [user.firstName, user.lastName].filter(Boolean);
-        nominatedByName = nameParts.join(' ').trim();
-      } else if (user.email) {
-        // Use email as fallback if no name fields
-        nominatedByName = user.email.split('@')[0]; // Use part before @
+      } 
+      // Then try firstName and lastName combination
+      else if (user.firstName || user.lastName) {
+        const nameParts = [];
+        if (user.firstName && typeof user.firstName === 'string' && user.firstName.trim() !== '') {
+          nameParts.push(user.firstName.trim());
+        }
+        if (user.lastName && typeof user.lastName === 'string' && user.lastName.trim() !== '') {
+          nameParts.push(user.lastName.trim());
+        }
+        if (nameParts.length > 0) {
+          nominatedByName = nameParts.join(' ');
+        }
+      } 
+      // Then try jobTitle or title
+      else if (user.jobTitle && typeof user.jobTitle === 'string' && user.jobTitle.trim() !== '') {
+        nominatedByName = user.jobTitle.trim();
+      }
+      else if (user.title && typeof user.title === 'string' && user.title.trim() !== '') {
+        nominatedByName = user.title.trim();
+      }
+      // Finally use email as fallback if no name fields
+      else if (user.email && typeof user.email === 'string' && user.email.trim() !== '') {
+        const emailParts = user.email.split('@');
+        if (emailParts[0]) {
+          nominatedByName = emailParts[0]; // Use part before @
+        }
       }
       
       console.log('[Contributors] Final nominatedByName:', nominatedByName);
@@ -205,6 +231,22 @@ export default function ContributorsSection({
     }
   };
 
+  // Debug function to check user data
+  const debugUserData = async () => {
+    if (!user?.id) return;
+    
+    try {
+      console.log('[Debug] Checking user data for ID:', user.id);
+      const response = await fetch(`/api/debug-current-user?userId=${user.id}`);
+      const data = await response.json();
+      console.log('[Debug] User data from API:', data);
+      alert(`User data check complete. Check console for details.\n\nComputed Name: ${data.computedName}`);
+    } catch (error) {
+      console.error('[Debug] Error checking user data:', error);
+      alert('Error checking user data. Check console for details.');
+    }
+  };
+
   // Check if current user has a pending nomination
   const pendingNomination = user?.organizationId 
     ? contributors.find(c => getContributorOrganizationId(c) === user.organizationId && c.status === 'nominated')
@@ -216,6 +258,7 @@ export default function ContributorsSection({
 
         <CardContent className="space-y-4 pt-6 h-full flex flex-col">
           <div className="flex-1 space-y-4">
+        
         {/* Pending Nomination Alert */}
         {pendingNomination && (
           <Alert>
@@ -268,7 +311,7 @@ export default function ContributorsSection({
               <Button 
                 onClick={nominateContributor}
                 disabled={!selectedOrganizationId || organizationsLoading || contributorsLoading}
-                className="h-10 shrink-0 px-6 py-2 ml-4"
+                className="h-[60px] min-h-[60px] shrink-0 px-6 py-3 ml-4"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Nominate

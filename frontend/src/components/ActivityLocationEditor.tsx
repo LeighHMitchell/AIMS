@@ -152,7 +152,7 @@ function MultiSelect({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command>
-          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
+          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} autoFocus />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>

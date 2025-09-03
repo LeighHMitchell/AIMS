@@ -278,7 +278,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                 <div className="bg-gray-50 rounded-lg p-3 border">
                   <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Tied Status</div>
                   <div className="text-sm text-gray-700">
-                    {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status) : 'Not reported'}
+                    {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status) : 'Not reported'}
                   </div>
                 </div>
               </div>

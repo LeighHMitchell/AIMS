@@ -36,7 +36,7 @@ export function LinkedActivityTitle({
         title={`View activity profile: ${displayTitle}`}
       >
         {displayTitle}{" "}{showIcon && (
-          <ExternalLink className="inline h-4 w-4" style={{ verticalAlign: "middle" }} aria-hidden="true" />
+          <ExternalLink className="inline h-5 w-5" style={{ verticalAlign: "middle" }} aria-hidden="true" />
         )}
         {children}
       </Link>

@@ -103,6 +103,26 @@ export default function SectorAllocationForm({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Helper function to auto-balance percentages equally
+  const autoBalancePercentages = useCallback((allocations: SectorAllocation[]) => {
+    if (allocations.length === 0) return allocations;
+    
+    const equalShare = 100 / allocations.length;
+    const balanced = allocations.map(alloc => ({
+      ...alloc,
+      percentage: parseFloat(equalShare.toFixed(2))
+    }));
+    
+    // Handle rounding errors by adjusting the first allocation
+    const total = balanced.reduce((sum, alloc) => sum + alloc.percentage, 0);
+    if (total !== 100 && balanced.length > 0) {
+      balanced[0].percentage += (100 - total);
+      balanced[0].percentage = parseFloat(balanced[0].percentage.toFixed(2));
+    }
+    
+    return balanced;
+  }, []);
+
   const addAllocation = (dac5: DAC5Sector) => {
     const newAllocation: SectorAllocation = {
       id: uuidv4(),
@@ -110,12 +130,14 @@ export default function SectorAllocationForm({
       dac5_name: dac5.dac5_name,
       dac3_code: dac5.dac3_code,
       dac3_name: dac5.dac3_name,
-      percentage: validation.remainingPercentage > 0 ? Math.min(validation.remainingPercentage, 100) : 0
+      percentage: 0 // Start with 0, will be auto-calculated below
     };
     
-    const updated = [...localAllocations, newAllocation];
-    setLocalAllocations(updated);
-    onChange(updated);
+    const updatedWithNew = [...localAllocations, newAllocation];
+    const autoBalanced = autoBalancePercentages(updatedWithNew);
+    
+    setLocalAllocations(autoBalanced);
+    onChange(autoBalanced);
     setSearchQuery('');
     setShowDropdown(false);
     setActiveAllocationId(newAllocation.id || null);
@@ -131,27 +153,18 @@ export default function SectorAllocationForm({
 
   const removeAllocation = (id: string) => {
     const updated = localAllocations.filter(alloc => alloc.id !== id);
-    setLocalAllocations(updated);
-    onChange(updated);
+    const autoBalanced = autoBalancePercentages(updated);
+    
+    setLocalAllocations(autoBalanced);
+    onChange(autoBalanced);
   };
 
   const handleAutoBalance = () => {
     if (localAllocations.length === 0) return;
     
-    const equalShare = 100 / localAllocations.length;
-    const updated = localAllocations.map(alloc => ({
-      ...alloc,
-      percentage: parseFloat(equalShare.toFixed(2))
-    }));
-    
-    // Handle rounding errors
-    const total = updated.reduce((sum, alloc) => sum + alloc.percentage, 0);
-    if (total !== 100 && updated.length > 0) {
-      updated[0].percentage += (100 - total);
-    }
-    
-    setLocalAllocations(updated);
-    onChange(updated);
+    const autoBalanced = autoBalancePercentages(localAllocations);
+    setLocalAllocations(autoBalanced);
+    onChange(autoBalanced);
   };
 
   const handleCSVImport = (event: React.ChangeEvent<HTMLInputElement>) => {

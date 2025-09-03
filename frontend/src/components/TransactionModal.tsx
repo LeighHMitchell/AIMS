@@ -75,19 +75,21 @@ import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components
 
 // Constants for dropdowns
 const TRANSACTION_TYPE_OPTIONS: { code: string; name: string; desc: string }[] = [
-  { code: '1', name: 'Incoming Funds', desc: 'Funds recieved for use on the activity, which can be from an external or internal source.' },
-  { code: '2', name: 'Outgoing Commitment', desc: 'A firm, written obligation from a donor or provider to provide a specified amount of funds, under particular terms and conditions, for specific purposes, for the benefit of the recipient.' },
-  { code: '3', name: 'Disbursement', desc: '' }, // Removed description
-  { code: '4', name: 'Expenditure', desc: 'Outgoing funds that are spent on goods and services for the activity.' },
-  { code: '5', name: 'Interest Payment', desc: 'The actual amount of interest paid on a loan or line of credit, including fees.' },
-  { code: '6', name: 'Loan Repayment', desc: 'The actual amount of principal (amortisation) repaid, including any arrears.' },
-  { code: '7', name: 'Reimbursement', desc: 'A type of disbursement that covers funds that have already been spent by the recipient, as agreed in the terms of the grant or loan' },
-  { code: '8', name: 'Purchase of Equity', desc: 'Outgoing funds that are used to purchase equity in a business' },
-  { code: '9', name: 'Sale of Equity', desc: 'Incoming funds from the sale of equity.' },
-  { code: '10', name: 'Credit Guarantee', desc: 'A commitment made by a funding organisation to underwrite a loan or line of credit entered into by a third party.' },
-  { code: '11', name: 'Incoming Commitment', desc: 'A firm, written obligation from a donor or provider to provide a specified amount of funds, under particular terms and conditions, reported by a recipient for this activity.' },
-  { code: '12', name: 'Outgoing Pledge', desc: 'Indicative, non-binding advice of an intended outgoing commitment.' },
-  { code: '13', name: 'Incoming Pledge', desc: 'Indicative, non-binding advice of an intended incoming commitment.' },
+  // Most commonly used transaction types first
+  { code: '3', name: 'Disbursement', desc: 'Actual payment of funds to recipients' },
+  { code: '2', name: 'Outgoing Commitment', desc: 'Firm obligation to provide specified funds' },
+  { code: '11', name: 'Incoming Commitment', desc: 'Firm obligation received from donor' },
+  { code: '4', name: 'Expenditure', desc: 'Funds spent on goods and services' },
+  { code: '1', name: 'Incoming Funds', desc: 'Funds received for activity use' },
+  // Other transaction types
+  { code: '5', name: 'Interest Payment', desc: 'Interest paid on loans or credit' },
+  { code: '6', name: 'Loan Repayment', desc: 'Principal repayment including arrears' },
+  { code: '7', name: 'Reimbursement', desc: 'Covers funds already spent by recipient' },
+  { code: '8', name: 'Purchase of Equity', desc: 'Funds used to purchase business equity' },
+  { code: '9', name: 'Sale of Equity', desc: 'Income from equity sales' },
+  { code: '10', name: 'Credit Guarantee', desc: 'Commitment to underwrite loans' },
+  { code: '12', name: 'Outgoing Pledge', desc: 'Non-binding intended commitment' },
+  { code: '13', name: 'Incoming Pledge', desc: 'Non-binding intended incoming commitment' },
 ];
 
 const ORGANIZATION_TYPES = {
@@ -533,6 +535,37 @@ export default function TransactionModal({
     }
   }, [formData?.flow_type, formData?.aid_type, formData?.finance_type]);
 
+  // State to track reference generation
+  const [isGeneratingReference, setIsGeneratingReference] = useState(false);
+
+  // Function to generate transaction reference immediately
+  const generateTransactionReference = async () => {
+    setIsGeneratingReference(true);
+    try {
+      console.log('[TransactionModal] Generating transaction reference for activity:', activityId);
+      
+      // Generate a highly unique reference using multiple factors
+      const timestamp = Date.now();
+      const microseconds = performance.now().toString().replace('.', '').slice(-6);
+      const random = Math.floor(Math.random() * 100000);
+      const userSuffix = user?.id ? user.id.slice(-4) : '0000';
+      
+      const reference = `${activityPartnerId || 'TXN'}-TRANS-${timestamp}-${microseconds}-${random}-${userSuffix}`;
+      
+      console.log('[TransactionModal] Generated reference:', reference);
+      return reference;
+    } catch (error) {
+      console.error('[TransactionModal] Error generating transaction reference:', error);
+      // Fallback: generate with maximum uniqueness
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000000);
+      const fallback = Math.floor(Math.random() * 1000000);
+      return `${activityPartnerId || 'TXN'}-TRANS-${timestamp}-${random}-${fallback}`;
+    } finally {
+      setIsGeneratingReference(false);
+    }
+  };
+
   // Update form data when transaction prop changes OR when defaults change
   useEffect(() => {
     console.log('[TransactionModal] Form data update triggered:', {
@@ -612,7 +645,7 @@ export default function TransactionModal({
         value: 0,
         currency: defaultCurrency || 'USD',
         status: 'draft',
-        transaction_reference: '',
+        transaction_reference: '', // Leave blank for backend auto-generation
         value_date: '',
         description: '',
         provider_org_id: user?.organizationId || undefined,
@@ -637,19 +670,11 @@ export default function TransactionModal({
       });
       setShowValueDate(false);
     }
-  }, [transaction, defaultFinanceType, defaultAidType, defaultCurrency, defaultTiedStatus, defaultFlowType, organizations, user]);
+  }, [transaction, defaultFinanceType, defaultAidType, defaultCurrency, defaultTiedStatus, defaultFlowType, organizations, user, open, activityId, activityPartnerId]);
 
   // Add missing state for Disbursement Channel popover
   const [disbursementPopoverOpen, setDisbursementPopoverOpen] = useState(false);
   const [disbursementSearch, setDisbursementSearch] = useState('');
-
-  // Add unique transaction_reference check (in-memory, for now)
-  const [allTransactionReferences, setAllTransactionReferences] = useState<string[]>([]);
-
-  useEffect(() => {
-    // If you have access to all transactions, setAllTransactionReferences([...]) here
-    // For now, this is a placeholder; ideally, pass as prop or fetch from parent
-  }, []);
 
   const validateTransaction = (data: Partial<Transaction>): string | null => {
     if (!data.transaction_type) return 'Transaction type is required.';
@@ -658,13 +683,7 @@ export default function TransactionModal({
     if (!data.currency) return 'Currency is required.';
     if (!data.provider_org_id) return 'Provider organization is required.';
     if (!data.receiver_org_id) return 'Receiver organization is required.';
-    if (data.transaction_reference) {
-      // Check for duplicate reference (case-insensitive)
-      const ref = data.transaction_reference.trim().toLowerCase();
-      if (allTransactionReferences && allTransactionReferences.filter(r => r && r.trim().toLowerCase() === ref).length > (isEditing ? 1 : 0)) {
-        return 'Transaction reference must be unique.';
-      }
-    }
+    // Remove frontend duplicate check - let the backend handle this with proper database validation
     return null;
   };
 
@@ -697,20 +716,7 @@ export default function TransactionModal({
       financing_classification: isClassificationOverridden ? manualClassification : computedClassification
     });
     const validationError = validateTransaction(submissionData);
-    // Check for duplicate transaction reference in the current list (frontend validation)
-    if (submissionData.transaction_reference) {
-      const ref = submissionData.transaction_reference.trim().toLowerCase();
-      const isDuplicate = allTransactionReferences && allTransactionReferences.filter(r => r && r.trim().toLowerCase() === ref).length > (createdTransactionId || (isEditing && transaction?.id) ? 1 : 0);
-      if (isDuplicate) {
-        showValidationError('Transaction reference must be unique.', {
-          isDuplicateReference: true,
-          onClearReference: () => {
-            setFormData(prev => ({ ...prev, transaction_reference: '' }));
-          }
-        });
-        return;
-      }
-    }
+    // Let the backend handle duplicate reference validation
     if (validationError) {
       const missingFields = getMissingRequiredFields(formData);
       if (missingFields.length > 0) {
@@ -722,14 +728,25 @@ export default function TransactionModal({
     }
     try {
       let response;
+      
+      console.log('[TransactionModal] handleSubmit - Transaction state:', {
+        createdTransactionId,
+        isEditing,
+        transactionUuid: transaction?.uuid,
+        transactionId: transaction?.id,
+        transactionReference: submissionData.transaction_reference
+      });
+      
       // If we have an autosaved transaction, update it instead of creating a new one
       if (createdTransactionId) {
+        console.log('[TransactionModal] Updating autosaved transaction:', createdTransactionId);
         response = await fetch('/api/transactions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...submissionData, id: createdTransactionId })
         });
       } else if (isEditing && (transaction?.uuid || transaction?.id)) {
+        console.log('[TransactionModal] Updating existing transaction:', transaction.uuid || transaction.id);
         // Update existing transaction (edit mode)
         response = await fetch('/api/transactions', {
           method: 'PUT',
@@ -737,6 +754,7 @@ export default function TransactionModal({
           body: JSON.stringify({ ...submissionData, id: transaction.uuid || transaction.id })
         });
       } else {
+        console.log('[TransactionModal] Creating new transaction');
         // Create new transaction
         response = await fetch('/api/transactions', {
           method: 'POST',
@@ -762,6 +780,15 @@ export default function TransactionModal({
       }
       const saved = await response.json();
       setCreatedTransactionId(saved.id || saved.uuid);
+      
+      // Update form data with the auto-generated transaction reference
+      if (saved.transaction_reference && (!formData.transaction_reference || formData.transaction_reference === '')) {
+        setFormData(prev => ({ 
+          ...prev, 
+          transaction_reference: saved.transaction_reference 
+        }));
+      }
+      
       showTransactionSuccess((isEditing || createdTransactionId) ? 'Transaction updated successfully' : 'Transaction added successfully');
       
       // Call onSubmit callback to notify parent component
@@ -911,7 +938,7 @@ export default function TransactionModal({
   const DISBURSEMENT_CHANNELS_WITH_DESC = {
     '1': { label: 'Central Ministry of Finance / Treasury', desc: 'Money is disbursed through central Ministry of Finance or Treasury' },
     '2': { label: 'Direct to Implementing Institution (Separate Account)', desc: 'Money is disbursed directly to the implementing institution and managed through a separate bank account' },
-    '3': { label: 'Aid in Kind via Third Party (NGOs, Management Companies)', desc: '' },
+    '3': { label: 'Aid in Kind via Third Party (NGOs, Management Companies)', desc: 'Donors utilise third party agencies, e.g. NGOs or management companies' },
     '4': { label: 'Aid in Kind Managed by Donor', desc: 'Donors manage funds themselves' }
   };
 
@@ -1058,7 +1085,7 @@ export default function TransactionModal({
       setCreationError(null);
       
       // Update form data with the auto-generated transaction reference
-      if (saved.transaction_reference && !formData.transaction_reference) {
+      if (saved.transaction_reference) {
         setFormData(prev => ({ 
           ...prev, 
           transaction_reference: saved.transaction_reference 
@@ -1262,11 +1289,6 @@ export default function TransactionModal({
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  {formData.transaction_type && (
-                    <FieldDescription>
-                      {TRANSACTION_TYPE_OPTIONS.find(opt => opt.code === formData.transaction_type)?.desc}
-                    </FieldDescription>
-                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1274,7 +1296,7 @@ export default function TransactionModal({
                     Validation Status
                     <InfoTooltip text="Indicates whether this transaction has been reviewed and validated by an authorized user" />
                   </Label>
-                  {user && getUserPermissions(user.role).canValidateActivities ? (
+                  {user && (user.role === 'super_user' || user.role === 'gov_partner_tier_1' || user.role === 'gov_partner_tier_2') ? (
                     // Validation toggle for users with permission
                     <div className="flex items-center justify-between h-12 w-full rounded-md border border-input bg-background px-4 py-3 hover:bg-accent/50 transition-colors">
                       <div className="flex items-center space-x-3">
@@ -1294,9 +1316,6 @@ export default function TransactionModal({
                             Mark as Validated
                             <InfoTooltip text="Check this box to mark the transaction as validated and approved" />
                           </Label>
-                          <span className="text-xs text-muted-foreground">
-                            Toggle to validate this transaction
-                          </span>
                         </div>
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-full ${
@@ -1311,11 +1330,11 @@ export default function TransactionModal({
                     // Read-only status display for users without permission
                     <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-gray-50 px-4 py-3">
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {formData.status === 'validated' ? 'Validated Transaction' : 'Unvalidated Transaction'}
+                        <span className="text-sm font-medium text-gray-500">
+                          {formData.status === 'validated' ? 'Validated Transaction' : 'Pending Validation'}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          Current status: {formData.status || 'draft'}
+                          Transaction is pending validation by relevant government focal points
                         </span>
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-full ${
@@ -1323,7 +1342,7 @@ export default function TransactionModal({
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-gray-100 text-gray-600'
                       }`}>
-                        {formData.status === 'validated' ? 'Validated' : 'Unvalidated'}
+                        {formData.status === 'validated' ? 'Validated' : 'Pending'}
                       </div>
                     </div>
                   )}
@@ -1910,11 +1929,11 @@ export default function TransactionModal({
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Transaction ID</label>
                   <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm">
-                    <Input
+                    <input
                       value={formData.transaction_reference || ''}
                       onChange={e => handleFieldChange('transaction_reference', e.target.value)}
-                      placeholder="Enter transaction reference"
-                      className="border-0 bg-transparent p-0 text-gray-900 placeholder-gray-400 focus:ring-0 flex-1 min-w-0"
+                      placeholder="Will be auto-generated on save"
+                      className="border-0 bg-transparent p-0 text-sm text-gray-900 placeholder-gray-400 focus:ring-0 focus:outline-none flex-1 min-w-0 font-mono"
                     />
                     {formData.transaction_reference && (
                       <button

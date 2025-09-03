@@ -17,36 +17,9 @@ export function ActivityEditorWrapper({ activityId, children }: ActivityEditorWr
   const router = useRouter();
 
   useEffect(() => {
-    if (!activityId) {
-      setLoading(false);
-      return;
-    }
-
-    const checkActivity = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('activities')
-          .select('id')
-          .eq('id', activityId)
-          .single();
-
-        if (error || !data) {
-          setError('Activity not found');
-          setTimeout(() => {
-            router.push('/activities');
-          }, 2000);
-          return;
-        }
-
-        // Activity exists, proceed with loading
-        setLoading(false);
-      } catch (err) {
-        console.error('Error checking activity:', err);
-        setError('Failed to load activity');
-      }
-    };
-
-    checkActivity();
+    // OPTIMIZATION: Remove redundant activity existence check
+    // The main activity loading will handle not found errors
+    setLoading(false);
   }, [activityId, router]);
 
   if (error) {

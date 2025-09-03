@@ -518,7 +518,7 @@ export default function TransactionForm({
                 </PopoverTrigger>
                 <PopoverContent className="w-[320px] p-0">
                   <Command>
-                    <CommandInput placeholder="Search transaction type..." />
+                    <CommandInput placeholder="Search transaction type..." autoFocus />
                     <CommandList>
                       <CommandGroup>
                         {COMMONLY_USED_TRANSACTION_TYPES.map(option => (
@@ -1043,7 +1043,7 @@ export default function TransactionForm({
                 }
               }}
               placeholder="Internal reference number"
-              className="bg-white"
+              className="bg-white border-gray-200 h-10"
             />
             {renderFieldIcon("transaction_reference")}
           </div>

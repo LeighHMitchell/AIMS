@@ -93,7 +93,7 @@ export function AppFeatureSearchableSelect({
           </button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[400px] p-0" 
+          className="w-[var(--radix-popover-trigger-width)] min-w-[400px] p-0" 
           side={side} 
           align={align}
           style={{ maxHeight: '400px' }}
@@ -106,6 +106,7 @@ export function AppFeatureSearchableSelect({
                 className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-0 focus:ring-0"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
               />
               {searchQuery && (
                 <button

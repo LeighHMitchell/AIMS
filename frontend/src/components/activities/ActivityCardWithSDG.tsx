@@ -442,7 +442,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                   variant={activity.publication_status === 'published' ? 'success' : 'secondary'}
                   className="text-xs font-medium leading-tight"
                 >
-                  {activity.publication_status === 'published' ? 'Published' : 'Draft'}
+                  {activity.publication_status === 'published' ? 'Published' : 'Unpublished'}
                 </Badge>
               )}
               {activity.default_aid_modality && (
@@ -504,7 +504,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-700">Default Tied Status</span>
                 <span className="text-sm text-gray-900">
-                  {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status) : 'Not reported'}
+                  {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status) : 'Not reported'}
                 </span>
               </div>
 
