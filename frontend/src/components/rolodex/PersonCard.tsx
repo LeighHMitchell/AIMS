@@ -414,13 +414,13 @@ export function PersonCard({
             )}
 
             {/* Role Badge - only for Users (but not super users since they have their own badge) */}
-            {person.source === 'user' && person.role && !isPersonSuperUser && roleInfo.label && (
+            {person.source === 'user' && person.role && !isPersonSuperUser && (
               <div className="flex items-center space-x-2 flex-wrap">
                 <Badge 
-                  variant="outline" 
-                  className={`text-xs ${roleInfo.color}`}
+                  variant={getRoleBadgeVariant(person.role)} 
+                  className="text-xs"
                 >
-                  {roleInfo.label}
+                  {getRoleDisplayLabel(person.role)}
                 </Badge>
               </div>
             )}

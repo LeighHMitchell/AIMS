@@ -206,7 +206,7 @@ export default function ActivityDetailPage() {
     try {
       if (showLoading) setLoading(true)
       // OPTIMIZATION: Use cached activity data
-      const found = await fetchActivityWithCache(params.id)
+      const found = await fetchActivityWithCache(Array.isArray(params.id) ? params.id[0] : params.id)
       if (found) {
           console.log('[ACTIVITY DETAIL DEBUG] Found activity:', found);
           console.log('[ACTIVITY DETAIL DEBUG] Activity contacts:', found.contacts);

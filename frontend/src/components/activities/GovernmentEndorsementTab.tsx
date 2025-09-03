@@ -331,8 +331,8 @@ export default function GovernmentEndorsementTab({
                 <HelpTextTooltip content="Official date when the agreement, MOU, or government endorsement takes effect" />
               </Label>
               <EnhancedDatePicker
-                value={formData.effective_date || ''}
-                onChange={(date) => handleFieldChange('effective_date', date)}
+                value={formData.effective_date ? new Date(formData.effective_date) : undefined}
+                onChange={(date) => handleFieldChange('effective_date', date?.toISOString().split('T')[0])}
                 placeholder="Select effective date"
                 disabled={!canEdit}
               />
@@ -344,8 +344,8 @@ export default function GovernmentEndorsementTab({
                 <HelpTextTooltip content="Date when the government actually reviewed and approved the activity" />
               </Label>
               <EnhancedDatePicker
-                value={formData.validation_date || ''}
-                onChange={(date) => handleFieldChange('validation_date', date)}
+                value={formData.validation_date ? new Date(formData.validation_date) : undefined}
+                onChange={(date) => handleFieldChange('validation_date', date?.toISOString().split('T')[0])}
                 placeholder="Select validation date"
                 disabled={!canEdit}
               />
@@ -468,8 +468,8 @@ export default function GovernmentEndorsementTab({
                 <HelpTextTooltip content="Date when the document was created or signed" />
               </Label>
               <EnhancedDatePicker
-                value={formData.document_date || ''}
-                onChange={(date) => handleFieldChange('document_date', date)}
+                value={formData.document_date ? new Date(formData.document_date) : undefined}
+                onChange={(date) => handleFieldChange('document_date', date?.toISOString().split('T')[0])}
                 placeholder="Select document date"
                 disabled={!canEdit}
               />

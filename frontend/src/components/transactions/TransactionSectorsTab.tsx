@@ -105,7 +105,7 @@ export default function TransactionSectorsTab({
   
   // Format amount for display
   const formatAmount = (amountMinor: number) => {
-    return formatCurrency(amountMinor / 100, transactionCurrency);
+    return formatCurrency(amountMinor / 100);
   };
   
   // Calculate computed amount for a percentage
@@ -322,13 +322,13 @@ export default function TransactionSectorsTab({
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Total Amount:</span>
                   <span className="font-mono">
-                    {formatCurrency(validation?.totalAmount || 0, transactionCurrency)}
+                    {formatCurrency(validation?.totalAmount || 0)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Transaction Value:</span>
                   <span className="font-mono">
-                    {formatCurrency(transactionValue, transactionCurrency)}
+                    {formatCurrency(transactionValue)}
                   </span>
                 </div>
               </div>

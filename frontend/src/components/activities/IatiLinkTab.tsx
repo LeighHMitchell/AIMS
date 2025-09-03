@@ -146,12 +146,12 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
       missing: Info
     };
 
-    const Icon = statusIcons[field.status];
+    const Icon = statusIcons[field.status as keyof typeof statusIcons];
 
     return (
       <div className="flex items-center justify-between p-3 rounded-lg border bg-gray-50">
         <div className="flex items-center gap-3">
-          <Icon className={`h-4 w-4 ${statusColors[field.status]}`} />
+          <Icon className={`h-4 w-4 ${statusColors[field.status as keyof typeof statusColors]}`} />
           <div>
             <p className="font-medium text-sm">{field.field}</p>
             <div className="flex gap-4 mt-1">

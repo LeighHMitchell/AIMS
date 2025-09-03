@@ -227,7 +227,7 @@ export async function GET(
                     .from('activity_contributors')
                     .update({ nominated_by_name: userName })
                     .eq('id', contributor.id)
-                    .then(({ error }) => {
+                    .then(({ error }: { error: any }) => {
                       if (error) {
                         console.error('[Contributors API GET] Error updating contributor:', error);
                       } else {

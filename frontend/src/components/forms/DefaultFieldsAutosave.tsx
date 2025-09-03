@@ -336,7 +336,7 @@ export function DefaultFieldsAutosave({
                 <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies. This provides clarity on how resources reach the implementing body." />
                 <SaveIndicator 
                   isSaving={disbursementChannelAutosave.state.isSaving}
-                  isSaved={!!disbursementChannelAutosave.state.lastSaved || fieldCompletionStatus.defaultDisbursementChannel}
+                  isSaved={!!disbursementChannelAutosave.state.lastSaved || false}
                   size="sm"
                   className=""
                 />

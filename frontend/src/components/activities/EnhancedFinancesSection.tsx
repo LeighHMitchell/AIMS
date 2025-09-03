@@ -174,7 +174,7 @@ export function EnhancedFinancesSection({
     try {
       await updateSupabaseField('defaultModalityOverride', checked);
     } catch (error) {
-      console.warn('[EnhancedFinancesSection] Could not save modality override to database:', error.message);
+      console.warn('[EnhancedFinancesSection] Could not save modality override to database:', error instanceof Error ? error.message : error);
     }
     
     // Update local state
@@ -190,7 +190,7 @@ export function EnhancedFinancesSection({
       try {
         await updateSupabaseField('defaultModality', calculatedModality);
       } catch (error) {
-        console.warn('[EnhancedFinancesSection] Could not save calculated modality to database:', error.message);
+        console.warn('[EnhancedFinancesSection] Could not save calculated modality to database:', error instanceof Error ? error.message : error);
       }
       onDefaultsChange?.('defaultModality', calculatedModality);
     } else if (!checked) {
@@ -198,7 +198,7 @@ export function EnhancedFinancesSection({
       try {
         await updateSupabaseField('defaultModality', null);
       } catch (error) {
-        console.warn('[EnhancedFinancesSection] Could not clear modality in database:', error.message);
+        console.warn('[EnhancedFinancesSection] Could not clear modality in database:', error instanceof Error ? error.message : error);
       }
       onDefaultsChange?.('defaultModality', null);
     }
@@ -415,14 +415,14 @@ export function EnhancedFinancesSection({
         <TabsContent value="transactions">
           <TransactionsManager
             activityId={activityId || "new"}
-            activityPartnerId={general.otherIdentifier}
+            activityPartnerId={general.otherIdentifier || undefined}
             transactions={transactions}
-            onTransactionsChange={onTransactionsChange}
-            defaultFinanceType={general.defaultFinanceType}
-            defaultAidType={general.defaultAidType}
-            defaultCurrency={general.defaultCurrency}
-            defaultTiedStatus={general.defaultTiedStatus}
-            defaultFlowType={general.defaultFlowType}
+            onTransactionsChange={onTransactionsChange!}
+            defaultFinanceType={general.defaultFinanceType || undefined}
+            defaultAidType={general.defaultAidType || undefined}
+            defaultCurrency={general.defaultCurrency || undefined}
+            defaultTiedStatus={general.defaultTiedStatus || undefined}
+            defaultFlowType={general.defaultFlowType || undefined}
           />
         </TabsContent>
 

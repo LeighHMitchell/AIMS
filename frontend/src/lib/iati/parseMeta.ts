@@ -49,7 +49,7 @@ export async function extractIatiMeta(file: File): Promise<IatiMeta> {
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: '',
-      ignoreNamespace: false,
+      // ignoreNamespace: false,
       allowBooleanAttributes: true,
       parseAttributeValue: true,
       parseTagValue: true,

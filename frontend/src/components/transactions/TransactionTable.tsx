@@ -689,7 +689,7 @@ export function TransactionTable({
                               <span className="font-semibold text-gray-800">Tied Status:</span>
                             </div>
                             <span className="block text-sm text-gray-600 pl-6">
-                              {transaction.tied_status ? (TIED_STATUS_LABELS[transaction.tied_status] || transaction.tied_status) : 'Not specified'}
+                              {transaction.tied_status ? (TIED_STATUS_LABELS[transaction.tied_status as keyof typeof TIED_STATUS_LABELS] || transaction.tied_status) : 'Not specified'}
                             </span>
                           </div>
                           

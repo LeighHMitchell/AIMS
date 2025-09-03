@@ -307,8 +307,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       if (user?.organisation || user?.organization?.name) {
         try {
           // Query organizations table to get IATI org ID
-          const orgName = user?.organisation || user?.organization?.name;
-          const response = await fetch(`/api/organizations?search=${encodeURIComponent(orgName)}`);
+          const orgName = user?.organisation || user?.organization?.name || '';
+          const response = await fetch(`/api/organizations?search=${encodeURIComponent(orgName || '')}`);
           
           if (response.ok) {
             const data = await response.json();
