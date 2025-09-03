@@ -225,15 +225,18 @@ interface SimpleMapSelectorProps {
 
 // Map events component
 function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
-  // Always call hooks first
-  const map = useMapEventsHook ? useMapEventsHook({
+  // Early return if not available - before any hook calls
+  if (!useMapEventsHook || typeof window === 'undefined') {
+    return null;
+  }
+  
+  // Now we can safely call the hook
+  const map = useMapEventsHook({
     click(e: any) {
-      if (typeof window !== 'undefined') {
-        const { lat, lng } = e.latlng;
-        onMapClick(lat, lng);
-      }
+      const { lat, lng } = e.latlng;
+      onMapClick(lat, lng);
     },
-  }) : null;
+  });
   
   return null;
 }
@@ -241,11 +244,16 @@ function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => v
 // Map initializer to ensure proper setup
 // Component to handle map reset
 function MapReset({ shouldReset, onResetComplete }: { shouldReset: boolean; onResetComplete: () => void }) {
-  // Always call hooks first
-  const map = useMapEventsHook ? useMapEventsHook({}) : null;
+  // Early return if not available - before any hook calls
+  if (!useMapEventsHook || typeof window === 'undefined') {
+    return null;
+  }
+  
+  // Now we can safely call hooks
+  const map = useMapEventsHook({});
 
   useEffect(() => {
-    if (!map || !shouldReset || !useMapEventsHook || typeof window === 'undefined') return;
+    if (!map || !shouldReset) return;
     
     console.log('Resetting map view to Myanmar');
     map.setView([19.5, 96.0], 6);
@@ -257,11 +265,16 @@ function MapReset({ shouldReset, onResetComplete }: { shouldReset: boolean; onRe
 
 // Component to fit map bounds to locations
 function MapBounds({ locations }: { locations: Location[] }) {
-  // Always call hooks first
-  const map = useMapEventsHook ? useMapEventsHook({}) : null;
+  // Early return if not available - before any hook calls
+  if (!useMapEventsHook || typeof window === 'undefined') {
+    return null;
+  }
+  
+  // Now we can safely call hooks
+  const map = useMapEventsHook({});
 
   useEffect(() => {
-    if (!map || !locations.length || !useMapEventsHook || typeof window === 'undefined') return;
+    if (!map || !locations.length) return;
     
     const validLocations = locations.filter(loc => 
       loc.latitude && loc.longitude && 
@@ -306,11 +319,16 @@ function MapBounds({ locations }: { locations: Location[] }) {
 }
 
 function MapInitializer() {
-  // Always call hooks first
-  const map = useMapEventsHook ? useMapEventsHook({}) : null;
+  // Early return if not available - before any hook calls
+  if (!useMapEventsHook || typeof window === 'undefined') {
+    return null;
+  }
+  
+  // Now we can safely call hooks
+  const map = useMapEventsHook({});
 
   useEffect(() => {
-    if (map && useMapEventsHook && typeof window !== 'undefined') {
+    if (map) {
       console.log('🔧 MapInitializer: Forcing interaction setup...');
       
       // Force enable all interactions
@@ -354,12 +372,17 @@ function MapInitializer() {
 
 // Heatmap component
 function HeatmapLayer({ locations }: { locations: Location[] }) {
-  // Always call hooks first
-  const map = useMapEventsHook ? useMapEventsHook({}) : null;
+  // Early return if not available - before any hook calls
+  if (!useMapEventsHook || typeof window === 'undefined') {
+    return null;
+  }
+  
+  // Now we can safely call hooks
+  const map = useMapEventsHook({});
   const heatLayerRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!map || !useMapEventsHook || typeof window === 'undefined') return;
+    if (!map) return;
     
     // Load leaflet.heat plugin if available
     if (typeof window !== 'undefined') {
@@ -435,23 +458,19 @@ function HeatmapLayer({ locations }: { locations: Location[] }) {
 
 // Map thumbnail component for location cards
 function MapThumbnail({ location, mapLayer = 'streets' }: { location: Location; mapLayer?: MapLayerType }) {
+  // All hook calls must come first
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  if (!location.latitude || !location.longitude) {
-    console.log('MapThumbnail: Missing coordinates for location:', location.location_name);
-    return (
-      <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
-          <MapPin className="h-6 w-6 text-gray-400" />
-      </div>
-    );
-  }
-
   // Use memoized URLs to prevent unnecessary re-renders
   const mapUrls = useMemo(() => {
-    const lat = location.latitude!;
-    const lng = location.longitude!;
+    if (!location.latitude || !location.longitude) {
+      return { primaryUrl: '', fallbackUrl: '' };
+    }
+    
+    const lat = location.latitude;
+    const lng = location.longitude;
     
     // Primary: Use Mapbox static API for all map types (more reliable)
     const mapboxToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
@@ -493,6 +512,16 @@ function MapThumbnail({ location, mapLayer = 'streets' }: { location: Location; 
     setHasError(false);
     setRetryCount(0);
   }, [location.latitude, location.longitude, mapLayer]);
+
+  // Early return after all hooks are called
+  if (!location.latitude || !location.longitude) {
+    console.log('MapThumbnail: Missing coordinates for location:', location.location_name);
+    return (
+      <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
+          <MapPin className="h-6 w-6 text-gray-400" />
+      </div>
+    );
+  }
 
   console.log('MapThumbnail: Rendering thumbnail for:', location.location_name, 'with layer:', mapLayer);
 

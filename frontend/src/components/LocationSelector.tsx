@@ -198,14 +198,17 @@ const MYANMAR_GEOJSON = {
 
 // Map events component
 function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
-  // Always call hooks first - no conditions
-  const map = useMapEventsHook ? useMapEventsHook({
+  // Early return if not available - before any hook calls
+  if (!useMapEventsHook || typeof window === 'undefined') {
+    return null;
+  }
+  
+  // Now we can safely call the hook
+  const map = useMapEventsHook({
     click(e: any) {
-      if (typeof window !== 'undefined') {
-        onMapClick(e.latlng.lat, e.latlng.lng);
-      }
+      onMapClick(e.latlng.lat, e.latlng.lng);
     },
-  }) : null;
+  });
   
   return null;
 }
