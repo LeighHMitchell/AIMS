@@ -3,6 +3,28 @@ import { setFieldSaved, isFieldSaved, clearFieldSaved } from '@/utils/persistent
 import { toast } from 'sonner';
 import { invalidateActivityCache } from '@/lib/activity-cache';
 
+// Utility function to check if HTML content is effectively empty
+function isEmptyHtmlContent(content: any): boolean {
+  if (!content) return true;
+  if (typeof content !== 'string') return false;
+  
+  // Remove all HTML tags and check if there's actual text content
+  const textOnly = content.replace(/<[^>]*>/g, '').trim();
+  
+  // Also handle common "empty" rich text patterns
+  const emptyPatterns = [
+    '', // completely empty
+    '<p></p>', // empty paragraph
+    '<p><br></p>', // paragraph with line break
+    '<p> </p>', // paragraph with just space
+    '<p><br/></p>', // paragraph with self-closing br
+    '<div></div>', // empty div
+    '<div><br></div>', // div with line break
+  ];
+  
+  return textOnly === '' || emptyPatterns.includes(content.trim());
+}
+
 // Global lock to prevent multiple simultaneous activity creations
 const globalActivityCreationLock = {
   isCreating: false,
@@ -44,7 +66,8 @@ export function useFieldAutosave(
 
   // Add persistent saved state
   const [isPersistentlySaved, setIsPersistentlySaved] = useState(() => {
-    if (activityId && userId) {
+    // Don't check saved state for NEW activities to prevent false positives
+    if (activityId && activityId !== 'NEW' && userId) {
       return isFieldSaved(activityId, userId, fieldName);
     }
     return false;
@@ -64,6 +87,24 @@ export function useFieldAutosave(
   const saveQueueRef = useRef<any[]>([]);
   const retryCountRef = useRef(0);
   const isUserInitiatedRef = useRef(false);
+
+  // Reset persistent saved state when switching to NEW activity
+  useEffect(() => {
+    if (activityId === 'NEW' && isPersistentlySaved) {
+      console.log(`[FieldAutosave] Resetting persistent saved state for NEW activity - field: ${fieldName}`);
+      setIsPersistentlySaved(false);
+    }
+    
+    // Clear any stale localStorage entries for NEW activities
+    if (activityId === 'NEW' && userId) {
+      const savedKey = `saved_NEW_${userId}_${fieldName}`;
+      if (typeof window !== 'undefined' && localStorage.getItem(savedKey)) {
+        console.log(`[FieldAutosave] Clearing stale localStorage entry: ${savedKey}`);
+        localStorage.removeItem(savedKey);
+        setIsPersistentlySaved(false);
+      }
+    }
+  }, [activityId, fieldName, isPersistentlySaved, userId]);
 
   // Enhanced save function with proper queue handling and retry logic
   const performFieldSave = useCallback(async (value: any, isRetry = false) => {
@@ -214,9 +255,17 @@ export function useFieldAutosave(
       }
 
       // Set persistent saved flag
-      if (activityId && userId) {
-        setFieldSaved(activityId, userId, fieldName);
-        setIsPersistentlySaved(true);
+      // For NEW activities, the field that created the activity should also be marked as saved
+      if (userId) {
+        if (activityId && activityId !== 'NEW') {
+          // Regular field save with real activity ID
+          setFieldSaved(activityId, userId, fieldName);
+          setIsPersistentlySaved(true);
+        } else if (isNewActivity && responseData?.id) {
+          // NEW activity creation - use the returned activity ID
+          setFieldSaved(responseData.id, userId, fieldName);
+          setIsPersistentlySaved(true);
+        }
       }
 
       // Reset retry counter on successful save
@@ -449,6 +498,17 @@ export function useFieldAutosave(
   // Enhanced trigger function with better handling of rapid typing
   const triggerFieldSave = useCallback((value: any, userInitiated = true) => {
     if (!enabled) return;
+
+    // Skip saving for effectively empty content (like <p></p> from rich text editors)
+    if (isEmptyHtmlContent(value)) {
+      console.log(`[FieldAutosave] Skipping save for ${fieldName} - content is effectively empty:`, value);
+      // Clear any existing saved state for empty content
+      if (activityId && activityId !== 'NEW' && userId) {
+        clearFieldSaved(activityId, userId, fieldName);
+      }
+      setIsPersistentlySaved(false);
+      return;
+    }
 
     console.log(`[FieldAutosave] triggerFieldSave called for ${fieldName} with value:`, value);
     console.log(`[FieldAutosave] Current state - isSaving: ${isSavingRef.current}, activityId: ${activityId}`);

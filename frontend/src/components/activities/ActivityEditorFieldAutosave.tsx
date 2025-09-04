@@ -146,6 +146,7 @@ export function ActivityEditorFieldAutosave({
           <LabelSaveIndicator
             isSaving={statusAutosave.state.isSaving}
             isSaved={statusAutosave.state.isPersistentlySaved}
+            hasValue={!!activity.activityStatus}
             className={fieldLockStatus?.isLocked ? 'text-gray-400' : 'text-gray-700'}
           >
             {!showOnlyStatus ? (

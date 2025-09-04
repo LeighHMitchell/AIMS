@@ -62,18 +62,21 @@ export function FieldSaveIndicator({
 export function LabelSaveIndicator({ 
   isSaving, 
   isSaved,
+  hasValue = false,
   children,
-  className = "",
-  hasValue = false
+  className = ""
 }: {
   isSaving: boolean;
   isSaved: boolean;
+  hasValue?: boolean;
   children: React.ReactNode;
   className?: string;
-  hasValue?: boolean;
 }) {
-  // Show green tick if actively saved OR if field has existing data
-  const showGreenTick = isSaved || hasValue;
+  // Show green tick when:
+  // 1. Field has been saved AND still has content (isSaved && hasValue)
+  // 2. Field has prefilled content but not yet saved (!isSaved && hasValue)
+  // This ensures that if a user deletes content, the tick disappears even if it was previously saved
+  const showGreenTick = hasValue;
   
   return (
     <label className={`text-sm font-medium flex items-center ${className}`}>

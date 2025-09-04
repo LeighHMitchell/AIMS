@@ -509,21 +509,21 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     }
   }, [titleAutosave.state, general.id]);
 
-  // Show initial toast when component mounts if no title exists
+  // Show initial toast when component mounts if activity not created
   useEffect(() => {
-    if (!general.title?.trim() && !hasShownInitialToast.current) {
-      toast.info("Start by entering an Activity Title to unlock all form fields!", {
+    if (!general.id && !hasShownInitialToast.current) {
+      toast.info("Start by entering an Activity Title to create the activity and unlock all form fields!", {
         position: 'top-right',
         duration: 5000,
       });
       hasShownInitialToast.current = true;
     }
-  }, [general.title]);
+  }, [general.id]);
 
   // Handler for when users click on disabled fields
   const handleDisabledFieldClick = (fieldName: string) => {
-    if (!general.title?.trim()) {
-      toast.warning(`Enter an Activity Title first to unlock the ${fieldName} field`, {
+    if (!general.id) {
+      toast.warning(`Please wait for the activity to be created to unlock the ${fieldName} field`, {
         position: 'top-right',
         duration: 3000,
       });
@@ -538,8 +538,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={bannerAutosave.state.isSaving}
             isSaved={bannerAutosave.state.isPersistentlySaved}
-            hasValue={!!general.banner}
-            className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'} mb-2`}
+            
+            className={`${!general.id ? 'text-gray-400' : 'text-gray-700'} mb-2`}
           >
             <div className="flex items-center gap-2">
               Activity Banner
@@ -549,15 +549,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             </div>
           </LabelSaveIndicator>
           <div 
-            className={`flex-1 ${!general.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={() => !general.title?.trim() && handleDisabledFieldClick('Activity Banner')}
+            className={`flex-1 ${!general.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={() => !general.id && handleDisabledFieldClick('Activity Banner')}
           >
             <BannerUpload
               currentBanner={general.banner}
               onBannerChange={banner => {
-                if (general.title?.trim()) {
+                if (general.id) {
                   setGeneral((g: any) => ({ ...g, banner }));
-                  if (general.id) bannerAutosave.triggerFieldSave(banner);
+                  bannerAutosave.triggerFieldSave(banner);
                 }
               }}
               activityId={general.id || "new"}
@@ -571,8 +571,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={iconAutosave.state.isSaving}
             isSaved={iconAutosave.state.isPersistentlySaved}
-            hasValue={!!general.icon}
-            className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'} mb-2`}
+            
+            className={`${!general.id ? 'text-gray-400' : 'text-gray-700'} mb-2`}
           >
             <div className="flex items-center gap-2">
               Activity Icon/Logo
@@ -582,15 +582,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             </div>
           </LabelSaveIndicator>
           <div 
-            className={`flex-1 ${!general.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={() => !general.title?.trim() && handleDisabledFieldClick('Activity Icon/Logo')}
+            className={`flex-1 ${!general.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={() => !general.id && handleDisabledFieldClick('Activity Icon/Logo')}
           >
             <IconUpload
               currentIcon={general.icon}
               onIconChange={icon => {
-                if (general.title?.trim()) {
+                if (general.id) {
                   setGeneral((g: any) => ({ ...g, icon }));
-                  if (general.id) iconAutosave.triggerFieldSave(icon);
+                  iconAutosave.triggerFieldSave(icon);
                 }
               }}
               activityId={general.id || "new"}
@@ -625,7 +625,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               value={general.title || ''}
               onChange={(e) => {
                 setGeneral((g: any) => ({ ...g, title: e.target.value }));
-                titleAutosave.triggerFieldSave(e.target.value);
+              }}
+              onBlur={(e) => {
+                if (e.target.value.trim()) {
+                  titleAutosave.triggerFieldSave(e.target.value);
+                }
               }}
               placeholder="Enter activity title"
               className="w-full"
@@ -642,7 +646,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             isSaving={acronymAutosave.state.isSaving}
             isSaved={acronymAutosave.state.isPersistentlySaved}
             hasValue={!!general.acronym?.trim()}
-            className={`${!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}`}
+            className={`${!general.id ? 'text-gray-400' : 'text-gray-700'}`}
           >
             <div className="flex items-center gap-2">
               Activity Acronym
@@ -652,8 +656,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             </div>
           </LabelSaveIndicator>
           <div 
-            className={`${!general.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={() => !general.title?.trim() && handleDisabledFieldClick('Activity Acronym')}
+            className={`${!general.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={() => !general.id && handleDisabledFieldClick('Activity Acronym')}
           >
             <Input
               id="acronym"
@@ -661,12 +665,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               onChange={(e) => {
                 if (general.title?.trim()) {
                   setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
-                  if (general.id) acronymAutosave.triggerFieldSave(e.target.value);
+                }
+              }}
+              onBlur={(e) => {
+                if (general.title?.trim() && general.id) {
+                  acronymAutosave.triggerFieldSave(e.target.value);
                 }
               }}
               placeholder="Enter acronym"
               className="w-full"
-              disabled={!general.title?.trim()}
+              disabled={!general.id}
             />
             {acronymAutosave.state.error && (
               <p className="text-xs text-red-600 mt-1">{acronymAutosave.state.error.toString()}</p>
@@ -694,7 +702,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             isSaving={activityIdAutosave.state.isSaving}
             isSaved={activityIdAutosave.state.isPersistentlySaved}
             hasValue={!!general.otherIdentifier?.trim()}
-            className={!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}
+            className={!general.id ? 'text-gray-400' : 'text-gray-700'}
           >
             <div className="flex items-center gap-2">
               Activity ID
@@ -724,8 +732,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               }}
               onClick={() => handleDisabledFieldClick('Activity ID')}
               placeholder="Enter your organization's activity ID"
-              disabled={!general.title?.trim()}
-              className={!general.title?.trim() ? 'bg-gray-50' : ''}
+              disabled={!general.id}
+              className={!general.id ? 'bg-gray-50' : ''}
             />
             {general.otherIdentifier && (
               <button
@@ -744,7 +752,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             isSaving={iatiIdentifierAutosave.state.isSaving}
             isSaved={iatiIdentifierAutosave.state.isPersistentlySaved}
             hasValue={!!general.iatiIdentifier?.trim()}
-            className={!general.title?.trim() ? 'text-gray-400' : 'text-gray-700'}
+            className={!general.id ? 'text-gray-400' : 'text-gray-700'}
           >
             <div className="flex items-center gap-2">
               IATI Identifier
@@ -774,8 +782,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               }}
               onClick={() => handleDisabledFieldClick('IATI Identifier')}
               placeholder="Enter IATI identifier"
-              disabled={!general.title?.trim()}
-              className={!general.title?.trim() ? 'bg-gray-50' : ''}
+              disabled={!general.id}
+              className={!general.id ? 'bg-gray-50' : ''}
             />
             {general.iatiIdentifier && (
               <button
@@ -834,7 +842,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <LabelSaveIndicator
           isSaving={descriptionAutosave.state.isSaving}
           isSaved={descriptionAutosave.state.isPersistentlySaved}
-          hasValue={!!general.description?.trim()}
+          hasValue={!!general.description && general.description.replace(/<[^>]*>/g, '').trim() !== ''}
           className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
         >
                       <div className="flex items-center gap-2">
@@ -1674,7 +1682,7 @@ function NewActivityPageContent() {
       created_by_org_name: "",
       created_by_org_acronym: "",
       collaborationType: "",
-      activityStatus: "",
+      activityStatus: "1", // Default to Pipeline (IATI code 1)
       activityScope: "4", // Default to National
       language: "en", // Default to English
       defaultAidType: "",
@@ -2134,7 +2142,7 @@ function NewActivityPageContent() {
         created_by_org_name: user?.organisation || user?.organization?.name || "",
         created_by_org_acronym: "",
         collaborationType: "",
-        activityStatus: "",
+        activityStatus: "1", // Default to Pipeline (IATI code 1)
         defaultAidType: "",
         defaultFinanceType: "",
         defaultCurrency: "",
