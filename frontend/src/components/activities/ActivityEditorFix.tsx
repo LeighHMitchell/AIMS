@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 
 // Fixed autosave implementation for activity editor
-export function createActivityAutosave() {
+export function useActivityAutosave() {
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoSavePromiseRef = useRef<Promise<void> | null>(null);
   
