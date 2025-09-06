@@ -44,6 +44,12 @@ export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavPr
 
   const navItems = [
     {
+      name: "Aid Map",
+      href: "/aid-map",
+      icon: Map,
+      show: true
+    },
+    {
       name: "Dashboard",
       href: "/dashboard",
       icon: Home,
