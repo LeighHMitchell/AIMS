@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MainLayout } from '@/components/layout/main-layout'
+import { SearchResultsSkeleton } from '@/components/ui/skeleton-loader'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 
@@ -355,9 +356,7 @@ function SearchPageContent() {
 
             <TabsContent value={activeTab} className="space-y-4">
               {loading && results.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-gray-500">Searching...</div>
-                </div>
+                <SearchResultsSkeleton />
               ) : filteredResults.length === 0 && !loading ? (
                 <div className="text-center py-12">
                   <div className="text-gray-500">

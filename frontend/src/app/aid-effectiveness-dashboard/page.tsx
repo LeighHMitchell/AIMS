@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { AnalyticsSkeleton } from '@/components/ui/skeleton-loader'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
@@ -212,15 +213,7 @@ export default function AidEffectivenessDashboard() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-64" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
-          <Skeleton className="h-96" />
-        </div>
+        <AnalyticsSkeleton />
       </MainLayout>
     )
   }

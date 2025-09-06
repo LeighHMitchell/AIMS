@@ -1,15 +1,25 @@
 "use client"
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { MapSkeleton } from '@/components/ui/skeleton-loader'
 import { AidFlowMap } from '@/components/analytics/AidFlowMap'
 
 export default function AidFlowMapPage() {
   return (
     <MainLayout>
-      <div className="container mx-auto py-6">
-        <AidFlowMap height={800} />
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Aid Flow Map</h1>
+        <p className="text-gray-600">
+          Interactive visualization of aid flows between donors and recipients
+        </p>
       </div>
+      
+      <Suspense fallback={<MapSkeleton height="800px" />}>
+        <div className="container mx-auto py-6">
+          <AidFlowMap height={800} />
+        </div>
+      </Suspense>
     </MainLayout>
   )
 } 

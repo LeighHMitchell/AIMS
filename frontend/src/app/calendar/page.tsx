@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MainLayout } from '@/components/layout/main-layout'
+import { CalendarSkeleton } from '@/components/ui/skeleton-loader'
 import { EventCreateModal } from '@/components/calendar/EventCreateModal'
 import { supabase } from '@/lib/supabase'
 
@@ -108,11 +109,7 @@ export default function CalendarPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="container mx-auto p-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          </div>
-        </div>
+        <CalendarSkeleton />
       </MainLayout>
     )
   }

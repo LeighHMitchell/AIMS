@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { FAQSkeleton } from '@/components/ui/skeleton-loader'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -320,16 +321,7 @@ export default function FAQPage() {
           {/* FAQ List */}
           <div className="space-y-4">
             {loading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardHeader>
-                      <div className="h-6 bg-muted rounded w-3/4"></div>
-                      <div className="h-4 bg-muted rounded w-1/4 mt-2"></div>
-                    </CardHeader>
-                  </Card>
-                ))}
-              </div>
+              <FAQSkeleton />
             ) : error ? (
               <Card>
                 <CardContent className="p-8 text-center">

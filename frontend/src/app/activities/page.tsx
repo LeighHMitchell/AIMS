@@ -313,6 +313,7 @@ function ActivitiesPageContent() {
   
   // Track if we've ever successfully loaded data to prevent flash of empty state
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Use optimization mode to get conditional image loading
   const usingOptimization = enableOptimization;
@@ -607,9 +608,17 @@ function ActivitiesPageContent() {
   // Track when we've successfully loaded data at least once
   useEffect(() => {
     if (!loading && !userLoading) {
-      setHasLoadedOnce(true);
+      // Add a small delay on initial load to ensure skeleton shows
+      if (isInitialLoad) {
+        setTimeout(() => {
+          setHasLoadedOnce(true);
+          setIsInitialLoad(false);
+        }, 500);
+      } else {
+        setHasLoadedOnce(true);
+      }
     }
-  }, [loading, userLoading]);
+  }, [loading, userLoading, isInitialLoad]);
 
   // Don't refetch on filter changes - we do client-side filtering
   // Only refetch if we need fresh data
@@ -1064,7 +1073,7 @@ function ActivitiesPageContent() {
       
 
       {/* Activities Content */}
-      {loading || userLoading || !hasLoadedOnce || totalActivities === 0 ? (
+      {loading || userLoading || !hasLoadedOnce || isInitialLoad ? (
         <ActivityListSkeleton />
       ) : error ? (
         <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
@@ -1082,9 +1091,17 @@ function ActivitiesPageContent() {
             </div>
           </div>
         </div>
-      ) : filterStatus !== "all" || filterValidation !== "all" ? (
+      ) : totalActivities === 0 ? (
         <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
-          <div className="text-slate-500">No matching activities found</div>
+          <div className="space-y-4">
+            <div className="text-slate-500">No activities found</div>
+            <p className="text-sm text-slate-400">
+              {filterStatus !== "all" || filterValidation !== "all" ? 
+                "Try adjusting your filters to see more results." : 
+                "There are no activities in the system yet."
+              }
+            </p>
+          </div>
         </div>
       ) : viewMode === 'table' ? (
         <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
