@@ -129,29 +129,29 @@ export function ExternalPublisherModal({
   // No longer need MergePicker - merge now uses current activity automatically
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ExternalLink className="h-5 w-5" />
-            {iatiImportStrings.modalTitle}
-          </DialogTitle>
-          <DialogDescription>
-            This activity is reported by a different organisation. Choose how you'd like to handle it.
-          </DialogDescription>
-        </DialogHeader>
+    <TooltipProvider delayDuration={500}>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ExternalLink className="h-5 w-5" />
+              {iatiImportStrings.modalTitle}
+            </DialogTitle>
+            <DialogDescription>
+              This activity is reported by a different organisation. Choose how you'd like to handle it.
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* Summary Information - 3 Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* Source Publisher */}
-          <Card className="p-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  {iatiImportStrings['summary.reportingOrg']}
-                </h3>
-                <TooltipProvider>
-                  <Tooltip>
+          {/* Summary Information - 3 Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Source Publisher */}
+            <Card className="p-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    {iatiImportStrings['summary.reportingOrg']}
+                  </h3>
+                  <Tooltip defaultOpen={false}>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
@@ -167,24 +167,22 @@ export function ExternalPublisherModal({
                       <p className="text-xs">{iatiImportStrings['summary.reportingOrg.help']}</p>
                     </TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold">{meta.reportingOrgName || 'Unknown Organisation'}</p>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{meta.reportingOrgRef}</span>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm font-semibold">{meta.reportingOrgName || 'Unknown Organisation'}</p>
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{meta.reportingOrgRef}</span>
-              </div>
-            </div>
-          </Card>
+            </Card>
 
-          {/* Your Organisation */}
-          <Card className="p-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  {iatiImportStrings['summary.yourOrg']}
-                </h3>
-                <TooltipProvider>
-                  <Tooltip>
+            {/* Your Organisation */}
+            <Card className="p-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    {iatiImportStrings['summary.yourOrg']}
+                  </h3>
+                  <Tooltip defaultOpen={false}>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
@@ -200,7 +198,6 @@ export function ExternalPublisherModal({
                       <p className="text-xs">{iatiImportStrings['summary.yourOrg.help']}</p>
                     </TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-semibold">{userOrgName || 'Unknown Organisation'}</p>
@@ -218,27 +215,25 @@ export function ExternalPublisherModal({
                 <h3 className="text-sm font-medium text-muted-foreground">
                   {iatiImportStrings['summary.iatiId']}
                 </h3>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 rounded-full"
-                        type="button"
-                        aria-label="Help"
-                      >
-                        <HelpCircle className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p className="text-xs">
-                        The activity identifier<br />
-                        from the imported XML.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip defaultOpen={false}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 rounded-full"
+                      type="button"
+                      aria-label="Help"
+                    >
+                      <HelpCircle className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-xs">
+                      The activity identifier<br />
+                      from the imported XML.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded break-all">{meta.iatiId}</span>
             </div>
@@ -276,26 +271,24 @@ export function ExternalPublisherModal({
                   <Label htmlFor="reference" className="text-base font-medium cursor-pointer flex items-center gap-2">
                     <ExternalLink className="h-4 w-4" />
                     {iatiImportStrings['option.reference.title']}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 w-5 p-0 rounded-full"
-                            type="button"
-                            aria-label="Show examples"
-                          >
-                            <HelpCircle className="h-3 w-3" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-sm">
-                          <p className="text-xs">
-                            {iatiImportStrings['option.reference.tooltip']}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip defaultOpen={false}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 rounded-full"
+                          type="button"
+                          aria-label="Show examples"
+                        >
+                          <HelpCircle className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-sm">
+                        <p className="text-xs">
+                          {iatiImportStrings['option.reference.tooltip']}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <p className="text-sm text-gray-600">
                     {iatiImportStrings['option.reference.help']}
@@ -312,26 +305,24 @@ export function ExternalPublisherModal({
                   <Label htmlFor="fork" className="text-base font-medium cursor-pointer flex items-center gap-2">
                     <GitBranch className="h-4 w-4" />
                     {iatiImportStrings['option.fork.title']}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 w-5 p-0 rounded-full"
-                            type="button"
-                            aria-label="Show examples"
-                          >
-                            <HelpCircle className="h-3 w-3" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-sm">
-                          <p className="text-xs">
-                            {iatiImportStrings['option.fork.tooltip']}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip defaultOpen={false}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 rounded-full"
+                          type="button"
+                          aria-label="Show examples"
+                        >
+                          <HelpCircle className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-sm">
+                        <p className="text-xs">
+                          {iatiImportStrings['option.fork.tooltip']}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <p className="text-sm text-gray-600">
                     {iatiImportStrings['option.fork.help']}
@@ -348,26 +339,24 @@ export function ExternalPublisherModal({
                   <Label htmlFor="merge" className="text-base font-medium cursor-pointer flex items-center gap-2">
                     <Merge className="h-4 w-4" />
                     {iatiImportStrings['option.merge.title']}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 w-5 p-0 rounded-full"
-                            type="button"
-                            aria-label="Show examples"
-                          >
-                            <HelpCircle className="h-3 w-3" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-sm">
-                          <p className="text-xs">
-                            {iatiImportStrings['option.merge.tooltip']}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip defaultOpen={false}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 rounded-full"
+                          type="button"
+                          aria-label="Show examples"
+                        >
+                          <HelpCircle className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-sm">
+                        <p className="text-xs">
+                          {iatiImportStrings['option.merge.tooltip']}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <p className="text-sm text-gray-600">
                     {iatiImportStrings['option.merge.help']}
@@ -415,5 +404,6 @@ export function ExternalPublisherModal({
         </div>
       </DialogContent>
     </Dialog>
+    </TooltipProvider>
   );
 }
