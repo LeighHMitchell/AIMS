@@ -96,6 +96,21 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('[AIMS-SIMPLE] Error fetching activities:', error);
       console.error('[AIMS-SIMPLE] Error details:', JSON.stringify(error, null, 2));
+      
+      // Check for HTML error responses (Supabase 520 errors)
+      if (error && error.message && typeof error.message === 'string' && 
+          error.message.includes('<!DOCTYPE html>')) {
+        console.error('[AIMS-SIMPLE] Detected Supabase connectivity issue (HTML error response)');
+        return NextResponse.json(
+          { 
+            error: 'Database connectivity issue detected',
+            details: 'Supabase is experiencing connection problems. Please try again later.',
+            code: 'DATABASE_CONNECTION_ERROR'
+          },
+          { status: 503 }
+        );
+      }
+      
       return NextResponse.json({ 
         error: 'Unable to fetch activities. Please try again later.' 
       }, { status: 500 });

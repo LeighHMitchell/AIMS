@@ -50,7 +50,6 @@ export async function GET(
         planned_end_date,
         actual_start_date,
         actual_end_date,
-        effective_date,
         iati_identifier,
         other_identifier,
         default_aid_type,
@@ -69,7 +68,11 @@ export async function GET(
         banner,
         icon,
         created_at,
-        updated_at
+        updated_at,
+        activity_sectors (
+          id, activity_id, sector_code, sector_name, percentage, level, 
+          category_code, category_name, type, created_at, updated_at
+        )
       `)
       .eq('id', id)
       .single();
@@ -84,32 +87,45 @@ export async function GET(
 
     console.log('[AIMS API] Basic activity data fetched successfully');
     
+    // Extract sectors
+    const sectors = activity.activity_sectors || [];
+    
     // Transform to match frontend format
     const transformedActivity = {
       id: activity.id,
       uuid: activity.id,
       title: activity.title_narrative,
+      title_narrative: activity.title_narrative,
       description: activity.description_narrative,
+      description_narrative: activity.description_narrative,
       acronym: activity.acronym,
       partnerId: activity.other_identifier,
       iatiId: activity.iati_identifier,
       iatiIdentifier: activity.iati_identifier,
+      iati_identifier: activity.iati_identifier,
       created_by_org_name: activity.created_by_org_name,
       created_by_org_acronym: activity.created_by_org_acronym,
       collaborationType: activity.collaboration_type,
+      collaboration_type: activity.collaboration_type,
       activityScope: activity.activity_scope,
+      activity_scope: activity.activity_scope,
       activityStatus: activity.activity_status,
+      activity_status: activity.activity_status,
       publicationStatus: activity.publication_status,
       submissionStatus: activity.submission_status,
       reportingOrgId: activity.reporting_org_id,
       plannedStartDate: activity.planned_start_date,
+      planned_start_date: activity.planned_start_date,
       plannedEndDate: activity.planned_end_date,
+      planned_end_date: activity.planned_end_date,
       actualStartDate: activity.actual_start_date,
+      actual_start_date: activity.actual_start_date,
       actualEndDate: activity.actual_end_date,
-      effectiveDate: activity.effective_date,
+      actual_end_date: activity.actual_end_date,
       defaultAidType: activity.default_aid_type,
       defaultFinanceType: activity.default_finance_type,
       defaultCurrency: activity.default_currency,
+      default_currency: activity.default_currency,
       defaultTiedStatus: activity.default_tied_status,
       defaultFlowType: activity.default_flow_type,
       defaultDisbursementChannel: activity.default_disbursement_channel,
@@ -119,7 +135,17 @@ export async function GET(
       banner: activity.banner,
       icon: activity.icon,
       createdAt: activity.created_at,
-      updatedAt: activity.updated_at
+      updatedAt: activity.updated_at,
+      sectors: sectors?.map((sector: any) => ({
+        id: sector.id,
+        code: sector.sector_code,
+        name: sector.sector_name,
+        percentage: sector.percentage ?? 0,
+        level: sector.level,
+        categoryCode: sector.category_code || sector.sector_code?.substring(0, 3),
+        categoryName: sector.category_name,
+        type: sector.type || 'secondary'
+      })) || []
     };
     
     console.log('[AIMS API] Basic activity transformed:', transformedActivity.title);

@@ -7,6 +7,9 @@ interface ParsedActivity {
   iatiIdentifier?: string;
   title?: string;
   description?: string;
+  descriptionObjectives?: string; // IATI description type="1"
+  descriptionTargetGroups?: string; // IATI description type="2"  
+  descriptionOther?: string; // IATI description type="4"
   activityStatus?: string;
   collaborationType?: string;
   activityScope?: string;
@@ -86,13 +89,43 @@ interface ParsedActivity {
   
   // Transactions
   transactions?: Array<{
+    ref?: string;
+    humanitarian?: boolean;
     type?: string;
     date?: string;
     value?: number;
     currency?: string;
+    valueDate?: string;
     description?: string;
-    providerOrg?: string;
-    receiverOrg?: string;
+    providerOrg?: {
+      ref?: string;
+      type?: string;
+      providerActivityId?: string;
+      name?: string;
+    };
+    receiverOrg?: {
+      ref?: string;
+      type?: string;
+      receiverActivityId?: string;
+      name?: string;
+    };
+    disbursementChannel?: string;
+    sector?: {
+      vocabulary?: string;
+      code?: string;
+    };
+    recipientCountry?: string;
+    recipientRegion?: {
+      code?: string;
+      vocabulary?: string;
+    };
+    flowType?: string;
+    financeType?: string;
+    aidType?: {
+      code?: string;
+      vocabulary?: string;
+    };
+    tiedStatus?: string;
   }>;
   
   // Policy Markers
@@ -132,6 +165,30 @@ interface ParsedActivity {
     };
     value?: number;
     currency?: string;
+    valueDate?: string;
+  }>;
+  
+  plannedDisbursements?: Array<{
+    type?: string;
+    period?: {
+      start?: string;
+      end?: string;
+    };
+    value?: number;
+    currency?: string;
+    valueDate?: string;
+    providerOrg?: {
+      ref?: string;
+      type?: string;
+      providerActivityId?: string;
+      name?: string;
+    };
+    receiverOrg?: {
+      ref?: string;
+      type?: string;
+      receiverActivityId?: string;
+      name?: string;
+    };
   }>;
 }
 
@@ -257,6 +314,36 @@ export class IATIXMLParser {
     // Description
     const description = activity.querySelector('description');
     result.description = this.extractNarrative(description);
+    
+    // IATI specific description types
+    const descriptions = activity.querySelectorAll('description');
+    console.log('[XML Parser] Found descriptions:', descriptions.length);
+    descriptions.forEach(desc => {
+      const type = desc.getAttribute('type');
+      const narrative = this.extractNarrative(desc);
+      console.log(`[XML Parser] Description type="${type || 'none'}", narrative="${narrative?.substring(0, 100)}..."`);
+      if (narrative) {
+        switch (type) {
+          case '1':
+            result.description = narrative; // General activity description
+            break;
+          case '2':
+            result.descriptionObjectives = narrative; // Objectives of the activity
+            break;
+          case '3':
+            result.descriptionTargetGroups = narrative; // Target groups / beneficiaries
+            break;
+          case '4':
+            result.descriptionOther = narrative; // Other description
+            break;
+          default:
+            // If no type attribute, treat as general description
+            if (!type && !result.description) {
+              result.description = narrative;
+            }
+        }
+      }
+    });
 
     // Activity Status
     const status = activity.querySelector('activity-status');
@@ -480,16 +567,71 @@ export class IATIXMLParser {
         const description = transaction.querySelector('description');
         const providerOrg = transaction.querySelector('provider-org');
         const receiverOrg = transaction.querySelector('receiver-org');
+        const disbursementChannel = transaction.querySelector('disbursement-channel');
+        const sector = transaction.querySelector('sector');
+        const recipientCountry = transaction.querySelector('recipient-country');
+        const recipientRegion = transaction.querySelector('recipient-region');
+        const flowType = transaction.querySelector('flow-type');
+        const financeType = transaction.querySelector('finance-type');
+        const aidType = transaction.querySelector('aid-type');
+        const tiedStatus = transaction.querySelector('tied-status');
 
-        result.transactions.push({
+        const transactionData: any = {
+          ref: transaction.getAttribute('ref') || undefined,
+          humanitarian: transaction.getAttribute('humanitarian') === '1' || transaction.getAttribute('humanitarian') === 'true',
           type: transactionType?.getAttribute('code') || undefined,
           date: transactionDate?.getAttribute('iso-date') || undefined,
           value: value?.textContent ? parseFloat(value.textContent) : undefined,
           currency: value?.getAttribute('currency') || undefined,
+          valueDate: value?.getAttribute('value-date') || undefined,
           description: this.extractNarrative(description),
-          providerOrg: this.extractNarrative(providerOrg),
-          receiverOrg: this.extractNarrative(receiverOrg),
-        });
+          disbursementChannel: disbursementChannel?.getAttribute('code') || undefined,
+          recipientCountry: recipientCountry?.getAttribute('code') || undefined,
+          flowType: flowType?.getAttribute('code') || undefined,
+          financeType: financeType?.getAttribute('code') || undefined,
+          tiedStatus: tiedStatus?.getAttribute('code') || undefined,
+        };
+
+        if (providerOrg) {
+          transactionData.providerOrg = {
+            ref: providerOrg.getAttribute('ref') || undefined,
+            type: providerOrg.getAttribute('type') || undefined,
+            providerActivityId: providerOrg.getAttribute('provider-activity-id') || undefined,
+            name: this.extractNarrative(providerOrg),
+          };
+        }
+
+        if (receiverOrg) {
+          transactionData.receiverOrg = {
+            ref: receiverOrg.getAttribute('ref') || undefined,
+            type: receiverOrg.getAttribute('type') || undefined,
+            receiverActivityId: receiverOrg.getAttribute('receiver-activity-id') || undefined,
+            name: this.extractNarrative(receiverOrg),
+          };
+        }
+
+        if (sector) {
+          transactionData.sector = {
+            vocabulary: sector.getAttribute('vocabulary') || undefined,
+            code: sector.getAttribute('code') || undefined,
+          };
+        }
+
+        if (recipientRegion) {
+          transactionData.recipientRegion = {
+            code: recipientRegion.getAttribute('code') || undefined,
+            vocabulary: recipientRegion.getAttribute('vocabulary') || undefined,
+          };
+        }
+
+        if (aidType) {
+          transactionData.aidType = {
+            code: aidType.getAttribute('code') || undefined,
+            vocabulary: aidType.getAttribute('vocabulary') || undefined,
+          };
+        }
+
+        result.transactions.push(transactionData);
       }
     }
 
@@ -567,6 +709,7 @@ export class IATIXMLParser {
           status: budget.getAttribute('status') || undefined,
           value: value?.textContent ? parseFloat(value.textContent) : undefined,
           currency: value?.getAttribute('currency') || undefined,
+          valueDate: value?.getAttribute('value-date') || undefined,
         };
 
         if (period) {
@@ -579,6 +722,56 @@ export class IATIXMLParser {
         }
 
         result.budgets.push(budgetData);
+      }
+    }
+
+    // === PLANNED DISBURSEMENTS ===
+    
+    const plannedDisbursements = activity.querySelectorAll('planned-disbursement');
+    if (plannedDisbursements.length > 0) {
+      result.plannedDisbursements = [];
+      for (let i = 0; i < plannedDisbursements.length; i++) {
+        const disbursement = plannedDisbursements[i];
+        const value = disbursement.querySelector('value');
+        const period = disbursement.querySelector('period');
+        const providerOrg = disbursement.querySelector('provider-org');
+        const receiverOrg = disbursement.querySelector('receiver-org');
+
+        const disbursementData: any = {
+          type: disbursement.getAttribute('type') || undefined,
+          value: value?.textContent ? parseFloat(value.textContent) : undefined,
+          currency: value?.getAttribute('currency') || undefined,
+          valueDate: value?.getAttribute('value-date') || undefined,
+        };
+
+        if (period) {
+          const periodStart = period.querySelector('period-start');
+          const periodEnd = period.querySelector('period-end');
+          disbursementData.period = {
+            start: periodStart?.getAttribute('iso-date') || undefined,
+            end: periodEnd?.getAttribute('iso-date') || undefined,
+          };
+        }
+
+        if (providerOrg) {
+          disbursementData.providerOrg = {
+            ref: providerOrg.getAttribute('ref') || undefined,
+            type: providerOrg.getAttribute('type') || undefined,
+            providerActivityId: providerOrg.getAttribute('provider-activity-id') || undefined,
+            name: this.extractNarrative(providerOrg),
+          };
+        }
+
+        if (receiverOrg) {
+          disbursementData.receiverOrg = {
+            ref: receiverOrg.getAttribute('ref') || undefined,
+            type: receiverOrg.getAttribute('type') || undefined,
+            receiverActivityId: receiverOrg.getAttribute('receiver-activity-id') || undefined,
+            name: this.extractNarrative(receiverOrg),
+          };
+        }
+
+        result.plannedDisbursements.push(disbursementData);
       }
     }
 
@@ -639,6 +832,9 @@ export class IATIXMLParser {
         hasIdentifier: !!activity.iatiIdentifier,
         hasTitle: !!activity.title,
         hasDescription: !!activity.description,
+        hasDescriptionObjectives: !!activity.descriptionObjectives,
+        hasDescriptionTargetGroups: !!activity.descriptionTargetGroups,
+        hasDescriptionOther: !!activity.descriptionOther,
         hasStatus: !!activity.activityStatus,
         hasCollaborationType: !!activity.collaborationType,
         hasPlannedDates: !!(activity.plannedStartDate || activity.plannedEndDate),

@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { 
@@ -26,25 +27,25 @@ import { format } from 'date-fns';
 // Inline strings for demo - in production would come from i18n
 const iatiImportStrings = {
   modalTitle: 'External Publisher Detected',
-  'summary.reportingOrg': 'Reporting Organisation',
-  'summary.yourOrg': 'Your Organisation',
-  'summary.iatiId': 'IATI Identifier',
+  'summary.reportingOrg': 'Source Publisher',
+  'summary.yourOrg': 'Your Organisation', 
+  'summary.iatiId': 'Source IATI Identifier',
+  'summary.reportingOrg.help': 'The organisation listed in the imported XML file.',
+  'summary.yourOrg.help': 'The organisation currently logged into the system.',
+  'summary.iatiId.help': 'The activity identifier from the imported XML.',
   'summary.lastUpdated': 'Last Updated',
   'summary.notProvided': 'Not provided',
   'noPublisher.banner': 'You have no publisher identifiers set up. All activities will be treated as external.',
   duplicateWarning: 'Warning: An activity with this IATI identifier already exists in your system.',
   'option.reference.title': 'Link as Reference',
   'option.reference.help': 'Add this activity as a read-only reference. It will not count towards your totals.',
-  'option.reference.tooltip1': 'Good for mapping related activities from other publishers',
-  'option.reference.tooltip2': 'Activity remains owned by original publisher',
+  'option.reference.tooltip': 'Use this option to add the selected activity as a read-only reference. The activity will remain external and cannot be edited. It will not contribute to your organisation\'s budgets, commitments, or disbursement totals. This is useful if you need contextual information without duplicating data.',
   'option.fork.title': 'Fork as Local Draft',
   'option.fork.help': 'Create an editable copy under your organisation. You must assign a new IATI identifier.',
-  'option.fork.tooltip1': 'Creates a draft copy you can edit and publish',
-  'option.fork.tooltip2': 'Must change IATI identifier before publishing',
+  'option.fork.tooltip': 'Create an editable copy of the activity under your organisation. You must assign a new, unique IATI Activity Identifier before publishing. The forked version becomes your responsibility to maintain and will be counted in your organisation\'s totals.',
   'option.merge.title': 'Merge into Current Activity',
   'option.merge.help': 'Link this external record to the activity you are currently editing.',
-  'option.merge.tooltip1': 'Links external data to your current activity',
-  'option.merge.tooltip2': 'No duplicate activity is created',
+  'option.merge.tooltip': 'Attach the external activity record directly to the one you are editing. This creates a link between the two datasets, allowing you to maintain your own reporting while showing its connection to the external activity (for example, a donor\'s parent record or an implementing partner\'s sub-activity).',
   'merge.title': 'Select Activity to Merge',
   footnote: 'This decision affects data ownership and reporting. You can change it later if needed.',
   'btn.cancel': 'Cancel',
@@ -65,6 +66,7 @@ export interface ExternalPublisherModalProps {
   userPublisherRefs: string[];
   onChoose: (choice: 'reference' | 'fork' | 'merge', targetActivityId?: string) => void;
   currentActivityId?: string; // The activity being edited
+  currentActivityIatiId?: string; // The IATI ID of the current activity
   existingActivity?: {
     id: string;
     iatiId: string;
@@ -82,6 +84,7 @@ export function ExternalPublisherModal({
   userPublisherRefs,
   onChoose,
   currentActivityId,
+  currentActivityIatiId,
   existingActivity
 }: ExternalPublisherModalProps) {
   const [selectedOption, setSelectedOption] = useState<ImportOption | null>(null);
@@ -127,7 +130,7 @@ export function ExternalPublisherModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ExternalLink className="h-5 w-5" />
@@ -138,53 +141,108 @@ export function ExternalPublisherModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Summary Information */}
-        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="font-medium text-gray-700">
-                {iatiImportStrings['summary.reportingOrg']}:
-              </span>
-              <div className="mt-1">
-                {meta.reportingOrgName || meta.reportingOrgRef}
-                <Badge variant="outline" className="ml-2 text-xs">
-                  {meta.reportingOrgRef}
-                </Badge>
+        {/* Summary Information - 3 Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Source Publisher */}
+          <Card className="p-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {iatiImportStrings['summary.reportingOrg']}
+                </h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 rounded-full"
+                        type="button"
+                        aria-label="Help"
+                      >
+                        <HelpCircle className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">{iatiImportStrings['summary.reportingOrg.help']}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold">{meta.reportingOrgName || 'Unknown Organisation'}</p>
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{meta.reportingOrgRef}</span>
               </div>
             </div>
-            <div>
-              <span className="font-medium text-gray-700">
-                {iatiImportStrings['summary.yourOrg']}:
-              </span>
-              <div className="mt-1">
-                {userOrgName}
-                {userPublisherRefs.length > 0 && (
-                  <Badge variant="outline" className="ml-2 text-xs">
-                    {userPublisherRefs.join(', ')}
-                  </Badge>
-                )}
+          </Card>
+
+          {/* Your Organisation */}
+          <Card className="p-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {iatiImportStrings['summary.yourOrg']}
+                </h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 rounded-full"
+                        type="button"
+                        aria-label="Help"
+                      >
+                        <HelpCircle className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">{iatiImportStrings['summary.yourOrg.help']}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold">{userOrgName || 'Unknown Organisation'}</p>
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                  {userPublisherRefs.length > 0 ? userPublisherRefs[0] : 'No Ref'}
+                </span>
               </div>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm pt-2 border-t border-gray-200">
-            <div>
-              <span className="font-medium text-gray-700">
-                {iatiImportStrings['summary.iatiId']}:
-              </span>
-              <div className="mt-1 font-mono text-xs bg-white px-2 py-1 rounded border">
-                {meta.iatiId}
+          </Card>
+
+          {/* Source IATI Identifier */}
+          <Card className="p-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {iatiImportStrings['summary.iatiId']}
+                </h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 rounded-full"
+                        type="button"
+                        aria-label="Help"
+                      >
+                        <HelpCircle className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="text-xs">
+                        The activity identifier<br />
+                        from the imported XML.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
+              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded break-all">{meta.iatiId}</span>
             </div>
-            <div>
-              <span className="font-medium text-gray-700">
-                {iatiImportStrings['summary.lastUpdated']}:
-              </span>
-              <div className="mt-1">
-                {formatLastUpdated(meta.lastUpdated)}
-              </div>
-            </div>
-          </div>
+          </Card>
         </div>
 
         {/* Warnings */}
@@ -211,7 +269,7 @@ export function ExternalPublisherModal({
           <RadioGroup value={selectedOption || ''} onValueChange={handleOptionChange}>
             
             {/* Option 1: Reference */}
-            <div className="border rounded-lg p-4 space-y-3 hover:bg-gray-50 transition-colors">
+            <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors">
               <div className="flex items-start space-x-3">
                 <RadioGroupItem value="reference" id="reference" className="mt-1" />
                 <div className="flex-1 space-y-2">
@@ -231,11 +289,10 @@ export function ExternalPublisherModal({
                             <HelpCircle className="h-3 w-3" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <div className="space-y-2 text-xs">
-                            <p>• {iatiImportStrings['option.reference.tooltip1']}</p>
-                            <p>• {iatiImportStrings['option.reference.tooltip2']}</p>
-                          </div>
+                        <TooltipContent className="max-w-sm">
+                          <p className="text-xs">
+                            {iatiImportStrings['option.reference.tooltip']}
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -248,7 +305,7 @@ export function ExternalPublisherModal({
             </div>
 
             {/* Option 2: Fork */}
-            <div className="border rounded-lg p-4 space-y-3 hover:bg-gray-50 transition-colors">
+            <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors">
               <div className="flex items-start space-x-3">
                 <RadioGroupItem value="fork" id="fork" className="mt-1" />
                 <div className="flex-1 space-y-2">
@@ -268,11 +325,10 @@ export function ExternalPublisherModal({
                             <HelpCircle className="h-3 w-3" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <div className="space-y-2 text-xs">
-                            <p>• {iatiImportStrings['option.fork.tooltip1']}</p>
-                            <p>• {iatiImportStrings['option.fork.tooltip2']}</p>
-                          </div>
+                        <TooltipContent className="max-w-sm">
+                          <p className="text-xs">
+                            {iatiImportStrings['option.fork.tooltip']}
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -285,7 +341,7 @@ export function ExternalPublisherModal({
             </div>
 
             {/* Option 3: Merge */}
-            <div className="border rounded-lg p-4 space-y-3 hover:bg-gray-50 transition-colors">
+            <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors relative">
               <div className="flex items-start space-x-3">
                 <RadioGroupItem value="merge" id="merge" className="mt-1" />
                 <div className="flex-1 space-y-2">
@@ -305,11 +361,10 @@ export function ExternalPublisherModal({
                             <HelpCircle className="h-3 w-3" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <div className="space-y-2 text-xs">
-                            <p>• {iatiImportStrings['option.merge.tooltip1']}</p>
-                            <p>• {iatiImportStrings['option.merge.tooltip2']}</p>
-                          </div>
+                        <TooltipContent className="max-w-sm">
+                          <p className="text-xs">
+                            {iatiImportStrings['option.merge.tooltip']}
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -317,22 +372,27 @@ export function ExternalPublisherModal({
                   <p className="text-sm text-gray-600">
                     {iatiImportStrings['option.merge.help']}
                   </p>
-                  {selectedOption === 'merge' && currentActivityId && (
-                    <div className="mt-2 p-2 bg-blue-50 rounded border">
-                      <p className="text-xs text-blue-800">
-                        Will merge into current activity: {currentActivityId}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
+              {selectedOption === 'merge' && currentActivityId && (
+                <div className="absolute top-1/3 -translate-y-1/2 right-4 w-56 p-4 bg-background border border-border rounded-lg hover:border-gray-300 transition-colors shadow-md z-10">
+                  <p className="text-xs text-gray-700 leading-tight">
+                    Will merge into current activity:
+                  </p>
+                  <div className="mt-1">
+                    <span className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-xs break-all">
+                      {currentActivityIatiId || currentActivityId}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
           </RadioGroup>
         </div>
 
         {/* Footnote */}
-        <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
+        <div className="text-xs text-gray-500 p-3">
           <Info className="h-3 w-3 inline mr-1" />
           {iatiImportStrings.footnote}
         </div>

@@ -7,6 +7,17 @@
 
 /* React DatePicker CSS - imported in components as needed */
 
+/* Hide number input stepper controls */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 /* Debug: Test if CSS is loading */
 .tailwind-test {
   background-color: #ff0000 !important;

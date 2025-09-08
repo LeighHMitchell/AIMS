@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Check, AlertTriangle, MapPin, Trash2 } from 'lucide-react'
+import { Check, AlertTriangle, MapPin, Trash2, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { MYANMAR_REGIONS, type MyanmarRegion } from "@/data/myanmar-regions"
 import { toast } from "sonner"
 import MyanmarAdminMap from "@/components/MyanmarAdminMap"
+import { RegionSearchableSelect } from "@/components/ui/region-searchable-select"
 
 interface SubnationalBreakdown {
   id?: string
@@ -34,26 +35,109 @@ export function SubnationalBreakdownTab({
   const [isNationwide, setIsNationwide] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [hasShownSuccessToast, setHasShownSuccessToast] = useState(false)
+  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [allocationStatus, setAllocationStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({})
+  const prevBreakdownsRef = useRef(breakdowns)
 
   // Calculate total percentage
   const totalPercentage = Object.values(breakdowns).reduce((sum, value) => sum + (value || 0), 0)
   const isValidTotal = Math.abs(totalPercentage - 100) < 0.01 // Allow for floating point precision
   const hasAnyValues = Object.values(breakdowns).some(value => value > 0)
 
-  // Show success toast when total reaches 100%
+  // Helper function to determine if allocation should show green tick
+  const shouldShowGreenTick = (regionName: string) => {
+    const status = allocationStatus[regionName]
+    const percentage = breakdowns[regionName] || 0
+    
+    console.log(`[DEBUG] Green tick check for ${regionName}:`, {
+      percentage,
+      status,
+      hasPercentage: percentage > 0,
+      notSaving: status !== 'saving',
+      notError: status !== 'error',
+      shouldShow: percentage > 0 && status !== 'saving' && status !== 'error',
+      allocationStatus
+    })
+    
+    // Only show green tick if:
+    // 1. The region has a valid percentage (> 0) 
+    // 2. AND it's not currently saving or in error state
+    return percentage > 0 && status !== 'saving' && status !== 'error'
+  }
+
+  // Note: Removed "Perfect! 100%" toast to match sectors tab behavior
+  // The sectors tab doesn't show this toast, it only shows "Sectors saved successfully!"
+
+  // Initialize save status for existing breakdowns when component first loads
   useEffect(() => {
-    if (isValidTotal && hasAnyValues && !isNationwide && !hasShownSuccessToast) {
-      toast.success(`✅ Perfect! Total allocation: ${totalPercentage.toFixed(1)}%`, {
-        duration: 3000,
-        description: "All subnational allocations now total exactly 100%"
-      })
-      setHasShownSuccessToast(true)
-    } else if (!isValidTotal) {
-      // Reset the flag when total is no longer 100%
-      setHasShownSuccessToast(false)
+    // Only initialize on first load when data has been loaded from backend
+    if (isLoadingData || loading) return
+    
+    const initialStatus: Record<string, 'saved'> = {}
+    
+    console.log('[DEBUG] Initializing status for loaded breakdowns:', {
+      breakdowns,
+      allocationStatus,
+      loading,
+      isLoadingData
+    })
+    
+    // Mark existing breakdowns with valid percentages as 'saved'
+    Object.entries(breakdowns).forEach(([regionName, percentage]) => {
+      if (percentage > 0 && !allocationStatus[regionName]) {
+        initialStatus[regionName] = 'saved'
+        console.log(`[DEBUG] Marking ${regionName} as 'saved' (${percentage}%)`)
+      }
+    })
+    
+    // Only update if we have new regions to mark as saved
+    if (Object.keys(initialStatus).length > 0) {
+      console.log('[DEBUG] Setting initial allocation status:', initialStatus)
+      setAllocationStatus(prev => ({ ...prev, ...initialStatus }))
+    } else {
+      console.log('[DEBUG] No initial status updates needed')
     }
-  }, [isValidTotal, hasAnyValues, isNationwide, totalPercentage, hasShownSuccessToast])
+  }, [loading, isLoadingData, Object.keys(breakdowns).join(',')]) // Run when data is fully loaded
+
+  // Track changed breakdowns and set their status to 'saving' on change
+  useEffect(() => {
+    const prev = prevBreakdownsRef.current
+    const statusUpdates: Record<string, 'saving'> = {}
+
+    // Check if there are any actual changes
+    let hasChanges = false
+
+    // New or changed breakdowns (only set to saving if percentage > 0 and not loading)
+    Object.entries(breakdowns).forEach(([regionName, percentage]) => {
+      const prevPercentage = prev[regionName] || 0
+      if (prevPercentage !== percentage && percentage > 0 && !isLoadingData) {
+        statusUpdates[regionName] = 'saving'
+        hasChanges = true
+      }
+    })
+
+    // Deleted breakdowns: remove from status
+    Object.keys(prev).forEach(regionName => {
+      if (!breakdowns[regionName]) {
+        hasChanges = true
+        setAllocationStatus(s => {
+          const copy = { ...s }
+          delete copy[regionName]
+          return copy
+        })
+      }
+    })
+
+    // Note: User change tracking removed since we no longer show "Perfect! 100%" toast
+
+    if (Object.keys(statusUpdates).length > 0) {
+      setAllocationStatus(s => ({ ...s, ...statusUpdates }))
+    }
+    
+    prevBreakdownsRef.current = breakdowns
+  }, [breakdowns, isLoadingData])
+
+  // Note: Save tracking logic moved directly into the autoSave function for immediate feedback
 
   // Notify parent when data changes
   useEffect(() => {
@@ -100,6 +184,8 @@ export function SubnationalBreakdownTab({
       if (response.ok) {
         const data = await response.json()
         
+        // Backend data loaded successfully
+        
         // Check if there's a nationwide entry (all regions with is_nationwide = true)
         const nationwideEntries = data.filter((item: SubnationalBreakdown) => item.is_nationwide)
         
@@ -139,6 +225,7 @@ export function SubnationalBreakdownTab({
       toast.error('Failed to load subnational breakdown data')
     } finally {
       setLoading(false)
+      setIsLoadingData(false)
     }
   }, [activityId])
 
@@ -212,7 +299,7 @@ export function SubnationalBreakdownTab({
 
   // Auto-save function
   const autoSave = async (nationwide: boolean = isNationwide, currentBreakdowns: Record<string, number> = breakdowns) => {
-    if (!canEdit || !activityId) return
+    if (!canEdit || !activityId || isLoadingData) return
     
     setSaving(true)
     try {
@@ -249,7 +336,21 @@ export function SubnationalBreakdownTab({
       })
 
       if (response.ok) {
-        toast.success('Breakdown saved', { duration: 2000 })
+        // Mark all current allocations as 'saved' immediately after successful save
+        setAllocationStatus(s => {
+          const updated: Record<string, 'saved'> = {}
+          Object.entries(currentBreakdowns).forEach(([regionName, percentage]) => {
+            if (percentage > 0) {
+              updated[regionName] = 'saved'
+            }
+          })
+          return { ...s, ...updated }
+        })
+        
+        // Only show toast if we have meaningful data to save
+        if (Object.values(currentBreakdowns).some(p => p > 0)) {
+          toast.success('Breakdown saved successfully!', { duration: 2000 })
+        }
       } else {
         const errorData = await response.text()
         console.error('API Error:', response.status, errorData)
@@ -258,6 +359,17 @@ export function SubnationalBreakdownTab({
     } catch (error) {
       console.error('Error saving breakdown:', error)
       toast.error('Failed to save breakdown')
+      
+      // Mark all 'saving' allocations as 'error'
+      setAllocationStatus(s => {
+        const updated = { ...s }
+        Object.keys(updated).forEach(regionName => {
+          if (updated[regionName] === 'saving') {
+            updated[regionName] = 'error'
+          }
+        })
+        return updated
+      })
     } finally {
       setSaving(false)
     }
@@ -390,67 +502,81 @@ export function SubnationalBreakdownTab({
             Nationwide
           </Button>
 
-          {/* Regional Breakdown Table */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-gray-700">Subnational Allocation</h4>
-              {!isNationwide && canEdit && hasAnyValues && (
-                <button
-                  onClick={handleClearAll}
-                  className="text-xs text-gray-500 hover:text-red-600 flex items-center gap-1 transition-colors"
-                  title="Clear all allocations"
-                >
-                  <Trash2 className="h-3 w-3" />
-                  Clear All
-                </button>
-              )}
-            </div>
-            <div className="border rounded-lg overflow-hidden">
-              <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto p-4">
-                {[...MYANMAR_REGIONS]
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((region) => (
-                  <div 
-                    key={region.name} 
-                    className={`flex items-center justify-between p-3 rounded-lg border ${
-                      isNationwide ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {region.name}
+          {/* Regional Breakdown - Searchable Dropdown */}
+          {!isNationwide && (
+            <RegionSearchableSelect
+              selectedRegions={breakdowns}
+              onRegionAdd={(regionName, percentage) => {
+                setBreakdowns(prev => ({
+                  ...prev,
+                  [regionName]: percentage
+                }))
+                setInputValues(prev => ({
+                  ...prev,
+                  [regionName]: percentage.toString()
+                }))
+                // Auto-save after adding (only if not loading)
+                if (!isLoadingData) {
+                  autoSave(false, { ...breakdowns, [regionName]: percentage })
+                }
+              }}
+              onRegionRemove={(regionName) => {
+                setBreakdowns(prev => {
+                  const newBreakdowns = { ...prev }
+                  delete newBreakdowns[regionName]
+                  return newBreakdowns
+                })
+                setInputValues(prev => {
+                  const newInputs = { ...prev }
+                  delete newInputs[regionName]
+                  return newInputs
+                })
+                // Auto-save after removing (only if not loading)
+                if (!isLoadingData) {
+                  const newBreakdowns = { ...breakdowns }
+                  delete newBreakdowns[regionName]
+                  autoSave(false, newBreakdowns)
+                }
+              }}
+              onPercentageChange={(regionName, percentage) => {
+                setBreakdowns(prev => ({
+                  ...prev,
+                  [regionName]: percentage
+                }))
+                setInputValues(prev => ({
+                  ...prev,
+                  [regionName]: percentage.toString()
+                }))
+                // Auto-save after changing percentage (only if not loading)
+                if (!isLoadingData) {
+                  autoSave(false, { ...breakdowns, [regionName]: percentage })
+                }
+              }}
+              disabled={!canEdit}
+              placeholder="Search and select a state, region, or union territory..."
+              allocationStatus={allocationStatus}
+              shouldShowGreenTick={shouldShowGreenTick}
+            />
+          )}
+
+          {/* Show all regions in read-only mode when nationwide is selected */}
+          {isNationwide && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-700">Nationwide Distribution (Equal across all locations)</h4>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="max-h-96 overflow-y-auto p-4 space-y-2">
+                  {Object.entries(breakdowns)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([regionName, percentage]) => (
+                      <div key={regionName} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span className="text-sm font-medium">{regionName}</span>
+                        <span className="text-sm text-gray-600">{percentage.toFixed(2)}%</span>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-3 flex-shrink-0">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={inputValues[region.name] ?? (breakdowns[region.name]?.toString() || '')}
-                        onChange={(e) => handlePercentageChange(region.name, e.target.value)}
-                        onBlur={(e) => handlePercentageBlur(region.name, e.target.value)}
-                        data-region={region.name}
-                        onFocus={(e) => {
-                          (e.target as HTMLInputElement).select()
-                          // Ensure selection works on mobile/touch devices
-                          setTimeout(() => (e.target as HTMLInputElement).select(), 10)
-                        }}
-                        onClick={(e) => (e.target as HTMLInputElement).select()}
-                        placeholder="0.00"
-                        className={`w-32 text-right text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
-                          isNationwide ? 'bg-gray-100 text-gray-600' : ''
-                        }`}
-                        disabled={!canEdit || isNationwide}
-                        readOnly={isNationwide}
-                      />
-                      <span className="text-sm text-gray-500 w-4">%</span>
-                    </div>
-                  </div>
-                ))}
+                    ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
 
         </CardContent>

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FEEDBACK_TYPES, FeedbackType } from '@/data/feedback-types';
 import { useUser } from '@/hooks/useUser';
-import { MessageSquareIcon, SendIcon, Loader2Icon, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Upload, X, Image, FileText } from 'lucide-react';
+import { MessageSquareIcon, SendIcon, Loader2Icon, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Upload, X, Image, FileText, Minus, CircleDot, AlertTriangle, Flame } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AppFeatureSearchableSelect } from '@/components/forms/AppFeatureSearchableSelect';
 
@@ -30,11 +30,28 @@ const getIconComponent = (iconName: string) => {
   return iconMap[iconName as keyof typeof iconMap] || HelpCircle;
 };
 
+// Helper function to get priority icon and color
+const getPriorityIcon = (priority: string) => {
+  switch (priority) {
+    case 'low':
+      return { icon: Minus, color: 'text-gray-400' };
+    case 'medium':
+      return { icon: CircleDot, color: 'text-blue-500' };
+    case 'high':
+      return { icon: AlertTriangle, color: 'text-orange-500' };
+    case 'urgent':
+      return { icon: Flame, color: 'text-red-600' };
+    default:
+      return { icon: Minus, color: 'text-gray-400' };
+  }
+};
+
 export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const { user } = useUser();
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState<string>('comment');
   const [selectedFeature, setSelectedFeature] = useState<string>('');
+  const [selectedPriority, setSelectedPriority] = useState<string>('medium');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -173,6 +190,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
           feature: selectedFeature || null,
           subject: subject.trim() || null,
           message: message.trim(),
+          priority: selectedPriority,
           attachment_url: attachmentData?.url || null,
           attachment_filename: attachmentData?.filename || null,
           attachment_type: attachmentData?.type || null,
@@ -186,6 +204,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         // Reset form
         setSelectedCategory('comment');
         setSelectedFeature('');
+        setSelectedPriority('medium');
         setSubject('');
         setMessage('');
         setSelectedFile(null);
@@ -209,6 +228,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     if (isSubmitting) return;
     setSelectedCategory('comment');
     setSelectedFeature('');
+    setSelectedPriority('medium');
     setSubject('');
     setMessage('');
     setSelectedFile(null);
@@ -242,26 +262,75 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="category">What type of feedback is this?</Label>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category..." />
-              </SelectTrigger>
-              <SelectContent>
-                {FEEDBACK_TYPES.map((type) => {
-                  const IconComponent = getIconComponent(type.icon);
-                  return (
-                    <SelectItem key={type.code} value={type.code}>
-                      <div className="flex items-center gap-2">
-                        <IconComponent className="h-4 w-4" />
-                        <div className="font-medium">{type.name}</div>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="category">What type of feedback is this?</Label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {FEEDBACK_TYPES.map((type) => {
+                    const IconComponent = getIconComponent(type.icon);
+                    return (
+                      <SelectItem key={type.code} value={type.code}>
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="h-4 w-4" />
+                          <div className="font-medium">{type.name}</div>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="priority">Priority Level</Label>
+              <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select priority..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const { icon: PriorityIcon, color } = getPriorityIcon('low');
+                        return <PriorityIcon className={`h-4 w-4 ${color}`} />;
+                      })()}
+                      <span>Low</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const { icon: PriorityIcon, color } = getPriorityIcon('medium');
+                        return <PriorityIcon className={`h-4 w-4 ${color}`} />;
+                      })()}
+                      <span>Medium</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="high">
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const { icon: PriorityIcon, color } = getPriorityIcon('high');
+                        return <PriorityIcon className={`h-4 w-4 ${color}`} />;
+                      })()}
+                      <span>High</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="urgent">
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const { icon: PriorityIcon, color } = getPriorityIcon('urgent');
+                        return <PriorityIcon className={`h-4 w-4 ${color}`} />;
+                      })()}
+                      <span>Urgent</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">

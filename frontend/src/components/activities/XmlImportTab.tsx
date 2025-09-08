@@ -11,15 +11,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { toast } from 'sonner';
 import { IATIXMLParser, validateIATIXML } from '@/lib/xml-parser';
 import { ExternalPublisherModal } from '@/components/import/ExternalPublisherModal';
 import { extractIatiMeta } from '@/lib/iati/parseMeta';
 import { useUser } from '@/hooks/useUser';
+import { setFieldSaved } from '@/utils/persistentSave';
 import {
   Upload,
   FileText,
   AlertCircle,
+  AlertTriangle,
   CheckCircle,
   Info,
   X,
@@ -32,6 +36,8 @@ import {
   Globe,
   Settings,
   ChevronRight,
+  ChevronsUpDown,
+  Check,
 } from 'lucide-react';
 
 interface XmlImportTabProps {
@@ -77,6 +83,10 @@ interface ParsedField {
   hasConflict: boolean;
   tab: string; // Which Activity Editor tab this field belongs to
   description?: string; // Optional description of what this field contains
+  isFinancialItem?: boolean; // True for budget/transaction/disbursement summary items
+  itemType?: 'budget' | 'transaction' | 'plannedDisbursement'; // Type of financial item
+  itemIndex?: number; // Index in the array
+  itemData?: any; // The actual data object
 }
 
 interface TabSection {
@@ -275,6 +285,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [showXmlPreview, setShowXmlPreview] = useState(false);
   const [currentActivityData, setCurrentActivityData] = useState<ActivityData>({});
   const [activeImportTab, setActiveImportTab] = useState('basic');
+  const [parsedActivity, setParsedActivity] = useState<any>(null);
   const [xmlUrl, setXmlUrl] = useState<string>('');
   const [importMethod, setImportMethod] = useState<'file' | 'url'>('file');
   const [showSectorRefinement, setShowSectorRefinement] = useState(false);
@@ -283,12 +294,358 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     refinedSectors: any[];
   }>({ originalSectors: [], refinedSectors: [] });
   const [savedRefinedSectors, setSavedRefinedSectors] = useState<any[]>([]);
+  const [xmlMetadata, setXmlMetadata] = useState<any>(null);
   
   // External Publisher Detection States
   const [showExternalPublisherModal, setShowExternalPublisherModal] = useState(false);
   const [externalPublisherMeta, setExternalPublisherMeta] = useState<any>(null);
   const [userPublisherRefs, setUserPublisherRefs] = useState<string[]>([]);
   const [userOrgName, setUserOrgName] = useState<string>('');
+  
+  // Financial Detail Selection Modal States
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<{
+    type: 'budget' | 'transaction' | 'plannedDisbursement';
+    index: number;
+    data: any;
+    fields: ParsedField[];
+  } | null>(null);
+  
+  // Helper function to generate detailed fields for a specific financial item
+  const generateDetailedFields = (itemType: 'budget' | 'transaction' | 'plannedDisbursement', itemData: any, itemIndex: number): ParsedField[] => {
+    const detailFields: ParsedField[] = [];
+    
+    if (itemType === 'budget') {
+      if (itemData.type) {
+        detailFields.push({
+          fieldName: 'Type',
+          iatiPath: `@type`,
+          currentValue: null,
+          importValue: { code: itemData.type, name: 'Budget type classification' },
+          selected: false,
+          hasConflict: false,
+          tab: 'budgets',
+          description: `Budget type: ${itemData.type}`
+        });
+      }
+      if (itemData.status) {
+        detailFields.push({
+          fieldName: 'Status',
+          iatiPath: `@status`,
+          currentValue: null,
+          importValue: { code: itemData.status, name: 'Budget status (indicative/committed)' },
+          selected: false,
+          hasConflict: false,
+          tab: 'budgets',
+          description: `Budget status: ${itemData.status}`
+        });
+      }
+      if (itemData.period?.start) {
+        detailFields.push({
+          fieldName: 'Period Start',
+          iatiPath: `period/period-start/@iso-date`,
+          currentValue: null,
+          importValue: itemData.period.start,
+          selected: false,
+          hasConflict: false,
+          tab: 'budgets',
+          description: 'Budget period start date'
+        });
+      }
+      if (itemData.period?.end) {
+        detailFields.push({
+          fieldName: 'Period End',
+          iatiPath: `period/period-end/@iso-date`,
+          currentValue: null,
+          importValue: itemData.period.end,
+          selected: false,
+          hasConflict: false,
+          tab: 'budgets',
+          description: 'Budget period end date'
+        });
+      }
+      if (itemData.value !== undefined) {
+        detailFields.push({
+          fieldName: 'Value',
+          iatiPath: `value`,
+          currentValue: null,
+          importValue: { code: itemData.value?.toLocaleString() || '0', name: `Amount: ${itemData.value?.toLocaleString() || '0'}` },
+          selected: false,
+          hasConflict: false,
+          tab: 'budgets',
+          description: 'Budget monetary value'
+        });
+      }
+      if (itemData.currency) {
+        detailFields.push({
+          fieldName: 'Currency',
+          iatiPath: `value/@currency`,
+          currentValue: null,
+          importValue: { code: itemData.currency, name: 'ISO 4217 currency code' },
+          selected: false,
+          hasConflict: false,
+          tab: 'budgets',
+          description: `Budget currency: ${itemData.currency}`
+        });
+      }
+      if (itemData.valueDate) {
+        detailFields.push({
+          fieldName: 'Value Date',
+          iatiPath: `value/@value-date`,
+          currentValue: null,
+          importValue: itemData.valueDate,
+          selected: false,
+          hasConflict: false,
+          tab: 'budgets',
+          description: 'Budget value date'
+        });
+      }
+    } else if (itemType === 'plannedDisbursement') {
+      // Add planned disbursement detailed fields
+      if (itemData.type) {
+        detailFields.push({
+          fieldName: 'Type',
+          iatiPath: `@type`,
+          currentValue: null,
+          importValue: { code: itemData.type, name: 'Planned disbursement type' },
+          selected: false,
+          hasConflict: false,
+          tab: 'planned_disbursements',
+          description: `Planned disbursement type: ${itemData.type}`
+        });
+      }
+      // Add more planned disbursement fields as needed...
+    } else if (itemType === 'transaction') {
+      // Add transaction detailed fields
+      if (itemData.ref) {
+        detailFields.push({
+          fieldName: 'Transaction Reference',
+          iatiPath: `transaction/@ref`,
+          currentValue: null,
+          importValue: itemData.ref,
+          selected: false,
+          hasConflict: false,
+          tab: 'transactions',
+          description: `Transaction reference identifier`
+        });
+      }
+      
+      if (itemData.type) {
+        const transactionTypes: Record<string, string> = {
+          '1': 'Incoming Funds',
+          '2': 'Commitment',
+          '3': 'Disbursement',
+          '4': 'Expenditure',
+          '5': 'Interest Repayment',
+          '6': 'Loan Repayment',
+          '7': 'Reimbursement',
+          '8': 'Purchase of Equity',
+          '9': 'Sale of Equity',
+          '10': 'Credit Guarantee',
+          '11': 'Incoming Commitment',
+          '12': 'Outgoing Pledge',
+          '13': 'Incoming Pledge'
+        };
+        
+        detailFields.push({
+          fieldName: 'Transaction Type',
+          iatiPath: `transaction/@type`,
+          currentValue: null,
+          importValue: { code: itemData.type, name: transactionTypes[itemData.type] || 'Unknown' },
+          selected: true,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Type of transaction'
+        });
+      }
+      
+      if (itemData.date) {
+        detailFields.push({
+          fieldName: 'Transaction Date',
+          iatiPath: `transaction/transaction-date/@iso-date`,
+          currentValue: null,
+          importValue: itemData.date,
+          selected: true,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Date of the transaction'
+        });
+      }
+      
+      if (itemData.value !== undefined) {
+        detailFields.push({
+          fieldName: 'Value',
+          iatiPath: `transaction/value`,
+          currentValue: null,
+          importValue: itemData.value,
+          selected: true,
+          hasConflict: false,
+          tab: 'transactions',
+          description: `Transaction amount`
+        });
+      }
+      
+      if (itemData.currency) {
+        detailFields.push({
+          fieldName: 'Currency',
+          iatiPath: `transaction/value/@currency`,
+          currentValue: null,
+          importValue: itemData.currency,
+          selected: true,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Transaction currency'
+        });
+      }
+      
+      if (itemData.valueDate) {
+        detailFields.push({
+          fieldName: 'Value Date',
+          iatiPath: `transaction/value/@value-date`,
+          currentValue: null,
+          importValue: itemData.valueDate,
+          selected: false,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Date to be used for currency conversion'
+        });
+      }
+      
+      if (itemData.description) {
+        detailFields.push({
+          fieldName: 'Description',
+          iatiPath: `transaction/description/narrative`,
+          currentValue: null,
+          importValue: itemData.description,
+          selected: true,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Transaction description'
+        });
+      }
+      
+      if (itemData.providerOrg) {
+        detailFields.push({
+          fieldName: 'Provider Organization',
+          iatiPath: `transaction/provider-org`,
+          currentValue: null,
+          importValue: itemData.providerOrg.name || itemData.providerOrg.ref || 'Unknown',
+          selected: false,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Organization providing the funds'
+        });
+      }
+      
+      if (itemData.receiverOrg) {
+        detailFields.push({
+          fieldName: 'Receiver Organization',
+          iatiPath: `transaction/receiver-org`,
+          currentValue: null,
+          importValue: itemData.receiverOrg.name || itemData.receiverOrg.ref || 'Unknown',
+          selected: false,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Organization receiving the funds'
+        });
+      }
+      
+      if (itemData.disbursementChannel) {
+        detailFields.push({
+          fieldName: 'Disbursement Channel',
+          iatiPath: `transaction/disbursement-channel/@code`,
+          currentValue: null,
+          importValue: itemData.disbursementChannel,
+          selected: false,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Channel through which funds will be disbursed'
+        });
+      }
+      
+      if (itemData.flowType) {
+        detailFields.push({
+          fieldName: 'Flow Type',
+          iatiPath: `transaction/flow-type/@code`,
+          currentValue: null,
+          importValue: itemData.flowType,
+          selected: false,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Type of financial flow'
+        });
+      }
+      
+      if (itemData.financeType) {
+        detailFields.push({
+          fieldName: 'Finance Type',
+          iatiPath: `transaction/finance-type/@code`,
+          currentValue: null,
+          importValue: itemData.financeType,
+          selected: false,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Type of finance'
+        });
+      }
+      
+      if (itemData.aidType) {
+        detailFields.push({
+          fieldName: 'Aid Type',
+          iatiPath: `transaction/aid-type/@code`,
+          currentValue: null,
+          importValue: itemData.aidType.code || itemData.aidType,
+          selected: false,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Type of aid'
+        });
+      }
+      
+      if (itemData.tiedStatus) {
+        detailFields.push({
+          fieldName: 'Tied Status',
+          iatiPath: `transaction/tied-status/@code`,
+          currentValue: null,
+          importValue: itemData.tiedStatus,
+          selected: false,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Whether aid is tied to procurement from donor country'
+        });
+      }
+      
+      if (itemData.humanitarian !== undefined) {
+        detailFields.push({
+          fieldName: 'Humanitarian',
+          iatiPath: `transaction/@humanitarian`,
+          currentValue: null,
+          importValue: itemData.humanitarian ? 'Yes' : 'No',
+          selected: false,
+          hasConflict: false,
+          tab: 'transactions',
+          description: 'Whether this is a humanitarian transaction'
+        });
+      }
+    }
+    
+    return detailFields;
+  };
+  
+  // Function to handle opening the financial detail modal
+  const openFinancialDetailModal = (field: ParsedField) => {
+    if (field.isFinancialItem && field.itemType && field.itemData !== undefined && field.itemIndex !== undefined) {
+      const detailFields = generateDetailedFields(field.itemType, field.itemData, field.itemIndex);
+      setSelectedItem({
+        type: field.itemType,
+        index: field.itemIndex,
+        data: field.itemData,
+        fields: detailFields
+      });
+      setShowDetailModal(true);
+    }
+  };
+  
   const [existingActivity, setExistingActivity] = useState<any>(null);
   
   // Fetch user and organization data
@@ -392,29 +749,65 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       
       try {
         // OPTIMIZATION: Use cached basic activity data
+        console.log('[XmlImportTab] Fetching activity data for:', activityId);
         const data = await fetchBasicActivityWithCache(activityId);
+        console.log('[XmlImportTab] Fetched activity data:', data);
+        
+        // Map the data correctly - the API returns both camelCase and snake_case versions
         setCurrentActivityData({
           id: data.id,
           title_narrative: data.title_narrative || data.title,
           description_narrative: data.description_narrative || data.description,
-          planned_start_date: data.planned_start_date,
-          planned_end_date: data.planned_end_date,
-          actual_start_date: data.actual_start_date,
-          actual_end_date: data.actual_end_date,
-          activity_status: data.activity_status,
-          collaboration_type: data.collaboration_type,
-          activity_scope: data.activityScope || data.activity_scope,
+          planned_start_date: data.planned_start_date || data.plannedStartDate,
+          planned_end_date: data.planned_end_date || data.plannedEndDate,
+          actual_start_date: data.actual_start_date || data.actualStartDate,
+          actual_end_date: data.actual_end_date || data.actualEndDate,
+          activity_status: data.activity_status || data.activityStatus,
+          collaboration_type: data.collaboration_type || data.collaborationType,
+          activity_scope: data.activity_scope || data.activityScope,
           language: data.language,
-          iati_identifier: data.iati_identifier,
-          default_currency: data.default_currency,
+          iati_identifier: data.iati_identifier || data.iatiIdentifier || data.iatiId,
+          default_currency: data.default_currency || data.defaultCurrency,
           defaultAidType: data.defaultAidType,
           defaultFinanceType: data.defaultFinanceType,
           defaultFlowType: data.defaultFlowType,
           defaultTiedStatus: data.defaultTiedStatus,
           sectors: data.sectors || [],
         });
+        console.log('[XmlImportTab] Set current activity data with title:', data.title_narrative || data.title);
       } catch (error) {
-        console.error('Error fetching activity data:', error);
+        console.error('[XmlImportTab] Error fetching activity data:', error);
+        // If basic endpoint fails, try the full endpoint as fallback
+        try {
+          console.log('[XmlImportTab] Trying full endpoint as fallback');
+          const response = await fetch(`/api/activities/${activityId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setCurrentActivityData({
+              id: data.id,
+              title_narrative: data.title_narrative || data.title,
+              description_narrative: data.description_narrative || data.description,
+              planned_start_date: data.planned_start_date || data.plannedStartDate,
+              planned_end_date: data.planned_end_date || data.plannedEndDate,
+              actual_start_date: data.actual_start_date || data.actualStartDate,
+              actual_end_date: data.actual_end_date || data.actualEndDate,
+              activity_status: data.activity_status || data.activityStatus,
+              collaboration_type: data.collaboration_type || data.collaborationType,
+              activity_scope: data.activity_scope || data.activityScope,
+              language: data.language,
+              iati_identifier: data.iati_identifier || data.iatiIdentifier || data.iatiId,
+              default_currency: data.default_currency || data.defaultCurrency,
+              defaultAidType: data.defaultAidType,
+              defaultFinanceType: data.defaultFinanceType,
+              defaultFlowType: data.defaultFlowType,
+              defaultTiedStatus: data.defaultTiedStatus,
+              sectors: data.sectors || [],
+            });
+            console.log('[XmlImportTab] Fallback successful, got title:', data.title_narrative || data.title);
+          }
+        } catch (fallbackError) {
+          console.error('[XmlImportTab] Fallback also failed:', fallbackError);
+        }
       }
     };
 
@@ -435,6 +828,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       setSelectedFile(file);
       setImportStatus({ stage: 'idle' });
       setParsedFields([]);
+      setXmlMetadata(null);
     }
   };
 
@@ -450,6 +844,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       setSelectedFile(file);
       setImportStatus({ stage: 'idle' });
       setParsedFields([]);
+      setXmlMetadata(null);
     }
   }, []);
 
@@ -505,6 +900,37 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       return;
     }
 
+    // Ensure we have the latest activity data before parsing
+    if (!currentActivityData.id && activityId) {
+      console.log('[XML Import Debug] Fetching activity data before parsing');
+      try {
+        const data = await fetchBasicActivityWithCache(activityId);
+        setCurrentActivityData({
+          id: data.id,
+          title_narrative: data.title_narrative || data.title,
+          description_narrative: data.description_narrative || data.description,
+          planned_start_date: data.planned_start_date || data.plannedStartDate,
+          planned_end_date: data.planned_end_date || data.plannedEndDate,
+          actual_start_date: data.actual_start_date || data.actualStartDate,
+          actual_end_date: data.actual_end_date || data.actualEndDate,
+          activity_status: data.activity_status || data.activityStatus,
+          collaboration_type: data.collaboration_type || data.collaborationType,
+          activity_scope: data.activity_scope || data.activityScope,
+          language: data.language,
+          iati_identifier: data.iati_identifier || data.iatiIdentifier || data.iatiId,
+          default_currency: data.default_currency || data.defaultCurrency,
+          defaultAidType: data.defaultAidType,
+          defaultFinanceType: data.defaultFinanceType,
+          defaultFlowType: data.defaultFlowType,
+          defaultTiedStatus: data.defaultTiedStatus,
+          sectors: data.sectors || [],
+        });
+      } catch (error) {
+        console.error('[XML Import Debug] Failed to fetch activity data:', error);
+      }
+    }
+
+    console.log('[XML Import Debug] Current activity data:', currentActivityData);
     console.log('[XML Import Debug] Setting status to uploading');
     setImportStatus({ stage: 'uploading', progress: 20 });
 
@@ -527,61 +953,6 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       
       setXmlContent(content);
       
-      // EXTERNAL PUBLISHER DETECTION
-      console.log('[XML Import] Checking for external publisher...');
-      if (fileToCheck) {
-        try {
-          const meta = await extractIatiMeta(fileToCheck);
-          console.log('[XML Import] Extracted metadata:', meta);
-          console.log('[XML Import] User publisher refs:', userPublisherRefs);
-          
-          // Check if reporting org matches user's publisher refs
-          const isOwnedActivity = userPublisherRefs.some(ref => 
-            ref && meta.reportingOrgRef && 
-            ref.toLowerCase() === meta.reportingOrgRef.toLowerCase()
-          );
-          
-          if (!isOwnedActivity) {
-            console.log('[XML Import] EXTERNAL PUBLISHER DETECTED!');
-            console.log('[XML Import] Reporting org:', meta.reportingOrgRef);
-            console.log('[XML Import] User refs:', userPublisherRefs);
-            
-            // Check if this IATI ID already exists
-            let existingAct = null;
-            if (meta.iatiId) {
-              try {
-                const searchResponse = await fetch(`/api/activities/search?iatiId=${encodeURIComponent(meta.iatiId)}`);
-                if (searchResponse.ok) {
-                  const searchData = await searchResponse.json();
-                  if (searchData.activities && searchData.activities.length > 0) {
-                    existingAct = searchData.activities[0];
-                  }
-                }
-              } catch (err) {
-                console.error('[XML Import] Error checking for existing activity:', err);
-              }
-            }
-            
-            // Set up modal data
-            setExternalPublisherMeta(meta);
-            setExistingActivity(existingAct);
-            setShowExternalPublisherModal(true);
-            
-            // Stop here - let the modal handle the choice
-            setImportStatus({ stage: 'idle' });
-            toast.info('External publisher detected', {
-              description: `This activity is reported by ${meta.reportingOrgName || meta.reportingOrgRef}`
-            });
-            return;
-          } else {
-            console.log('[XML Import] Activity is owned by user, proceeding with normal import');
-          }
-        } catch (metaError) {
-          console.error('[XML Import] Error extracting metadata:', metaError);
-          // Continue with normal import if metadata extraction fails
-        }
-      }
-      
       console.log('[XML Import Debug] Setting status to parsing');
       setImportStatus({ stage: 'parsing', progress: 50 });
       
@@ -596,7 +967,53 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       const parser = new IATIXMLParser(content);
       const parsedActivity = parser.parseActivity();
       
+      // Store parsed activity data in state for use by import function
+      setParsedActivity(parsedActivity);
+      
       console.log('[XML Import Debug] Parsed activity data:', parsedActivity);
+
+      // Helper function to determine if a field should be selected by default
+      const shouldSelectField = (currentValue: any, importValue: any): boolean => {
+        // Select if current value is empty/null/undefined OR if values differ
+        if (!currentValue) return true;
+        
+        // Handle object comparison (e.g., for coded fields that return {code, name})
+        if (typeof currentValue === 'object' && typeof importValue === 'object') {
+          if (currentValue === null || importValue === null) {
+            return currentValue !== importValue;
+          }
+          // Compare by code if both have code property, otherwise deep compare
+          if (currentValue.code !== undefined && importValue.code !== undefined) {
+            return currentValue.code !== importValue.code;
+          }
+          // For other objects, compare by JSON serialization
+          return JSON.stringify(currentValue) !== JSON.stringify(importValue);
+        }
+        
+        // Handle primitive comparison
+        return currentValue !== importValue;
+      };
+
+      const hasConflict = (currentValue: any, importValue: any): boolean => {
+        // Only show conflict if current value exists and differs from import value
+        if (!currentValue) return false;
+        
+        // Handle object comparison (e.g., for coded fields that return {code, name})
+        if (typeof currentValue === 'object' && typeof importValue === 'object') {
+          if (currentValue === null || importValue === null) {
+            return currentValue !== importValue;
+          }
+          // Compare by code if both have code property, otherwise deep compare
+          if (currentValue.code !== undefined && importValue.code !== undefined) {
+            return currentValue.code !== importValue.code;
+          }
+          // For other objects, compare by JSON serialization
+          return JSON.stringify(currentValue) !== JSON.stringify(importValue);
+        }
+        
+        // Handle primitive comparison
+        return currentValue !== importValue;
+      };
 
       // Create fields from parsed data organized by tabs
       const fields: ParsedField[] = [];
@@ -604,41 +1021,115 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // === BASIC INFO TAB ===
       
       if (parsedActivity.iatiIdentifier) {
+        const currentValue = currentActivityData.iati_identifier || null;
+        
+        // Format current and import values like collaboration type IDs
+        const formattedCurrentValue = currentValue ? {
+          code: currentValue,
+          name: ''
+        } : null;
+        
+        const formattedImportValue = {
+          code: parsedActivity.iatiIdentifier,
+          name: ''
+        };
+        
         fields.push({
           fieldName: 'IATI Identifier',
           iatiPath: 'iati-activity/iati-identifier',
-          currentValue: currentActivityData.iati_identifier || null,
-          importValue: parsedActivity.iatiIdentifier,
-          selected: !!currentActivityData.iati_identifier && currentActivityData.iati_identifier !== parsedActivity.iatiIdentifier,
-          hasConflict: !!currentActivityData.iati_identifier && currentActivityData.iati_identifier !== parsedActivity.iatiIdentifier,
+          currentValue: formattedCurrentValue,
+          importValue: formattedImportValue,
+          selected: shouldSelectField(currentValue, parsedActivity.iatiIdentifier),
+          hasConflict: hasConflict(currentValue, parsedActivity.iatiIdentifier),
           tab: 'basic',
           description: 'Unique identifier for this activity'
         });
       }
 
       if (parsedActivity.title) {
+        const currentValue = currentActivityData.title_narrative || null;
+        console.log('[XmlImportTab] Comparing titles:', {
+          current: currentValue,
+          import: parsedActivity.title,
+          shouldSelect: shouldSelectField(currentValue, parsedActivity.title)
+        });
         fields.push({
           fieldName: 'Activity Title',
           iatiPath: 'iati-activity/title/narrative',
-          currentValue: currentActivityData.title_narrative || null,
+          currentValue: currentValue,
           importValue: parsedActivity.title,
-          selected: !!currentActivityData.title_narrative && currentActivityData.title_narrative !== parsedActivity.title,
-          hasConflict: !!currentActivityData.title_narrative && currentActivityData.title_narrative !== parsedActivity.title,
+          selected: shouldSelectField(currentValue, parsedActivity.title),
+          hasConflict: hasConflict(currentValue, parsedActivity.title),
           tab: 'basic',
           description: 'Main title/name of the activity'
         });
       }
 
       if (parsedActivity.description) {
+        const currentValue = currentActivityData.description_narrative || null;
+        console.log('[Import Preview] Adding general description field:', {
+          current: currentValue?.substring(0, 50),
+          import: parsedActivity.description?.substring(0, 50)
+        });
         fields.push({
           fieldName: 'Activity Description',
-          iatiPath: 'iati-activity/description/narrative',
-          currentValue: currentActivityData.description_narrative || null,
+          iatiPath: 'iati-activity/description[@type="1"]/narrative',
+          currentValue: currentValue,
           importValue: parsedActivity.description,
-          selected: !!currentActivityData.description_narrative && currentActivityData.description_narrative !== parsedActivity.description,
-          hasConflict: !!currentActivityData.description_narrative && currentActivityData.description_narrative !== parsedActivity.description,
+          selected: shouldSelectField(currentValue, parsedActivity.description),
+          hasConflict: hasConflict(currentValue, parsedActivity.description),
           tab: 'basic',
-          description: 'Detailed description of activity objectives and scope'
+          description: 'General activity description (IATI type="1")'
+        });
+      }
+
+      if (parsedActivity.descriptionObjectives) {
+        const currentValue = currentActivityData.description_objectives || null;
+        console.log('[Import Preview] Adding objectives description field:', {
+          current: currentValue?.substring(0, 50),
+          import: parsedActivity.descriptionObjectives?.substring(0, 50)
+        });
+        fields.push({
+          fieldName: 'Activity Description - Objectives',
+          iatiPath: 'iati-activity/description[@type="2"]/narrative',
+          currentValue: currentValue,
+          importValue: parsedActivity.descriptionObjectives,
+          selected: shouldSelectField(currentValue, parsedActivity.descriptionObjectives),
+          hasConflict: hasConflict(currentValue, parsedActivity.descriptionObjectives),
+          tab: 'basic',
+          description: 'Objectives of the activity (IATI type="2")'
+        });
+      }
+
+      if (parsedActivity.descriptionTargetGroups) {
+        const currentValue = currentActivityData.description_target_groups || null;
+        console.log('[Import Preview] Adding target groups description field:', {
+          current: currentValue?.substring(0, 50),
+          import: parsedActivity.descriptionTargetGroups?.substring(0, 50)
+        });
+        fields.push({
+          fieldName: 'Activity Description - Target Groups',
+          iatiPath: 'iati-activity/description[@type="3"]/narrative',
+          currentValue: currentValue,
+          importValue: parsedActivity.descriptionTargetGroups,
+          selected: shouldSelectField(currentValue, parsedActivity.descriptionTargetGroups),
+          hasConflict: hasConflict(currentValue, parsedActivity.descriptionTargetGroups),
+          tab: 'basic',
+          description: 'Target groups and beneficiaries (IATI type="3")'
+        });
+      }
+
+      if (parsedActivity.descriptionOther) {
+        const currentValue = currentActivityData.description_other || null;
+        fields.push({
+          fieldName: 'Activity Description - Other',
+          iatiPath: 'iati-activity/description[@type="4"]/narrative',
+          currentValue: currentValue,
+          importValue: parsedActivity.descriptionOther,
+          selected: shouldSelectField(currentValue, parsedActivity.descriptionOther),
+          hasConflict: hasConflict(currentValue, parsedActivity.descriptionOther),
+          tab: 'basic',
+          description: 'Other relevant information'
         });
       }
 
@@ -650,8 +1141,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/collaboration-type',
           currentValue: currentCollabLabel,
           importValue: importCollabLabel,
-          selected: !!currentActivityData.collaboration_type && currentActivityData.collaboration_type !== parsedActivity.collaborationType,
-          hasConflict: !!currentActivityData.collaboration_type && currentActivityData.collaboration_type !== parsedActivity.collaborationType,
+          selected: shouldSelectField(currentCollabLabel, importCollabLabel),
+          hasConflict: hasConflict(currentCollabLabel, importCollabLabel),
           tab: 'basic',
           description: 'Type of collaboration arrangement'
         });
@@ -665,8 +1156,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-status',
           currentValue: currentStatusLabel,
           importValue: importStatusLabel,
-          selected: !!currentActivityData.activity_status && currentActivityData.activity_status !== parsedActivity.activityStatus,
-          hasConflict: !!currentActivityData.activity_status && currentActivityData.activity_status !== parsedActivity.activityStatus,
+          selected: shouldSelectField(currentStatusLabel, importStatusLabel),
+          hasConflict: hasConflict(currentStatusLabel, importStatusLabel),
           tab: 'basic',
           description: 'Current implementation status'
         });
@@ -680,8 +1171,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-scope',
           currentValue: currentScopeLabel,
           importValue: importScopeLabel,
-          selected: !!currentActivityData.activity_scope && currentActivityData.activity_scope !== parsedActivity.activityScope,
-          hasConflict: !!currentActivityData.activity_scope && currentActivityData.activity_scope !== parsedActivity.activityScope,
+          selected: shouldSelectField(currentScopeLabel, importScopeLabel),
+          hasConflict: hasConflict(currentScopeLabel, importScopeLabel),
           tab: 'basic',
           description: 'Geographical scope of the activity'
         });
@@ -695,8 +1186,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity[@xml:lang]',
           currentValue: currentLanguageLabel,
           importValue: importLanguageLabel,
-          selected: !!currentActivityData.language && currentActivityData.language !== parsedActivity.language,
-          hasConflict: !!currentActivityData.language && currentActivityData.language !== parsedActivity.language,
+          selected: shouldSelectField(currentLanguageLabel, importLanguageLabel),
+          hasConflict: hasConflict(currentLanguageLabel, importLanguageLabel),
           tab: 'basic',
           description: 'Primary language of the activity'
         });
@@ -705,13 +1196,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // === DATES TAB ===
       
       if (parsedActivity.plannedStartDate) {
+        const currentValue = currentActivityData.planned_start_date || null;
         fields.push({
           fieldName: 'Planned Start Date',
           iatiPath: 'iati-activity/activity-date[@type="1"]',
-          currentValue: currentActivityData.planned_start_date || null,
+          currentValue: currentValue,
           importValue: parsedActivity.plannedStartDate,
-          selected: !!currentActivityData.planned_start_date && currentActivityData.planned_start_date !== parsedActivity.plannedStartDate,
-          hasConflict: !!currentActivityData.planned_start_date && currentActivityData.planned_start_date !== parsedActivity.plannedStartDate,
+          selected: shouldSelectField(currentValue, parsedActivity.plannedStartDate),
+          hasConflict: hasConflict(currentValue, parsedActivity.plannedStartDate),
           tab: 'basic',
           description: 'When the activity is planned to begin'
         });
@@ -723,8 +1215,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-date[@type="3"]',
           currentValue: currentActivityData.planned_end_date || null,
           importValue: parsedActivity.plannedEndDate,
-          selected: !!currentActivityData.planned_end_date && currentActivityData.planned_end_date !== parsedActivity.plannedEndDate,
-          hasConflict: !!currentActivityData.planned_end_date && currentActivityData.planned_end_date !== parsedActivity.plannedEndDate,
+          selected: shouldSelectField(currentActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
+          hasConflict: hasConflict(currentActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
           tab: 'basic',
           description: 'When the activity is planned to end'
         });
@@ -736,8 +1228,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-date[@type="2"]',
           currentValue: currentActivityData.actual_start_date || null,
           importValue: parsedActivity.actualStartDate,
-          selected: !!currentActivityData.actual_start_date && currentActivityData.actual_start_date !== parsedActivity.actualStartDate,
-          hasConflict: !!currentActivityData.actual_start_date && currentActivityData.actual_start_date !== parsedActivity.actualStartDate,
+          selected: shouldSelectField(currentActivityData.actual_start_date || null, parsedActivity.actualStartDate),
+          hasConflict: hasConflict(currentActivityData.actual_start_date || null, parsedActivity.actualStartDate),
           tab: 'basic',
           description: 'When the activity actually started'
         });
@@ -749,8 +1241,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-date[@type="4"]',
           currentValue: currentActivityData.actual_end_date || null,
           importValue: parsedActivity.actualEndDate,
-          selected: !!currentActivityData.actual_end_date && currentActivityData.actual_end_date !== parsedActivity.actualEndDate,
-          hasConflict: !!currentActivityData.actual_end_date && currentActivityData.actual_end_date !== parsedActivity.actualEndDate,
+          selected: shouldSelectField(currentActivityData.actual_end_date || null, parsedActivity.actualEndDate),
+          hasConflict: hasConflict(currentActivityData.actual_end_date || null, parsedActivity.actualEndDate),
           tab: 'basic',
           description: 'When the activity actually ended'
         });
@@ -764,8 +1256,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity[@default-currency]',
           currentValue: currentActivityData.default_currency || null,
           importValue: parsedActivity.defaultCurrency,
-          selected: !!currentActivityData.default_currency && currentActivityData.default_currency !== parsedActivity.defaultCurrency,
-          hasConflict: !!currentActivityData.default_currency && currentActivityData.default_currency !== parsedActivity.defaultCurrency,
+          selected: shouldSelectField(currentActivityData.default_currency || null, parsedActivity.defaultCurrency),
+          hasConflict: hasConflict(currentActivityData.default_currency || null, parsedActivity.defaultCurrency),
           tab: 'finances',
           description: 'Default currency for financial values'
         });
@@ -779,8 +1271,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/default-finance-type',
           currentValue: currentFinanceLabel,
           importValue: importFinanceLabel,
-          selected: !!currentActivityData.defaultFinanceType && currentActivityData.defaultFinanceType !== parsedActivity.defaultFinanceType,
-          hasConflict: !!currentActivityData.defaultFinanceType && currentActivityData.defaultFinanceType !== parsedActivity.defaultFinanceType,
+          selected: shouldSelectField(currentFinanceLabel, importFinanceLabel),
+          hasConflict: hasConflict(currentFinanceLabel, importFinanceLabel),
           tab: 'finances',
           description: 'Default type of finance (grant, loan, etc.)'
         });
@@ -794,8 +1286,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/default-flow-type',
           currentValue: currentFlowLabel,
           importValue: importFlowLabel,
-          selected: !!currentActivityData.defaultFlowType && currentActivityData.defaultFlowType !== parsedActivity.defaultFlowType,
-          hasConflict: !!currentActivityData.defaultFlowType && currentActivityData.defaultFlowType !== parsedActivity.defaultFlowType,
+          selected: shouldSelectField(currentFlowLabel, importFlowLabel),
+          hasConflict: hasConflict(currentFlowLabel, importFlowLabel),
           tab: 'finances',
           description: 'Default flow classification'
         });
@@ -809,8 +1301,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/default-aid-type',
           currentValue: currentAidLabel,
           importValue: importAidLabel,
-          selected: !!currentActivityData.defaultAidType && currentActivityData.defaultAidType !== parsedActivity.defaultAidType,
-          hasConflict: !!currentActivityData.defaultAidType && currentActivityData.defaultAidType !== parsedActivity.defaultAidType,
+          selected: shouldSelectField(currentAidLabel, importAidLabel),
+          hasConflict: hasConflict(currentAidLabel, importAidLabel),
           tab: 'finances',
           description: 'Default aid type classification'
         });
@@ -824,38 +1316,120 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/default-tied-status',
           currentValue: currentTiedLabel,
           importValue: importTiedLabel,
-          selected: !!currentActivityData.defaultTiedStatus && currentActivityData.defaultTiedStatus !== parsedActivity.defaultTiedStatus,
-          hasConflict: !!currentActivityData.defaultTiedStatus && currentActivityData.defaultTiedStatus !== parsedActivity.defaultTiedStatus,
+          selected: shouldSelectField(currentTiedLabel, importTiedLabel),
+          hasConflict: hasConflict(currentTiedLabel, importTiedLabel),
           tab: 'finances',
           description: 'Default tied aid status'
         });
       }
 
-      // Add budget information
+      // === BUDGETS TAB ===
+      
       if (parsedActivity.budgets && parsedActivity.budgets.length > 0) {
-        fields.push({
-          fieldName: 'Budgets',
-          iatiPath: 'iati-activity/budget',
-          currentValue: null,
-          importValue: `${parsedActivity.budgets.length} budget entries found`,
-          selected: false, // Don't auto-select complex data
-          hasConflict: false,
-          tab: 'finances',
-          description: 'Budget allocations and periods'
+        parsedActivity.budgets.forEach((budget, budgetIndex) => {
+          // Create budget summary
+          const budgetSummary = [
+            budget.type && `Type: ${budget.type}`,
+            budget.status && `Status: ${budget.status}`,
+            budget.period?.start && `Start: ${budget.period.start}`,
+            budget.period?.end && `End: ${budget.period.end}`,
+            budget.value && `Amount: ${budget.value.toLocaleString()} ${budget.currency || ''}`
+          ].filter(Boolean).join(' | ');
+          
+          fields.push({
+            fieldName: `Budget ${budgetIndex + 1}`,
+            iatiPath: `iati-activity/budget[${budgetIndex + 1}]`,
+            currentValue: null,
+            importValue: budgetSummary,
+            selected: false,
+            hasConflict: false,
+            tab: 'budgets',
+            description: `Budget ${budgetIndex + 1} - Click to configure individual fields`,
+            isFinancialItem: true,
+            itemType: 'budget',
+            itemIndex: budgetIndex,
+            itemData: budget
+          });
         });
       }
 
-      // Add transaction information
+      // === PLANNED DISBURSEMENTS TAB ===
+      
+      if (parsedActivity.plannedDisbursements && parsedActivity.plannedDisbursements.length > 0) {
+        parsedActivity.plannedDisbursements.forEach((disbursement, disbIndex) => {
+          // Create disbursement summary
+          const disbursementSummary = [
+            disbursement.type && `Type: ${disbursement.type}`,
+            disbursement.period?.start && `Start: ${disbursement.period.start}`,
+            disbursement.period?.end && `End: ${disbursement.period.end}`,
+            disbursement.value && `Amount: ${disbursement.value.toLocaleString()} ${disbursement.currency || ''}`,
+            disbursement.providerOrg?.name && `Provider: ${disbursement.providerOrg.name}`,
+            disbursement.receiverOrg?.name && `Receiver: ${disbursement.receiverOrg.name}`
+          ].filter(Boolean).join(' | ');
+          
+          fields.push({
+            fieldName: `Planned Disbursement ${disbIndex + 1}`,
+            iatiPath: `iati-activity/planned-disbursement[${disbIndex + 1}]`,
+            currentValue: null,
+            importValue: disbursementSummary,
+            selected: false,
+            hasConflict: false,
+            tab: 'planned_disbursements',
+            description: `Planned Disbursement ${disbIndex + 1} - Click to configure individual fields`,
+            isFinancialItem: true,
+            itemType: 'plannedDisbursement',
+            itemIndex: disbIndex,
+            itemData: disbursement
+          });
+        });
+      }
+
+      // === TRANSACTIONS TAB ===
+      
       if (parsedActivity.transactions && parsedActivity.transactions.length > 0) {
-        fields.push({
-          fieldName: 'Transactions',
-          iatiPath: 'iati-activity/transaction',
-          currentValue: null,
-          importValue: `${parsedActivity.transactions.length} transactions found`,
-          selected: false, // Don't auto-select complex data
-          hasConflict: false,
-          tab: 'finances',
-          description: 'Financial transactions and disbursements'
+        parsedActivity.transactions.forEach((transaction, transIndex) => {
+          // Create transaction summary with type mapping
+          const transactionTypes: Record<string, string> = {
+            '1': 'Incoming Funds',
+            '2': 'Commitment',
+            '3': 'Disbursement',
+            '4': 'Expenditure',
+            '5': 'Interest Repayment',
+            '6': 'Loan Repayment',
+            '7': 'Reimbursement',
+            '8': 'Purchase of Equity',
+            '9': 'Sale of Equity',
+            '10': 'Credit Guarantee',
+            '11': 'Incoming Commitment',
+            '12': 'Outgoing Pledge',
+            '13': 'Incoming Pledge'
+          };
+          
+          const transactionType = transactionTypes[transaction.type || ''] || transaction.type || 'Unknown';
+          
+          const transactionSummary = [
+            `Type: ${transactionType}`,
+            transaction.date && `Date: ${transaction.date}`,
+            transaction.value && `Amount: ${transaction.value.toLocaleString()} ${transaction.currency || parsedActivity.defaultCurrency || ''}`,
+            transaction.description && `Description: ${transaction.description}`,
+            transaction.providerOrg?.name && `Provider: ${transaction.providerOrg.name}`,
+            transaction.receiverOrg?.name && `Receiver: ${transaction.receiverOrg.name}`
+          ].filter(Boolean).join(' | ');
+          
+          fields.push({
+            fieldName: `Transaction ${transIndex + 1}`,
+            iatiPath: `iati-activity/transaction[${transIndex + 1}]`,
+            currentValue: null,
+            importValue: transactionSummary,
+            selected: false,
+            hasConflict: false,
+            tab: 'transactions',
+            description: `${transactionType} - Click to configure individual fields`,
+            isFinancialItem: true,
+            itemType: 'transaction',
+            itemIndex: transIndex,
+            itemData: transaction
+          });
         });
       }
 
@@ -903,6 +1477,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         const has3DigitSectors = parsedActivity.sectors.some(s => 
           s.code && s.code.length === 3 && /^\d{3}$/.test(s.code)
         );
+        console.log('[Sector Import Debug] Parsed sectors:', parsedActivity.sectors);
+        console.log('[Sector Import Debug] 3-digit sectors detected:', has3DigitSectors);
+        console.log('[Sector Import Debug] Sector codes:', parsedActivity.sectors.map(s => s.code));
         
         const hasConflict = !!currentActivityData.sectors?.length;
         const sectorField: ParsedField = {
@@ -910,7 +1487,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/sector',
           currentValue: currentSectorsInfo,
           importValue: importSectorInfo,
-          selected: hasConflict, // Auto-select if there are existing sectors
+          selected: shouldSelectField(currentSectorsInfo, importSectorInfo),
           hasConflict: hasConflict,
           tab: 'sectors',
           description: has3DigitSectors 
@@ -1008,8 +1585,87 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       console.log('[XML Import Debug] Setting parsed fields:', fields.length, 'fields');
       setParsedFields(fields);
+      
+      // EXTERNAL PUBLISHER DETECTION - After parsing is complete
+      console.log('[XML Import] Checking for external publisher...');
+      if (fileToCheck) {
+        try {
+          const meta = await extractIatiMeta(fileToCheck);
+          console.log('[XML Import] Extracted metadata:', meta);
+          console.log('[XML Import] User publisher refs:', userPublisherRefs);
+          
+          // Store metadata for display in the modal
+          setXmlMetadata(meta);
+          
+          // Check if reporting org matches user's publisher refs
+          const isOwnedActivity = userPublisherRefs.some(ref => 
+            ref && meta.reportingOrgRef && 
+            ref.toLowerCase() === meta.reportingOrgRef.toLowerCase()
+          );
+          
+          if (!isOwnedActivity) {
+            console.log('[XML Import] EXTERNAL PUBLISHER DETECTED!');
+            console.log('[XML Import] Reporting org:', meta.reportingOrgRef);
+            console.log('[XML Import] User refs:', userPublisherRefs);
+            
+            // Check if this IATI ID already exists
+            let existingAct = null;
+            if (meta.iatiId) {
+              try {
+                const searchResponse = await fetch(`/api/activities/search?iatiId=${encodeURIComponent(meta.iatiId)}`);
+                if (searchResponse.ok) {
+                  const searchData = await searchResponse.json();
+                  if (searchData.activities && searchData.activities.length > 0) {
+                    existingAct = searchData.activities[0];
+                  }
+                }
+              } catch (err) {
+                console.error('[XML Import] Error checking for existing activity:', err);
+              }
+            }
+            
+            // Set up modal data
+            setExternalPublisherMeta(meta);
+            setExistingActivity(existingAct);
+            setShowExternalPublisherModal(true);
+            
+            // Fields are already parsed and ready
+            // Show the modal but also show the preview
+            setImportStatus({ stage: 'previewing', progress: 100 });
+            toast.info('External publisher detected', {
+              description: `This activity is reported by ${meta.reportingOrgName || meta.reportingOrgRef}. Please choose how to handle it before importing.`
+            });
+            toast.success(`XML file parsed successfully! Found ${fields.length} importable fields.`);
+            return; // Exit here, modal is shown and preview is visible
+          } else {
+            console.log('[XML Import] Activity is owned by user, proceeding with normal import');
+          }
+        } catch (metaError) {
+          console.error('[XML Import] Error extracting metadata:', metaError);
+          // Continue with normal import if metadata extraction fails
+        }
+      }
+      
       console.log('[XML Import Debug] Setting status to previewing');
       setImportStatus({ stage: 'previewing', progress: 100 });
+      
+      // AUTO-TRIGGER SECTOR REFINEMENT for 3-digit sectors
+      const sectorField = fields.find(f => f.fieldName === 'Sectors');
+      if (sectorField && (sectorField as any).needsRefinement) {
+        console.log('[XML Import] Auto-triggering sector refinement for 3-digit sectors');
+        const importedSectors = (sectorField as any).importedSectors || [];
+        
+        // Show sector refinement modal immediately
+        setSectorRefinementData({
+          originalSectors: importedSectors,
+          refinedSectors: []
+        });
+        setShowSectorRefinement(true);
+        
+        toast.info('3-digit sectors detected', {
+          description: 'Please map these to specific 5-digit subsectors before importing.'
+        });
+      }
       
       toast.success(`XML file parsed successfully! Found ${fields.length} importable fields.`);
     } catch (error) {
@@ -1041,6 +1697,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   // Handle sector refinement
   const handleSectorRefinement = (importedSectors: any[]) => {
     console.log('[Sector Refinement] Opening refinement dialog for sectors:', importedSectors);
+    console.log('[Sector Refinement] Sector count:', importedSectors.length);
+    console.log('[Sector Refinement] Sector details:', importedSectors.map(s => ({
+      code: s.code,
+      narrative: s.narrative,
+      percentage: s.percentage,
+      codeLength: s.code?.length
+    })));
     setSectorRefinementData({
       originalSectors: importedSectors,
       refinedSectors: []
@@ -1078,7 +1741,20 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             updateData.title_narrative = field.importValue;
             break;
           case 'Activity Description':
+            console.log('[Import Update] Setting description_narrative:', field.importValue?.substring(0, 100));
             updateData.description_narrative = field.importValue;
+            break;
+          case 'Activity Description - Objectives':
+            console.log('[Import Update] Setting description_objectives:', field.importValue?.substring(0, 100));
+            updateData.description_objectives = field.importValue;
+            break;
+          case 'Activity Description - Target Groups':
+            console.log('[Import Update] Setting description_target_groups:', field.importValue?.substring(0, 100));
+            updateData.description_target_groups = field.importValue;
+            break;
+          case 'Activity Description - Other':
+            console.log('[Import Update] Setting description_other:', field.importValue?.substring(0, 100));
+            updateData.description_other = field.importValue;
             break;
           case 'Planned Start Date':
             updateData.planned_start_date = field.importValue;
@@ -1125,6 +1801,33 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           case 'Sectors':
             // Handle sector imports - this will be processed separately after main activity update
             updateData._importSectors = true;
+            break;
+          default:
+            if (field.fieldName.startsWith('Budget ')) {
+              // Collect budget data for import
+              if (!updateData.importedBudgets) updateData.importedBudgets = [];
+              const budgetIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
+              if (parsedActivity.budgets && parsedActivity.budgets[budgetIndex]) {
+                updateData.importedBudgets.push(parsedActivity.budgets[budgetIndex]);
+              }
+              console.log(`[XML Import] Adding budget ${budgetIndex + 1} for import`);
+            } else if (field.fieldName.startsWith('Planned Disbursement ')) {
+              // Collect planned disbursement data for import
+              if (!updateData.importedPlannedDisbursements) updateData.importedPlannedDisbursements = [];
+              const disbursementIndex = parseInt(field.fieldName.split(' ')[2]) - 1;
+              if (parsedActivity.plannedDisbursements && parsedActivity.plannedDisbursements[disbursementIndex]) {
+                updateData.importedPlannedDisbursements.push(parsedActivity.plannedDisbursements[disbursementIndex]);
+              }
+              console.log(`[XML Import] Adding planned disbursement ${disbursementIndex + 1} for import`);
+            } else if (field.fieldName.startsWith('Transaction ')) {
+              // Collect transaction data for import
+              if (!updateData.importedTransactions) updateData.importedTransactions = [];
+              const transactionIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
+              if (parsedActivity.transactions && parsedActivity.transactions[transactionIndex]) {
+                updateData.importedTransactions.push(parsedActivity.transactions[transactionIndex]);
+              }
+              console.log(`[XML Import] Adding transaction ${transactionIndex + 1} for import`);
+            }
             break;
         }
       });
@@ -1196,6 +1899,27 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
           if (sectorsToImport.length > 0) {
             console.log('[XML Import] Importing sectors to database:', sectorsToImport);
+            
+            // Validate sectors before sending to API
+            const totalPercentage = sectorsToImport.reduce((sum, s) => sum + (s.percentage || 0), 0);
+            if (Math.abs(totalPercentage - 100) > 0.01) {
+              console.error('[XML Import] Invalid sector percentage total:', totalPercentage);
+              toast.error('Sector import failed: Invalid percentages', {
+                description: `Sector percentages total ${totalPercentage.toFixed(1)}% instead of 100%. Please use the sector refinement modal to fix this.`
+              });
+              return;
+            }
+            
+            // Check for invalid sector codes
+            const invalidSectors = sectorsToImport.filter(s => !s.sector_code || !/^\d{5}$/.test(s.sector_code));
+            if (invalidSectors.length > 0) {
+              console.error('[XML Import] Invalid sector codes found:', invalidSectors);
+              toast.error('Sector import failed: Invalid codes', {
+                description: `${invalidSectors.length} sectors have invalid codes. Valid sector codes must be 5-digit numbers.`
+              });
+              return;
+            }
+            
             try {
               const sectorResponse = await fetch(`/api/activities/${activityId}/sectors`, {
                 method: 'POST',
@@ -1206,18 +1930,33 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               });
 
               if (!sectorResponse.ok) {
-                console.error('[XML Import] Sector import failed:', await sectorResponse.text());
-                toast.error('Failed to import sectors', {
-                  description: 'Main activity data was imported successfully, but sectors failed.'
-                });
+                const errorData = await sectorResponse.json();
+                console.error('[XML Import] Sector import API error:', errorData);
+                
+                if (sectorResponse.status === 400 && errorData.error?.includes('percentage')) {
+                  toast.error('Sector import failed: Percentage error', {
+                    description: errorData.error || 'Sector percentages must total exactly 100%'
+                  });
+                } else {
+                  toast.error('Failed to import sectors', {
+                    description: `API Error: ${errorData.error || sectorResponse.statusText}. Main activity data was imported successfully.`
+                  });
+                }
               } else {
-                console.log('[XML Import] Sectors imported successfully');
-                toast.success('Sectors imported successfully');
+                const successData = await sectorResponse.json();
+                console.log('[XML Import] Sectors imported successfully:', successData);
+                toast.success(`Sectors imported successfully`, {
+                  description: `${sectorsToImport.length} sector(s) added to the activity`
+                });
               }
             } catch (sectorError) {
-              console.error('[XML Import] Sector import error:', sectorError);
-              toast.error('Failed to import sectors');
+              console.error('[XML Import] Sector import network error:', sectorError);
+              toast.error('Failed to import sectors', {
+                description: 'Network error occurred while importing sectors. Please check your connection and try again.'
+              });
             }
+          } else {
+            console.log('[XML Import] No sectors to import');
           }
         }
       }
@@ -1228,6 +1967,86 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         ...updateData
       }));
 
+      // Trigger autosave indicators for imported fields
+      if (typeof window !== 'undefined' && user?.id) {
+        selectedFieldsList.forEach(field => {
+          // Map field names to their localStorage keys for autosave indicators
+          let saveKey = '';
+          switch (field.fieldName) {
+            case 'Activity Title':
+              saveKey = 'title';
+              break;
+            case 'Activity Description':
+              saveKey = 'description';
+              break;
+            case 'Activity Description - Objectives':
+              saveKey = 'descriptionObjectives';
+              break;
+            case 'Activity Description - Target Groups':
+              saveKey = 'descriptionTargetGroups';
+              break;
+            case 'Activity Description - Other':
+              saveKey = 'descriptionOther';
+              break;
+            case 'Activity Status':
+              saveKey = 'activityStatus';
+              break;
+            case 'Collaboration Type':
+              saveKey = 'collaborationType';
+              break;
+            case 'Activity Scope':
+              saveKey = 'activityScope';
+              break;
+            case 'Default Currency':
+              saveKey = 'defaultCurrency';
+              break;
+            case 'Default Aid Type':
+              saveKey = 'defaultAidType';
+              break;
+            case 'Default Finance Type':
+              saveKey = 'defaultFinanceType';
+              break;
+            case 'Default Flow Type':
+              saveKey = 'defaultFlowType';
+              break;
+            case 'Default Tied Status':
+              saveKey = 'defaultTiedStatus';
+              break;
+            case 'Planned Start Date':
+              saveKey = 'plannedStartDate';
+              console.log(`[XML Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
+              break;
+            case 'Planned End Date':
+              saveKey = 'plannedEndDate';
+              console.log(`[XML Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
+              break;
+            case 'Actual Start Date':
+              saveKey = 'actualStartDate';
+              console.log(`[XML Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
+              break;
+            case 'Actual End Date':
+              saveKey = 'actualEndDate';
+              console.log(`[XML Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
+              break;
+            default:
+              // For other fields, use a generic key
+              saveKey = field.fieldName.toLowerCase().replace(/\s+/g, '_');
+          }
+          
+          if (saveKey) {
+            console.log(`[XML Import] Marking field as saved: ${saveKey}`);
+            setFieldSaved(activityId, user.id, saveKey);
+          }
+        });
+        
+        console.log('[XML Import] All imported fields marked as saved - green ticks should appear');
+        
+        // Trigger a gentle refresh to show the green ticks
+        setTimeout(() => {
+          window.dispatchEvent(new Event('storage'));
+        }, 100);
+      }
+
       setImportStatus({ stage: 'complete' });
       toast.success(`Successfully imported ${selectedFieldsList.length} fields from XML`, {
         description: 'Activity data has been updated and saved to the database.'
@@ -1236,8 +2055,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // Clear refined sectors after successful import
       setSavedRefinedSectors([]);
 
-      // Refresh the page or trigger a data refetch if needed
+      // Trigger a page refresh after a short delay to ensure all components get fresh data
       setTimeout(() => {
+        console.log('[XML Import] Refreshing page to show updated data');
         window.location.reload();
       }, 1500);
 
@@ -1262,6 +2082,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     setShowXmlPreview(false);
     setXmlUrl('');
     setImportMethod('file');
+    setXmlMetadata(null);
     // Clear cache for this activity
     if (activityId) {
       parsedXmlCache.delete(activityId);
@@ -1277,6 +2098,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       'basic': 'General',
       'dates': 'Dates', 
       'finances': 'Finances',
+      'budgets': 'Budgets',
+      'planned_disbursements': 'Planned Disbursements',
+      'transactions': 'Transactions',
       'locations': 'Locations',
       'sectors': 'Sectors',
       'partners': 'Partners',
@@ -1295,7 +2119,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     });
 
     return Array.from(tabMap.values()).sort((a, b) => {
-      const order = ['basic', 'dates', 'finances', 'locations', 'sectors', 'partners', 'results'];
+      const order = ['basic', 'dates', 'finances', 'budgets', 'planned_disbursements', 'transactions', 'locations', 'sectors', 'partners', 'results'];
       return order.indexOf(a.tabId) - order.indexOf(b.tabId);
     });
   };
@@ -1312,7 +2136,6 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       <td className="px-4 py-3">
         <div>
           <p className="font-medium text-sm text-gray-900">{field.fieldName}</p>
-          <p className="text-xs text-gray-500">{field.description}</p>
           {(field as any).needsRefinement && (
             <div className="mt-2">
               <Button
@@ -1323,6 +2146,19 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               >
                 <Settings className="h-3 w-3 mr-1" />
                 Refine Sectors
+              </Button>
+            </div>
+          )}
+          {field.isFinancialItem && (
+            <div className="mt-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openFinancialDetailModal(field)}
+                className="text-xs"
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                Select Fields
               </Button>
             </div>
           )}
@@ -1363,10 +2199,20 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         </div>
       </td>
       <td className="px-4 py-3 text-center">
-        {field.hasConflict && (
+        {field.hasConflict ? (
           <Badge variant="outline" className="text-xs border-orange-400 text-orange-700">
             <AlertCircle className="h-3 w-3 mr-1" />
             Conflict
+          </Badge>
+        ) : field.currentValue ? (
+          <Badge variant="outline" className="text-xs border-green-400 text-green-700">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Match
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-xs border-blue-400 text-blue-700">
+            <Info className="h-3 w-3 mr-1" />
+            New
           </Badge>
         )}
       </td>
@@ -1455,23 +2301,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileCode className="h-5 w-5" />
-            XML Import
-          </CardTitle>
-          <CardDescription>
-            Import activity data from an IATI-compliant XML file. You can review and select which fields to import.
-          </CardDescription>
-        </CardHeader>
-      </Card>
 
       {/* Import Method Selection and Input */}
       {importStatus.stage === 'idle' && !selectedFile && !xmlContent && (
-        <Card>
-          <CardContent className="pt-6">
+        <div>
             {/* Method Selection */}
             <div className="mb-6">
               <Label className="text-base font-medium">Import Method</Label>
@@ -1481,7 +2314,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   onClick={() => setImportMethod('file')}
                   className="flex-1"
                 >
-                  <Upload className="h-4 w-4 mr-2" />
+                  <FileCode className="h-4 w-4 mr-2" />
                   Upload File
                 </Button>
                 <Button
@@ -1503,7 +2336,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
                 onClick={() => document.getElementById('xml-upload')?.click()}
               >
-                <Upload className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                <FileCode className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                 <p className="text-gray-600 mb-2">Drop your IATI XML file here, or click to browse</p>
                 <p className="text-sm text-gray-500 mb-4">Supports standard IATI Activity XML format</p>
                 <input
@@ -1550,22 +2383,21 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             )}
 
             <div className="mt-4">
-              <Alert>
-                <Info className="h-4 w-4" />
-                <div className="font-medium">Import Guidelines</div>
-                <AlertDescription>
-                  <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                <div>
+                  <div className="font-medium text-sm mb-2">Import Guidelines</div>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                     <li>{importMethod === 'file' ? 'File' : 'URL'} must be a valid IATI Activity XML document</li>
                     {importMethod === 'url' && <li>URL must be publicly accessible (no authentication required)</li>}
                     <li>You can review all fields before importing</li>
                     <li>Existing data will be highlighted if there are conflicts</li>
                     <li>You can choose which fields to import or skip</li>
                   </ul>
-                </AlertDescription>
-              </Alert>
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+        </div>
       )}
 
       {/* Selected File/URL Info */}
@@ -1608,7 +2440,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     )}
                     {!xmlContent && importMethod === 'file' && selectedFile && (
                       <Button onClick={parseXmlFile}>
-                        <Upload className="h-4 w-4 mr-2" />
+                        <FileCode className="h-4 w-4 mr-2" />
                         Parse File
                       </Button>
                     )}
@@ -1707,14 +2539,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   <strong>{parsedFields.filter(f => f.selected).length}</strong> of <strong>{parsedFields.length}</strong> fields selected
                 </div>
                 {parsedFields.filter(f => f.selected && f.hasConflict).length > 0 && (
-                  <div className="text-sm text-orange-600">
+                  <div className="text-sm text-orange-700">
                     <AlertCircle className="h-4 w-4 inline mr-1" />
                     <strong>{parsedFields.filter(f => f.selected && f.hasConflict).length}</strong> conflicts to resolve
                   </div>
                 )}
-                <div className="text-sm text-blue-600">
-                  <strong>{organizeFieldsByTabs(parsedFields).length}</strong> activity tabs affected
-                </div>
               </div>
             </CardHeader>
           </Card>
@@ -1755,36 +2584,22 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           </Card>
 
           {/* Import Actions */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  Ready to import <strong>{parsedFields.filter(f => f.selected).length}</strong> fields into the Activity Editor
-                  {parsedFields.filter(f => f.selected && f.hasConflict).length > 0 && (
-                    <div className="text-orange-600 mt-1">
-                      ⚠️ {parsedFields.filter(f => f.selected && f.hasConflict).length} fields will overwrite existing data
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={resetImport}>
-                    Cancel Import
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      console.log('[XML Import] Button clicked!');
-                      importSelectedFields();
-                    }}
-                    disabled={parsedFields.filter(f => f.selected).length === 0}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Database className="h-4 w-4 mr-2" />
-                    Import Selected Fields
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex justify-end gap-2 pt-6">
+            <Button variant="outline" onClick={resetImport}>
+              Cancel Import
+            </Button>
+            <Button 
+              onClick={() => {
+                console.log('[XML Import] Button clicked!');
+                importSelectedFields();
+              }}
+              disabled={parsedFields.filter(f => f.selected).length === 0}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Database className="h-4 w-4 mr-2" />
+              Import Selected Fields
+            </Button>
+          </div>
         </div>
       )}
 
@@ -1800,10 +2615,18 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               </p>
               <div className="flex gap-2 justify-center">
                 <Button variant="outline" onClick={resetImport}>
-                  <Upload className="h-4 w-4 mr-2" />
+                  <FileCode className="h-4 w-4 mr-2" />
                   Import Another File
                 </Button>
-                <Button>
+                <Button onClick={() => {
+                  // Navigate to Basic Info tab to review imported changes
+                  const basicTab = document.querySelector('[data-value="basic"]') as HTMLButtonElement;
+                  if (basicTab) {
+                    basicTab.click();
+                  }
+                  // Also scroll to top to show the imported data
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}>
                   <ArrowRight className="h-4 w-4 mr-2" />
                   Review Changes
                 </Button>
@@ -1831,6 +2654,17 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         originalSectors={sectorRefinementData.originalSectors}
         onSave={(refinedSectors) => {
           console.log('[Sector Refinement] Saving refined sectors:', refinedSectors);
+          console.log('[Sector Refinement] Refined sectors count:', refinedSectors.length);
+          console.log('[Sector Refinement] Refined sectors details:', refinedSectors.map(s => ({
+            code: s.code,
+            name: s.name,
+            percentage: s.percentage,
+            originalCode: s.originalCode,
+            isValid: /^\d{5}$/.test(s.code)
+          })));
+          
+          const totalPercentage = refinedSectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
+          console.log('[Sector Refinement] Total percentage:', totalPercentage);
           
           // Store the refined sectors for later import
           setSavedRefinedSectors(refinedSectors);
@@ -1873,9 +2707,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           userOrgName={userOrgName}
           userPublisherRefs={userPublisherRefs}
           currentActivityId={activityId}
+          currentActivityIatiId={currentActivityData.iati_identifier}
           existingActivity={existingActivity}
           onChoose={async (choice, targetActivityId) => {
             console.log('[XML Import] External publisher choice:', choice, targetActivityId);
+            
+            // Check if user is authenticated
+            if (!user?.id) {
+              toast.error('You must be logged in to import XML activities');
+              return;
+            }
             
             try {
               let response;
@@ -1889,7 +2730,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       meta: externalPublisherMeta,
-                      userId: user?.id || 'current-user'
+                      userId: user.id
                     })
                   });
                   
@@ -1912,7 +2753,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       meta: externalPublisherMeta,
-                      userId: user?.id || 'current-user'
+                      userId: user.id
                     })
                   });
                   
@@ -1922,8 +2763,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                       description: 'You can now edit this activity. Remember to assign your own IATI ID before publishing.'
                     });
                     setShowExternalPublisherModal(false);
-                    // Continue with normal import flow for the forked activity
-                    parseXmlFile(); // Re-run parsing after fork
+                    // Continue with the field comparison that was already parsed
+                    // The parsed fields are already set, just update the status
+                    setImportStatus({ stage: 'previewing', progress: 100 });
                   }
                   break;
                   
@@ -1937,7 +2779,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                       body: JSON.stringify({
                         meta: externalPublisherMeta,
                         targetActivityId,
-                        userId: 'current-user'
+                        userId: user.id
                       })
                     });
                     
@@ -1946,8 +2788,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                         description: 'External record linked to your existing activity.'
                       });
                       setShowExternalPublisherModal(false);
-                      // Continue with import to merge fields
-                      parseXmlFile(); // Re-run parsing after merge
+                      // Continue with the field comparison that was already parsed
+                      // The parsed fields are already set, just update the status
+                      setImportStatus({ stage: 'previewing', progress: 100 });
                     }
                   }
                   break;
@@ -1966,6 +2809,157 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           }}
         />
       )}
+
+      {/* Financial Item Detail Modal */}
+      {showDetailModal && selectedItem && (
+        <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Select Fields for {selectedItem.type.charAt(0).toUpperCase() + selectedItem.type.slice(1)} {selectedItem.index + 1}
+              </DialogTitle>
+              <DialogDescription>
+                Choose which specific fields from this {selectedItem.type} to import into your activity.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <h4 className="font-medium text-gray-700 mb-2">Item Summary:</h4>
+                <div className="text-sm text-gray-600">
+                  {selectedItem.type === 'budget' && selectedItem.data && (
+                    <div className="space-y-1">
+                      {selectedItem.data.type && <div><strong>Type:</strong> {selectedItem.data.type}</div>}
+                      {selectedItem.data.status && <div><strong>Status:</strong> {selectedItem.data.status}</div>}
+                      {selectedItem.data.period?.start && <div><strong>Start Date:</strong> {selectedItem.data.period.start}</div>}
+                      {selectedItem.data.period?.end && <div><strong>End Date:</strong> {selectedItem.data.period.end}</div>}
+                      {selectedItem.data.value && <div><strong>Amount:</strong> {selectedItem.data.value.toLocaleString()} {selectedItem.data.currency}</div>}
+                    </div>
+                  )}
+                  {selectedItem.type === 'transaction' && selectedItem.data && (
+                    <div className="space-y-1">
+                      {selectedItem.data.type && (
+                        <div><strong>Type:</strong> {(() => {
+                          const transactionTypes: Record<string, string> = {
+                            '1': 'Incoming Funds',
+                            '2': 'Commitment',
+                            '3': 'Disbursement',
+                            '4': 'Expenditure',
+                            '5': 'Interest Repayment',
+                            '6': 'Loan Repayment',
+                            '7': 'Reimbursement',
+                            '8': 'Purchase of Equity',
+                            '9': 'Sale of Equity',
+                            '10': 'Credit Guarantee',
+                            '11': 'Incoming Commitment',
+                            '12': 'Outgoing Pledge',
+                            '13': 'Incoming Pledge'
+                          };
+                          return transactionTypes[selectedItem.data.type] || selectedItem.data.type;
+                        })()}</div>
+                      )}
+                      {selectedItem.data.date && <div><strong>Date:</strong> {selectedItem.data.date}</div>}
+                      {selectedItem.data.value && <div><strong>Amount:</strong> {selectedItem.data.value.toLocaleString()} {selectedItem.data.currency || ''}</div>}
+                      {selectedItem.data.description && <div><strong>Description:</strong> {selectedItem.data.description}</div>}
+                      {selectedItem.data.providerOrg?.name && <div><strong>Provider:</strong> {selectedItem.data.providerOrg.name}</div>}
+                      {selectedItem.data.receiverOrg?.name && <div><strong>Receiver:</strong> {selectedItem.data.receiverOrg.name}</div>}
+                      {selectedItem.data.humanitarian && <div><strong>Humanitarian:</strong> Yes</div>}
+                      {selectedItem.data.flowType && <div><strong>Flow Type:</strong> {selectedItem.data.flowType}</div>}
+                      {selectedItem.data.financeType && <div><strong>Finance Type:</strong> {selectedItem.data.financeType}</div>}
+                      {selectedItem.data.aidType && <div><strong>Aid Type:</strong> {selectedItem.data.aidType.code || selectedItem.data.aidType}</div>}
+                      {selectedItem.data.tiedStatus && <div><strong>Tied Status:</strong> {selectedItem.data.tiedStatus}</div>}
+                    </div>
+                  )}
+                  {selectedItem.type === 'plannedDisbursement' && selectedItem.data && (
+                    <div className="space-y-1">
+                      {selectedItem.data.type && <div><strong>Type:</strong> {selectedItem.data.type}</div>}
+                      {selectedItem.data.periodStart && <div><strong>Period Start:</strong> {selectedItem.data.periodStart}</div>}
+                      {selectedItem.data.periodEnd && <div><strong>Period End:</strong> {selectedItem.data.periodEnd}</div>}
+                      {selectedItem.data.value && <div><strong>Amount:</strong> {selectedItem.data.value.toLocaleString()} {selectedItem.data.currency}</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Field Selection Table */}
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left px-4 py-2 font-medium text-gray-700 w-12">Import</th>
+                      <th className="text-left px-4 py-2 font-medium text-gray-700">Field</th>
+                      <th className="text-left px-4 py-2 font-medium text-gray-700">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {selectedItem.fields.map((field, index) => (
+                      <tr key={index} className="bg-white hover:bg-gray-50">
+                        <td className="px-4 py-3 text-center">
+                          <Switch
+                            checked={field.selected}
+                            onCheckedChange={(checked) => {
+                              const updatedFields = [...selectedItem.fields];
+                              updatedFields[index].selected = checked;
+                              setSelectedItem({
+                                ...selectedItem,
+                                fields: updatedFields
+                              });
+                            }}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-sm text-gray-900">{field.fieldName}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="space-y-1">
+                            {typeof field.importValue === 'object' && field.importValue?.code ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
+                                <span className="text-sm font-medium text-gray-900">{field.importValue.name}</span>
+                              </div>
+                            ) : (
+                              <span className="text-sm font-medium text-gray-900">{field.importValue || 'N/A'}</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDetailModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                // Update the main fields with the selected detail fields
+                const updatedFields = [...allFields];
+                const mainFieldIndex = updatedFields.findIndex(f => 
+                  f.isFinancialItem && 
+                  f.itemType === selectedItem.type && 
+                  f.itemIndex === selectedItem.index
+                );
+                
+                if (mainFieldIndex !== -1) {
+                  // Update the summary to show selection status
+                  const selectedCount = selectedItem.fields.filter(f => f.selected).length;
+                  const totalCount = selectedItem.fields.length;
+                  updatedFields[mainFieldIndex].importValue = `${selectedCount} of ${totalCount} fields selected`;
+                }
+                
+                setAllFields(updatedFields);
+                setShowDetailModal(false);
+              }}>
+                Apply Selection
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
     </div>
   );
 }
@@ -1982,42 +2976,367 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
   const [refinedSectors, setRefinedSectors] = useState<any[]>([]);
   const [totalPercentage, setTotalPercentage] = useState(0);
 
-  // Mock subsector data - in real implementation, this would come from your IATI reference data
+  // IATI DAC sector reference data - comprehensive mapping
   const getSubsectorsFor3DigitCode = (threeDigitCode: string) => {
     const subsectorMap: Record<string, any[]> = {
-      '111': [
+      // SOCIAL INFRASTRUCTURE & SERVICES
+      '111': [ // Education, Level Unspecified
         { code: '11110', name: 'Education policy and administrative management' },
         { code: '11120', name: 'Education facilities and training' },
         { code: '11130', name: 'Teacher training' },
-        { code: '11182', name: 'Educational research' },
+        { code: '11182', name: 'Educational research' }
       ],
-      '112': [
+      '112': [ // Basic Education
         { code: '11220', name: 'Primary education' },
         { code: '11230', name: 'Basic life skills for adults' },
-        { code: '11240', name: 'Early childhood education' },
+        { code: '11240', name: 'Early childhood education' }
       ],
-      '113': [
+      '113': [ // Secondary Education
         { code: '11320', name: 'Secondary education' },
-        { code: '11330', name: 'Vocational training' },
+        { code: '11330', name: 'Vocational training' }
       ],
-      '110': [
-        { code: '11010', name: 'Education policy and administrative management' },
-        { code: '11020', name: 'Education facilities and training' },
+      '114': [ // Post-Secondary Education
+        { code: '11420', name: 'Higher education' },
+        { code: '11430', name: 'Advanced technical and managerial training' }
+      ],
+      '121': [ // Health, General
+        { code: '12110', name: 'Health policy and administrative management' },
+        { code: '12181', name: 'Medical education/training' },
+        { code: '12182', name: 'Medical research' },
+        { code: '12191', name: 'Medical services' }
+      ],
+      '122': [ // Basic Health
+        { code: '12220', name: 'Basic health care' },
+        { code: '12230', name: 'Basic health infrastructure' },
+        { code: '12240', name: 'Basic nutrition' },
+        { code: '12250', name: 'Infectious disease control' },
+        { code: '12261', name: 'Health education' },
+        { code: '12281', name: 'Health personnel development' }
+      ],
+      '130': [ // Population Policies/Programmes & Reproductive Health
+        { code: '13010', name: 'Population policy and administrative management' },
+        { code: '13020', name: 'Reproductive health care' },
+        { code: '13030', name: 'Family planning' },
+        { code: '13040', name: 'STD control including HIV/AIDS' },
+        { code: '13081', name: 'Personnel development for population and reproductive health' }
+      ],
+      '140': [ // Water Supply & Sanitation
+        { code: '14010', name: 'Water sector policy and administrative management' },
+        { code: '14015', name: 'Water resources conservation (including data collection)' },
+        { code: '14020', name: 'Water supply and sanitation - large systems' },
+        { code: '14030', name: 'Basic drinking water supply and basic sanitation' },
+        { code: '14040', name: 'River development' },
+        { code: '14050', name: 'Waste management/disposal' },
+        { code: '14081', name: 'Education and training in water supply and sanitation' }
+      ],
+      '151': [ // Government & Civil Society-general
+        { code: '15110', name: 'Public sector policy and administrative management' },
+        { code: '15111', name: 'Public finance management (PFM)' },
+        { code: '15112', name: 'Decentralisation and support to subnational government' },
+        { code: '15113', name: 'Anti-corruption organisations and institutions' },
+        { code: '15130', name: 'Legal and judicial development' },
+        { code: '15150', name: 'Democratic participation and civil society' },
+        { code: '15160', name: 'Human rights' },
+        { code: '15170', name: "Women's rights organisations and movements" },
+        { code: '15180', name: 'Ending violence against women and girls' }
+      ],
+      '152': [ // Conflict, Peace & Security
+        { code: '15210', name: 'Security system management and reform' },
+        { code: '15220', name: 'Civilian peace-building, conflict prevention and resolution' },
+        { code: '15230', name: 'Participation in international peacekeeping operations' },
+        { code: '15240', name: 'Reintegration and SALW control' },
+        { code: '15250', name: 'Removal of land mines and explosive remnants of war' },
+        { code: '15261', name: 'Child soldiers (prevention and demobilisation)' }
+      ],
+      '160': [ // Other Social Infrastructure & Services
+        { code: '16010', name: 'Social Protection' },
+        { code: '16020', name: 'Employment creation' },
+        { code: '16030', name: 'Housing policy and administrative management' },
+        { code: '16040', name: 'Low-cost housing' },
+        { code: '16050', name: 'Multisector aid for basic social services' },
+        { code: '16061', name: 'Culture and recreation' },
+        { code: '16062', name: 'Statistical capacity building' },
+        { code: '16063', name: 'Narcotics control' },
+        { code: '16064', name: 'Social mitigation of HIV/AIDS' }
+      ],
+      
+      // ECONOMIC INFRASTRUCTURE & SERVICES
+      '210': [ // Transport & Storage
+        { code: '21010', name: 'Transport policy and administrative management' },
+        { code: '21020', name: 'Road transport' },
+        { code: '21030', name: 'Rail transport' },
+        { code: '21040', name: 'Water transport' },
+        { code: '21050', name: 'Air transport' },
+        { code: '21061', name: 'Storage' },
+        { code: '21081', name: 'Education and training in transport and storage' }
+      ],
+      '220': [ // Communications
+        { code: '22010', name: 'Communications policy and administrative management' },
+        { code: '22020', name: 'Telecommunications' },
+        { code: '22030', name: 'Radio/television/print media' },
+        { code: '22040', name: 'Information and communication technology (ICT)' }
+      ],
+      '230': [ // Energy
+        { code: '23010', name: 'Energy policy and administrative management' },
+        { code: '23020', name: 'Power generation/non-renewable sources' },
+        { code: '23030', name: 'Power generation/renewable sources' },
+        { code: '23040', name: 'Electrical transmission/ distribution' },
+        { code: '23050', name: 'Gas distribution' },
+        { code: '23061', name: 'Oil-fired power plants' },
+        { code: '23062', name: 'Gas-fired power plants' },
+        { code: '23063', name: 'Coal-fired power plants' },
+        { code: '23064', name: 'Nuclear power plants' },
+        { code: '23065', name: 'Hydro-electric power plants' },
+        { code: '23066', name: 'Geothermal energy' },
+        { code: '23067', name: 'Solar energy' },
+        { code: '23068', name: 'Wind power' },
+        { code: '23069', name: 'Ocean power' },
+        { code: '23070', name: 'Biomass' },
+        { code: '23081', name: 'Energy education/training' },
+        { code: '23082', name: 'Energy research' }
+      ],
+      '240': [ // Banking & Financial Services
+        { code: '24010', name: 'Financial policy and administrative management' },
+        { code: '24020', name: 'Monetary institutions' },
+        { code: '24030', name: 'Formal sector financial intermediaries' },
+        { code: '24040', name: 'Informal/semi-formal financial intermediaries' },
+        { code: '24050', name: 'Remittance facilitation, promotion and optimisation' },
+        { code: '24081', name: 'Education/training in banking and financial services' }
+      ],
+      '250': [ // Business & Other Services
+        { code: '25010', name: 'Business support services and institutions' },
+        { code: '25020', name: 'Privatisation' },
+        { code: '25030', name: 'Business development services' },
+        { code: '25040', name: 'Responsible business conduct' }
+      ],
+      
+      // PRODUCTION SECTORS
+      '311': [ // Agriculture
+        { code: '31110', name: 'Agricultural policy and administrative management' },
+        { code: '31120', name: 'Agricultural development' },
+        { code: '31130', name: 'Agricultural land resources' },
+        { code: '31140', name: 'Agricultural water resources' },
+        { code: '31150', name: 'Agricultural inputs' },
+        { code: '31161', name: 'Food crop production' },
+        { code: '31162', name: 'Industrial crops/export crops' },
+        { code: '31163', name: 'Livestock' },
+        { code: '31164', name: 'Agrarian reform' },
+        { code: '31165', name: 'Agricultural alternative development' },
+        { code: '31166', name: 'Agricultural extension' },
+        { code: '31181', name: 'Agricultural education/training' },
+        { code: '31182', name: 'Agricultural research' },
+        { code: '31191', name: 'Agricultural services' },
+        { code: '31192', name: 'Plant and post-harvest protection and pest control' },
+        { code: '31193', name: 'Agricultural financial services' },
+        { code: '31194', name: 'Agricultural co-operatives' },
+        { code: '31195', name: 'Livestock/veterinary services' }
+      ],
+      '312': [ // Forestry
+        { code: '31210', name: 'Forestry policy and administrative management' },
+        { code: '31220', name: 'Forestry development' },
+        { code: '31261', name: 'Fuelwood/charcoal' },
+        { code: '31281', name: 'Forestry education/training' },
+        { code: '31282', name: 'Forestry research' },
+        { code: '31291', name: 'Forestry services' }
+      ],
+      '313': [ // Fishing
+        { code: '31310', name: 'Fishing policy and administrative management' },
+        { code: '31320', name: 'Fishery development' },
+        { code: '31381', name: 'Fishery education/training' },
+        { code: '31382', name: 'Fishery research' },
+        { code: '31391', name: 'Fishery services' }
+      ],
+      '321': [ // Industry
+        { code: '32110', name: 'Industrial policy and administrative management' },
+        { code: '32120', name: 'Industrial development' },
+        { code: '32130', name: 'Small and medium-sized enterprises (SME) development' },
+        { code: '32140', name: 'Cottage industries and handicraft' },
+        { code: '32161', name: 'Agro-industries' },
+        { code: '32162', name: 'Forest industries' },
+        { code: '32163', name: 'Textiles, leather and substitutes' },
+        { code: '32164', name: 'Chemicals' },
+        { code: '32165', name: 'Fertilizer plants' },
+        { code: '32166', name: 'Cement/lime/plaster' },
+        { code: '32167', name: 'Energy manufacturing' },
+        { code: '32168', name: 'Pharmaceutical production' },
+        { code: '32169', name: 'Basic metal industries' },
+        { code: '32170', name: 'Non-ferrous metal industries' },
+        { code: '32171', name: 'Engineering' },
+        { code: '32172', name: 'Transport equipment industry' },
+        { code: '32182', name: 'Technological research and development' }
+      ],
+      '322': [ // Mineral Resources & Mining
+        { code: '32210', name: 'Mineral/mining policy and administrative management' },
+        { code: '32220', name: 'Mineral prospection and exploration' },
+        { code: '32261', name: 'Coal' },
+        { code: '32262', name: 'Oil and gas (upstream)' },
+        { code: '32263', name: 'Ferrous metals' },
+        { code: '32264', name: 'Nonferrous metals' },
+        { code: '32265', name: 'Precious metals/materials' },
+        { code: '32266', name: 'Industrial minerals' },
+        { code: '32267', name: 'Fertilizer minerals' },
+        { code: '32268', name: 'Offshore minerals' }
+      ],
+      '323': [ // Construction
+        { code: '32310', name: 'Construction policy and administrative management' }
+      ],
+      '331': [ // Trade Policies & Regulations
+        { code: '33110', name: 'Trade policy and administrative management' },
+        { code: '33120', name: 'Trade facilitation' },
+        { code: '33130', name: 'Regional trade agreements (RTAs)' },
+        { code: '33140', name: 'Multilateral trade negotiations' },
+        { code: '33150', name: 'Trade-related adjustment' },
+        { code: '33181', name: 'Trade education/training' }
+      ],
+      '332': [ // Tourism
+        { code: '33210', name: 'Tourism policy and administrative management' }
+      ],
+      
+      // MULTI-SECTOR / CROSS-CUTTING
+      '410': [ // General Environment Protection
+        { code: '41010', name: 'Environmental policy and administrative management' },
+        { code: '41020', name: 'Biosphere protection' },
+        { code: '41030', name: 'Bio-diversity' },
+        { code: '41040', name: 'Site preservation' },
+        { code: '41050', name: 'Flood prevention/control' },
+        { code: '41081', name: 'Environmental education/training' },
+        { code: '41082', name: 'Environmental research' }
+      ],
+      '430': [ // Other Multisector
+        { code: '43010', name: 'Multisector aid' },
+        { code: '43030', name: 'Urban development and management' },
+        { code: '43040', name: 'Rural development' },
+        { code: '43050', name: 'Non-agricultural alternative development' },
+        { code: '43081', name: 'Multisector education/training' },
+        { code: '43082', name: 'Research/scientific institutions' }
+      ],
+      
+      // COMMODITY AID / GENERAL PROGRAMME ASSISTANCE
+      '520': [ // Development Food Assistance
+        { code: '52010', name: 'Food assistance' }
+      ],
+      '530': [ // Other Commodity Assistance
+        { code: '53030', name: 'Import support (capital goods)' },
+        { code: '53040', name: 'Import support (commodities)' }
+      ],
+      
+      // ACTION RELATING TO DEBT
+      '600': [ // Action Relating to Debt
+        { code: '60010', name: 'Action relating to debt' },
+        { code: '60020', name: 'Debt forgiveness' },
+        { code: '60030', name: 'Relief of multilateral debt' },
+        { code: '60040', name: 'Rescheduling and refinancing' },
+        { code: '60061', name: 'Debt for development swap' },
+        { code: '60062', name: 'Other debt swap' },
+        { code: '60063', name: 'Debt buy-back' }
+      ],
+      
+      // HUMANITARIAN AID
+      '720': [ // Emergency Response
+        { code: '72010', name: 'Material relief assistance and services' },
+        { code: '72040', name: 'Emergency food assistance' },
+        { code: '72050', name: 'Relief co-ordination and support services' }
+      ],
+      '730': [ // Reconstruction Relief & Rehabilitation
+        { code: '73010', name: 'Reconstruction relief and rehabilitation' }
+      ],
+      '740': [ // Disaster Prevention & Preparedness
+        { code: '74010', name: 'Disaster prevention and preparedness' },
+        { code: '74020', name: 'Multi-hazard response preparedness' }
+      ],
+      
+      // UNALLOCATED / UNSPECIFIED
+      '998': [ // Unallocated / Unspecified
+        { code: '99810', name: 'Sectors not specified' },
+        { code: '99820', name: 'Promotion of development awareness' }
       ]
     };
     
-    return subsectorMap[threeDigitCode] || [
+    // Return the subsectors for the given code, or create generic ones if not found
+    if (subsectorMap[threeDigitCode]) {
+      return subsectorMap[threeDigitCode];
+    }
+    
+    // Create generic subsectors for unknown codes
+    return [
       { code: `${threeDigitCode}10`, name: `${threeDigitCode} - Policy and administrative management` },
-      { code: `${threeDigitCode}20`, name: `${threeDigitCode} - Facilities and training` },
+      { code: `${threeDigitCode}20`, name: `${threeDigitCode} - Development and implementation` },
+      { code: `${threeDigitCode}30`, name: `${threeDigitCode} - Education and training` },
+      { code: `${threeDigitCode}40`, name: `${threeDigitCode} - Research and development` }
     ];
+  };
+
+  // Sector validation functions
+  const isValidSectorCode = (code: string): boolean => {
+    if (!code) return false;
+    // 3-digit codes should be numeric
+    if (code.length === 3) return /^\d{3}$/.test(code);
+    // 5-digit codes should be numeric
+    if (code.length === 5) return /^\d{5}$/.test(code);
+    return false;
+  };
+
+  const normalizePercentages = (sectors: any[]): any[] => {
+    const totalPercentage = sectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
+    
+    if (totalPercentage === 0) {
+      // Equal distribution if no percentages provided
+      const equalPercentage = Math.round((100 / sectors.length) * 100) / 100;
+      return sectors.map(s => ({ ...s, percentage: equalPercentage }));
+    }
+    
+    if (Math.abs(totalPercentage - 100) > 0.01) {
+      // Normalize to 100%
+      const factor = 100 / totalPercentage;
+      return sectors.map(s => ({
+        ...s,
+        percentage: Math.round((s.percentage || 0) * factor * 100) / 100
+      }));
+    }
+    
+    return sectors;
+  };
+
+  const detectSectorIssues = (sectors: any[]): string[] => {
+    const issues: string[] = [];
+    
+    // Check for invalid codes
+    const invalidCodes = sectors.filter(s => !isValidSectorCode(s.code));
+    if (invalidCodes.length > 0) {
+      issues.push(`Invalid sector codes: ${invalidCodes.map(s => s.code).join(', ')}`);
+    }
+    
+    // Check percentage total
+    const total = sectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
+    if (Math.abs(total - 100) > 0.01) {
+      issues.push(`Sector percentages total ${total.toFixed(1)}% instead of 100%`);
+    }
+    
+    // Check for zero percentages
+    const zeroPercentages = sectors.filter(s => (s.percentage || 0) === 0);
+    if (zeroPercentages.length > 0 && sectors.length > 1) {
+      issues.push(`${zeroPercentages.length} sector(s) have 0% allocation`);
+    }
+    
+    return issues;
   };
 
   useEffect(() => {
     if (isOpen && originalSectors.length > 0) {
-      // Initialize refined sectors based on original sectors
-      const initialRefinedSectors = originalSectors.map(sector => {
+      console.log('[SectorRefinement] Initializing with original sectors:', originalSectors);
+      
+      // Process original sectors with validation
+      const processedSectors = originalSectors.map(sector => {
+        console.log('[SectorRefinement] Processing sector:', sector);
+        
+        if (!isValidSectorCode(sector.code)) {
+          console.warn('[SectorRefinement] Invalid sector code detected:', sector.code);
+        }
+        
         if (sector.code && sector.code.length === 3) {
           const subsectors = getSubsectorsFor3DigitCode(sector.code);
+          console.log('[SectorRefinement] Found', subsectors.length, 'subsectors for code:', sector.code);
+          
           // Default to first subsector for this category
           return {
             originalCode: sector.code,
@@ -2025,21 +3344,37 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
             code: subsectors[0]?.code || `${sector.code}10`,
             name: subsectors[0]?.name || `${sector.code} - Default subsector`,
             percentage: sector.percentage || 0,
-            availableSubsectors: subsectors
+            availableSubsectors: subsectors,
+            needsRefinement: true,
+            isValid: isValidSectorCode(sector.code)
           };
         }
+        
+        // If already 5-digit or other format, keep as is but validate
         return {
           originalCode: sector.code,
           originalPercentage: sector.percentage || 0,
           code: sector.code,
-          name: sector.narrative || sector.name,
+          name: sector.narrative || sector.name || `Unknown sector ${sector.code}`,
           percentage: sector.percentage || 0,
-          availableSubsectors: []
+          availableSubsectors: [],
+          needsRefinement: false,
+          isValid: isValidSectorCode(sector.code)
         };
       });
       
-      setRefinedSectors(initialRefinedSectors);
-      calculateTotal(initialRefinedSectors);
+      // Normalize percentages if needed
+      const normalizedSectors = normalizePercentages(processedSectors);
+      console.log('[SectorRefinement] Normalized sectors:', normalizedSectors);
+      
+      setRefinedSectors(normalizedSectors);
+      calculateTotal(normalizedSectors);
+      
+      // Detect and log issues
+      const issues = detectSectorIssues(normalizedSectors);
+      if (issues.length > 0) {
+        console.warn('[SectorRefinement] Detected issues:', issues);
+      }
     }
   }, [isOpen, originalSectors]);
 
@@ -2055,6 +3390,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
       const selectedSubsector = updated[index].availableSubsectors.find((s: any) => s.code === value);
       updated[index].code = value;
       updated[index].name = selectedSubsector?.name || value;
+      updated[index].isValid = isValidSectorCode(value);
     } else {
       updated[index][field] = value;
     }
@@ -2063,6 +3399,19 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
     if (field === 'percentage') {
       calculateTotal(updated);
     }
+  };
+
+  const handleNormalizePercentages = () => {
+    const normalized = normalizePercentages(refinedSectors);
+    setRefinedSectors(normalized);
+    calculateTotal(normalized);
+  };
+
+  const handleEqualDistribution = () => {
+    const equalPercentage = Math.round((100 / refinedSectors.length) * 100) / 100;
+    const updated = refinedSectors.map(s => ({ ...s, percentage: equalPercentage }));
+    setRefinedSectors(updated);
+    calculateTotal(updated);
   };
 
   const handleSave = () => {
@@ -2088,21 +3437,45 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Progress indicator */}
-          <div className="bg-gray-50 p-3 rounded-lg">
+          {/* Progress indicator and controls */}
+          <div className="bg-gray-50 p-3 rounded-lg space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-700">
                 Total Percentage: 
               </span>
-              <span className={`font-bold ${
-                Math.abs(totalPercentage - 100) < 0.01 
-                  ? 'text-green-600' 
-                  : 'text-red-600'
-              }`}>
-                {totalPercentage.toFixed(1)}%
-              </span>
+              <div className="flex items-center gap-3">
+                <span className={`font-bold ${
+                  Math.abs(totalPercentage - 100) < 0.01 
+                    ? 'text-green-600' 
+                    : 'text-red-600'
+                }`}>
+                  {totalPercentage.toFixed(1)}%
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEqualDistribution}
+                    className="text-xs px-2 py-1"
+                  >
+                    Equal Split
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNormalizePercentages}
+                    className="text-xs px-2 py-1"
+                    disabled={totalPercentage === 0}
+                  >
+                    Normalize
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+            
+            <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
                 className={`h-2 rounded-full transition-all ${
                   Math.abs(totalPercentage - 100) < 0.01 
@@ -2114,6 +3487,29 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                 style={{ width: `${Math.min(totalPercentage, 100)}%` }}
               />
             </div>
+            
+            {/* Show validation issues */}
+            {(() => {
+              const issues = detectSectorIssues(refinedSectors);
+              if (issues.length > 0) {
+                return (
+                  <div className="bg-amber-50 border border-amber-200 rounded p-2">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                      <div className="text-xs text-amber-800">
+                        <div className="font-medium mb-1">Issues detected:</div>
+                        <ul className="list-disc list-inside space-y-1">
+                          {issues.map((issue, index) => (
+                            <li key={index}>{issue}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           {/* Refinement table */}
@@ -2147,24 +3543,51 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     </td>
                     <td className="px-3 py-3">
                       {sector.availableSubsectors.length > 0 ? (
-                        <select
-                          value={sector.code}
-                          onChange={(e) => handleSectorChange(index, 'code', e.target.value)}
-                          className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                        >
-                          {sector.availableSubsectors.map((sub: any) => (
-                            <option key={sub.code} value={sub.code}>
-                              {sub.code}: {sub.name}
-                            </option>
-                          ))}
-                        </select>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+                            >
+                              <span className="truncate">
+                                <span className="flex items-center gap-2">
+                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
+                                  <span className="font-medium">{sector.name}</span>
+                                </span>
+                              </span>
+                              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border">
+                            <Command>
+                              <CommandList>
+                                <CommandGroup>
+                                  {sector.availableSubsectors.map((sub: any) => (
+                                    <CommandItem
+                                      key={sub.code}
+                                      onSelect={() => handleSectorChange(index, 'code', sub.code)}
+                                      className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                                    >
+                                      <Check
+                                        className={`mr-2 h-4 w-4 ${sector.code === sub.code ? "opacity-100" : "opacity-0"}`}
+                                      />
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sub.code}</span>
+                                          <span className="font-medium text-foreground">{sub.name}</span>
+                                        </div>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       ) : (
                         <div className="text-sm">
-                          <div className="font-mono text-xs">
-                            {sector.code}
-                          </div>
-                          <div className="text-gray-600 text-xs">
-                            {sector.name}
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
+                            <span className="font-medium text-foreground">{sector.name}</span>
                           </div>
                         </div>
                       )}

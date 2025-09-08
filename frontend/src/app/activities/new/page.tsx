@@ -538,7 +538,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={bannerAutosave.state.isSaving}
             isSaved={bannerAutosave.state.isPersistentlySaved}
-            
+            hasValue={!!general.banner}
             className={`${!general.id ? 'text-gray-400' : 'text-gray-700'} mb-2`}
           >
             <div className="flex items-center gap-2">
@@ -571,7 +571,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <LabelSaveIndicator
             isSaving={iconAutosave.state.isSaving}
             isSaved={iconAutosave.state.isPersistentlySaved}
-            
+            hasValue={!!general.icon}
             className={`${!general.id ? 'text-gray-400' : 'text-gray-700'} mb-2`}
           >
             <div className="flex items-center gap-2">
@@ -800,7 +800,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={uuidAutosave.state.isSaving}
-            isSaved={uuidAutosave.state.isPersistentlySaved}
+            isSaved={uuidAutosave.state.isPersistentlySaved || !!general.uuid}
             hasValue={!!general.uuid}
             className="text-gray-700"
           >
@@ -1126,7 +1126,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="w-full space-y-2">
             <LabelSaveIndicator
               isSaving={activityScopeAutosave.state.isSaving}
-              isSaved={activityScopeAutosave.state.isPersistentlySaved}
+              isSaved={activityScopeAutosave.state.isPersistentlySaved || !!general.activityScope}
               hasValue={!!general.activityScope}
               className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
             >
@@ -1354,7 +1354,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, clearSavedFormData, loadedTabs }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, clearSavedFormData, loadedTabs }: any) {
   
   // OPTIMIZATION: Lazy loading - only render heavy components after tab has been visited
   // Removed the duplicate skeleton rendering logic here since the parent component
@@ -1411,6 +1411,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
                 setSectors(newSectors);
               }}
               onValidationChange={setSectorValidation}
+              onCompletionStatusChange={setSectorsCompletionStatusWithLogging}
               activityId={general.id}
             />
         </div>
@@ -1734,6 +1735,23 @@ function NewActivityPageContent() {
     }
     return [];
   });
+
+  // Track sectors completion status including save state
+  const [sectorsCompletionStatus, setSectorsCompletionStatus] = useState<{
+    isComplete: boolean;
+    isInProgress: boolean;
+    isSaved: boolean;
+  }>({ isComplete: false, isInProgress: false, isSaved: false });
+
+  // Debug wrapper for setSectorsCompletionStatus
+  const setSectorsCompletionStatusWithLogging = useCallback((newStatus: {
+    isComplete: boolean;
+    isInProgress: boolean;
+    isSaved: boolean;
+  }) => {
+    console.log('[MainPage] setSectorsCompletionStatus called with:', newStatus);
+    setSectorsCompletionStatus(newStatus);
+  }, []);
   
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const activityId = searchParams?.get("id");
@@ -2605,7 +2623,8 @@ function NewActivityPageContent() {
       documents: "Documents & Images",
       aid_effectiveness: "Aid Effectiveness",
       budgets: "Budgets",
-      "planned-disbursements": "Planned Disbursements"
+      "planned-disbursements": "Planned Disbursements",
+      "xml-import": "XML Import"
     };
     return sectionLabels[sectionId] || sectionId;
   };
@@ -2624,7 +2643,8 @@ function NewActivityPageContent() {
       tags: "Add custom tags to categorise this activity and make it easier to find through search and reporting. You can click on any tag to edit it inline. When creating tags, use clear and specific terms, such as \"water-infrastructure\" instead of simply \"water,\" to ensure accuracy. Tags ignore letter cases and will always be saved in lowercase. For consistency, try to reuse existing tags whenever possible. Careful tagging not only improves searchability but also strengthens the quality of filtering and reporting across activities.",
       working_groups: "In this section you can map the activity to the relevant technical or sector working groups. Doing so ensures that the activity is visible within the appropriate coordination structures, helps align it with other initiatives in the same area, and supports joint planning, monitoring and reporting. By linking your activity to the correct working group, you contribute to better coordination across partners and provide government and sector leads with a clearer picture of collective efforts.",
       policy_markers: "Assign OECD DAC and IATI-compliant policy markers to show how this activity addresses cross-cutting development issues. Policy markers are a standard way of signalling whether and to what extent an activity contributes to objectives such as gender equality, climate change, biodiversity, or disaster risk reduction. Each marker is scored to reflect the importance of the objective within the activity—for example, whether it is a principal objective, a significant objective, or not targeted at all. The Rio Markers are a specific subset that track environmental objectives in line with OECD DAC guidelines. Providing a short rationale alongside your chosen scores helps explain and justify the assessment, making the data more transparent and easier to interpret across organisations and reports.",
-      documents: "You can drag and drop files into the upload area or click \"Choose Files\" to browse your computer. Supported formats include images (PNG, JPG, GIF), PDFs, Word documents, Excel sheets, and CSV files. Add a clear title and category so your uploads are easy to find later in the library."
+      documents: "You can drag and drop files into the upload area or click \"Choose Files\" to browse your computer. Supported formats include images (PNG, JPG, GIF), PDFs, Word documents, Excel sheets, and CSV files. Add a clear title and category so your uploads are easy to find later in the library.",
+      "xml-import": "Import activity data from an IATI-compliant XML file. You can review and select which fields to import."
     };
     return sectionHelpTexts[sectionId] || "Complete this section to provide additional details about your activity.";
   };
@@ -2711,9 +2731,28 @@ function NewActivityPageContent() {
 
   // Tab completion status calculation
   const tabCompletionStatus = React.useMemo(() => {
+    console.log('[DEBUG] tabCompletionStatus memo running, sectors.length:', sectors.length);
     const generalCompletion = getTabCompletionStatus('general', general, getDateFieldStatus)
-    // Sectors tab: use the comprehensive sector completion check
-    const sectorsCompletion = getTabCompletionStatus('sectors', sectors);
+    // Sectors tab: compute completion based on actual sectors data
+    const hasSectorsWithPercentage = sectors.some(sector => sector.percentage && sector.percentage > 0);
+    const totalSectorsPercentage = sectors.reduce((sum, sector) => sum + (sector.percentage || 0), 0);
+    const isSectorsProperlyAllocated = Math.abs(totalSectorsPercentage - 100) < 0.1;
+    const isSectorsDataComplete = hasSectorsWithPercentage && isSectorsProperlyAllocated;
+    
+    const sectorsCompletion = {
+      isComplete: isSectorsDataComplete,
+      isInProgress: hasSectorsWithPercentage && !isSectorsProperlyAllocated
+    };
+    
+    console.log('[TabCompletion] Sectors completion status:', {
+      sectorsCount: sectors.length,
+      hasSectorsWithPercentage,
+      totalSectorsPercentage,
+      isSectorsProperlyAllocated,
+      isSectorsDataComplete,
+      sectorsCompletion
+    });
+    
 
     // Defaults sub-tab under Finances: require all fields filled AND saved
     const financesDefaultsCompletion = getTabCompletionStatus('finances', {
@@ -2814,10 +2853,10 @@ function NewActivityPageContent() {
         isComplete: iatiSyncComplete, 
         isInProgress: iatiSyncInProgress 
       },
-      sectors: sectorsCompletion ? { 
+      sectors: { 
         isComplete: sectorsCompletion.isComplete,
         isInProgress: sectorsCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
+      },
       locations: locationsCompletion ? { 
         isComplete: locationsCompletion.isComplete,
         isInProgress: locationsCompletion.isInProgress 
@@ -2879,7 +2918,7 @@ function NewActivityPageContent() {
         isInProgress: aidEffectivenessCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, getDateFieldStatus, sectorValidation, sectors, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, contributorsCount, linkedActivitiesCount, resultsCount, documents, governmentInputs, focalPoints]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, sectorsCompletionStatus, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, contributorsCount, linkedActivitiesCount, resultsCount, documents, governmentInputs, focalPoints]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -3730,6 +3769,7 @@ function NewActivityPageContent() {
                     setCoverageAreas={setCoverageAreas}
                     permissions={permissions}
                     setSectorValidation={setSectorValidation}
+                    setSectorsCompletionStatus={setSectorsCompletionStatusWithLogging}
                     activityScope={activityScope}
                     setActivityScope={setActivityScope}
                     user={user}

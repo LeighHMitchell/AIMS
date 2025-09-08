@@ -72,6 +72,7 @@ interface ImprovedSectorAllocationFormProps {
   allocations: SectorAllocation[];
   onChange: (allocations: SectorAllocation[]) => void;
   onValidationChange?: (validation: SectorValidation) => void;
+  onCompletionStatusChange?: (completion: { isComplete: boolean; isInProgress: boolean; isSaved: boolean }) => void;
   allowPublish?: boolean;
   activityId?: string;
 }
@@ -245,9 +246,15 @@ export default function ImprovedSectorAllocationForm({
   allocations = [], 
   onChange, 
   onValidationChange,
+  onCompletionStatusChange,
   allowPublish = true,
   activityId
 }: ImprovedSectorAllocationFormProps) {
+  console.log('[ImprovedSectorAllocationForm] Component mounted with:', {
+    allocationsCount: allocations.length,
+    allocations,
+    hasCompletionCallback: !!onCompletionStatusChange
+  });
   const { user } = useUser();
   // Multi-select: get all selected sector codes
   const selectedSectors = allocations.map(a => a.code);
@@ -329,6 +336,38 @@ export default function ImprovedSectorAllocationForm({
   const [allocationStatus, setAllocationStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
   const prevAllocationsRef = useRef(allocations);
 
+  // Helper function to determine if allocation should show green tick
+  const shouldShowGreenTick = (allocation: any) => {
+    const status = allocationStatus[allocation.id];
+    
+    // Only show green tick if:
+    // 1. The sector has a valid percentage (> 0)
+    // 2. AND it's either explicitly marked as saved OR loaded from backend
+    // 3. AND it's not currently saving or in error state
+    if (allocation.percentage > 0 && status !== 'saving' && status !== 'error') {
+      return true;
+    }
+    
+    return false;
+  };
+
+  // Initialize save status for existing allocations when component first loads
+  useEffect(() => {
+    const initialStatus: Record<string, 'saved'> = {};
+    
+    // Mark existing allocations with valid percentages as 'saved'
+    allocations.forEach(allocation => {
+      if (allocation.percentage > 0 && !allocationStatus[allocation.id]) {
+        initialStatus[allocation.id] = 'saved';
+      }
+    });
+    
+    // Only update if we have new sectors to mark as saved
+    if (Object.keys(initialStatus).length > 0) {
+      setAllocationStatus(prev => ({ ...prev, ...initialStatus }));
+    }
+  }, [allocations.length]); // Run when allocations first load or count changes
+
   // Track changed allocations and set their status to 'saving' on change
   useEffect(() => {
     const prev = prevAllocationsRef.current;
@@ -336,10 +375,10 @@ export default function ImprovedSectorAllocationForm({
     const currIds = new Set(allocations.map(a => a.id));
     const statusUpdates: Record<string, 'saving'> = {};
 
-    // New or changed allocations
+    // New or changed allocations (only set to saving if percentage > 0)
     allocations.forEach(a => {
       const prevA = prev.find(p => p.id === a.id);
-      if (!prevA || prevA.percentage !== a.percentage) {
+      if ((!prevA || prevA.percentage !== a.percentage) && a.percentage > 0) {
         statusUpdates[a.id] = 'saving';
       }
     });
@@ -371,8 +410,13 @@ export default function ImprovedSectorAllocationForm({
       
       setAllocationStatus(s => {
         const updated: Record<string, 'saved'> = {};
-        allocations.forEach(a => { updated[a.id] = 'saved'; });
-        return updated;
+        // Only mark sectors with percentage > 0 as saved (since 0% sectors are filtered out before saving)
+        allocations.forEach(a => { 
+          if (a.percentage > 0) {
+            updated[a.id] = 'saved';
+          }
+        });
+        return { ...s, ...updated };
       });
       
       // Only show toast if we have meaningful sectors to save
@@ -510,34 +554,25 @@ export default function ImprovedSectorAllocationForm({
           }, 100);
         }
       } else {
-        // Auto-distribute equally (default behavior for new selections or equal distributions)
-        const equalShare = 100 / newAllocations.length;
-        const autoBalanced = newAllocations.map(a => ({
-          ...a,
-          percentage: parseFloat(equalShare.toFixed(2))
-        }));
-        
-        // Handle rounding errors by adjusting the first allocation
-        const total = autoBalanced.reduce((sum, a) => sum + a.percentage, 0);
-        if (total !== 100 && autoBalanced.length > 0) {
-          autoBalanced[0].percentage += (100 - total);
-          autoBalanced[0].percentage = parseFloat(autoBalanced[0].percentage.toFixed(2));
-        }
-        
-        console.log('[SectorForm] Auto-distributing percentages equally:', {
-          totalSectors: autoBalanced.length,
-          equalShare,
-          autoBalanced: autoBalanced.map(a => ({ code: a.code, percentage: a.percentage }))
+        // No auto-distribution - just add sectors with existing percentages (or 0% for new ones)
+        console.log('[SectorForm] Adding sectors without auto-distribution:', {
+          totalSectors: newAllocations.length,
+          sectors: newAllocations.map(a => ({ code: a.code, percentage: a.percentage })),
+          trigger: 'handleSectorsChange - no auto-distribution'
         });
         
-        onChange(autoBalanced);
+        onChange(newAllocations);
       }
       
-      // Trigger autosave with a small delay
+      // Trigger autosave with a small delay (only save sectors with > 0%)
       setTimeout(() => {
         if (sectorsAutosave && newAllocations.length > 0) {
-          console.log('[SectorForm] Triggering autosave after selection change');
-          sectorsAutosave.triggerFieldSave(newAllocations);
+          const sectorsToSave = newAllocations.filter(a => a.percentage > 0);
+          console.log('[SectorForm] Triggering autosave after selection change:', {
+            allSectors: newAllocations.map(a => ({ code: a.code, percentage: a.percentage })),
+            sectorsToSave: sectorsToSave.map(a => ({ code: a.code, percentage: a.percentage }))
+          });
+          sectorsAutosave.triggerFieldSave(sectorsToSave);
         }
       }, 100);
     } else {
@@ -590,34 +625,23 @@ export default function ImprovedSectorAllocationForm({
     
     const updatedWithNew = [...allocations, newAllocation];
     
-    // Auto-distribute percentages equally among all sectors
-    const equalShare = 100 / updatedWithNew.length;
-    const autoBalanced = updatedWithNew.map(a => ({
-      ...a,
-      percentage: parseFloat(equalShare.toFixed(2))
-    }));
-    
-    // Handle rounding errors by adjusting the first allocation
-    const total = autoBalanced.reduce((sum, a) => sum + a.percentage, 0);
-    if (total !== 100 && autoBalanced.length > 0) {
-      autoBalanced[0].percentage += (100 - total);
-      autoBalanced[0].percentage = parseFloat(autoBalanced[0].percentage.toFixed(2));
-    }
-    
-    console.log('[SectorForm] Auto-distributing percentages:', {
-      totalSectors: autoBalanced.length,
-      equalShare,
-      autoBalanced: autoBalanced.map(a => ({ code: a.code, percentage: a.percentage }))
+    console.log('[SectorForm] Adding sector without auto-distribution:', {
+      newSector: { code: option.code, name: option.name },
+      totalSectors: updatedWithNew.length
     });
     
-    // Call onChange with auto-balanced percentages first
-    onChange(autoBalanced);
+    // Just add the sector with 0% - no auto-distribution
+    onChange(updatedWithNew);
     
-    // Then trigger autosave with a small delay to ensure onChange completes first
+    // Trigger autosave with the new sector (only save sectors with > 0%)
     setTimeout(() => {
-      if (sectorsAutosave && autoBalanced.length > 0) {
-        console.log('[SectorForm] Triggering autosave after auto-balance:', autoBalanced);
-        sectorsAutosave.triggerFieldSave(autoBalanced);
+      if (sectorsAutosave && updatedWithNew.length > 0) {
+        const sectorsToSave = updatedWithNew.filter(a => a.percentage > 0);
+        console.log('[SectorForm] Triggering autosave after sector addition:', {
+          allSectors: updatedWithNew.map(a => ({ code: a.code, percentage: a.percentage })),
+          sectorsToSave: sectorsToSave.map(a => ({ code: a.code, percentage: a.percentage }))
+        });
+        sectorsAutosave.triggerFieldSave(sectorsToSave);
       }
     }, 100);
   };
@@ -628,55 +652,47 @@ export default function ImprovedSectorAllocationForm({
       a.id === id ? { ...a, percentage: Math.max(0, Math.min(100, percentage)) } : a
     );
     onChange(updated);
+    
+    // Trigger autosave after percentage update to ensure data is saved
+    setTimeout(() => {
+      if (sectorsAutosave && updated.length > 0) {
+        // Filter out sectors with 0% before saving
+        const sectorsToSave = updated.filter(a => a.percentage > 0);
+        console.log('[SectorForm] Triggering autosave after percentage update:', {
+          trigger: 'updatePercentage',
+          allSectors: updated.map(a => ({ code: a.code, percentage: a.percentage })),
+          sectorsToSave: sectorsToSave.map(a => ({ code: a.code, percentage: a.percentage })),
+          totalPercentage: updated.reduce((sum, a) => sum + a.percentage, 0)
+        });
+        sectorsAutosave.triggerFieldSave(sectorsToSave);
+      }
+    }, 500); // Longer delay to avoid race conditions
   };
 
   // Remove a sector
   const removeSector = (id: string) => {
     const updated = allocations.filter(a => a.id !== id);
     
-    // Auto-distribute percentages equally among remaining sectors
-    if (updated.length > 0) {
-      const equalShare = 100 / updated.length;
-      const autoBalanced = updated.map(a => ({
-        ...a,
-        percentage: parseFloat(equalShare.toFixed(2))
-      }));
-      
-      // Handle rounding errors by adjusting the first allocation
-      const total = autoBalanced.reduce((sum, a) => sum + a.percentage, 0);
-      if (total !== 100 && autoBalanced.length > 0) {
-        autoBalanced[0].percentage += (100 - total);
-        autoBalanced[0].percentage = parseFloat(autoBalanced[0].percentage.toFixed(2));
+    console.log('[SectorForm] Removing sector without auto-redistribution:', {
+      removedSectorId: id,
+      remainingSectors: updated.length,
+      remainingPercentages: updated.map(a => ({ code: a.code, percentage: a.percentage }))
+    });
+    
+    // Just remove the sector - keep existing percentages
+    onChange(updated);
+    
+    // Trigger autosave with the updated sectors (only save sectors with > 0%)
+    setTimeout(() => {
+      if (sectorsAutosave) {
+        const sectorsToSave = updated.filter(a => a.percentage > 0);
+        console.log('[SectorForm] Triggering autosave after sector removal:', {
+          remainingSectors: updated.map(a => ({ code: a.code, percentage: a.percentage })),
+          sectorsToSave: sectorsToSave.map(a => ({ code: a.code, percentage: a.percentage }))
+        });
+        sectorsAutosave.triggerFieldSave(sectorsToSave);
       }
-      
-      console.log('[SectorForm] Auto-redistributing after removal:', {
-        remainingSectors: autoBalanced.length,
-        equalShare,
-        autoBalanced: autoBalanced.map(a => ({ code: a.code, percentage: a.percentage }))
-      });
-      
-      // Call onChange with auto-balanced percentages first
-      onChange(autoBalanced);
-      
-      // Then trigger autosave with a small delay to ensure onChange completes first
-      setTimeout(() => {
-        if (sectorsAutosave && autoBalanced.length > 0) {
-          console.log('[SectorForm] Triggering autosave after removal rebalance:', autoBalanced);
-          sectorsAutosave.triggerFieldSave(autoBalanced);
-        }
-      }, 100);
-    } else {
-      console.log('[SectorForm] All sectors removed');
-      onChange(updated);
-      
-      // Trigger autosave for empty state too
-      setTimeout(() => {
-        if (sectorsAutosave) {
-          console.log('[SectorForm] Triggering autosave for empty sectors');
-          sectorsAutosave.triggerFieldSave(updated);
-        }
-      }, 100);
-    }
+    }, 100);
   };
 
   // Distribute percentages equally
@@ -697,6 +713,17 @@ export default function ImprovedSectorAllocationForm({
     }
     
     onChange(updated);
+    
+    // Trigger autosave after equal distribution
+    setTimeout(() => {
+      if (sectorsAutosave && updated.length > 0) {
+        console.log('[SectorForm] Triggering autosave after equal distribution:', {
+          distributedSectors: updated.map(a => ({ code: a.code, percentage: a.percentage })),
+          totalPercentage: updated.reduce((sum, a) => sum + a.percentage, 0)
+        });
+        sectorsAutosave.triggerFieldSave(updated); // Save all since they all have valid percentages
+      }
+    }, 100);
   };
 
   // Clear all sectors
@@ -725,6 +752,45 @@ export default function ImprovedSectorAllocationForm({
   useEffect(() => {
     onValidationChange?.(validation);
   }, [validation, onValidationChange]);
+
+  // Notify parent of completion status changes
+  useEffect(() => {
+    if (onCompletionStatusChange) {
+      // Small delay to ensure autosave state is properly initialized
+      const timeoutId = setTimeout(() => {
+        const hasValidSectors = allocations.some(sector => sector.percentage && sector.percentage > 0);
+        const totalPercentage = allocations.reduce((sum, sector) => sum + (sector.percentage || 0), 0);
+        const isProperlyAllocated = Math.abs(totalPercentage - 100) < 0.1;
+        const isComplete = hasValidSectors && isProperlyAllocated;
+        
+        // Consider data saved if:
+        // 1. localStorage indicates it's persistently saved, OR
+        // 2. We have existing allocations (loaded from backend) and we're not currently saving
+        const isSaved = sectorsAutosave.state.isPersistentlySaved || 
+                       (allocations.length > 0 && !sectorsAutosave.state.isSaving && !sectorsAutosave.state.error);
+        
+        const isInProgress = sectorsAutosave.state.isSaving || (hasValidSectors && !isProperlyAllocated);
+        
+        console.log('[SectorForm] Completion status change:', {
+          hasValidSectors,
+          totalPercentage,
+          isProperlyAllocated,
+          isComplete,
+          isSaved,
+          finalStatus: isComplete && isSaved,
+          autosaveState: sectorsAutosave.state
+        });
+        
+        onCompletionStatusChange({
+          isComplete: isComplete && isSaved,
+          isInProgress: isInProgress,
+          isSaved: isSaved
+        });
+      }, 100); // Small delay to ensure proper initialization
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [allocations, sectorsAutosave.state.isPersistentlySaved, sectorsAutosave.state.isSaving, sectorsAutosave.state.error, onCompletionStatusChange]);
 
   // Save to autosave when allocations change (with deep comparison to prevent unnecessary saves)
   const prevAllocationsStringRef = useRef<string>('');
@@ -1146,7 +1212,7 @@ export default function ImprovedSectorAllocationForm({
                               {allocationStatus[allocation.id] === 'saving' && (
                                 <Loader2 className="h-3 w-3 animate-spin text-orange-500" />
                               )}
-                              {allocationStatus[allocation.id] === 'saved' && (
+                              {shouldShowGreenTick(allocation) && (
                                 <CheckCircle className="h-3 w-3 text-green-600" />
                               )}
                               {allocationStatus[allocation.id] === 'error' && (

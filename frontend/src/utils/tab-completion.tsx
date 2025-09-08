@@ -1,4 +1,4 @@
-import React from "react"
+import * as React from "react"
 import { CheckCircle, Loader2 } from "lucide-react"
 
 export interface TabCompletionStatus {
@@ -258,8 +258,11 @@ export function checkTagsTabCompletion(tags: any[]): TabCompletionStatus {
 
 /**
  * Check if the Sectors tab is complete based on sector allocations
+ * Extended version that can accept save state information for more accurate completion status
  */
-export function checkSectorsTabCompletion(sectors: any[]): TabCompletionStatus {
+export function checkSectorsTabCompletion(sectors: any[], options?: { 
+  autosaveState?: { isSaving?: boolean; isPersistentlySaved?: boolean; error?: any }
+}): TabCompletionStatus {
   const completedFields: string[] = []
   const missingFields: string[] = []
   
@@ -281,6 +284,26 @@ export function checkSectorsTabCompletion(sectors: any[]): TabCompletionStatus {
       completedFields.push('allocation_complete')
     } else {
       missingFields.push('allocation_complete')
+    }
+    
+    // If autosave state is provided and currently saving, show as in progress
+    if (options?.autosaveState?.isSaving) {
+      return {
+        isComplete: false,
+        isInProgress: true,
+        completedFields,
+        missingFields
+      }
+    }
+    
+    // If autosave failed, don't show as complete even if data looks valid
+    if (options?.autosaveState?.error) {
+      return {
+        isComplete: false,
+        isInProgress: false,
+        completedFields,
+        missingFields: [...missingFields, 'save_error']
+      }
     }
   } else {
     missingFields.push('sectors')

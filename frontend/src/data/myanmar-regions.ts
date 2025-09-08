@@ -90,10 +90,10 @@ export const MYANMAR_REGIONS = [
   
   // Union Territories
   { 
-    name: "Naypyitaw Union Territory", 
+    name: "Naypyidaw Union Territory", 
     type: "Union Territory", 
     flag: "/images/flags/naypyitaw-union-territory.svg",
-    flagAlt: "Flag of Naypyitaw Union Territory"
+    flagAlt: "Flag of Naypyidaw Union Territory"
   }
 ] as const;
 

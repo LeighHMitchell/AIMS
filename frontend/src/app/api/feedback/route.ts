@@ -237,7 +237,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, category, feature, subject, message, attachment_url, attachment_filename, attachment_type, attachment_size } = body;
+    const { userId, category, feature, subject, message, priority, attachment_url, attachment_filename, attachment_type, attachment_size } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -333,39 +333,22 @@ export async function POST(request: NextRequest) {
     // Let's try to insert without checking user existence first
     console.log('[AIMS Feedback API] Attempting direct insert with user ID:', realUserId);
 
-    // Check if feature column exists by testing with a simple query first
-    let hasFeatureColumn = false;
-    try {
-      const { data: testData, error: testError } = await supabase
-        .from('feedback')
-        .select('*')
-        .limit(1);
-      
-      if (!testError && testData && testData.length > 0) {
-        hasFeatureColumn = 'feature' in testData[0];
-      }
-      
-      console.log('[AIMS Feedback API] Feature column exists:', hasFeatureColumn);
-    } catch (error) {
-      console.warn('[AIMS Feedback API] Could not check for feature column:', error);
-    }
+    // Validate priority if provided
+    const validPriorities = ['low', 'medium', 'high', 'urgent'];
+    const finalPriority = priority && validPriorities.includes(priority) ? priority : 'medium';
 
-    // Insert feedback with conditional feature field
+    // Insert feedback with feature field
     const insertData: any = {
       user_id: realUserId,
       category,
+      feature: feature?.trim() || null,  // Always include feature field
       subject: subject?.trim() || null,
       message: message.trim(),
       status: 'open',
-      priority: 'medium'
+      priority: finalPriority
     };
 
-    // Only add feature field if the column exists
-    if (hasFeatureColumn && feature?.trim()) {
-      insertData.feature = feature.trim();
-    } else if (feature?.trim()) {
-      console.warn('[AIMS Feedback API] Feature value provided but column does not exist. Please run migration: ALTER TABLE feedback ADD COLUMN feature TEXT;');
-    }
+    console.log('[AIMS Feedback API] Including feature field:', insertData.feature);
 
     // Check if attachment columns exist by trying to get a sample feedback record
     let hasAttachmentColumns = false;
@@ -470,7 +453,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, id, status, priority, admin_notes, assigned_to } = body;
+    const { userId, id, status, priority, feature, admin_notes, assigned_to } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -524,6 +507,7 @@ export async function PUT(request: NextRequest) {
     
     if (status) updateData.status = status;
     if (priority) updateData.priority = priority;
+    if (feature !== undefined) updateData.feature = feature?.trim() || null;
     if (admin_notes !== undefined) updateData.admin_notes = admin_notes;
     if (assigned_to !== undefined) updateData.assigned_to = assigned_to;
     

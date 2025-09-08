@@ -145,7 +145,7 @@ export function ActivityEditorFieldAutosave({
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={statusAutosave.state.isSaving}
-            isSaved={statusAutosave.state.isPersistentlySaved}
+            isSaved={statusAutosave.state.isPersistentlySaved || !!activity.activityStatus}
             hasValue={!!activity.activityStatus}
             className={fieldLockStatus?.isLocked ? 'text-gray-400' : 'text-gray-700'}
           >

@@ -44,13 +44,14 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatReportedBy, formatSubmittedBy } from "@/utils/format-helpers";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { 
   Plus, Download, Edit2, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
-import { Transaction } from "@/types/transaction";
+import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
 import { LEGACY_TRANSACTION_TYPE_MAP } from "@/utils/transactionMigrationHelper";
 import { USER_ROLES } from "@/types/user";
 import { ActivityListSkeleton } from '@/components/ui/skeleton-loader';
@@ -93,12 +94,35 @@ const FLOW_TYPE_LABELS: Record<string, string> = {
   '50': 'Other flows'
 };
 
-// Tied Status mappings
-const TIED_STATUS_LABELS: Record<string, string> = {
-  '3': 'Partially tied',
-  '4': 'Tied',
-  '5': 'Untied'
+// Finance Type mappings
+const FINANCE_TYPE_LABELS: Record<string, string> = {
+  '110': 'Standard grant',
+  '111': 'Subsidies to national private investors',
+  '210': 'Interest subsidy',
+  '211': 'Interest subsidy to national private exporters',
+  '310': 'Capital subscription on deposit basis',
+  '311': 'Capital subscription on encashment basis',
+  '410': 'Aid loan excluding debt reorganisation',
+  '411': 'Investment-related loan to developing countries',
+  '412': 'Loan in a joint venture with the recipient',
+  '413': 'Loan to national private investor',
+  '421': 'Standard loan',
+  '422': 'Reimbursable grant',
+  '510': 'Bonds',
+  '520': 'Asset-backed securities',
+  '530': 'Other debt securities'
 };
+
+// Modality mappings
+const MODALITY_LABELS: Record<string, string> = {
+  '1': 'Grant',
+  '2': 'Loan',
+  '3': 'Technical Assistance',
+  '4': 'Reimbursable Grant or Other',
+  '5': 'Investment/Guarantee'
+};
+
+// Tied Status mappings imported from @/types/transaction
 
 type Organization = {
   id: string;
@@ -111,6 +135,7 @@ type Organization = {
 type Activity = {
   id: string;
   title: string;
+  acronym?: string; // Activity acronym/abbreviation
   activityStatus?: string; // IATI activity status (planning, implementation, etc.)
   publicationStatus?: string; // Publication status (draft, published)
   submissionStatus?: string; // Changed to string to match interface
@@ -169,7 +194,8 @@ type Activity = {
   default_finance_type?: string;
   default_flow_type?: string;
   default_tied_status?: string;
-  default_modality?: string;
+  default_aid_modality?: string;
+  default_aid_modality_override?: boolean;
   tied_status?: string; // Legacy field
 };
 
@@ -201,7 +227,7 @@ const getActivityStatusColor = (status: string): "secondary" | "success" | "defa
 // Helper function to get status label from code
 const getActivityStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
-    "1": "Pipeline / Identification",
+    "1": "Pipeline",
     "2": "Implementation", 
     "3": "Finalisation",
     "4": "Closed",
@@ -218,6 +244,16 @@ const getActivityStatusLabel = (status: string): string => {
 };
 
 
+
+// Helper function to format currency
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 // Helper function to check if user can edit an activity
 const canUserEditActivity = (user: any, activity: Activity): boolean => {
@@ -237,17 +273,25 @@ const canUserEditActivity = (user: any, activity: Activity): boolean => {
 };
 
 function ActivitiesPageContent() {
-  // FORCE DISABLE optimization to use working legacy API
-  const enableOptimization = false;
+  // Enable optimization to get conditional image loading
+  const enableOptimization = true;
   
   console.log('[Activities Page] Environment variable NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION:', process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION);
   console.log('[Activities Page] enableOptimization:', enableOptimization);
   console.log('[Activities Page] typeof env var:', typeof process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION);
   
+  // Common state regardless of optimization (moved before hook call)
+  const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  const [pageLimit, setPageLimit] = useState<number>(20);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  
   // Use optimized hook if enabled, otherwise fall back to original implementation
   const optimizedData = useOptimizedActivities({
     pageSize: 20,
     enableOptimization,
+    viewMode: viewMode,
     onError: (error) => {
       console.error('[Activities Page] Optimization error:', error);
       // Could fall back to original implementation here if needed
@@ -260,13 +304,6 @@ function ActivitiesPageContent() {
   const [legacyError, setLegacyError] = useState<string | null>(null);
   const [legacyCurrentPage, setLegacyCurrentPage] = useState(1);
   
-  // Common state regardless of optimization
-  const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
-  const [pageLimit, setPageLimit] = useState<number>(20);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  
   // Legacy sorting state for non-optimized version
   const [legacySortField, setLegacySortField] = useState<SortField>('updatedAt');
   const [legacySortOrder, setLegacySortOrder] = useState<SortOrder>('desc');
@@ -276,9 +313,10 @@ function ActivitiesPageContent() {
   
   // Track if we've ever successfully loaded data to prevent flash of empty state
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
-  // FORCE LEGACY MODE - completely disable optimization
-  const usingOptimization = false;
+  // Use optimization mode to get conditional image loading
+  const usingOptimization = enableOptimization;
   
   // Safely extract optimized data with fallbacks
   const safeOptimizedData = {
@@ -309,8 +347,7 @@ function ActivitiesPageContent() {
       setAidType: optimizedData?.filters?.setAidType || (() => {}),
       flowType: optimizedData?.filters?.flowType || 'all',
       setFlowType: optimizedData?.filters?.setFlowType || (() => {}),
-      tiedStatus: optimizedData?.filters?.tiedStatus || 'all',
-      setTiedStatus: optimizedData?.filters?.setTiedStatus || (() => {})
+
     }
   };
   
@@ -348,31 +385,39 @@ function ActivitiesPageContent() {
   const setFilterAidType = usingOptimization ? safeOptimizedData.filters.setAidType : () => {};
   const filterFlowType = usingOptimization ? safeOptimizedData.filters.flowType : 'all';
   const setFilterFlowType = usingOptimization ? safeOptimizedData.filters.setFlowType : () => {};
-  const filterTiedStatus = usingOptimization ? safeOptimizedData.filters.tiedStatus : 'all';
-  const setFilterTiedStatus = usingOptimization ? safeOptimizedData.filters.setTiedStatus : () => {};
+
 
   // Memoized helper functions - must be defined before use in other memos
   const getCreatorOrganization = useCallback((activity: Activity): string => {
+    // First, check if we have a stored acronym
     if (activity.created_by_org_acronym) {
       return activity.created_by_org_acronym;
     }
+    
+    // Look up by organization ID
     if (activity.createdByOrg) {
       const org = organizations.find(o => o.id === activity.createdByOrg);
       if (org && org.acronym) return org.acronym;
       if (org && org.name) return org.name;
     }
+    
+    // Look up by organization name to find acronym
     if (activity.created_by_org_name) {
+      const org = organizations.find(o => o.name === activity.created_by_org_name);
+      if (org && org.acronym) return org.acronym;
       return activity.created_by_org_name;
     }
+    
     return "Unknown";
   }, [organizations]);
 
   // Copy ID to clipboard
-  const copyToClipboard = (text: string, type: 'partnerId' | 'iatiIdentifier', activityId: string) => {
+  const copyToClipboard = (text: string, type: 'partnerId' | 'iatiIdentifier' | 'acronym', activityId: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(`${activityId}-${type}`);
     setTimeout(() => setCopiedId(null), 2000);
-    toast.success(`${type === 'partnerId' ? 'Activity ID' : 'IATI Identifier'} copied to clipboard`);
+    const message = type === 'partnerId' ? 'Activity ID' : type === 'iatiIdentifier' ? 'IATI Identifier' : 'Acronym';
+    toast.success(`${message} copied to clipboard`);
   };
 
   const fetchOrganizations = async () => {
@@ -461,7 +506,7 @@ function ActivitiesPageContent() {
     if (usingOptimization) {
       // Use optimized hook's refetch instead
       console.log('[AIMS] Using optimized refetch');
-      optimizedData.refetch();
+      optimizedData?.refetch();
       return;
     }
     
@@ -515,7 +560,7 @@ function ActivitiesPageContent() {
       toast.error(errorMessage);
       setLegacyActivities([]);
     }
-  }, [usingOptimization, optimizedData]);
+  }, [usingOptimization]);
 
   // Load saved page limit preference on mount
   useEffect(() => {
@@ -562,16 +607,34 @@ function ActivitiesPageContent() {
 
   // Track when we've successfully loaded data at least once
   useEffect(() => {
-    if (!loading && !userLoading && (totalActivitiesCount > 0 || error)) {
-      setHasLoadedOnce(true);
+    if (!loading && !userLoading) {
+      // Add a small delay on initial load to ensure skeleton shows
+      if (isInitialLoad) {
+        setTimeout(() => {
+          setHasLoadedOnce(true);
+          setIsInitialLoad(false);
+        }, 300);
+      } else {
+        setHasLoadedOnce(true);
+      }
     }
-  }, [loading, userLoading, totalActivitiesCount, error]);
+  }, [loading, userLoading, isInitialLoad]);
 
   // Don't refetch on filter changes - we do client-side filtering
   // Only refetch if we need fresh data
 
   const handleDelete = async (id: string, retryCount = 0) => {
     const MAX_RETRIES = 3;
+    
+    // Get the activity title for better toast feedback
+    let activityTitle = '';
+    if (usingOptimization) {
+      const activity = safeOptimizedData.activities.find(a => a.id === id);
+      activityTitle = (activity as any)?.title_narrative || activity?.title || 'Activity';
+    } else {
+      const activity = legacyActivities.find(a => a.id === id);
+      activityTitle = (activity as any)?.title_narrative || activity?.title || 'Activity';
+    }
     
     try {
       // Immediately remove the activity from the UI (optimistic update)
@@ -604,16 +667,17 @@ function ActivitiesPageContent() {
         // If it's a 404, the activity is already gone - that's fine
         if (res.status === 404) {
           console.log("[AIMS] Activity already deleted:", id);
-          toast.success("Activity deleted successfully");
+          console.log('[AIMS] About to show success toast for already deleted activity:', activityTitle);
+          toast.success(`"${activityTitle}" was deleted successfully`);
           return;
         }
         
         // For other errors, we need to revert the optimistic update or refetch
         if (retryCount === 0) {
           console.error("[AIMS] Delete failed, reverting optimistic update");
-                  if (usingOptimization) {
-          safeOptimizedData.refetch(); // Refetch to get current state
-        } else {
+          if (usingOptimization) {
+            safeOptimizedData.refetch(); // Refetch to get current state
+          } else {
             // For legacy mode, we'd need to restore the activity or refetch
             // For now, just refetch by calling the fetch function
             window.location.reload(); // Simple fallback
@@ -623,7 +687,8 @@ function ActivitiesPageContent() {
         throw new Error(errorData.error || "Failed to delete activity");
       }
       
-      toast.success("Activity deleted successfully");
+      console.log('[AIMS] About to show success toast for deletion:', activityTitle);
+      toast.success(`"${activityTitle}" was deleted successfully`);
       // Activity already removed optimistically, no need to do anything else
       
     } catch (error) {
@@ -653,7 +718,7 @@ function ActivitiesPageContent() {
         );
       }
     }
-  }
+  };
 
   const handleSort = (field: SortField) => {
     if (usingOptimization) {
@@ -851,640 +916,660 @@ function ActivitiesPageContent() {
   return (
     <MainLayout>
       <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
-        {/* Header */}
-        <div className="flex flex-wrap justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-800">Activities</h1>
-            <p className="text-slate-500">View key information about each activity. Users with appropriate permissions can update or remove activities from this list.</p>
-          </div>
+      {/* Header */}
+      <div className="flex flex-wrap justify-between items-center mb-6">
+        <div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportActivities}
-              className="h-9"
-            >
-              <Download className="h-4 w-4 mr-1" />
-              Export CSV
-            </Button>
+            <h1 className="text-2xl font-semibold text-slate-800">Activities</h1>
+            <HelpTextTooltip 
+              content="View key information about each activity. Users with appropriate permissions can update or remove activities from this list."
+            />
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportActivities}
+            className="h-9"
+          >
+            <Download className="h-4 w-4 mr-1" />
+            Export CSV
+          </Button>
+        </div>
+      </div>
 
-        {/* Filters and View Controls - All in One Row */}
-        <div className="flex flex-col lg:flex-row lg:items-center py-4 bg-slate-50 rounded-lg px-4">
-          {/* Left Side: Primary Status Filters */}
-          <div className="flex flex-wrap items-center gap-3">
-              <ActivityStatusFilterSelect
-                value={filterStatus}
-                onValueChange={setFilterStatus}
-                placeholder="Status"
-                className="w-[140px]"
-              />
+      {/* Filters and View Controls - All in One Row */}
+      <div className="flex flex-col lg:flex-row lg:items-center py-4 bg-slate-50 rounded-lg px-4">
+        {/* Left Side: Primary Status Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+            <ActivityStatusFilterSelect
+              value={filterStatus}
+              onValueChange={setFilterStatus}
+              placeholder="Status"
+              className="w-[180px]"
+            />
 
-              <Select value={filterValidation} onValueChange={setFilterValidation}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Validation" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Validation Types</SelectItem>
-                  <SelectItem value="validated">Validated</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="pending">Not Validated</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Reported By Filter */}
-              <Select value={filterReportedBy} onValueChange={setFilterReportedBy}>
-                <SelectTrigger className="w-[140px] pl-0">
-                  <SelectValue placeholder="Organisation" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Organisations</SelectItem>
-                  {organizations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>
-                      {org.acronym || org.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-          </div>
-
-          {/* Middle: Aid Modality Filters */}
-          <div className="flex flex-wrap items-center gap-3 lg:mx-8">
-            {/* Aid Type Filter */}
-            <Select value={filterAidType} onValueChange={setFilterAidType}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Aid Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Aid Types</SelectItem>
-                  {Object.entries(AID_TYPE_LABELS).map(([code, label]) => (
-                    <SelectItem key={code} value={code}>
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Flow Type Filter */}
-              <Select value={filterFlowType} onValueChange={setFilterFlowType}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Flow Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Flow Types</SelectItem>
-                  {Object.entries(FLOW_TYPE_LABELS).map(([code, label]) => (
-                    <SelectItem key={code} value={code}>
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Tied Status Filter */}
-              <Select value={filterTiedStatus} onValueChange={setFilterTiedStatus}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Tied Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Tied Status Types</SelectItem>
-                  {Object.entries(TIED_STATUS_LABELS).map(([code, label]) => (
-                    <SelectItem key={code} value={code}>
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-          </div>
-
-          {/* Center-Right: Page Size */}
-          <div className="flex items-center gap-2 lg:ml-auto lg:mr-6">
-            <span className="text-sm text-slate-600">Show:</span>
-            <Select 
-              value={pageLimit.toString()} 
-              onValueChange={(value) => handlePageLimitChange(Number(value))}
-            >
-              <SelectTrigger className="w-20">
-                <SelectValue />
+            <Select value={filterValidation} onValueChange={setFilterValidation}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Validation" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="all">All Validation Types</SelectItem>
+                <SelectItem value="validated">Validated</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="pending">Not Validated</SelectItem>
               </SelectContent>
             </Select>
-          </div>
 
-          {/* Right Side: View Toggle + Results Count - Fixed width */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-shrink-0">
-            {/* View Mode Toggle */}
-            <div className="flex items-center">
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('table')}
-                className="rounded-r-none"
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'card' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('card')}
-                className="rounded-l-none"
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-            </div>
+            {/* Reported By Filter */}
+            <Select value={filterReportedBy} onValueChange={setFilterReportedBy}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Organisation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Organisations</SelectItem>
+                {organizations.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>
+                    {org.acronym || org.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+        </div>
+
+        {/* Middle: Aid Modality Filters */}
+        <div className="flex flex-wrap items-center gap-3 lg:mx-8">
+          {/* Aid Type Filter */}
+          <Select value={filterAidType} onValueChange={setFilterAidType}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Aid Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Aid Types</SelectItem>
+                {Object.entries(AID_TYPE_LABELS).map(([code, label]) => (
+                  <SelectItem key={code} value={code}>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Flow Type Filter */}
+            <Select value={filterFlowType} onValueChange={setFilterFlowType}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Flow Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Flow Types</SelectItem>
+                {Object.entries(FLOW_TYPE_LABELS).map(([code, label]) => (
+                  <SelectItem key={code} value={code}>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+
             
-            {/* Results Summary with Performance Metrics */}
-            <div className="flex flex-col items-end gap-1">
-              <p className="text-sm text-slate-600 whitespace-nowrap">
-                {totalActivities === 0 
-                  ? "No activities" 
-                  : paginatedActivities.length === 0
-                  ? "No activities on this page"
-                  : `Showing ${Math.min(startIndex + 1, totalActivities)}–${Math.min(endIndex, totalActivities)} of ${totalActivities}`}
-              </p>
+        </div>
+
+        {/* Center-Right: Page Size */}
+        <div className="flex items-center gap-2 lg:ml-auto lg:mr-6">
+          <span className="text-sm text-slate-600">Show:</span>
+          <Select 
+            value={pageLimit.toString()} 
+            onValueChange={(value) => handlePageLimitChange(Number(value))}
+          >
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Right Side: View Toggle + Results Count - Fixed width */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-shrink-0">
+          {/* View Mode Toggle */}
+          <div className="flex items-center">
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className="rounded-r-none"
+            >
+              <TableIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'card' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('card')}
+              className="rounded-l-none"
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Results Summary with Performance Metrics */}
+          <div className="flex flex-col items-end gap-1">
+            <p className="text-sm text-slate-600 whitespace-nowrap">
+              {totalActivities === 0 
+                ? "No activities" 
+                : paginatedActivities.length === 0
+                ? "No activities on this page"
+                : `Showing ${Math.min(startIndex + 1, totalActivities)}–${Math.min(endIndex, totalActivities)} of ${totalActivities}`}
+            </p>
+          </div>
+        </div>
+      </div>
+      
+
+      {/* Activities Content */}
+      {(loading || userLoading || !hasLoadedOnce || isInitialLoad) ? (
+        <ActivityListSkeleton />
+      ) : error ? (
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+          <div className="space-y-4">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+            <div>
+              <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Activities</h3>
+              <p className="text-slate-500 mb-4">{error}</p>
+              <Button 
+                onClick={() => usingOptimization ? safeOptimizedData.refetch() : fetchActivities(1, true)} 
+                variant="outline"
+              >
+                Try Again
+              </Button>
             </div>
           </div>
         </div>
-        
-
-        {/* Activities Content */}
-        {loading || userLoading || !hasLoadedOnce ? (
-          <ActivityListSkeleton />
-        ) : totalActivities === 0 ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
-            {error ? (
-              <div className="space-y-4">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-                <div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Activities</h3>
-                  <p className="text-slate-500 mb-4">{error}</p>
-                  <Button 
-                    onClick={() => usingOptimization ? safeOptimizedData.refetch() : fetchActivities(1, true)} 
-                    variant="outline"
-                  >
-                    Try Again
-                  </Button>
-                </div>
-              </div>
-            ) : filterStatus !== "all" || filterValidation !== "all" ? (
-              <div className="text-slate-500">No matching activities found</div>
-            ) : (
-              <div className="space-y-4">
-                <div className="text-slate-500">No activities yet</div>
-                <Button onClick={() => router.push("/activities/new")} className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Activity
-                </Button>
-              </div>
-            )}
+      ) : totalActivities === 0 ? (
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+          <div className="space-y-4">
+            <div className="text-slate-500">No activities found</div>
+            <p className="text-sm text-slate-400">
+              {filterStatus !== "all" || filterValidation !== "all" ? 
+                "Try adjusting your filters to see more results." : 
+                "There are no activities in the system yet."
+              }
+            </p>
           </div>
-        ) : viewMode === 'table' ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
-            <div className="overflow-x-auto">
-              <table className="w-full table-fixed border-collapse min-w-[1300px]">
-                <thead className="bg-muted border-b">
-                  <tr>
-                    <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left cursor-pointer hover:bg-gray-200 w-[30%]"
-                      onClick={() => handleSort('title')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Activity Title
-                        {getSortIcon('title')}
-                      </div>
-                    </th>
-                    <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left cursor-pointer hover:bg-gray-200 w-[120px]"
-                      onClick={() => handleSort('activityStatus')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Activity Status
-                        {getSortIcon('activityStatus')}
-                      </div>
-                    </th>
-                    <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-center w-[120px]">
-                      Publication Status
-                    </th>
-                    <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left min-w-[140px] cursor-pointer hover:bg-gray-200"
-                      onClick={() => handleSort('createdBy')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Reported by
-                        {getSortIcon('createdBy')}
-                      </div>
-                    </th>
-                    <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[120px]"
-                      onClick={() => handleSort('commitments')}
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        Total Budgeted
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="inline h-4 w-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                              <p className="text-sm text-gray-600 font-normal">
-                                Total budget amount across all budget entries for this activity. All values are displayed in USD.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        {getSortIcon('commitments')}
-                      </div>
-                    </th>
-                    <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[100px]"
-                      onClick={() => handleSort('disbursements')}
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        Total Disbursed
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="inline h-4 w-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                              <p className="text-sm text-gray-600 font-normal">
-                                Total value of all disbursement and expenditure transactions for this activity. All values are displayed in USD.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        {getSortIcon('disbursements')}
-                      </div>
-                    </th>
+        </div>
+      ) : viewMode === 'table' ? (
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed border-collapse min-w-[1300px]">
+              <thead className="bg-muted/50 border-b border-border">
+                <tr>
+                  <th 
+                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[30%]"
+                    onClick={() => handleSort('title')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Activity Title</span>
+                      {getSortIcon('title')}
+                    </div>
+                  </th>
+                  <th 
+                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[120px]"
+                    onClick={() => handleSort('activityStatus')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Activity Status</span>
+                      {getSortIcon('activityStatus')}
+                    </div>
+                  </th>
+                  <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
+                    Publication Status
+                  </th>
+                  <th 
+                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[140px]"
+                    onClick={() => handleSort('createdBy')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Reported by</span>
+                      {getSortIcon('createdBy')}
+                    </div>
+                  </th>
+                  <th 
+                    className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[120px]"
+                    onClick={() => handleSort('commitments')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Total Budgeted</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="inline h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                            <p className="text-sm text-gray-600 font-normal">
+                              Total budget amount across all budget entries for this activity. All values are displayed in USD.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      {getSortIcon('commitments')}
+                    </div>
+                  </th>
+                  <th 
+                    className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
+                    onClick={() => handleSort('disbursements')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Total Disbursed</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="inline h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                            <p className="text-sm text-gray-600 font-normal">
+                              Total value of all disbursement and expenditure transactions for this activity. All values are displayed in USD.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      {getSortIcon('disbursements')}
+                    </div>
+                  </th>
 
-                    <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[100px]"
-                      onClick={() => handleSort('updatedAt')}
+                  <th 
+                    className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
+                    onClick={() => handleSort('updatedAt')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Last Edited</span>
+                      {getSortIcon('updatedAt')}
+                    </div>
+                  </th>
+                  <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
+                    Modality & Classification
+                  </th>
+                  <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[80px]">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white">
+                {paginatedActivities.map(activity => {
+                  const organizationAcronyms = getOrganizationAcronyms(activity);
+                  const acronymsText = formatOrganizationAcronyms(organizationAcronyms);
+                  const creatorOrg = getCreatorOrganization(activity);
+                  const activityStatus = activity.activityStatus || activity.status || '1';
+                  const publicationStatus = activity.publicationStatus || 'draft';
+                  const submissionStatus = activity.submissionStatus || 'draft';
+                  
+                  return (
+                    <tr
+                      key={activity.id}
+                      className="group hover:bg-muted transition-colors"
                     >
-                      <div className="flex items-center justify-end gap-1">
-                        Last Edited
-                        {getSortIcon('updatedAt')}
-                      </div>
-                    </th>
-                    <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-center w-[120px]">
-                      Default Aid Modality
-                    </th>
-                    <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right w-[80px]">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
-                  {paginatedActivities.map(activity => {
-                    const organizationAcronyms = getOrganizationAcronyms(activity);
-                    const acronymsText = formatOrganizationAcronyms(organizationAcronyms);
-                    const creatorOrg = getCreatorOrganization(activity);
-                    const activityStatus = activity.activityStatus || activity.status || '1';
-                    const publicationStatus = activity.publicationStatus || 'draft';
-                    const submissionStatus = activity.submissionStatus || 'draft';
-                    
-                    return (
-                      <tr
-                        key={activity.id}
-                        className="group hover:bg-muted transition-colors"
-                      >
-                        <td className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
-                          <div 
-                            className="cursor-pointer"
-                            onClick={() => router.push(`/activities/${activity.id}`)}
-                          >
-                            <div className="space-y-1 pr-2">
-                              <h3 className="font-medium text-foreground leading-tight line-clamp-2" title={activity.title}>
-                                {activity.title}
-                              </h3>
-                              {(activity.partnerId || activity.iatiIdentifier) && (
-                                <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
-                                  {activity.partnerId && (
-                                    <>
-                                      <span>{activity.partnerId}</span>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
-                                        }}
-                                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
-                                        title="Copy Activity ID"
-                                      >
-                                        {copiedId === `${activity.id}-partnerId` ? (
-                                          <Check className="w-3 h-3 text-green-500" />
-                                        ) : (
-                                          <Copy className="w-3 h-3" />
-                                        )}
-                                      </button>
-                                    </>
-                                  )}
-
-                                  {activity.iatiIdentifier && (
-                                    <>
-                                      <span className="text-slate-400 ml-2">{activity.iatiIdentifier}</span>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          copyToClipboard(activity.iatiIdentifier!, 'iatiIdentifier', activity.id);
-                                        }}
-                                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
-                                        title="Copy IATI Identifier"
-                                      >
-                                        {copiedId === `${activity.id}-iatiIdentifier` ? (
-                                          <Check className="w-3 h-3 text-green-500" />
-                                        ) : (
-                                          <Copy className="w-3 h-3" />
-                                        )}
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
+                      <td className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
+                        <div 
+                          className="cursor-pointer"
+                          onClick={() => router.push(`/activities/${activity.id}`)}
+                        >
+                          <div className="space-y-1 pr-2">
+                            <h3 className="font-medium text-foreground leading-tight line-clamp-2" title={activity.title}>
+                              {activity.title}
+                              {activity.acronym && (
+                                <span>
+                                  {' '}({activity.acronym})
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(activity.acronym!, 'acronym', activity.id);
+                                    }}
+                                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                    title="Copy Acronym"
+                                  >
+                                    {copiedId === `${activity.id}-acronym` ? (
+                                      <Check className="w-3 h-3 text-green-500" />
+                                    ) : (
+                                      <Copy className="w-3 h-3" />
+                                    )}
+                                  </button>
+                                </span>
                               )}
-                            </div>
+                            </h3>
+                            {(activity.partnerId || activity.iatiIdentifier) && (
+                              <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
+                                {activity.partnerId && (
+                                  <>
+                                    <span>{activity.partnerId}</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
+                                      }}
+                                      className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                      title="Copy Activity ID"
+                                    >
+                                      {copiedId === `${activity.id}-partnerId` ? (
+                                        <Check className="w-3 h-3 text-green-500" />
+                                      ) : (
+                                        <Copy className="w-3 h-3" />
+                                      )}
+                                    </button>
+                                  </>
+                                )}
+
+                                {activity.iatiIdentifier && (
+                                  <>
+                                    <span className="text-slate-400 ml-2">{activity.iatiIdentifier}</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyToClipboard(activity.iatiIdentifier!, 'iatiIdentifier', activity.id);
+                                      }}
+                                      className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                      title="Copy IATI Identifier"
+                                    >
+                                      {copiedId === `${activity.id}-iatiIdentifier` ? (
+                                        <Check className="w-3 h-3 text-green-500" />
+                                      ) : (
+                                        <Copy className="w-3 h-3" />
+                                      )}
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
-                          {getActivityStatusLabel(activityStatus)}
-                        </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-center">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer mx-auto`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="space-y-2 p-1">
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <FileCheck className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <ShieldCheck className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Globe className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">IATI:</span> {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
-                                  </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-foreground text-left">
+                        {getActivityStatusLabel(activityStatus)}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-foreground text-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer mx-auto`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="space-y-2 p-1">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <FileCheck className="h-4 w-4" />
+                                  <span className="text-sm"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
                                 </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </td>
-                        <td className="px-4 py-2 text-sm text-foreground">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div>
-                                  {creatorOrg}
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <ShieldCheck className="h-4 w-4" />
+                                  <span className="text-sm"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
                                 </div>
-                              </TooltipTrigger>
-                              <TooltipContent 
-                                className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
-                                sideOffset={8}
-                              >
-                                <div className="text-sm">
-                                  <p className="font-semibold">
-                                    Reported by {formatReportedBy({ 
-                                      name: activity.created_by_org_name || "Unknown Organization", 
-                                      shortName: activity.created_by_org_acronym 
-                                    })}
-                                  </p>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Globe className="h-4 w-4" />
+                                  <span className="text-sm"><span className="font-semibold">IATI:</span> {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-foreground">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <div>
+                                {creatorOrg}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent 
+                              className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
+                              sideOffset={8}
+                            >
+                              <div className="text-sm">
+                                <p className="font-semibold">
+                                  Reported by {formatReportedBy({ 
+                                    name: activity.created_by_org_name || "Unknown Organization", 
+                                    shortName: activity.created_by_org_acronym 
+                                  })}
                                   {user && (
-                                    <p className="text-gray-600">
-                                      Submitted by {formatSubmittedBy({
+                                    <span className="text-gray-600 font-normal">
+                                      {' '}Submitted by {formatSubmittedBy({
                                         title: user.title,
                                         firstName: user.firstName || '',
                                         middleName: user.middleName,
                                         lastName: user.lastName || '',
                                         jobTitle: user.jobTitle
                                       })} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
-                                    </p>
+                                    </span>
                                   )}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                {formatCurrency((activity as any).totalBudget || 0)}
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600 font-normal">
-                                  Total budget amount across all budget entries for this activity. All values are displayed in USD for consistency across different currencies.
                                 </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                {formatCurrency((activity as any).totalDisbursed || 0)}
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600 font-normal">
-                                  Total value of all disbursement and expenditure transactions for this activity. All values are displayed in USD for consistency across different currencies.
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </td>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              {formatCurrency((activity as any).totalBudget || 0)}
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <p className="text-sm text-gray-600 font-normal">
+                                Total budget amount across all budget entries for this activity. All values are displayed in USD for consistency across different currencies.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              {formatCurrency((activity as any).totalDisbursed || 0)}
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <p className="text-sm text-gray-600 font-normal">
+                                Total value of all disbursement and expenditure transactions for this activity. All values are displayed in USD for consistency across different currencies.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </td>
 
-                        <td className="px-4 py-2 text-sm text-foreground whitespace-nowrap text-right">
-                          {format(new Date(activity.updatedAt), "dd MMM yyyy")}
-                        </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-center">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <ReceiptText className="h-4 w-4 text-gray-500 hover:text-primary cursor-pointer mx-auto" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="space-y-2 p-1">
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Handshake className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Shuffle className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Link2 className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status : 'Not specified'}</span>
-                                  </div>
+                      <td className="px-4 py-2 text-sm text-foreground whitespace-nowrap text-right">
+                        {format(new Date(activity.updatedAt), "dd MMM yyyy")}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-foreground text-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <ReceiptText className="h-4 w-4 text-gray-500 hover:text-primary cursor-pointer mx-auto" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="space-y-2 p-1">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Handshake className="h-4 w-4" />
+                                  <span className="text-sm"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
                                 </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-right">
-                          <div className="flex items-center justify-end">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-32">
-                                {canUserEditActivity(user, activity) && (
-                                  <DropdownMenuItem 
-                                    onClick={() => router.push(`/activities/new?id=${activity.id}`)}
-                                    className="cursor-pointer"
-                                  >
-                                    <PencilLine className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                )}
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <DollarSign className="h-4 w-4" />
+                                  <span className="text-sm"><span className="font-semibold">Default Finance Type:</span> {activity.default_finance_type ? FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type : 'Not specified'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Shuffle className="h-4 w-4" />
+                                  <span className="text-sm"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Link2 className="h-4 w-4" />
+                                  <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status : 'Not specified'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Settings className="h-4 w-4" />
+                                  <span className="text-sm"><span className="font-semibold">Default Modality:</span> {activity.default_aid_modality ? MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality : 'Not specified'}</span>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-foreground text-right">
+                        <div className="flex items-center justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-32">
+                              {canUserEditActivity(user, activity) && (
                                 <DropdownMenuItem 
-                                  onClick={() => setDeleteActivityId(activity.id)}
-                                  className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => router.push(`/activities/new?id=${activity.id}`)}
+                                  className="cursor-pointer"
                                 >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
+                                  <PencilLine className="mr-2 h-4 w-4" />
+                                  Edit
                                 </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                              )}
+                              <DropdownMenuItem 
+                                onClick={() => setDeleteActivityId(activity.id)}
+                                className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          // Card View - Using new ActivityList component
-          <ActivityList
-            activities={paginatedActivities.map(activity => ({
-              id: activity.id,
-              title: activity.title,
-              iati_id: activity.iatiIdentifier || activity.iatiId,
-              description: activity.description,
-              activity_status: activity.activityStatus,
-              publication_status: activity.publicationStatus,
-              planned_start_date: activity.plannedStartDate,
-              planned_end_date: activity.plannedEndDate,
-              updated_at: activity.updatedAt,
-              partner_id: activity.partnerId,
-              banner: activity.banner,
-              icon: activity.icon,
-              // Add aid modality fields
-              default_aid_type: activity.default_aid_type,
-              default_finance_type: activity.default_finance_type,
-              default_flow_type: activity.default_flow_type,
-              default_tied_status: activity.default_tied_status,
-              // Add financial and reporting fields
-              created_by_org_name: activity.created_by_org_name,
-              created_by_org_acronym: activity.created_by_org_acronym,
-              totalBudget: (activity as any).totalBudget || 0,
-              totalDisbursed: (activity as any).totalDisbursed || 0,
-              sdgMappings: (activity as any).sdgMappings || []
-            }))
-            loading={loading}
-            onEdit={canUserEditActivity(user, {} as Activity) ? (activityId) => router.push(`/activities/new?id=${activityId}`) : undefined}
-            onDelete={(activityId) => setDeleteActivityId(activityId)}
-            className="fade-in"
-          />
-        )}
+        </div>
+      ) : (
+        // Card View - Using new ActivityList component
+        <ActivityList
+          activities={paginatedActivities.map(activity => ({
+            id: activity.id,
+            title: activity.title,
+            iati_id: activity.iatiIdentifier || activity.iatiId,
+            description: activity.description,
+            acronym: activity.acronym,
+            activity_status: activity.activityStatus,
+            publication_status: activity.publicationStatus,
+            planned_start_date: activity.plannedStartDate,
+            planned_end_date: activity.plannedEndDate,
+            updated_at: activity.updatedAt,
+            partner_id: activity.partnerId,
+            banner: activity.banner,
+            icon: activity.icon,
+            // Add aid modality fields
+            default_aid_type: activity.default_aid_type,
+            default_finance_type: activity.default_finance_type,
+            default_flow_type: activity.default_flow_type,
+            default_tied_status: activity.default_tied_status,
+            default_aid_modality: activity.default_aid_modality,
+            default_aid_modality_override: activity.default_aid_modality_override,
+            // Add financial and reporting fields
+            created_by_org_name: activity.created_by_org_name,
+            created_by_org_acronym: activity.created_by_org_acronym,
+            totalBudget: (activity as any).totalBudget || 0,
+            totalDisbursed: (activity as any).totalDisbursed || 0,
+            sdgMappings: (activity as any).sdgMappings || []
+          }))}
+          loading={loading}
+          onEdit={canUserEditActivity(user, {} as Activity) ? (activityId) => router.push(`/activities/new?id=${activityId}`) : undefined}
+          onDelete={(activityId) => setDeleteActivityId(activityId)}
+          className="fade-in"
+        />
+      )}
 
-        {/* Pagination Controls */}
-        {!isShowingAll && totalPages > 1 && totalActivities > 0 && (
-          <div className="flex items-center justify-center space-x-2 mt-6">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const newPage = Math.max(1, currentPage - 1);
-                usingOptimization ? safeOptimizedData.setPage(newPage) : setCurrentPage(newPage);
-              }}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <div className="flex items-center space-x-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      usingOptimization ? safeOptimizedData.setPage(pageNum) : setCurrentPage(pageNum);
-                    }}
-                    className="w-10"
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const newPage = Math.min(totalPages, currentPage + 1);
-                usingOptimization ? safeOptimizedData.setPage(newPage) : setCurrentPage(newPage);
-              }}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </Button>
+      {/* Pagination Controls */}
+      {!isShowingAll && totalPages > 1 && totalActivities > 0 && (
+        <div className="flex items-center justify-center space-x-2 mt-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const newPage = Math.max(1, currentPage - 1);
+              usingOptimization ? safeOptimizedData.setPage(newPage) : setCurrentPage(newPage);
+            }}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    usingOptimization ? safeOptimizedData.setPage(pageNum) : setCurrentPage(pageNum);
+                  }}
+                  className="w-10"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
           </div>
-        )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const newPage = Math.min(totalPages, currentPage + 1);
+              usingOptimization ? safeOptimizedData.setPage(newPage) : setCurrentPage(newPage);
+            }}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
 
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={!!deleteActivityId} onOpenChange={() => setDeleteActivityId(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Activity</DialogTitle>
-              <DialogDesc>
-                Are you sure you want to delete this activity? This action cannot be undone.
-              </DialogDesc>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteActivityId(null)}>
-                Cancel
-              </Button>
-              <Button 
-                variant="destructive" 
-                onClick={() => deleteActivityId && handleDelete(deleteActivityId)}
-              >
-                Delete Activity
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteActivityId} onOpenChange={() => setDeleteActivityId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Activity</DialogTitle>
+            <DialogDesc>
+              Are you sure you want to delete this activity? This action cannot be undone.
+            </DialogDesc>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteActivityId(null)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => deleteActivityId && handleDelete(deleteActivityId)}
+            >
+              Delete Activity
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </MainLayout>
   );

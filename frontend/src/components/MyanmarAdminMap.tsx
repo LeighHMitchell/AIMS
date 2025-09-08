@@ -93,6 +93,11 @@ export default function MyanmarAdminMap({
   const [shouldResetMap, setShouldResetMap] = useState(false);
   const mapRef = useRef<any>(null);
 
+  // Debug: Log breakdowns data
+  console.log('[MyanmarAdminMap] Received breakdowns:', breakdowns);
+  console.log('[MyanmarAdminMap] Breakdowns keys:', Object.keys(breakdowns || {}));
+  console.log('[MyanmarAdminMap] Visible:', visible);
+
   // Load Leaflet and GeoJSON data
   useEffect(() => {
     loadLeaflet();
@@ -110,17 +115,17 @@ export default function MyanmarAdminMap({
       });
   }, []);
 
-  // Function to get color based on percentage
+  // Function to get color based on percentage (slate/dark blue theme)
   const getColor = (percentage: number): string => {
-    if (percentage === 0) return '#f7f7f7';  // Light gray for 0%
-    if (percentage <= 10) return '#fee5d9';   // Very light orange
-    if (percentage <= 20) return '#fcbba1';   // Light orange
-    if (percentage <= 30) return '#fc9272';   // Medium orange
-    if (percentage <= 40) return '#fb6a4a';   // Orange-red
-    if (percentage <= 50) return '#ef3b2c';   // Red
-    if (percentage <= 60) return '#cb181d';   // Dark red
-    if (percentage <= 80) return '#a50f15';   // Darker red
-    return '#67000d';                         // Darkest red for >80%
+    if (percentage === 0) return '#f1f5f9';  // Light slate-50 for 0%
+    if (percentage <= 10) return '#e2e8f0';  // slate-200 - Very light slate
+    if (percentage <= 20) return '#cbd5e1';  // slate-300 - Light slate
+    if (percentage <= 30) return '#94a3b8';  // slate-400 - Medium slate
+    if (percentage <= 40) return '#64748b';  // slate-500 - Slate
+    if (percentage <= 50) return '#475569';  // slate-600 - Dark slate
+    if (percentage <= 60) return '#334155';  // slate-700 - Darker slate
+    if (percentage <= 80) return '#1e293b';  // slate-800 - Very dark slate
+    return '#0f172a';                        // slate-900 - Darkest slate for >80%
   };
 
   // Function to map GeoJSON region names to our full region names
@@ -157,11 +162,11 @@ export default function MyanmarAdminMap({
     
     return {
       fillColor: getColor(percentage),
-      weight: 2,
+      weight: 3,
       opacity: 1,
-      color: '#666',
+      color: '#1e293b',  // slate-800 for darker, more visible borders
       dashArray: '',
-      fillOpacity: 0.7
+      fillOpacity: 0.6
     };
   };
 
@@ -176,10 +181,10 @@ export default function MyanmarAdminMap({
       <div class="text-sm bg-white p-2 rounded shadow-lg border">
         <div class="font-semibold text-gray-900">${fullRegionName}</div>
         <div class="text-gray-600 mt-1">
-          Allocation: <span class="font-medium text-blue-600">${percentage.toFixed(1)}%</span>
+          Allocation: <span class="font-medium text-gray-900">${percentage.toFixed(1)}%</span>
         </div>
         <div class="text-xs text-gray-500 mt-1">
-          ${feature.properties.ST_RG} • Click to select
+          ${feature.properties.ST_RG}
         </div>
       </div>
     `, {
@@ -196,7 +201,8 @@ export default function MyanmarAdminMap({
         const layer = e.target;
         layer.setStyle({
           weight: 3,
-          color: '#2563eb',
+          color: '#374151',  // gray-700 for hover borders
+          fillColor: '#9ca3af',  // gray-400 monochrome hover
           dashArray: '',
           fillOpacity: 0.8
         });
@@ -250,7 +256,7 @@ export default function MyanmarAdminMap({
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 p-4">
-        <div className="h-[calc(100vh-300px)] min-h-[500px] w-full relative rounded-lg overflow-hidden border">
+        <div className="min-h-[600px] max-h-[800px] h-full w-full relative rounded-lg overflow-hidden border">
           {isMapLoaded && L && geoJsonData ? (
             <MapContainer
               ref={mapRef}
@@ -260,7 +266,12 @@ export default function MyanmarAdminMap({
               zoomControl={true}
               attributionControl={false}
             >
-              {/* No base tiles - just boundaries */}
+              {/* Add base tiles for better visibility */}
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              {/* Administrative boundaries */}
               <GeoJSON
                 data={geoJsonData}
                 style={styleFeature}

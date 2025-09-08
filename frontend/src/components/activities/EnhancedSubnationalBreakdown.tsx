@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 
 
-import { MapPin, Trash2 } from 'lucide-react'
+import { MapPin, Trash2, Sparkles } from 'lucide-react'
 import { MYANMAR_REGIONS, type MyanmarRegion } from "@/data/myanmar-regions"
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
@@ -45,11 +45,11 @@ export function EnhancedSubnationalBreakdown({
   const [saving, setSaving] = useState(false)
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
 
-  // Create flattened list of all administrative units
+  // Create flattened list of all administrative units (states/regions/union territories only)
   const allAdminUnits = useMemo(() => {
     const units: AdminUnit[] = []
     
-    // Add states/regions/union territories
+    // Add states/regions/union territories ONLY (no townships)
     myanmarData.states.forEach((state) => {
       units.push({
         id: state.id,
@@ -58,17 +58,7 @@ export function EnhancedSubnationalBreakdown({
         fullName: state.name
       })
       
-      // Add townships within each state
-      state.townships.forEach((township) => {
-        units.push({
-          id: `${state.id}-${township.id}`,
-          name: township.name,
-          type: 'township',
-          parentName: state.name,
-          parentId: state.id,
-          fullName: `${township.name} (${state.name})`
-        })
-      })
+      // Skip townships - we don't want them in the dropdown
     })
     
     return units
@@ -426,7 +416,7 @@ export function EnhancedSubnationalBreakdown({
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
               Subnational Breakdown
-              <HelpTextTooltip content="Select administrative units (states/regions or townships) and provide percentage breakdowns. Click on the map to add regions quickly." />
+              <HelpTextTooltip content="Select administrative units (states/regions/union territories) and provide percentage breakdowns. Click on the map to add regions quickly." />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 flex-1 overflow-y-auto">
@@ -437,29 +427,31 @@ export function EnhancedSubnationalBreakdown({
                 allAdminUnits={allAdminUnits}
                 selected={selectedUnits}
                 onChange={handleSelectionChange}
-                placeholder="Select states, regions, or townships..."
+                placeholder="Select states, regions, or union territories..."
                 disabled={!canEdit}
               />
             </div>
 
             {/* Action Buttons */}
             {entries.length > 0 && canEdit && (
-              <div className="flex gap-2">
+              <div className="flex justify-end gap-2">
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="sm"
                   onClick={distributeEqually}
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
                 >
+                  <Sparkles className="h-3 w-3 mr-1" />
                   Distribute Equally
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={clearAllocations}
-                  className="text-gray-600 border-gray-200 hover:bg-gray-50"
+                  className="text-red-600 border-red-200 hover:bg-red-50"
                 >
-                  Clear Allocations
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear All
                 </Button>
               </div>
             )}
@@ -471,13 +463,18 @@ export function EnhancedSubnationalBreakdown({
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="text-left px-3 py-2 font-medium text-sm text-gray-700">Administrative Unit</th>
-                      <th className="text-right px-3 py-2 font-medium text-sm text-gray-700 w-28">%</th>
+                      <th className="px-3 py-2">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="w-28 text-right font-medium text-sm text-gray-700">%</span>
+                          <span className="w-8"></span>
+                        </div>
+                      </th>
                       {canEdit && <th className="w-10 px-3 py-2"></th>}
                     </tr>
                   </thead>
                   <tbody>
                     {organizedEntries.map(({ entry, isParent, isChild }) => (
-                      <tr key={entry.id} className={`border-t hover:bg-gray-50 ${isChild ? '' : 'bg-gray-100'}`}>
+                      <tr key={entry.id} className="border-t">
                         <td className={`px-3 py-2 ${isChild ? 'pl-8' : ''}`}>
                           <span className={`text-sm ${isParent ? 'font-semibold' : isChild ? 'font-normal text-gray-700' : 'font-medium'}`}>
                             {isChild ? entry.adminUnit.name : entry.adminUnit.fullName}
@@ -492,11 +489,11 @@ export function EnhancedSubnationalBreakdown({
                               step="0.01"
                               value={entry.percentage || ''}
                               onChange={(e) => updatePercentage(entry.id, parseFloat(e.target.value) || 0)}
-                              className="w-20 text-right text-sm h-8"
+                              className="w-28 text-right text-sm h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               placeholder="0"
                               disabled={!canEdit}
                             />
-                            <span className="text-xs text-gray-500 w-3">%</span>
+                            <span className="text-xs text-gray-500 w-8 text-left">%</span>
                           </div>
                         </td>
                         {canEdit && (
@@ -515,15 +512,18 @@ export function EnhancedSubnationalBreakdown({
                     ))}
                   </tbody>
                   {hasAnyValues && (
-                    <tfoot className="bg-gray-50 border-t">
+                    <tfoot className="border-t">
                       <tr>
                         <td className="px-3 py-2 font-semibold text-sm">
                           Total
                         </td>
-                        <td className="px-3 py-2 text-right font-semibold text-sm">
-                          <span className={isValidTotal ? "text-green-600" : "text-red-600"}>
-                            {totalPercentage.toFixed(1)}%
-                          </span>
+                        <td className="px-3 py-2 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-gray-700 font-semibold text-sm w-28 text-right">
+                              {totalPercentage.toFixed(1)}
+                            </span>
+                            <span className="text-xs text-gray-700 font-semibold w-8 text-left">%</span>
+                          </div>
                         </td>
                         {canEdit && <td className="px-3 py-2"></td>}
                       </tr>
@@ -539,22 +539,11 @@ export function EnhancedSubnationalBreakdown({
               </div>
             )}
 
-            {/* Actions */}
-            {entries.length > 0 && canEdit && (
-              <div className="flex justify-between items-center pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setEntries([])
-                    setSelectedUnits([])
-                  }}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Remove All Units
-                </Button>
+            {/* Save Status */}
+            {entries.length > 0 && saving && (
+              <div className="flex justify-end pt-4 border-t">
                 <div className="text-sm text-gray-600">
-                  {saving ? 'Saving...' : `${entries.length} unit${entries.length !== 1 ? 's' : ''} selected`}
+                  Saving...
                 </div>
               </div>
             )}

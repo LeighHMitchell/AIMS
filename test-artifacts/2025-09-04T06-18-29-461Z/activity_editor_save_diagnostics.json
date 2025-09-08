@@ -1,0 +1,21 @@
+{
+  "testRunId": "2025-09-04T06-18-29-461Z",
+  "timestamp": "2025-09-04T06:18:29.490Z",
+  "summary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "passRate": "NaN%",
+    "failureTypes": {
+      "ui_save_failed": [],
+      "db_save_failed": [],
+      "nav_persistence_failed": [],
+      "refresh_persistence_failed": [],
+      "spinner_not_seen": [],
+      "tick_not_seen": [],
+      "tick_while_empty_issue": [],
+      "rapid_edit_failed": []
+    }
+  },
+  "results": []
+}

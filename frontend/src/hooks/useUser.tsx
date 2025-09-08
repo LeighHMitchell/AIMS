@@ -42,30 +42,39 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Listen for Supabase auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: any, session: any) => {
-        console.log('[useUser] Supabase auth event:', event);
-        
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Don't override user data if we already have it loaded
-          // The login API provides complete user data including profilePicture
-          console.log('[useUser] Supabase SIGNED_IN event - skipping user override to preserve login API data');
+    let subscription: any = null;
+
+    try {
+      // Listen for Supabase auth changes
+      const authResponse = supabase.auth.onAuthStateChange(
+        async (event: any, session: any) => {
+          console.log('[useUser] Supabase auth event:', event);
+          
+          if (event === 'SIGNED_IN' && session?.user) {
+            // Don't override user data if we already have it loaded
+            // The login API provides complete user data including profilePicture
+            console.log('[useUser] Supabase SIGNED_IN event - skipping user override to preserve login API data');
+          }
+          
+          if (event === 'SIGNED_OUT') {
+            console.log('[useUser] User signed out from Supabase');
+            handleSetUser(null);
+          }
         }
-        
-        if (event === 'SIGNED_OUT') {
-          console.log('[useUser] User signed out from Supabase');
-          handleSetUser(null);
-        }
-      }
-    );
+      );
+      subscription = authResponse.data.subscription;
+    } catch (error) {
+      console.error('[useUser] Failed to setup Supabase auth listener:', error);
+    }
 
     setIsLoading(false);
     setIsInitialized(true);
 
     // Cleanup subscription
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 

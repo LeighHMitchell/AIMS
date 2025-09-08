@@ -37,6 +37,24 @@ export async function POST(request: Request) {
           ELSE
               RAISE NOTICE 'activity_scope column already exists';
           END IF;
+          
+          -- Add feature column to feedback table if it doesn't exist
+          IF NOT EXISTS (
+              SELECT 1 
+              FROM information_schema.columns 
+              WHERE table_name = 'feedback' 
+              AND column_name = 'feature'
+          ) THEN
+              ALTER TABLE feedback 
+              ADD COLUMN feature TEXT NULL;
+              
+              -- Add comment explaining the field
+              COMMENT ON COLUMN feedback.feature IS 'App feature/functionality this feedback relates to';
+              
+              RAISE NOTICE 'feature column added to feedback table successfully';
+          ELSE
+              RAISE NOTICE 'feature column already exists in feedback table';
+          END IF;
       END $$;
     `;
 

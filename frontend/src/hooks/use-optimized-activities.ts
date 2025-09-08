@@ -96,6 +96,14 @@ export function useOptimizedActivities(
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  console.log('[Hook Debug] Current state:', { 
+    activitiesCount: activities.length, 
+    loading, 
+    error,
+    enableOptimization,
+    forceEnableOptimization 
+  });
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -272,15 +280,27 @@ export function useOptimizedActivities(
       }
 
       console.error('[Activities Hook] Error fetching activities:', error);
-      setError(error.message || 'Failed to fetch activities');
+      
+      // Handle specific error types
+      let errorMessage = 'Failed to fetch activities';
+      
+      if (error.message && error.message.includes('DATABASE_CONNECTION_ERROR')) {
+        errorMessage = 'Database connection issue. Please try again later.';
+      } else if (error.message && error.message.includes('503')) {
+        errorMessage = 'Service temporarily unavailable. Please try again later.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
       
       if (onError) {
-        onError(error.message || 'Failed to fetch activities');
+        onError(errorMessage);
       }
     } finally {
       setLoading(false);
     }
-  }, [onError]); // Remove unstable dependencies to prevent infinite re-fetching
+  }, [currentPage, pageSize, debouncedSearchQuery, sortField, sortOrder, activityStatus, submissionStatus, reportedBy, aidType, flowType, tiedStatus, viewMode, onError]);
 
   // Debounce search query
   useEffect(() => {

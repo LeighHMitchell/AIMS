@@ -1,16 +1,18 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FEEDBACK_TYPES, FEEDBACK_STATUS_TYPES, FEEDBACK_PRIORITY_TYPES } from '@/data/feedback-types';
-import { ALL_APP_FEATURES } from '@/data/app-features';
-import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, RefreshCw, Clock, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame } from 'lucide-react';
+import { ALL_APP_FEATURES, APP_FEATURES } from '@/data/app-features';
+import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, RefreshCw, Clock, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
@@ -151,6 +153,7 @@ export function FeedbackManagement() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterPriority, setFilterPriority] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
   
@@ -174,6 +177,7 @@ export function FeedbackManagement() {
       params.append('userId', user.id);
       if (filterStatus !== 'all') params.append('status', filterStatus);
       if (filterCategory !== 'all') params.append('category', filterCategory);
+      if (filterPriority !== 'all') params.append('priority', filterPriority);
       params.append('page', currentPage.toString());
       params.append('limit', pageSize.toString());
       
@@ -220,7 +224,7 @@ export function FeedbackManagement() {
       setCurrentPage(1); // Reset to first page when filters change
       fetchFeedback();
     }
-  }, [filterStatus, filterCategory, user?.id]);
+  }, [filterStatus, filterCategory, filterPriority, user?.id]);
 
   // Separate effect for pagination changes
   useEffect(() => {
@@ -356,7 +360,7 @@ export function FeedbackManagement() {
   };
 
   // Sort feedback based on current sort field and direction
-  const sortedFeedback = React.useMemo(() => {
+  const sortedFeedback = useMemo(() => {
     const sorted = [...feedback].sort((a, b) => {
       let aValue: any = a[sortField as keyof Feedback];
       let bValue: any = b[sortField as keyof Feedback];
@@ -387,12 +391,13 @@ export function FeedbackManagement() {
     return sorted;
   }, [feedback, sortField, sortDirection]);
 
-  // Filter feedback based on status, category, and archived state
+  // Filter feedback based on status, category, priority, and archived state
   const filteredFeedback = sortedFeedback.filter(item => {
     const statusMatch = filterStatus === 'all' || item.status === filterStatus;
     const categoryMatch = filterCategory === 'all' || item.category === filterCategory;
+    const priorityMatch = filterPriority === 'all' || item.priority === filterPriority;
     const archivedMatch = showArchived ? item.status === 'archived' : item.status !== 'archived';
-    return statusMatch && categoryMatch && archivedMatch;
+    return statusMatch && categoryMatch && priorityMatch && archivedMatch;
   });
 
 
@@ -423,11 +428,17 @@ export function FeedbackManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  {FEEDBACK_STATUS_TYPES.map((status) => (
-                    <SelectItem key={status.code} value={status.code}>
-                      {status.name}
-                    </SelectItem>
-                  ))}
+                  {FEEDBACK_STATUS_TYPES.map((status) => {
+                    const { icon: StatusIcon, color } = getStatusIcon(status.code);
+                    return (
+                      <SelectItem key={status.code} value={status.code}>
+                        <div className="flex items-center gap-2">
+                          <StatusIcon className={`h-4 w-4 ${color}`} />
+                          {status.name}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -446,6 +457,28 @@ export function FeedbackManagement() {
                         <div className="flex items-center gap-2">
                           <IconComponent className="h-4 w-4" />
                           {type.name}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Filter by Priority</label>
+              <Select value={filterPriority} onValueChange={setFilterPriority}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All priorities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  {FEEDBACK_PRIORITY_TYPES.map((priorityType) => {
+                    const { icon: PriorityIcon, color } = getPriorityIcon(priorityType.code);
+                    return (
+                      <SelectItem key={priorityType.code} value={priorityType.code}>
+                        <div className="flex items-center gap-2">
+                          <PriorityIcon className={`h-4 w-4 ${color}`} />
+                          {priorityType.name}
                         </div>
                       </SelectItem>
                     );
@@ -623,11 +656,8 @@ export function FeedbackManagement() {
                         <div className="text-sm">
                           {item.feature ? (
                             <div className="max-w-[200px]">
-                              <div className="font-medium text-blue-600 truncate">
+                              <div className="font-medium text-gray-900 truncate">
                                 {ALL_APP_FEATURES.find(f => f.code === item.feature)?.name || item.feature}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate">
-                                {ALL_APP_FEATURES.find(f => f.code === item.feature)?.group || 'Unknown'}
                               </div>
                             </div>
                           ) : (
@@ -901,15 +931,34 @@ function FeedbackDetailModal({
 }) {
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
+  const [feature, setFeature] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
+  const [featurePopoverOpen, setFeaturePopoverOpen] = useState(false);
+  const [featureSearchQuery, setFeatureSearchQuery] = useState('');
 
   useEffect(() => {
     if (feedback) {
       setStatus(feedback.status);
       setPriority(feedback.priority);
+      setFeature(feedback.feature || 'none');
       setAdminNotes(feedback.admin_notes || '');
     }
   }, [feedback]);
+
+  // Filter features based on search query
+  const filteredFeatures = useMemo(() => {
+    if (!featureSearchQuery) return APP_FEATURES;
+    
+    const query = featureSearchQuery.toLowerCase();
+    return APP_FEATURES.map(group => ({
+      ...group,
+      features: group.features.filter(feat =>
+        feat.name.toLowerCase().includes(query) ||
+        feat.description.toLowerCase().includes(query) ||
+        feat.code.toLowerCase().includes(query)
+      )
+    })).filter(group => group.features.length > 0);
+  }, [featureSearchQuery]);
 
   if (!feedback) return null;
 
@@ -920,6 +969,7 @@ function FeedbackDetailModal({
     onUpdate(feedback.id, {
       status,
       priority,
+      feature: feature === 'none' ? null : feature.trim() || null,
       admin_notes: adminNotes.trim() || null
     });
   };
@@ -941,32 +991,11 @@ function FeedbackDetailModal({
           {/* User Message */}
           <div>
             <h4 className="font-medium mb-2">User Message</h4>
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-gray-50 border p-4 rounded-lg">
               <p className="whitespace-pre-wrap">{feedback.message}</p>
             </div>
           </div>
 
-          {/* Feature Information */}
-          {feedback.feature && (
-            <div>
-              <h4 className="font-medium mb-2">Related Feature</h4>
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <div className="flex-1">
-                    <div className="font-medium text-blue-900">
-                      {ALL_APP_FEATURES.find(f => f.code === feedback.feature)?.name || feedback.feature}
-                    </div>
-                    <div className="text-sm text-blue-700 mt-1">
-                      {ALL_APP_FEATURES.find(f => f.code === feedback.feature)?.group || 'Unknown Group'}
-                    </div>
-                    <div className="text-sm text-blue-600 mt-2">
-                      {ALL_APP_FEATURES.find(f => f.code === feedback.feature)?.description || 'No description available'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Attachment */}
           {feedback.attachment_url && (
@@ -982,7 +1011,7 @@ function FeedbackDetailModal({
                         <span className="text-gray-400">({formatFileSize(feedback.attachment_size)})</span>
                       )}
                     </div>
-                    <div className="border rounded-lg overflow-hidden bg-gray-50">
+                    <div className="border rounded-lg overflow-hidden bg-gray-100">
                       <button
                         onClick={() => {
                           // Open image in new tab for full size viewing
@@ -1038,6 +1067,101 @@ function FeedbackDetailModal({
             </div>
           )}
 
+          {/* Feature Assignment */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Assign to Feature</label>
+            <Popover open={featurePopoverOpen} onOpenChange={setFeaturePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={featurePopoverOpen}
+                  className="w-full justify-between"
+                >
+                  {feature && feature !== 'none'
+                    ? ALL_APP_FEATURES.find(f => f.code === feature)?.name
+                    : "Select a feature (optional)"}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[600px] max-w-[90vw] p-0">
+                <Command shouldFilter={false}>
+                  <div className="flex items-center border-b px-3">
+                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                    <input
+                      placeholder="Search features..."
+                      className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-0 focus:ring-0"
+                      value={featureSearchQuery}
+                      onChange={(e) => setFeatureSearchQuery(e.target.value)}
+                      autoFocus
+                    />
+                    {featureSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setFeatureSearchQuery("")}
+                        className="ml-2 h-4 w-4 shrink-0 opacity-50 hover:opacity-100"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  <CommandList style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    <CommandGroup>
+                      <CommandItem
+                        key="none"
+                        value="none"
+                        className="cursor-pointer"
+                        onSelect={() => {
+                          setFeature('none');
+                          setFeaturePopoverOpen(false);
+                          setFeatureSearchQuery('');
+                        }}
+                      >
+                        <Check
+                          className={`mr-2 h-4 w-4 ${
+                            feature === 'none' ? 'opacity-100' : 'opacity-0'
+                          }`}
+                        />
+                        <span className="text-gray-500">No feature assigned</span>
+                      </CommandItem>
+                    </CommandGroup>
+                    {filteredFeatures.map((group) => (
+                      <CommandGroup key={group.label} heading={group.label}>
+                        {group.features.map((feat) => (
+                          <CommandItem
+                            key={feat.code}
+                            value={feat.code}
+                            className="cursor-pointer py-3"
+                            onSelect={() => {
+                              setFeature(feat.code);
+                              setFeaturePopoverOpen(false);
+                              setFeatureSearchQuery('');
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${
+                                feature === feat.code ? 'opacity-100' : 'opacity-0'
+                              }`}
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-medium">{feat.name}</span>
+                              <span className="text-xs text-gray-500">{feat.description}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    ))}
+                    {filteredFeatures.length === 0 && (
+                      <div className="py-6 text-center text-sm text-muted-foreground">
+                        No features found matching "{featureSearchQuery}"
+                      </div>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {/* Status and Priority */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -1047,11 +1171,17 @@ function FeedbackDetailModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {FEEDBACK_STATUS_TYPES.map((statusType) => (
-                    <SelectItem key={statusType.code} value={statusType.code}>
-                      {statusType.name}
-                    </SelectItem>
-                  ))}
+                  {FEEDBACK_STATUS_TYPES.map((statusType) => {
+                    const { icon: StatusIcon, color } = getStatusIcon(statusType.code);
+                    return (
+                      <SelectItem key={statusType.code} value={statusType.code}>
+                        <div className="flex items-center gap-2">
+                          <StatusIcon className={`h-4 w-4 ${color}`} />
+                          {statusType.name}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -1063,11 +1193,17 @@ function FeedbackDetailModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {FEEDBACK_PRIORITY_TYPES.map((priorityType) => (
-                    <SelectItem key={priorityType.code} value={priorityType.code}>
-                      {priorityType.name}
-                    </SelectItem>
-                  ))}
+                  {FEEDBACK_PRIORITY_TYPES.map((priorityType) => {
+                    const { icon: PriorityIcon, color } = getPriorityIcon(priorityType.code);
+                    return (
+                      <SelectItem key={priorityType.code} value={priorityType.code}>
+                        <div className="flex items-center gap-2">
+                          <PriorityIcon className={`h-4 w-4 ${color}`} />
+                          {priorityType.name}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

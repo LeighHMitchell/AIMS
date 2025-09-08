@@ -63,31 +63,44 @@ export function LabelSaveIndicator({
   isSaving, 
   isSaved,
   hasValue = false,
+  isFocused = false,
   children,
   className = ""
 }: {
   isSaving: boolean;
   isSaved: boolean;
   hasValue?: boolean;
+  isFocused?: boolean;
   children: React.ReactNode;
   className?: string;
 }) {
-  // Show green tick when:
-  // 1. Field has been saved AND still has content (isSaved && hasValue)
-  // 2. Field has prefilled content but not yet saved (!isSaved && hasValue)
-  // This ensures that if a user deletes content, the tick disappears even if it was previously saved
-  const showGreenTick = hasValue;
+  // Determine what indicator to show based on state
+  const showIndicator = () => {
+    // Never show indicators when field is focused (user is typing)
+    if (isFocused) {
+      return null;
+    }
+    
+    // Show orange circle while saving
+    if (isSaving) {
+      return <CircleDashed className="w-4 h-4 text-orange-600 animate-spin ml-2" />;
+    }
+    
+    // Show green tick only if:
+    // 1. Field has been saved (isSaved = true)
+    // 2. Field has a non-empty value (hasValue = true)
+    if (isSaved && hasValue) {
+      return <CheckCircle className="w-4 h-4 text-green-600 ml-2" />;
+    }
+    
+    // No indicator for idle state or saved with empty value
+    return null;
+  };
   
   return (
     <label className={`text-sm font-medium flex items-center ${className}`}>
       {children}
-      {/* Show save indicator (orange when saving, green when saved or has data) */}
-      {isSaving && (
-        <CircleDashed className="w-4 h-4 text-orange-600 animate-spin ml-2" />
-      )}
-      {!isSaving && showGreenTick && (
-        <CheckCircle className="w-4 h-4 text-green-600 ml-2" />
-      )}
+      {showIndicator()}
     </label>
   );
 } 

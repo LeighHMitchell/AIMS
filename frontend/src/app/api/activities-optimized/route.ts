@@ -152,13 +152,41 @@ export async function GET(request: NextRequest) {
       dataQuery
     ]);
 
+    // Check for HTML error responses (Supabase 520 errors)
+    const isHTMLError = (error: any) => {
+      return error && error.message && typeof error.message === 'string' && 
+             error.message.includes('<!DOCTYPE html>');
+    };
+
     if (countResult.error) {
       console.error('[AIMS] Count query error:', countResult.error);
+      if (isHTMLError(countResult.error)) {
+        console.error('[AIMS] Detected Supabase connectivity issue (HTML error response)');
+        return NextResponse.json(
+          { 
+            error: 'Database connectivity issue detected',
+            details: 'Supabase is experiencing connection problems. Please try again later.',
+            code: 'DATABASE_CONNECTION_ERROR'
+          },
+          { status: 503 }
+        );
+      }
       throw countResult.error;
     }
 
     if (dataResult.error) {
       console.error('[AIMS] Data query error:', dataResult.error);
+      if (isHTMLError(dataResult.error)) {
+        console.error('[AIMS] Detected Supabase connectivity issue (HTML error response)');
+        return NextResponse.json(
+          { 
+            error: 'Database connectivity issue detected',
+            details: 'Supabase is experiencing connection problems. Please try again later.',
+            code: 'DATABASE_CONNECTION_ERROR'
+          },
+          { status: 503 }
+        );
+      }
       throw dataResult.error;
     }
 

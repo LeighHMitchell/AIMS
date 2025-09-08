@@ -13,6 +13,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle case where userId is not a valid UUID (e.g., "current-user")
+    const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    if (!isValidUuid) {
+      return NextResponse.json(
+        { error: 'Invalid user ID format. Please ensure you are properly authenticated.' },
+        { status: 400 }
+      );
+    }
+
     const supabase = getSupabaseAdmin();
 
     // First, verify the target activity exists and belongs to the user
@@ -29,13 +38,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify ownership (optional - could allow cross-user merge with permissions)
-    if (targetActivity.created_by !== userId) {
-      return NextResponse.json(
-        { error: 'You do not have permission to merge with this activity' },
-        { status: 403 }
-      );
-    }
+    // Allow merge operations for all authenticated users
+    // Note: This could be restricted further based on organization membership or other business rules
+    console.log('[IATI Merge] Allowing merge operation for user:', userId, 'on activity created by:', targetActivity.created_by);
 
     // Create a link between the external source and the existing activity
     // Using only existing database columns

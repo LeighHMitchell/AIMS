@@ -93,7 +93,7 @@ export function AppFeatureSearchableSelect({
           </button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[var(--radix-popover-trigger-width)] min-w-[400px] p-0" 
+          className="w-[600px] max-w-[90vw] p-0" 
           side={side} 
           align={align}
           style={{ maxHeight: '400px' }}
