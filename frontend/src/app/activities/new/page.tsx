@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useCallback, useEffect, Suspense, useRef } from "react";
+import React, { useState, useCallback, useEffect, useMemo, Suspense, useRef } from "react";
 import Image from "next/image";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useRouter, useSearchParams } from "next/navigation";
