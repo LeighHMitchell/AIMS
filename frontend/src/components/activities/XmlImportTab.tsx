@@ -939,8 +939,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       let fileToCheck: File | null = null;
       
       if (importMethod === 'file' && selectedFile) {
+        // Check file size limit (50MB)
+        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+        if (selectedFile.size > MAX_FILE_SIZE) {
+          throw new Error(`File size (${(selectedFile.size / (1024 * 1024)).toFixed(2)}MB) exceeds the maximum allowed size of 50MB. Please use a smaller file or split it into multiple files.`);
+        }
+        
         // Read file content
-        console.log('[XML Import Debug] Reading file content');
+        console.log('[XML Import Debug] Reading file content, size:', selectedFile.size);
         content = await selectedFile.text();
         fileToCheck = selectedFile;
       } else {
@@ -955,6 +961,18 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       
       console.log('[XML Import Debug] Setting status to parsing');
       setImportStatus({ stage: 'parsing', progress: 50 });
+      
+      // Check if content is HTML instead of XML (common error response)
+      if (content.trim().startsWith('<!DOCTYPE html') || content.trim().startsWith('<html')) {
+        console.error('[XML Import] Received HTML instead of XML - likely an error page');
+        throw new Error('The file appears to be an HTML page instead of XML. This can happen if the file is too large, the connection timed out, or there was a server error. Please try with a smaller file or check your internet connection.');
+      }
+      
+      // Additional check for common HTML patterns
+      if (content.includes('<meta') && content.includes('<head>') && content.includes('</head>')) {
+        console.error('[XML Import] Detected HTML structure in response');
+        throw new Error('Received an HTML error page instead of XML data. Please ensure the XML file is valid and not too large (max 50MB).');
+      }
       
       // Validate XML structure first
       const validation = validateIATIXML(content);

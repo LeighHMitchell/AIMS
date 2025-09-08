@@ -197,6 +197,16 @@ export class IATIXMLParser {
 
   constructor(xmlContent: string) {
     try {
+      // Check if content is HTML instead of XML
+      if (xmlContent.trim().startsWith('<!DOCTYPE html') || xmlContent.trim().startsWith('<html')) {
+        throw new Error('Received HTML instead of XML. This often happens when the server returns an error page. Please check the file and try again.');
+      }
+      
+      // Check for common HTML patterns that might indicate an error page
+      if (xmlContent.includes('<meta') && xmlContent.includes('<head>') && xmlContent.includes('</head>')) {
+        throw new Error('The response appears to be an HTML error page. Please ensure you are uploading a valid IATI XML file.');
+      }
+      
       // Preprocess XML to handle common entity issues
       const preprocessedXml = this.preprocessXmlContent(xmlContent);
       
@@ -206,7 +216,14 @@ export class IATIXMLParser {
       // Check for parsing errors
       const parseError = this.xmlDoc.querySelector('parsererror');
       if (parseError) {
-        throw new Error('XML parsing error: ' + parseError.textContent);
+        // Extract more specific error information
+        const errorText = parseError.textContent || '';
+        if (errorText.includes('Opening and ending tag mismatch')) {
+          throw new Error('XML structure error: Tags are not properly matched. This might indicate the file is corrupted or not a valid XML file.');
+        } else if (errorText.includes('meta') && errorText.includes('head')) {
+          throw new Error('The file appears to contain HTML content instead of XML. Please ensure you are uploading an IATI XML file.');
+        }
+        throw new Error('XML parsing error: ' + errorText);
       }
     } catch (error) {
       throw new Error(`Failed to parse XML: ${error instanceof Error ? error.message : 'Unknown error'}`);
