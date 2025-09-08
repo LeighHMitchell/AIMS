@@ -2729,14 +2729,6 @@ function NewActivityPageContent() {
                       general.activityStatus && general.plannedStartDate && general.plannedEndDate);
 
   // 🚀 FIELD-LEVEL AUTOSAVE SYSTEM - saves individual fields immediately
-  // Simplified autosave state for field-level autosave system
-  const autosaveState = {
-    isSaving: isAnyAutosaveInProgress,
-    hasUnsavedChanges: false,
-    lastSaved: null,
-    error: null
-  };
-  
   // Simplified updateActivityNestedField for backward compatibility
   const updateActivityNestedField = (field: string, value: any) => {
     console.log(`Field-level autosave: ${field} updated to`, value);
