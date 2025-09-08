@@ -30,6 +30,7 @@ interface ActivityEditorNavigationProps {
   showGovernmentInputs?: boolean
   activityCreated?: boolean
   tabCompletionStatus?: Record<string, { isComplete: boolean; isInProgress: boolean }>
+  disabled?: boolean
 }
 
 export default function ActivityEditorNavigation({
@@ -37,13 +38,19 @@ export default function ActivityEditorNavigation({
   onSectionChange,
   showGovernmentInputs = false,
   activityCreated = false,
-  tabCompletionStatus = {}
+  tabCompletionStatus = {},
+  disabled = false
 }: ActivityEditorNavigationProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
   // Enhanced section change handler that updates URL
   const handleSectionChange = (sectionId: string) => {
+    // Don't allow section change when disabled (saving in progress)
+    if (disabled) {
+      return;
+    }
+    
     // Call the original onSectionChange handler
     onSectionChange(sectionId)
     
@@ -151,14 +158,14 @@ export default function ActivityEditorNavigation({
                   <button
                     key={section.id}
                     type="button"
-                    onClick={() => !isLocked && handleSectionChange(section.id)}
-                    disabled={isLocked}
+                    onClick={() => !isLocked && !disabled && handleSectionChange(section.id)}
+                    disabled={isLocked || disabled}
                     className={cn(
                       "w-full text-left py-2 px-3 rounded text-sm font-normal transition-all duration-200 ease-in-out",
                       "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:ring-offset-1",
                       "border-l-3 border-transparent",
-                      !isLocked && "active:scale-[0.98] transform",
-                      isLocked 
+                      !isLocked && !disabled && "active:scale-[0.98] transform",
+                      (isLocked || disabled)
                         ? "text-gray-400 cursor-not-allowed opacity-60" 
                         : isActive
                           ? "bg-blue-100 text-blue-700 font-medium border-l-3 border-blue-600 shadow-sm"
@@ -166,6 +173,7 @@ export default function ActivityEditorNavigation({
                     )}
                     aria-current={isActive ? "page" : undefined}
                     aria-describedby={undefined}
+                    title={disabled ? "Please wait while saving..." : undefined}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">

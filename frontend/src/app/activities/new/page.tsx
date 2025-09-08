@@ -2678,9 +2678,60 @@ function NewActivityPageContent() {
                       general.activityStatus && general.plannedStartDate && general.plannedEndDate);
 
   // 🚀 FIELD-LEVEL AUTOSAVE SYSTEM - saves individual fields immediately
+  // Check if any autosave is currently in progress
+  const isAnyAutosaveInProgress = useMemo(() => {
+    return (
+      descriptionAutosave.state.isSaving ||
+      descriptionObjectivesAutosave.state.isSaving ||
+      descriptionTargetGroupsAutosave.state.isSaving ||
+      descriptionOtherAutosave.state.isSaving ||
+      collaborationTypeAutosave.state.isSaving ||
+      activityScopeAutosave.state.isSaving ||
+      publicationStatusAutosave.state.isSaving ||
+      plannedStartDateAutosave.state.isSaving ||
+      plannedEndDateAutosave.state.isSaving ||
+      actualStartDateAutosave.state.isSaving ||
+      actualEndDateAutosave.state.isSaving ||
+      activityIdAutosave.state.isSaving ||
+      iatiIdentifierAutosave.state.isSaving ||
+      bannerAutosave.state.isSaving ||
+      iconAutosave.state.isSaving ||
+      uuidAutosave.state.isSaving ||
+      titleAutosave.state.isSaving ||
+      acronymAutosave.state.isSaving ||
+      saving ||
+      savingAndNext ||
+      submitting ||
+      publishing
+    );
+  }, [
+    descriptionAutosave.state.isSaving,
+    descriptionObjectivesAutosave.state.isSaving,
+    descriptionTargetGroupsAutosave.state.isSaving,
+    descriptionOtherAutosave.state.isSaving,
+    collaborationTypeAutosave.state.isSaving,
+    activityScopeAutosave.state.isSaving,
+    publicationStatusAutosave.state.isSaving,
+    plannedStartDateAutosave.state.isSaving,
+    plannedEndDateAutosave.state.isSaving,
+    actualStartDateAutosave.state.isSaving,
+    actualEndDateAutosave.state.isSaving,
+    activityIdAutosave.state.isSaving,
+    iatiIdentifierAutosave.state.isSaving,
+    bannerAutosave.state.isSaving,
+    iconAutosave.state.isSaving,
+    uuidAutosave.state.isSaving,
+    titleAutosave.state.isSaving,
+    acronymAutosave.state.isSaving,
+    saving,
+    savingAndNext,
+    submitting,
+    publishing
+  ]);
+  
   // Simplified autosave state for field-level autosave system
   const autosaveState = {
-    isSaving: false,
+    isSaving: isAnyAutosaveInProgress,
     hasUnsavedChanges: false,
     lastSaved: null,
     error: null
@@ -3356,6 +3407,12 @@ function NewActivityPageContent() {
 
   // OPTIMIZED: Enhanced tab change with lazy loading
   const handleTabChange = async (value: string) => {
+    // Prevent tab change while saving
+    if (isAnyAutosaveInProgress) {
+      toast.warning('Please wait while saving before switching tabs');
+      return;
+    }
+    
     console.log('[AIMS Performance] Switching to tab:', value);
     
     setTabLoading(true);
@@ -3598,6 +3655,7 @@ function NewActivityPageContent() {
               showGovernmentInputs={showGovernmentInputs}
               activityCreated={!!general.id}
               tabCompletionStatus={tabCompletionStatus}
+              disabled={isAnyAutosaveInProgress}
             />
           </div>
         </aside>
@@ -3892,10 +3950,20 @@ function NewActivityPageContent() {
                   variant="outline"
                   className="px-6 py-3 text-base font-semibold"
                   onClick={() => previousSection && handleTabChange(previousSection.id)}
-                  disabled={!previousSection || tabLoading}
+                  disabled={!previousSection || tabLoading || isAnyAutosaveInProgress}
+                  title={isAnyAutosaveInProgress ? "Please wait while saving..." : undefined}
                 >
-                  <ArrowLeft className="mr-2 h-5 w-5" />
-                  Back
+                  {isAnyAutosaveInProgress ? (
+                    <>
+                      <CircleDashed className="mr-2 h-5 w-5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowLeft className="mr-2 h-5 w-5" />
+                      Back
+                    </>
+                  )}
                 </Button>
 
                 {/* Next Button */}
@@ -3903,10 +3971,20 @@ function NewActivityPageContent() {
                   variant="default"
                   className="px-6 py-3 text-base font-semibold"
                   onClick={() => nextSection && handleTabChange(nextSection.id)}
-                  disabled={isLastSection || tabLoading}
+                  disabled={isLastSection || tabLoading || isAnyAutosaveInProgress}
+                  title={isAnyAutosaveInProgress ? "Please wait while saving..." : undefined}
                 >
-                  Next
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  {isAnyAutosaveInProgress ? (
+                    <>
+                      Saving...
+                      <CircleDashed className="ml-2 h-5 w-5 animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      Next
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
