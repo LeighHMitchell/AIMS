@@ -471,6 +471,57 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     }
   });
 
+  // Check if any autosave is currently in progress - MUST be after all autosave hooks
+  const isAnyAutosaveInProgress = useMemo(() => {
+    return (
+      descriptionAutosave.state.isSaving ||
+      descriptionObjectivesAutosave.state.isSaving ||
+      descriptionTargetGroupsAutosave.state.isSaving ||
+      descriptionOtherAutosave.state.isSaving ||
+      collaborationTypeAutosave.state.isSaving ||
+      activityScopeAutosave.state.isSaving ||
+      publicationStatusAutosave.state.isSaving ||
+      plannedStartDateAutosave.state.isSaving ||
+      plannedEndDateAutosave.state.isSaving ||
+      actualStartDateAutosave.state.isSaving ||
+      actualEndDateAutosave.state.isSaving ||
+      activityIdAutosave.state.isSaving ||
+      iatiIdentifierAutosave.state.isSaving ||
+      bannerAutosave.state.isSaving ||
+      iconAutosave.state.isSaving ||
+      uuidAutosave.state.isSaving ||
+      titleAutosave.state.isSaving ||
+      acronymAutosave.state.isSaving ||
+      saving ||
+      savingAndNext ||
+      submitting ||
+      publishing
+    );
+  }, [
+    descriptionAutosave.state.isSaving,
+    descriptionObjectivesAutosave.state.isSaving,
+    descriptionTargetGroupsAutosave.state.isSaving,
+    descriptionOtherAutosave.state.isSaving,
+    collaborationTypeAutosave.state.isSaving,
+    activityScopeAutosave.state.isSaving,
+    publicationStatusAutosave.state.isSaving,
+    plannedStartDateAutosave.state.isSaving,
+    plannedEndDateAutosave.state.isSaving,
+    actualStartDateAutosave.state.isSaving,
+    actualEndDateAutosave.state.isSaving,
+    activityIdAutosave.state.isSaving,
+    iatiIdentifierAutosave.state.isSaving,
+    bannerAutosave.state.isSaving,
+    iconAutosave.state.isSaving,
+    uuidAutosave.state.isSaving,
+    titleAutosave.state.isSaving,
+    acronymAutosave.state.isSaving,
+    saving,
+    savingAndNext,
+    submitting,
+    publishing
+  ]);
+
   // Show orange toast when creating activity
   React.useEffect(() => {
     const isNewActivity = !general.id;
@@ -2678,57 +2729,6 @@ function NewActivityPageContent() {
                       general.activityStatus && general.plannedStartDate && general.plannedEndDate);
 
   // 🚀 FIELD-LEVEL AUTOSAVE SYSTEM - saves individual fields immediately
-  // Check if any autosave is currently in progress
-  const isAnyAutosaveInProgress = useMemo(() => {
-    return (
-      descriptionAutosave.state.isSaving ||
-      descriptionObjectivesAutosave.state.isSaving ||
-      descriptionTargetGroupsAutosave.state.isSaving ||
-      descriptionOtherAutosave.state.isSaving ||
-      collaborationTypeAutosave.state.isSaving ||
-      activityScopeAutosave.state.isSaving ||
-      publicationStatusAutosave.state.isSaving ||
-      plannedStartDateAutosave.state.isSaving ||
-      plannedEndDateAutosave.state.isSaving ||
-      actualStartDateAutosave.state.isSaving ||
-      actualEndDateAutosave.state.isSaving ||
-      activityIdAutosave.state.isSaving ||
-      iatiIdentifierAutosave.state.isSaving ||
-      bannerAutosave.state.isSaving ||
-      iconAutosave.state.isSaving ||
-      uuidAutosave.state.isSaving ||
-      titleAutosave.state.isSaving ||
-      acronymAutosave.state.isSaving ||
-      saving ||
-      savingAndNext ||
-      submitting ||
-      publishing
-    );
-  }, [
-    descriptionAutosave.state.isSaving,
-    descriptionObjectivesAutosave.state.isSaving,
-    descriptionTargetGroupsAutosave.state.isSaving,
-    descriptionOtherAutosave.state.isSaving,
-    collaborationTypeAutosave.state.isSaving,
-    activityScopeAutosave.state.isSaving,
-    publicationStatusAutosave.state.isSaving,
-    plannedStartDateAutosave.state.isSaving,
-    plannedEndDateAutosave.state.isSaving,
-    actualStartDateAutosave.state.isSaving,
-    actualEndDateAutosave.state.isSaving,
-    activityIdAutosave.state.isSaving,
-    iatiIdentifierAutosave.state.isSaving,
-    bannerAutosave.state.isSaving,
-    iconAutosave.state.isSaving,
-    uuidAutosave.state.isSaving,
-    titleAutosave.state.isSaving,
-    acronymAutosave.state.isSaving,
-    saving,
-    savingAndNext,
-    submitting,
-    publishing
-  ]);
-  
   // Simplified autosave state for field-level autosave system
   const autosaveState = {
     isSaving: isAnyAutosaveInProgress,
