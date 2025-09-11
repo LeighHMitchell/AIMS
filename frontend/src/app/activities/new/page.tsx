@@ -1354,7 +1354,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, clearSavedFormData, loadedTabs }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, clearSavedFormData, loadedTabs }: any) {
   
   // OPTIMIZATION: Lazy loading - only render heavy components after tab has been visited
   // Removed the duplicate skeleton rendering logic here since the parent component
@@ -1455,6 +1455,12 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         coverageAreas={coverageAreas}
         onSpecificLocationsChange={setSpecificLocations}
         onCoverageAreasChange={setCoverageAreas}
+        advancedLocations={advancedLocations}
+        onAdvancedLocationsChange={setAdvancedLocations}
+        countries={countries}
+        regions={regions}
+        onCountriesChange={setCountries}
+        onRegionsChange={setRegions}
         activityId={general.id}
         canEdit={permissions?.canEditActivity ?? true}
         onSubnationalDataChange={setSubnationalBreakdowns}
@@ -1586,7 +1592,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
 }
 
 function NewActivityPageContent() {
-  const { user } = useUser();
+  const { user, isLoading: userLoading } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -1866,6 +1872,33 @@ function NewActivityPageContent() {
     if (activityId) {
       const savedData = loadSavedFormData();
       return savedData?.coverageAreas || [];
+    }
+    return [];
+  });
+  
+  const [countries, setCountries] = useState<any[]>(() => {
+    const activityId = searchParams?.get("id");
+    if (activityId) {
+      const savedData = loadSavedFormData();
+      return savedData?.countries || [];
+    }
+    return [];
+  });
+  
+  const [regions, setRegions] = useState<any[]>(() => {
+    const activityId = searchParams?.get("id");
+    if (activityId) {
+      const savedData = loadSavedFormData();
+      return savedData?.regions || [];
+    }
+    return [];
+  });
+  
+  const [advancedLocations, setAdvancedLocations] = useState<any[]>(() => {
+    const activityId = searchParams?.get("id");
+    if (activityId) {
+      const savedData = loadSavedFormData();
+      return savedData?.advancedLocations || [];
     }
     return [];
   });
@@ -2451,7 +2484,6 @@ function NewActivityPageContent() {
             reportingOrgId: data.reportingOrgId,
             createdByOrg: data.createdByOrg
           });
-          
           // Update all state with loaded data
           setGeneral({
             id: data.id || activityId,
@@ -2621,7 +2653,7 @@ function NewActivityPageContent() {
           }
         } else {
           // New activity - just set some defaults
-          console.log('[AIMS] Creating new activity');
+          console.log('[AIMS] Creating new activity - user:', user);
           setGeneral((prev: any) => ({
             ...prev,
             created_by_org_name: user?.organisation || user?.organization?.name || "",
@@ -3817,6 +3849,12 @@ function NewActivityPageContent() {
                     setSpecificLocations={setSpecificLocations}
                     coverageAreas={coverageAreas}
                     setCoverageAreas={setCoverageAreas}
+                    countries={countries}
+                    setCountries={setCountries}
+                    regions={regions}
+                    setRegions={setRegions}
+                    advancedLocations={advancedLocations}
+                    setAdvancedLocations={setAdvancedLocations}
                     permissions={permissions}
                     setSectorValidation={setSectorValidation}
                     setSectorsCompletionStatus={setSectorsCompletionStatusWithLogging}

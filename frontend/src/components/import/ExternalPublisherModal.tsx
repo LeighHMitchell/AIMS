@@ -159,6 +159,7 @@ export function ExternalPublisherModal({
                         className="h-4 w-4 p-0 rounded-full"
                         type="button"
                         aria-label="Help"
+                        tabIndex={-1}
                       >
                         <HelpCircle className="h-3 w-3" />
                       </Button>
@@ -363,18 +364,6 @@ export function ExternalPublisherModal({
                   </p>
                 </div>
               </div>
-              {selectedOption === 'merge' && currentActivityId && (
-                <div className="absolute top-1/3 -translate-y-1/2 right-4 w-56 p-4 bg-background border border-border rounded-lg hover:border-gray-300 transition-colors shadow-md z-10">
-                  <p className="text-xs text-gray-700 leading-tight">
-                    Will merge into current activity:
-                  </p>
-                  <div className="mt-1">
-                    <span className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-xs break-all">
-                      {currentActivityIatiId || currentActivityId}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
 
           </RadioGroup>

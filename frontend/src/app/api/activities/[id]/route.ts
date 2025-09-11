@@ -28,7 +28,8 @@ export async function PATCH(
       'title_narrative', 'description_narrative', 'description_objectives', 'description_target_groups', 'description_other',
       'planned_start_date', 'planned_end_date', 'actual_start_date', 'actual_end_date', 'activity_status', 'collaboration_type',
       'iati_identifier', 'default_currency', 'default_aid_type', 'default_finance_type',
-      'default_flow_type', 'default_tied_status', 'activity_scope', 'language'
+      'default_flow_type', 'default_tied_status', 'activity_scope', 'language',
+      'recipient_countries', 'recipient_regions', 'custom_geographies'
     ];
     
     fieldsToUpdate.forEach(field => {

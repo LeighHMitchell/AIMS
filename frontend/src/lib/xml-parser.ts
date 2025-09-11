@@ -422,8 +422,8 @@ export class IATIXMLParser {
 
     // === LOCATIONS ===
     
-    // Recipient Countries
-    const countries = activity.querySelectorAll('recipient-country');
+    // Recipient Countries - only direct children of activity
+    const countries = Array.from(activity.children).filter(child => child.tagName === 'recipient-country');
     if (countries.length > 0) {
       result.recipientCountries = [];
       for (let i = 0; i < countries.length; i++) {
@@ -436,8 +436,8 @@ export class IATIXMLParser {
       }
     }
 
-    // Recipient Regions
-    const regions = activity.querySelectorAll('recipient-region');
+    // Recipient Regions - only direct children of activity
+    const regions = Array.from(activity.children).filter(child => child.tagName === 'recipient-region');
     if (regions.length > 0) {
       result.recipientRegions = [];
       for (let i = 0; i < regions.length; i++) {
@@ -446,6 +446,7 @@ export class IATIXMLParser {
           vocabulary: region.getAttribute('vocabulary') || undefined,
           code: region.getAttribute('code') || undefined,
           percentage: region.getAttribute('percentage') ? parseFloat(region.getAttribute('percentage')!) : undefined,
+          vocabularyUri: region.getAttribute('vocabulary-uri') || undefined,
           narrative: this.extractNarrative(region),
         });
       }
@@ -453,7 +454,8 @@ export class IATIXMLParser {
 
     // === SECTORS ===
     
-    const sectors = activity.querySelectorAll('sector');
+    // Only get direct child sectors, not those nested in transactions
+    const sectors = Array.from(activity.children).filter(child => child.tagName === 'sector');
     if (sectors.length > 0) {
       result.sectors = [];
       for (let i = 0; i < sectors.length; i++) {

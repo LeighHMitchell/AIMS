@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCircle } from 'lucide-react';
 import LocationsTab from './LocationsTab';
 import { EnhancedSubnationalBreakdown } from './activities/EnhancedSubnationalBreakdown';
+import CountriesRegionsTab, { CountryAllocation, RegionAllocation } from './activities/CountriesRegionsTab';
+import { AdvancedLocationData } from '@/data/iati-location-types';
 
 // Re-export types for compatibility
 interface SpecificLocation {
@@ -40,11 +42,21 @@ interface CombinedLocationsTabProps {
   onSpecificLocationsChange: (locations: SpecificLocation[]) => void;
   onCoverageAreasChange: (areas: CoverageArea[]) => void;
   
+  // Advanced IATI Location Fields props
+  advancedLocations?: AdvancedLocationData[];
+  onAdvancedLocationsChange?: (locations: AdvancedLocationData[]) => void;
+  
   // Subnational Breakdown props
   activityId: string;
   canEdit?: boolean;
   onSubnationalDataChange?: (breakdowns: Record<string, number>) => void;
   subnationalBreakdowns?: Record<string, number>;
+  
+  // Countries & Regions props
+  countries?: CountryAllocation[];
+  regions?: RegionAllocation[];
+  onCountriesChange?: (countries: CountryAllocation[]) => void;
+  onRegionsChange?: (regions: RegionAllocation[]) => void;
   
   // Common props
   activityTitle?: string;
@@ -56,16 +68,25 @@ export default function CombinedLocationsTab({
   coverageAreas = [],
   onSpecificLocationsChange,
   onCoverageAreasChange,
+  advancedLocations = [],
+  onAdvancedLocationsChange,
   activityId,
   canEdit = true,
   onSubnationalDataChange,
   subnationalBreakdowns: initialSubnationalBreakdowns = {},
+  countries: initialCountries = [],
+  regions: initialRegions = [],
+  onCountriesChange,
+  onRegionsChange,
   activityTitle,
   activitySector
 }: CombinedLocationsTabProps) {
   // State to track active sub-tab
-  const [activeSubTab, setActiveSubTab] = useState('activity-locations');
+  const [activeSubTab, setActiveSubTab] = useState('countries-regions');
   const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>(initialSubnationalBreakdowns);
+  const [countries, setCountries] = useState<CountryAllocation[]>(initialCountries);
+  const [regions, setRegions] = useState<RegionAllocation[]>(initialRegions);
+  const [advancedLocationsState, setAdvancedLocationsState] = useState<AdvancedLocationData[]>(advancedLocations);
 
   // Calculate completion status for sub-tabs
   const hasValidLocations = useMemo(() => {
@@ -83,6 +104,15 @@ export default function CombinedLocationsTab({
     return isValidTotal && hasAnyValues;
   }, [subnationalBreakdowns]);
 
+  const hasValidCountriesRegions = useMemo(() => {
+    const countryTotal = countries.reduce((sum, c) => sum + (c.percentage || 0), 0);
+    const regionTotal = regions.reduce((sum, r) => sum + (r.percentage || 0), 0);
+    const totalPercentage = countryTotal + regionTotal;
+    const isValidTotal = Math.abs(totalPercentage - 100) < 0.01;
+    const hasAnyValues = countries.length > 0 || regions.length > 0;
+    return isValidTotal && hasAnyValues;
+  }, [countries, regions]);
+
   // Update parent when subnational data changes
   const handleSubnationalDataChange = (breakdowns: Record<string, number>) => {
     setSubnationalBreakdowns(breakdowns);
@@ -91,10 +121,40 @@ export default function CombinedLocationsTab({
     }
   };
 
+  // Update parent when countries data changes
+  const handleCountriesChange = (newCountries: CountryAllocation[]) => {
+    setCountries(newCountries);
+    if (onCountriesChange) {
+      onCountriesChange(newCountries);
+    }
+  };
+
+  // Update parent when regions data changes
+  const handleRegionsChange = (newRegions: RegionAllocation[]) => {
+    setRegions(newRegions);
+    if (onRegionsChange) {
+      onRegionsChange(newRegions);
+    }
+  };
+
+  // Update parent when advanced locations data changes
+  const handleAdvancedLocationsChange = (newAdvancedLocations: AdvancedLocationData[]) => {
+    setAdvancedLocationsState(newAdvancedLocations);
+    if (onAdvancedLocationsChange) {
+      onAdvancedLocationsChange(newAdvancedLocations);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="countries-regions" className="flex items-center gap-2">
+            Countries & Regions
+            {hasValidCountriesRegions && (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            )}
+          </TabsTrigger>
           <TabsTrigger value="activity-locations" className="flex items-center gap-2">
             Activity Locations
             {hasValidLocations && (
@@ -109,12 +169,25 @@ export default function CombinedLocationsTab({
           </TabsTrigger>
         </TabsList>
         
+        <TabsContent value="countries-regions" className="mt-6">
+          <CountriesRegionsTab
+            activityId={activityId}
+            countries={countries}
+            regions={regions}
+            onCountriesChange={handleCountriesChange}
+            onRegionsChange={handleRegionsChange}
+            canEdit={canEdit}
+          />
+        </TabsContent>
+
         <TabsContent value="activity-locations" className="mt-6">
           <LocationsTab
             specificLocations={specificLocations}
             coverageAreas={coverageAreas}
             onSpecificLocationsChange={onSpecificLocationsChange}
             onCoverageAreasChange={onCoverageAreasChange}
+            advancedLocations={advancedLocationsState}
+            onAdvancedLocationsChange={handleAdvancedLocationsChange}
             activityId={activityId}
             activityTitle={activityTitle}
             activitySector={activitySector}

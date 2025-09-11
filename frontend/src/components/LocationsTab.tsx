@@ -8,6 +8,8 @@ import { useUser } from '@/hooks/useUser';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import AdvancedLocationFields from './activities/AdvancedLocationFields';
+import { AdvancedLocationData } from '@/data/iati-location-types';
 
 // Types for IATI-compliant location data
 interface SpecificLocation {
@@ -44,6 +46,8 @@ interface LocationsTabProps {
   activityId?: string;
   activityTitle?: string;
   activitySector?: string;
+  advancedLocations?: AdvancedLocationData[];
+  onAdvancedLocationsChange?: (locations: AdvancedLocationData[]) => void;
 }
 
 // Convert SpecificLocation to new Location format
@@ -100,7 +104,9 @@ export default function LocationsTab({
   onCoverageAreasChange,
   activityId,
   activityTitle,
-  activitySector
+  activitySector,
+  advancedLocations = [],
+  onAdvancedLocationsChange
 }: LocationsTabProps) {
   // Get user for autosave
   const { user } = useUser();
@@ -220,6 +226,14 @@ export default function LocationsTab({
           />
         </div>
       </div>
+
+      {/* Advanced IATI Location Fields */}
+      <AdvancedLocationFields
+        locations={advancedLocations}
+        onLocationsChange={onAdvancedLocationsChange || (() => {})}
+        canEdit={true}
+        activityId={activityId}
+      />
 
       {/* Bottom Summary */}
 

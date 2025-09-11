@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { fetchBasicActivityWithCache } from '@/lib/activity-cache';
+import { getSectorInfo, getCleanSectorName } from '@/lib/dac-sector-utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -15,6 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { toast } from 'sonner';
 import { IATIXMLParser, validateIATIXML } from '@/lib/xml-parser';
+import { IATI_REGIONS } from '@/data/iati-regions';
+import { IATI_COUNTRIES } from '@/data/iati-countries';
 import { ExternalPublisherModal } from '@/components/import/ExternalPublisherModal';
 import { extractIatiMeta } from '@/lib/iati/parseMeta';
 import { useUser } from '@/hooks/useUser';
@@ -38,6 +41,7 @@ import {
   ChevronRight,
   ChevronsUpDown,
   Check,
+  Lock,
 } from 'lucide-react';
 
 interface XmlImportTabProps {
@@ -48,6 +52,9 @@ interface ActivityData {
   id?: string;
   title_narrative?: string;
   description_narrative?: string;
+  description_objectives?: string;
+  description_target_groups?: string;
+  description_other?: string;
   planned_start_date?: string;
   planned_end_date?: string;
   actual_start_date?: string;
@@ -71,6 +78,40 @@ interface ActivityData {
     categoryCode?: string;
     categoryName?: string;
     type?: string;
+  }>;
+  recipient_countries?: Array<{
+    id: string;
+    country: {
+      code: string;
+      name: string;
+      iso2: string;
+      withdrawn: boolean;
+    };
+    percentage: number;
+    vocabulary: string;
+    vocabularyUri?: string;
+    narrative?: string;
+  }>;
+  recipient_regions?: Array<{
+    id: string;
+    region: {
+      code: string;
+      name: string;
+      withdrawn: boolean;
+    };
+    percentage: number;
+    vocabulary: string;
+    vocabularyUri?: string;
+    narrative?: string;
+  }>;
+  custom_geographies?: Array<{
+    id: string;
+    name: string;
+    code: string;
+    percentage: number;
+    vocabulary: string;
+    vocabularyUri: string;
+    narrative?: string;
   }>;
 }
 
@@ -748,16 +789,24 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       if (!activityId) return;
       
       try {
-        // OPTIMIZATION: Use cached basic activity data
+        // Fetch full activity data to include location data
         console.log('[XmlImportTab] Fetching activity data for:', activityId);
-        const data = await fetchBasicActivityWithCache(activityId);
+        const data = await fetchActivityWithCache(activityId, false);
         console.log('[XmlImportTab] Fetched activity data:', data);
+        console.log('[XmlImportTab] Location data:', {
+          recipient_countries: data.recipient_countries,
+          recipient_regions: data.recipient_regions,
+          custom_geographies: data.custom_geographies
+        });
         
         // Map the data correctly - the API returns both camelCase and snake_case versions
         setCurrentActivityData({
           id: data.id,
           title_narrative: data.title_narrative || data.title,
           description_narrative: data.description_narrative || data.description,
+          description_objectives: data.description_objectives || data.descriptionObjectives,
+          description_target_groups: data.description_target_groups || data.descriptionTargetGroups,
+          description_other: data.description_other || data.descriptionOther,
           planned_start_date: data.planned_start_date || data.plannedStartDate,
           planned_end_date: data.planned_end_date || data.plannedEndDate,
           actual_start_date: data.actual_start_date || data.actualStartDate,
@@ -773,6 +822,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           defaultFlowType: data.defaultFlowType,
           defaultTiedStatus: data.defaultTiedStatus,
           sectors: data.sectors || [],
+          recipient_countries: data.recipient_countries || [],
+          recipient_regions: data.recipient_regions || [],
+          custom_geographies: data.custom_geographies || [],
         });
         console.log('[XmlImportTab] Set current activity data with title:', data.title_narrative || data.title);
       } catch (error) {
@@ -787,6 +839,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               id: data.id,
               title_narrative: data.title_narrative || data.title,
               description_narrative: data.description_narrative || data.description,
+          description_objectives: data.description_objectives || data.descriptionObjectives,
+          description_target_groups: data.description_target_groups || data.descriptionTargetGroups,
+          description_other: data.description_other || data.descriptionOther,
               planned_start_date: data.planned_start_date || data.plannedStartDate,
               planned_end_date: data.planned_end_date || data.plannedEndDate,
               actual_start_date: data.actual_start_date || data.actualStartDate,
@@ -802,6 +857,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               defaultFlowType: data.defaultFlowType,
               defaultTiedStatus: data.defaultTiedStatus,
               sectors: data.sectors || [],
+              recipient_countries: data.recipient_countries || [],
+              recipient_regions: data.recipient_regions || [],
+              custom_geographies: data.custom_geographies || [],
             });
             console.log('[XmlImportTab] Fallback successful, got title:', data.title_narrative || data.title);
           }
@@ -904,11 +962,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     if (!currentActivityData.id && activityId) {
       console.log('[XML Import Debug] Fetching activity data before parsing');
       try {
-        const data = await fetchBasicActivityWithCache(activityId);
+        const data = await fetchActivityWithCache(activityId, false);
         setCurrentActivityData({
           id: data.id,
           title_narrative: data.title_narrative || data.title,
           description_narrative: data.description_narrative || data.description,
+          description_objectives: data.description_objectives || data.descriptionObjectives,
+          description_target_groups: data.description_target_groups || data.descriptionTargetGroups,
+          description_other: data.description_other || data.descriptionOther,
           planned_start_date: data.planned_start_date || data.plannedStartDate,
           planned_end_date: data.planned_end_date || data.plannedEndDate,
           actual_start_date: data.actual_start_date || data.actualStartDate,
@@ -924,6 +985,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           defaultFlowType: data.defaultFlowType,
           defaultTiedStatus: data.defaultTiedStatus,
           sectors: data.sectors || [],
+          recipient_countries: data.recipient_countries || [],
+          recipient_regions: data.recipient_regions || [],
+          custom_geographies: data.custom_geographies || [],
         });
       } catch (error) {
         console.error('[XML Import Debug] Failed to fetch activity data:', error);
@@ -1041,22 +1105,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       if (parsedActivity.iatiIdentifier) {
         const currentValue = currentActivityData.iati_identifier || null;
         
-        // Format current and import values like collaboration type IDs
-        const formattedCurrentValue = currentValue ? {
-          code: currentValue,
-          name: ''
-        } : null;
-        
-        const formattedImportValue = {
-          code: parsedActivity.iatiIdentifier,
-          name: ''
-        };
-        
         fields.push({
           fieldName: 'IATI Identifier',
           iatiPath: 'iati-activity/iati-identifier',
-          currentValue: formattedCurrentValue,
-          importValue: formattedImportValue,
+          currentValue: currentValue,
+          importValue: parsedActivity.iatiIdentifier,
           selected: shouldSelectField(currentValue, parsedActivity.iatiIdentifier),
           hasConflict: hasConflict(currentValue, parsedActivity.iatiIdentifier),
           tab: 'basic',
@@ -1453,31 +1506,126 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       // === LOCATIONS TAB ===
       
-      if (parsedActivity.recipientCountries && parsedActivity.recipientCountries.length > 0) {
-        const countryNames = parsedActivity.recipientCountries.map(c => c.narrative || c.code).join(', ');
+      // Always show recipient countries field if there's current data or import data
+      const countryInfo = parsedActivity.recipientCountries && parsedActivity.recipientCountries.length > 0
+        ? parsedActivity.recipientCountries.map(c => ({
+            code: c.code,
+            name: `${(() => {
+            const countryData = IATI_COUNTRIES.find(country => country.code === c.code);
+            const countryName = countryData ? countryData.name : (c.narrative || c.code);
+            return countryName;
+          })()}${c.percentage ? ` (${c.percentage}%)` : ''}`,
+            vocabulary: 'A4 ISO Country'
+          }))
+        : null;
+      
+      const currentCountryInfo = currentActivityData.recipient_countries && currentActivityData.recipient_countries.length > 0
+        ? currentActivityData.recipient_countries.map(c => {
+            const countryCode = c.country?.code || c.code;
+            const countryData = IATI_COUNTRIES.find(country => country.code === countryCode);
+            const countryName = countryData ? countryData.name : (c.country?.name || c.name || countryCode);
+            return {
+              code: countryCode,
+              name: `${countryName}${c.percentage ? ` (${c.percentage}%)` : ''}`,
+              vocabulary: 'A4 ISO Country'
+            };
+          })
+        : null;
+      
+      console.log('[XML Import Debug] Current country info:', currentCountryInfo);
+      console.log('[XML Import Debug] Current activity data recipient_countries:', currentActivityData.recipient_countries);
+      
+      // Only add the field if there's either current data or import data
+      if (currentCountryInfo || countryInfo) {
         fields.push({
           fieldName: 'Recipient Countries',
           iatiPath: 'iati-activity/recipient-country',
-          currentValue: null,
-          importValue: countryNames,
-          selected: false, // Don't auto-select complex data
-          hasConflict: false,
+          currentValue: currentCountryInfo,
+          importValue: countryInfo,
+          selected: shouldSelectField(currentCountryInfo, countryInfo),
+          hasConflict: hasConflict(currentCountryInfo, countryInfo),
           tab: 'locations',
-          description: 'Countries where activity takes place'
+          description: 'Countries where activity takes place with percentage allocations (vocabulary: A4)'
         });
       }
 
-      if (parsedActivity.recipientRegions && parsedActivity.recipientRegions.length > 0) {
-        const regionNames = parsedActivity.recipientRegions.map(r => r.narrative || r.code).join(', ');
+      // Always show recipient regions field if there's current data or import data
+      const standardRegions = parsedActivity.recipientRegions ? parsedActivity.recipientRegions.filter(r => r.vocabulary !== '99') : [];
+      const customRegions = parsedActivity.recipientRegions ? parsedActivity.recipientRegions.filter(r => r.vocabulary === '99') : [];
+      
+      // Standard regions
+      const regionInfo = standardRegions.length > 0
+        ? standardRegions.map(r => {
+            // Look up the region name from our regions data
+            const regionData = IATI_REGIONS.find(region => region.code === r.code);
+            const regionName = regionData ? regionData.name : (r.narrative || r.code);
+            const vocab = r.vocabulary || '1';
+            const vocabName = vocab === '1' ? 'OECD DAC' : vocab === '2' ? 'UN' : 'Custom';
+            return {
+              code: r.code,
+              name: `${regionName}${r.percentage ? ` (${r.percentage}%)` : ''}`,
+              vocabulary: `${vocab} ${vocabName}`
+            };
+          })
+        : null;
+      
+      const currentRegionInfo = currentActivityData.recipient_regions && currentActivityData.recipient_regions.length > 0
+        ? currentActivityData.recipient_regions.map(r => {
+            const regionCode = r.region?.code || r.code;
+            const regionData = IATI_REGIONS.find(region => region.code === regionCode);
+            const regionName = regionData ? regionData.name : (r.region?.name || r.name || regionCode);
+            const vocab = r.vocabulary || '1';
+            const vocabName = vocab === '1' ? 'OECD DAC' : vocab === '2' ? 'UN' : 'Custom';
+            return {
+              code: regionCode,
+              name: `${regionName}${r.percentage ? ` (${r.percentage}%)` : ''}`,
+              vocabulary: `${vocab} ${vocabName}`
+            };
+          })
+        : null;
+      
+      if (currentRegionInfo || regionInfo) {
         fields.push({
           fieldName: 'Recipient Regions',
           iatiPath: 'iati-activity/recipient-region',
-          currentValue: null,
-          importValue: regionNames,
-          selected: false,
-          hasConflict: false,
+          currentValue: currentRegionInfo,
+          importValue: regionInfo,
+          selected: shouldSelectField(currentRegionInfo, regionInfo),
+          hasConflict: hasConflict(currentRegionInfo, regionInfo),
           tab: 'locations',
-          description: 'Regions where activity takes place'
+          description: 'Standard regions where activity takes place with percentage allocations'
+        });
+      }
+      
+      // Custom geographies
+      const customInfo = customRegions.length > 0
+        ? customRegions.map(r => ({
+            code: r.code,
+            name: `${r.narrative || r.code}${r.percentage ? ` (${r.percentage}%)` : ''}`,
+            vocabulary: `99 Custom`,
+            vocabularyUri: r.vocabularyUri || null
+          }))
+        : null;
+      
+      const currentCustomInfo = currentActivityData.custom_geographies && currentActivityData.custom_geographies.length > 0
+        ? currentActivityData.custom_geographies.map(c => ({
+            code: c.code,
+            name: `${c.name}${c.percentage ? ` (${c.percentage}%)` : ''}`,
+            vocabulary: `99 Custom`,
+            vocabularyUri: c.vocabularyUri || null
+          }))
+        : null;
+      
+      if (currentCustomInfo || customInfo) {
+        fields.push({
+          fieldName: 'Custom Geographies',
+          iatiPath: 'iati-activity/recipient-region[@vocabulary="99"]',
+          currentValue: currentCustomInfo,
+          importValue: customInfo,
+          selected: shouldSelectField(currentCustomInfo, customInfo),
+          hasConflict: hasConflict(currentCustomInfo, customInfo),
+          tab: 'locations',
+          description: 'Custom geographies where activity takes place with percentage allocations'
         });
       }
 
@@ -1485,11 +1633,43 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       
       if (parsedActivity.sectors && parsedActivity.sectors.length > 0) {
         const currentSectorsInfo = currentActivityData.sectors && currentActivityData.sectors.length > 0 
-          ? currentActivityData.sectors.map(s => `${s.code}: ${s.name} (${s.percentage}%)`).join('; ')
+          ? currentActivityData.sectors.map(s => ({
+              code: s.code,
+              name: s.name,
+              percentage: s.percentage
+            }))
           : null;
-        const importSectorInfo = parsedActivity.sectors.map(s => 
-          `${s.code}: ${s.narrative || 'Unnamed sector'} (${s.percentage || 0}%)`
-        ).join('; ');
+        
+        // Separate importable sectors from non-DAC sectors
+        // vocabulary 1 = OECD DAC, vocabulary 2 = UN, both are importable
+        // vocabulary 99 = Custom/Reporting organisation, not importable
+        const importableSectors = parsedActivity.sectors.filter(s => !s.vocabulary || s.vocabulary === '1' || s.vocabulary === '2' || s.vocabulary === 'DAC');
+        const nonDacSectors = parsedActivity.sectors.filter(s => s.vocabulary === '99');
+        
+        const importSectorInfo = importableSectors.map(s => {
+          // Try to get sector name from DAC sectors data
+          const sectorInfo = s.code ? getSectorInfo(s.code) : null;
+          const sectorName = sectorInfo ? getCleanSectorName(sectorInfo.name) : (s.narrative || 'Unnamed sector');
+          
+          return {
+            code: s.code,
+            name: sectorName,
+            percentage: s.percentage || 0,
+            isDac: true
+          };
+        });
+        
+        // Add non-DAC sectors as locked/unimportable
+        const nonDacSectorInfo = nonDacSectors.map(s => ({
+          code: s.code,
+          name: s.narrative || 'Custom sector',
+          percentage: s.percentage || 0,
+          isDac: false,
+          vocabulary: s.vocabulary,
+          locked: true
+        }));
+        
+        const allSectorInfo = [...importSectorInfo, ...nonDacSectorInfo];
         
         // Check for 3-digit sectors that need refinement
         const has3DigitSectors = parsedActivity.sectors.some(s => 
@@ -1500,23 +1680,33 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         console.log('[Sector Import Debug] Sector codes:', parsedActivity.sectors.map(s => s.code));
         
         const hasConflict = !!currentActivityData.sectors?.length;
+        const hasNonDacSectors = nonDacSectors.length > 0;
         const sectorField: ParsedField = {
           fieldName: 'Sectors',
           iatiPath: 'iati-activity/sector',
           currentValue: currentSectorsInfo,
-          importValue: importSectorInfo,
-          selected: shouldSelectField(currentSectorsInfo, importSectorInfo),
+          importValue: allSectorInfo,
+          selected: shouldSelectField(currentSectorsInfo, importSectorInfo), // Only select DAC sectors
           hasConflict: hasConflict,
           tab: 'sectors',
-          description: has3DigitSectors 
+          description: hasNonDacSectors 
+            ? `Sector classifications and allocations (${nonDacSectors.length} non-DAC sectors excluded)`
+            : has3DigitSectors 
             ? 'Sector classifications and allocations (Contains 3-digit categories - refinement needed)'
-            : 'Sector classifications and allocations'
+            : 'Sector classifications and allocations',
+          hasNonDacSectors: hasNonDacSectors,
+          nonDacSectors: nonDacSectors
         };
         
         // Add metadata to track sectors that need refinement
         if (has3DigitSectors) {
           (sectorField as any).needsRefinement = true;
-          (sectorField as any).importedSectors = parsedActivity.sectors;
+          // Only pass 3-digit DAC sectors that need refinement, not all sectors
+          const sectorsNeedingRefinement = parsedActivity.sectors.filter(s => 
+            s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) && 
+            (s.vocabulary === '1' || s.vocabulary === '2' || !s.vocabulary)
+          );
+          (sectorField as any).importedSectors = sectorsNeedingRefinement;
         }
         
         fields.push(sectorField);
@@ -1530,7 +1720,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: `${parsedActivity.policyMarkers.length} policy markers found`,
           selected: false,
           hasConflict: false,
-          tab: 'sectors',
+          tab: 'policy-markers',
           description: 'Policy significance markers'
         });
       }
@@ -1673,9 +1863,15 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         console.log('[XML Import] Auto-triggering sector refinement for 3-digit sectors');
         const importedSectors = (sectorField as any).importedSectors || [];
         
+        // Filter to only include 3-digit DAC sectors that need refinement
+        const sectorsNeedingRefinement = importedSectors.filter(s => 
+          s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) && 
+          (s.vocabulary === '1' || s.vocabulary === '2' || !s.vocabulary)
+        );
+        
         // Show sector refinement modal immediately
         setSectorRefinementData({
-          originalSectors: importedSectors,
+          originalSectors: sectorsNeedingRefinement,
           refinedSectors: []
         });
         setShowSectorRefinement(true);
@@ -1722,8 +1918,15 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       percentage: s.percentage,
       codeLength: s.code?.length
     })));
+    
+    // Filter to only include 3-digit DAC sectors that need refinement
+    const sectorsNeedingRefinement = importedSectors.filter(s => 
+      s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) && 
+      (s.vocabulary === '1' || s.vocabulary === '2' || !s.vocabulary)
+    );
+    
     setSectorRefinementData({
-      originalSectors: importedSectors,
+      originalSectors: sectorsNeedingRefinement,
       refinedSectors: []
     });
     setShowSectorRefinement(true);
@@ -1820,6 +2023,94 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             // Handle sector imports - this will be processed separately after main activity update
             updateData._importSectors = true;
             break;
+          case 'Recipient Countries':
+            // Handle recipient countries import
+            if (parsedActivity.recipientCountries && parsedActivity.recipientCountries.length > 0) {
+              updateData.recipient_countries = parsedActivity.recipientCountries.map((country: any) => {
+                const countryData = IATI_COUNTRIES.find(c => c.code === country.code);
+                const countryName = countryData ? countryData.name : (country.narrative || country.code);
+                
+                return {
+                id: `country-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                country: {
+                  code: country.code,
+                    name: countryName,
+                  iso2: country.code,
+                  withdrawn: false
+                },
+                  percentage: country.percentage || 0,
+                  vocabulary: 'A4', // Default to ISO Country vocabulary
+                  vocabularyUri: undefined,
+                  narrative: country.narrative || undefined
+                };
+              });
+            }
+            break;
+          case 'Recipient Regions':
+            // Handle recipient regions import
+            if (parsedActivity.recipientRegions && parsedActivity.recipientRegions.length > 0) {
+              const regions: any[] = [];
+              const customGeographies: any[] = [];
+              
+              parsedActivity.recipientRegions.forEach((region: any) => {
+                const regionData = {
+                id: `region-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                region: {
+                  code: region.code,
+                    name: (() => {
+                      const regionLookup = IATI_REGIONS.find(r => r.code === region.code);
+                      return regionLookup ? regionLookup.name : (region.narrative || region.code);
+                    })(),
+                  vocabulary: region.vocabulary || '1',
+                  withdrawn: false
+                },
+                  percentage: region.percentage || 0,
+                  vocabulary: region.vocabulary || '1',
+                  vocabularyUri: undefined,
+                  narrative: region.narrative || undefined
+                };
+                
+                // Check if this is a custom geography (vocabulary="99")
+                if (region.vocabulary === '99') {
+                  customGeographies.push({
+                    id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    name: region.narrative || region.code,
+                    code: region.code,
+                    percentage: region.percentage || 0,
+                    vocabularyUri: region.vocabularyUri || null,
+                    narrative: region.narrative || undefined
+                  });
+                } else {
+                  // For standard regions, update vocabularyUri if present
+                  regionData.vocabularyUri = region.vocabularyUri;
+                  regions.push(regionData);
+                }
+              });
+              
+              if (regions.length > 0) {
+                updateData.recipient_regions = regions;
+              }
+              if (customGeographies.length > 0) {
+                updateData.custom_geographies = customGeographies;
+              }
+            }
+            break;
+          case 'Custom Geographies':
+            // Handle custom geographies import (vocabulary="99" regions)
+            if (parsedActivity.recipientRegions && parsedActivity.recipientRegions.length > 0) {
+              const customRegions = parsedActivity.recipientRegions.filter((region: any) => region.vocabulary === '99');
+              if (customRegions.length > 0) {
+                updateData.custom_geographies = customRegions.map((region: any) => ({
+                  id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  name: region.narrative || region.code,
+                  code: region.code,
+                  percentage: region.percentage || 0,
+                  vocabularyUri: region.vocabularyUri || null,
+                  narrative: region.narrative || undefined
+                }));
+              }
+            }
+            break;
           default:
             if (field.fieldName.startsWith('Budget ')) {
               // Collect budget data for import
@@ -1911,8 +2202,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             }));
           } else {
             // Use original sectors from import if no refinement was done
+            // Filter out locked (non-DAC) sectors
             console.log('[XML Import] Using original sectors from field');
-            // This would handle non-refined sector imports
+            const importableSectors = (sectorField.importValue || []).filter((sector: any) => !sector.locked);
+            sectorsToImport = importableSectors.map((sector: any) => ({
+              sector_code: sector.code,
+              sector_name: sector.name,
+              percentage: sector.percentage,
+              type: 'secondary',
+              level: 'subsector'
+            }));
           }
 
           if (sectorsToImport.length > 0) {
@@ -2046,6 +2345,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               saveKey = 'actualEndDate';
               console.log(`[XML Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
+            case 'Recipient Countries':
+              saveKey = 'recipient_countries';
+              break;
+            case 'Recipient Regions':
+              saveKey = 'recipient_regions';
+              break;
             default:
               // For other fields, use a generic key
               saveKey = field.fieldName.toLowerCase().replace(/\s+/g, '_');
@@ -2121,6 +2426,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       'transactions': 'Transactions',
       'locations': 'Locations',
       'sectors': 'Sectors',
+      'policy-markers': 'Policy Markers',
       'partners': 'Partners',
       'results': 'Results'
     };
@@ -2151,7 +2457,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           onCheckedChange={(checked) => toggleFieldSelection(globalIndex, checked)}
         />
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 w-32">
         <div>
           <p className="font-medium text-sm text-gray-900">{field.fieldName}</p>
           {(field as any).needsRefinement && (
@@ -2182,12 +2488,43 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           )}
         </div>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 w-40">
+        <div className="space-y-1">
         {field.currentValue ? (
-          typeof field.currentValue === 'object' && field.currentValue?.code ? (
-            <div className="flex items-center gap-2">
+            Array.isArray(field.currentValue) ? (
+              field.currentValue.map((item, index) => (
+                <div key={index} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
+                    <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                    {item.percentage && (
+                      <span className="text-xs text-gray-500 font-normal">({item.percentage}%)</span>
+                    )}
+                    {item.vocabulary && (
+                      <>
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.vocabulary.split(' ')[0]}</span>
+                        <span className="text-xs text-gray-400 font-normal ml-1">{item.vocabulary.split(' ').slice(1).join(' ')}</span>
+                      </>
+                    )}
+                  </div>
+                  {item.vocabularyUri && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">URI</span>
+                      <span className="text-xs text-gray-500 font-normal">{item.vocabularyUri}</span>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : typeof field.currentValue === 'object' && field.currentValue?.code ? (
+              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
               <span className="text-sm font-medium text-gray-900">{field.currentValue.name}</span>
+                {field.currentValue.vocabulary && (
+                  <>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.vocabulary.split(' ')[0]}</span>
+                    <span className="text-xs text-gray-400 font-normal ml-1">{field.currentValue.vocabulary.split(' ').slice(1).join(' ')}</span>
+                  </>
+                )}
             </div>
           ) : (
             <span className="text-sm font-medium text-gray-900">{field.currentValue}</span>
@@ -2195,28 +2532,55 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         ) : (
           <span className="text-sm text-gray-400 italic">Empty</span>
         )}
+        </div>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 w-40">
         <div className="space-y-1">
-          {typeof field.importValue === 'object' && field.importValue?.code ? (
-            <div className="flex items-center gap-2">
+          {Array.isArray(field.importValue) ? (
+            field.importValue.map((item, index) => (
+              <div key={index} className={`flex flex-col gap-1 ${item.locked ? 'opacity-50' : ''}`}>
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
+                  <span className={`text-sm font-medium ${item.locked ? 'text-gray-500' : 'text-gray-900'}`}>{item.name}</span>
+                  {item.percentage && (
+                    <span className="text-xs text-gray-500 font-normal">({item.percentage}%)</span>
+                  )}
+                  {item.locked && (
+                    <Lock className="h-3 w-3 text-gray-500" />
+                  )}
+                  {item.vocabulary && (
+                    <>
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.vocabulary.split(' ')[0]}</span>
+                      <span className="text-xs text-gray-400 font-normal ml-1">{item.vocabulary.split(' ').slice(1).join(' ')}</span>
+                    </>
+                  )}
+                </div>
+                {item.vocabularyUri && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">URI</span>
+                    <span className="text-xs text-gray-500 font-normal">{item.vocabularyUri}</span>
+                  </div>
+                )}
+              </div>
+            ))
+          ) : typeof field.importValue === 'object' && field.importValue?.code ? (
+            <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
               <span className="text-sm font-medium text-gray-900">{field.importValue.name}</span>
+              {field.importValue.vocabulary && (
+                <>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.vocabulary.split(' ')[0]}</span>
+                  <span className="text-xs text-gray-400 font-normal ml-1">{field.importValue.vocabulary.split(' ').slice(1).join(' ')}</span>
+                </>
+              )}
             </div>
           ) : (
             <span className="text-sm font-medium text-gray-900">{field.importValue}</span>
           )}
-          {(field as any).needsRefinement && (
-            <div className="mt-1">
-              <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-700">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                3-digit categories detected
-              </Badge>
-            </div>
-          )}
         </div>
       </td>
-      <td className="px-4 py-3 text-center">
+      <td className="px-4 py-3 text-left w-40">
+        <div className="space-y-1 text-left">
         {field.hasConflict ? (
           <Badge variant="outline" className="text-xs border-orange-400 text-orange-700">
             <AlertCircle className="h-3 w-3 mr-1" />
@@ -2233,6 +2597,19 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             New
           </Badge>
         )}
+          {(field as any).needsRefinement && (
+            <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-700">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              3-digit categories detected
+            </Badge>
+          )}
+          {(field as any).hasNonDacSectors && (
+            <Badge variant="outline" className="text-xs border-red-400 text-red-700">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              {(field as any).nonDacSectors?.length || 0} non-DAC sectors excluded
+            </Badge>
+          )}
+        </div>
       </td>
     </tr>
   );
@@ -2246,7 +2623,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       <div className="space-y-4">
         {/* Tab header with selection controls */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
             {/* Removed redundant badges */}
           </div>
           <div className="flex gap-2">
@@ -2285,16 +2662,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center w-20">
                   Import
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                   Field
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                   Current Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                   Import Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center w-24">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                   Status
                 </th>
               </tr>
@@ -2425,7 +2802,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {importMethod === 'file' ? (
-                  <FileText className="h-8 w-8 text-gray-700" />
+                  <FileCode className="h-8 w-8 text-gray-700" />
                 ) : (
                   <Globe className="h-8 w-8 text-gray-700" />
                 )}
@@ -2570,7 +2947,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           <Card>
             <CardContent className="pt-6">
               <Tabs value={activeImportTab} onValueChange={setActiveImportTab}>
-                <TabsList className="grid w-full grid-cols-7">
+                <TabsList className="grid w-full grid-cols-8">
                   {organizeFieldsByTabs(parsedFields).map((tabSection) => {
                     const selectedCount = tabSection.fields.filter(f => f.selected).length;
                     const totalCount = tabSection.fields.length;
@@ -2690,9 +3067,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           // Update the parsed fields with refined sectors display
           const updatedFields = parsedFields.map(field => {
             if (field.fieldName === 'Sectors') {
-              const refinedSectorInfo = refinedSectors.map(s => 
-                `${s.code}: ${s.name} (${s.percentage}%)`
-              ).join('; ');
+              const refinedSectorInfo = refinedSectors.map(s => ({
+                code: s.code,
+                name: s.name,
+                percentage: s.percentage
+              }));
               
               return {
                 ...field,
@@ -2932,7 +3311,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                         <td className="px-4 py-3">
                           <div className="space-y-1">
                             {typeof field.importValue === 'object' && field.importValue?.code ? (
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
                                 <span className="text-sm font-medium text-gray-900">{field.importValue.name}</span>
                               </div>
@@ -2993,6 +3372,13 @@ interface SectorRefinementModalProps {
 const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: SectorRefinementModalProps) => {
   const [refinedSectors, setRefinedSectors] = useState<any[]>([]);
   const [totalPercentage, setTotalPercentage] = useState(0);
+  
+  // Separate DAC and non-DAC sectors
+  const dacSectors = refinedSectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
+  const nonDacSectors = refinedSectors.filter(sector => !sector.isValid || !/^\d{5}$/.test(sector.code));
+  
+  // Calculate total percentage only for DAC sectors
+  const dacTotalPercentage = dacSectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
 
   // IATI DAC sector reference data - comprehensive mapping
   const getSubsectorsFor3DigitCode = (threeDigitCode: string) => {
@@ -3318,21 +3704,16 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
   const detectSectorIssues = (sectors: any[]): string[] => {
     const issues: string[] = [];
     
-    // Check for invalid codes
-    const invalidCodes = sectors.filter(s => !isValidSectorCode(s.code));
-    if (invalidCodes.length > 0) {
-      issues.push(`Invalid sector codes: ${invalidCodes.map(s => s.code).join(', ')}`);
-    }
-    
-    // Check percentage total
-    const total = sectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
+    // Only check percentage total for DAC sectors
+    const dacSectors = sectors.filter(s => s.isValid && /^\d{5}$/.test(s.code));
+    const total = dacSectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
     if (Math.abs(total - 100) > 0.01) {
       issues.push(`Sector percentages total ${total.toFixed(1)}% instead of 100%`);
     }
     
-    // Check for zero percentages
-    const zeroPercentages = sectors.filter(s => (s.percentage || 0) === 0);
-    if (zeroPercentages.length > 0 && sectors.length > 1) {
+    // Check for zero percentages in DAC sectors only
+    const zeroPercentages = dacSectors.filter(s => (s.percentage || 0) === 0);
+    if (zeroPercentages.length > 0 && dacSectors.length > 1) {
       issues.push(`${zeroPercentages.length} sector(s) have 0% allocation`);
     }
     
@@ -3397,7 +3778,9 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
   }, [isOpen, originalSectors]);
 
   const calculateTotal = (sectors: any[]) => {
-    const total = sectors.reduce((sum, sector) => sum + (sector.percentage || 0), 0);
+    // Only calculate total for DAC sectors (valid 5-digit codes)
+    const dacSectors = sectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
+    const total = dacSectors.reduce((sum, sector) => sum + (sector.percentage || 0), 0);
     setTotalPercentage(total);
   };
 
@@ -3420,14 +3803,30 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
   };
 
   const handleNormalizePercentages = () => {
-    const normalized = normalizePercentages(refinedSectors);
+    // Only normalize DAC sectors
+    const dacSectors = refinedSectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
+    const nonDacSectors = refinedSectors.filter(sector => !sector.isValid || !/^\d{5}$/.test(sector.code));
+    
+    const normalizedDacSectors = normalizePercentages(dacSectors);
+    const normalized = [...normalizedDacSectors, ...nonDacSectors];
+    
     setRefinedSectors(normalized);
     calculateTotal(normalized);
   };
 
   const handleEqualDistribution = () => {
-    const equalPercentage = Math.round((100 / refinedSectors.length) * 100) / 100;
-    const updated = refinedSectors.map(s => ({ ...s, percentage: equalPercentage }));
+    // Only distribute equally among DAC sectors
+    const dacSectors = refinedSectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
+    const equalPercentage = dacSectors.length > 0 ? Math.round((100 / dacSectors.length) * 100) / 100 : 0;
+    
+    const updated = refinedSectors.map(s => {
+      // Only update percentage for DAC sectors
+      if (s.isValid && /^\d{5}$/.test(s.code)) {
+        return { ...s, percentage: equalPercentage };
+      }
+      return s; // Keep non-DAC sectors unchanged
+    });
+    
     setRefinedSectors(updated);
     calculateTotal(updated);
   };
@@ -3459,13 +3858,13 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
           <div className="bg-gray-50 p-3 rounded-lg space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-700">
-                Total Percentage: 
+                Total Percentage (DAC Sectors Only): 
               </span>
               <div className="flex items-center gap-3">
                 <span className={`font-bold ${
                   Math.abs(totalPercentage - 100) < 0.01 
-                    ? 'text-green-600' 
-                    : 'text-red-600'
+                    ? 'text-gray-800' 
+                    : 'text-gray-600'
                 }`}>
                   {totalPercentage.toFixed(1)}%
                 </span>
@@ -3475,7 +3874,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     variant="outline"
                     size="sm"
                     onClick={handleEqualDistribution}
-                    className="text-xs px-2 py-1"
+                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
                   >
                     Equal Split
                   </Button>
@@ -3484,7 +3883,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     variant="outline"
                     size="sm"
                     onClick={handleNormalizePercentages}
-                    className="text-xs px-2 py-1"
+                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400"
                     disabled={totalPercentage === 0}
                   >
                     Normalize
@@ -3493,14 +3892,12 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
               </div>
             </div>
             
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-100 rounded-full h-1">
               <div 
-                className={`h-2 rounded-full transition-all ${
+                className={`h-1 rounded-full transition-all ${
                   Math.abs(totalPercentage - 100) < 0.01 
-                    ? 'bg-green-500' 
-                    : totalPercentage > 100
-                      ? 'bg-red-500'
-                      : 'bg-yellow-500'
+                    ? 'bg-gray-300' 
+                    : 'bg-gray-400'
                 }`}
                 style={{ width: `${Math.min(totalPercentage, 100)}%` }}
               />
@@ -3511,10 +3908,10 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
               const issues = detectSectorIssues(refinedSectors);
               if (issues.length > 0) {
                 return (
-                  <div className="bg-amber-50 border border-amber-200 rounded p-2">
+                  <div className="bg-gray-100 border border-gray-300 rounded p-2">
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
-                      <div className="text-xs text-amber-800">
+                      <AlertTriangle className="h-4 w-4 text-gray-600 mt-0.5" />
+                      <div className="text-xs text-gray-800">
                         <div className="font-medium mb-1">Issues detected:</div>
                         <ul className="list-disc list-inside space-y-1">
                           {issues.map((issue, index) => (
@@ -3547,8 +3944,11 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {refinedSectors.map((sector, index) => (
-                  <tr key={index} className="bg-white">
+                {/* DAC Sectors */}
+                {dacSectors.map((sector, index) => {
+                  const originalIndex = refinedSectors.findIndex(s => s === sector);
+                  return (
+                  <tr key={originalIndex} className="bg-white">
                     <td className="px-3 py-3">
                       <div className="text-sm">
                         <div className="font-mono text-xs text-gray-600">
@@ -3563,17 +3963,17 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                       {sector.availableSubsectors.length > 0 ? (
                         <Popover>
                           <PopoverTrigger asChild>
-                            <button
+                            <Button
                               className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
                             >
                               <span className="truncate">
                                 <span className="flex items-center gap-2">
-                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
-                                  <span className="font-medium">{sector.name}</span>
+                                  <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{sector.code}</span>
+                                  <span className="font-medium text-gray-900">{sector.name}</span>
                                 </span>
                               </span>
                               <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                            </button>
+                            </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border">
                             <Command>
@@ -3582,14 +3982,14 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                   {sector.availableSubsectors.map((sub: any) => (
                                     <CommandItem
                                       key={sub.code}
-                                      onSelect={() => handleSectorChange(index, 'code', sub.code)}
+                                      onSelect={() => handleSectorChange(originalIndex, 'code', sub.code)}
                                       className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                                     >
                                       <Check
                                         className={`mr-2 h-4 w-4 ${sector.code === sub.code ? "opacity-100" : "opacity-0"}`}
                                       />
                                       <div className="flex-1">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sub.code}</span>
                                           <span className="font-medium text-foreground">{sub.name}</span>
                                         </div>
@@ -3604,8 +4004,8 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                       ) : (
                         <div className="text-sm">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
-                            <span className="font-medium text-foreground">{sector.name}</span>
+                            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{sector.code}</span>
+                            <span className="font-medium text-gray-900">{sector.name}</span>
                           </div>
                         </div>
                       )}
@@ -3617,24 +4017,76 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                         max="100"
                         step="0.1"
                         value={sector.percentage}
-                        onChange={(e) => handleSectorChange(index, 'percentage', parseFloat(e.target.value) || 0)}
+                        onChange={(e) => handleSectorChange(originalIndex, 'percentage', parseFloat(e.target.value) || 0)}
                         className="w-full text-xs"
                       />
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
+                
+                {/* Non-DAC Sectors (Locked) */}
+                {nonDacSectors.length > 0 && (
+                  <>
+                    <tr className="bg-gray-100">
+                      <td colSpan={3} className="px-3 py-2">
+                        <div className="flex items-center gap-2 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                          <Lock className="h-3 w-3" />
+                          Non-DAC Sectors
+                        </div>
+                      </td>
+                    </tr>
+                    {nonDacSectors.map((sector, index) => {
+                      const originalIndex = refinedSectors.findIndex(s => s === sector);
+                      return (
+                        <tr key={originalIndex} className="bg-gray-50">
+                          <td className="px-3 py-3">
+                            <div className="text-sm">
+                              <div className="font-mono text-xs text-gray-500">
+                                {sector.originalCode}
+                              </div>
+                              <div className="text-gray-400 text-xs">
+                                {sector.originalPercentage}% original
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="text-sm">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-mono text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded">{sector.code}</span>
+                                <span className="font-medium text-gray-500">{sector.name}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              value={sector.percentage}
+                              disabled
+                              className="w-full text-xs bg-gray-100 text-gray-500"
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </>
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} className="bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200">
             Cancel
           </Button>
           <Button 
             onClick={handleSave}
             disabled={Math.abs(totalPercentage - 100) > 0.01}
+            className="bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400"
           >
             Save Refined Sectors
           </Button>
