@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { fetchBasicActivityWithCache } from '@/lib/activity-cache';
-import { getSectorInfo, getCleanSectorName } from '@/lib/dac-sector-utils';
+import { getSectorInfo, getCleanSectorName, getSectorInfoFlexible } from '@/lib/dac-sector-utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -13,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandGroup, CommandItem, CommandList, CommandInput, CommandEmpty } from '@/components/ui/command';
 import { toast } from 'sonner';
 import { IATIXMLParser, validateIATIXML } from '@/lib/xml-parser';
 import { IATI_REGIONS } from '@/data/iati-regions';
@@ -42,6 +43,8 @@ import {
   ChevronsUpDown,
   Check,
   Lock,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 
 interface XmlImportTabProps {
@@ -1647,8 +1650,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         const nonDacSectors = parsedActivity.sectors.filter(s => s.vocabulary === '99');
         
         const importSectorInfo = importableSectors.map(s => {
-          // Try to get sector name from DAC sectors data
-          const sectorInfo = s.code ? getSectorInfo(s.code) : null;
+          // Try to get sector name from DAC sectors data using flexible lookup
+          const sectorInfo = s.code ? getSectorInfoFlexible(s.code) : null;
           const sectorName = sectorInfo ? getCleanSectorName(sectorInfo.name) : (s.narrative || 'Unnamed sector');
           
           return {
@@ -2419,31 +2422,37 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     // Define tab display names
     const tabNames: Record<string, string> = {
       'basic': 'General',
-      'dates': 'Dates', 
-      'finances': 'Finances',
-      'budgets': 'Budgets',
-      'planned_disbursements': 'Planned Disbursements',
-      'transactions': 'Transactions',
+      'policy-markers': 'Policy Markers',
+      'finances': 'Finances', // This will be the main finances tab
       'locations': 'Locations',
       'sectors': 'Sectors',
-      'policy-markers': 'Policy Markers',
       'partners': 'Partners',
       'results': 'Results'
     };
 
+    // Financial tabs that should be grouped under main Finances tab
+    const financialTabs = ['finances', 'budgets', 'planned_disbursements', 'transactions'];
+
     fields.forEach(field => {
-      if (!tabMap.has(field.tab)) {
-        tabMap.set(field.tab, {
-          tabId: field.tab,
-          tabName: tabNames[field.tab] || field.tab,
+      let tabKey = field.tab;
+      
+      // Group financial tabs under main 'finances' tab
+      if (financialTabs.includes(field.tab)) {
+        tabKey = 'finances';
+      }
+      
+      if (!tabMap.has(tabKey)) {
+        tabMap.set(tabKey, {
+          tabId: tabKey,
+          tabName: tabNames[tabKey] || tabKey,
           fields: []
         });
       }
-      tabMap.get(field.tab)!.fields.push(field);
+      tabMap.get(tabKey)!.fields.push(field);
     });
 
     return Array.from(tabMap.values()).sort((a, b) => {
-      const order = ['basic', 'dates', 'finances', 'budgets', 'planned_disbursements', 'transactions', 'locations', 'sectors', 'partners', 'results'];
+      const order = ['policy-markers', 'basic', 'finances', 'locations', 'sectors', 'partners', 'results'];
       return order.indexOf(a.tabId) - order.indexOf(b.tabId);
     });
   };
@@ -2498,7 +2507,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
                     <span className="text-sm font-medium text-gray-900">{item.name}</span>
                     {item.percentage && (
-                      <span className="text-xs text-gray-500 font-normal">({item.percentage}%)</span>
+                      <span className="text-xs text-gray-500 font-normal">({Number(item.percentage).toFixed(2)}%)</span>
                     )}
                     {item.vocabulary && (
                       <>
@@ -2543,7 +2552,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
                   <span className={`text-sm font-medium ${item.locked ? 'text-gray-500' : 'text-gray-900'}`}>{item.name}</span>
                   {item.percentage && (
-                    <span className="text-xs text-gray-500 font-normal">({item.percentage}%)</span>
+                    <span className="text-xs text-gray-500 font-normal">({Number(item.percentage).toFixed(2)}%)</span>
                   )}
                   {item.locked && (
                     <Lock className="h-3 w-3 text-gray-500" />
@@ -2586,6 +2595,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             <AlertCircle className="h-3 w-3 mr-1" />
             Conflict
           </Badge>
+        ) : (field as any).refinedSectors ? (
+          <Badge variant="outline" className="text-xs border-green-400 text-green-700">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Resolved
+          </Badge>
         ) : field.currentValue ? (
           <Badge variant="outline" className="text-xs border-green-400 text-green-700">
             <CheckCircle className="h-3 w-3 mr-1" />
@@ -2597,13 +2611,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             New
           </Badge>
         )}
-          {(field as any).needsRefinement && (
+          {(field as any).needsRefinement && !(field as any).refinedSectors && (
             <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-700">
               <AlertCircle className="h-3 w-3 mr-1" />
               3-digit categories detected
             </Badge>
           )}
-          {(field as any).hasNonDacSectors && (
+          {(field as any).hasNonDacSectors && !(field as any).refinedSectors && (
             <Badge variant="outline" className="text-xs border-red-400 text-red-700">
               <AlertCircle className="h-3 w-3 mr-1" />
               {(field as any).nonDacSectors?.length || 0} non-DAC sectors excluded
@@ -2614,10 +2628,51 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     </tr>
   );
 
-  // Tab content component
-  const TabFieldContent = ({ tabSection }: { tabSection: TabSection }) => {
-    const tabFieldsSelected = tabSection.fields.filter(f => f.selected).length;
-    const tabFieldsTotal = tabSection.fields.length;
+  // Financial sub-tabs component
+  const FinancialTabContent = ({ tabSection }: { tabSection: TabSection }) => {
+    const [activeFinancialTab, setActiveFinancialTab] = useState('finances');
+    
+    // Group financial fields by their original tab
+    const financialSubTabs = {
+      'finances': { name: 'Finances', fields: tabSection.fields.filter(f => f.tab === 'finances') },
+      'budgets': { name: 'Budgets', fields: tabSection.fields.filter(f => f.tab === 'budgets') },
+      'planned_disbursements': { name: 'Planned Disbursements', fields: tabSection.fields.filter(f => f.tab === 'planned_disbursements') },
+      'transactions': { name: 'Transactions', fields: tabSection.fields.filter(f => f.tab === 'transactions') }
+    };
+    
+    const activeSubTab = financialSubTabs[activeFinancialTab as keyof typeof financialSubTabs];
+    
+    return (
+      <div className="space-y-4">
+        {/* Financial Sub-tabs */}
+        <Tabs value={activeFinancialTab} onValueChange={setActiveFinancialTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            {Object.entries(financialSubTabs).map(([key, subTab]) => (
+              <TabsTrigger key={key} value={key} className="text-sm">
+                {subTab.name}
+                {subTab.fields.length > 0 && (
+                  <span className="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full">
+                    {subTab.fields.filter(f => f.selected).length}/{subTab.fields.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          
+          {Object.entries(financialSubTabs).map(([key, subTab]) => (
+            <TabsContent key={key} value={key} className="mt-4">
+              <RegularTabContent fields={subTab.fields} tabName={subTab.name} />
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
+    );
+  };
+  
+  // Regular tab content component
+  const RegularTabContent = ({ fields, tabName }: { fields: ParsedField[]; tabName: string }) => {
+    const tabFieldsSelected = fields.filter(f => f.selected).length;
+    const tabFieldsTotal = fields.length;
 
     return (
       <div className="space-y-4">
@@ -2631,7 +2686,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               variant="outline"
               size="sm"
               onClick={() => {
-                tabSection.fields.forEach((field) => {
+                fields.forEach((field) => {
                   const globalIndex = parsedFields.indexOf(field);
                   toggleFieldSelection(globalIndex, true);
                 });
@@ -2643,7 +2698,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               variant="outline"
               size="sm"
               onClick={() => {
-                tabSection.fields.forEach((field) => {
+                fields.forEach((field) => {
                   const globalIndex = parsedFields.indexOf(field);
                   toggleFieldSelection(globalIndex, false);
                 });
@@ -2677,7 +2732,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {tabSection.fields.map((field, index) => {
+              {fields.map((field, index) => {
                 const globalIndex = parsedFields.indexOf(field);
                 return (
                   <FieldRow 
@@ -2692,6 +2747,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         </div>
       </div>
     );
+  };
+  
+  // Main tab content component that chooses between financial and regular
+  const TabFieldContent = ({ tabSection }: { tabSection: TabSection }) => {
+    if (tabSection.tabId === 'finances') {
+      return <FinancialTabContent tabSection={tabSection} />;
+    }
+    return <RegularTabContent fields={tabSection.fields} tabName={tabSection.tabName} />;
   };
 
   return (
@@ -2947,7 +3010,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           <Card>
             <CardContent className="pt-6">
               <Tabs value={activeImportTab} onValueChange={setActiveImportTab}>
-                <TabsList className="grid w-full grid-cols-8">
+                <TabsList className="grid w-full grid-cols-7">
                   {organizeFieldsByTabs(parsedFields).map((tabSection) => {
                     const selectedCount = tabSection.fields.filter(f => f.selected).length;
                     const totalCount = tabSection.fields.length;
@@ -3076,7 +3139,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               return {
                 ...field,
                 importValue: refinedSectorInfo,
-                description: 'Sector classifications and allocations (Refined to 5-digit sub-sectors)',
+                description: 'Sector classifications and allocations - Refined successfully',
+                hasConflict: false, // Conflict resolved after refinement
                 refinedSectors: refinedSectors // Store refined sectors in field for import
               };
             }
@@ -3333,7 +3397,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               </Button>
               <Button onClick={() => {
                 // Update the main fields with the selected detail fields
-                const updatedFields = [...allFields];
+                const updatedFields = [...parsedFields];
                 const mainFieldIndex = updatedFields.findIndex(f => 
                   f.isFinancialItem && 
                   f.itemType === selectedItem.type && 
@@ -3347,7 +3411,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   updatedFields[mainFieldIndex].importValue = `${selectedCount} of ${totalCount} fields selected`;
                 }
                 
-                setAllFields(updatedFields);
+                setParsedFields(updatedFields);
                 setShowDetailModal(false);
               }}>
                 Apply Selection
@@ -3362,6 +3426,106 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 }
 
 // Sector Refinement Modal Component
+interface PortalDropdownProps {
+  sector: any;
+  sectorsGroup: any[];
+  originalIndex: number;
+  isOpen: boolean;
+  onToggle: () => void;
+  onSelect: (code: string) => void;
+}
+
+const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle, onSelect }: PortalDropdownProps) => {
+  const [buttonRect, setButtonRect] = useState<DOMRect | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setButtonRect(rect);
+    }
+  }, [isOpen]);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen && 
+          buttonRef.current && 
+          !buttonRef.current.contains(event.target as Node) &&
+          dropdownRef.current && 
+          !dropdownRef.current.contains(event.target as Node)) {
+        onToggle();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onToggle]);
+
+  const filteredSubsectors = sector.availableSubsectors.filter((subsector: any) => {
+    const usedCodes = sectorsGroup.map((s: any) => s.code);
+    return !usedCodes.includes(subsector.code) || sector.code === subsector.code;
+  });
+
+  const dropdownContent = isOpen && buttonRect && (
+    <div 
+      ref={dropdownRef}
+      className="fixed bg-white border border-gray-200 rounded-md shadow-lg z-[9999] max-h-[200px] overflow-y-auto"
+      style={{
+        top: buttonRect.bottom + 4,
+        left: buttonRect.left,
+        width: buttonRect.width,
+      }}
+    >
+      {filteredSubsectors.map((subsector: any) => (
+        <div
+          key={subsector.code}
+          onClick={() => onSelect(subsector.code)}
+          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent border-b border-gray-100 last:border-b-0 whitespace-nowrap"
+        >
+          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded min-w-[50px]">
+            {subsector.code}
+          </span>
+          <span className="font-medium text-gray-900 flex-1 truncate">
+            {subsector.name}
+          </span>
+          {sector.code === subsector.code && (
+            <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="relative">
+      <Button
+        ref={buttonRef}
+        variant="outline"
+        role="combobox"
+        onClick={onToggle}
+        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+      >
+        <span className="truncate">
+          <span className="flex items-center gap-2">
+            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{sector.code}</span>
+            <span className="font-medium text-gray-900">{sector.name}</span>
+          </span>
+        </span>
+        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+      
+      {dropdownContent && createPortal(dropdownContent, document.body)}
+    </div>
+  );
+};
+
 interface SectorRefinementModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -3372,6 +3536,7 @@ interface SectorRefinementModalProps {
 const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: SectorRefinementModalProps) => {
   const [refinedSectors, setRefinedSectors] = useState<any[]>([]);
   const [totalPercentage, setTotalPercentage] = useState(0);
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
   
   // Separate DAC and non-DAC sectors
   const dacSectors = refinedSectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
@@ -3745,7 +3910,8 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
             percentage: sector.percentage || 0,
             availableSubsectors: subsectors,
             needsRefinement: true,
-            isValid: isValidSectorCode(sector.code)
+            isValid: isValidSectorCode(sector.code),
+            id: crypto.randomUUID() // Add unique ID for React keys
           };
         }
         
@@ -3758,7 +3924,8 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
           percentage: sector.percentage || 0,
           availableSubsectors: [],
           needsRefinement: false,
-          isValid: isValidSectorCode(sector.code)
+          isValid: isValidSectorCode(sector.code),
+          id: crypto.randomUUID() // Add unique ID for React keys
         };
       });
       
@@ -3781,6 +3948,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
     // Only calculate total for DAC sectors (valid 5-digit codes)
     const dacSectors = sectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
     const total = dacSectors.reduce((sum, sector) => sum + (sector.percentage || 0), 0);
+    console.log('[Calculate Total] DAC sectors:', dacSectors.length, 'Total:', total);
     setTotalPercentage(total);
   };
 
@@ -3802,6 +3970,58 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
     }
   };
 
+  const handleAddSubsector = (originalCode: string, originalPercentage: number) => {
+    const availableSubsectors = getSubsectorsFor3DigitCode(originalCode);
+    
+    // Find an unused subsector (one that's not already selected for this original code)
+    const existingSectorCodes = refinedSectors
+      .filter(s => s.originalCode === originalCode)
+      .map(s => s.code);
+    
+    const unusedSubsector = availableSubsectors.find(sub => !existingSectorCodes.includes(sub.code));
+    
+    if (unusedSubsector) {
+      const newSector = {
+        originalCode: originalCode,
+        originalPercentage: originalPercentage,
+        code: unusedSubsector.code,
+        name: unusedSubsector.name,
+        percentage: 0, // User will need to set this
+        availableSubsectors: availableSubsectors,
+        needsRefinement: true,
+        isValid: isValidSectorCode(unusedSubsector.code),
+        id: crypto.randomUUID() // Add unique ID for React keys
+      };
+      
+      setRefinedSectors([...refinedSectors, newSector]);
+    }
+  };
+
+  const handleRemoveSubsector = (index: number) => {
+    const updated = refinedSectors.filter((_, i) => i !== index);
+    setRefinedSectors(updated);
+    calculateTotal(updated);
+  };
+
+  const handleDistributeEqually = (originalCode: string) => {
+    const sectorsForOriginal = refinedSectors.filter(s => s.originalCode === originalCode && s.isValid);
+    const originalSector = refinedSectors.find(s => s.originalCode === originalCode);
+    
+    if (sectorsForOriginal.length > 0 && originalSector) {
+      const equalPercentage = Math.round((originalSector.originalPercentage / sectorsForOriginal.length) * 100) / 100;
+      
+      const updated = refinedSectors.map(s => {
+        if (s.originalCode === originalCode && s.isValid) {
+          return { ...s, percentage: equalPercentage };
+        }
+        return s;
+      });
+      
+      setRefinedSectors(updated);
+      calculateTotal(updated);
+    }
+  };
+
   const handleNormalizePercentages = () => {
     // Only normalize DAC sectors
     const dacSectors = refinedSectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
@@ -3817,18 +4037,38 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
   const handleEqualDistribution = () => {
     // Only distribute equally among DAC sectors
     const dacSectors = refinedSectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
-    const equalPercentage = dacSectors.length > 0 ? Math.round((100 / dacSectors.length) * 100) / 100 : 0;
+    console.log('[Distribute Equally] DAC sectors found:', dacSectors.length, dacSectors);
     
+    if (dacSectors.length === 0) return;
+    
+    // Calculate base percentage and remainder to ensure exact 100% total
+    const basePercentage = Math.floor((100 / dacSectors.length) * 100) / 100; // Round down to 2 decimal places
+    const remainder = 100 - (basePercentage * dacSectors.length);
+    
+    console.log('[Distribute Equally] Base percentage:', basePercentage, 'Remainder:', remainder);
+    
+    let dacSectorIndex = 0;
     const updated = refinedSectors.map(s => {
       // Only update percentage for DAC sectors
       if (s.isValid && /^\d{5}$/.test(s.code)) {
-        return { ...s, percentage: equalPercentage };
+        // Add remainder to only the first sector to ensure exact 100%
+        const extraAmount = dacSectorIndex === 0 ? remainder : 0;
+        const finalPercentage = Math.round((basePercentage + extraAmount) * 100) / 100; // Round to 2 decimal places
+        dacSectorIndex++;
+        
+        console.log('[Distribute Equally] Sector', s.code, 'gets percentage:', finalPercentage);
+        return { ...s, percentage: finalPercentage };
       }
       return s; // Keep non-DAC sectors unchanged
     });
     
+    console.log('[Distribute Equally] Updated sectors:', updated);
     setRefinedSectors(updated);
-    calculateTotal(updated);
+    
+    // Use setTimeout to ensure state update happens before calculation
+    setTimeout(() => {
+      calculateTotal(updated);
+    }, 0);
   };
 
   const handleSave = () => {
@@ -3876,17 +4116,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     onClick={handleEqualDistribution}
                     className="text-xs px-2 py-1 bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
                   >
-                    Equal Split
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleNormalizePercentages}
-                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400"
-                    disabled={totalPercentage === 0}
-                  >
-                    Normalize
+                    Distribute Equally
                   </Button>
                 </div>
               </div>
@@ -3903,28 +4133,6 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
               />
             </div>
             
-            {/* Show validation issues */}
-            {(() => {
-              const issues = detectSectorIssues(refinedSectors);
-              if (issues.length > 0) {
-                return (
-                  <div className="bg-gray-100 border border-gray-300 rounded p-2">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="h-4 w-4 text-gray-600 mt-0.5" />
-                      <div className="text-xs text-gray-800">
-                        <div className="font-medium mb-1">Issues detected:</div>
-                        <ul className="list-disc list-inside space-y-1">
-                          {issues.map((issue, index) => (
-                            <li key={index}>{issue}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })()}
           </div>
 
           {/* Refinement table */}
@@ -3944,86 +4152,121 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {/* DAC Sectors */}
-                {dacSectors.map((sector, index) => {
-                  const originalIndex = refinedSectors.findIndex(s => s === sector);
-                  return (
-                  <tr key={originalIndex} className="bg-white">
-                    <td className="px-3 py-3">
-                      <div className="text-sm">
-                        <div className="font-mono text-xs text-gray-600">
-                          {sector.originalCode}
-                        </div>
-                        <div className="text-gray-500 text-xs">
-                          {sector.originalPercentage}% original
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      {sector.availableSubsectors.length > 0 ? (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
-                            >
-                              <span className="truncate">
-                                <span className="flex items-center gap-2">
-                                  <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{sector.code}</span>
-                                  <span className="font-medium text-gray-900">{sector.name}</span>
-                                </span>
-                              </span>
-                              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border">
-                            <Command>
-                              <CommandList>
-                                <CommandGroup>
-                                  {sector.availableSubsectors.map((sub: any) => (
-                                    <CommandItem
-                                      key={sub.code}
-                                      onSelect={() => handleSectorChange(originalIndex, 'code', sub.code)}
-                                      className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
-                                    >
-                                      <Check
-                                        className={`mr-2 h-4 w-4 ${sector.code === sub.code ? "opacity-100" : "opacity-0"}`}
-                                      />
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sub.code}</span>
-                                          <span className="font-medium text-foreground">{sub.name}</span>
-                                        </div>
-                                      </div>
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      ) : (
-                        <div className="text-sm">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{sector.code}</span>
-                            <span className="font-medium text-gray-900">{sector.name}</span>
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-3 py-3">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        value={sector.percentage}
-                        onChange={(e) => handleSectorChange(originalIndex, 'percentage', parseFloat(e.target.value) || 0)}
-                        className="w-full text-xs"
-                      />
-                    </td>
-                  </tr>
-                  );
-                })}
+                {/* Group sectors by original code */}
+                {Object.entries(
+                  dacSectors.reduce((groups: Record<string, any[]>, sector: any) => {
+                    const originalCode = sector.originalCode;
+                    if (!groups[originalCode]) groups[originalCode] = [];
+                    groups[originalCode].push(sector);
+                    return groups;
+                  }, {} as Record<string, any[]>)
+                ).map(([originalCode, sectorsGroup]: [string, any[]]) => (
+                  <React.Fragment key={originalCode}>
+                    {sectorsGroup.map((sector: any, groupIndex: number) => {
+                      const originalIndex = refinedSectors.findIndex(s => s === sector);
+                      const isFirstInGroup = groupIndex === 0;
+                      const availableSubsectors = getSubsectorsFor3DigitCode(originalCode);
+                      const usedCodes = sectorsGroup.map((s: any) => s.code);
+                      const hasUnusedSubsectors = availableSubsectors.some(sub => !usedCodes.includes(sub.code));
+                      
+                      return (
+                        <tr key={sector.id || originalIndex} className="bg-white">
+                          {/* Original Code Column - only show for first row of each group */}
+                          <td className="px-3 py-3">
+                            {isFirstInGroup && (
+                              <div className="text-sm">
+                                <div className="font-mono text-xs text-gray-600">
+                                  {sector.originalCode}
+                                </div>
+                                <div className="text-gray-500 text-xs">
+                                  {sector.originalPercentage}% original
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          
+                          {/* Refined Sector Column */}
+                          <td className="px-3 py-3">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1">
+                                  {sector.availableSubsectors.length > 0 ? (
+                                    <PortalDropdown
+                                      sector={sector}
+                                      sectorsGroup={sectorsGroup}
+                                      originalIndex={originalIndex}
+                                      isOpen={openPopoverId === sector.id}
+                                      onToggle={() => setOpenPopoverId(openPopoverId === sector.id ? null : sector.id)}
+                                      onSelect={(code) => {
+                                        handleSectorChange(originalIndex, 'code', code);
+                                        setOpenPopoverId(null);
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="text-sm text-gray-500 italic">
+                                      No subsectors available
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Remove button - only show if there are multiple subsectors for this original code */}
+                                {sectorsGroup.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemoveSubsector(originalIndex)}
+                                    className="h-8 w-8 p-0 text-gray-400 hover:text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                              
+                              {/* Add Subsector button - show for the last row of each group and if there are unused subsectors */}
+                              {groupIndex === sectorsGroup.length - 1 && hasUnusedSubsectors && (
+                                <div className="flex justify-start">
+                                  <Button
+                                    type="button"
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => handleAddSubsector(originalCode, sector.originalPercentage)}
+                                    className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                                  >
+                                    <Plus className="h-3 w-3 mr-1" />
+                                    Add Subsector
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          
+                          {/* Percentage Column */}
+                          <td className="px-3 py-3">
+                            <div className="space-y-2">
+                              <div className="flex items-center h-10">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.1"
+                                  value={sector.percentage || ''}
+                                  onChange={(e) => handleSectorChange(originalIndex, 'percentage', parseFloat(e.target.value) || 0)}
+                                  className="w-20 text-sm"
+                                  placeholder="0"
+                                />
+                              </div>
+                              {/* Empty space to match the Add Subsector button space */}
+                              {groupIndex === sectorsGroup.length - 1 && hasUnusedSubsectors && (
+                                <div className="h-8"></div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
                 
                 {/* Non-DAC Sectors (Locked) */}
                 {nonDacSectors.length > 0 && (

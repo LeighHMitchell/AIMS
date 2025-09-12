@@ -49,7 +49,7 @@ import { AidEffectivenessForm } from "@/components/AidEffectivenessForm";
 import SDGAlignmentSection from "@/components/SDGAlignmentSection";
 import TagsSection from "@/components/TagsSection";
 import WorkingGroupsSection from "@/components/WorkingGroupsSection";
-import PolicyMarkersSection from "@/components/PolicyMarkersSection";
+import PolicyMarkersSectionIATIWithCustom from "@/components/PolicyMarkersSectionIATIWithCustom";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { SectorValidation } from "@/types/sector";
 import LinkedActivitiesEditorTab from "@/components/activities/LinkedActivitiesEditorTab";
@@ -111,6 +111,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const hasShownInitialToast = useRef(false);
   const lastSavedDescriptionRef = useRef<string>('');
   const hasUserEditedDescriptionRef = useRef(false);
+  
+  // Guard clause to prevent rendering until user is loaded
+  if (!user) {
+    return <div className="p-6"><Skeleton className="h-8 w-64 mb-4" /><Skeleton className="h-32 w-full" /></div>;
+  }
   
   // State to track which additional description fields are visible
   const [visibleDescriptionFields, setVisibleDescriptionFields] = useState<{
@@ -1574,7 +1579,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "working_groups":
       return <WorkingGroupsSection activityId={general.id} workingGroups={workingGroups} onChange={setWorkingGroups} setHasUnsavedChanges={setHasUnsavedChanges} />;
     case "policy_markers":
-      return <PolicyMarkersSection activityId={general.id} policyMarkers={policyMarkers} onChange={setPolicyMarkers} setHasUnsavedChanges={setHasUnsavedChanges} />;
+      return <PolicyMarkersSectionIATIWithCustom activityId={general.id} policyMarkers={policyMarkers} onChange={setPolicyMarkers} setHasUnsavedChanges={setHasUnsavedChanges} />;
     case "linked_activities":
       return <LinkedActivitiesEditorTab 
         activityId={general.id} 
@@ -2278,48 +2283,12 @@ function NewActivityPageContent() {
   // Check if any autosave is currently in progress - MUST be after all state variables
   const isAnyAutosaveInProgress = useMemo(() => {
     return (
-      descriptionAutosave.state.isSaving ||
-      descriptionObjectivesAutosave.state.isSaving ||
-      descriptionTargetGroupsAutosave.state.isSaving ||
-      descriptionOtherAutosave.state.isSaving ||
-      collaborationTypeAutosave.state.isSaving ||
-      activityScopeAutosave.state.isSaving ||
-      publicationStatusAutosave.state.isSaving ||
-      plannedStartDateAutosave.state.isSaving ||
-      plannedEndDateAutosave.state.isSaving ||
-      actualStartDateAutosave.state.isSaving ||
-      actualEndDateAutosave.state.isSaving ||
-      activityIdAutosave.state.isSaving ||
-      iatiIdentifierAutosave.state.isSaving ||
-      bannerAutosave.state.isSaving ||
-      iconAutosave.state.isSaving ||
-      uuidAutosave.state.isSaving ||
-      titleAutosave.state.isSaving ||
-      acronymAutosave.state.isSaving ||
       saving ||
       savingAndNext ||
       submitting ||
       publishing
     );
   }, [
-    descriptionAutosave.state.isSaving,
-    descriptionObjectivesAutosave.state.isSaving,
-    descriptionTargetGroupsAutosave.state.isSaving,
-    descriptionOtherAutosave.state.isSaving,
-    collaborationTypeAutosave.state.isSaving,
-    activityScopeAutosave.state.isSaving,
-    publicationStatusAutosave.state.isSaving,
-    plannedStartDateAutosave.state.isSaving,
-    plannedEndDateAutosave.state.isSaving,
-    actualStartDateAutosave.state.isSaving,
-    actualEndDateAutosave.state.isSaving,
-    activityIdAutosave.state.isSaving,
-    iatiIdentifierAutosave.state.isSaving,
-    bannerAutosave.state.isSaving,
-    iconAutosave.state.isSaving,
-    uuidAutosave.state.isSaving,
-    titleAutosave.state.isSaving,
-    acronymAutosave.state.isSaving,
     saving,
     savingAndNext,
     submitting,

@@ -584,7 +584,7 @@ export async function POST(request: Request) {
           const policyMarkersData = body.policyMarkers.map((marker: any) => ({
             activity_id: body.id,
             policy_marker_id: marker.policy_marker_id,
-            score: marker.score,
+            significance: marker.significance || marker.score, // Support both new and old field names
             rationale: marker.rationale || null
           }));
 

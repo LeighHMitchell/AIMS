@@ -81,4 +81,49 @@ export function isValidSectorCode(sectorCode: string): boolean {
 export function getCleanSectorName(sectorName: string): string {
   const dashIndex = sectorName.indexOf(' - ');
   return dashIndex > -1 ? sectorName.substring(dashIndex + 3) : sectorName;
+}
+
+/**
+ * Get sector information by code, handling both 3-digit and 5-digit codes
+ * @param sectorCode - The sector code (e.g., "111", "11220")
+ * @returns The sector object with name and description, or null if not found
+ */
+export function getSectorInfoFlexible(sectorCode: string): { name: string; description: string } | null {
+  if (!sectorCode) return null;
+  
+  // For 5-digit codes, use the existing function
+  if (sectorCode.length === 5) {
+    const sectorInfo = getSectorInfo(sectorCode);
+    if (sectorInfo) {
+      return {
+        name: sectorInfo.name,
+        description: sectorInfo.description
+      };
+    }
+  }
+  
+  // For 3-digit codes, look up the category
+  if (sectorCode.length === 3) {
+    const categoryInfo = getCategoryInfo(sectorCode + '00'); // Convert 3-digit to 5-digit for lookup
+    if (categoryInfo) {
+      return {
+        name: categoryInfo.name,
+        description: `Category: ${categoryInfo.name}`
+      };
+    }
+  }
+  
+  // For other lengths, try to find a matching category
+  if (sectorCode.length >= 3) {
+    const categoryCode = sectorCode.substring(0, 3);
+    const categoryInfo = getCategoryInfo(categoryCode + '00');
+    if (categoryInfo) {
+      return {
+        name: categoryInfo.name,
+        description: `Category: ${categoryInfo.name}`
+      };
+    }
+  }
+  
+  return null;
 } 
