@@ -1359,7 +1359,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, clearSavedFormData, loadedTabs }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, clearSavedFormData, loadedTabs }: any) {
   
   // OPTIMIZATION: Lazy loading - only render heavy components after tab has been visited
   // Removed the duplicate skeleton rendering logic here since the parent component
@@ -1435,6 +1435,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         extendingPartners={extendingPartners}
         implementingPartners={implementingPartners}
         governmentPartners={governmentPartners}
+        fundingPartners={fundingPartners}
         contributors={contributors}
         onParticipatingOrganizationsChange={setParticipatingOrgsCount}
         onContributorAdd={(contributor) => {
@@ -1450,6 +1451,9 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
               break;
             case 'governmentPartners':
               setGovernmentPartners(value);
+              break;
+            case 'fundingPartners':
+              setFundingPartners(value);
               break;
           }
         }}
@@ -1796,6 +1800,15 @@ function NewActivityPageContent() {
     if (activityId) {
       const savedData = loadSavedFormData();
       return savedData?.governmentPartners || [];
+    }
+    return [];
+  });
+  
+  const [fundingPartners, setFundingPartners] = useState<any[]>(() => {
+    const activityId = searchParams?.get("id");
+    if (activityId) {
+      const savedData = loadSavedFormData();
+      return savedData?.fundingPartners || [];
     }
     return [];
   });
@@ -3809,6 +3822,8 @@ function NewActivityPageContent() {
                     setImplementingPartners={setImplementingPartners}
                     governmentPartners={governmentPartners}
                     setGovernmentPartners={setGovernmentPartners}
+                    fundingPartners={fundingPartners}
+                    setFundingPartners={setFundingPartners}
                     contacts={contacts}
                     setContacts={setContacts}
                     updateContacts={setContacts}

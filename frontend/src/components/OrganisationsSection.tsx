@@ -17,6 +17,7 @@ interface OrganisationsSectionProps {
   extendingPartners: any[];
   implementingPartners: any[];
   governmentPartners: any[];
+  fundingPartners: any[];
   onChange: (field: string, value: any[]) => void;
   contributors: ActivityContributor[];
   onContributorAdd: (contributor: ActivityContributor) => void;
@@ -29,6 +30,7 @@ export default function OrganisationsSection({
   extendingPartners,
   implementingPartners,
   governmentPartners,
+  fundingPartners,
   onChange,
   contributors,
   onContributorAdd,
@@ -38,11 +40,12 @@ export default function OrganisationsSection({
 }: OrganisationsSectionProps) {
   const { user } = useUser();
   const [nominationModal, setNominationModal] = useState<{open: boolean, organization: Organization | null}>({open: false, organization: null});
-  const [openDropdown, setOpenDropdown] = useState<'extending' | 'implementing' | 'government' | null>(null);
-  const [savingState, setSavingState] = useState<{extending: boolean, implementing: boolean, government: boolean}>({
+  const [openDropdown, setOpenDropdown] = useState<'extending' | 'implementing' | 'government' | 'funding' | null>(null);
+  const [savingState, setSavingState] = useState<{extending: boolean, implementing: boolean, government: boolean, funding: boolean}>({
     extending: false,
     implementing: false, 
-    government: false
+    government: false,
+    funding: false
   });
 
   // Use the new hooks - always call these hooks
@@ -113,6 +116,7 @@ export default function OrganisationsSection({
   const extendingOrgs = getOrganizationsByRole('extending');
   const implementingOrgs = getOrganizationsByRole('implementing');
   const governmentOrgs = getOrganizationsByRole('government');
+  const fundingOrgs = getOrganizationsByRole('funding');
 
   // Helper function to determine if an organization is classified as Partner Government
   const isPartnerGovernment = (org: Organization): boolean => {
@@ -138,7 +142,7 @@ export default function OrganisationsSection({
   };
 
   // Filter organizations that are not already participating in each role
-  const getAvailableOrganizations = (roleType: 'extending' | 'implementing' | 'government') => {
+  const getAvailableOrganizations = (roleType: 'extending' | 'implementing' | 'government' | 'funding') => {
     let filteredOrgs = organizations;
     
     // For government partners, only show organizations classified as Partner Government
@@ -149,7 +153,7 @@ export default function OrganisationsSection({
     return filteredOrgs.filter(org => !isOrganizationParticipating(org.id, roleType));
   };
 
-  const handleAddOrganization = async (organizationId: string, roleType: 'extending' | 'implementing' | 'government') => {
+  const handleAddOrganization = async (organizationId: string, roleType: 'extending' | 'implementing' | 'government' | 'funding') => {
     try {
       console.log('[OrganisationsSection] Adding organization:', organizationId, 'role:', roleType);
       console.log('[OrganisationsSection] Activity ID for add:', activityId);
@@ -169,7 +173,7 @@ export default function OrganisationsSection({
     }
   };
 
-  const handleRemoveOrganization = async (organizationId: string, roleType: 'extending' | 'implementing' | 'government') => {
+  const handleRemoveOrganization = async (organizationId: string, roleType: 'extending' | 'implementing' | 'government' | 'funding') => {
     try {
       await removeParticipatingOrganization(organizationId, roleType);
       toast.success('Organization removed successfully');
@@ -231,7 +235,7 @@ export default function OrganisationsSection({
     return contributors.some(c => c.organizationId === orgId);
   };
 
-  const renderOrganizationCard = (participatingOrg: any, roleType: 'extending' | 'implementing' | 'government') => {
+  const renderOrganizationCard = (participatingOrg: any, roleType: 'extending' | 'implementing' | 'government' | 'funding') => {
     const org = participatingOrg.organization;
     if (!org) return null;
 
@@ -442,6 +446,49 @@ export default function OrganisationsSection({
             open={openDropdown === 'government'}
             onOpenChange={(open) => setOpenDropdown(open ? 'government' : null)}
             forceDirection="up"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Funding Partners */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            Funding Partners
+            <HelpTextTooltip content="Organizations providing financial resources for the activity. They are the primary source of funding and may not be directly involved in implementation." />
+            {savingState.funding && (
+              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            {fundingOrgs.map((participatingOrg) => 
+              renderOrganizationCard(participatingOrg, 'funding')
+            )}
+
+            {fundingOrgs.length === 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
+                <p className="text-gray-500 text-center">No funding partners added</p>
+              </div>
+            )}
+          </div>
+
+          <OrganizationSearchableSelect
+            organizations={getAvailableOrganizations('funding')}
+            value=""
+            onValueChange={(organizationId) => {
+              console.log('[OrganisationsSection] Funding partner selected:', organizationId);
+              if (organizationId) {
+                handleAddOrganization(organizationId, 'funding');
+              }
+            }}
+            placeholder="Select a funding partner"
+            searchPlaceholder="Search funding partners..."
+            disabled={organizationsLoading}
+            className="w-full"
+            open={openDropdown === 'funding'}
+            onOpenChange={(open) => setOpenDropdown(open ? 'funding' : null)}
           />
         </CardContent>
       </Card>

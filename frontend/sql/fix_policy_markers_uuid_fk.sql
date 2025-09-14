@@ -170,24 +170,11 @@ SET
 
 -- Step 9: Create indexes for efficient lookups
 
--- First, let's clean up any duplicate IATI codes before creating the unique index
--- This can happen if the migration was run multiple times or if there were existing duplicates
-
--- Remove duplicate IATI standard markers, keeping only the first one for each iati_code
-DELETE FROM policy_markers pm1
-USING policy_markers pm2
-WHERE pm1.id > pm2.id
-  AND pm1.is_iati_standard = true
-  AND pm2.is_iati_standard = true
-  AND pm1.vocabulary = pm2.vocabulary
-  AND pm1.iati_code = pm2.iati_code
-  AND pm1.iati_code IS NOT NULL;
-
 -- Unique index for standard marker lookup by vocabulary+iati_code
 DROP INDEX IF EXISTS ux_policy_markers_std_vocab_iati;
 CREATE UNIQUE INDEX ux_policy_markers_std_vocab_iati
   ON policy_markers (lower(vocabulary), lower(iati_code))
-  WHERE is_iati_standard = true AND vocabulary IS NOT NULL AND iati_code IS NOT NULL;
+  WHERE is_iati_standard = true;
 
 -- Index for custom marker lookups by (vocabulary, code, vocabulary_uri)
 DROP INDEX IF EXISTS ix_policy_markers_custom_lookup;

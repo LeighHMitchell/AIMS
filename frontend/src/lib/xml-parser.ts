@@ -5,6 +5,7 @@
 interface ParsedActivity {
   // Basic Info
   iatiIdentifier?: string;
+  otherIdentifier?: string; // Other identifier (e.g., internal project ID)
   title?: string;
   description?: string;
   descriptionObjectives?: string; // IATI description type="1"
@@ -15,6 +16,7 @@ interface ParsedActivity {
   activityScope?: string;
   language?: string;
   defaultCurrency?: string;
+  crsChannelCode?: string; // CRS Channel Code
   
   // Dates
   plannedStartDate?: string;
@@ -198,6 +200,16 @@ export class IATIXMLParser {
 
   constructor(xmlContent: string) {
     try {
+      // Check if content is empty or too short
+      if (!xmlContent || xmlContent.trim().length === 0) {
+        throw new Error('The file appears to be empty. Please ensure you are uploading a valid IATI XML file.');
+      }
+      
+      // Check file size (warn if very large)
+      if (xmlContent.length > 50 * 1024 * 1024) { // 50MB
+        console.warn('[XML Parser] Large file detected:', xmlContent.length, 'bytes');
+      }
+      
       // Check if content is HTML instead of XML
       if (xmlContent.trim().startsWith('<!DOCTYPE html') || xmlContent.trim().startsWith('<html')) {
         throw new Error('Received HTML instead of XML. This often happens when the server returns an error page. Please check the file and try again.');
@@ -206,6 +218,11 @@ export class IATIXMLParser {
       // Check for common HTML patterns that might indicate an error page
       if (xmlContent.includes('<meta') && xmlContent.includes('<head>') && xmlContent.includes('</head>')) {
         throw new Error('The response appears to be an HTML error page. Please ensure you are uploading a valid IATI XML file.');
+      }
+      
+      // Check for basic XML structure
+      if (!xmlContent.includes('<') || !xmlContent.includes('>')) {
+        throw new Error('The file does not appear to contain valid XML content. Please ensure you are uploading an IATI XML file.');
       }
       
       // Preprocess XML to handle common entity issues
@@ -223,10 +240,15 @@ export class IATIXMLParser {
           throw new Error('XML structure error: Tags are not properly matched. This might indicate the file is corrupted or not a valid XML file.');
         } else if (errorText.includes('meta') && errorText.includes('head')) {
           throw new Error('The file appears to contain HTML content instead of XML. Please ensure you are uploading an IATI XML file.');
+        } else if (errorText.includes('I/O read operation failed')) {
+          throw new Error('File read error: The XML file may be corrupted, too large, or contain invalid characters. Please try a different file or check the file format.');
         }
         throw new Error('XML parsing error: ' + errorText);
       }
     } catch (error) {
+      if (error instanceof Error && error.message.includes('I/O read operation failed')) {
+        throw new Error('File read error: The XML file may be corrupted, too large, or contain invalid characters. Please try a different file or check the file format.');
+      }
       throw new Error(`Failed to parse XML: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -253,6 +275,14 @@ export class IATIXMLParser {
 
     let processedContent = xmlContent;
     
+    // Remove BOM if present
+    if (processedContent.charCodeAt(0) === 0xFEFF) {
+      processedContent = processedContent.slice(1);
+    }
+    
+    // Normalize line endings
+    processedContent = processedContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    
     // Replace entities
     for (const [entity, replacement] of Object.entries(entityReplacements)) {
       processedContent = processedContent.replace(new RegExp(entity, 'g'), replacement);
@@ -261,6 +291,9 @@ export class IATIXMLParser {
     // Clean up any remaining undefined entities by removing them
     // This regex matches &entityname; patterns that aren't standard XML entities
     processedContent = processedContent.replace(/&(?!lt;|gt;|amp;|quot;|apos;)[a-zA-Z][a-zA-Z0-9]*;/g, '');
+
+    // Remove any null bytes or other problematic characters
+    processedContent = processedContent.replace(/\0/g, '');
 
     return processedContent;
   }
@@ -323,6 +356,12 @@ export class IATIXMLParser {
     const iatiId = activity.querySelector('iati-identifier');
     if (iatiId) {
       result.iatiIdentifier = iatiId.textContent?.trim();
+    }
+
+    // Other Identifier
+    const otherId = activity.querySelector('other-identifier');
+    if (otherId) {
+      result.otherIdentifier = otherId.textContent?.trim();
     }
 
     // Title
@@ -419,6 +458,15 @@ export class IATIXMLParser {
     const defaultTiedStatus = activity.querySelector('default-tied-status');
     if (defaultTiedStatus) {
       result.defaultTiedStatus = defaultTiedStatus.getAttribute('code') || undefined;
+    }
+
+    // CRS Channel Code
+    const crsChannelCode = activity.querySelector('crs-add');
+    if (crsChannelCode) {
+      const channelCode = crsChannelCode.querySelector('channel-code');
+      if (channelCode) {
+        result.crsChannelCode = channelCode.textContent?.trim();
+      }
     }
 
     // === LOCATIONS ===

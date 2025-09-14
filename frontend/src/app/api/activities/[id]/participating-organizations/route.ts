@@ -5,10 +5,11 @@ export interface ParticipatingOrganization {
   id: string;
   activity_id: string;
   organization_id: string;
-  role_type: 'extending' | 'implementing' | 'government';
+  role_type: 'extending' | 'implementing' | 'government' | 'funding';
   display_order: number;
   created_at: string;
   updated_at: string;
+  iati_role_code?: number;
   // Joined organization data
   organization?: {
     id: string;
@@ -101,9 +102,9 @@ export async function POST(
       );
     }
 
-    if (!['extending', 'implementing', 'government'].includes(role_type)) {
+    if (!['extending', 'implementing', 'government', 'funding'].includes(role_type)) {
       return NextResponse.json(
-        { error: 'role_type must be one of: extending, implementing, government' },
+        { error: 'role_type must be one of: extending, implementing, government, funding' },
         { status: 400 }
       );
     }

@@ -148,6 +148,92 @@ export async function PATCH(
       
       console.log('[AIMS API] Working groups updated successfully');
     }
+
+    // Handle imported participating organizations
+    if (body.importedParticipatingOrgs !== undefined) {
+      console.log('[AIMS API] Processing imported participating organizations for activity:', id);
+      console.log('[AIMS API] Imported participating orgs:', body.importedParticipatingOrgs);
+      
+      // First, delete existing participating organizations
+      const { error: deleteError } = await getSupabaseAdmin()
+        .from('activity_participating_organizations')
+        .delete()
+        .eq('activity_id', id);
+      
+      if (deleteError) {
+        console.error('[AIMS API] Error deleting existing participating organizations:', deleteError);
+        throw deleteError;
+      }
+      
+      // Then insert new participating organizations if any
+      if (body.importedParticipatingOrgs.length > 0) {
+        // Get organization IDs from refs or names
+        const orgRefs = body.importedParticipatingOrgs.map((org: any) => org.ref).filter(Boolean);
+        const orgNames = body.importedParticipatingOrgs.map((org: any) => org.name).filter(Boolean);
+        
+        const { data: organizations, error: orgFetchError } = await getSupabaseAdmin()
+          .from('organizations')
+          .select('id, iati_org_id, name')
+          .in('iati_org_id', orgRefs);
+        
+        if (orgFetchError) {
+          console.error('[AIMS API] Error fetching organizations:', orgFetchError);
+          throw orgFetchError;
+        }
+        
+        // Create organization mapping
+        const orgMap = new Map<string, string>();
+        (organizations || []).forEach((org: any) => {
+          if (org.iati_org_id) orgMap.set(org.iati_org_id, org.id);
+          orgMap.set(org.name, org.id);
+        });
+        
+        // Map participating organizations to database format
+        const participatingOrgsData = body.importedParticipatingOrgs
+          .map((org: any, index: number) => {
+            const orgId = orgMap.get(org.ref || '') || orgMap.get(org.name || '');
+            if (!orgId) {
+              console.warn(`[AIMS API] Organization not found for ref: ${org.ref}, name: ${org.name}`);
+              return null;
+            }
+            
+            // Map IATI role codes to our role types
+            let roleType: 'extending' | 'implementing' | 'government' | 'funding' = 'implementing';
+            if (org.role === '1') {
+              roleType = 'funding';
+            } else if (org.role === '2') {
+              roleType = 'implementing';
+            } else if (org.role === '3') {
+              roleType = 'extending';
+            } else if (org.role === '4') {
+              roleType = 'implementing';
+            }
+            
+            return {
+              activity_id: id,
+              organization_id: orgId,
+              role_type: roleType,
+              display_order: index
+            };
+          })
+          .filter(Boolean);
+        
+        if (participatingOrgsData.length > 0) {
+          console.log('[AIMS API] Inserting participating organizations:', JSON.stringify(participatingOrgsData, null, 2));
+          
+          const { error: insertError } = await getSupabaseAdmin()
+            .from('activity_participating_organizations')
+            .insert(participatingOrgsData);
+          
+          if (insertError) {
+            console.error('[AIMS API] Error inserting participating organizations:', insertError);
+            throw insertError;
+          }
+        }
+      }
+      
+      console.log('[AIMS API] Participating organizations updated successfully');
+    }
     
     // Update activity updated_at timestamp only if no basic fields were updated
     if (Object.keys(activityFields).length === 0) {

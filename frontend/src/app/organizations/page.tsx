@@ -1181,7 +1181,10 @@ const EditOrganizationModal: React.FC<{
                           key={type.code} 
                           value={type.code}
                         >
-                          {type.label}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type.code}</span>
+                            <span className="font-medium text-foreground">{type.label}</span>
+                          </div>
                         </SelectItem>
                       ))}
                   </SelectContent>

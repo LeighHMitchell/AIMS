@@ -1152,6 +1152,21 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      if (parsedActivity.otherIdentifier) {
+        const currentValue = currentActivityData['other_identifier' as keyof typeof currentActivityData] || null;
+        
+        fields.push({
+          fieldName: 'Activity ID',
+          iatiPath: 'iati-activity/other-identifier',
+          currentValue: currentValue,
+          importValue: parsedActivity.otherIdentifier,
+          selected: shouldSelectField(currentValue, parsedActivity.otherIdentifier),
+          hasConflict: hasConflict(currentValue, parsedActivity.otherIdentifier),
+          tab: 'basic',
+          description: 'Other identifier for this activity (e.g., internal project ID)'
+        });
+      }
+
       if (parsedActivity.title) {
         const currentValue = currentActivityData.title_narrative || null;
         console.log('[XmlImportTab] Comparing titles:', {
@@ -1288,14 +1303,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         const currentLanguageLabel = currentActivityData.language ? getLanguageLabel(currentActivityData.language) : null;
         const importLanguageLabel = getLanguageLabel(parsedActivity.language);
         fields.push({
-          fieldName: 'Language',
+          fieldName: 'Narrative Language',
           iatiPath: 'iati-activity[@xml:lang]',
           currentValue: currentLanguageLabel,
           importValue: importLanguageLabel,
           selected: shouldSelectField(currentLanguageLabel, importLanguageLabel),
           hasConflict: hasConflict(currentLanguageLabel, importLanguageLabel),
           tab: 'basic',
-          description: 'Primary language of the activity'
+          description: 'Primary language of the activity (if multilingual)'
         });
       }
 
@@ -1366,6 +1381,19 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           hasConflict: hasConflict(currentActivityData.default_currency || null, parsedActivity.defaultCurrency),
           tab: 'finances',
           description: 'Default currency for financial values'
+        });
+      }
+
+      if (parsedActivity.crsChannelCode) {
+        fields.push({
+          fieldName: 'CRS Channel Code',
+          iatiPath: 'iati-activity/crs-add/channel-code',
+          currentValue: null, // This field is not stored in the current system
+          importValue: parsedActivity.crsChannelCode,
+          selected: false, // Don't auto-select as it's optional
+          hasConflict: false,
+          tab: 'finances',
+          description: 'CRS Channel Code (optional)'
         });
       }
 
@@ -1777,7 +1805,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             name: existingMarker.policy_marker_details?.name
           } : null;
 
-          fields.push({
+        fields.push({
             fieldName: `Policy Marker: ${marker.code || 'Unknown'}`,
             iatiPath: `iati-activity/policy-marker[${index}]`,
             currentValue: currentValue,
@@ -1788,7 +1816,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               vocabulary_uri: marker.vocabulary_uri,
               rationale: marker.rationale
             },
-            selected: false,
+          selected: false,
             hasConflict: hasConflict(currentValue, {
               code: marker.code,
               significance: marker.significance,
@@ -1807,44 +1835,80 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // === PARTNERS TAB ===
       
       if (parsedActivity.reportingOrg) {
+        // Get current reporting org from activity data
+        const currentReportingOrg = currentActivityData ? {
+          name: currentActivityData['created_by_org_name' as keyof typeof currentActivityData] || null,
+          acronym: currentActivityData['created_by_org_acronym' as keyof typeof currentActivityData] || null
+        } : null;
+
         fields.push({
           fieldName: 'Reporting Organization',
           iatiPath: 'iati-activity/reporting-org',
-          currentValue: null,
-          importValue: parsedActivity.reportingOrg.narrative || parsedActivity.reportingOrg.ref,
+          currentValue: currentReportingOrg,
+          importValue: {
+            name: parsedActivity.reportingOrg.narrative || parsedActivity.reportingOrg.ref,
+            ref: parsedActivity.reportingOrg.ref || null,
+            narrative: parsedActivity.reportingOrg.narrative || null,
+            type: parsedActivity.reportingOrg.type || null
+          },
           selected: false,
           hasConflict: false,
-          tab: 'partners',
+          tab: 'reporting_org',
           description: 'Organization reporting this activity'
         });
       }
 
       if (parsedActivity.participatingOrgs && parsedActivity.participatingOrgs.length > 0) {
-        const orgNames = parsedActivity.participatingOrgs.map(org => 
-          `${org.narrative || org.ref} (Role: ${org.role})`
-        ).join('; ');
+        parsedActivity.participatingOrgs.forEach((org: any, index: number) => {
+          const orgName = org.narrative || org.ref || 'Unknown Organization';
+          const role = org.role || 'Unknown Role';
+          
         fields.push({
-          fieldName: 'Participating Organizations',
-          iatiPath: 'iati-activity/participating-org',
+            fieldName: `Participating Organization: ${orgName}`,
+            iatiPath: `iati-activity/participating-org[${index}]`,
           currentValue: null,
-          importValue: orgNames,
+            importValue: {
+              name: orgName,
+              ref: org.ref || null,
+              role: role,
+              narrative: org.narrative || null,
+              type: org.type || null
+            },
           selected: false,
           hasConflict: false,
-          tab: 'partners',
-          description: 'Organizations involved in activity implementation'
+            tab: 'participating_orgs',
+            description: `Participating organization: ${orgName} (Role: ${role})`
+          });
         });
       }
 
+      // === CONTACTS TAB ===
+
       if (parsedActivity.contactInfo && parsedActivity.contactInfo.length > 0) {
+        parsedActivity.contactInfo.forEach((contact: any, index: number) => {
+          const contactType = contact.type || 'Contact';
+          const contactName = contact.organization?.narrative || contact.personName?.narrative || 'N/A';
+          
         fields.push({
-          fieldName: 'Contact Information',
-          iatiPath: 'iati-activity/contact-info',
+            fieldName: `${contactType}: ${contactName}`,
+            iatiPath: `iati-activity/contact-info[${index}]`,
           currentValue: null,
-          importValue: `${parsedActivity.contactInfo.length} contact entries found`,
+            importValue: {
+              type: contactType,
+              organization: contact.organization?.narrative || null,
+              personName: contact.personName?.narrative || null,
+              jobTitle: contact.jobTitle?.narrative || null,
+              department: contact.department?.narrative || null,
+              email: contact.email || null,
+              telephone: contact.telephone || null,
+              website: contact.website || null,
+              mailingAddress: contact.mailingAddress?.narrative || null
+            },
           selected: false,
           hasConflict: false,
-          tab: 'partners',
-          description: 'Contact details for activity coordination'
+            tab: 'contacts',
+            description: `${contactType} contact information`
+          });
         });
       }
 
@@ -2195,6 +2259,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               updateData._importPolicyMarkers = true;
             break;
           default:
+            if (field.fieldName.startsWith('Participating Organization:')) {
+              // Collect participating organization data for import
+              if (!updateData.importedParticipatingOrgs) updateData.importedParticipatingOrgs = [];
+              updateData.importedParticipatingOrgs.push(field.importValue);
+              console.log(`[XML Import] Adding participating organization for import:`, field.importValue);
+            } else
             if (field.fieldName.startsWith('Policy Marker:')) {
               // Handle individual policy marker import
               if (!updateData._importPolicyMarkers) updateData._importPolicyMarkers = [];
@@ -2756,11 +2826,15 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       'locations': 'Locations',
       'sectors': 'Sectors',
       'partners': 'Partners',
+      'contacts': 'Contacts',
       'results': 'Results'
     };
 
     // Financial tabs that should be grouped under main Finances tab
     const financialTabs = ['finances', 'budgets', 'planned_disbursements', 'transactions'];
+    
+    // Partner tabs that should be grouped under main Partners tab
+    const partnerTabs = ['reporting_org', 'participating_orgs'];
 
     fields.forEach(field => {
       let tabKey = field.tab;
@@ -2768,6 +2842,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // Group financial tabs under main 'finances' tab
       if (financialTabs.includes(field.tab)) {
         tabKey = 'finances';
+      }
+      
+      // Group partner tabs under main 'partners' tab
+      if (partnerTabs.includes(field.tab)) {
+        tabKey = 'partners';
       }
       
       if (!tabMap.has(tabKey)) {
@@ -2781,7 +2860,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     });
 
     return Array.from(tabMap.values()).sort((a, b) => {
-      const order = ['basic', 'partners', 'sectors', 'policy-markers', 'locations', 'finances', 'results'];
+      const order = ['basic', 'partners', 'contacts', 'sectors', 'policy-markers', 'locations', 'finances', 'results'];
       return order.indexOf(a.tabId) - order.indexOf(b.tabId);
     });
   };
@@ -2876,6 +2955,89 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   </div>
                 )}
               </div>
+            ) : field.tab === 'contacts' && typeof field.currentValue === 'object' ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.type}</span>
+                  <span className="text-sm font-medium text-gray-900">Contact</span>
+                </div>
+                {field.currentValue.organization && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Organization:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.organization}</span>
+                  </div>
+                )}
+                {field.currentValue.personName && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Person:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.personName}</span>
+                  </div>
+                )}
+                {field.currentValue.jobTitle && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Title:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.jobTitle}</span>
+                  </div>
+                )}
+                {field.currentValue.email && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Email:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.email}</span>
+                  </div>
+                )}
+                {field.currentValue.telephone && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Phone:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.telephone}</span>
+                  </div>
+                )}
+              </div>
+            ) : field.tab === 'participating_orgs' && typeof field.currentValue === 'object' ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.role}</span>
+                  <span className="text-sm font-medium text-gray-900">Participating Org</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Name:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.name}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Role:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.role}</span>
+                </div>
+                {field.currentValue.ref && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Ref:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.ref}</span>
+                  </div>
+                )}
+                {field.currentValue.type && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Type:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.type}</span>
+                  </div>
+                )}
+              </div>
+            ) : field.tab === 'reporting_org' && typeof field.currentValue === 'object' ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
+                  <span className="text-sm font-medium text-gray-900">Organization</span>
+                </div>
+                {field.currentValue.name && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Name:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.name}</span>
+                  </div>
+                )}
+                {field.currentValue.acronym && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Acronym:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.acronym}</span>
+                  </div>
+                )}
+              </div>
             ) : typeof field.currentValue === 'object' && field.currentValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
@@ -2917,6 +3079,93 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-500">Rationale:</span>
                   <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.rationale}</span>
+                </div>
+              )}
+            </div>
+          ) : field.tab === 'contacts' && typeof field.importValue === 'object' ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
+                <span className="text-sm font-medium text-gray-900">Contact</span>
+              </div>
+              {field.importValue.organization && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Organization:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.organization}</span>
+                </div>
+              )}
+              {field.importValue.personName && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Person:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.personName}</span>
+                </div>
+              )}
+              {field.importValue.jobTitle && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Title:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.jobTitle}</span>
+                </div>
+              )}
+              {field.importValue.email && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Email:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.email}</span>
+                </div>
+              )}
+              {field.importValue.telephone && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Phone:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.telephone}</span>
+                </div>
+              )}
+            </div>
+          ) : field.tab === 'participating_orgs' && typeof field.importValue === 'object' ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.role}</span>
+                <span className="text-sm font-medium text-gray-900">Participating Org</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500">Name:</span>
+                <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.name}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500">Role:</span>
+                <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.role}</span>
+              </div>
+              {field.importValue.ref && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Ref:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.ref}</span>
+                </div>
+              )}
+              {field.importValue.type && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Type:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.type}</span>
+                </div>
+              )}
+            </div>
+          ) : field.tab === 'reporting_org' && typeof field.importValue === 'object' ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
+                <span className="text-sm font-medium text-gray-900">Organization</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500">Name:</span>
+                <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.name}</span>
+              </div>
+              {field.importValue.ref && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Ref:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.ref}</span>
+                </div>
+              )}
+              {field.importValue.type && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Type:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.type}</span>
                 </div>
               )}
             </div>
@@ -3043,6 +3292,52 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       </div>
     );
   };
+
+  // Partners sub-tabs component
+  const PartnersTabContent = ({ tabSection }: { tabSection: TabSection }) => {
+    const [activePartnerTab, setActivePartnerTab] = useState('reporting_org');
+    
+    // Group partner fields by their original tab
+    const partnerSubTabs = {
+      'reporting_org': { name: 'Reporting Organisation', fields: tabSection.fields.filter(f => f.tab === 'reporting_org') },
+      'participating_orgs': { name: 'Participating Organisations', fields: tabSection.fields.filter(f => f.tab === 'participating_orgs') }
+    };
+    
+    // Set default active tab to the first one that has fields
+    const availableTabs = Object.entries(partnerSubTabs).filter(([, subTab]) => subTab.fields.length > 0);
+    const defaultTab = availableTabs.length > 0 ? availableTabs[0][0] : 'reporting_org';
+    
+    // Use the default tab if current active tab has no fields
+    const currentActiveTab = partnerSubTabs[activePartnerTab as keyof typeof partnerSubTabs]?.fields.length > 0 
+      ? activePartnerTab 
+      : defaultTab;
+    
+    return (
+      <div className="space-y-4">
+        {/* Partners Sub-tabs */}
+        <Tabs value={currentActiveTab} onValueChange={setActivePartnerTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            {Object.entries(partnerSubTabs).map(([key, subTab]) => (
+              <TabsTrigger key={key} value={key} className="text-sm">
+                {subTab.name}
+                {subTab.fields.length > 0 && (
+                  <span className="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full">
+                    {subTab.fields.filter(f => f.selected).length}/{subTab.fields.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          
+          {Object.entries(partnerSubTabs).map(([key, subTab]) => (
+            <TabsContent key={key} value={key} className="mt-4">
+              <RegularTabContent fields={subTab.fields} tabName={subTab.name} />
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
+    );
+  };
   
   // Regular tab content component
   const RegularTabContent = ({ fields, tabName }: { fields: ParsedField[]; tabName: string }) => {
@@ -3123,7 +3418,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       </div>
     );
   };
-
+  
   // Policy markers tab content component with Select All/Clear All functionality
   const PolicyMarkersTabContent = ({ fields, tabName }: { fields: ParsedField[]; tabName: string }) => {
     const policyMarkerFields = fields.filter(f => f.isPolicyMarker);
@@ -3218,10 +3513,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     );
   };
   
-  // Main tab content component that chooses between financial and regular
+  // Main tab content component that chooses between financial, partners, and regular
   const TabFieldContent = ({ tabSection }: { tabSection: TabSection }) => {
     if (tabSection.tabId === 'finances') {
       return <FinancialTabContent tabSection={tabSection} />;
+    }
+    if (tabSection.tabId === 'partners') {
+      return <PartnersTabContent tabSection={tabSection} />;
     }
     if (tabSection.tabId === 'policy-markers') {
       return <PolicyMarkersTabContent fields={tabSection.fields} tabName={tabSection.tabName} />;

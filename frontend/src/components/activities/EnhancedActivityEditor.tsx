@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { LinkedActivityTitle } from '@/components/ui/linked-activity-title';
 import IatiLinkTab from './IatiLinkTab';
 import XmlImportTab from './XmlImportTab';
+import OrganizationsTab from './OrganizationsTab';
 import { ActivityScopeSearchableSelect } from '@/components/forms/ActivityScopeSearchableSelect';
 import {
   Save,
@@ -854,29 +855,9 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
             </Card>
           </TabsContent>
 
-          {/* Partners Tab */}
+          {/* Organizations Tab */}
           <TabsContent value="partners" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Partners & Organizations
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <FieldWrapper section="partners" label="Participating Organizations">
-                  <div className="text-sm text-gray-600 p-4 border border-gray-200 rounded">
-                    <p>Partners section will include:</p>
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>Funding organizations</li>
-                      <li>Implementing partners</li>
-                      <li>Accountable organizations</li>
-                      <li>Organization roles and relationships</li>
-                    </ul>
-                  </div>
-                </FieldWrapper>
-              </CardContent>
-            </Card>
+            <OrganizationsTab activityId={activityId} />
           </TabsContent>
 
           {/* IATI Link Tab */}

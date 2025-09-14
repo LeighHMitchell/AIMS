@@ -215,13 +215,13 @@ export async function POST(
     if (fields.participating_orgs && iati_data.participating_orgs) {
       console.log('[IATI Import] Updating participating organizations');
       
-      // Store previous contributors
-      const { data: previousContributors } = await supabase
-        .from('activity_contributors')
+      // Store previous participating organizations
+      const { data: previousParticipatingOrgs } = await supabase
+        .from('activity_participating_organizations')
         .select('*')
         .eq('activity_id', activityId);
       
-      previousValues.participating_orgs = previousContributors;
+      previousValues.participating_orgs = previousParticipatingOrgs;
       
       // Map organization references/names to IDs
       const orgRefs = iati_data.participating_orgs.map((o: IATIOrganization) => o.ref).filter(Boolean);
@@ -238,31 +238,43 @@ export async function POST(
         orgMap.set(org.name, org.id);
       });
       
-      // Clear existing contributors
+      // Clear existing participating organizations
       await supabase
-        .from('activity_contributors')
+        .from('activity_participating_organizations')
         .delete()
         .eq('activity_id', activityId);
       
-      // Insert new contributors
-      const contributors = iati_data.participating_orgs
-        .map((org: IATIOrganization) => {
+      // Insert new participating organizations
+      const participatingOrgs = iati_data.participating_orgs
+        .map((org: IATIOrganization, index: number) => {
           const orgId = orgMap.get(org.ref || '') || orgMap.get(org.name || '');
           if (!orgId) return null;
+          
+          // Map IATI role codes to our role types
+          let roleType: 'extending' | 'implementing' | 'government' | 'funding' = 'implementing';
+          if (org.role === '1') {
+            roleType = 'funding';
+          } else if (org.role === '2') {
+            roleType = 'implementing';
+          } else if (org.role === '3') {
+            roleType = 'extending';
+          } else if (org.role === '4') {
+            roleType = 'implementing';
+          }
           
           return {
             activity_id: activityId,
             organization_id: orgId,
-            contribution_type: org.role === '1' ? 'funder' : 
-                              org.role === '4' ? 'implementer' : 'partner'
+            role_type: roleType,
+            display_order: index
           };
         })
         .filter(Boolean);
       
-      if (contributors.length > 0) {
+      if (participatingOrgs.length > 0) {
         await supabase
-          .from('activity_contributors')
-          .insert(contributors);
+          .from('activity_participating_organizations')
+          .insert(participatingOrgs);
       }
       
       updatedFields.push('participating_orgs');
