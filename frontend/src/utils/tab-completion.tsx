@@ -173,14 +173,20 @@ export function checkFinancesTabCompletion(
  * Currently only implements General tab - can be extended for other tabs
  */
 /**
- * Check if the Combined Locations tab is complete based on specific locations and subnational breakdown
+ * Check if the Combined Locations tab is complete based on specific locations, countries/regions, and subnational breakdown
  */
-export function checkLocationsTabCompletion(data: { specificLocations?: any[], subnationalBreakdowns?: Record<string, number> }): TabCompletionStatus {
+export function checkLocationsTabCompletion(data: { 
+  specificLocations?: any[], 
+  subnationalBreakdowns?: Record<string, number>,
+  countries?: any[],
+  regions?: any[]
+}): TabCompletionStatus {
   const completedFields: string[] = []
   const missingFields: string[] = []
   
   let hasValidLocations = false
   let hasCompleteSubnational = false
+  let hasValidCountriesRegions = false
   
   // Check specific locations
   if (data.specificLocations && data.specificLocations.length > 0) {
@@ -192,7 +198,24 @@ export function checkLocationsTabCompletion(data: { specificLocations?: any[], s
     );
     
     if (hasValidLocations) {
-      completedFields.push('locations')
+      completedFields.push('activity_locations')
+    }
+  }
+  
+  // Check countries and regions
+  if (data.countries || data.regions) {
+    const countries = data.countries || []
+    const regions = data.regions || []
+    
+    const countryTotal = countries.reduce((sum, c) => sum + (c.percentage || 0), 0)
+    const regionTotal = regions.reduce((sum, r) => sum + (r.percentage || 0), 0)
+    const totalPercentage = countryTotal + regionTotal
+    const isValidTotal = Math.abs(totalPercentage - 100) < 0.01
+    const hasAnyValues = countries.length > 0 || regions.length > 0
+    
+    if (isValidTotal && hasAnyValues) {
+      hasValidCountriesRegions = true
+      completedFields.push('countries_regions')
     }
   }
   
@@ -208,14 +231,15 @@ export function checkLocationsTabCompletion(data: { specificLocations?: any[], s
     }
   }
   
-  // The Locations tab is complete if EITHER condition is met:
+  // The Locations tab is complete if ANY condition is met:
   // 1. At least one valid location is saved OR
-  // 2. Subnational breakdown totals 100%
-  const isComplete = hasValidLocations || hasCompleteSubnational
+  // 2. Countries & regions totals 100% OR
+  // 3. Subnational breakdown totals 100%
+  const isComplete = hasValidLocations || hasValidCountriesRegions || hasCompleteSubnational
   
-  // If neither is complete, we consider it missing
-  if (!hasValidLocations && !hasCompleteSubnational) {
-    missingFields.push('locations_or_subnational')
+  // If none are complete, we consider it missing
+  if (!hasValidLocations && !hasValidCountriesRegions && !hasCompleteSubnational) {
+    missingFields.push('locations_data')
   }
   
   return {
@@ -356,9 +380,13 @@ export function checkPolicyMarkersTabCompletion(policyMarkers: any[]): TabComple
   const missingFields: string[] = []
   
   if (policyMarkers && policyMarkers.length > 0) {
-    // Check if we have at least one policy marker with a score > 0
+    // Check if we have at least one policy marker with a significance > 0
+    // Support both old 'score' field and new 'significance' field
     const hasValidPolicyMarkers = policyMarkers.some(marker => 
-      marker && marker.score && marker.score > 0
+      marker && (
+        (marker.significance && marker.significance > 0) || 
+        (marker.score && marker.score > 0)
+      )
     );
     
     if (hasValidPolicyMarkers) {

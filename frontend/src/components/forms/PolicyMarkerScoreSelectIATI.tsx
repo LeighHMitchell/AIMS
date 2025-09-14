@@ -5,8 +5,9 @@ import { ChevronsUpDown, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { getAvailableSignificanceOptions, type PolicyMarker } from "@/lib/policy-marker-validation";
 
-// Standard IATI significance options (0, 1, 2 for most policy markers)
+// Standard IATI significance options (0, 1, 2, 3, 4 for all policy markers)
 const STANDARD_IATI_SCORE_OPTIONS = [
   {
     value: 0,
@@ -24,6 +25,18 @@ const STANDARD_IATI_SCORE_OPTIONS = [
     value: 2,
     label: "Principal objective",
     description: "The policy objective is the principal reason for undertaking the activity",
+    color: "bg-gray-100 text-gray-700"
+  },
+  {
+    value: 3,
+    label: "Most funding targeted",
+    description: "Most, but not all of the funding is targeted to the objective",
+    color: "bg-gray-100 text-gray-700"
+  },
+  {
+    value: 4,
+    label: "Explicit primary objective",
+    description: "All funding is targeted to this policy objective",
     color: "bg-gray-100 text-gray-700"
   }
 ];
@@ -68,9 +81,10 @@ interface PolicyMarkerScoreSelectIATIProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  maxScore?: number; // Allow limiting max score (e.g., 2 for non-RMNCH markers)
-  scoreLabels?: Record<number, string>; // Allow custom labels
-  isRMNCH?: boolean; // Flag to indicate if this is for RMNCH marker
+  maxScore?: number; // Allow limiting max score (e.g., 2 for non-RMNCH markers) - DEPRECATED, use policyMarker instead
+  scoreLabels?: Record<number, string>; // Allow custom labels - DEPRECATED, use policyMarker instead
+  isRMNCH?: boolean; // Flag to indicate if this is for RMNCH marker - DEPRECATED, use policyMarker instead
+  policyMarker?: PolicyMarker; // The policy marker to validate against (RECOMMENDED)
 }
 
 export function PolicyMarkerScoreSelectIATI({
@@ -81,23 +95,29 @@ export function PolicyMarkerScoreSelectIATI({
   className,
   maxScore = 4,
   scoreLabels,
-  isRMNCH = false
+  isRMNCH = false,
+  policyMarker
 }: PolicyMarkerScoreSelectIATIProps) {
   const [open, setOpen] = React.useState(false);
 
-  // Choose the appropriate options based on whether this is RMNCH or not
-  const baseOptions = isRMNCH ? RMNCH_IATI_SCORE_OPTIONS : STANDARD_IATI_SCORE_OPTIONS;
-  
-  // Filter options based on maxScore
-  const availableOptions = baseOptions.filter(option => option.value <= maxScore);
-  
-  // Override labels if provided
-  const scoreOptions = scoreLabels 
-    ? availableOptions.map(option => ({
-        ...option,
-        label: scoreLabels[option.value] || option.label
-      }))
-    : availableOptions;
+  // Use new validation system if policyMarker is provided, otherwise fall back to legacy props
+  const scoreOptions = React.useMemo(() => {
+    if (policyMarker) {
+      // Use the new IATI-compliant validation system
+      return getAvailableSignificanceOptions(policyMarker);
+    }
+
+    // Legacy fallback logic
+    const baseOptions = isRMNCH ? RMNCH_IATI_SCORE_OPTIONS : STANDARD_IATI_SCORE_OPTIONS;
+    const availableOptions = baseOptions.filter(option => option.value <= maxScore);
+
+    return scoreLabels
+      ? availableOptions.map(option => ({
+          ...option,
+          label: scoreLabels[option.value] || option.label
+        }))
+      : availableOptions;
+  }, [policyMarker, isRMNCH, maxScore, scoreLabels]);
 
   const selectedOption = scoreOptions.find(option => option.value === value);
 

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2025-01-15T10:00:00Z">
+  <iati-activity>
+    <iati-identifier>TEST-POLICY-MARKERS-001</iati-identifier>
+    <reporting-org ref="US-1" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Test Activity with Policy Markers</narrative>
+    </title>
+    <description>
+      <narrative>This is a test activity to verify policy marker import functionality</narrative>
+    </description>
+    
+    <!-- Policy Markers -->
+    <policy-marker vocabulary="1" code="1" significance="2">
+      <narrative>Gender Equality - Principal objective</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="1" code="2" significance="1">
+      <narrative>Aid to Environment - Significant objective</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="1" code="3" significance="0">
+      <narrative>Participatory Development/Good Governance - Not targeted</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="1" code="4" significance="3">
+      <narrative>Trade Development - Most funding targeted</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="1" code="9" significance="4">
+      <narrative>RMNCH - Explicit primary objective</narrative>
+    </policy-marker>
+    
+  </iati-activity>
+</iati-activities>
+

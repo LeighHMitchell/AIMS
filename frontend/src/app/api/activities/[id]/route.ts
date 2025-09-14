@@ -366,7 +366,7 @@ export async function GET(
       })) || [],
       policyMarkers: activityPolicyMarkers?.map((marker: any) => ({
         policy_marker_id: marker.policy_marker_id,
-        score: marker.score,
+        significance: marker.significance, // Use the correct significance column
         rationale: marker.rationale
       })) || [],
       locations: (() => {

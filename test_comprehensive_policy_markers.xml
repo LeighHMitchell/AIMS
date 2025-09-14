@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2025-01-15T10:00:00Z">
+  <iati-activity>
+    <iati-identifier>TEST-COMPREHENSIVE-POLICY-MARKERS-001</iati-identifier>
+    <reporting-org ref="US-1" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Comprehensive Policy Markers Test Activity</narrative>
+    </title>
+    <description>
+      <narrative>This activity tests all forms of policy marker import including standard IATI markers and custom vocabulary markers</narrative>
+    </description>
+    
+    <!-- Standard IATI Policy Markers (vocabulary="1") -->
+    <policy-marker vocabulary="1" code="2" significance="3">
+      <narrative>Aid to Environment - Principal objective</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="1" code="9" significance="4">
+      <narrative>Reproductive, Maternal, Newborn and Child Health (RMNCH) - Explicit primary objective</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="1" code="1" significance="2">
+      <narrative>Gender Equality - Principal objective</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="1" code="3" significance="1">
+      <narrative>Participatory Development/Good Governance - Significant objective</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="1" code="4" significance="0">
+      <narrative>Trade Development - Not targeted</narrative>
+    </policy-marker>
+    
+    <!-- Custom Vocabulary Policy Markers (vocabulary="99") -->
+    <policy-marker vocabulary="99" vocabulary-uri="http://example.com/vocab.html" code="A1" significance="3">
+      <narrative>Custom Policy Marker A1 - Organization specific marker</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="99" vocabulary-uri="http://example.com/vocab.html" code="B2" significance="2">
+      <narrative>Custom Policy Marker B2 - Regional development focus</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="99" code="C3" significance="1">
+      <narrative>Custom Policy Marker C3 - Without vocabulary URI</narrative>
+    </policy-marker>
+    
+    <!-- Test edge cases -->
+    <policy-marker vocabulary="2" code="X1" significance="2">
+      <narrative>Non-standard vocabulary marker</narrative>
+    </policy-marker>
+    
+    <policy-marker code="Y1" significance="1">
+      <narrative>Marker without vocabulary attribute (should default to vocabulary 1)</narrative>
+    </policy-marker>
+    
+  </iati-activity>
+</iati-activities>
+

@@ -584,7 +584,7 @@ export async function POST(request: Request) {
           const policyMarkersData = body.policyMarkers.map((marker: any) => ({
             activity_id: body.id,
             policy_marker_id: marker.policy_marker_id,
-            significance: marker.significance || marker.score, // Support both new and old field names
+            score: marker.significance || marker.score, // Use score column (database hasn't been renamed yet)
             rationale: marker.rationale || null
           }));
 
@@ -861,7 +861,10 @@ export async function POST(request: Request) {
           label: wgRelation.working_groups.label,
           vocabulary: wgRelation.vocabulary
         })) || [],
-        policyMarkers: activityPolicyMarkers || [],
+        policyMarkers: (activityPolicyMarkers || []).map(marker => ({
+          ...marker,
+          significance: marker.score // Map score to significance for frontend compatibility
+        })),
         transactions: transactions || [],
       sectors: sectors?.map((sector: any) => ({
         id: sector.id,
@@ -1384,7 +1387,7 @@ export async function POST(request: Request) {
       const policyMarkersData = body.policyMarkers.map((marker: any) => ({
         activity_id: newActivity.id,
         policy_marker_id: marker.policy_marker_id,
-        score: marker.score,
+        significance: marker.significance,
         rationale: marker.rationale || null
       }));
 
@@ -1590,7 +1593,10 @@ export async function POST(request: Request) {
         label: wgRelation.working_groups.label,
         vocabulary: wgRelation.vocabulary
       })) || [],
-      policyMarkers: activityPolicyMarkers || [],
+      policyMarkers: (activityPolicyMarkers || []).map(marker => ({
+        ...marker,
+        significance: marker.score // Map score to significance for frontend compatibility
+      })),
       transactions: transactions || [],
       sectors: sectors?.map((sector: any) => ({
         id: sector.id,

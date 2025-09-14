@@ -613,7 +613,7 @@ export async function POST(request: Request) {
             const policyMarkersData = policyMarkersToSave.map((marker: any) => ({
               activity_id: body.activityId,
               policy_marker_id: marker.policy_marker_id,
-              significance: marker.significance || marker.score, // Support both new and old field names
+              significance: marker.significance || marker.score, // Use significance column
               rationale: marker.rationale || null
             }));
 

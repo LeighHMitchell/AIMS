@@ -45,6 +45,8 @@ import {
   Lock,
   Plus,
   Trash2,
+  Bug,
+  Copy,
 } from 'lucide-react';
 
 interface XmlImportTabProps {
@@ -131,6 +133,10 @@ interface ParsedField {
   itemType?: 'budget' | 'transaction' | 'plannedDisbursement'; // Type of financial item
   itemIndex?: number; // Index in the array
   itemData?: any; // The actual data object
+  isPolicyMarker?: boolean; // True for policy marker items
+  policyMarkerData?: any; // The actual policy marker data object
+  hasNonDacSectors?: boolean; // True if sector field has non-DAC sectors
+  nonDacSectors?: any[]; // Array of non-DAC sectors
 }
 
 interface TabSection {
@@ -339,6 +345,32 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   }>({ originalSectors: [], refinedSectors: [] });
   const [savedRefinedSectors, setSavedRefinedSectors] = useState<any[]>([]);
   const [xmlMetadata, setXmlMetadata] = useState<any>(null);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [showDebugConsole, setShowDebugConsole] = useState(false);
+  
+  // Debug console capture
+  const captureConsoleLog = (message: string, ...args: any[]) => {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}${args.length > 0 ? ' ' + args.map(arg => 
+      typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+    ).join(' ') : ''}`;
+    
+    setDebugLogs(prev => [...prev, logMessage]);
+    console.log(message, ...args);
+  };
+
+  const clearDebugLogs = () => {
+    setDebugLogs([]);
+  };
+
+  const copyDebugLogs = () => {
+    const logText = debugLogs.join('\n');
+    navigator.clipboard.writeText(logText).then(() => {
+      toast.success('Debug logs copied to clipboard');
+    }).catch(() => {
+      toast.error('Failed to copy debug logs');
+    });
+  };
   
   // External Publisher Detection States
   const [showExternalPublisherModal, setShowExternalPublisherModal] = useState(false);
@@ -794,7 +826,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       try {
         // Fetch full activity data to include location data
         console.log('[XmlImportTab] Fetching activity data for:', activityId);
-        const data = await fetchActivityWithCache(activityId, false);
+        const data = await fetchBasicActivityWithCache(activityId);
         console.log('[XmlImportTab] Fetched activity data:', data);
         console.log('[XmlImportTab] Location data:', {
           recipient_countries: data.recipient_countries,
@@ -965,7 +997,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     if (!currentActivityData.id && activityId) {
       console.log('[XML Import Debug] Fetching activity data before parsing');
       try {
-        const data = await fetchActivityWithCache(activityId, false);
+        const data = await fetchBasicActivityWithCache(activityId);
         setCurrentActivityData({
           id: data.id,
           title_narrative: data.title_narrative || data.title,
@@ -1524,9 +1556,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       
       const currentCountryInfo = currentActivityData.recipient_countries && currentActivityData.recipient_countries.length > 0
         ? currentActivityData.recipient_countries.map(c => {
-            const countryCode = c.country?.code || c.code;
+            const countryCode = c.country?.code;
             const countryData = IATI_COUNTRIES.find(country => country.code === countryCode);
-            const countryName = countryData ? countryData.name : (c.country?.name || c.name || countryCode);
+            const countryName = countryData ? countryData.name : (c.country?.name || countryCode);
             return {
               code: countryCode,
               name: `${countryName}${c.percentage ? ` (${c.percentage}%)` : ''}`,
@@ -1574,9 +1606,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       
       const currentRegionInfo = currentActivityData.recipient_regions && currentActivityData.recipient_regions.length > 0
         ? currentActivityData.recipient_regions.map(r => {
-            const regionCode = r.region?.code || r.code;
+            const regionCode = r.region?.code;
             const regionData = IATI_REGIONS.find(region => region.code === regionCode);
-            const regionName = regionData ? regionData.name : (r.region?.name || r.name || regionCode);
+            const regionName = regionData ? regionData.name : (r.region?.name || regionCode);
             const vocab = r.vocabulary || '1';
             const vocabName = vocab === '1' ? 'OECD DAC' : vocab === '2' ? 'UN' : 'Custom';
             return {
@@ -1606,7 +1638,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             code: r.code,
             name: `${r.narrative || r.code}${r.percentage ? ` (${r.percentage}%)` : ''}`,
             vocabulary: `99 Custom`,
-            vocabularyUri: r.vocabularyUri || null
+            vocabularyUri: undefined
           }))
         : null;
       
@@ -1716,15 +1748,59 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       }
 
       if (parsedActivity.policyMarkers && parsedActivity.policyMarkers.length > 0) {
-        fields.push({
-          fieldName: 'Policy Markers',
-          iatiPath: 'iati-activity/policy-marker',
-          currentValue: null,
-          importValue: `${parsedActivity.policyMarkers.length} policy markers found`,
-          selected: false,
-          hasConflict: false,
-          tab: 'policy-markers',
-          description: 'Policy significance markers'
+        // Fetch existing policy markers to populate current values
+        let existingPolicyMarkers = [];
+        try {
+          const policyMarkersResponse = await fetch(`/api/activities/${activityId}/policy-markers`);
+          if (policyMarkersResponse.ok) {
+            existingPolicyMarkers = await policyMarkersResponse.json();
+            console.log('[XML Import] Fetched existing policy markers:', existingPolicyMarkers);
+          }
+        } catch (error) {
+          console.warn('[XML Import] Failed to fetch existing policy markers:', error);
+        }
+
+        // Create individual fields for each policy marker
+        parsedActivity.policyMarkers.forEach((marker: any, index: number) => {
+          // Find matching existing policy marker
+          const existingMarker = existingPolicyMarkers.find((existing: any) => 
+            existing.policy_marker_details?.code === marker.code && 
+            existing.policy_marker_details?.vocabulary === marker.vocabulary
+          );
+
+          const currentValue = existingMarker ? {
+            code: existingMarker.policy_marker_details?.code,
+            significance: existingMarker.significance,
+            vocabulary: existingMarker.policy_marker_details?.vocabulary,
+            vocabulary_uri: existingMarker.policy_marker_details?.vocabulary_uri,
+            rationale: existingMarker.rationale,
+            name: existingMarker.policy_marker_details?.name
+          } : null;
+
+          fields.push({
+            fieldName: `Policy Marker: ${marker.code || 'Unknown'}`,
+            iatiPath: `iati-activity/policy-marker[${index}]`,
+            currentValue: currentValue,
+            importValue: {
+              code: marker.code,
+              significance: marker.significance,
+              vocabulary: marker.vocabulary,
+              vocabulary_uri: marker.vocabulary_uri,
+              rationale: marker.rationale
+            },
+            selected: false,
+            hasConflict: hasConflict(currentValue, {
+              code: marker.code,
+              significance: marker.significance,
+              vocabulary: marker.vocabulary,
+              vocabulary_uri: marker.vocabulary_uri,
+              rationale: marker.rationale
+            }),
+            tab: 'policy-markers',
+            description: `Policy marker: ${marker.code} (Significance: ${marker.significance})`,
+            isPolicyMarker: true,
+            policyMarkerData: marker
+          });
         });
       }
 
@@ -1867,7 +1943,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         const importedSectors = (sectorField as any).importedSectors || [];
         
         // Filter to only include 3-digit DAC sectors that need refinement
-        const sectorsNeedingRefinement = importedSectors.filter(s => 
+        const sectorsNeedingRefinement = importedSectors.filter((s: any) => 
           s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) && 
           (s.vocabulary === '1' || s.vocabulary === '2' || !s.vocabulary)
         );
@@ -2114,8 +2190,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               }
             }
             break;
+          case 'Policy Markers':
+            // Handle policy markers import - this will be processed separately after main activity update
+              updateData._importPolicyMarkers = true;
+            break;
           default:
-            if (field.fieldName.startsWith('Budget ')) {
+            if (field.fieldName.startsWith('Policy Marker:')) {
+              // Handle individual policy marker import
+              if (!updateData._importPolicyMarkers) updateData._importPolicyMarkers = [];
+              updateData._importPolicyMarkers.push(field.policyMarkerData);
+            } else if (field.fieldName.startsWith('Budget ')) {
               // Collect budget data for import
               if (!updateData.importedBudgets) updateData.importedBudgets = [];
               const budgetIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
@@ -2221,7 +2305,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             console.log('[XML Import] Importing sectors to database:', sectorsToImport);
             
             // Validate sectors before sending to API
-            const totalPercentage = sectorsToImport.reduce((sum, s) => sum + (s.percentage || 0), 0);
+            const totalPercentage = sectorsToImport.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0);
             if (Math.abs(totalPercentage - 100) > 0.01) {
               console.error('[XML Import] Invalid sector percentage total:', totalPercentage);
               toast.error('Sector import failed: Invalid percentages', {
@@ -2231,7 +2315,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             }
             
             // Check for invalid sector codes
-            const invalidSectors = sectorsToImport.filter(s => !s.sector_code || !/^\d{5}$/.test(s.sector_code));
+            const invalidSectors = sectorsToImport.filter((s: any) => !s.sector_code || !/^\d{5}$/.test(s.sector_code));
             if (invalidSectors.length > 0) {
               console.error('[XML Import] Invalid sector codes found:', invalidSectors);
               toast.error('Sector import failed: Invalid codes', {
@@ -2278,6 +2362,251 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           } else {
             console.log('[XML Import] No sectors to import');
           }
+        }
+      }
+
+      // Handle policy markers import if any
+      if (updateData._importPolicyMarkers) {
+        captureConsoleLog('[XML Import] Processing policy markers import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 90,
+          message: 'Importing policy markers...'
+        });
+
+        try {
+          // First, fetch available policy markers from database to match IATI codes
+          captureConsoleLog(`[XML Import] Fetching policy markers for activity: ${activityId}`);
+          const policyMarkersResponse = await fetch(`/api/policy-markers?activity_id=${activityId}`);
+          
+          if (!policyMarkersResponse.ok) {
+            const errorText = await policyMarkersResponse.text();
+            captureConsoleLog(`[XML Import] Policy markers API error: ${policyMarkersResponse.status} - ${errorText}`);
+            throw new Error(`Failed to fetch policy markers: ${policyMarkersResponse.status} ${errorText}`);
+          }
+          
+            const availableMarkers = await policyMarkersResponse.json();
+          captureConsoleLog(`[XML Import] Received ${availableMarkers.length} available markers from API`);
+            
+            const importedPolicyMarkers = [];
+            
+            // Determine which policy markers to process
+            let markersToProcess = [];
+            if (Array.isArray(updateData._importPolicyMarkers)) {
+              // Individual selections
+              markersToProcess = updateData._importPolicyMarkers;
+              captureConsoleLog(`[XML Import] Processing ${markersToProcess.length} individually selected policy markers`);
+            } else if (updateData._importPolicyMarkers === true) {
+              // Bulk import all policy markers
+              markersToProcess = parsedActivity.policyMarkers || [];
+              captureConsoleLog(`[XML Import] Processing all ${markersToProcess.length} policy markers from XML`);
+            }
+            
+            for (const xmlMarker of markersToProcess) {
+            captureConsoleLog(`[XML Import DEBUG] Processing XML marker:`, xmlMarker);
+            captureConsoleLog(`[XML Import DEBUG] Available markers:`, availableMarkers.map((m: any) => ({
+                uuid: m.uuid,
+                code: m.code,
+                iati_code: m.iati_code,
+                name: m.name,
+                vocabulary: m.vocabulary,
+                is_iati_standard: m.is_iati_standard
+              })));
+            captureConsoleLog(`[XML Import DEBUG] Standard IATI markers:`, availableMarkers.filter((m: any) => m.is_iati_standard).map((m: any) => ({
+              code: m.code,
+              iati_code: m.iati_code,
+              name: m.name
+            })));
+            captureConsoleLog(`[XML Import DEBUG] XML marker details:`, {
+                code: xmlMarker.code,
+                vocabulary: xmlMarker.vocabulary,
+                vocabulary_uri: xmlMarker.vocabulary_uri,
+                significance: xmlMarker.significance,
+                narrative: xmlMarker.narrative
+              });
+
+              // Determine lookup strategy based on vocabulary
+              let matchingMarker = null;
+              const markerVocabulary = xmlMarker.vocabulary || '1';
+
+              if (markerVocabulary === '1') {
+                // Standard IATI marker: match by vocabulary + iati_code
+              captureConsoleLog(`[XML Import DEBUG] Looking for standard marker with iati_code="${xmlMarker.code}"`);
+              matchingMarker = availableMarkers.find((marker: any) => {
+                const matches = marker.is_iati_standard === true &&
+                  marker.vocabulary === '1' &&
+                  marker.iati_code === xmlMarker.code;
+                if (matches) {
+                  captureConsoleLog(`[XML Import DEBUG] Found matching standard marker:`, marker);
+                }
+                return matches;
+              });
+              } else if (markerVocabulary === '99') {
+                // Custom marker: match by vocabulary + code + vocabulary_uri
+                const vocabularyUri = xmlMarker.vocabulary_uri || '';
+              captureConsoleLog(`[XML Import DEBUG] Looking for custom marker with code="${xmlMarker.code}", vocabulary_uri="${vocabularyUri}"`);
+              matchingMarker = availableMarkers.find((marker: any) => {
+                const matches = marker.is_iati_standard === false &&
+                  marker.vocabulary === '99' &&
+                  marker.code === xmlMarker.code &&
+                  (marker.vocabulary_uri || '') === vocabularyUri;
+                if (matches) {
+                  captureConsoleLog(`[XML Import DEBUG] Found matching custom marker:`, marker);
+                }
+                return matches;
+              });
+            }
+
+            captureConsoleLog(`[XML Import DEBUG] Matching result for code ${xmlMarker.code}:`,
+                matchingMarker ? { uuid: matchingMarker.uuid, code: matchingMarker.code, name: matchingMarker.name, iati_code: matchingMarker.iati_code } : 'NO MATCH');
+
+              if (matchingMarker) {
+                // Convert significance from string to number
+                const rawSignificance = parseInt(xmlMarker.significance || '0');
+
+                // Normalize significance to IATI-compliant range
+                const { validatePolicyMarkerSignificance } = await import('@/lib/policy-marker-validation');
+                const validation = validatePolicyMarkerSignificance(matchingMarker, rawSignificance);
+                
+                let significance = rawSignificance;
+                if (!validation.isValid) {
+                  // Normalize to maximum allowed significance
+                  significance = validation.maxAllowedSignificance;
+                  captureConsoleLog(`[XML Import] Normalized significance for ${matchingMarker.name}: ${rawSignificance} -> ${significance} (IATI compliance)`);
+                }
+
+                captureConsoleLog(`✅ [XML Import FIELD] PROCESSED ${matchingMarker.name} (code: ${xmlMarker.code}) - significance: ${significance}`);
+
+                importedPolicyMarkers.push({
+                  policy_marker_id: matchingMarker.uuid, // Use UUID, not ID!
+                  significance: significance,
+                  rationale: xmlMarker.narrative || null
+                });
+
+              captureConsoleLog(`[XML Import] Mapped policy marker: ${xmlMarker.code} -> ${matchingMarker.name} (significance: ${significance})`);
+            } else {
+                // Create custom policy marker if not found
+              captureConsoleLog(`[XML Import] Creating custom policy marker for code: ${xmlMarker.code}, vocabulary: 99`);
+
+                try {
+                  // Create custom policy marker
+                  const createResponse = await fetch('/api/policy-markers', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                  body: JSON.stringify({
+                    name: `Policy Marker ${xmlMarker.code}`,
+                    description: `Custom policy marker imported from XML (code: ${xmlMarker.code})`,
+                    marker_type: 'custom',
+                    code: xmlMarker.code,
+                    vocabulary: '99',
+                    vocabulary_uri: xmlMarker.vocabulary_uri || null
+                  })
+                  });
+
+                  if (createResponse.ok) {
+                    const newMarker = await createResponse.json();
+                  captureConsoleLog(`[XML Import] Successfully created custom policy marker:`, newMarker);
+
+                    // Convert significance from string to number
+                    const rawSignificance = parseInt(xmlMarker.significance || '0');
+
+                  // Validate significance according to IATI rules
+                    const { validatePolicyMarkerSignificance } = await import('@/lib/policy-marker-validation');
+                    const validation = validatePolicyMarkerSignificance(newMarker, rawSignificance);
+
+                    let significance = rawSignificance;
+                    if (!validation.isValid) {
+                      // Normalize to maximum allowed significance
+                      significance = validation.maxAllowedSignificance;
+                      captureConsoleLog(`[XML Import] Normalized significance for custom marker ${xmlMarker.code}: ${rawSignificance} -> ${significance} (IATI compliance)`);
+                    }
+
+                    // Add the newly created marker to our import list
+                    importedPolicyMarkers.push({
+                      policy_marker_id: newMarker.uuid, // Use UUID!
+                      significance: significance,
+                      rationale: xmlMarker.narrative || null
+                    });
+
+                  captureConsoleLog(`[XML Import] Created and assigned custom policy marker: ${xmlMarker.code} -> ${newMarker.name} (significance: ${significance})`);
+                    } else {
+                      const errorData = await createResponse.json().catch(() => ({ error: 'Unknown error' }));
+                  captureConsoleLog(`[XML Import] Failed to create custom policy marker:`, errorData);
+                      toast.warning(`Failed to create custom policy marker "${xmlMarker.code}"`, {
+                        description: errorData.error || 'Could not create custom policy marker during import.'
+                      });
+                    }
+                  } catch (createError) {
+                captureConsoleLog(`[XML Import] Error creating custom policy marker:`, createError);
+                    toast.warning(`Failed to create custom policy marker "${xmlMarker.code}"`, {
+                      description: 'Network error occurred while creating custom policy marker.'
+                    });
+                  }
+              }
+            }
+            
+            if (importedPolicyMarkers.length > 0) {
+            captureConsoleLog(`\n📤 [XML Import] Sending ${importedPolicyMarkers.length} policy markers to API:`);
+            importedPolicyMarkers.forEach((marker, index) => {
+              captureConsoleLog(`  ${index + 1}. UUID: ${marker.policy_marker_id}, Significance: ${marker.significance}, Rationale: ${marker.rationale || 'none'}`);
+            });
+            
+            captureConsoleLog(`[XML Import] Sending policy markers to API:`, importedPolicyMarkers);
+              const importResponse = await fetch(`/api/activities/${activityId}/policy-markers`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                  policyMarkers: importedPolicyMarkers, 
+                  replace: true 
+                }),
+              });
+
+              if (!importResponse.ok) {
+              const errorText = await importResponse.text();
+              captureConsoleLog('[XML Import] Policy markers import failed:', {
+                status: importResponse.status,
+                statusText: importResponse.statusText,
+                error: errorText
+              });
+              
+              let errorMessage = 'Policy markers could not be imported. Main activity data was imported successfully.';
+              try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.error || errorData.details || errorMessage;
+              } catch (e) {
+                errorMessage = errorText || errorMessage;
+              }
+              
+                toast.error('Failed to import policy markers', {
+                description: errorMessage
+                });
+              } else {
+                const successData = await importResponse.json();
+              captureConsoleLog('[XML Import] Policy markers imported successfully:', successData);
+                toast.success(`Policy markers imported successfully`, {
+                  description: `${importedPolicyMarkers.length} policy marker(s) added to the activity`
+                });
+              }
+            } else {
+            captureConsoleLog('[XML Import] No policy markers could be matched for import');
+            toast.warning('No policy markers imported', {
+              description: 'No policy markers from the XML could be matched with available policy markers in the database.'
+            });
+          }
+        } catch (policyMarkersError: any) {
+          captureConsoleLog('[XML Import] Policy markers import error:', policyMarkersError);
+          captureConsoleLog('[XML Import] Error details:', {
+            message: policyMarkersError.message,
+            stack: policyMarkersError.stack,
+            name: policyMarkersError.name
+          });
+          toast.error('Failed to import policy markers', {
+            description: `An error occurred while processing policy markers: ${policyMarkersError.message}`
+          });
         }
       }
 
@@ -2452,7 +2781,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     });
 
     return Array.from(tabMap.values()).sort((a, b) => {
-      const order = ['policy-markers', 'basic', 'finances', 'locations', 'sectors', 'partners', 'results'];
+      const order = ['basic', 'partners', 'sectors', 'policy-markers', 'locations', 'finances', 'results'];
       return order.indexOf(a.tabId) - order.indexOf(b.tabId);
     });
   };
@@ -2524,6 +2853,29 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   )}
                 </div>
               ))
+            ) : field.isPolicyMarker ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
+                  <span className="text-sm font-medium text-gray-900">Policy Marker</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Significance:</span>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.significance}</span>
+                  {field.currentValue.vocabulary && (
+                    <>
+                      <span className="text-xs text-gray-500 ml-2">Vocabulary:</span>
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.vocabulary}</span>
+                    </>
+                  )}
+                </div>
+                {field.currentValue.rationale && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Rationale:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.rationale}</span>
+                  </div>
+                )}
+              </div>
             ) : typeof field.currentValue === 'object' && field.currentValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
@@ -2545,7 +2897,30 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       </td>
       <td className="px-4 py-3 w-40">
         <div className="space-y-1">
-          {Array.isArray(field.importValue) ? (
+          {field.isPolicyMarker ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
+                <span className="text-sm font-medium text-gray-900">Policy Marker</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500">Significance:</span>
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.significance}</span>
+                {field.importValue.vocabulary && (
+                  <>
+                    <span className="text-xs text-gray-500 ml-2">Vocabulary:</span>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.vocabulary}</span>
+                  </>
+                )}
+              </div>
+              {field.importValue.rationale && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Rationale:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.rationale}</span>
+                </div>
+              )}
+            </div>
+          ) : Array.isArray(field.importValue) ? (
             field.importValue.map((item, index) => (
               <div key={index} className={`flex flex-col gap-1 ${item.locked ? 'opacity-50' : ''}`}>
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
@@ -2573,10 +2948,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               </div>
             ))
           ) : typeof field.importValue === 'object' && field.importValue?.code ? (
-            <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
-              <span className="text-sm font-medium text-gray-900">{field.importValue.name}</span>
-              {field.importValue.vocabulary && (
+              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
+                <span className="text-sm font-medium text-gray-900">{field.importValue.name}</span>
+                    {field.importValue.vocabulary && (
                 <>
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.vocabulary.split(' ')[0]}</span>
                   <span className="text-xs text-gray-400 font-normal ml-1">{field.importValue.vocabulary.split(' ').slice(1).join(' ')}</span>
@@ -2748,17 +3123,138 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       </div>
     );
   };
+
+  // Policy markers tab content component with Select All/Clear All functionality
+  const PolicyMarkersTabContent = ({ fields, tabName }: { fields: ParsedField[]; tabName: string }) => {
+    const policyMarkerFields = fields.filter(f => f.isPolicyMarker);
+    const selectedCount = policyMarkerFields.filter(f => f.selected).length;
+    const totalCount = policyMarkerFields.length;
+
+    const selectAllPolicyMarkers = () => {
+      const newFields = [...parsedFields];
+      policyMarkerFields.forEach(policyField => {
+        const index = parsedFields.findIndex(f => f === policyField);
+        if (index !== -1) {
+          newFields[index] = { ...newFields[index], selected: true };
+        }
+      });
+      setParsedFields(newFields);
+    };
+
+    const clearAllPolicyMarkers = () => {
+      const newFields = [...parsedFields];
+      policyMarkerFields.forEach(policyField => {
+        const index = parsedFields.findIndex(f => f === policyField);
+        if (index !== -1) {
+          newFields[index] = { ...newFields[index], selected: false };
+        }
+      });
+      setParsedFields(newFields);
+    };
+
+    return (
+      <div className="space-y-4">
+        {/* Policy markers header with selection controls */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-medium">{tabName}</h3>
+            <div className="text-sm text-gray-600">
+              {selectedCount} of {totalCount} policy markers selected
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearAllPolicyMarkers}
+              disabled={selectedCount === 0}
+            >
+              Clear All
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={selectAllPolicyMarkers}
+              disabled={selectedCount === totalCount}
+            >
+              Select All
+            </Button>
+          </div>
+        </div>
+
+        {/* Policy markers table */}
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                  Import
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Policy Marker
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Current Value
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Import Value
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {policyMarkerFields.map((field, index) => {
+                const globalIndex = parsedFields.findIndex(f => f === field);
+                return (
+                  <FieldRow key={globalIndex} field={field} globalIndex={globalIndex} />
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
   
   // Main tab content component that chooses between financial and regular
   const TabFieldContent = ({ tabSection }: { tabSection: TabSection }) => {
     if (tabSection.tabId === 'finances') {
       return <FinancialTabContent tabSection={tabSection} />;
     }
+    if (tabSection.tabId === 'policy-markers') {
+      return <PolicyMarkersTabContent fields={tabSection.fields} tabName={tabSection.tabName} />;
+    }
     return <RegularTabContent fields={tabSection.fields} tabName={tabSection.tabName} />;
   };
 
   return (
     <div className="space-y-6">
+      {/* Debug Console Button */}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDebugConsole(true)}
+            className="flex items-center gap-2"
+          >
+            <Bug className="h-4 w-4" />
+            Debug Console ({debugLogs.length})
+          </Button>
+          {debugLogs.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearDebugLogs}
+              className="text-red-600 hover:text-red-700"
+            >
+              Clear Logs
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Import Method Selection and Input */}
       {importStatus.stage === 'idle' && !selectedFile && !xmlContent && (
@@ -3420,6 +3916,65 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Debug Console Modal */}
+      <Dialog open={showDebugConsole} onOpenChange={setShowDebugConsole}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bug className="h-5 w-5" />
+              Debug Console
+              <Badge variant="secondary" className="ml-2">
+                {debugLogs.length} logs
+              </Badge>
+            </DialogTitle>
+            <DialogDescription>
+              Console logs captured during XML import process. Use this to debug import issues.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyDebugLogs}
+                className="flex items-center gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                Copy All Logs
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearDebugLogs}
+                className="flex items-center gap-2 text-red-600 hover:text-red-700"
+              >
+                <X className="h-4 w-4" />
+                Clear Logs
+              </Button>
+            </div>
+            
+            <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
+              {debugLogs.length === 0 ? (
+                <div className="text-gray-500">No debug logs captured yet. Try importing an XML file to see logs here.</div>
+              ) : (
+                debugLogs.map((log, index) => (
+                  <div key={index} className="whitespace-pre-wrap break-words">
+                    {log}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDebugConsole(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

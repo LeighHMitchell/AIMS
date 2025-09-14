@@ -170,7 +170,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
     
     // Trigger autosave
     if (policyMarkersAutosave && activityId) {
-      policyMarkersAutosave.debouncedSave(markersArray);
+      policyMarkersAutosave.triggerFieldSave(markersArray);
     }
     
     setHasUnsavedChanges?.(true);
@@ -193,7 +193,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
       onChange(markersArray);
       
       if (policyMarkersAutosave && activityId) {
-        policyMarkersAutosave.debouncedSave(markersArray);
+        policyMarkersAutosave.triggerFieldSave(markersArray);
       }
       
       setHasUnsavedChanges?.(true);
@@ -239,21 +239,21 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
       }`}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-1">
                 {MARKER_TYPE_ICONS[marker.marker_type]}
                 <h4 className="font-medium text-sm">{marker.name}</h4>
+                
+                {/* IATI Standard Badge */}
+                {marker.is_iati_standard && (
+                  <Badge variant="outline" className="text-xs border-green-400 text-green-700">
+                    <Globe className="h-3 w-3 mr-1" />
+                    IATI {marker.iati_code}
+                  </Badge>
+                )}
               </div>
               
-              {/* IATI Standard Badge */}
-              {marker.is_iati_standard && (
-                <Badge variant="outline" className="text-xs border-green-400 text-green-700">
-                  <Globe className="h-3 w-3 mr-1" />
-                  IATI {marker.iati_code}
-                </Badge>
-              )}
-              
-              {/* Vocabulary Badge */}
+              {/* Vocabulary Badge - moved to the right */}
               <Badge variant="outline" className="text-xs border-gray-400 text-gray-600">
                 {VOCABULARY_LABELS[marker.vocabulary as keyof typeof VOCABULARY_LABELS] || `Vocab ${marker.vocabulary}`}
               </Badge>
@@ -267,8 +267,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
               <PolicyMarkerScoreSelectIATI
                 value={significance}
                 onValueChange={(value) => updateMarkerSignificance(marker.id, value as 0 | 1 | 2 | 3 | 4)}
-                scoreLabels={IATI_SIGNIFICANCE_LABELS}
-                maxScore={marker.iati_code === '9' ? 4 : 3} // Allow significance 4 only for RMNCH
+                policyMarker={marker} // Use new IATI-compliant validation
               />
             </div>
             
@@ -339,25 +338,6 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
         </div>
       </div>
 
-      {/* Summary */}
-      {selectedCount > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-medium text-sm text-blue-900 mb-2">Selected Policy Markers</h4>
-          <div className="flex flex-wrap gap-2">
-            {Array.from(selectedMarkers.entries()).map(([markerId, markerData]) => {
-              const marker = availableMarkers.find(m => m.id === markerId);
-              if (!marker) return null;
-              
-              return (
-                <Badge key={markerId} variant="secondary" className="text-xs">
-                  {marker.is_iati_standard && `IATI ${marker.iati_code}: `}
-                  {marker.name} ({IATI_SIGNIFICANCE_LABELS[markerData.significance]})
-                </Badge>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Tabbed Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

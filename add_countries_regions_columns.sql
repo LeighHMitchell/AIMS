@@ -11,4 +11,5 @@ CREATE INDEX IF NOT EXISTS idx_activities_recipient_regions ON activities USING 
 
 -- Add comments to document the columns
 COMMENT ON COLUMN activities.recipient_countries IS 'JSON array of country allocations with percentage values';
-COMMENT ON COLUMN activities.recipient_regions IS 'JSON array of region allocations with percentage values';
+COMMENT ON COLUMN activities.recipient_regions IS 'JSON array of region allocations with percentage values';Whe
+

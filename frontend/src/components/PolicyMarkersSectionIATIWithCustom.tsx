@@ -19,11 +19,12 @@ import { useUser } from '@/hooks/useUser';
 
 // Types
 interface IATIPolicyMarker {
-  id: string;
+  id: string; // Keep for backward compatibility
+  uuid: string; // The actual UUID used for references
   code: string;
   name: string;
   description: string;
-  marker_type: 'environmental' | 'social_governance' | 'other';
+  marker_type: 'environmental' | 'social_governance' | 'other' | 'custom';
   vocabulary: string;
   iati_code: string;
   is_iati_standard: boolean;
@@ -58,6 +59,8 @@ const getSignificanceLabel = (isRMNCH: boolean, significance: number): string =>
       case 0: return "Not targeted";
       case 1: return "Significant objective";
       case 2: return "Principal objective";
+      case 3: return "Most funding targeted"; // IATI level 3
+      case 4: return "Explicit primary objective"; // IATI level 4 (should only be for RMNCH)
       default: return "Unknown";
     }
   }
@@ -145,11 +148,12 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     setSelectedMarkers(markersMap);
   }, [policyMarkers]);
 
-  // Fetch available IATI policy markers
+  // Fetch available IATI policy markers (including activity-specific custom markers)
   useEffect(() => {
     const fetchMarkers = async () => {
       try {
-        const response = await fetch('/api/policy-markers');
+        // Pass activity_id to get activity-scoped custom markers
+        const response = await fetch(`/api/policy-markers?activity_id=${activityId}`);
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
           throw new Error(errorData.error || `HTTP ${response.status}`);
@@ -159,6 +163,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
         // Add default IATI fields for markers that don't have them yet
         const markersWithDefaults = (Array.isArray(data) ? data : []).map((marker: any) => ({
           ...marker,
+          uuid: marker.uuid || marker.id, // Ensure UUID is present
           vocabulary: marker.vocabulary || '1',
           iati_code: marker.iati_code || marker.code,
           is_iati_standard: marker.is_iati_standard !== undefined ? marker.is_iati_standard : true
@@ -180,8 +185,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   }, []);
 
   // Update marker significance
-  const updateMarkerSignificance = (markerId: string, significance: 0 | 1 | 2 | 3 | 4) => {
-    const marker = availableMarkers.find(m => m.id === markerId);
+  const updateMarkerSignificance = (markerUuid: string, significance: 0 | 1 | 2 | 3 | 4) => {
+    const marker = availableMarkers.find(m => (m.uuid || m.id) === markerUuid);
     if (!marker) return;
 
     // Validate significance 4 is only for RMNCH (IATI code 9)
@@ -191,23 +196,23 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     }
 
     const newSelectedMarkers = new Map(selectedMarkers);
-    
+
     if (significance === 0) {
-      newSelectedMarkers.delete(markerId);
+      newSelectedMarkers.delete(markerUuid);
     } else {
-      const existingMarker = newSelectedMarkers.get(markerId) || { 
-        policy_marker_id: markerId, 
+      const existingMarker = newSelectedMarkers.get(markerUuid) || {
+        policy_marker_id: markerUuid, // Use UUID as the policy_marker_id
         significance: 0,
         rationale: ''
       };
-      newSelectedMarkers.set(markerId, {
+      newSelectedMarkers.set(markerUuid, {
         ...existingMarker,
         significance
       });
     }
-    
+
     setSelectedMarkers(newSelectedMarkers);
-    
+
     // Convert to array for parent component
     const updatedMarkers = Array.from(newSelectedMarkers.values());
     onChange(updatedMarkers);
@@ -460,23 +465,28 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   };
 
   // Get current significance for a marker
-  const getMarkerSignificance = (markerId: string): 0 | 1 | 2 | 3 | 4 => {
-    return selectedMarkers.get(markerId)?.significance || 0;
+  const getMarkerSignificance = (markerUuid: string): 0 | 1 | 2 | 3 | 4 => {
+    // Find the selected marker by UUID
+    const selectedMarker = selectedMarkers.get(markerUuid);
+    return selectedMarker?.significance || 0;
   };
 
   // Get current rationale for a marker
-  const getMarkerRationale = (markerId: string): string => {
-    return selectedMarkers.get(markerId)?.rationale || '';
+  const getMarkerRationale = (markerUuid: string): string => {
+    // Find the selected marker by UUID
+    const selectedMarker = selectedMarkers.get(markerUuid);
+    return selectedMarker?.rationale || '';
   };
 
   // Render marker card
   const renderMarkerCard = (marker: IATIPolicyMarker) => {
-    const significance = getMarkerSignificance(marker.id);
-    const rationale = getMarkerRationale(marker.id);
+    const markerUuid = marker.uuid || marker.id; // Use UUID, fallback to ID
+    const significance = getMarkerSignificance(markerUuid);
+    const rationale = getMarkerRationale(markerUuid);
     const isSelected = significance > 0;
 
     return (
-      <div key={marker.id} className={`border rounded-lg p-4 transition-all ${
+      <div key={markerUuid} className={`border rounded-lg p-4 transition-all ${
         isSelected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-white'
       }`}>
         <div className="flex items-start justify-between">
@@ -547,9 +557,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
               <Label className="text-xs font-medium mb-1 block">Significance Level</Label>
               <PolicyMarkerScoreSelectIATI
                 value={significance}
-                onValueChange={(value) => updateMarkerSignificance(marker.id, value as 0 | 1 | 2 | 3 | 4)}
-                maxScore={marker.iati_code === '9' ? 4 : 2}
-                isRMNCH={marker.iati_code === '9'}
+                onValueChange={(value) => updateMarkerSignificance(markerUuid, value as 0 | 1 | 2 | 3 | 4)}
+                policyMarker={marker} // Use new IATI-compliant validation
               />
             </div>
             
@@ -561,9 +570,9 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                   value={rationale}
                   onChange={(e) => {
                     const newSelectedMarkers = new Map(selectedMarkers);
-                    const existingMarker = newSelectedMarkers.get(marker.id);
+                    const existingMarker = newSelectedMarkers.get(markerUuid);
                     if (existingMarker) {
-                      newSelectedMarkers.set(marker.id, {
+                      newSelectedMarkers.set(markerUuid, {
                         ...existingMarker,
                         rationale: e.target.value
                       });
@@ -626,10 +635,16 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           <h3 className="text-lg font-semibold">IATI Policy Markers</h3>
           <HelpText content={HELP_CONTENT} />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <div className="text-sm text-gray-600">
             {selectedCount} of {totalMarkers} markers selected
           </div>
+          {selectedCount > 0 && (
+            <div className="flex items-center gap-2 text-xs">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-green-700 font-medium">Policy markers saved</span>
+            </div>
+          )}
           <Dialog open={showAddCustomDialog} onOpenChange={setShowAddCustomDialog}>
             <DialogTrigger asChild>
               <Button size="sm" className="text-xs bg-blue-600 hover:bg-blue-700 text-white">
@@ -708,11 +723,13 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                           <SelectItem value="4">4 - Explicit primary objective</SelectItem>
                         </>
                       ) : (
-                        // Standard significance levels for other markers
+                        // Standard significance levels for other markers (including IATI levels 3 and 4)
                         <>
                           <SelectItem value="0">0 - Not targeted</SelectItem>
                           <SelectItem value="1">1 - Significant objective</SelectItem>
                           <SelectItem value="2">2 - Principal objective</SelectItem>
+                          <SelectItem value="3">3 - Most funding targeted</SelectItem>
+                          <SelectItem value="4">4 - Explicit primary objective</SelectItem>
                         </>
                       )}
                     </SelectContent>
@@ -825,11 +842,13 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                           <SelectItem value="4">4 - Explicit primary objective</SelectItem>
                         </>
                       ) : (
-                        // Standard significance levels for other markers
+                        // Standard significance levels for other markers (including IATI levels 3 and 4)
                         <>
                           <SelectItem value="0">0 - Not targeted</SelectItem>
                           <SelectItem value="1">1 - Significant objective</SelectItem>
                           <SelectItem value="2">2 - Principal objective</SelectItem>
+                          <SelectItem value="3">3 - Most funding targeted</SelectItem>
+                          <SelectItem value="4">4 - Explicit primary objective</SelectItem>
                         </>
                       )}
                     </SelectContent>
@@ -897,6 +916,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           {Object.entries(MARKER_TYPE_LABELS).map(([type, label]) => {
             const typeMarkers = getMarkersByType(type);
             const selectedInType = typeMarkers.filter(m => selectedMarkers.has(m.id)).length;
+            const totalInType = typeMarkers.length;
             
             return (
               <TabsTrigger key={type} value={type} className="relative">
@@ -905,11 +925,16 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                   <span className="hidden sm:inline">{label}</span>
                   <span className="sm:hidden">{label.split(' ')[0]}</span>
                 </div>
-                {selectedInType > 0 && (
-                  <Badge variant="secondary" className="ml-2 text-xs bg-gray-100 text-gray-700">
-                    {selectedInType}
-                  </Badge>
-                )}
+                <Badge 
+                  variant={selectedInType > 0 ? "default" : "secondary"} 
+                  className={`ml-2 text-xs ${
+                    selectedInType > 0 
+                      ? 'bg-green-100 text-green-700 border-green-200' 
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {selectedInType}/{totalInType}
+                </Badge>
               </TabsTrigger>
             );
           })}

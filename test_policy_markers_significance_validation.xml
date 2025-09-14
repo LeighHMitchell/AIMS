@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2025-09-13T00:00:00Z">
+  <iati-activity>
+    <iati-identifier>TEST-SIGNIFICANCE-VALIDATION-001</iati-identifier>
+    <title>
+      <narrative>Test Activity for Policy Marker Significance Validation</narrative>
+    </title>
+    <description type="1">
+      <narrative>This activity tests IATI v2.03 policy marker significance validation rules</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date iso-date="2025-01-01" type="1"/>
+    <activity-date iso-date="2025-12-31" type="3"/>
+
+    <!-- Valid standard marker: Gender Equality with significance 2 (allowed) -->
+    <policy-marker vocabulary="1" code="1" significance="2">
+      <narrative>Principal objective for gender equality</narrative>
+    </policy-marker>
+
+    <!-- Valid RMNCH marker with significance 4 (allowed only for RMNCH) -->
+    <policy-marker vocabulary="1" code="9" significance="4">
+      <narrative>Explicit primary objective for RMNCH</narrative>
+    </policy-marker>
+
+    <!-- Valid Desertification marker with significance 3 (allowed only for Desertification) -->
+    <policy-marker vocabulary="1" code="8" significance="3">
+      <narrative>Principal objective in support of action programme</narrative>
+    </policy-marker>
+
+    <!-- Valid custom marker with significance 3 (custom markers allow 0-4) -->
+    <policy-marker vocabulary="99" vocabulary-uri="http://example.com/vocab.html" code="CUSTOM1" significance="3">
+      <narrative>Custom policy marker with high significance</narrative>
+    </policy-marker>
+
+    <!-- INVALID: Standard marker with significance 3 (should fail) -->
+    <policy-marker vocabulary="1" code="2" significance="3">
+      <narrative>This should fail - Environment marker with significance 3</narrative>
+    </policy-marker>
+
+  </iati-activity>
+</iati-activities>

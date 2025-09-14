@@ -2445,7 +2445,7 @@ function NewActivityPageContent() {
         if (activityId) {
           // OPTIMIZATION: Use cached activity data if available
           console.log('[AIMS] Loading activity with cache:', activityId);
-          const data = await fetchActivityWithCache(activityId);
+          const data = await fetchActivityWithCache(activityId, true); // Use basic endpoint to get location data
           console.log('[AIMS] Activity loaded:', data.title);
           console.log('[AIMS DEBUG] Organization data from API:', {
             created_by_org_name: data.created_by_org_name,
@@ -2546,6 +2546,17 @@ function NewActivityPageContent() {
             setCoverageAreas(data.locations.coverageAreas || []);
           } else {
             console.log('[Activity New] No locations data in response');
+          }
+          
+          // Set countries and regions data for tab completion
+          if (data.recipient_countries) {
+            console.log('[Activity New] Countries data received:', data.recipient_countries);
+            setCountries(data.recipient_countries || []);
+          }
+          
+          if (data.recipient_regions) {
+            console.log('[Activity New] Regions data received:', data.recipient_regions);
+            setRegions(data.recipient_regions || []);
           }
           
           // Activity scope is now handled in general state
@@ -2820,10 +2831,12 @@ function NewActivityPageContent() {
     // SDG tab: green check if at least one SDG goal is mapped
     const sdgComplete = sdgMappings && sdgMappings.length > 0;
 
-    // Locations tab: use the comprehensive locations completion check (includes subnational breakdown)
+    // Locations tab: use the comprehensive locations completion check (includes subnational breakdown, countries, and regions)
     const locationsCompletion = getTabCompletionStatus('locations', { 
       specificLocations, 
-      subnationalBreakdowns 
+      subnationalBreakdowns,
+      countries,
+      regions
     });
 
     // Tags tab: use the comprehensive tags completion check

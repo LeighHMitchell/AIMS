@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2025-09-13T00:00:00Z">
+  <iati-activity>
+    <iati-identifier>TEST-SIMPLE-POLICY-MARKERS-001</iati-identifier>
+    <title>
+      <narrative>Simple Policy Marker Test</narrative>
+    </title>
+    <description type="1">
+      <narrative>Testing policy marker validation with simple examples</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date iso-date="2025-01-01" type="1"/>
+
+    <!-- Valid: Gender Equality with significance 2 -->
+    <policy-marker vocabulary="1" code="1" significance="2">
+      <narrative>Principal objective for gender equality</narrative>
+    </policy-marker>
+
+    <!-- INVALID: Environment with significance 3 (should fail) -->
+    <policy-marker vocabulary="1" code="2" significance="3">
+      <narrative>This should fail - Environment marker with significance 3</narrative>
+    </policy-marker>
+
+  </iati-activity>
+</iati-activities>

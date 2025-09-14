@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities>
+  <iati-activity>
+    <iati-identifier>TEST-001</iati-identifier>
+    <title>
+      <narrative>Test Activity for Policy Markers</narrative>
+    </title>
+    <!--policy-marker starts-->
+    <policy-marker vocabulary="1" code="2" significance="3" />
+    <policy-marker vocabulary="1" code="9" significance="4" />
+    <policy-marker vocabulary="99" vocabulary-uri="http://example.com/vocab.html" code="A1" significance="3" />
+    <!--policy-marker ends-->
+  </iati-activity>
+</iati-activities>

@@ -131,6 +131,7 @@ interface ParsedActivity {
   // Policy Markers
   policyMarkers?: Array<{
     vocabulary?: string;
+    vocabulary_uri?: string;
     code?: string;
     significance?: string;
     narrative?: string;
@@ -663,6 +664,7 @@ export class IATIXMLParser {
         const marker = policyMarkers[i];
         result.policyMarkers.push({
           vocabulary: marker.getAttribute('vocabulary') || undefined,
+          vocabulary_uri: marker.getAttribute('vocabulary-uri') || undefined,
           code: marker.getAttribute('code') || undefined,
           significance: marker.getAttribute('significance') || undefined,
           narrative: this.extractNarrative(marker),

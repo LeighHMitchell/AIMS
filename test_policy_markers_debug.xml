@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2025-01-15T10:00:00Z">
+  <iati-activity>
+    <iati-identifier>TEST-DEBUG-POLICY-MARKERS-001</iati-identifier>
+    <reporting-org ref="US-1" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Debug Policy Markers Test Activity</narrative>
+    </title>
+    <description>
+      <narrative>This activity tests specific policy marker import issues</narrative>
+    </description>
+    
+    <!-- Test the specific markers that aren't importing -->
+    <policy-marker vocabulary="1" code="2" significance="3">
+      <narrative>Aid to Environment - Principal objective</narrative>
+    </policy-marker>
+    
+    <policy-marker vocabulary="1" code="9" significance="4">
+      <narrative>RMNCH - Explicit primary objective</narrative>
+    </policy-marker>
+    
+    <!-- Test the one that IS working -->
+    <policy-marker vocabulary="99" vocabulary-uri="http://example.com/vocab.html" code="A1" significance="3">
+      <narrative>Custom Policy Marker A1 - Organization specific marker</narrative>
+    </policy-marker>
+    
+  </iati-activity>
+</iati-activities>
+
+
+
+

@@ -42,6 +42,9 @@ export async function GET(
         id,
         title_narrative,
         description_narrative,
+        description_objectives,
+        description_target_groups,
+        description_other,
         acronym,
         collaboration_type,
         activity_scope,
@@ -72,7 +75,16 @@ export async function GET(
         activity_sectors (
           id, activity_id, sector_code, sector_name, percentage, level, 
           category_code, category_name, type, created_at, updated_at
-        )
+        ),
+        activity_policy_markers (
+          id, activity_id, policy_marker_id, significance, rationale, created_at, updated_at,
+          policy_markers (
+            id, code, iati_code, name, vocabulary, is_iati_standard, created_at, updated_at
+          )
+        ),
+        recipient_countries,
+        recipient_regions,
+        custom_geographies
       `)
       .eq('id', id)
       .single();
@@ -98,6 +110,9 @@ export async function GET(
       title_narrative: activity.title_narrative,
       description: activity.description_narrative,
       description_narrative: activity.description_narrative,
+      description_objectives: activity.description_objectives,
+      description_target_groups: activity.description_target_groups,
+      description_other: activity.description_other,
       acronym: activity.acronym,
       partnerId: activity.other_identifier,
       iatiId: activity.iati_identifier,
@@ -145,7 +160,24 @@ export async function GET(
         categoryCode: sector.category_code || sector.sector_code?.substring(0, 3),
         categoryName: sector.category_name,
         type: sector.type || 'secondary'
-      })) || []
+      })) || [],
+      policyMarkers: activity.activity_policy_markers?.map((pm: any) => ({
+        id: pm.id,
+        policy_marker_id: pm.policy_marker_id,
+        significance: pm.significance,
+        rationale: pm.rationale,
+        policy_marker: pm.policy_markers ? {
+          id: pm.policy_markers.id,
+          code: pm.policy_markers.code,
+          iati_code: pm.policy_markers.iati_code,
+          name: pm.policy_markers.name,
+          vocabulary: pm.policy_markers.vocabulary,
+          is_iati_standard: pm.policy_markers.is_iati_standard
+        } : null
+      })) || [],
+      recipient_countries: activity.recipient_countries || [],
+      recipient_regions: activity.recipient_regions || [],
+      custom_geographies: activity.custom_geographies || []
     };
     
     console.log('[AIMS API] Basic activity transformed:', transformedActivity.title);
