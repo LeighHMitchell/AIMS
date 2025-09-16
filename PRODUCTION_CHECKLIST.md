@@ -2,148 +2,99 @@
 
 ## 🔴 Critical Issues to Fix
 
-### 1. Django Security Settings
-- [ ] Set `DEBUG = False` in production
-- [ ] Move `SECRET_KEY` to environment variable
-- [ ] Configure `ALLOWED_HOSTS` with your domain
-- [ ] Set `SESSION_COOKIE_SECURE = True` (requires HTTPS)
-- [ ] Set `CSRF_COOKIE_SECURE = True` (requires HTTPS)
-- [ ] Enable `SECURE_SSL_REDIRECT = True`
+### 1. Supabase Configuration
+- [ ] Verify Supabase environment variables are set
+- [ ] Test database connections and queries
+- [ ] Configure proper Row Level Security (RLS) policies
+- [ ] Set up proper authentication flows
+- [ ] Test all Supabase Storage operations
 
-### 2. Database Issues
-- [ ] Fix "column activities_1.title does not exist" error
-- [ ] Run all pending migrations
-- [ ] Switch from SQLite to PostgreSQL for production
-- [ ] Create database backups
+### 2. Frontend Configuration
+- [ ] Verify Next.js build works correctly
+- [ ] Test all API routes (`/api/*`)
+- [ ] Configure proper CORS settings
+- [ ] Set up proper error handling
+- [ ] Test all form submissions and data persistence
 
 ### 3. Environment Configuration
-- [ ] Create `.env.production` file
-- [ ] Never commit sensitive credentials
+- [ ] Create `.env.production` file with production Supabase credentials
+- [ ] Never commit sensitive credentials to version control
 - [ ] Use environment variables for all secrets
+- [ ] Verify all required environment variables are set
 
 ## 🟡 Important Tasks
 
-### 4. Django Production Setup
+### 4. Supabase Production Setup
+- [ ] Configure production Supabase project
+- [ ] Set up proper database backups and point-in-time recovery
+- [ ] Configure proper security policies and RLS
+- [ ] Test all database operations (CRUD)
+- [ ] Set up monitoring and logging
+- [ ] Configure proper connection pooling
+
+### 5. Frontend Production Setup
+- [ ] Configure Next.js for production deployment
+- [ ] Set up proper caching strategies
+- [ ] Configure CDN if needed (Vercel handles this automatically)
+- [ ] Test all functionality in production environment
+- [ ] Set up proper error monitoring (Sentry, etc.)
+- [ ] Configure proper logging
+
+### 6. Security Configuration
 ```bash
-# Install production dependencies
-pip install gunicorn whitenoise python-decouple psycopg2-binary
-
-# Generate requirements.txt
-pip freeze > requirements.txt
+# Ensure these are set in production
+NEXT_PUBLIC_SUPABASE_URL=your-production-supabase-url
+SUPABASE_SERVICE_ROLE_KEY=your-production-service-role-key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-production-anon-key
 ```
 
-### 5. Static Files Configuration
-```python
-# In settings.py
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-```
+### 7. Testing Checklist
+- [ ] Test user authentication (login/logout)
+- [ ] Test activity creation and editing
+- [ ] Test all form persistence fixes
+- [ ] Test file uploads to Supabase Storage
+- [ ] Test all API routes
+- [ ] Test database operations
+- [ ] Test error handling
 
-### 6. Update Django settings.py
-```python
-import os
-from decouple import config
+## ✅ Current Architecture
 
-# Security Settings
-DEBUG = config('DEBUG', default=False, cast=bool)
-SECRET_KEY = config('SECRET_KEY')
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+### Production Stack
+- **Frontend**: Next.js on Vercel
+- **Backend**: Supabase (PostgreSQL + Auth + Storage + Edge Functions)
+- **Database**: Supabase PostgreSQL with RLS
+- **Authentication**: Supabase Auth
+- **File Storage**: Supabase Storage
+- **Deployment**: Vercel (Frontend) + Supabase (Backend)
 
-# Database (PostgreSQL for production)
-if not DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME'),
-            'USER': config('DB_USER'),
-            'PASSWORD': config('DB_PASSWORD'),
-            'HOST': config('DB_HOST'),
-            'PORT': config('DB_PORT', default=5432),
-        }
-    }
+### Development Stack
+- **Frontend**: Next.js (`npm run dev`)
+- **Backend**: Supabase (local development or staging)
+- **Database**: Supabase PostgreSQL
+- **Authentication**: Supabase Auth
 
-# Security headers
-SECURE_SSL_REDIRECT = not DEBUG
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-```
+## 🚀 Deployment Steps
 
-### 7. Frontend Production Build
-```bash
-cd frontend
-npm run build
-```
+### 1. Supabase Setup
+1. Create production Supabase project
+2. Configure database schema
+3. Set up RLS policies
+4. Configure authentication providers
+5. Set up storage buckets
 
-### 8. CORS Configuration
-- [ ] Update CORS_ALLOWED_ORIGINS with production domain
-- [ ] Remove wildcard origins
+### 2. Vercel Deployment
+1. Connect GitHub repository to Vercel
+2. Configure environment variables in Vercel dashboard
+3. Deploy and test
 
-## 🟢 Pre-Deployment Steps
+### 3. Post-Deployment
+1. Test all functionality
+2. Monitor logs and performance
+3. Set up alerts and monitoring
+4. Create backup procedures
 
-### 9. Testing
-- [ ] Run all tests
-- [ ] Test user authentication flow
-- [ ] Test profile updates
-- [ ] Verify all API endpoints work
-
-### 10. Create Deployment Files
-
-**Procfile** (for Heroku):
-```
-web: gunicorn aims.wsgi
-release: python manage.py migrate
-```
-
-**runtime.txt**:
-```
-python-3.13.1
-```
-
-## 📊 Production Architecture
-
-### Recommended Setup:
-1. **Backend**: Django on Heroku/Railway/DigitalOcean
-2. **Frontend**: Next.js on Vercel
-3. **Database**: PostgreSQL (Heroku Postgres or Supabase)
-4. **Static Files**: Whitenoise or S3
-5. **Media Files**: S3 or Cloudinary
-
-## 🔒 Security Checklist
-
-- [ ] All passwords are strong
-- [ ] Database credentials are secure
-- [ ] API endpoints require authentication
-- [ ] HTTPS is enforced
-- [ ] Security headers are configured
-- [ ] Rate limiting is implemented
-- [ ] Error logs don't expose sensitive data
-
-## 🚦 Final Checks
-
-- [ ] Remove all `console.log` statements
-- [ ] Remove debug endpoints
-- [ ] Update API URLs to production
-- [ ] Configure error monitoring (Sentry)
-- [ ] Set up logging
-- [ ] Configure email settings
-- [ ] Test password reset flow
-
-## ⚠️ DO NOT Deploy Until:
-
-1. All critical issues are resolved
-2. Database migrations are tested
-3. Security settings are configured
-4. Environment variables are set
-5. Production build succeeds
-6. All tests pass
-
-## 📝 Post-Deployment
-
-- [ ] Monitor error logs
-- [ ] Set up database backups
-- [ ] Configure monitoring alerts
-- [ ] Document deployment process
-- [ ] Create rollback plan 
+## 📚 Documentation
+- All Django references have been removed
+- Architecture is now purely Supabase + Next.js
+- Simplified deployment process
+- Better performance and scalability

@@ -2669,6 +2669,96 @@ function NewActivityPageContent() {
     loadActivity();
   }, [searchParams, user]);
 
+
+  // CLEAN FIX: Form data persistence for General tab
+  // Save form data to localStorage when it changes (only for existing activities)
+  useEffect(() => {
+    if (general.id && general.id !== 'NEW' && user) {
+      const formData = {
+        general,
+        sectors,
+        transactions,
+        extendingPartners,
+        implementingPartners,
+        governmentPartners,
+        contacts,
+        contributors,
+        contributorsCount,
+        participatingOrgsCount,
+        linkedActivitiesCount,
+        resultsCount,
+        sdgMappings,
+        tags,
+        workingGroups,
+        policyMarkers,
+        specificLocations,
+        coverageAreas,
+        countries,
+        regions,
+        advancedLocations,
+        budgets,
+        plannedDisbursements,
+        documents,
+        focalPoints,
+        subnationalBreakdowns,
+        governmentInputs
+      };
+      saveFormData(formData);
+    }
+  }, [
+    general, sectors, transactions, extendingPartners, implementingPartners, 
+    governmentPartners, contacts, contributors, contributorsCount, 
+    participatingOrgsCount, linkedActivitiesCount, resultsCount,
+    sdgMappings, tags, workingGroups, policyMarkers, specificLocations, 
+    coverageAreas, countries, regions, advancedLocations, budgets, 
+    plannedDisbursements, documents, focalPoints, subnationalBreakdowns, 
+    governmentInputs, user
+    // NOTE: Intentionally exclude saveFormData to prevent infinite loops
+  ]);
+
+  // CLEAN FIX: General tab rehydration when accessed
+  useEffect(() => {
+    if (activeSection === 'general' && general.id && general.id !== 'NEW') {
+      const isGeneralTabEmpty = !general.banner && !general.icon && !general.acronym && !general.description;
+      
+      if (isGeneralTabEmpty) {
+        // Try localStorage first (fast)
+        const savedData = loadSavedFormData();
+        if (savedData?.general) {
+          console.log('[AIMS] Rehydrating General tab from localStorage');
+          setGeneral(prev => ({
+            ...prev,
+            ...savedData.general
+          }));
+        } else {
+          // Fallback to database (slower but reliable)
+          console.log('[AIMS] General tab empty, reloading from database');
+          const reloadFromDatabase = async () => {
+            try {
+              const data = await fetchActivityWithCache(general.id, true);
+              if (data) {
+                setGeneral(prev => ({
+                  ...prev,
+                  banner: data.banner || "",
+                  icon: data.icon || "",
+                  acronym: data.acronym || "",
+                  description: data.description || "",
+                  title: data.title || prev.title,
+                  descriptionObjectives: data.descriptionObjectives || "",
+                  descriptionTargetGroups: data.descriptionTargetGroups || "",
+                  descriptionOther: data.descriptionOther || ""
+                }));
+              }
+            } catch (error) {
+              console.error('[AIMS] Error reloading General tab data:', error);
+            }
+          };
+          reloadFromDatabase();
+        }
+      }
+    }
+  }, [activeSection, general.id, general.banner, general.icon, general.acronym, general.description]);
+
   // Debug logging for user role
   console.log('[AIMS DEBUG] Current user:', user);
   console.log('[AIMS DEBUG] User role:', user?.role);

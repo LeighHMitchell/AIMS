@@ -12,7 +12,7 @@ export const ROLE_LABELS = {
   [USER_ROLES.DEV_PARTNER_TIER_2]: "Review & Approval",
   [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Partner Tier 1",
   [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Partner Tier 2",
-  'admin': "Administrator", // Django admin role
+  'admin': "Administrator", // Legacy admin role
 } as const;
 
 export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
@@ -56,7 +56,7 @@ export interface User {
   preferredLanguage?: string;
   timezone?: string;
   notifications?: UserNotificationPreferences;
-  role: UserRole | 'admin'; // Allow 'admin' from Django backend
+  role: UserRole | 'admin'; // Allow 'admin' legacy role
   organizationId?: string;
   organization?: Organization; // Legacy - for backward compatibility
   title?: string; // Title (Mr., Mrs., Dr., etc.)
@@ -85,7 +85,7 @@ export interface UserPermissions {
 export function getUserPermissions(role: UserRole | string): UserPermissions {
   switch (role) {
     case USER_ROLES.SUPER_USER:
-    case 'admin': // Handle Django admin role
+    case 'admin': // Handle legacy admin role
       return {
         canCreateActivities: true,
         canValidateActivities: true,
