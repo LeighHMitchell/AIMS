@@ -50,7 +50,6 @@ import SDGAlignmentSection from "@/components/SDGAlignmentSection";
 import TagsSection from "@/components/TagsSection";
 import WorkingGroupsSection from "@/components/WorkingGroupsSection";
 import PolicyMarkersSectionIATIWithCustom from "@/components/PolicyMarkersSectionIATIWithCustom";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { SectorValidation } from "@/types/sector";
 import LinkedActivitiesEditorTab from "@/components/activities/LinkedActivitiesEditorTab";
 import { SubnationalBreakdownTab } from "@/components/activities/SubnationalBreakdownTab";
@@ -870,20 +869,21 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </div>
         </LabelSaveIndicator>
         <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-          <RichTextEditor
-            content={general.description || ''}
-            onChange={(content) => {
+          <Textarea
+            value={general.description || ''}
+            onChange={(e) => {
               if (!fieldLockStatus.isLocked) {
-                console.log('[GeneralSection] Description onChange triggered with content:', content);
+                console.log('[GeneralSection] Description onChange triggered with content:', e.target.value);
                 // Mark that the user has actually edited the description
                 hasUserEditedDescriptionRef.current = true;
-                setGeneral((g: any) => ({ ...g, description: content }));
-                descriptionAutosave.triggerFieldSave(content);
+                setGeneral((g: any) => ({ ...g, description: e.target.value }));
+                descriptionAutosave.triggerFieldSave(e.target.value);
               }
             }}
             placeholder="Describe your activity's objectives, scope, and expected outcomes..."
-            className="min-h-[300px]"
+            rows={6}
             disabled={fieldLockStatus.isLocked}
+            className="resize-y"
           />
         </div>
         {descriptionAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {descriptionAutosave.state.error.message}</p>}
@@ -921,17 +921,18 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           {visibleDescriptionFields.objectives && (
             <div className="mt-2">
               <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-                <RichTextEditor
-                  content={general.descriptionObjectives || ''}
-                  onChange={(content) => {
+                <Textarea
+                  value={general.descriptionObjectives || ''}
+                  onChange={(e) => {
                     if (!fieldLockStatus.isLocked) {
-                      setGeneral((g: any) => ({ ...g, descriptionObjectives: content }));
-                      descriptionObjectivesAutosave.triggerFieldSave(content);
+                      setGeneral((g: any) => ({ ...g, descriptionObjectives: e.target.value }));
+                      descriptionObjectivesAutosave.triggerFieldSave(e.target.value);
                     }
                   }}
                   placeholder="Describe the specific objectives of this activity..."
-                  className="min-h-[200px]"
+                  rows={6}
                   disabled={fieldLockStatus.isLocked}
+                  className="resize-y"
                 />
               </div>
               {descriptionObjectivesAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionObjectivesAutosave.state.error.message}</p>}
@@ -969,17 +970,18 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           {visibleDescriptionFields.targetGroups && (
             <div className="mt-2">
               <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-                <RichTextEditor
-                  content={general.descriptionTargetGroups || ''}
-                  onChange={(content) => {
+                <Textarea
+                  value={general.descriptionTargetGroups || ''}
+                  onChange={(e) => {
                     if (!fieldLockStatus.isLocked) {
-                      setGeneral((g: any) => ({ ...g, descriptionTargetGroups: content }));
-                      descriptionTargetGroupsAutosave.triggerFieldSave(content);
+                      setGeneral((g: any) => ({ ...g, descriptionTargetGroups: e.target.value }));
+                      descriptionTargetGroupsAutosave.triggerFieldSave(e.target.value);
                     }
                   }}
                   placeholder="Describe the target groups and beneficiaries of this activity..."
-                  className="min-h-[200px]"
+                  rows={6}
                   disabled={fieldLockStatus.isLocked}
+                  className="resize-y"
                 />
               </div>
               {descriptionTargetGroupsAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionTargetGroupsAutosave.state.error.message}</p>}
@@ -1017,17 +1019,18 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           {visibleDescriptionFields.other && (
             <div className="mt-2">
               <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-                <RichTextEditor
-                  content={general.descriptionOther || ''}
-                  onChange={(content) => {
+                <Textarea
+                  value={general.descriptionOther || ''}
+                  onChange={(e) => {
                     if (!fieldLockStatus.isLocked) {
-                      setGeneral((g: any) => ({ ...g, descriptionOther: content }));
-                      descriptionOtherAutosave.triggerFieldSave(content);
+                      setGeneral((g: any) => ({ ...g, descriptionOther: e.target.value }));
+                      descriptionOtherAutosave.triggerFieldSave(e.target.value);
                     }
                   }}
                   placeholder="Add any other relevant information about this activity..."
-                  className="min-h-[200px]"
+                  rows={6}
                   disabled={fieldLockStatus.isLocked}
+                  className="resize-y"
                 />
               </div>
               {descriptionOtherAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionOtherAutosave.state.error.message}</p>}

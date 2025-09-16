@@ -12,6 +12,7 @@ import { useParticipatingOrganizations } from "@/hooks/use-participating-organiz
 import { useOrganizations } from "@/hooks/use-organizations";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import Image from "next/image";
+import { v4 as uuidv4 } from 'uuid';
 
 interface OrganisationsSectionProps {
   extendingPartners: any[];
@@ -212,7 +213,7 @@ export default function OrganisationsSection({
     }
 
     const newContributor: ActivityContributor = {
-      id: `contrib_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      id: uuidv4(),
       organizationId: organization.id,
       organizationName: organization.name,
       status: 'nominated',
@@ -316,6 +317,49 @@ export default function OrganisationsSection({
 
 
 
+
+      {/* Funding Partners */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            Funding Partners
+            <HelpTextTooltip content="Organizations providing financial resources for the activity. They are the primary source of funding and may not be directly involved in implementation." />
+            {savingState.funding && (
+              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            {fundingOrgs.map((participatingOrg) => 
+              renderOrganizationCard(participatingOrg, 'funding')
+            )}
+
+            {fundingOrgs.length === 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
+                <p className="text-gray-500 text-center">No funding partners added</p>
+              </div>
+            )}
+          </div>
+
+          <OrganizationSearchableSelect
+            organizations={getAvailableOrganizations('funding')}
+            value=""
+            onValueChange={(organizationId) => {
+              console.log('[OrganisationsSection] Funding partner selected:', organizationId);
+              if (organizationId) {
+                handleAddOrganization(organizationId, 'funding');
+              }
+            }}
+            placeholder="Select a funding partner"
+            searchPlaceholder="Search funding partners..."
+            disabled={organizationsLoading}
+            className="w-full"
+            open={openDropdown === 'funding'}
+            onOpenChange={(open) => setOpenDropdown(open ? 'funding' : null)}
+          />
+        </CardContent>
+      </Card>
 
       {/* Extending Partners */}
       <Card>
@@ -446,49 +490,6 @@ export default function OrganisationsSection({
             open={openDropdown === 'government'}
             onOpenChange={(open) => setOpenDropdown(open ? 'government' : null)}
             forceDirection="up"
-          />
-        </CardContent>
-      </Card>
-
-      {/* Funding Partners */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            Funding Partners
-            <HelpTextTooltip content="Organizations providing financial resources for the activity. They are the primary source of funding and may not be directly involved in implementation." />
-            {savingState.funding && (
-              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            {fundingOrgs.map((participatingOrg) => 
-              renderOrganizationCard(participatingOrg, 'funding')
-            )}
-
-            {fundingOrgs.length === 0 && (
-              <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
-                <p className="text-gray-500 text-center">No funding partners added</p>
-              </div>
-            )}
-          </div>
-
-          <OrganizationSearchableSelect
-            organizations={getAvailableOrganizations('funding')}
-            value=""
-            onValueChange={(organizationId) => {
-              console.log('[OrganisationsSection] Funding partner selected:', organizationId);
-              if (organizationId) {
-                handleAddOrganization(organizationId, 'funding');
-              }
-            }}
-            placeholder="Select a funding partner"
-            searchPlaceholder="Search funding partners..."
-            disabled={organizationsLoading}
-            className="w-full"
-            open={openDropdown === 'funding'}
-            onOpenChange={(open) => setOpenDropdown(open ? 'funding' : null)}
           />
         </CardContent>
       </Card>

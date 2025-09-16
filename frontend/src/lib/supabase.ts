@@ -125,8 +125,12 @@ export type Database = {
           iati_identifier: string | null
           title_narrative: string
           description_narrative: string | null
-            created_by_org_name: string | null
-  created_by_org_acronym: string | null
+          acronym: string | null
+          description_objectives: string | null
+          description_target_groups: string | null
+          description_other: string | null
+          created_by_org_name: string | null
+          created_by_org_acronym: string | null
           collaboration_type: string | null
           activity_status: string
           publication_status: string

@@ -39,10 +39,11 @@ interface TopNavProps {
     }
   } | null
   canCreateActivities?: boolean
+  isInActivityEditor?: boolean
   onLogout?: () => void
 }
 
-export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
+export function TopNav({ user, canCreateActivities, isInActivityEditor = false, onLogout }: TopNavProps) {
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
   // Function to construct full name - only FirstName LastName
@@ -68,7 +69,13 @@ export function TopNav({ user, canCreateActivities, onLogout }: TopNavProps) {
           {/* Add New Activity Button - conditionally rendered but with stable structure */}
           <div className={canCreateActivities ? undefined : "hidden"}>
             <Link href="/activities/new">
-              <Button variant="default" size="sm">
+              <Button 
+                variant="default" 
+                size="sm"
+                disabled={isInActivityEditor}
+                className={isInActivityEditor ? "opacity-50 cursor-not-allowed" : ""}
+                title={isInActivityEditor ? "Please finish editing the current activity first" : "Create a new activity"}
+              >
                 <FolderPlus className="h-4 w-4 mr-2" />
                 Add New Activity
               </Button>

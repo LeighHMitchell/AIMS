@@ -61,6 +61,7 @@ import { SDG_GOALS, SDG_TARGETS } from "@/data/sdg-targets"
 import { SDGImageGrid } from "@/components/ui/SDGImageGrid"
 import SDGAlignmentSection from "@/components/SDGAlignmentSection"
 import ContributorsSection from "@/components/ContributorsSection"
+import { useContributors } from "@/hooks/use-contributors"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActivityProfileSkeleton } from "@/components/skeletons/ActivityProfileSkeleton"
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
@@ -72,6 +73,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
+import { v4 as uuidv4 } from 'uuid'
 
 
 interface Activity {
@@ -145,6 +147,7 @@ export default function ActivityDetailPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const router = useRouter()
   const { user } = useUser()
+  const { contributors } = useContributors(id)
   const searchParams = useSearchParams()
   
   // Set initial tab from URL parameter
@@ -364,7 +367,7 @@ export default function ActivityDetailPage() {
     }
     
     const newContributor: ActivityContributor = {
-      id: `contrib_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      id: uuidv4(),
       organizationId: user.organizationId,
       organizationName: user.organization?.name || 'Unknown Organization',
       status: 'requested',
@@ -950,6 +953,11 @@ export default function ActivityDetailPage() {
                 </TabsTrigger>
                 <TabsTrigger value="contributors" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Contributors
+                  {contributors && contributors.length > 0 && (
+                    <Badge variant="outline" className="ml-1 text-xs border-slate-300">
+                      {contributors.length}
+                    </Badge>
+                  )}
                 </TabsTrigger>
                 <TabsTrigger value="comments" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Comments

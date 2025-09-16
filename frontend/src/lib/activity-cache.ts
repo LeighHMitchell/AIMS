@@ -148,7 +148,13 @@ export async function fetchBasicActivityWithCache(activityId: string): Promise<a
 
 // Invalidate cache when activity is updated
 export function invalidateActivityCache(activityId: string): void {
-  const cacheKey = createActivityCacheKey(activityId);
-  activityCache.delete(cacheKey);
-  console.log('[Activity Cache] Invalidated cache for activity:', activityId);
+  // Clear both the full and basic cache keys to prevent stale data
+  const fullCacheKey = createActivityCacheKey(activityId);
+  const basicCacheKey = createActivityCacheKey(activityId, 'basic');
+
+  // Delete both cache entries
+  activityCache.delete(fullCacheKey);
+  activityCache.delete(basicCacheKey);
+
+  console.log('[Activity Cache] Invalidated both full and basic cache for activity:', activityId);
 }

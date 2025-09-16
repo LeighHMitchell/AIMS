@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FEEDBACK_TYPES, FEEDBACK_STATUS_TYPES, FEEDBACK_PRIORITY_TYPES } from '@/data/feedback-types';
 import { ALL_APP_FEATURES, APP_FEATURES } from '@/data/app-features';
-import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, RefreshCw, Clock, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search } from 'lucide-react';
+import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
@@ -155,7 +155,6 @@ export function FeedbackManagement() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState(Date.now());
   
   // Sorting state
   const [sortField, setSortField] = useState<string>('created_at');
@@ -510,28 +509,6 @@ export function FeedbackManagement() {
             </div>
           </div>
           
-          {/* Refresh Controls */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  fetchFeedback();
-                  setLastRefresh(Date.now());
-                }}
-                disabled={loading}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Clock className="h-4 w-4" />
-              Last updated: {formatDistanceToNow(lastRefresh, { addSuffix: true })}
-            </div>
-          </div>
         </CardContent>
       </Card>
 

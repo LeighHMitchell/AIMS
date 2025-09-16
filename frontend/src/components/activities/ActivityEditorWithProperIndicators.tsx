@@ -363,7 +363,7 @@ export function ActivityEditorWithProperIndicators({
                     A detailed description of the activity's purpose and scope.
                   </HelpTextTooltip>
                 }
-                rows={4}
+                rows={3}
                 autosaveState={descriptionAutosave.state}
                 triggerSave={descriptionAutosave.triggerFieldSave}
                 saveOnBlur={true}

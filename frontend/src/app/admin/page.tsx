@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useUser } from "@/hooks/useUser"
 import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
@@ -12,9 +12,14 @@ import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
 
-export default function AdminPage() {
+function AdminPageContent() {
   const { user, isLoading } = useUser()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = useState("users")
+
+  // Valid tab values
+  const validTabs = ["users", "import-logs", "validations", "feedback", "systems"]
 
   useEffect(() => {
     // Redirect if user is not super_user
@@ -22,6 +27,24 @@ export default function AdminPage() {
       router.push("/")
     }
   }, [user, isLoading, router])
+
+  // Initialize tab from URL or default to "users"
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab")
+    if (tabFromUrl && validTabs.includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl)
+    } else {
+      setActiveTab("users")
+    }
+  }, [searchParams])
+
+  // Handle tab change and update URL
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", value)
+    router.replace(`/admin?${params.toString()}`, { scroll: false })
+  }
 
   if (isLoading) {
     return (
@@ -70,7 +93,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="users" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -148,5 +171,13 @@ export default function AdminPage() {
         </Tabs>
       </div>
     </MainLayout>
+  )
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminPageContent />
+    </Suspense>
   )
 } 

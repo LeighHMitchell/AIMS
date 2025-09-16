@@ -23,9 +23,14 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
   // Initialize smart pre-caching based on current path
   useSmartPreCache(pathname || '');
 
+  // Check if user is currently in the activity editor
+  const isInActivityEditor = pathname?.includes('/activities/new') || 
+                            (pathname?.includes('/activities/') && pathname?.includes('/edit'));
+
   // Debug log
   console.log('[MainLayout] Rendering with user:', user);
   console.log('[MainLayout] User authenticated:', !!user);
+  console.log('[MainLayout] Is in activity editor:', isInActivityEditor);
 
   const content = (
     <div className="flex h-screen overflow-hidden bg-background border-0">
@@ -62,6 +67,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
           key={user?.profilePicture || 'no-profile-pic'} 
           user={user}
           canCreateActivities={permissions.canCreateActivities}
+          isInActivityEditor={isInActivityEditor}
           onLogout={logout}
         />
 

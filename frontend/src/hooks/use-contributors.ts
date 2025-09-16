@@ -46,7 +46,7 @@ export function useContributors(activityId: string | undefined) {
       setError(null);
       
       console.log('[useContributors] Fetching contributors for activity:', activityId);
-      const response = await fetch(`/api/activities/${activityId}/contributors`);
+      const response = await fetch(`/api/activity-contributors?activityId=${activityId}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch contributors: ${response.status}`);
@@ -86,12 +86,15 @@ export function useContributors(activityId: string | undefined) {
     try {
       console.log('[useContributors] Adding contributor:', contributorData);
       
-      const response = await fetch(`/api/activities/${activityId}/contributors`, {
+      const response = await fetch(`/api/activity-contributors`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(contributorData),
+        body: JSON.stringify({
+          ...contributorData,
+          activityId: activityId
+        }),
       });
 
       if (!response.ok) {
@@ -163,7 +166,7 @@ export function useContributors(activityId: string | undefined) {
     try {
       console.log('[useContributors] Removing contributor:', contributorId);
       
-      const response = await fetch(`/api/activities/${activityId}/contributors?contributorId=${contributorId}`, {
+      const response = await fetch(`/api/activity-contributors?contributorId=${contributorId}`, {
         method: 'DELETE',
       });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import { ProjectContributor, CONTRIBUTOR_STATUS } from '@/types/project';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     // Create new contributor
     const newContributor: ProjectContributor = {
-      id: `contrib_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      id: uuidv4(),
       projectId: body.projectId,
       organizationId: body.organizationId,
       organizationName: body.organizationName,
