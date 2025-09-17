@@ -2294,6 +2294,14 @@ function NewActivityPageContent() {
         if (activityId) {
           // OPTIMIZATION: Use cached activity data if available
           console.log('[AIMS] Loading activity with cache:', activityId);
+          
+          // RACE CONDITION FIX: Add small delay to ensure all pending autosaves complete
+          // This prevents loading stale cached data when activity was just created
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // ADDITIONAL FIX: Force cache invalidation before loading to ensure fresh data
+          invalidateActivityCache(activityId);
+          
           const data = await fetchActivityWithCache(activityId, true); // Use basic endpoint to get location data
           console.log('[AIMS] Activity loaded:', data.title);
           console.log('[AIMS DEBUG] Organization data from API:', {
