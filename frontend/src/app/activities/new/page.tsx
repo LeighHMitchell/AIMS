@@ -629,6 +629,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               value={general.title || ''}
               onChange={(e) => {
                 setGeneral((g: any) => ({ ...g, title: e.target.value }));
+                if (e.target.value.trim()) {
+                  titleAutosave.triggerFieldSave(e.target.value);
+                }
               }}
               onBlur={(e) => {
                 if (e.target.value.trim()) {
@@ -669,6 +672,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               onChange={(e) => {
                 if (general.title?.trim()) {
                   setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
+                  if (e.target.value.trim()) {
+                    acronymAutosave.triggerFieldSave(e.target.value);
+                  }
                 }
               }}
               onBlur={(e) => {
