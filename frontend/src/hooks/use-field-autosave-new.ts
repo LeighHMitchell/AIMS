@@ -275,7 +275,7 @@ export function useFieldAutosave(
       if (activityId && activityId !== 'NEW') {
         invalidateActivityCache(activityId);
       }
-      
+
       onSuccess?.(responseData, isUserInitiatedRef.current);
       console.log(`[FieldAutosave] Field ${fieldName} saved successfully`);
 

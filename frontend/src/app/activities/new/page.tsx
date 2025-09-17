@@ -1681,16 +1681,12 @@ function NewActivityPageContent() {
   const [general, setGeneral] = useState(() => {
     // Check if we're editing an existing activity or creating a new one
     const activityId = searchParams?.get("id");
-    
-    if (activityId) {
-      // Editing existing activity - load saved data
-      const savedData = loadSavedFormData();
-      if (savedData?.general) {
-        return savedData.general;
-      }
-    }
-    
-    // New activity or no saved data - start with blank defaults
+
+    // Don't use localStorage for existing activities - always fetch fresh from API
+    // localStorage is only for preserving unsaved NEW activity drafts
+
+    // Start with blank defaults for all cases
+    // The useEffect will populate with API data for existing activities
     return {
       id: "",
       partnerId: "",
@@ -1746,11 +1742,7 @@ function NewActivityPageContent() {
 
   // Initialize other form sections with saved data or defaults
   const [sectors, setSectors] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.sectors || [];
-    }
+    // Don't use localStorage for existing activities
     return [];
   });
 
@@ -1771,212 +1763,51 @@ function NewActivityPageContent() {
     setSectorsCompletionStatus(newStatus);
   }, []);
   
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.transactions || [];
-    }
-    return [];
-  });
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   
-  const [extendingPartners, setExtendingPartners] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.extendingPartners || [];
-    }
-    return [];
-  });
+  const [extendingPartners, setExtendingPartners] = useState<any[]>([]);
   
-  const [implementingPartners, setImplementingPartners] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.implementingPartners || [];
-    }
-    return [];
-  });
+  const [implementingPartners, setImplementingPartners] = useState<any[]>([]);
   
-  const [governmentPartners, setGovernmentPartners] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.governmentPartners || [];
-    }
-    return [];
-  });
+  const [governmentPartners, setGovernmentPartners] = useState<any[]>([]);
   
-  const [fundingPartners, setFundingPartners] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.fundingPartners || [];
-    }
-    return [];
-  });
+  const [fundingPartners, setFundingPartners] = useState<any[]>([]);
   
-  const [contacts, setContacts] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.contacts || [];
-    }
-    return [];
-  });
+  const [contacts, setContacts] = useState<any[]>([]);
   
-  const [governmentInputs, setGovernmentInputs] = useState<any>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.governmentInputs || {};
-    }
-    return {};
-  });
+  const [governmentInputs, setGovernmentInputs] = useState<any>({});
   
-  const [contributors, setContributors] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.contributors || [];
-    }
-    return [];
-  });
+  const [contributors, setContributors] = useState<any[]>([]);
   
-  const [sdgMappings, setSdgMappings] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.sdgMappings || [];
-    }
-    return [];
-  });
+  const [sdgMappings, setSdgMappings] = useState<any[]>([]);
   
-  const [tags, setTags] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.tags || [];
-    }
-    return [];
-  });
+  const [tags, setTags] = useState<any[]>([]);
   
-  const [workingGroups, setWorkingGroups] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.workingGroups || [];
-    }
-    return [];
-  });
+  const [workingGroups, setWorkingGroups] = useState<any[]>([]);
   
-  const [policyMarkers, setPolicyMarkers] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.policyMarkers || [];
-    }
-    return [];
-  });
+  const [policyMarkers, setPolicyMarkers] = useState<any[]>([]);
   
-  const [specificLocations, setSpecificLocations] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.specificLocations || [];
-    }
-    return [];
-  });
+  const [specificLocations, setSpecificLocations] = useState<any[]>([]);
   
-  const [coverageAreas, setCoverageAreas] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.coverageAreas || [];
-    }
-    return [];
-  });
+  const [coverageAreas, setCoverageAreas] = useState<any[]>([]);
   
-  const [countries, setCountries] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.countries || [];
-    }
-    return [];
-  });
+  const [countries, setCountries] = useState<any[]>([]);
   
-  const [regions, setRegions] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.regions || [];
-    }
-    return [];
-  });
+  const [regions, setRegions] = useState<any[]>([]);
   
-  const [advancedLocations, setAdvancedLocations] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.advancedLocations || [];
-    }
-    return [];
-  });
+  const [advancedLocations, setAdvancedLocations] = useState<any[]>([]);
   
-  const [activityScope, setActivityScope] = useState<any>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.activityScope || {};
-    }
-    return {};
-  });
+  const [activityScope, setActivityScope] = useState<any>({});
   
-  const [budgets, setBudgets] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.budgets || [];
-    }
-    return [];
-  });
+  const [budgets, setBudgets] = useState<any[]>([]);
   
-  const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.plannedDisbursements || [];
-    }
-    return [];
-  });
+  const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([]);
   
-  const [documents, setDocuments] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.documents || [];
-    }
-    return [];
-  });
+  const [documents, setDocuments] = useState<any[]>([]);
   
-  const [focalPoints, setFocalPoints] = useState<any[]>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.focalPoints || [];
-    }
-    return [];
-  });
+  const [focalPoints, setFocalPoints] = useState<any[]>([]);
   
-  const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>(() => {
-    const activityId = searchParams?.get("id");
-    if (activityId) {
-      const savedData = loadSavedFormData();
-      return savedData?.subnationalBreakdowns || {};
-    }
-    return {};
-  });
+  const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>({});
 
   // Add missing state variables
   const [transactionsLoaded, setTransactionsLoaded] = useState(false);
@@ -2670,94 +2501,14 @@ function NewActivityPageContent() {
   }, [searchParams, user]);
 
 
-  // CLEAN FIX: Form data persistence for General tab
-  // Save form data to localStorage when it changes (only for existing activities)
-  useEffect(() => {
-    if (general.id && general.id !== 'NEW' && user) {
-      const formData = {
-        general,
-        sectors,
-        transactions,
-        extendingPartners,
-        implementingPartners,
-        governmentPartners,
-        contacts,
-        contributors,
-        contributorsCount,
-        participatingOrgsCount,
-        linkedActivitiesCount,
-        resultsCount,
-        sdgMappings,
-        tags,
-        workingGroups,
-        policyMarkers,
-        specificLocations,
-        coverageAreas,
-        countries,
-        regions,
-        advancedLocations,
-        budgets,
-        plannedDisbursements,
-        documents,
-        focalPoints,
-        subnationalBreakdowns,
-        governmentInputs
-      };
-      saveFormData(formData);
-    }
-  }, [
-    general, sectors, transactions, extendingPartners, implementingPartners, 
-    governmentPartners, contacts, contributors, contributorsCount, 
-    participatingOrgsCount, linkedActivitiesCount, resultsCount,
-    sdgMappings, tags, workingGroups, policyMarkers, specificLocations, 
-    coverageAreas, countries, regions, advancedLocations, budgets, 
-    plannedDisbursements, documents, focalPoints, subnationalBreakdowns, 
-    governmentInputs, user
-    // NOTE: Intentionally exclude saveFormData to prevent infinite loops
-  ]);
+  // REMOVED: localStorage persistence for existing activities
+  // This was causing stale data issues on page refresh
+  // Existing activities should always fetch fresh data from the API
+  // localStorage is only used for NEW unsaved activities (handled by the other useEffect)
 
-  // CLEAN FIX: General tab rehydration when accessed
-  useEffect(() => {
-    if (activeSection === 'general' && general.id && general.id !== 'NEW') {
-      const isGeneralTabEmpty = !general.banner && !general.icon && !general.acronym && !general.description;
-      
-      if (isGeneralTabEmpty) {
-        // Try localStorage first (fast)
-        const savedData = loadSavedFormData();
-        if (savedData?.general) {
-          console.log('[AIMS] Rehydrating General tab from localStorage');
-          setGeneral(prev => ({
-            ...prev,
-            ...savedData.general
-          }));
-        } else {
-          // Fallback to database (slower but reliable)
-          console.log('[AIMS] General tab empty, reloading from database');
-          const reloadFromDatabase = async () => {
-            try {
-              const data = await fetchActivityWithCache(general.id, true);
-              if (data) {
-                setGeneral(prev => ({
-                  ...prev,
-                  banner: data.banner || "",
-                  icon: data.icon || "",
-                  acronym: data.acronym || "",
-                  description: data.description || "",
-                  title: data.title || prev.title,
-                  descriptionObjectives: data.descriptionObjectives || "",
-                  descriptionTargetGroups: data.descriptionTargetGroups || "",
-                  descriptionOther: data.descriptionOther || ""
-                }));
-              }
-            } catch (error) {
-              console.error('[AIMS] Error reloading General tab data:', error);
-            }
-          };
-          reloadFromDatabase();
-        }
-      }
-    }
-  }, [activeSection, general.id, general.banner, general.icon, general.acronym, general.description]);
+  // REMOVED: General tab rehydration logic
+  // This was causing issues with stale localStorage data
+  // All data should be loaded by the main useEffect on page load
 
   // Debug logging for user role
   console.log('[AIMS DEBUG] Current user:', user);
