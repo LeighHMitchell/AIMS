@@ -99,6 +99,7 @@ export async function GET(
 
     console.log('[AIMS API] Basic activity data fetched successfully');
     console.log('[AIMS API] Raw activity data - title:', activity.title_narrative, 'acronym:', activity.acronym);
+    console.log('[AIMS API] Full raw activity object:', JSON.stringify(activity, null, 2));
     
     // Extract sectors
     const sectors = activity.activity_sectors || [];
@@ -185,6 +186,8 @@ export async function GET(
     };
     
     console.log('[AIMS API] Basic activity transformed:', transformedActivity.title);
+    console.log('[AIMS API] Final response acronym:', transformedActivity.acronym);
+    console.log('[AIMS API] Full transformed activity object:', JSON.stringify(transformedActivity, null, 2));
     
     return NextResponse.json(transformedActivity);
   } catch (error) {
