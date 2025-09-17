@@ -2333,8 +2333,8 @@ function NewActivityPageContent() {
           // This ensures we get the most up-to-date data when loading after activity creation
           console.log('[AIMS] Waiting for pending autosave operations to complete...');
           
-          // Wait for all pending saves to complete (with longer delay)
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds for all pending saves
+          // Wait for all pending saves to complete (with shorter delay)
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms for all pending saves
           
           // Force cache invalidation to ensure fresh data
           invalidateActivityCache(activityId);

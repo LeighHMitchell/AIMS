@@ -279,9 +279,12 @@ export function useFieldAutosave(
       retryCountRef.current = 0;
       
       // OPTIMIZATION: Invalidate activity cache when field is updated
+      // Add delay to ensure database consistency before cache invalidation
       if (activityId && activityId !== 'NEW') {
-        invalidateActivityCache(activityId);
-        console.log(`[FieldAutosave] Cache invalidated for activity: ${activityId}`);
+        setTimeout(() => {
+          invalidateActivityCache(activityId);
+          console.log(`[FieldAutosave] Cache invalidated for activity: ${activityId} (delayed)`);
+        }, 200); // 200ms delay to ensure database is consistent
       }
 
       onSuccess?.(responseData, isUserInitiatedRef.current);

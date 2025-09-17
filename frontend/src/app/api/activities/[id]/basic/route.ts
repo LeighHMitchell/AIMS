@@ -25,6 +25,9 @@ export async function GET(
     
     console.log('[AIMS API] GET /api/activities/[id]/basic - Fetching basic activity:', id);
     
+    // Add a small delay to ensure database consistency
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     const supabase = getSupabaseAdmin();
     
     if (!supabase) {
@@ -33,6 +36,20 @@ export async function GET(
         { error: 'Database connection not configured' },
         { status: 503 }
       );
+    }
+    
+    // First, let's do a simple query to check just the acronym field
+    console.log('[AIMS API] Checking acronym field specifically...');
+    const { data: acronymCheck, error: acronymError } = await supabase
+      .from('activities')
+      .select('id, acronym, title_narrative')
+      .eq('id', id)
+      .single();
+    
+    if (acronymError) {
+      console.error('[AIMS API] Error checking acronym:', acronymError);
+    } else {
+      console.log('[AIMS API] Acronym check result:', acronymCheck);
     }
     
     // Fetch only essential activity fields for editor performance
@@ -99,7 +116,15 @@ export async function GET(
 
     console.log('[AIMS API] Basic activity data fetched successfully');
     console.log('[AIMS API] Raw activity data - title:', activity.title_narrative, 'acronym:', activity.acronym);
+    console.log('[AIMS API] Acronym type:', typeof activity.acronym, 'Value:', activity.acronym);
     console.log('[AIMS API] Full raw activity object:', JSON.stringify(activity, null, 2));
+    
+    // Check if acronym is null or undefined
+    if (activity.acronym === null || activity.acronym === undefined) {
+      console.log('[AIMS API] WARNING: Acronym is null/undefined in database query result');
+    } else {
+      console.log('[AIMS API] Acronym found in database:', activity.acronym);
+    }
     
     // Extract sectors
     const sectors = activity.activity_sectors || [];

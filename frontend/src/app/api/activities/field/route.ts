@@ -768,6 +768,26 @@ export async function POST(request: Request) {
         .single();
       updatedActivity = updateResult.data;
       updateError = updateResult.error;
+      
+      // CRITICAL: Ensure the update is fully committed before proceeding
+      if (!updateError && updatedActivity) {
+        console.log('[Field API] Update successful, verifying data consistency...');
+        // Add a small delay to ensure database consistency
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verify the update was actually committed by re-reading the record
+        const { data: verifyData, error: verifyError } = await getSupabaseAdmin()
+          .from('activities')
+          .select('id, acronym, title_narrative')
+          .eq('id', body.activityId)
+          .single();
+          
+        if (verifyError) {
+          console.error('[Field API] Verification failed:', verifyError);
+        } else {
+          console.log('[Field API] Verification successful - acronym:', verifyData?.acronym, 'title:', verifyData?.title_narrative);
+        }
+      }
 
       if (updateError) {
         console.error('[Field API] Error updating field:', updateError);
