@@ -2346,6 +2346,11 @@ function NewActivityPageContent() {
           
           const data = await response.json();
           console.log('[AIMS] Activity loaded:', data.title);
+          console.log('[AIMS DEBUG] Title and Acronym from API:', {
+            title: data.title,
+            acronym: data.acronym,
+            title_narrative: data.title_narrative
+          });
           console.log('[AIMS DEBUG] Organization data from API:', {
             created_by_org_name: data.created_by_org_name,
             created_by_org_acronym: data.created_by_org_acronym,

@@ -98,6 +98,7 @@ export async function GET(
     }
 
     console.log('[AIMS API] Basic activity data fetched successfully');
+    console.log('[AIMS API] Raw activity data - title:', activity.title_narrative, 'acronym:', activity.acronym);
     
     // Extract sectors
     const sectors = activity.activity_sectors || [];
