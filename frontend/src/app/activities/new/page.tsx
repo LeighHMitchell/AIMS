@@ -672,13 +672,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               onBlur={(e) => {
-                if (general.title?.trim() && general.id) {
+                if (general.title?.trim() && e.target.value.trim()) {
                   acronymAutosave.triggerFieldSave(e.target.value);
                 }
               }}
               placeholder="Enter acronym"
               className="w-full"
-              disabled={!general.id}
             />
             {acronymAutosave.state.error && (
               <p className="text-xs text-red-600 mt-1">{acronymAutosave.state.error.toString()}</p>
