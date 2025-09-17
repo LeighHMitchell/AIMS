@@ -22,6 +22,7 @@ import { CollaborationTypeSelect } from "@/components/forms/CollaborationTypeSel
 import { ActivityScopeSearchableSelect } from "@/components/forms/ActivityScopeSearchableSelect";
 import { DropdownProvider } from "@/contexts/DropdownContext";
 import { LinkedActivityTitle } from "@/components/ui/linked-activity-title";
+import { CreateActivityModal } from "@/components/modals/CreateActivityModal";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1610,6 +1611,9 @@ function NewActivityPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
+  // Modal state for activity creation
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  
   // Pre-cache common data for faster interactions
   const iatiReferenceCache = useIATIReferenceCache();
   const organizationsCache = useOrganizationsCache();
@@ -2279,6 +2283,13 @@ function NewActivityPageContent() {
 
 
   const isEditing = !!searchParams?.get("id");
+  
+  // Show modal if no activity ID (new activity creation)
+  useEffect(() => {
+    if (!isEditing && !userLoading) {
+      setShowCreateModal(true);
+    }
+  }, [isEditing, userLoading]);
   
   // Initialize activity editor pre-caching
   useEffect(() => {
@@ -3413,6 +3424,21 @@ function NewActivityPageContent() {
     return (
       <MainLayout>
         <ActivityEditorSkeleton />
+      </MainLayout>
+    );
+  }
+
+  // Show modal for new activity creation
+  if (!isEditing) {
+    return (
+      <MainLayout>
+        <CreateActivityModal 
+          isOpen={showCreateModal}
+          onClose={() => {
+            setShowCreateModal(false);
+            router.push('/activities');
+          }}
+        />
       </MainLayout>
     );
   }
