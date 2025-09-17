@@ -662,23 +662,18 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </HelpTextTooltip>
             </div>
           </LabelSaveIndicator>
-          <div 
-            className={`${!general.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={() => !general.id && handleDisabledFieldClick('Activity Acronym')}
-          >
+          <div>
             <Input
               id="acronym"
               value={general.acronym || ''}
               onChange={(e) => {
-                if (general.title?.trim()) {
-                  setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
-                  if (e.target.value.trim()) {
-                    acronymAutosave.triggerFieldSave(e.target.value);
-                  }
+                setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
+                if (e.target.value.trim()) {
+                  acronymAutosave.triggerFieldSave(e.target.value);
                 }
               }}
               onBlur={(e) => {
-                if (general.title?.trim() && e.target.value.trim()) {
+                if (e.target.value.trim()) {
                   acronymAutosave.triggerFieldSave(e.target.value);
                 }
               }}
