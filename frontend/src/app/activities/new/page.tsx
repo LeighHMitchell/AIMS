@@ -689,13 +689,17 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               id="acronym"
               value={general.acronym || ''}
               onChange={(e) => {
+                console.log('[AIMS DEBUG] Acronym onChange triggered:', e.target.value);
                 setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
                 if (e.target.value.trim()) {
+                  console.log('[AIMS DEBUG] Triggering acronym autosave with value:', e.target.value);
                   acronymAutosave.triggerFieldSave(e.target.value);
                 }
               }}
               onBlur={(e) => {
+                console.log('[AIMS DEBUG] Acronym onBlur triggered:', e.target.value);
                 if (e.target.value.trim()) {
+                  console.log('[AIMS DEBUG] Triggering acronym autosave on blur with value:', e.target.value);
                   acronymAutosave.triggerFieldSave(e.target.value);
                 }
               }}
