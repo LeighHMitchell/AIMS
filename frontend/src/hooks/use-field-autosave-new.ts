@@ -53,6 +53,13 @@ export function useFieldAutosave(
   fieldName: string,
   options: UseFieldAutosaveOptions = {}
 ) {
+  console.log(`[FieldAutosave] HOOK INSTANTIATED for field: ${fieldName}`, {
+    activityId: options.activityId,
+    userId: options.userId,
+    enabled: options.enabled,
+    immediate: options.immediate
+  });
+
   const {
     activityId,
     userId,
@@ -497,7 +504,18 @@ export function useFieldAutosave(
 
   // Enhanced trigger function with better handling of rapid typing
   const triggerFieldSave = useCallback((value: any, userInitiated = true) => {
-    if (!enabled) return;
+    console.log(`[FieldAutosave] triggerFieldSave CALLED for ${fieldName}`, {
+      value,
+      userInitiated,
+      enabled,
+      activityId,
+      userId
+    });
+
+    if (!enabled) {
+      console.log(`[FieldAutosave] triggerFieldSave EARLY RETURN - not enabled for ${fieldName}`);
+      return;
+    }
 
     // Skip saving for effectively empty content (like <p></p> from rich text editors)
     if (isEmptyHtmlContent(value)) {

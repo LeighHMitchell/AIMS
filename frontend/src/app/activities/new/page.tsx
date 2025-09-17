@@ -110,12 +110,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const hasShownInitialToast = useRef(false);
   const lastSavedDescriptionRef = useRef<string>('');
   const hasUserEditedDescriptionRef = useRef(false);
-  
-  // Guard clause to prevent rendering until user is loaded
-  if (!user) {
-    return <div className="p-6"><Skeleton className="h-8 w-64 mb-4" /><Skeleton className="h-32 w-full" /></div>;
-  }
-  
+
   // State to track which additional description fields are visible
   const [visibleDescriptionFields, setVisibleDescriptionFields] = useState<{
     objectives: boolean;
@@ -136,6 +131,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
   // Field-level autosave hooks with context-aware success callbacks
   // Pass 'NEW' for new activities to trigger creation on first save
+  // IMPORTANT: All hooks must be called before any early returns (Rules of Hooks)
   const effectiveActivityId = general.id || 'NEW';
   const descriptionAutosave = useFieldAutosave('description', { 
     activityId: effectiveActivityId,
@@ -533,6 +529,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       });
     }
   };
+
+  // Guard clause to prevent rendering until user is loaded
+  // MOVED AFTER ALL HOOKS to comply with Rules of Hooks
+  if (!user) {
+    return <div className="p-6"><Skeleton className="h-8 w-64 mb-4" /><Skeleton className="h-32 w-full" /></div>;
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-8 min-h-[800px]">
