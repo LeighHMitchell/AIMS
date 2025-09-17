@@ -399,7 +399,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       partnerId: general.otherIdentifier || null,
       iatiId: general.iatiIdentifier || null
     },
+    onStart: () => {
+      setPendingSaves(prev => new Set([...prev, 'title']));
+    },
     onSuccess: (data) => {
+      setPendingSaves(prev => {
+        const newSet = new Set(prev);
+        newSet.delete('title');
+        return newSet;
+      });
       if (data.id && !general.id) {
         // New activity was created
         setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
@@ -463,7 +471,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     userId: user?.id,
     immediate: true, // ✅ FIXED: Make acronym save immediately like title
     debounceMs: 500, // ✅ FIXED: Use same short debounce as title
+    onStart: () => {
+      setPendingSaves(prev => new Set([...prev, 'acronym']));
+    },
     onSuccess: (data) => {
+      setPendingSaves(prev => {
+        const newSet = new Set(prev);
+        newSet.delete('acronym');
+        return newSet;
+      });
       if (data.id && !general.id) {
         setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
         setShowActivityCreatedAlert(true);
@@ -1614,6 +1630,9 @@ function NewActivityPageContent() {
   // Modal state for activity creation
   const [showCreateModal, setShowCreateModal] = useState(false);
   
+  // Track pending autosave operations
+  const [pendingSaves, setPendingSaves] = useState(new Set<string>());
+  
   // Pre-cache common data for faster interactions
   const iatiReferenceCache = useIATIReferenceCache();
   const organizationsCache = useOrganizationsCache();
@@ -2306,8 +2325,21 @@ function NewActivityPageContent() {
           // OPTIMIZATION: Use cached activity data if available
           console.log('[AIMS] Loading activity with cache:', activityId);
           
-          // RACE CONDITION FIX: Force cache invalidation and bypass cache completely
-          // This ensures we always get fresh data when loading after activity creation
+          // RACE CONDITION FIX: Wait for all pending autosave operations to complete
+          // This ensures we get the most up-to-date data when loading after activity creation
+          console.log('[AIMS] Waiting for pending autosave operations to complete...');
+          console.log('[AIMS] Pending saves:', Array.from(pendingSaves));
+          
+          // Wait for all pending saves to complete (with timeout)
+          let attempts = 0;
+          const maxAttempts = 20; // 10 seconds max wait
+          while (pendingSaves.size > 0 && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            attempts++;
+            console.log(`[AIMS] Waiting for pending saves... attempt ${attempts}/${maxAttempts}, pending:`, Array.from(pendingSaves));
+          }
+          
+          // Force cache invalidation to ensure fresh data
           invalidateActivityCache(activityId);
           
           // Bypass cache completely and fetch fresh data directly from API
