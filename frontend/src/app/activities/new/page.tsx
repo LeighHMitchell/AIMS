@@ -111,6 +111,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const hasShownInitialToast = useRef(false);
   const lastSavedDescriptionRef = useRef<string>('');
   const hasUserEditedDescriptionRef = useRef(false);
+  
+  // Track pending autosave operations
+  const [pendingSaves, setPendingSaves] = useState(new Set<string>());
 
   // State to track which additional description fields are visible
   const [visibleDescriptionFields, setVisibleDescriptionFields] = useState<{
@@ -1630,9 +1633,6 @@ function NewActivityPageContent() {
   // Modal state for activity creation
   const [showCreateModal, setShowCreateModal] = useState(false);
   
-  // Track pending autosave operations
-  const [pendingSaves, setPendingSaves] = useState(new Set<string>());
-  
   // Pre-cache common data for faster interactions
   const iatiReferenceCache = useIATIReferenceCache();
   const organizationsCache = useOrganizationsCache();
@@ -2328,16 +2328,9 @@ function NewActivityPageContent() {
           // RACE CONDITION FIX: Wait for all pending autosave operations to complete
           // This ensures we get the most up-to-date data when loading after activity creation
           console.log('[AIMS] Waiting for pending autosave operations to complete...');
-          console.log('[AIMS] Pending saves:', Array.from(pendingSaves));
           
-          // Wait for all pending saves to complete (with timeout)
-          let attempts = 0;
-          const maxAttempts = 20; // 10 seconds max wait
-          while (pendingSaves.size > 0 && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            attempts++;
-            console.log(`[AIMS] Waiting for pending saves... attempt ${attempts}/${maxAttempts}, pending:`, Array.from(pendingSaves));
-          }
+          // Wait for all pending saves to complete (with longer delay)
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds for all pending saves
           
           // Force cache invalidation to ensure fresh data
           invalidateActivityCache(activityId);
