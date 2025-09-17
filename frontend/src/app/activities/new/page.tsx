@@ -391,8 +391,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const titleAutosave = useFieldAutosave('title', { 
     activityId: effectiveActivityId,
     userId: user?.id,
-    immediate: false, // Changed to false to enable debouncing for new activities
-    debounceMs: 1000, // 1 second debounce for faster feedback
+    immediate: true, // ✅ FIXED: Make title save immediately for consistency
+    debounceMs: 500, // ✅ FIXED: Use shorter debounce for faster saves
     additionalData: {
       // Remove heavy image data from initial activity creation
       partnerId: general.otherIdentifier || null,
@@ -460,8 +460,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const acronymAutosave = useFieldAutosave('acronym', {
     activityId: effectiveActivityId,
     userId: user?.id,
-    immediate: false,
-    debounceMs: 1000,
+    immediate: true, // ✅ FIXED: Make acronym save immediately like title
+    debounceMs: 500, // ✅ FIXED: Use same short debounce as title
     onSuccess: (data) => {
       if (data.id && !general.id) {
         setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
