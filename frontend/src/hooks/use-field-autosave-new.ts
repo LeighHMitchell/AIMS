@@ -281,6 +281,7 @@ export function useFieldAutosave(
       // OPTIMIZATION: Invalidate activity cache when field is updated
       if (activityId && activityId !== 'NEW') {
         invalidateActivityCache(activityId);
+        console.log(`[FieldAutosave] Cache invalidated for activity: ${activityId}`);
       }
 
       onSuccess?.(responseData, isUserInitiatedRef.current);
