@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Check, AlertTriangle, MapPin, Trash2, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { MYANMAR_REGIONS, type MyanmarRegion } from "@/data/myanmar-regions"
 import { toast } from "sonner"
-import MyanmarAdminMap from "@/components/MyanmarAdminMap"
+import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
 import { RegionSearchableSelect } from "@/components/ui/region-searchable-select"
 
 interface SubnationalBreakdown {
@@ -453,7 +453,7 @@ export function SubnationalBreakdownTab({
       {/* Two-column layout: Map on left, Form on right */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Map */}
-        <MyanmarAdminMap 
+        <MyanmarRegionsMap 
           breakdowns={breakdowns}
           onRegionClick={(regionName) => {
             // Focus on the region input when clicked

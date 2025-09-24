@@ -10,7 +10,7 @@ import { Map, RotateCcw, Layers, Satellite, Mountain, MapPin, Activity, Building
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { EnhancedSubnationalBreakdown } from '@/components/activities/EnhancedSubnationalBreakdown';
-import MyanmarAdminMap from '@/components/MyanmarAdminMap';
+import MyanmarRegionsMap from '@/components/MyanmarRegionsMap';
 
 // Dynamic import for map components to avoid SSR issues
 const MapContainer = dynamic(
@@ -786,9 +786,8 @@ export default function AidMap() {
                   <>
                     {/* Myanmar Admin Map */}
                     <div className="h-[600px] w-full">
-                      <MyanmarAdminMap 
+                      <MyanmarRegionsMap 
                         breakdowns={regionBreakdowns}
-                        visible={true}
                         onRegionClick={(regionName) => {
                           console.log('Region clicked:', regionName);
                           // Could add filtering functionality here

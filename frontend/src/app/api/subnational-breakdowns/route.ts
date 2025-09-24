@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       regionAggregation[regionName].activities.push(activityInfo)
     })
 
-    // Convert aggregation to the format expected by MyanmarAdminMap
+    // Convert aggregation to the format expected by MyanmarRegionsMap
     const result = {
       breakdowns: {} as Record<string, number>,
       details: regionAggregation
