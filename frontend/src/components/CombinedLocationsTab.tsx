@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LocationsTab from './LocationsTab';
 import { EnhancedSubnationalBreakdown } from './activities/EnhancedSubnationalBreakdown';
 import CountriesRegionsTab, { CountryAllocation, RegionAllocation } from './activities/CountriesRegionsTab';
@@ -104,6 +104,11 @@ export default function CombinedLocationsTab({
     return isValidTotal && hasAnyValues;
   }, [subnationalBreakdowns]);
 
+  // Check if subnational has any data (for green tick)
+  const hasSubnationalData = useMemo(() => {
+    return Object.values(subnationalBreakdowns).some(value => value > 0);
+  }, [subnationalBreakdowns]);
+
   const hasValidCountriesRegions = useMemo(() => {
     const countryTotal = countries.reduce((sum, c) => sum + (c.percentage || 0), 0);
     const regionTotal = regions.reduce((sum, r) => sum + (r.percentage || 0), 0);
@@ -111,6 +116,11 @@ export default function CombinedLocationsTab({
     const isValidTotal = Math.abs(totalPercentage - 100) < 0.01;
     const hasAnyValues = countries.length > 0 || regions.length > 0;
     return isValidTotal && hasAnyValues;
+  }, [countries, regions]);
+
+  // Check if countries/regions has any data (for green tick)
+  const hasCountriesRegionsData = useMemo(() => {
+    return countries.length > 0 || regions.length > 0;
   }, [countries, regions]);
 
   // Update parent when subnational data changes
@@ -151,21 +161,15 @@ export default function CombinedLocationsTab({
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="countries-regions" className="flex items-center gap-2">
             Countries & Regions
-            {hasValidCountriesRegions && (
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            )}
+            {hasCountriesRegionsData && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
           </TabsTrigger>
           <TabsTrigger value="activity-locations" className="flex items-center gap-2">
             Activity Locations
-            {hasValidLocations && (
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            )}
+            {hasValidLocations && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
           </TabsTrigger>
           <TabsTrigger value="subnational-breakdown" className="flex items-center gap-2">
             Subnational Breakdown
-            {hasCompleteSubnational && (
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            )}
+            {hasSubnationalData && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
           </TabsTrigger>
         </TabsList>
         

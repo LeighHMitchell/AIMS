@@ -8,10 +8,9 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 
 
 import { MapPin, Trash2, Sparkles } from 'lucide-react'
-import { MYANMAR_REGIONS, type MyanmarRegion } from "@/data/myanmar-regions"
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
-import MyanmarAdminMap from "@/components/MyanmarAdminMap"
+import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
 import { HierarchicalAdminSelect } from "@/components/ui/hierarchical-admin-select"
 
 interface AdminUnit {
@@ -89,22 +88,25 @@ export function EnhancedSubnationalBreakdown({
     }> = []
 
     // Group entries by parent state/region
-    const stateEntries = entries.filter(e => e.adminUnit.type !== 'township')
-    const townshipEntries = entries.filter(e => e.adminUnit.type === 'township')
-    
-    // Group townships by their parent
-    const townshipsByParent = townshipEntries.reduce((acc, entry) => {
-      const parentName = entry.adminUnit.parentName!
-      if (!acc[parentName]) {
-        acc[parentName] = []
+    const stateEntries = entries.filter((entry) => entry.adminUnit.type !== "township")
+    const townshipEntries = entries.filter((entry) => entry.adminUnit.type === "township")
+
+    const townshipsByParent = new Map<string, BreakdownEntry[]>()
+
+    townshipEntries.forEach((entry) => {
+      const parentName = entry.adminUnit.parentName ?? entry.adminUnit.name
+      const siblings = townshipsByParent.get(parentName)
+      if (siblings) {
+        siblings.push(entry)
+      } else {
+        townshipsByParent.set(parentName, [entry])
       }
-      acc[parentName].push(entry)
-      return acc
-    }, {} as Record<string, BreakdownEntry[]>)
+    })
 
     // Add state/region entries and their townships
     stateEntries.forEach(stateEntry => {
-      const hasChildren = townshipsByParent[stateEntry.adminUnit.name]?.length > 0
+      const childTownships = townshipsByParent.get(stateEntry.adminUnit.name) ?? []
+      const hasChildren = childTownships.length > 0
       
       result.push({
         entry: stateEntry,
@@ -114,7 +116,7 @@ export function EnhancedSubnationalBreakdown({
 
       // Add townships under this state/region
       if (hasChildren) {
-        townshipsByParent[stateEntry.adminUnit.name].forEach(townshipEntry => {
+        childTownships.forEach((townshipEntry) => {
           result.push({
             entry: townshipEntry,
             isParent: false,
@@ -126,11 +128,11 @@ export function EnhancedSubnationalBreakdown({
     })
 
     // Add orphaned townships (townships without their parent state selected)
-    Object.entries(townshipsByParent).forEach(([parentName, townships]) => {
-      const hasParentSelected = stateEntries.some(e => e.adminUnit.name === parentName)
-      
+    townshipsByParent.forEach((townships, parentName) => {
+      const hasParentSelected = stateEntries.some((entry) => entry.adminUnit.name === parentName)
+
       if (!hasParentSelected) {
-        townships.forEach(townshipEntry => {
+        townships.forEach((townshipEntry) => {
           result.push({
             entry: townshipEntry,
             isParent: false,
@@ -155,20 +157,27 @@ export function EnhancedSubnationalBreakdown({
 
   // Convert entries to the format expected by the map and backend
   const breakdownsForMap = useMemo(() => {
-    const result: Record<string, number> = {}
-    
+    const aggregated = new Map<string, number>()
+
     entries.forEach((entry) => {
-      if (entry.adminUnit.type === 'township') {
-        // For townships, aggregate by parent state/region for map display
-        const parentName = entry.adminUnit.parentName!
-        const existing = result[parentName] || 0
-        result[parentName] = existing + entry.percentage
+      const targetName =
+        entry.adminUnit.type === "township"
+          ? entry.adminUnit.parentName ?? entry.adminUnit.name
+          : entry.adminUnit.name
+
+      const currentValue = aggregated.get(targetName)
+      if (typeof currentValue === "number") {
+        aggregated.set(targetName, currentValue + entry.percentage)
       } else {
-        // For states/regions, use directly
-        result[entry.adminUnit.name] = entry.percentage
+        aggregated.set(targetName, entry.percentage)
       }
     })
-    
+
+    const result = Object.fromEntries(aggregated.entries())
+
+    console.log("[EnhancedSubnationalBreakdown] breakdownsForMap:", result)
+    console.log("[EnhancedSubnationalBreakdown] entries:", entries)
+
     return result
   }, [entries])
 
@@ -249,7 +258,7 @@ export function EnhancedSubnationalBreakdown({
     }, 10000) // 10 second timeout
     
     return () => clearTimeout(timeout)
-  }, [loadData])
+  }, [activityId, loadData])
 
   // Auto-save function
   const autoSave = useCallback(async () => {
@@ -365,11 +374,11 @@ export function EnhancedSubnationalBreakdown({
 
   // Auto-save when entries change
   useEffect(() => {
-    if (!loading && entries.length > 0) {
+    if (!loading && entries.length > 0 && activityId) {
       const timeoutId = setTimeout(autoSave, 2000)
       return () => clearTimeout(timeoutId)
     }
-  }, [entries, loading, autoSave])
+  }, [entries, loading, activityId, autoSave])
 
   if (loading) {
     console.log('[EnhancedSubnationalBreakdown] Still loading, activityId:', activityId)
@@ -396,7 +405,7 @@ export function EnhancedSubnationalBreakdown({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Map (much taller to fit all of Myanmar) */}
         <div className="h-[800px]">
-          <MyanmarAdminMap 
+          <MyanmarRegionsMap
             breakdowns={breakdownsForMap}
             onRegionClick={(regionName) => {
               // Find the admin unit for this region
