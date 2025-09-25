@@ -54,9 +54,15 @@ export function middleware(request: NextRequest) {
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   
   // Add cache headers to prevent stale responses
-  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, s-maxage=0')
   response.headers.set('Pragma', 'no-cache')
   response.headers.set('Expires', '0')
+
+  // Additional cache-busting headers for activity endpoints
+  if (request.nextUrl.pathname.includes('/activities/')) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, s-maxage=0, private')
+    response.headers.set('Vercel-CDN-Cache-Control', 'no-cache')
+  }
   
   // Add request ID for tracking
   response.headers.set('X-Request-ID', requestId)

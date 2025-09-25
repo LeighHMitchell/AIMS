@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-simple'
+import { searchCache, cacheKeys } from '@/lib/search-cache'
+import { highlightSearchResults, extractSearchTerms } from '@/lib/search-highlighting'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  console.log('[AIMS API] GET /api/search - Starting search request')
-  
+  console.log('[AIMS API] GET /api/search - Starting enhanced search request')
+
+  const startTime = Date.now()
+  let searchAnalyticsData = null
+
   try {
     const searchParams = request.nextUrl.searchParams
     const query = searchParams.get('q') || ''
@@ -14,7 +19,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     if (!query.trim()) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         results: [],
         total: 0,
         page: 1,
@@ -23,13 +28,38 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Track search analytics
+    searchAnalyticsData = {
+      search_query: query,
+      search_type: 'global',
+      user_id: null, // Will be set if we can get user context
+      ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      user_agent: request.headers.get('user-agent') || 'unknown'
+    }
+
     const supabase = createClient()
     if (!supabase) {
       throw new Error('Failed to create Supabase client')
     }
-    const searchTerm = `%${query.toLowerCase()}%`
 
-    // Search activities - by title_narrative and acronym
+    // Prepare search terms for full-text search
+    const searchTerm = query.trim()
+    const processedQuery = searchTerm.split(' ').filter(term => term.length > 0).join(' & ')
+
+    // Check cache first
+    const cacheKey = cacheKeys.search(searchTerm, page, limit)
+    const cachedResult = searchCache.get(cacheKey)
+
+    if (cachedResult) {
+      console.log(`[AIMS API] Cache hit for query: "${query}"`)
+      return NextResponse.json({
+        ...cachedResult,
+        cached: true,
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    // Search activities using full-text search with ranking
     const { data: activities, error: activitiesError, count: activitiesCount } = await supabase
       .from('activities')
       .select(`
@@ -44,7 +74,7 @@ export async function GET(request: NextRequest) {
         created_by_org_acronym,
         icon
       `, { count: 'exact' })
-      .or(`title_narrative.ilike.${searchTerm},acronym.ilike.${searchTerm}`)
+      .or(`title_narrative.ilike.%${searchTerm}%,acronym.ilike.%${searchTerm}%,other_identifier.ilike.%${searchTerm}%,iati_identifier.ilike.%${searchTerm}%`)
       .range(offset, offset + limit - 1)
       .order('updated_at', { ascending: false })
 
@@ -73,11 +103,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Search organizations - only names and acronyms
+    // Search organizations using enhanced full-text search
     const { data: organizations, error: orgsError, count: organizationsCount } = await supabase
       .from('organizations')
       .select('id, name, acronym, iati_org_id, type, country, logo, banner', { count: 'exact' })
-      .or(`name.ilike.${searchTerm},acronym.ilike.${searchTerm},iati_org_id.ilike.${searchTerm}`)
+      .or(`name.ilike.%${searchTerm}%,acronym.ilike.%${searchTerm}%,iati_org_id.ilike.%${searchTerm}%`)
       .range(offset, offset + limit - 1)
       .order('name')
 
@@ -320,9 +350,26 @@ export async function GET(request: NextRequest) {
     const totalResults = totalActivities + totalOrganizations + totalSectors + totalUsers + totalTags + totalContacts
     const hasMore = offset + limit < totalResults
 
-    console.log(`[AIMS API] Search completed - Found ${results.length} results for query: "${query}"`)
-    console.log(`[AIMS API] Pagination: page ${page}, limit ${limit}, offset ${offset}, total ${totalResults}, hasMore ${hasMore}`)
-    
+    const responseTime = Date.now() - startTime
+
+    // Record search analytics
+    if (searchAnalyticsData && totalResults > 0) {
+      try {
+        await supabase
+          .from('search_analytics')
+          .insert({
+            ...searchAnalyticsData,
+            result_count: totalResults,
+            response_time_ms: responseTime
+          })
+      } catch (analyticsError) {
+        console.warn('[AIMS API] Failed to record search analytics:', analyticsError)
+      }
+    }
+
+    console.log(`[AIMS API] Enhanced search completed - Found ${results.length} results for query: "${query}"`)
+    console.log(`[AIMS API] Performance: ${responseTime}ms, Pagination: page ${page}, limit ${limit}, offset ${offset}, total ${totalResults}, hasMore ${hasMore}`)
+
     // Debug: Log the first few results to see what's matching
     if (results.length > 0) {
       console.log('[AIMS API] First few search results:')
@@ -340,15 +387,38 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({ 
+    // Extract search terms for highlighting
+    const searchTerms = extractSearchTerms(query)
+
+    // Highlight search results
+    const highlightedResults = highlightSearchResults(results, searchTerms)
+
+    const result = {
+      results: highlightedResults,
+      total: totalResults,
+      page,
+      limit,
+      hasMore,
+      query,
+      searchTerms,
+      responseTime,
+      timestamp: new Date().toISOString()
+    }
+
+    // Cache the result for future requests (cache without highlighting to save space)
+    const cacheResult = {
       results,
       total: totalResults,
       page,
       limit,
       hasMore,
       query,
+      responseTime,
       timestamp: new Date().toISOString()
-    })
+    }
+    searchCache.set(cacheKey, cacheResult)
+
+    return NextResponse.json(result)
 
   } catch (error) {
     console.error('[AIMS API] Search error:', error)

@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { EnhancedSearchableSelect, type EnhancedSelectGroup } from '@/components/ui/enhanced-searchable-select';
 import { ChevronDown, ChevronUp, MapPin, Plus, Trash2, AlertCircle } from 'lucide-react';
 import {
   LOCATION_REACH_TYPES,
@@ -21,6 +21,87 @@ import {
   FEATURE_DESIGNATION_TYPES,
   AdvancedLocationData
 } from '@/data/iati-location-types';
+
+
+const LOCATION_REACH_GROUPS: EnhancedSelectGroup[] = [
+  {
+    label: 'Location Reach',
+    options: LOCATION_REACH_TYPES.map((type) => ({
+      code: type.code,
+      name: type.name,
+      description: type.description
+    }))
+  }
+];
+
+const LOCATION_EXACTNESS_GROUPS: EnhancedSelectGroup[] = [
+  {
+    label: 'Exactness',
+    options: LOCATION_EXACTNESS_TYPES.map((type) => ({
+      code: type.code,
+      name: type.name,
+      description: type.description
+    }))
+  }
+];
+
+const LOCATION_CLASS_GROUPS: EnhancedSelectGroup[] = [
+  {
+    label: 'Location Class',
+    options: LOCATION_CLASS_TYPES.map((type) => ({
+      code: type.code,
+      name: type.name,
+      description: type.description
+    }))
+  }
+];
+
+const LOCATION_ID_VOCABULARY_GROUPS: EnhancedSelectGroup[] = [
+  {
+    label: 'Vocabularies',
+    options: LOCATION_ID_VOCABULARIES.map((vocab) => ({
+      code: vocab.code,
+      name: vocab.name,
+      description: vocab.description
+    }))
+  }
+];
+
+const ADMINISTRATIVE_LEVEL_GROUPS: EnhancedSelectGroup[] = [
+  {
+    label: 'Administrative Levels',
+    options: ADMINISTRATIVE_LEVELS.map((level) => ({
+      code: level.code,
+      name: level.name,
+      description: level.description
+    }))
+  }
+];
+
+const FEATURE_DESIGNATION_GROUPS: EnhancedSelectGroup[] = Object.entries(
+  FEATURE_DESIGNATION_TYPES.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = [];
+    }
+
+    acc[item.category].push({
+      code: item.code,
+      name: item.name
+    });
+
+    return acc;
+  }, {} as Record<string, { code: string; name: string }[]>)
+).map(([category, options]) => ({
+  label: category,
+  options
+}));
+
+const LOCATION_SELECT_SETTINGS = {
+  searchPlaceholder: 'Search options',
+  emptyStateMessage: 'No options found.',
+  emptyStateSubMessage: 'Try adjusting your search'
+};
+
 
 interface AdvancedLocationFieldsProps {
   locations: AdvancedLocationData[];
@@ -117,21 +198,6 @@ export default function AdvancedLocationFields({
     return Object.keys(newErrors).length === 0;
   };
 
-  // Get grouped feature designations
-  const getGroupedFeatureDesignations = () => {
-    const grouped = FEATURE_DESIGNATION_TYPES.reduce((acc, item) => {
-      if (!acc[item.category]) {
-        acc[item.category] = [];
-      }
-      acc[item.category].push(item);
-      return acc;
-    }, {} as Record<string, typeof FEATURE_DESIGNATION_TYPES>);
-    
-    return grouped;
-  };
-
-  const groupedFeatureDesignations = getGroupedFeatureDesignations();
-
   return (
     <Card className="w-full">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -212,49 +278,31 @@ export default function AdvancedLocationFields({
                             Location Reach
                             <HelpTextTooltip content="Clarifies whether the activity happens at this location or if beneficiaries live here" />
                           </Label>
-                          <Select
+                          <EnhancedSearchableSelect
+                            groups={LOCATION_REACH_GROUPS}
                             value={location.locationReach || ''}
                             onValueChange={(value) => updateLocation(location.id, { locationReach: value })}
                             disabled={!canEdit}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select reach type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {LOCATION_REACH_TYPES.map((type) => (
-                                <SelectItem key={type.code} value={type.code}>
-                                  <div>
-                                    <div className="font-medium">{type.name}</div>
-                                    <div className="text-xs text-gray-500">{type.description}</div>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            placeholder="Select reach type"
+                            searchPlaceholder={LOCATION_SELECT_SETTINGS.searchPlaceholder}
+                            emptyStateMessage={LOCATION_SELECT_SETTINGS.emptyStateMessage}
+                            emptyStateSubMessage={LOCATION_SELECT_SETTINGS.emptyStateSubMessage}
+                          />
                         </div>
 
                         {/* Exactness */}
                         <div className="space-y-2">
                           <Label htmlFor={`exactness-${location.id}`}>Exactness</Label>
-                          <Select
+                          <EnhancedSearchableSelect
+                            groups={LOCATION_EXACTNESS_GROUPS}
                             value={location.exactness || ''}
                             onValueChange={(value) => updateLocation(location.id, { exactness: value })}
                             disabled={!canEdit}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select exactness" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {LOCATION_EXACTNESS_TYPES.map((type) => (
-                                <SelectItem key={type.code} value={type.code}>
-                                  <div>
-                                    <div className="font-medium">{type.name}</div>
-                                    <div className="text-xs text-gray-500">{type.description}</div>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            placeholder="Select exactness"
+                            searchPlaceholder={LOCATION_SELECT_SETTINGS.searchPlaceholder}
+                            emptyStateMessage={LOCATION_SELECT_SETTINGS.emptyStateMessage}
+                            emptyStateSubMessage={LOCATION_SELECT_SETTINGS.emptyStateSubMessage}
+                          />
                         </div>
                       </div>
 
@@ -264,7 +312,8 @@ export default function AdvancedLocationFields({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor={`location-id-vocab-${location.id}`}>Vocabulary</Label>
-                            <Select
+                            <EnhancedSearchableSelect
+                              groups={LOCATION_ID_VOCABULARY_GROUPS}
                               value={location.locationId?.vocabulary || ''}
                               onValueChange={(value) => updateLocation(location.id, { 
                                 locationId: { 
@@ -273,21 +322,11 @@ export default function AdvancedLocationFields({
                                 } 
                               })}
                               disabled={!canEdit}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select vocabulary" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {LOCATION_ID_VOCABULARIES.map((vocab) => (
-                                  <SelectItem key={vocab.code} value={vocab.code}>
-                                    <div>
-                                      <div className="font-medium">{vocab.name}</div>
-                                      <div className="text-xs text-gray-500">{vocab.description}</div>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              placeholder="Select vocabulary"
+                              searchPlaceholder={LOCATION_SELECT_SETTINGS.searchPlaceholder}
+                              emptyStateMessage={LOCATION_SELECT_SETTINGS.emptyStateMessage}
+                              emptyStateSubMessage={LOCATION_SELECT_SETTINGS.emptyStateSubMessage}
+                            />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor={`location-id-code-${location.id}`}>Code</Label>
@@ -313,7 +352,8 @@ export default function AdvancedLocationFields({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor={`admin-level-${location.id}`}>Level</Label>
-                            <Select
+                            <EnhancedSearchableSelect
+                              groups={ADMINISTRATIVE_LEVEL_GROUPS}
                               value={location.administrative?.level || ''}
                               onValueChange={(value) => updateLocation(location.id, { 
                                 administrative: { 
@@ -322,21 +362,11 @@ export default function AdvancedLocationFields({
                                 } 
                               })}
                               disabled={!canEdit}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select level" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {ADMINISTRATIVE_LEVELS.map((level) => (
-                                  <SelectItem key={level.code} value={level.code}>
-                                    <div>
-                                      <div className="font-medium">{level.name}</div>
-                                      <div className="text-xs text-gray-500">{level.description}</div>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              placeholder="Select level"
+                              searchPlaceholder={LOCATION_SELECT_SETTINGS.searchPlaceholder}
+                              emptyStateMessage={LOCATION_SELECT_SETTINGS.emptyStateMessage}
+                              emptyStateSubMessage={LOCATION_SELECT_SETTINGS.emptyStateSubMessage}
+                            />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor={`admin-code-${location.id}`}>Code</Label>
@@ -360,54 +390,30 @@ export default function AdvancedLocationFields({
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor={`location-class-${location.id}`}>Location Class</Label>
-                          <Select
+                          <EnhancedSearchableSelect
+                            groups={LOCATION_CLASS_GROUPS}
                             value={location.locationClass || ''}
                             onValueChange={(value) => updateLocation(location.id, { locationClass: value })}
                             disabled={!canEdit}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select class" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {LOCATION_CLASS_TYPES.map((type) => (
-                                <SelectItem key={type.code} value={type.code}>
-                                  <div>
-                                    <div className="font-medium">{type.name}</div>
-                                    <div className="text-xs text-gray-500">{type.description}</div>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            placeholder="Select class"
+                            searchPlaceholder={LOCATION_SELECT_SETTINGS.searchPlaceholder}
+                            emptyStateMessage={LOCATION_SELECT_SETTINGS.emptyStateMessage}
+                            emptyStateSubMessage={LOCATION_SELECT_SETTINGS.emptyStateSubMessage}
+                          />
                         </div>
 
                         <div className="space-y-2">
                           <Label htmlFor={`feature-designation-${location.id}`}>Feature Designation</Label>
-                          <Select
+                          <EnhancedSearchableSelect
+                            groups={FEATURE_DESIGNATION_GROUPS}
                             value={location.featureDesignation || ''}
                             onValueChange={(value) => updateLocation(location.id, { featureDesignation: value })}
                             disabled={!canEdit}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select designation" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-60">
-                              {Object.entries(groupedFeatureDesignations).map(([category, items]) => (
-                                <div key={category}>
-                                  <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50">
-                                    {category}
-                                  </div>
-                                  {items.map((item) => (
-                                    <SelectItem key={item.code} value={item.code}>
-                                      <div>
-                                        <div className="font-medium">{item.code} - {item.name}</div>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </div>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            placeholder="Select designation"
+                            searchPlaceholder={LOCATION_SELECT_SETTINGS.searchPlaceholder}
+                            emptyStateMessage={LOCATION_SELECT_SETTINGS.emptyStateMessage}
+                            emptyStateSubMessage={LOCATION_SELECT_SETTINGS.emptyStateSubMessage}
+                          />
                         </div>
                       </div>
 

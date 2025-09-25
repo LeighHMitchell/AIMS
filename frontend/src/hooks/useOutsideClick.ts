@@ -4,19 +4,29 @@ import { useEffect, useRef, RefObject } from 'react';
  * Hook that detects clicks outside of the referenced element
  * @param callback Function to call when outside click is detected
  * @param isActive Optional boolean to enable/disable the listener (default: true)
- * @returns RefObject to attach to the element
+ * @param ref Optional ref to use. If not provided, will listen globally
+ * @returns RefObject to attach to the element (if ref not provided)
  */
 export function useOutsideClick<T extends HTMLElement = HTMLDivElement>(
   callback: () => void,
-  isActive: boolean = true
-): RefObject<T> {
-  const ref = useRef<T>(null);
+  isActive: boolean = true,
+  ref?: RefObject<T>
+): RefObject<T> | null {
+  const internalRef = useRef<T>(null);
+  const actualRef = ref || internalRef;
 
   useEffect(() => {
     if (!isActive) return;
 
     function handleClick(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
+      // If a specific ref is provided, check if click is outside that element
+      // If no ref is provided, always trigger (global listener)
+      if (actualRef.current) {
+        if (!actualRef.current.contains(event.target as Node)) {
+          callback();
+        }
+      } else {
+        // Global listener - always trigger callback
         callback();
       }
     }
@@ -30,12 +40,12 @@ export function useOutsideClick<T extends HTMLElement = HTMLDivElement>(
     // Use 'mousedown' instead of 'click' to handle before other events
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('keydown', handleEscape);
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [callback, isActive]);
+  }, [callback, isActive, actualRef]);
 
-  return ref;
+  return actualRef as RefObject<T>;
 } 

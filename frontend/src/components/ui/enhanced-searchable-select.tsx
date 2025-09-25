@@ -225,11 +225,4 @@ export function EnhancedSearchableSelect({
 }
 
 // Helper function to transform your existing data structures
-export function transformCollaborationTypes(collaborationTypes: any[]) {
-  return collaborationTypes.map(group => ({
-    label: group.label,
-    options: group.types || group.options || []
-  }));
-}
-
-// Types are already exported above with the interface declarations 
+// Types are already exported above with the interface declarations

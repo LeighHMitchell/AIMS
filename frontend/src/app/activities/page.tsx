@@ -55,6 +55,7 @@ import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
 import { LEGACY_TRANSACTION_TYPE_MAP } from "@/utils/transactionMigrationHelper";
 import { USER_ROLES } from "@/types/user";
 import { ActivityListSkeleton } from '@/components/ui/skeleton-loader';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Link from 'next/link';
@@ -314,6 +315,9 @@ function ActivitiesPageContent() {
   // Track if we've ever successfully loaded data to prevent flash of empty state
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  // Debounced empty-state flag to avoid flicker (skeleton → empty → list)
+  const [showEmptyState, setShowEmptyState] = useState(false);
+  const emptyTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Use optimization mode to get conditional image loading
   const usingOptimization = enableOptimization;
@@ -386,6 +390,8 @@ function ActivitiesPageContent() {
   const filterFlowType = usingOptimization ? safeOptimizedData.filters.flowType : 'all';
   const setFilterFlowType = usingOptimization ? safeOptimizedData.filters.setFlowType : () => {};
 
+
+  // Debounced empty state display will be handled after totalActivities is computed
 
   // Memoized helper functions - must be defined before use in other memos
   const getCreatorOrganization = useCallback((activity: Activity): string => {
@@ -619,6 +625,8 @@ function ActivitiesPageContent() {
       }
     }
   }, [loading, userLoading, isInitialLoad]);
+
+  // NOTE: debounced empty-state effect moved below where dependent variables are initialized
 
   // Don't refetch on filter changes - we do client-side filtering
   // Only refetch if we need fresh data
@@ -893,6 +901,35 @@ function ActivitiesPageContent() {
     paginatedActivities = sortedActivities.slice(startIndex, endIndex);
   }
 
+  // Debounce empty state display to avoid brief flashes during fetch transitions
+  useEffect(() => {
+    const isLoading = loading || userLoading || !hasLoadedOnce || isInitialLoad;
+
+    if (isLoading) {
+      if (emptyTimerRef.current) {
+        clearTimeout(emptyTimerRef.current);
+        emptyTimerRef.current = null;
+      }
+      setShowEmptyState(false);
+      return;
+    }
+
+    if (totalActivities === 0) {
+      if (!emptyTimerRef.current) {
+        emptyTimerRef.current = setTimeout(() => {
+          setShowEmptyState(true);
+          emptyTimerRef.current = null;
+        }, 400);
+      }
+    } else {
+      if (emptyTimerRef.current) {
+        clearTimeout(emptyTimerRef.current);
+        emptyTimerRef.current = null;
+      }
+      setShowEmptyState(false);
+    }
+  }, [totalActivities, loading, userLoading, hasLoadedOnce, isInitialLoad]);
+
   // Page limit change handler
   const handlePageLimitChange = useCallback((newLimit: number) => {
     setPageLimit(newLimit);
@@ -1060,13 +1097,17 @@ function ActivitiesPageContent() {
           
           {/* Results Summary with Performance Metrics */}
           <div className="flex flex-col items-end gap-1">
-            <p className="text-sm text-slate-600 whitespace-nowrap">
-              {totalActivities === 0 
-                ? "No activities" 
-                : paginatedActivities.length === 0
-                ? "No activities on this page"
-                : `Showing ${Math.min(startIndex + 1, totalActivities)}–${Math.min(endIndex, totalActivities)} of ${totalActivities}`}
-            </p>
+            {loading || userLoading || !hasLoadedOnce || isInitialLoad ? (
+              <Skeleton className="h-4 w-40" />
+            ) : (
+              <p className="text-sm text-slate-600 whitespace-nowrap">
+                {showEmptyState
+                  ? "No activities"
+                  : paginatedActivities.length === 0
+                  ? "No activities on this page"
+                  : `Showing ${Math.min(startIndex + 1, totalActivities)}–${Math.min(endIndex, totalActivities)} of ${totalActivities}`}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -1091,7 +1132,7 @@ function ActivitiesPageContent() {
             </div>
           </div>
         </div>
-      ) : totalActivities === 0 ? (
+      ) : showEmptyState ? (
         <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
           <div className="space-y-4">
             <div className="text-slate-500">No activities found</div>

@@ -66,6 +66,7 @@ export async function POST(request: Request) {
     console.log('[AIMS API] Timestamp:', new Date().toISOString());
     console.log('[AIMS API] Request body keys:', Object.keys(body));
     console.log('[AIMS API] Activity title:', body.title);
+    console.log('[AIMS API] Activity acronym:', body.acronym);
     console.log('[AIMS API] Activity ID:', body.id || 'NEW');
     console.log('[AIMS API] Publication Status:', body.publicationStatus);
     console.log('[AIMS API] Transactions count:', body.transactions?.length || 0);
@@ -127,8 +128,9 @@ export async function POST(request: Request) {
         updateData = {
           other_identifier: body.partnerId || null,
           iati_identifier: body.iatiId,
-          title_narrative: body.title,
-          acronym: body.acronym,
+          // Only update title/acronym if explicitly provided to avoid accidental clearing
+          ...(body.title !== undefined ? { title_narrative: body.title } : {}),
+          ...(body.acronym !== undefined ? { acronym: body.acronym } : {}),
           description_narrative: body.description,
           created_by_org_name: body.created_by_org_name,
           created_by_org_acronym: body.created_by_org_acronym,
@@ -1029,6 +1031,29 @@ export async function POST(request: Request) {
       // Generate UUID for new activity
       const activityUuid = uuidv4();
       
+      console.log('[AIMS API] Creating new activity with acronym:', body.acronym);
+      console.log('[AIMS API] Acronym type:', typeof body.acronym);
+      console.log('[AIMS API] Acronym length:', body.acronym?.length);
+      
+      // Normalize and validate activity scope (IATI codes '1'-'8')
+      const normalizeScope = (val: any): string | null => {
+        if (val == null) return '4';
+        const str = String(val).trim();
+        const map: Record<string, string> = {
+          global: '1',
+          regional: '2',
+          'multi-national': '3',
+          national: '4',
+          'sub-national multi first level': '5',
+          'sub-national single first level': '6',
+          'sub-national single second level': '7',
+          'single location': '8',
+        };
+        if (map[str.toLowerCase()]) return map[str.toLowerCase()];
+        if (/^[1-8]$/.test(str)) return str;
+        return '4';
+      };
+
       insertData = {
         id: activityUuid,
         other_identifier: body.partnerId || null,
@@ -1039,7 +1064,7 @@ export async function POST(request: Request) {
         created_by_org_name: userOrgData.created_by_org_name,
         created_by_org_acronym: userOrgData.created_by_org_acronym,
         collaboration_type: body.collaborationType,
-        activity_scope: body.activityScope || '4',
+        activity_scope: normalizeScope(body.activityScope),
         language: body.language,
         activity_status: body.activityStatus || '1',
         publication_status: body.publicationStatus || 'draft',
@@ -1078,6 +1103,7 @@ export async function POST(request: Request) {
       user_id: body.user?.id
     });
     console.log('[AIMS API] Attempting to create new activity with data:', JSON.stringify(insertData, null, 2));
+    console.log('[AIMS API] Acronym in insertData:', insertData.acronym);
     const { data: newActivity, error: insertError } = await getSupabaseAdmin()
       .from('activities')
       .insert([insertData])
@@ -1113,6 +1139,11 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    // Debug: Check what was actually saved
+    console.log('[AIMS API] === AFTER DATABASE INSERT ===');
+    console.log('[AIMS API] newActivity from database:', newActivity);
+    console.log('[AIMS API] newActivity.acronym from database:', newActivity?.acronym);
 
     // Handle sectors
     if (body.sectors && body.sectors.length > 0) {

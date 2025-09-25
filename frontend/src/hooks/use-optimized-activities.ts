@@ -267,6 +267,10 @@ export function useOptimizedActivities(
         timestamp: Date.now()
       });
 
+      // Set loading to false AFTER data is successfully set
+      // Add a small delay to prevent any flash of empty state
+      setTimeout(() => setLoading(false), 50);
+
       console.log('[Activities Hook] Successfully set activities:', {
         count: activities.length,
         totalCount,
@@ -280,10 +284,10 @@ export function useOptimizedActivities(
       }
 
       console.error('[Activities Hook] Error fetching activities:', error);
-      
+
       // Handle specific error types
       let errorMessage = 'Failed to fetch activities';
-      
+
       if (error.message && error.message.includes('DATABASE_CONNECTION_ERROR')) {
         errorMessage = 'Database connection issue. Please try again later.';
       } else if (error.message && error.message.includes('503')) {
@@ -291,14 +295,14 @@ export function useOptimizedActivities(
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       setError(errorMessage);
-      
+      // Set loading to false on error with small delay for consistency
+      setTimeout(() => setLoading(false), 50);
+
       if (onError) {
         onError(errorMessage);
       }
-    } finally {
-      setLoading(false);
     }
   }, [currentPage, pageSize, debouncedSearchQuery, sortField, sortOrder, activityStatus, submissionStatus, reportedBy, aidType, flowType, tiedStatus, viewMode, onError]);
 

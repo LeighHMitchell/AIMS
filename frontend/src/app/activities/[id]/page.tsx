@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/table"
 import { useUser } from "@/hooks/useUser"
 import { ActivityComments } from "@/components/ActivityComments"
-import { fetchActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache'
+import { fetchActivityWithCache, invalidateActivityCache, forceActivityCacheRefresh } from '@/lib/activity-cache'
 import { CommentsDrawer } from "@/components/activities/CommentsDrawer"
 import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
 import TransactionTab from "@/components/activities/TransactionTab"
@@ -190,6 +190,8 @@ export default function ActivityDetailPage() {
 
   useEffect(() => {
     if (params?.id) {
+      // Force refresh cache to ensure we get the latest data
+      forceActivityCacheRefresh(Array.isArray(params.id) ? params.id[0] : params.id);
       fetchActivity(true)
       loadAllPartners();
       fetchBudgets();

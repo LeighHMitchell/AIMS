@@ -11,6 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useDropdownState } from '@/contexts/DropdownContext';
+import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   Plus, 
@@ -89,15 +91,30 @@ export default function CountriesRegionsTab({
   const [customVocabularyUri, setCustomVocabularyUri] = useState<string>('');
   const [narrative, setNarrative] = useState<string>('');
   const [vocabulary, setVocabulary] = useState<string>('');
-  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
-  const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
-  const [vocabularyDropdownOpen, setVocabularyDropdownOpen] = useState(false);
+  const { isOpen: typeDropdownOpen, setOpen: setTypeDropdownOpen } = useDropdownState('countries-regions-type');
+  const { isOpen: itemDropdownOpen, setOpen: setItemDropdownOpen } = useDropdownState('countries-regions-item');
+  const { isOpen: vocabularyDropdownOpen, setOpen: setVocabularyDropdownOpen } = useDropdownState('countries-regions-vocabulary');
   const [itemSearchQuery, setItemSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Close all dropdowns when clicking outside the form
+  const closeAllDropdowns = () => {
+    // Only close dropdowns if any are open (don't close if they're already closed)
+    if (typeDropdownOpen || itemDropdownOpen || vocabularyDropdownOpen) {
+      setTypeDropdownOpen(false);
+      setItemDropdownOpen(false);
+      setVocabularyDropdownOpen(false);
+    }
+  };
+
+  // Use outside click to close dropdowns when clicking outside the form container
+  const formRef = useOutsideClick(closeAllDropdowns, true);
+
+  const [allocationStatus, setAllocationStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
 
   // Type options for the dropdown
   const typeOptions = [
@@ -171,20 +188,38 @@ export default function CountriesRegionsTab({
     return allCodes.length !== uniqueCodes.size;
   }, [countries, regions, customGeographies]);
 
-  // Get validation errors
+  // Get validation errors - only show errors when there's data to validate
   const validationErrors = useMemo(() => {
     const errors: string[] = [];
-    
-    if (!isValidAllocation) {
+
+    // Only validate if there's data to validate
+    const hasAnyData = countries.length > 0 || regions.length > 0 || customGeographies.length > 0;
+
+    if (hasAnyData && !isValidAllocation) {
       errors.push(`Total allocation must equal 100%. Currently at ${totalPercentage.toFixed(1)}%.`);
     }
-    
+
     if (hasOverlappingAllocations) {
       errors.push('Duplicate country/region codes detected. Each location can only be allocated once.');
     }
-    
+
     return errors;
-  }, [isValidAllocation, totalPercentage, hasOverlappingAllocations]);
+  }, [isValidAllocation, totalPercentage, hasOverlappingAllocations, countries, regions, customGeographies]);
+
+  // Helper function to determine if allocation should show green tick
+  const shouldShowGreenTick = (allocation: any) => {
+    const status = allocationStatus[allocation.id];
+
+    // Only show green tick if:
+    // 1. The allocation has a valid percentage (> 0) OR is a user-selected allocation (any percentage)
+    // 2. AND it's either explicitly marked as saved OR loaded from backend
+    // 3. AND it's not currently saving or in error state
+    if ((allocation.percentage > 0 || allocation.id) && status !== 'saving' && status !== 'error') {
+      return true;
+    }
+
+    return false;
+  };
 
   // Load data from API on mount
   useEffect(() => {
@@ -264,6 +299,13 @@ export default function CountriesRegionsTab({
       onCountriesChange?.(transformedCountries);
       onRegionsChange?.(transformedRegions);
       onCustomGeographiesChange?.(transformedCustomGeographies);
+
+      // Mark all loaded allocations as saved (they came from backend)
+      const newStatus: Record<string, 'saving' | 'saved' | 'error'> = {};
+      [...transformedCountries, ...transformedRegions, ...transformedCustomGeographies].forEach(allocation => {
+        newStatus[allocation.id] = 'saved';
+      });
+      setAllocationStatus(newStatus);
     } catch (err) {
       console.error('Error loading countries/regions data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -275,9 +317,19 @@ export default function CountriesRegionsTab({
   // Save data to API
   const saveData = async () => {
     if (!activityId || activityId === 'new') return;
-    
+
     setIsSaving(true);
     setError(null);
+
+    // Mark all allocations as saving
+    const allAllocations = [...countries, ...regions, ...customGeographies];
+    const newStatus: Record<string, 'saving' | 'saved' | 'error'> = {};
+
+    allAllocations.forEach(allocation => {
+      newStatus[allocation.id] = 'saving';
+    });
+
+    setAllocationStatus(newStatus);
     
     try {
       const response = await fetch(`/api/activities/${activityId}/countries-regions`, {
@@ -295,12 +347,29 @@ export default function CountriesRegionsTab({
       if (!response.ok) {
         throw new Error('Failed to save countries/regions data');
       }
-      
+
       setLastSaved(new Date());
+
+      // Mark all allocations as saved
+      const allAllocations = [...countries, ...regions, ...customGeographies];
+      const newStatus: Record<string, 'saving' | 'saved' | 'error'> = {};
+
+      allAllocations.forEach(allocation => {
+        newStatus[allocation.id] = 'saved';
+      });
+
+      setAllocationStatus(newStatus);
     } catch (err) {
       console.error('Error saving countries/regions data:', err);
       setError(err instanceof Error ? err.message : 'Failed to save data');
       toast.error('Failed to save countries/regions data');
+
+      // Mark all allocations as error
+      const errorStatus: Record<string, 'saving' | 'saved' | 'error'> = {};
+      allAllocations.forEach(allocation => {
+        errorStatus[allocation.id] = 'error';
+      });
+      setAllocationStatus(errorStatus);
     } finally {
       setIsSaving(false);
     }
@@ -394,6 +463,9 @@ export default function CountriesRegionsTab({
       const updatedCustomGeographies = [...customGeographies, newCustomGeography];
       setCustomGeographies(updatedCustomGeographies);
       onCustomGeographiesChange?.(updatedCustomGeographies);
+
+      // Mark the new allocation as saved
+      setAllocationStatus(prev => ({ ...prev, [newCustomGeography.id]: 'saved' }));
       
       // Reset form
       setSelectedType('');
@@ -442,6 +514,9 @@ export default function CountriesRegionsTab({
         const updatedCountries = [...countries, newCountry];
         setCountries(updatedCountries);
         onCountriesChange?.(updatedCountries);
+
+        // Mark the new allocation as saved
+        setAllocationStatus(prev => ({ ...prev, [newCountry.id]: 'saved' }));
       }
     } else if (selectedType === 'region') {
       const regionData = REGIONS.find(r => r.code === selectedItem);
@@ -465,6 +540,9 @@ export default function CountriesRegionsTab({
         const updatedRegions = [...regions, newRegion];
         setRegions(updatedRegions);
         onRegionsChange?.(updatedRegions);
+
+        // Mark the new allocation as saved
+        setAllocationStatus(prev => ({ ...prev, [newRegion.id]: 'saved' }));
       }
     }
     
@@ -483,7 +561,7 @@ export default function CountriesRegionsTab({
     setSelectedItem('');
     setItemSearchQuery('');
     setNarrative('');
-    
+
     // Auto-select appropriate vocabulary based on type
     if (type === 'country') {
       setVocabulary('A4');
@@ -494,18 +572,23 @@ export default function CountriesRegionsTab({
     } else {
       setVocabulary('');
     }
-    
+
     // Reset custom fields when switching away from custom
     if (type !== 'custom') {
       setCustomName('');
       setCustomCode('');
       setCustomVocabularyUri('');
     }
+
+    // Close dropdown immediately
+    setTypeDropdownOpen(false);
   };
 
   // Handle vocabulary selection
   const handleVocabularyChange = (vocab: string) => {
     setVocabulary(vocab);
+    // Close dropdown immediately
+    setVocabularyDropdownOpen(false);
   };
 
   // Edit functions
@@ -557,6 +640,8 @@ export default function CountriesRegionsTab({
   // Handle item selection
   const handleItemChange = (itemCode: string) => {
     setSelectedItem(itemCode);
+    // Close dropdown immediately
+    setItemDropdownOpen(false);
   };
 
   // Update country percentage
@@ -641,49 +726,11 @@ export default function CountriesRegionsTab({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header with validation status */}
+    <div ref={formRef as any} className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">Countries & Regions Allocation</h3>
-          {validationErrors.length === 0 && (countries.length > 0 || regions.length > 0) ? (
-            <div className="flex items-center gap-1 text-green-600">
-              <CheckCircle className="h-4 w-4" />
-              <span className="text-sm">Valid</span>
-            </div>
-          ) : validationErrors.length > 0 ? (
-            <div className="flex items-center gap-1 text-red-600">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm">Validation errors</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 text-amber-600">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm">{totalPercentage.toFixed(1)}% allocated</span>
-            </div>
-          )}
-        </div>
-        
-        {/* Save status */}
-        <div className="flex items-center gap-2">
-          {isSaving && (
-            <div className="flex items-center gap-1 text-blue-600">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Saving...</span>
-            </div>
-          )}
-          {lastSaved && !isSaving && !error && (
-            <div className="flex items-center gap-1 text-green-600">
-              <CheckCircle className="h-4 w-4" />
-              <span className="text-sm">Saved</span>
-            </div>
-          )}
-          {error && (
-            <div className="flex items-center gap-1 text-red-600">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm">Save failed</span>
-            </div>
-          )}
         </div>
         
         {!isValidAllocation && !hasOverlappingAllocations && (countries.length > 0 || regions.length > 0) && (
@@ -799,7 +846,6 @@ export default function CountriesRegionsTab({
                               value={option.value}
                               onSelect={() => {
                                   handleTypeChange(option.value as 'country' | 'region' | 'custom' | '');
-                                setTypeDropdownOpen(false);
                               }}
                                 className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                             >
@@ -869,7 +915,6 @@ export default function CountriesRegionsTab({
                                   value={option.value}
                                   onSelect={() => {
                                     handleVocabularyChange(option.value);
-                                    setVocabularyDropdownOpen(false);
                                   }}
                                   className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                                 >
@@ -955,6 +1000,9 @@ export default function CountriesRegionsTab({
                                   if (e.key === 'Escape') {
                                     setItemDropdownOpen(false);
                                     setItemSearchQuery("");
+                                  } else if (e.key === 'Enter' || e.key === 'Tab') {
+                                    // Close dropdown and keep current search query
+                                    setItemDropdownOpen(false);
                                   }
                                 }}
                                 className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
@@ -980,8 +1028,7 @@ export default function CountriesRegionsTab({
                                 value={item.code}
                                 onSelect={() => {
                                   handleItemChange(item.code);
-                                  setItemDropdownOpen(false);
-                                      setItemSearchQuery("");
+                                  setItemSearchQuery("");
                                 }}
                                     className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                               >
@@ -1159,7 +1206,9 @@ export default function CountriesRegionsTab({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-medium">{countryAllocation.percentage}%</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-medium">{countryAllocation.percentage}%</span>
+                          </div>
                         </TableCell>
                         <TableCell className="text-sm text-gray-600 min-w-48" title={countryAllocation.narrative}>
                           {countryAllocation.narrative || '-'}
@@ -1217,7 +1266,9 @@ export default function CountriesRegionsTab({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-medium">{regionAllocation.percentage}%</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-medium">{regionAllocation.percentage}%</span>
+                          </div>
                         </TableCell>
                         <TableCell className="text-sm text-gray-600 min-w-48" title={regionAllocation.narrative}>
                           {regionAllocation.narrative || '-'}
@@ -1289,7 +1340,9 @@ export default function CountriesRegionsTab({
                           </TooltipProvider>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-medium">{customAllocation.percentage}%</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-medium">{customAllocation.percentage}%</span>
+                          </div>
                         </TableCell>
                         <TableCell className="text-sm text-gray-600 min-w-48" title={customAllocation.narrative}>
                           {customAllocation.narrative || '-'}

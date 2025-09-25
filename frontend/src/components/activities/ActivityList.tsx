@@ -66,12 +66,14 @@ export const ActivityList: React.FC<ActivityListProps> = ({
     );
   }
 
-  if (activities.length === 0) {
+  // Only show "no activities" message if not loading and no activities
+  // This prevents showing the message during initial load
+  if (activities.length === 0 && !loading) {
     return (
       <div className={`text-center py-12 ${className}`}>
         <div className="text-gray-500">
           <p className="text-lg font-medium mb-2">No activities found</p>
-          <p className="text-sm">Try adjusting your search or filters</p>
+          <p className="text-sm">There are no activities in the system yet.</p>
         </div>
       </div>
     );

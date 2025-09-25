@@ -15,72 +15,107 @@ import dynamic from 'next/dynamic';
 // Import gesture handling plugin and CSS
 // Note: Gesture handling CSS is not needed - the plugin works without it
 
-// Dynamic import for map components to avoid SSR issues
-const MapContainer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const Marker = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Marker),
-  { ssr: false }
-);
-const Popup = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Popup),
-  { ssr: false }
-);
-const Tooltip = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Tooltip),
-  { ssr: false }
-);
-const Polygon = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Polygon),
-  { ssr: false }
-);
-const GeoJSON = dynamic(
-  () => import('react-leaflet').then((mod) => mod.GeoJSON),
-  { ssr: false }
-);
+// Dynamic import for map components to avoid SSR issues with error handling
+let MapContainer: any;
+let TileLayer: any;
+let Marker: any;
+let Popup: any;
+let Tooltip: any;
+let Polygon: any;
+let GeoJSON: any;
 
-// Import Leaflet and fix SSR issues
-let L: any;
-let useMapEventsHook: any;
-let useMap: any;
+// Initialize dynamic imports with proper error handling
 if (typeof window !== 'undefined') {
-  L = require('leaflet');
-  const ReactLeaflet = require('react-leaflet');
-  useMapEventsHook = ReactLeaflet.useMapEvents;
-  useMap = ReactLeaflet.useMap;
-  require('leaflet/dist/leaflet.css');
-  
-  // Load leaflet-gesture-handling plugin
   try {
-    const GestureHandling = require('leaflet-gesture-handling');
-    
-    // Add the gesture handling handler to Leaflet
-    L.Map.addInitHook('addHandler', 'gestureHandling', GestureHandling.GestureHandling);
-    console.log('Gesture handling plugin loaded successfully');
-  } catch (e) {
-    console.warn('Leaflet gesture handling plugin not loaded:', e);
+    MapContainer = dynamic(
+      () => import('react-leaflet').then((mod) => mod.MapContainer),
+      { ssr: false }
+    );
+    TileLayer = dynamic(
+      () => import('react-leaflet').then((mod) => mod.TileLayer),
+      { ssr: false }
+    );
+    Marker = dynamic(
+      () => import('react-leaflet').then((mod) => mod.Marker),
+      { ssr: false }
+    );
+    Popup = dynamic(
+      () => import('react-leaflet').then((mod) => mod.Popup),
+      { ssr: false }
+    );
+    Tooltip = dynamic(
+      () => import('react-leaflet').then((mod) => mod.Tooltip),
+      { ssr: false }
+    );
+    Polygon = dynamic(
+      () => import('react-leaflet').then((mod) => mod.Polygon),
+      { ssr: false }
+    );
+    GeoJSON = dynamic(
+      () => import('react-leaflet').then((mod) => mod.GeoJSON),
+      { ssr: false }
+    );
+  } catch (error) {
+    console.error('Error initializing dynamic imports:', error);
   }
-  
-  // Load leaflet.heat plugin
-  try {
-    require('leaflet.heat');
-  } catch (e) {
-    console.warn('Leaflet.heat plugin not loaded');
+}
+
+// Global Leaflet variables - initialize as null to prevent uninitialized variable errors
+let L: any = null;
+let useMapEventsHook: any = null;
+let useMap: any = null;
+
+// Function to safely load Leaflet dependencies
+const loadLeafletDependencies = () => {
+  if (typeof window !== 'undefined' && !L) {
+    try {
+      L = require('leaflet');
+      const ReactLeaflet = require('react-leaflet');
+      useMapEventsHook = ReactLeaflet.useMapEvents;
+      useMap = ReactLeaflet.useMap;
+      require('leaflet/dist/leaflet.css');
+
+      // Load leaflet-gesture-handling plugin
+      try {
+        const GestureHandling = require('leaflet-gesture-handling');
+
+        // Add the gesture handling handler to Leaflet
+        if (L?.Map?.addInitHook) {
+          L.Map.addInitHook('addHandler', 'gestureHandling', GestureHandling.GestureHandling);
+        }
+        console.log('✅ Gesture handling plugin loaded successfully');
+      } catch (e) {
+        console.warn('⚠️ Leaflet gesture handling plugin not loaded:', e);
+      }
+
+      // Load leaflet.heat plugin
+      try {
+        require('leaflet.heat');
+        console.log('✅ Leaflet heat plugin loaded successfully');
+      } catch (e) {
+        console.warn('⚠️ Leaflet.heat plugin not loaded:', e);
+      }
+
+      // Fix for default marker icons in Leaflet
+      if (L?.Icon?.Default) {
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        });
+      }
+
+      console.log('✅ Leaflet dependencies loaded successfully');
+    } catch (error) {
+      console.error('❌ Failed to load Leaflet dependencies:', error);
+    }
   }
-  
-  // Fix for default marker icons in Leaflet
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  });
+};
+
+// Load dependencies when the module is loaded (on client side)
+if (typeof window !== 'undefined') {
+  loadLeafletDependencies();
 }
 
 // Database interface matching Supabase schema
@@ -198,18 +233,16 @@ const MYANMAR_GEOJSON = {
 
 // Map events component
 function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
-  // Early return if not available - before any hook calls
-  if (!useMapEventsHook || typeof window === 'undefined') {
-    return null;
-  }
-  
-  // Now we can safely call the hook
+  // Always call hooks first - no early returns before hooks
   const map = useMapEventsHook({
     click(e: any) {
-      onMapClick(e.latlng.lat, e.latlng.lng);
+      // Only call onMapClick if Leaflet is properly loaded
+      if (L && typeof window !== 'undefined') {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      }
     },
   });
-  
+
   return null;
 }
 
@@ -217,49 +250,68 @@ function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => v
 function HeatMapLayer({ locations }: { locations: Location[] }) {
   // Always call hooks first
   const map = useMap();
-  
+
   React.useEffect(() => {
-    if (!map || typeof window === 'undefined' || !L || !L.heatLayer) return;
-    
-    const validLocations = locations.filter(loc => loc.latitude && loc.longitude);
-    
-    if (validLocations.length === 0) return;
-    
-    // Convert locations to heat data format [lat, lng, intensity]
-    const heatData = validLocations.map(loc => [
-      loc.latitude!,
-      loc.longitude!,
-      1 // intensity
-    ]);
-    
-    // Create heat layer with better visibility
-    const heatLayer = L.heatLayer(heatData, {
-      radius: 25,
-      blur: 15,
-      maxZoom: 10,
-      max: 1.0,
-      minOpacity: 0.4,
-      gradient: {
-        0.0: '#8b5cf6',
-        0.2: '#a855f7', 
-        0.4: '#c084fc',
-        0.6: '#fbbf24',
-        0.8: '#f59e0b',
-        1.0: '#d97706'
+    if (!map || !L || !L.heatLayer) {
+      console.log('HeatMapLayer: Missing dependencies or invalid environment');
+      return;
+    }
+
+    let heatLayer: any = null;
+
+    try {
+      const validLocations = locations.filter(loc => loc.latitude && loc.longitude);
+
+      if (validLocations.length === 0) {
+        console.log('HeatMapLayer: No valid locations for heatmap');
+        return;
       }
-    });
-    
-    // Add to map
-    heatLayer.addTo(map);
-    
-    // Cleanup
+
+      // Convert locations to heat data format [lat, lng, intensity]
+      const heatData = validLocations.map(loc => [
+        loc.latitude!,
+        loc.longitude!,
+        1 // intensity
+      ]);
+
+      // Create heat layer with better visibility
+      heatLayer = L.heatLayer(heatData, {
+        radius: 25,
+        blur: 15,
+        maxZoom: 10,
+        max: 1.0,
+        minOpacity: 0.4,
+        gradient: {
+          0.0: '#8b5cf6',
+          0.2: '#a855f7',
+          0.4: '#c084fc',
+          0.6: '#fbbf24',
+          0.8: '#f59e0b',
+          1.0: '#d97706'
+        }
+      });
+
+      console.log('✅ HeatMapLayer: Successfully created heat layer');
+
+      // Add to map
+      heatLayer.addTo(map);
+
+    } catch (error) {
+      console.error('HeatMapLayer: Error creating heatmap:', error);
+    }
+
+    // Cleanup function
     return () => {
-      if (map.hasLayer(heatLayer)) {
-        map.removeLayer(heatLayer);
+      try {
+        if (heatLayer && map.hasLayer(heatLayer)) {
+          map.removeLayer(heatLayer);
+        }
+      } catch (error) {
+        console.error('HeatMapLayer: Error during cleanup:', error);
       }
     };
   }, [map, locations]);
-    
+
   return null;
 }
 
@@ -276,6 +328,17 @@ function MapThumbnail({ location }: { location: Location }) {
   }
 
   if (!location.latitude || !location.longitude) {
+    return (
+      <div className="w-32 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+          <MapPin className="h-6 w-6 text-gray-400" />
+        </div>
+      </div>
+    );
+  }
+
+  // Safety check for dynamic imports
+  if (!MapContainer || !TileLayer || !Marker) {
     return (
       <div className="w-32 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
         <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -306,18 +369,29 @@ function MapThumbnail({ location }: { location: Location }) {
   );
 }
 
-export default function LocationSelector({ 
-  locations, 
-  onLocationsChange, 
-  activityId, 
+export default function LocationSelector({
+  locations,
+  onLocationsChange,
+  activityId,
   userId,
-  saveStatus, 
+  saveStatus,
   saveMessage,
   activityTitle,
-  activitySector 
+  activitySector
 }: LocationSelectorProps) {
   console.log('[LocationSelector] Component rendering...');
-  
+  console.log('[LocationSelector] Props:', {
+    locationsCount: locations?.length || 0,
+    activityId,
+    userId,
+    saveStatus,
+    activityTitle,
+    activitySector
+  });
+
+  // ALL HOOKS MUST BE CALLED FIRST, BEFORE ANY EARLY RETURNS OR CONDITIONAL LOGIC
+
+  // State hooks
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -329,15 +403,11 @@ export default function LocationSelector({
   const mapRef = useRef<any>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Default center (Myanmar)
-  const defaultCenter: [number, number] = [21.9162, 95.9560];
-
+  // Effect hooks - MUST be called in same order every time
   useEffect(() => {
     setIsMapLoaded(true);
   }, []);
 
-
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -352,9 +422,10 @@ export default function LocationSelector({
     };
   }, []);
 
-  // Handle real-time search with debouncing
   useEffect(() => {
-    if (searchQuery.trim().length < 2) {
+    // Only proceed with search if searchQuery has content
+    // This is safe because it's inside a useEffect, not a conditional return
+    if (typeof window === 'undefined' || searchQuery.trim().length < 2) {
       setSearchResults([]);
       setShowDropdown(false);
       return;
@@ -579,8 +650,9 @@ export default function LocationSelector({
     );
   }
 
-  return (
-    <div className="space-y-6">
+  try {
+    return (
+      <div className="space-y-6">
       {/* Search and Controls - Fixed layout to prevent clipping */}
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Search Bar - Enhanced with dropdown */}
@@ -660,7 +732,7 @@ export default function LocationSelector({
       <Card>
         <CardContent className="p-0">
           <div className="h-80 w-full relative bg-gray-100 rounded-lg">
-            {typeof window !== 'undefined' && (
+            {typeof window !== 'undefined' && MapContainer && TileLayer && Marker && Popup && (
               <MapContainer
                 center={defaultCenter}
                 zoom={6}
@@ -766,6 +838,16 @@ export default function LocationSelector({
                 
                 <MapEvents onMapClick={handleMapClick} />
               </MapContainer>
+            )}
+
+            {/* Fallback when dynamic imports are not available */}
+            {typeof window !== 'undefined' && (!MapContainer || !TileLayer || !Marker || !Popup) && (
+              <div className="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">Map components loading...</p>
+                </div>
+              </div>
             )}
             
                          {/* Click instruction */}
@@ -976,4 +1058,8 @@ export default function LocationSelector({
       )}
     </div>
   );
+  } catch (error) {
+    console.error('[LocationSelector] Error during render:', error);
+    return <div className="p-4 text-red-600">Error: Component render failed</div>;
+  }
 }

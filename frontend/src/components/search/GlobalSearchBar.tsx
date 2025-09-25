@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { debounce } from 'lodash'
 import { Search, X, Loader2, Building2, Target, UserCircle } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -57,14 +58,25 @@ interface SearchResult {
   }
 }
 
+interface SearchSuggestion {
+  id: string
+  type: 'activity' | 'organization' | 'sector' | 'tag' | 'user' | 'contact'
+  title: string
+  subtitle?: string
+  metadata?: {
+    count?: number
+    category?: string
+  }
+}
+
 interface GlobalSearchBarProps {
   className?: string
   placeholder?: string
 }
 
-export function GlobalSearchBar({ 
+export function GlobalSearchBar({
   className,
-  placeholder = "Search projects, donors, tags…" 
+  placeholder = "Search projects, donors, tags…"
 }: GlobalSearchBarProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -73,10 +85,60 @@ export function GlobalSearchBar({
   const [isSearching, setIsSearching] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
+  const [popularSearches, setPopularSearches] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const router = useRouter()
   const pathname = usePathname()
+
+  // Fetch search suggestions
+  const fetchSuggestions = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      setSuggestions([])
+      setPopularSearches([])
+      setShowSuggestions(false)
+      setIsLoadingSuggestions(false)
+      return
+    }
+
+    setIsLoadingSuggestions(true)
+    setShowSuggestions(true)
+
+    try {
+      const response = await fetch(
+        `/api/search/suggestions?q=${encodeURIComponent(searchQuery)}&limit=8`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestions')
+      }
+
+      const data = await response.json()
+      setSuggestions(data.suggestions || [])
+      setPopularSearches(data.popularSearches || [])
+    } catch (err) {
+      console.error('Suggestions error:', err)
+      setSuggestions([])
+      setPopularSearches([])
+    } finally {
+      setIsLoadingSuggestions(false)
+    }
+  }, [])
+
+  // Debounced suggestions function
+  const debouncedFetchSuggestions = useCallback(
+    debounce((query: string) => fetchSuggestions(query), 300),
+    [fetchSuggestions]
+  )
 
   // Debounced search function
   const performSearch = useCallback(async (searchQuery: string) => {
@@ -138,10 +200,19 @@ export function GlobalSearchBar({
   const handleInputChange = useCallback((value: string) => {
     setQuery(value)
     setOpen(true) // Always open when typing
-    
-    // Clear previous timeout
+
+    // Clear previous timeouts
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current)
+    }
+
+    // Fetch suggestions for queries with 2+ characters
+    if (value.trim().length >= 2) {
+      debouncedFetchSuggestions(value)
+    } else {
+      setShowSuggestions(false)
+      setSuggestions([])
+      setPopularSearches([])
     }
 
     // Search immediately with 1 character
@@ -151,11 +222,11 @@ export function GlobalSearchBar({
       setError(null)
       setResults([]) // Clear previous results immediately
       setHasSearched(false) // Reset search state when starting new search
-      
+
       // Set new timeout for debounced search with very fast delay
       searchTimeoutRef.current = setTimeout(() => {
         performSearch(value)
-      }, 300) // 300ms debounce delay for better UX
+      }, 150) // Reduced to 150ms for snappier feel
     } else {
       // Clear results if no input
       setResults([])
@@ -163,8 +234,9 @@ export function GlobalSearchBar({
       setLoading(false)
       setIsSearching(false)
       setHasSearched(false)
+      setShowSuggestions(false)
     }
-  }, [performSearch])
+  }, [performSearch, debouncedFetchSuggestions])
 
   // Navigate to result
   const handleResultClick = useCallback((result: SearchResult) => {
@@ -197,6 +269,42 @@ export function GlobalSearchBar({
         break
     }
   }, [router])
+
+  // Handle suggestion click
+  const handleSuggestionClick = useCallback((suggestion: SearchSuggestion) => {
+    setOpen(false)
+    setQuery('')
+    setSuggestions([])
+    setShowSuggestions(false)
+
+    // Navigate based on suggestion type
+    switch (suggestion.type) {
+      case 'activity':
+        router.push(`/activities/${suggestion.id}`)
+        break
+      case 'organization':
+        router.push(`/organizations/${suggestion.id}`)
+        break
+      case 'sector':
+        router.push(`/sectors/${suggestion.id}`)
+        break
+      case 'tag':
+        router.push(`/tags/${suggestion.id}`)
+        break
+      default:
+        // For other types, set the query and let normal search handle it
+        setQuery(suggestion.title)
+        setOpen(true)
+    }
+  }, [router])
+
+  // Handle popular search click
+  const handlePopularSearchClick = useCallback((searchTerm: string) => {
+    setQuery(searchTerm)
+    setOpen(true)
+    setShowSuggestions(false)
+    performSearch(searchTerm)
+  }, [performSearch])
 
   // Navigate to full search results page
   const handleSearchSubmit = useCallback(() => {
@@ -415,7 +523,76 @@ export function GlobalSearchBar({
             {!loading && !isSearching && !error && query && results.length === 0 && hasSearched && query.trim().length > 0 && (
               <CommandEmpty>No results found for "{query}"</CommandEmpty>
             )}
-            
+
+            {/* Show suggestions when typing */}
+            {!loading && !isSearching && !error && query && query.trim().length >= 2 && showSuggestions && (
+              <>
+                {/* Show suggestions if available */}
+                {suggestions.length > 0 && (
+                  <CommandGroup>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                      Suggestions
+                    </div>
+                    {suggestions.map((suggestion) => (
+                      <CommandItem
+                        key={`suggestion-${suggestion.type}-${suggestion.id}`}
+                        onSelect={() => handleSuggestionClick(suggestion)}
+                        className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                      >
+                        <div className="flex items-start gap-3 w-full">
+                          <div className="flex-shrink-0 mt-0.5">
+                            {getResultIcon(suggestion as any)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate text-gray-900">
+                              {suggestion.title}
+                            </div>
+                            {suggestion.subtitle && (
+                              <div className="text-xs text-gray-500 mt-1 truncate">
+                                {suggestion.subtitle}
+                              </div>
+                            )}
+                            {suggestion.metadata?.category && (
+                              <div className="text-xs text-gray-400 mt-1">
+                                {suggestion.metadata.category}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+
+                {/* Show popular searches if available */}
+                {popularSearches.length > 0 && suggestions.length === 0 && (
+                  <CommandGroup>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                      Popular Searches
+                    </div>
+                    {popularSearches.map((search, idx) => (
+                      <CommandItem
+                        key={`popular-${idx}`}
+                        onSelect={() => handlePopularSearchClick(search)}
+                        className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                      >
+                        <div className="flex items-start gap-3 w-full">
+                          <div className="flex-shrink-0 mt-0.5">
+                            <Search className="h-4 w-4 text-gray-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate text-gray-900">
+                              {search}
+                            </div>
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </>
+            )}
+
             {!loading && !error && results.length > 0 && (
               <>
                 {/* Group results by type */}

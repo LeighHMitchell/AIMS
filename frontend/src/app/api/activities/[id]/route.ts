@@ -32,9 +32,56 @@ export async function PATCH(
       'recipient_countries', 'recipient_regions', 'custom_geographies'
     ];
     
+    // Normalize activity_scope value (string '1'-'8') if provided using a helper
+    const normalizeScope = (val: any): string | null => {
+      if (val == null) return null;
+      const str = String(val).trim();
+      const map: Record<string, string> = {
+        global: '1',
+        regional: '2',
+        'multi-national': '3',
+        national: '4',
+        'sub-national multi first level': '5',
+        'sub-national single first level': '6',
+        'sub-national single second level': '7',
+        'single location': '8',
+      };
+      if (map[str.toLowerCase()]) return map[str.toLowerCase()];
+      if (/^[1-8]$/.test(str)) return str;
+      return null;
+    };
+
+    // Accept camelCase fields and map to DB column names
+    if (body.title !== undefined) activityFields.title_narrative = body.title;
+    if (body.description !== undefined) activityFields.description_narrative = body.description;
+    if (body.descriptionObjectives !== undefined) activityFields.description_objectives = body.descriptionObjectives;
+    if (body.descriptionTargetGroups !== undefined) activityFields.description_target_groups = body.descriptionTargetGroups;
+    if (body.descriptionOther !== undefined) activityFields.description_other = body.descriptionOther;
+    if (body.plannedStartDate !== undefined) activityFields.planned_start_date = body.plannedStartDate;
+    if (body.plannedEndDate !== undefined) activityFields.planned_end_date = body.plannedEndDate;
+    if (body.actualStartDate !== undefined) activityFields.actual_start_date = body.actualStartDate;
+    if (body.actualEndDate !== undefined) activityFields.actual_end_date = body.actualEndDate;
+    if (body.activityStatus !== undefined) activityFields.activity_status = body.activityStatus;
+    if (body.collaborationType !== undefined) activityFields.collaboration_type = body.collaborationType;
+    if (body.iatiIdentifier !== undefined) activityFields.iati_identifier = body.iatiIdentifier;
+    if (body.defaultCurrency !== undefined) activityFields.default_currency = body.defaultCurrency;
+    if (body.defaultAidType !== undefined) activityFields.default_aid_type = body.defaultAidType;
+    if (body.defaultFinanceType !== undefined) activityFields.default_finance_type = body.defaultFinanceType;
+    if (body.defaultFlowType !== undefined) activityFields.default_flow_type = body.defaultFlowType;
+    if (body.defaultTiedStatus !== undefined) activityFields.default_tied_status = body.defaultTiedStatus;
+    if (body.language !== undefined) activityFields.language = body.language;
+    if (body.acronym !== undefined) activityFields.acronym = body.acronym;
+    if (body.activityScope !== undefined) activityFields.activity_scope = normalizeScope(body.activityScope);
+    if (body.publicationStatus !== undefined) activityFields.publication_status = body.publicationStatus;
+
     fieldsToUpdate.forEach(field => {
       if (body[field] !== undefined) {
-        activityFields[field] = body[field];
+        if (field === 'activity_scope') {
+          const normalized = normalizeScope(body[field]);
+          if (normalized !== null) activityFields[field] = normalized;
+        } else {
+          activityFields[field] = body[field];
+        }
       }
     });
     

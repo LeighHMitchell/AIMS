@@ -206,16 +206,22 @@ export function checkLocationsTabCompletion(data: {
   if (data.countries || data.regions) {
     const countries = data.countries || []
     const regions = data.regions || []
-    
+
     const countryTotal = countries.reduce((sum, c) => sum + (c.percentage || 0), 0)
     const regionTotal = regions.reduce((sum, r) => sum + (r.percentage || 0), 0)
     const totalPercentage = countryTotal + regionTotal
     const isValidTotal = Math.abs(totalPercentage - 100) < 0.01
     const hasAnyValues = countries.length > 0 || regions.length > 0
-    
-    if (isValidTotal && hasAnyValues) {
+
+    // Show as complete if we have any valid allocations (even if total isn't 100% yet)
+    if (hasAnyValues) {
       hasValidCountriesRegions = true
       completedFields.push('countries_regions')
+    }
+
+    // Also mark as complete if total is valid (existing logic)
+    if (isValidTotal && hasAnyValues) {
+      completedFields.push('countries_regions_complete')
     }
   }
   

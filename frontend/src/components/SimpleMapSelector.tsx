@@ -17,37 +17,51 @@ import { getLocationTypeLabel } from '@/data/location-types';
 
 // Note: Gesture handling CSS is not needed - the plugin works without it
 
-// Dynamic import for map components to avoid SSR issues
-const MapContainer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const Marker = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Marker),
-  { ssr: false }
-);
-const Popup = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Popup),
-  { ssr: false }
-);
-const ZoomControl = dynamic(
-  () => import('react-leaflet').then((mod) => mod.ZoomControl),
-  { ssr: false }
-);
-const AttributionControl = dynamic(
-  () => import('react-leaflet').then((mod) => mod.AttributionControl),
-  { ssr: false }
-);
+// Dynamic import for map components to avoid SSR issues with error handling
+let MapContainer: any;
+let TileLayer: any;
+let Marker: any;
+let Popup: any;
+let ZoomControl: any;
+let AttributionControl: any;
+
+// Initialize dynamic imports with proper error handling
+if (typeof window !== 'undefined') {
+  try {
+    MapContainer = dynamic(
+      () => import('react-leaflet').then((mod) => mod.MapContainer),
+      { ssr: false }
+    );
+    TileLayer = dynamic(
+      () => import('react-leaflet').then((mod) => mod.TileLayer),
+      { ssr: false }
+    );
+    Marker = dynamic(
+      () => import('react-leaflet').then((mod) => mod.Marker),
+      { ssr: false }
+    );
+    Popup = dynamic(
+      () => import('react-leaflet').then((mod) => mod.Popup),
+      { ssr: false }
+    );
+    ZoomControl = dynamic(
+      () => import('react-leaflet').then((mod) => mod.ZoomControl),
+      { ssr: false }
+    );
+    AttributionControl = dynamic(
+      () => import('react-leaflet').then((mod) => mod.AttributionControl),
+      { ssr: false }
+    );
+  } catch (error) {
+    console.error('Error initializing dynamic imports in SimpleMapSelector:', error);
+  }
+}
 
 // Import Leaflet and fix SSR issues
 let L: any = null;
 let useMapEventsHook: any = null;
 
-// Ensure we only load Leaflet on client side
+// Function to safely load Leaflet dependencies
 const loadLeafletDependencies = () => {
   if (typeof window !== 'undefined' && !L) {
     try {
@@ -55,7 +69,7 @@ const loadLeafletDependencies = () => {
       const ReactLeaflet = require('react-leaflet');
       useMapEventsHook = ReactLeaflet.useMapEvents;
       require('leaflet/dist/leaflet.css');
-      
+
       // Load leaflet-gesture-handling plugin (optional)
       try {
         const GestureHandling = require('leaflet-gesture-handling');
@@ -66,7 +80,7 @@ const loadLeafletDependencies = () => {
       } catch (e) {
         console.warn('⚠️ Leaflet gesture handling plugin not loaded, using default interactions:', e);
       }
-      
+
       // Load leaflet.heat plugin for heatmap functionality
       try {
         require('leaflet.heat');
@@ -74,16 +88,20 @@ const loadLeafletDependencies = () => {
       } catch (e) {
         console.warn('⚠️ Leaflet heat plugin not loaded, heatmap functionality disabled:', e);
       }
-      
+
       // Fix marker icons
+      if (L?.Icon?.Default) {
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-      });
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        });
+      }
+
+      console.log('✅ Leaflet dependencies loaded successfully');
     } catch (error) {
-      console.error('Failed to load Leaflet dependencies:', error);
+      console.error('❌ Failed to load Leaflet dependencies:', error);
     }
   }
 };
@@ -225,234 +243,236 @@ interface SimpleMapSelectorProps {
 
 // Map events component
 function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
-  // Early return if not available - before any hook calls
-  if (!useMapEventsHook || typeof window === 'undefined') {
-    return null;
-  }
-  
-  // Now we can safely call the hook
+  // Always call hooks first, then handle the logic
   const map = useMapEventsHook({
     click(e: any) {
-      const { lat, lng } = e.latlng;
-      onMapClick(lat, lng);
+      // Only call onMapClick if Leaflet is properly loaded
+      if (L && typeof window !== 'undefined') {
+        const { lat, lng } = e.latlng;
+        onMapClick(lat, lng);
+      }
     },
   });
-  
+
   return null;
 }
 
 // Map initializer to ensure proper setup
 // Component to handle map reset
 function MapReset({ shouldReset, onResetComplete }: { shouldReset: boolean; onResetComplete: () => void }) {
-  // Early return if not available - before any hook calls
-  if (!useMapEventsHook || typeof window === 'undefined') {
-    return null;
-  }
-  
-  // Now we can safely call hooks
+  // Always call hooks first
   const map = useMapEventsHook({});
 
   useEffect(() => {
-    if (!map || !shouldReset) return;
-    
-    console.log('Resetting map view to Myanmar');
-    map.setView([19.5, 96.0], 6);
-    onResetComplete();
+    // Only reset if all dependencies are available
+    if (!map || !shouldReset || !L || typeof window === 'undefined') return;
+
+    try {
+      console.log('Resetting map view to Myanmar');
+      map.setView([19.5, 96.0], 6);
+      onResetComplete();
+    } catch (error) {
+      console.error('Error resetting map:', error);
+    }
   }, [map, shouldReset, onResetComplete]);
-  
+
   return null;
 }
 
 // Component to fit map bounds to locations
 function MapBounds({ locations }: { locations: Location[] }) {
-  // Early return if not available - before any hook calls
-  if (!useMapEventsHook || typeof window === 'undefined') {
-    return null;
-  }
-  
-  // Now we can safely call hooks
+  // Always call hooks first
   const map = useMapEventsHook({});
 
   useEffect(() => {
-    if (!map || !locations.length) return;
-    
-    const validLocations = locations.filter(loc => 
-      loc.latitude && loc.longitude && 
-      !isNaN(loc.latitude) && !isNaN(loc.longitude)
-    );
-    
-    if (validLocations.length === 0) {
-      console.log('🗺️ MapBounds: No valid locations, keeping current view');
+    if (!map || !locations.length || !L || typeof window === 'undefined') {
+      console.log('🗺️ MapBounds: Missing dependencies or no locations');
       return;
     }
-    
-    if (validLocations.length === 1) {
-      // For single location, center on it
-      const loc = validLocations[0];
-      console.log('🗺️ MapBounds: Single location, centering on:', loc.location_name);
-      map.setView([loc.latitude!, loc.longitude!], 12);
-    } else {
-      // For multiple locations, fit bounds
-      const bounds = validLocations.map(loc => [loc.latitude!, loc.longitude!] as [number, number]);
-      console.log('🗺️ MapBounds: Calculated bounds:', bounds);
-      
-      // Calculate the extent of the bounds
-      const lats = bounds.map(b => b[0]);
-      const lngs = bounds.map(b => b[1]);
-      const minLat = Math.min(...lats);
-      const maxLat = Math.max(...lats);
-      const minLng = Math.min(...lngs);
-      const maxLng = Math.max(...lngs);
-      
-      console.log('🗺️ MapBounds: Bounds extent:', {
-        latRange: [minLat, maxLat],
-        lngRange: [minLng, maxLng],
-        latSpread: maxLat - minLat,
-        lngSpread: maxLng - minLng
-      });
-      
-      map.fitBounds(bounds, { padding: [20, 20] });
+
+    try {
+      const validLocations = locations.filter(loc =>
+        loc.latitude && loc.longitude &&
+        !isNaN(loc.latitude) && !isNaN(loc.longitude)
+      );
+
+      if (validLocations.length === 0) {
+        console.log('🗺️ MapBounds: No valid locations, keeping current view');
+        return;
+      }
+
+      if (validLocations.length === 1) {
+        // For single location, center on it
+        const loc = validLocations[0];
+        console.log('🗺️ MapBounds: Single location, centering on:', loc.location_name);
+        map.setView([loc.latitude!, loc.longitude!], 12);
+      } else {
+        // For multiple locations, fit bounds
+        const bounds = validLocations.map(loc => [loc.latitude!, loc.longitude!] as [number, number]);
+        console.log('🗺️ MapBounds: Calculated bounds:', bounds);
+
+        // Calculate the extent of the bounds
+        const lats = bounds.map(b => b[0]);
+        const lngs = bounds.map(b => b[1]);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs);
+        const maxLng = Math.max(...lngs);
+
+        console.log('🗺️ MapBounds: Bounds extent:', {
+          latRange: [minLat, maxLat],
+          lngRange: [minLng, maxLng],
+          latSpread: maxLat - minLat,
+          lngSpread: maxLng - minLng
+        });
+
+        map.fitBounds(bounds, { padding: [20, 20] });
+      }
+    } catch (error) {
+      console.error('🗺️ MapBounds: Error fitting bounds:', error);
     }
   }, [map, locations]);
-  
+
   return null;
 }
 
 function MapInitializer() {
-  // Early return if not available - before any hook calls
-  if (!useMapEventsHook || typeof window === 'undefined') {
-    return null;
-  }
-  
-  // Now we can safely call hooks
+  // Always call hooks first
   const map = useMapEventsHook({});
 
   useEffect(() => {
-    if (map) {
+    if (!map || !L || typeof window === 'undefined') {
+      console.log('🔧 MapInitializer: Missing dependencies');
+      return;
+    }
+
+    try {
       console.log('🔧 MapInitializer: Forcing interaction setup...');
-      
+
       // Force enable all interactions
       if (map.dragging && !map.dragging.enabled()) {
         map.dragging.enable();
         console.log('✅ Force enabled dragging');
       }
-      
+
       if (map.scrollWheelZoom && !map.scrollWheelZoom.enabled()) {
         map.scrollWheelZoom.enable();
         console.log('✅ Force enabled scroll wheel zoom');
       }
-      
+
       if (map.touchZoom && !map.touchZoom.enabled()) {
         map.touchZoom.enable();
         console.log('✅ Force enabled touch zoom');
       }
-      
+
       // Force refresh map size
       setTimeout(() => {
         console.log('🔄 Forcing map refresh...');
         map.invalidateSize();
         console.log('✅ Map size invalidated and refreshed');
       }, 100);
-      
+
       // Additional interaction setup
       setTimeout(() => {
-        if (map.getContainer) {
-          const container = map.getContainer();
-          if (container) {
-            container.style.cursor = 'grab';
-            console.log('🎯 Map cursor set to grab');
+        try {
+          if (map.getContainer) {
+            const container = map.getContainer();
+            if (container) {
+              container.style.cursor = 'grab';
+              console.log('🎯 Map cursor set to grab');
+            }
           }
+        } catch (error) {
+          console.error('🔧 MapInitializer: Error setting cursor:', error);
         }
       }, 200);
+    } catch (error) {
+      console.error('🔧 MapInitializer: Error during initialization:', error);
     }
   }, [map]);
-  
+
   return null;
 }
 
 // Heatmap component
 function HeatmapLayer({ locations }: { locations: Location[] }) {
-  // Early return if not available - before any hook calls
-  if (!useMapEventsHook || typeof window === 'undefined') {
-    return null;
-  }
-  
-  // Now we can safely call hooks
+  // Always call hooks first
   const map = useMapEventsHook({});
   const heatLayerRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!map) return;
-    
-    // Load leaflet.heat plugin if available
-    if (typeof window !== 'undefined') {
-      try {
-        require('leaflet.heat');
-        
-        // Remove existing heatmap layer if it exists
-        if (heatLayerRef.current && map.hasLayer(heatLayerRef.current)) {
-          map.removeLayer(heatLayerRef.current);
-          heatLayerRef.current = null;
-        }
-        
-        // Only create heatmap if we have valid locations
-        const validLocations = locations.filter(loc => 
-          loc.latitude && loc.longitude && 
-          !isNaN(loc.latitude) && !isNaN(loc.longitude)
-        );
-        
-        if (validLocations.length === 0) {
-          console.log('No valid locations for heatmap');
-          return;
-        }
-        
-        // Create heatmap data from locations
-        const heatmapData = validLocations.map(loc => [
-          loc.latitude!, 
-          loc.longitude!, 
-          1.0 // Intensity - could be based on activity data in the future
-        ]);
-        
-        console.log('Creating heatmap with', heatmapData.length, 'points');
-        
-        // Create and add heatmap layer
-        if (!L || !L.heatLayer) {
-          console.warn('Leaflet heatLayer not available');
-          return;
-        }
-        const heatLayer = L.heatLayer(heatmapData, {
-          radius: 25,
-          blur: 15,
-          maxZoom: 18,
-          minOpacity: 0.4,
-          gradient: {
-            0.0: 'blue',
-            0.2: 'cyan',
-            0.4: 'lime',
-            0.6: 'yellow',
-            0.8: 'orange',
-            1.0: 'red'
-          }
-        });
-        
-        map.addLayer(heatLayer);
-        heatLayerRef.current = heatLayer;
-        console.log('✅ Heatmap layer added successfully');
-        
-      } catch (error) {
-        console.error('Error creating heatmap:', error);
-      }
+    if (!map || !L || !L.heatLayer || typeof window === 'undefined') {
+      console.log('HeatmapLayer: Missing dependencies or invalid environment');
+      return;
     }
-    
-    // Cleanup function
-    return () => {
+
+    try {
+      // Load leaflet.heat plugin if available
+      require('leaflet.heat');
+
+      // Remove existing heatmap layer if it exists
       if (heatLayerRef.current && map.hasLayer(heatLayerRef.current)) {
         map.removeLayer(heatLayerRef.current);
         heatLayerRef.current = null;
       }
+
+      // Only create heatmap if we have valid locations
+      const validLocations = locations.filter(loc =>
+        loc.latitude && loc.longitude &&
+        !isNaN(loc.latitude) && !isNaN(loc.longitude)
+      );
+
+      if (validLocations.length === 0) {
+        console.log('HeatmapLayer: No valid locations for heatmap');
+        return;
+      }
+
+      // Create heatmap data from locations
+      const heatmapData = validLocations.map(loc => [
+        loc.latitude!,
+        loc.longitude!,
+        1.0 // Intensity - could be based on activity data in the future
+      ]);
+
+      console.log('HeatmapLayer: Creating heatmap with', heatmapData.length, 'points');
+
+      // Create and add heatmap layer
+      const heatLayer = L.heatLayer(heatmapData, {
+        radius: 25,
+        blur: 15,
+        maxZoom: 18,
+        minOpacity: 0.4,
+        gradient: {
+          0.0: 'blue',
+          0.2: 'cyan',
+          0.4: 'lime',
+          0.6: 'yellow',
+          0.8: 'orange',
+          1.0: 'red'
+        }
+      });
+
+      map.addLayer(heatLayer);
+      heatLayerRef.current = heatLayer;
+      console.log('✅ HeatmapLayer: Successfully created heat layer');
+
+    } catch (error) {
+      console.error('HeatmapLayer: Error creating heatmap:', error);
+    }
+
+    // Cleanup function
+    return () => {
+      try {
+        if (heatLayerRef.current && map.hasLayer(heatLayerRef.current)) {
+          map.removeLayer(heatLayerRef.current);
+          heatLayerRef.current = null;
+        }
+      } catch (error) {
+        console.error('HeatmapLayer: Error during cleanup:', error);
+      }
     };
   }, [map, locations]);
-  
+
   return null;
 }
 
@@ -974,7 +994,7 @@ export default function SimpleMapSelector({
         </CardHeader>
         <CardContent className="flex-1">
           <div className="h-full w-full relative rounded-lg overflow-hidden">
-            {isMapLoaded && L && useMapEventsHook ? (
+            {isMapLoaded && L && useMapEventsHook && MapContainer && TileLayer && Marker && Popup && ZoomControl && AttributionControl ? (
               <MapContainer
                 ref={mapRef}
                     center={[19.5, 96.0]}
@@ -1057,7 +1077,7 @@ export default function SimpleMapSelector({
               </MapContainer>
             ) : null}
             
-            {(!isMapLoaded || !L || !useMapEventsHook) && (
+            {(!isMapLoaded || !L || !useMapEventsHook || !MapContainer || !TileLayer || !Marker || !Popup || !ZoomControl || !AttributionControl) && (
                   <div className="flex items-center justify-center h-full bg-gray-50">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
@@ -1073,7 +1093,12 @@ export default function SimpleMapSelector({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setIsAddingLocation(false)}
+                      onClick={() => {
+                        setIsAddingLocation(false);
+                        setSearchQuery('');
+                        setSearchResults([]);
+                        setShowDropdown(false);
+                      }}
                       className="mt-2 text-white hover:bg-blue-600 p-1 h-auto"
                     >
                       Cancel
@@ -1115,10 +1140,6 @@ export default function SimpleMapSelector({
                     // Delay hiding dropdown to allow click events on dropdown items
                     setTimeout(() => {
                       setShowDropdown(false);
-                      // Clear search if no location was selected
-                      if (!selectedLocation.location_name) {
-                        setSearchQuery('');
-                      }
                     }, 200);
                   }}
                   onFocus={() => {
@@ -1131,7 +1152,23 @@ export default function SimpleMapSelector({
                 {isSearching && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-              </div>
+                  </div>
+                )}
+                {searchQuery && !isSearching && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSearchQuery('');
+                      setSearchResults([]);
+                      setShowDropdown(false);
+                    }}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    title="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 )}
                 
                 {showDropdown && searchResults.length > 0 && (
@@ -1142,10 +1179,10 @@ export default function SimpleMapSelector({
                         className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
                         onClick={() => {
                           const address = result.address || {};
-                          
+
                           // Parse the display name to extract address components
                           const displayParts = result.display_name.split(',').map((part: string) => part.trim());
-                          
+
                           const newLocation: Partial<Location> = {
                             location_name: result.name || displayParts[0],
                             location_type: 'site',
@@ -1167,15 +1204,16 @@ export default function SimpleMapSelector({
                             township_code: address.township_code || '',
                             village_name: address.village || address.hamlet || address.suburb || address.neighbourhood || '',
                           };
-                          
+
                           // Center the map on the selected search result
                           if (mapRef.current) {
                             const map = mapRef.current;
                             map.setView([parseFloat(result.lat), parseFloat(result.lon)], 14);
                             console.log('🗺️ Map centered on search result:', result.name || displayParts[0]);
                           }
-                          
+
                           setSelectedLocation(newLocation);
+                          // Keep the selected location name in the search field
                           setSearchQuery(result.name || displayParts[0]);
                           setShowDropdown(false);
                           setIsAddingLocation(true);
@@ -1408,6 +1446,8 @@ export default function SimpleMapSelector({
                     setIsAddingLocation(false);
                   setEditingLocation(null);
                     setSearchQuery('');
+                    setSearchResults([]);
+                    setShowDropdown(false);
                 }}
               >
                   Clear

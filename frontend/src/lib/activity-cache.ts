@@ -12,10 +12,13 @@ interface CacheEntry<T> {
 class ActivityCache {
   private cache = new Map<string, CacheEntry<any>>();
   private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
+  private readonly ACTIVITY_TTL = 30 * 1000; // 30 seconds for activity data (shorter for editing)
 
   set<T>(key: string, data: T, ttl?: number): void {
     const now = Date.now();
-    const expiresAt = now + (ttl || this.DEFAULT_TTL);
+    // Use shorter TTL for activity data to ensure freshness during editing
+    const actualTTL = ttl || (key.includes('activity:') ? this.ACTIVITY_TTL : this.DEFAULT_TTL);
+    const expiresAt = now + actualTTL;
     
     this.cache.set(key, {
       data,
@@ -23,7 +26,8 @@ class ActivityCache {
       expiresAt
     });
 
-    console.log('[Activity Cache] Cached data for key:', key, 'expires at:', new Date(expiresAt).toISOString());
+    const ttlType = key.includes('activity:') ? 'activity' : 'general';
+    console.log('[Activity Cache] Cached data for key:', key, 'expires at:', new Date(expiresAt).toISOString(), `(TTL: ${ttlType})`);
   }
 
   get<T>(key: string): T | null {
@@ -157,4 +161,22 @@ export function invalidateActivityCache(activityId: string): void {
   activityCache.delete(basicCacheKey);
 
   console.log('[Activity Cache] Invalidated both full and basic cache for activity:', activityId);
+}
+
+// Force immediate cache refresh by clearing all activity-related cache entries
+export function forceActivityCacheRefresh(activityId?: string): void {
+  if (activityId) {
+    // Clear specific activity cache
+    invalidateActivityCache(activityId);
+  } else {
+    // Clear all activity caches (use with caution)
+    const cacheStats = activityCache.getStats();
+    const activityKeys = cacheStats.keys.filter(key => key.includes('activity:'));
+
+    activityKeys.forEach(key => {
+      activityCache.delete(key);
+    });
+
+    console.log('[Activity Cache] Force refreshed all activity cache entries');
+  }
 }

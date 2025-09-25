@@ -180,6 +180,9 @@ export function useFieldAutosave(
           'title': 'title',
           'acronym': 'acronym',
           'description': 'description',
+          'descriptionObjectives': 'description_objectives',
+          'descriptionTargetGroups': 'description_target_groups',
+          'descriptionOther': 'description_other',
           'collaborationType': 'collaborationType',
           'activityScope': 'activityScope',
           'language': 'language',
@@ -279,12 +282,10 @@ export function useFieldAutosave(
       retryCountRef.current = 0;
       
       // OPTIMIZATION: Invalidate activity cache when field is updated
-      // Add delay to ensure database consistency before cache invalidation
+      // FIXED: Invalidate immediately to prevent stale data on refresh
       if (activityId && activityId !== 'NEW') {
-        setTimeout(() => {
-          invalidateActivityCache(activityId);
-          console.log(`[FieldAutosave] Cache invalidated for activity: ${activityId} (delayed)`);
-        }, 200); // 200ms delay to ensure database is consistent
+        invalidateActivityCache(activityId);
+        console.log(`[FieldAutosave] Cache invalidated for activity: ${activityId} (immediate)`);
       }
 
       onSuccess?.(responseData, isUserInitiatedRef.current);

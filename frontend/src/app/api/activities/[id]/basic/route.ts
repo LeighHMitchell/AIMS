@@ -214,7 +214,11 @@ export async function GET(
     console.log('[AIMS API] Final response acronym:', transformedActivity.acronym);
     console.log('[AIMS API] Full transformed activity object:', JSON.stringify(transformedActivity, null, 2));
     
-    return NextResponse.json(transformedActivity);
+    return NextResponse.json(transformedActivity, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, max-age=0, must-revalidate'
+      }
+    });
   } catch (error) {
     console.error('[AIMS API] Error fetching basic activity:', error);
     return NextResponse.json(

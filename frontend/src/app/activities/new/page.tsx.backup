@@ -382,8 +382,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     };
   };
 
-  // Make fieldLockStatus reactive to general.id changes
-  const fieldLockStatus = useMemo(() => getFieldLockStatus(), [general.id]);
+  const fieldLockStatus = getFieldLockStatus();
 
   // Copy function for identifier fields
   const handleCopy = async (text: string, fieldName: string) => {
@@ -489,16 +488,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       setShowActivityCreatedAlert(true);
       setHasUnsavedChanges(false);
       
-      toast.success(
-        <div className="flex items-center gap-2">
-          <PartyPopper className="h-4 w-4" />
-          <span>Activity created! All tabs are now unlocked and ready to use.</span>
-        </div>,
-        {
-          duration: 4000,
-          position: 'top-right'
-        }
-      );
+      toast.success('Activity created successfully!');
       
     } catch (error: any) {
       console.error('[DEBUG] Failed to create activity:', error);
@@ -652,7 +642,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               placeholder="Enter activity title"
               className="w-full"
               autoFocus={!general.id}
-              tabIndex={1}
             />
           </div>
         </div>
@@ -705,7 +694,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               placeholder="Enter acronym"
               className="w-full"
               disabled={fieldLockStatus.isLocked}
-              tabIndex={general.id ? 2 : -1}
             />
           </div>
         </div>
@@ -763,7 +751,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               placeholder="Enter your organization's activity ID"
               className={''}
               disabled={fieldLockStatus.isLocked}
-              tabIndex={general.id ? 3 : -1}
             />
             {general.otherIdentifier && (
               <button
@@ -826,7 +813,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               placeholder="Enter IATI identifier"
               className={''}
               disabled={fieldLockStatus.isLocked}
-              tabIndex={general.id ? 4 : -1}
             />
             {general.iatiIdentifier && (
               <button
@@ -863,7 +849,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               type="text"
               value={general.uuid || ''}
               readOnly
-              tabIndex={general.id ? 5 : -1}
               className="bg-gray-50 cursor-not-allowed pr-10 truncate"
               placeholder={general.uuid ? general.uuid : "Auto-generated when activity is created"}
             />
@@ -3112,7 +3097,6 @@ function NewActivityPageContent() {
         console.log('[DEBUG] POST successful, created activity:', created.id);
         activityId = created.id;
         setGeneral((g: any) => ({ ...g, id: created.id, uuid: created.uuid || created.id }));
-        setShowActivityCreatedAlert(true);
       } else {
         console.log('[DEBUG] Updating existing activity via PATCH');
         // Now persist the full General tab via PATCH
@@ -3132,25 +3116,7 @@ function NewActivityPageContent() {
       }
 
       setHasUnsavedChanges(false);
-      
-      // Show appropriate toast message based on whether we created or updated
-      if (!general.id) {
-        // Activity was just created
-        toast.success(
-          <div className="flex items-center gap-2">
-            <PartyPopper className="h-4 w-4" />
-            <span>Activity created! All tabs are now unlocked and ready to use.</span>
-          </div>,
-          {
-            duration: 4000,
-            position: 'top-right'
-          }
-        );
-      } else {
-        // Activity was updated
-        toast.success(publish ? 'Published' : 'Saved');
-      }
-      
+      toast.success(publish ? 'Published' : 'Saved');
       console.log('[DEBUG] Save successful, clearing loading states');
 
       if (goToNext) {
@@ -3673,6 +3639,7 @@ function NewActivityPageContent() {
                     <span>Comments</span>
                   </Button>
                 )}
+                
                 {/* Back Button */}
                 <Button
                   variant="outline"
@@ -3694,22 +3661,63 @@ function NewActivityPageContent() {
                   )}
                 </Button>
 
+                {/* Save Button */}
+                <Button
+                  variant="outline"
+                  className="px-6 py-3 text-base font-semibold"
+                  onClick={() => saveActivity({})}
+                  disabled={!general.id || tabLoading || saving}
+                  title={!general.id ? "Activity will be created automatically when you enter a title" : (saving ? "Saving activity..." : undefined)}
+                >
+                  {saving ? (
+                    <>
+                      <CircleDashed className="mr-2 h-5 w-5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-5 w-5" />
+                      Save
+                    </>
+                  )}
+                </Button>
+
+                {/* Debug Button - Remove this after testing */}
+                <Button
+                  variant="outline"
+                  className="px-4 py-2 text-sm"
+                  onClick={() => {
+                    console.log('[DEBUG] Current saving state:', saving);
+                    setSaving(!saving);
+                    console.log('[DEBUG] Toggled saving to:', !saving);
+                  }}
+                >
+                  Debug Toggle Saving ({saving ? 'ON' : 'OFF'})
+                </Button>
+
                 {/* Save & Next Button */}
                 <Button
                   variant="default"
                   className="px-6 py-3 text-base font-semibold"
                   onClick={() => {
                     if (nextSection) {
-                      handleTabChange(nextSection.id);
+                      saveActivity({ goToNext: true });
                     }
                   }}
-                  disabled={!general.id || isLastSection || tabLoading}
-                  title={!general.id ? "Activity will be created automatically when you enter a title" : undefined}
+                  disabled={!general.id || isLastSection || tabLoading || savingAndNext}
+                  title={!general.id ? "Activity will be created automatically when you enter a title" : (savingAndNext ? "Saving activity..." : undefined)}
                 >
-                  <>
-                    Save & Next
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </>
+                  {savingAndNext ? (
+                    <>
+                      Saving...
+                      <CircleDashed className="ml-2 h-5 w-5 animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      Save & Next
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
