@@ -20,39 +20,13 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   
-  // Webpack configuration
+  // Webpack configuration - temporarily simplified
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Ensure TypeScript and JSON files are resolved properly
-    config.resolve.extensions = ['.ts', '.tsx', '.js', '.jsx', '.json'];
-    
     // Ensure the data directory is included in module resolution
     config.resolve.alias = {
       ...config.resolve.alias,
       '@/data': require('path').resolve(__dirname, 'src/data'),
     };
-    
-    // Add rules to handle TypeScript and JSON files
-    config.module.rules.push({
-      test: /\.(ts|tsx)$/,
-      include: /src\/data/,
-      use: [defaultLoaders.babel],
-    });
-    
-    // Ensure JSON files are handled
-    config.module.rules.push({
-      test: /\.json$/,
-      type: 'json',
-    });
-    
-    // Add fallback for modules
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        path: false,
-        crypto: false,
-      };
-    }
     
     return config;
   },

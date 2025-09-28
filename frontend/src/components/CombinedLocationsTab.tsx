@@ -3,13 +3,14 @@
 import React, { useState, useMemo } from 'react';
 import { CheckCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import LocationsTab from './LocationsTab';
+// Using the new LocationsTab component instead of LocationEditor
+// import LocationEditor, { IATILocation } from './LocationEditor';
 import { EnhancedSubnationalBreakdown } from './activities/EnhancedSubnationalBreakdown';
 import CountriesRegionsTab, { CountryAllocation, RegionAllocation } from './activities/CountriesRegionsTab';
 import { AdvancedLocationData } from '@/data/iati-location-types';
 
-// Re-export types for compatibility
-interface SpecificLocation {
+// Re-export types for compatibility with existing interfaces
+export interface SpecificLocation {
   id: string;
   name: string;
   type: string;
@@ -19,7 +20,7 @@ interface SpecificLocation {
   notes?: string;
 }
 
-interface CoverageArea {
+export interface CoverageArea {
   id: string;
   scope: 'national' | 'subnational';
   description: string;
@@ -41,27 +42,30 @@ interface CombinedLocationsTabProps {
   coverageAreas: CoverageArea[];
   onSpecificLocationsChange: (locations: SpecificLocation[]) => void;
   onCoverageAreasChange: (areas: CoverageArea[]) => void;
-  
+
   // Advanced IATI Location Fields props
   advancedLocations?: AdvancedLocationData[];
   onAdvancedLocationsChange?: (locations: AdvancedLocationData[]) => void;
-  
+
   // Subnational Breakdown props
   activityId: string;
   canEdit?: boolean;
   onSubnationalDataChange?: (breakdowns: Record<string, number>) => void;
   subnationalBreakdowns?: Record<string, number>;
-  
+
   // Countries & Regions props
   countries?: CountryAllocation[];
   regions?: RegionAllocation[];
   onCountriesChange?: (countries: CountryAllocation[]) => void;
   onRegionsChange?: (regions: RegionAllocation[]) => void;
-  
+
   // Common props
   activityTitle?: string;
   activitySector?: string;
 }
+
+// Import the new LocationsTab component
+import LocationsTab from './LocationsTab';
 
 export default function CombinedLocationsTab({
   specificLocations = [],
@@ -82,7 +86,7 @@ export default function CombinedLocationsTab({
   activitySector
 }: CombinedLocationsTabProps) {
   // State to track active sub-tab
-  const [activeSubTab, setActiveSubTab] = useState('countries-regions');
+  const [activeSubTab, setActiveSubTab] = useState('activity-locations');
   const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>(initialSubnationalBreakdowns);
   const [countries, setCountries] = useState<CountryAllocation[]>(initialCountries);
   const [regions, setRegions] = useState<RegionAllocation[]>(initialRegions);
@@ -90,9 +94,10 @@ export default function CombinedLocationsTab({
 
   // Calculate completion status for sub-tabs
   const hasValidLocations = useMemo(() => {
-    return specificLocations.some(location => 
-      location.name?.trim() && 
-      typeof location.latitude === 'number' && 
+    // Check specific locations for validity
+    return specificLocations.some(location =>
+      location.name?.trim() &&
+      typeof location.latitude === 'number' &&
       typeof location.longitude === 'number'
     );
   }, [specificLocations]);
@@ -159,42 +164,26 @@ export default function CombinedLocationsTab({
     <div className="space-y-6">
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="countries-regions" className="flex items-center gap-2">
-            Countries & Regions
-            {hasCountriesRegionsData && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
-          </TabsTrigger>
           <TabsTrigger value="activity-locations" className="flex items-center gap-2">
-            Activity Locations
+            Activity Sites
             {hasValidLocations && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
           </TabsTrigger>
           <TabsTrigger value="subnational-breakdown" className="flex items-center gap-2">
-            Subnational Breakdown
+            Subnational Allocation
             {hasSubnationalData && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
+          </TabsTrigger>
+          <TabsTrigger value="countries-regions" className="flex items-center gap-2">
+            Country and Region Allocation
+            {hasCountriesRegionsData && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="countries-regions" className="mt-6">
-          <CountriesRegionsTab
-            activityId={activityId}
-            countries={countries}
-            regions={regions}
-            onCountriesChange={handleCountriesChange}
-            onRegionsChange={handleRegionsChange}
-            canEdit={canEdit}
-          />
-        </TabsContent>
-
         <TabsContent value="activity-locations" className="mt-6">
           <LocationsTab
-            specificLocations={specificLocations}
-            coverageAreas={coverageAreas}
-            onSpecificLocationsChange={onSpecificLocationsChange}
-            onCoverageAreasChange={onCoverageAreasChange}
-            advancedLocations={advancedLocationsState}
-            onAdvancedLocationsChange={handleAdvancedLocationsChange}
             activityId={activityId}
             activityTitle={activityTitle}
             activitySector={activitySector}
+            canEdit={canEdit}
           />
         </TabsContent>
 
@@ -203,6 +192,17 @@ export default function CombinedLocationsTab({
             activityId={activityId}
             canEdit={canEdit}
             onDataChange={handleSubnationalDataChange}
+          />
+        </TabsContent>
+
+        <TabsContent value="countries-regions" className="mt-6">
+          <CountriesRegionsTab
+            activityId={activityId}
+            countries={countries}
+            regions={regions}
+            onCountriesChange={handleCountriesChange}
+            onRegionsChange={handleRegionsChange}
+            canEdit={canEdit}
           />
         </TabsContent>
       </Tabs>

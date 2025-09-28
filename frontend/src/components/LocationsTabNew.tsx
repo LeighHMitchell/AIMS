@@ -11,7 +11,6 @@ import {
   AlertCircle,
   CheckCircle,
   Loader2,
-  RefreshCw,
   Info
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -33,7 +32,7 @@ interface LocationsTabProps {
   canEdit?: boolean;
 }
 
-export default function LocationsTab({
+export default function LocationsTabNew({
   activityId,
   activityTitle,
   activitySector,
@@ -50,24 +49,31 @@ export default function LocationsTab({
   const { user } = useUser();
   const userId = user?.id || 'anonymous';
 
+  // Field autosave for locations
+  const locationsAutosave = useFieldAutosave('locations', {
+    activityId: activityId || 'new',
+    userId,
+    debounceMs: 2000,
+  });
+
   // Load locations from API
   const loadLocations = useCallback(async () => {
-      if (!activityId || activityId === 'new') {
+    if (!activityId || activityId === 'new') {
       setLocations([]);
       setIsLoading(false);
-        return;
-      }
+      return;
+    }
 
-      try {
+    try {
       setIsLoading(true);
       setError(null);
 
-        const response = await fetch(`/api/activities/${activityId}/locations`);
-        if (!response.ok) {
+      const response = await fetch(`/api/activities/${activityId}/locations`);
+      if (!response.ok) {
         throw new Error('Failed to load locations');
-        }
+      }
 
-        const data = await response.json();
+      const data = await response.json();
 
       if (data.success) {
         setLocations(data.locations || []);
@@ -87,6 +93,20 @@ export default function LocationsTab({
     loadLocations();
   }, [loadLocations]);
 
+  // Auto-save when locations change
+  useEffect(() => {
+    if (activityId && activityId !== 'new' && locations.length > 0) {
+      const timeoutId = setTimeout(() => {
+        const locationsData = {
+          locations: locations.filter(loc => !loc.id?.startsWith('temp_')),
+        };
+
+        locationsAutosave.triggerFieldSave(locationsData);
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [locations, activityId, locationsAutosave]);
 
   // Handle save location (create or update)
   const handleSaveLocation = useCallback(async (locationData: LocationSchema) => {
@@ -195,10 +215,6 @@ export default function LocationsTab({
     setIsModalOpen(true);
   }, []);
 
-  // Handle refresh
-  const handleRefresh = useCallback(() => {
-    loadLocations();
-  }, [loadLocations]);
 
 
   // Show loading state
@@ -208,7 +224,7 @@ export default function LocationsTab({
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           <span className="ml-2 text-gray-600">Loading locations...</span>
-            </div>
+        </div>
       </div>
     );
   }
@@ -237,19 +253,12 @@ export default function LocationsTab({
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {error}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              className="ml-2"
-            >
-              Retry
-            </Button>
           </AlertDescription>
         </Alert>
       )}
 
 
+      {/* Percentage Summary Info */}
 
       {/* Locations Grid */}
       {locations.length === 0 ? (
@@ -267,7 +276,7 @@ export default function LocationsTab({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {locations.map((location) => (
             <LocationCard
               key={location.id}
@@ -295,4 +304,3 @@ export default function LocationsTab({
     </div>
   );
 }
-

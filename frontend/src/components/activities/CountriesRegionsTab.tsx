@@ -30,6 +30,7 @@ import { IATI_COUNTRIES, IATICountry, searchCountries } from '@/data/iati-countr
 import { IATI_REGIONS, IATIRegion, searchRegions } from '@/data/iati-regions';
 import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-select';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export interface CountryAllocation {
   id: string;
@@ -232,7 +233,7 @@ export default function CountriesRegionsTab({
 
   // Autosave when data changes
   useEffect(() => {
-    if (activityId && activityId !== 'new' && (countries.length > 0 || regions.length > 0 || customGeographies.length > 0)) {
+    if (activityId && activityId !== 'new') {
       const timeoutId = setTimeout(() => {
         saveData();
       }, 1000); // Debounce for 1 second
@@ -667,6 +668,11 @@ export default function CountriesRegionsTab({
     const updatedCountries = countries.filter(c => c.id !== id);
     setCountries(updatedCountries);
     onCountriesChange?.(updatedCountries);
+    
+    // Immediately save deletion to database
+    if (activityId && activityId !== 'new') {
+      saveData();
+    }
   };
 
   // Remove region allocation
@@ -674,6 +680,11 @@ export default function CountriesRegionsTab({
     const updatedRegions = regions.filter(r => r.id !== id);
     setRegions(updatedRegions);
     onRegionsChange?.(updatedRegions);
+    
+    // Immediately save deletion to database
+    if (activityId && activityId !== 'new') {
+      saveData();
+    }
   };
 
   // Update custom geography percentage
@@ -690,6 +701,11 @@ export default function CountriesRegionsTab({
     const updatedCustomGeographies = customGeographies.filter(c => c.id !== id);
     setCustomGeographies(updatedCustomGeographies);
     onCustomGeographiesChange?.(updatedCustomGeographies);
+    
+    // Immediately save deletion to database
+    if (activityId && activityId !== 'new') {
+      saveData();
+    }
   };
 
   // Auto-distribute remaining percentage
@@ -724,6 +740,84 @@ export default function CountriesRegionsTab({
     onRegionsChange?.(updatedRegions);
     onCustomGeographiesChange?.(updatedCustomGeographies);
   };
+
+  // Show skeleton loader when loading
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-64" />
+          <Skeleton className="h-9 w-40" />
+        </div>
+        
+        {/* Alert Skeleton */}
+        <div className="rounded-lg border p-4">
+          <div className="flex gap-2">
+            <Skeleton className="h-4 w-4" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          </div>
+        </div>
+        
+        {/* Add Form Card Skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-48" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <div className="md:col-span-3">
+                <Skeleton className="h-4 w-16 mb-2" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="md:col-span-6">
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="md:col-span-2">
+                <Skeleton className="h-4 w-20 mb-2" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="md:col-span-1">
+                <Skeleton className="h-4 w-4 mb-2" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Table Skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-4 w-4" />
+                    <div>
+                      <Skeleton className="h-4 w-32 mb-1" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div ref={formRef as any} className="space-y-6">

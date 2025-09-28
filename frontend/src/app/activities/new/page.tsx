@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2 } from "lucide-react";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator } from "@/components/ActivityFieldHelpers";
@@ -461,6 +461,23 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     console.log('[DEBUG] Setting loading state');
     setIsSaving(true);
 
+    // Show orange toast notification while creating activity
+    const loadingToastId = toast(
+      <div className="flex items-center gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Creating activity...</span>
+      </div>,
+      {
+        duration: Infinity, // Will be dismissed when creation completes
+        position: 'top-right',
+        style: {
+          background: 'rgb(251, 146, 60)', // Orange-400
+          color: 'white',
+          border: '1px solid rgb(249, 115, 22)' // Orange-500
+        }
+      }
+    );
+
     try {
       const payload = {
         title: general.title,
@@ -485,6 +502,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       const data = await res.json();
       console.log('[DEBUG] Activity created successfully:', data);
       
+      // Dismiss the loading toast
+      toast.dismiss(loadingToastId);
+      
       setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
       setShowActivityCreatedAlert(true);
       setHasUnsavedChanges(false);
@@ -502,6 +522,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       
     } catch (error: any) {
       console.error('[DEBUG] Failed to create activity:', error);
+      // Dismiss the loading toast on error
+      toast.dismiss(loadingToastId);
       toast.error(`Failed to create activity: ${error.message}`);
     } finally {
       setIsSaving(false);
@@ -2848,6 +2870,14 @@ function NewActivityPageContent() {
       regions
     });
 
+    console.log('[TabCompletion] Locations completion status:', {
+      specificLocationsCount: specificLocations?.length || 0,
+      countriesCount: countries?.length || 0,
+      regionsCount: regions?.length || 0,
+      subnationalBreakdownsKeys: Object.keys(subnationalBreakdowns || {}).length,
+      locationsCompletion
+    });
+
     // Tags tab: use the comprehensive tags completion check
     const tagsCompletion = getTabCompletionStatus('tags', tags);
 
@@ -3390,7 +3420,7 @@ function NewActivityPageContent() {
         </aside>
 
         {/* Main Content Panel */}
-        <main className="flex-1 min-w-0 overflow-y-auto bg-white">
+        <main className="flex-1 overflow-y-auto bg-white">
           <div className="activity-editor pl-0 pr-6 md:pr-8 py-6 pb-24">
             <div className="flex items-center justify-end mb-6">
               <div className="flex items-center gap-6">
@@ -3693,6 +3723,28 @@ function NewActivityPageContent() {
                     </>
                   )}
                 </Button>
+
+                {/* Save Button - Only show for existing activities */}
+                {general.id && (
+                  <Button
+                    variant="outline"
+                    className="px-6 py-3 text-base font-semibold"
+                    onClick={() => saveActivity({})}
+                    disabled={saving || tabLoading}
+                  >
+                    {saving ? (
+                      <>
+                        <CircleDashed className="mr-2 h-5 w-5 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-5 w-5" />
+                        Save
+                      </>
+                    )}
+                  </Button>
+                )}
 
                 {/* Save & Next Button */}
                 <Button

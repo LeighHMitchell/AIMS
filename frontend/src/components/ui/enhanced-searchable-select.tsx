@@ -5,7 +5,7 @@ import { ChevronsUpDown, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { Command, CommandGroup, CommandItem, CommandList } from "./command";
-import { useDropdownState } from "@/contexts/DropdownContext";
+import { useDropdownState, DropdownContext } from "@/contexts/DropdownContext";
 
 export interface EnhancedSelectOption {
   code: string;
@@ -48,8 +48,15 @@ export function EnhancedSearchableSelect({
   align = "start",
 }: EnhancedSearchableSelectProps) {
   // Use shared dropdown state if dropdownId is provided
-  const { isOpen, setOpen } = useDropdownState(dropdownId);
+  const [localIsOpen, setLocalIsOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
+
+  // Use dropdown context if available, otherwise use local state
+  const dropdownContext = React.useContext(DropdownContext);
+  const { isOpen, setOpen } = dropdownContext && dropdownId !== "enhanced-searchable-select" ? useDropdownState(dropdownId) : {
+    isOpen: localIsOpen,
+    setOpen: setLocalIsOpen
+  };
 
   // Flatten all options for search and selection
   const allOptions = React.useMemo(
@@ -106,7 +113,7 @@ export function EnhancedSearchableSelect({
         <PopoverTrigger
           data-popover-trigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors cursor-pointer",
             !selectedOption && "text-muted-foreground"
           )}
           disabled={disabled}

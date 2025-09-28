@@ -1,0 +1,22 @@
+-- Fix the admin consistency constraint to be more flexible
+-- The constraint was too strict - it required both township_code and state_region_code
+-- to be present when township_name exists, but our geocoding data often has names without codes
+
+-- Drop the existing constraint
+ALTER TABLE activity_locations 
+DROP CONSTRAINT IF EXISTS activity_locations_admin_consistency;
+
+-- Add a more flexible constraint that only requires township_name and state_region_name
+-- to both be present or both be null (if we have township data, we should have state data)
+ALTER TABLE activity_locations 
+ADD CONSTRAINT activity_locations_admin_consistency 
+CHECK (
+    -- Either both township and state region names are null
+    (township_name IS NULL AND state_region_name IS NULL) OR 
+    -- Or both township and state region names are present
+    (township_name IS NOT NULL AND state_region_name IS NOT NULL)
+);
+
+-- Add a comment explaining the constraint
+COMMENT ON CONSTRAINT activity_locations_admin_consistency ON activity_locations 
+IS 'Ensures that if township_name is provided, state_region_name must also be provided for consistency';

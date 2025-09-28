@@ -10,7 +10,7 @@ interface DropdownContextType {
   openDropdownExclusive: (dropdownId: string) => void;
 }
 
-const DropdownContext = createContext<DropdownContextType | undefined>(undefined);
+export const DropdownContext = createContext<DropdownContextType | undefined>(undefined);
 
 export function DropdownProvider({ children }: { children: React.ReactNode }) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);

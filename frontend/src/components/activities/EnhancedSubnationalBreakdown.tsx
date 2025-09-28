@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
+import { Skeleton } from "@/components/ui/skeleton"
 
 
-import { MapPin, Trash2, Sparkles } from 'lucide-react'
+import { MapPin, Trash2, Sparkles, Loader2 } from 'lucide-react'
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
 import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
@@ -384,16 +385,71 @@ export function EnhancedSubnationalBreakdown({
     console.log('[EnhancedSubnationalBreakdown] Still loading, activityId:', activityId)
     return (
       <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-12 bg-gray-200 rounded"></div>
-            ))}
+        {/* Two-column layout skeleton to match actual layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Map Skeleton */}
+          <div className="h-[800px]">
+            <Card className="h-full">
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-[700px] w-full rounded-lg" />
+              </CardContent>
+            </Card>
           </div>
-        </div>
-        <div className="text-center text-sm text-gray-500">
-          Loading subnational breakdown data...
+          
+          {/* Form Skeleton */}
+          <Card className="h-[800px] flex flex-col">
+            <CardHeader>
+              <Skeleton className="h-6 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="flex-1 overflow-auto">
+              {/* Admin Unit Selection Skeleton */}
+              <div className="space-y-4 mb-6">
+                <Skeleton className="h-4 w-32 mb-2" />
+                <Skeleton className="h-10 w-full" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-10 flex-1" />
+                  <Skeleton className="h-10 w-24" />
+                </div>
+              </div>
+              
+              {/* Entries Table Skeleton */}
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-4 w-4" />
+                      <div>
+                        <Skeleton className="h-4 w-32 mb-1" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-8 w-20" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Total Skeleton */}
+              <div className="mt-6 pt-4 border-t">
+                <div className="flex justify-between items-center">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              </div>
+              
+              {/* Loading message */}
+              <div className="flex items-center justify-center mt-8 text-sm text-gray-500">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Loading subnational breakdown data...
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )

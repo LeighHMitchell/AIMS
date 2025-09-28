@@ -631,6 +631,40 @@ function ActivitiesPageContent() {
   // Don't refetch on filter changes - we do client-side filtering
   // Only refetch if we need fresh data
 
+  const handleDuplicateActivity = async (id: string) => {
+    try {
+      // Show loading toast
+      const loadingToastId = toast.loading("Duplicating activity...");
+      
+      const response = await fetch(`/api/activities/${id}/duplicate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to duplicate activity');
+      }
+
+      const result = await response.json();
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToastId);
+      
+      // Show success toast
+      toast.success("Activity duplicated successfully!");
+      
+      // Redirect to the new activity
+      router.push(`/activities/new?id=${result.id}`);
+      
+    } catch (error) {
+      console.error('Error duplicating activity:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate activity');
+    }
+  };
+
   const handleDelete = async (id: string, retryCount = 0) => {
     const MAX_RETRIES = 3;
     
@@ -1478,6 +1512,13 @@ function ActivitiesPageContent() {
                                   Edit
                                 </DropdownMenuItem>
                               )}
+                              <DropdownMenuItem 
+                                onClick={() => handleDuplicateActivity(activity.id)}
+                                className="cursor-pointer"
+                              >
+                                <Copy className="mr-2 h-4 w-4" />
+                                Duplicate
+                              </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => setDeleteActivityId(activity.id)}
                                 className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"

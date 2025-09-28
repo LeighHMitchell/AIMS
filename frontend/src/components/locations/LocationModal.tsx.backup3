@@ -1,0 +1,1327 @@
+'use client';
+
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
+import {
+  MapPin,
+  Search,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  X,
+  Save,
+  Trash2,
+  Map,
+  Layers,
+  Satellite,
+  RefreshCw,
+  Copy,
+  Check
+} from 'lucide-react';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+import { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
+import dynamic from 'next/dynamic';
+
+
+import {
+  locationFormSchema,
+  type LocationFormSchema,
+  type LocationSchema,
+  SITE_TYPES,
+  LOCATION_REACH_CODES,
+  LOCATION_EXACTNESS_CODES,
+  LOCATION_CLASS_CODES,
+  LOCATION_ID_VOCABULARIES,
+  ADMIN_LEVELS,
+  getDefaultLocationValues,
+  validateCoordinates,
+} from '@/lib/schemas/location';
+
+import {
+  smartLocationSearch,
+  reverseGeocode,
+  extractAdministrativeInfo,
+  formatAddress,
+  isValidCoordinate,
+  type LocationSearchResult,
+  type GeocodingResult,
+} from '@/lib/geo/nominatim';
+
+import { SelectIATI, type SelectIATIGroup } from '@/components/ui/SelectIATI';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+
+const LocationMap = dynamic(() => import('./LocationMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-96 items-center justify-center bg-muted text-sm text-muted-foreground">
+      Loading map...
+    </div>
+  ),
+});
+
+// IATI Select Groups Configuration
+const LOCATION_TYPE_GROUPS: SelectIATIGroup[] = [
+  {
+    label: 'Location Type',
+    options: [
+      { code: 'site', name: 'Site Location', description: 'Specific point-based locations' },
+      { code: 'coverage', name: 'Coverage Area', description: 'Geographical areas representing coverage' },
+    ],
+  },
+];
+
+const COVERAGE_SCOPE_GROUPS: SelectIATIGroup[] = [
+  {
+    label: 'Coverage Scope',
+    options: [
+      { code: 'national', name: 'National', description: 'Country-wide scope' },
+      { code: 'subnational', name: 'Subnational', description: 'Regional or state-level coverage' },
+      { code: 'regional', name: 'Regional', description: 'Multi-country region coverage' },
+      { code: 'local', name: 'Local', description: 'District or community coverage' },
+    ],
+  },
+];
+
+const SITE_TYPE_GROUPS: SelectIATIGroup[] = [
+  {
+    label: 'Site Type',
+    options: SITE_TYPES.map((type) => ({
+      code: type,
+      name: type
+        .split('_')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' '),
+    })),
+  },
+];
+
+const OSM_TYPE_PREFIX: Record<string, string> = {
+  node: 'node',
+  way: 'way',
+  relation: 'relation',
+  n: 'node',
+  w: 'way',
+  r: 'relation',
+};
+
+const LOCATION_CLASS_BY_TYPE: Record<string, '1' | '2' | '3' | '4' | '5'> = {
+  city: '2',
+  town: '2',
+  village: '2',
+  hamlet: '2',
+  suburb: '2',
+  neighbourhood: '2',
+  hospital: '3',
+  clinic: '3',
+  pharmacy: '3',
+  school: '3',
+  university: '3',
+  college: '3',
+  government: '3',
+  building: '3',
+  office: '3',
+  church: '3',
+  temple: '3',
+  mosque: '3',
+  monastery: '3',
+  shrine: '3',
+  structure: '3',
+  airport: '4',
+  railway: '4',
+  station: '4',
+};
+
+const FEATURE_DESIGNATION_BY_TYPE: Record<string, string> = {
+  hospital: 'HSP',
+  clinic: 'CLIN',
+  pharmacy: 'HSP',
+  school: 'SCH',
+  university: 'SCH',
+  college: 'SCH',
+  government: 'GOV',
+  office: 'FAC',
+  building: 'BLDG',
+  airport: 'ADMF',
+  city: 'PPL',
+  town: 'PPL',
+  village: 'PPL',
+  hamlet: 'PPL',
+  suburb: 'PPL',
+  neighbourhood: 'PPL',
+};
+
+const DEFAULT_LOCATION_REACH: '1' = '1';
+const DEFAULT_EXACTNESS: '1' = '1';
+
+const LOCATION_REACH_GROUPS: SelectIATIGroup[] = [
+  {
+    label: 'Location Reach',
+    options: [
+      { code: '1', name: 'Activity happens here', description: 'The activity is physically implemented at this location' },
+      { code: '2', name: 'Beneficiaries live here', description: 'The beneficiaries of the activity live at this location' }
+    ]
+  }
+];
+
+const LOCATION_EXACTNESS_GROUPS: SelectIATIGroup[] = [
+  {
+    label: 'Exactness',
+    options: [
+      { code: '1', name: 'Exact', description: 'Location is precisely known' },
+      { code: '2', name: 'Approximate', description: 'Location is approximately known' },
+      { code: '3', name: 'Extrapolated', description: 'Location is estimated or extrapolated' }
+    ]
+  }
+];
+
+const LOCATION_CLASS_GROUPS: SelectIATIGroup[] = [
+  {
+    label: 'Location Class',
+    options: [
+      { code: '1', name: 'Administrative Region', description: 'Administrative or political division' },
+      { code: '2', name: 'Settlement', description: 'Populated place or settlement' },
+      { code: '3', name: 'Structure', description: 'Building or structure' },
+      { code: '4', name: 'Site', description: 'Specific site or location' },
+      { code: '5', name: 'Area', description: 'Geographic area or region' }
+    ]
+  }
+];
+
+const LOCATION_ID_VOCABULARY_GROUPS: SelectIATIGroup[] = [
+  {
+    label: 'Gazetteer Vocabularies',
+    options: [
+      { code: 'G1', name: 'GeoNames', description: 'GeoNames geographical database' },
+      { code: 'G2', name: 'OpenStreetMap', description: 'OpenStreetMap database' },
+      { code: 'A1', name: 'GADM', description: 'Global Administrative Areas' },
+      { code: 'A4', name: 'HASC', description: 'Hierarchical Administrative Subdivision Codes' },
+      { code: 'A5', name: 'ISO 3166-1', description: 'ISO 3166-1 country codes' },
+      { code: 'A6', name: 'ISO 3166-2', description: 'ISO 3166-2 subdivision codes' },
+      { code: 'A8', name: 'UN', description: 'United Nations codes' }
+    ]
+  }
+];
+
+const ADMINISTRATIVE_LEVEL_GROUPS: SelectIATIGroup[] = [
+  {
+    label: 'Administrative Levels',
+    options: [
+      { code: '0', name: 'Country', description: 'Country level' },
+      { code: '1', name: 'Province/State', description: 'First-level administrative division' },
+      { code: '2', name: 'District/County', description: 'Second-level administrative division' },
+      { code: '3', name: 'Township/Municipality', description: 'Third-level administrative division' },
+      { code: '4', name: 'Ward/Neighborhood', description: 'Fourth-level administrative division' },
+      { code: '5', name: 'Village/Settlement', description: 'Fifth-level administrative division' }
+    ]
+  }
+];
+
+const FEATURE_DESIGNATION_GROUPS: SelectIATIGroup[] = [
+  {
+    label: 'Administrative',
+    options: [
+      { code: 'ADM1', name: 'First-order administrative division' },
+      { code: 'ADM2', name: 'Second-order administrative division' },
+      { code: 'ADM3', name: 'Third-order administrative division' },
+      { code: 'ADM4', name: 'Fourth-order administrative division' },
+      { code: 'ADM5', name: 'Fifth-order administrative division' },
+      { code: 'ADMF', name: 'Administrative facility' }
+    ]
+  },
+  {
+    label: 'Settlement',
+    options: [
+      { code: 'PPL', name: 'Populated place' },
+      { code: 'PPLA', name: 'Seat of first-order administrative division' },
+      { code: 'PPLA2', name: 'Seat of second-order administrative division' },
+      { code: 'PPLA3', name: 'Seat of third-order administrative division' },
+      { code: 'PPLA4', name: 'Seat of fourth-order administrative division' },
+      { code: 'PPLG', name: 'Seat of government' },
+      { code: 'PPLS', name: 'Populated places' },
+      { code: 'PPLX', name: 'Section of populated place' }
+    ]
+  },
+  {
+    label: 'Structure',
+    options: [
+      { code: 'BLDG', name: 'Building' },
+      { code: 'SCH', name: 'School' },
+      { code: 'HSP', name: 'Hospital' },
+      { code: 'CLIN', name: 'Clinic' },
+      { code: 'FAC', name: 'Facility' },
+      { code: 'MIL', name: 'Military facility' },
+      { code: 'GOV', name: 'Government facility' }
+    ]
+  },
+  {
+    label: 'Geographic',
+    options: [
+      { code: 'MT', name: 'Mountain' },
+      { code: 'HLL', name: 'Hill' },
+      { code: 'VLY', name: 'Valley' },
+      { code: 'RGN', name: 'Region' },
+      { code: 'AREA', name: 'Area' },
+      { code: 'ZONE', name: 'Zone' }
+    ]
+  },
+  {
+    label: 'Water',
+    options: [
+      { code: 'STM', name: 'Stream' },
+      { code: 'LK', name: 'Lake' },
+      { code: 'RIV', name: 'River' },
+      { code: 'SEA', name: 'Sea' },
+      { code: 'OCN', name: 'Ocean' }
+    ]
+  }
+];
+
+// Default center (Myanmar)
+const DEFAULT_CENTER: [number, number] = [21.9162, 96.0785];
+const DEFAULT_ZOOM = 6;
+
+// Map layer configuration
+const MAP_LAYERS = {
+  roads: {
+    name: 'Roads',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  },
+  terrain: {
+    name: 'Terrain',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; <a href="https://www.arcgis.com/">Esri</a> &mdash; Esri, DeLorme, NAVTEQ'
+  },
+  political: {
+    name: 'Political',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; <a href="https://www.arcgis.com/">Esri</a> &mdash; Esri, DeLorme, NAVTEQ'
+  },
+  satellite: {
+    name: 'Satellite',
+    // Primary: ESRI World Imagery
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; <a href="https://www.arcgis.com/">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    // Fallbacks
+    fallbacks: [
+      // Mapbox (if token available)
+      process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+        ? `https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
+        : null,
+      // Google (if token available)
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+        ? 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
+        : null,
+      // Back to OSM if all else fails
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    ].filter(Boolean)
+  }
+};
+
+// Layer persistence key
+const LAYER_PREFERENCE_KEY = 'aims-map-layer-preference';
+
+interface LocationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (location: LocationSchema) => Promise<void>;
+  onDelete?: (locationId: string) => Promise<void>;
+  activityId: string;
+  location?: LocationSchema;
+  existingLocations?: LocationSchema[];
+}
+
+export default function LocationModal({
+  isOpen,
+  onClose,
+  onSave,
+  onDelete,
+  activityId,
+  location,
+  existingLocations = [],
+}: LocationModalProps) {
+  // Form state
+  const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<LocationSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
+  const [mapZoom, setMapZoom] = useState(DEFAULT_ZOOM);
+  const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<Partial<LocationFormSchema>>({});
+  const [useMapValues, setUseMapValues] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [currentLayer, setCurrentLayer] = useState<'roads' | 'terrain' | 'political' | 'satellite'>('roads');
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [satelliteFallbackIndex, setSatelliteFallbackIndex] = useState(0);
+
+  const mapRef = useRef<any>(null);
+
+  // Load saved layer preference
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLayer = localStorage.getItem(LAYER_PREFERENCE_KEY) as 'roads' | 'terrain' | 'political' | 'satellite';
+      if (savedLayer && ['roads', 'terrain', 'political', 'satellite'].includes(savedLayer)) {
+        setCurrentLayer(savedLayer);
+      }
+    }
+  }, []);
+
+  // Save layer preference
+  const saveLayerPreference = useCallback((layer: 'roads' | 'terrain' | 'political' | 'satellite') => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LAYER_PREFERENCE_KEY, layer);
+      setCurrentLayer(layer);
+    }
+  }, []);
+
+  // Get current layer URL with fallbacks
+  const getLayerUrl = useCallback(() => {
+    const layer = MAP_LAYERS[currentLayer];
+
+    if (currentLayer === 'satellite') {
+      const fallbacks = layer.fallbacks ?? [];
+      const urls = [layer.url, ...fallbacks];
+      const index = Math.min(satelliteFallbackIndex, urls.length - 1);
+      return urls[index] ?? layer.url;
+    }
+
+    return layer.url;
+  }, [currentLayer, satelliteFallbackIndex]);
+
+  // Handle layer change
+  const handleLayerChange = useCallback((layer: 'roads' | 'terrain' | 'political' | 'satellite') => {
+    setMapError(null);
+    if (layer !== 'satellite') {
+      setSatelliteFallbackIndex(0);
+    }
+    saveLayerPreference(layer);
+  }, [saveLayerPreference]);
+
+  // Handle map tile error
+  const handleMapError = useCallback(() => {
+    if (currentLayer === 'satellite') {
+      const fallbacks = MAP_LAYERS.satellite.fallbacks ?? [];
+      const urls = [MAP_LAYERS.satellite.url, ...fallbacks];
+
+      setSatelliteFallbackIndex((prev) => {
+        const hasNext = prev < urls.length - 1;
+        if (hasNext) {
+          toast.warning('Satellite imagery unavailable from the current provider. Falling back to the next source.');
+          return prev + 1;
+        }
+        return prev;
+      });
+
+      if (satelliteFallbackIndex >= urls.length - 1) {
+        setMapError('Satellite tiles failed to load. Try switching layers or retry.');
+      }
+    } else {
+      setMapError('Map tiles failed to load. Click retry to try again.');
+    }
+  }, [currentLayer, satelliteFallbackIndex]);
+
+  // Handle retry
+  const handleRetry = useCallback(() => {
+    setIsRetrying(true);
+    setMapError(null);
+    if (currentLayer === 'satellite') {
+      setSatelliteFallbackIndex(0);
+    }
+
+    setTimeout(() => {
+      setIsRetrying(false);
+    }, 1000);
+  }, [currentLayer]);
+
+  useEffect(() => {
+    if (currentLayer !== 'satellite') {
+      setSatelliteFallbackIndex(0);
+    }
+  }, [currentLayer]);
+
+  // Form setup
+  const form = useForm<LocationFormSchema>({
+    resolver: zodResolver(locationFormSchema),
+    defaultValues: getDefaultLocationValues('site'),
+  });
+
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = form;
+
+  // Watch form values
+  const watchedLocationType = watch('location_type');
+  const watchedLatitude = watch('latitude');
+  const watchedLongitude = watch('longitude');
+
+  // Initialize form with existing location data
+  useEffect(() => {
+    if (location) {
+      reset({
+        ...location,
+        latitude: location.latitude || undefined,
+        longitude: location.longitude || undefined,
+      } as LocationFormSchema);
+
+      if (location.latitude && location.longitude) {
+        setMarkerPosition([location.latitude, location.longitude]);
+        setMapCenter([location.latitude, location.longitude]);
+        setMapZoom(15);
+      }
+
+      setSelectedLocation(location);
+    } else {
+      // Reset to defaults for new location
+      const defaults = getDefaultLocationValues('site');
+      reset({
+        ...defaults,
+      } as LocationFormSchema);
+      setSelectedLocation({});
+      setMarkerPosition(null);
+      setMapCenter(DEFAULT_CENTER);
+      setMapZoom(DEFAULT_ZOOM);
+    }
+  }, [location, reset]);
+
+  // Reset form when modal opens for new location
+  useEffect(() => {
+    if (isOpen && !location) {
+      // Force reset to defaults when modal opens for new location
+      const defaults = getDefaultLocationValues('site');
+      reset({
+        ...defaults,
+      } as LocationFormSchema);
+      setSelectedLocation({});
+      setMarkerPosition(null);
+      setMapCenter(DEFAULT_CENTER);
+      setMapZoom(DEFAULT_ZOOM);
+      setValidationErrors({});
+      setSearchQuery('');
+      setSearchResults([]);
+    }
+  }, [isOpen, location, reset]);
+  // Default toggle on for map auto-population
+  useEffect(() => {
+    setUseMapValues(true);
+  }, []);
+
+  // Search functionality
+  useEffect(() => {
+    const performSearch = async () => {
+      if (searchQuery.trim().length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const results = await smartLocationSearch(searchQuery.trim(), { limit: 8 });
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timeoutId = setTimeout(performSearch, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // Handle search result selection
+const autoPopulateIatiFields = useCallback((params: {
+    type?: string;
+    category?: string;
+    osmType?: string;
+    osmId?: string;
+    address?: Record<string, string | undefined>;
+    displayName?: string;
+    name?: string;
+  }) => {
+    const { type, category, osmType, osmId, address } = params;
+
+    // Location reach & exactness defaults
+    if (!watch('location_reach')) {
+      setValue('location_reach', DEFAULT_LOCATION_REACH);
+    }
+    if (!watch('exactness')) {
+      setValue('exactness', DEFAULT_EXACTNESS);
+    }
+
+    // Location class
+    const normalizedType = type?.toLowerCase();
+    if (normalizedType && LOCATION_CLASS_BY_TYPE[normalizedType]) {
+      if (!watch('location_class')) {
+        setValue('location_class', LOCATION_CLASS_BY_TYPE[normalizedType]);
+      }
+    }
+
+    // Feature designation
+    if (normalizedType && FEATURE_DESIGNATION_BY_TYPE[normalizedType]) {
+      setValue('feature_designation', FEATURE_DESIGNATION_BY_TYPE[normalizedType]);
+    }
+
+    // Gazetteer vocabulary & code (OSM)
+    if (osmId && osmType) {
+      const vocabulary = 'G2';
+      const prefix = OSM_TYPE_PREFIX[osmType.toLowerCase()] || 'node';
+      setValue('location_id_vocabulary', vocabulary);
+      setValue('location_id_code', `${prefix}/${osmId}`);
+    }
+
+    // Administrative level & code (if available)
+    if (address) {
+      if (address.state || address.province) {
+        setValue('admin_level', '1');
+        setValue('admin_code', address.state || address.province || '');
+      } else if (address.county || address.district) {
+        setValue('admin_level', '2');
+        setValue('admin_code', address.county || address.district || '');
+      }
+    }
+  }, [setValue]);
+
+  const handleSelectSearchResult = useCallback((result: LocationSearchResult) => {
+    const lat = result.lat;
+    const lng = result.lon;
+
+    setValue('latitude', lat);
+    setValue('longitude', lng);
+    setMarkerPosition([lat, lng]);
+    setMapCenter([lat, lng]);
+    setMapZoom(15);
+    
+    // Actually move the map to the new location
+    if (mapRef.current) {
+      mapRef.current.setView([lat, lng], 15);
+    }
+    setSearchQuery('');
+    setSearchResults([]);
+
+    // Populate address fields
+    setValue('address', result.display_name);
+    setValue('location_name', result.name || result.display_name);
+
+    if (result.address) {
+      setValue('city', result.address.city || result.address.town || '');
+      setValue('state_region_name', result.address.state || result.address.province || '');
+      setValue('township_name', result.address.county || result.address.district || '');
+      setValue('village_name', result.address.village || result.address.suburb || result.address.hamlet || '');
+      setValue('postal_code', result.address.postcode || '');
+      setValue('country_code', result.address.country_code?.toUpperCase() || '');
+    }
+
+    autoPopulateIatiFields({
+      type: result.type,
+      category: (result as any).category,
+      osmType: result.osm_type,
+      osmId: result.osm_id,
+      address: result.address as Record<string, string | undefined>,
+      displayName: result.display_name,
+      name: result.name,
+    });
+
+    toast.success(`Selected: ${result.display_name}`);
+  }, [autoPopulateIatiFields, setValue]);
+
+  // Handle map click
+  const handleMapClick = useCallback(async (lat: number, lng: number) => {
+    if (!isValidCoordinate(lat, lng)) return;
+
+    setValue('latitude', lat);
+    setValue('longitude', lng);
+    setMarkerPosition([lat, lng]);
+
+    // If user wants to use map values, populate other fields
+    if (useMapValues) {
+      try {
+        const geocodingResult = await reverseGeocode(lat, lng);
+        const adminInfo = extractAdministrativeInfo(geocodingResult);
+
+        setValue('address', geocodingResult.display_name);
+        setValue('location_name', geocodingResult.name || geocodingResult.display_name);
+        setValue('city', adminInfo.city || '');
+        setValue('state_region_name', adminInfo.state || '');
+        setValue('township_name', adminInfo.county || '');
+        setValue('village_name', adminInfo.village || '');
+        setValue('postal_code', adminInfo.postcode || '');
+        setValue('country_code', geocodingResult.address?.country_code?.toUpperCase() || '');
+
+        autoPopulateIatiFields({
+          type: geocodingResult.type,
+          category: geocodingResult.category,
+          osmType: geocodingResult.osm_type,
+          osmId: String(geocodingResult.osm_id),
+          address: geocodingResult.address as Record<string, string | undefined>,
+          displayName: geocodingResult.display_name,
+          name: geocodingResult.name,
+        });
+
+        toast.success('Location details updated from map');
+      } catch (error) {
+        console.error('Reverse geocoding error:', error);
+        setValue('address', `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`);
+        toast.warning('Could not get address details, but coordinates are set');
+      }
+    } else {
+      toast.success('Click coordinates set. Enable "Use map values" to auto-populate fields.');
+    }
+  }, [setValue, useMapValues]);
+
+  // Handle marker drag
+  const handleMarkerDragEnd = useCallback(async (lat: number, lng: number) => {
+    setValue('latitude', lat);
+    setValue('longitude', lng);
+
+    if (useMapValues) {
+      try {
+        const geocodingResult = await reverseGeocode(lat, lng);
+        const adminInfo = extractAdministrativeInfo(geocodingResult);
+
+        setValue('address', geocodingResult.display_name);
+        setValue('location_name', geocodingResult.name || geocodingResult.display_name);
+        setValue('city', adminInfo.city || '');
+        setValue('state_region_name', adminInfo.state || '');
+        setValue('township_name', adminInfo.county || '');
+        setValue('village_name', adminInfo.village || '');
+        setValue('postal_code', adminInfo.postcode || '');
+        setValue('country_code', geocodingResult.address?.country_code?.toUpperCase() || '');
+
+        autoPopulateIatiFields({
+          type: geocodingResult.type,
+          category: geocodingResult.category,
+          osmType: geocodingResult.osm_type,
+          osmId: String(geocodingResult.osm_id),
+          address: geocodingResult.address as Record<string, string | undefined>,
+          displayName: geocodingResult.display_name,
+          name: geocodingResult.name,
+        });
+
+        toast.success('Location details updated from dragged position');
+      } catch (error) {
+        console.error('Reverse geocoding error:', error);
+      }
+    }
+  }, [setValue, useMapValues]);
+
+
+  // Form submission
+  const onSubmit = async (data: LocationFormSchema) => {
+    try {
+      setIsSaving(true);
+      setValidationErrors({});
+
+      // Additional validation
+      const errors: Record<string, string> = {};
+
+      if (data.location_type === 'site') {
+        if (data.latitude === undefined || data.longitude === undefined || !validateCoordinates(data.latitude, data.longitude)) {
+          errors.coordinates = 'Valid latitude and longitude are required for site locations';
+        }
+        if (!data.location_reach) {
+          errors.location_reach = 'Location reach is required when coordinates are provided';
+        }
+        if (!data.exactness) {
+          errors.exactness = 'Exactness is required when coordinates are provided';
+        }
+      }
+
+
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        return;
+      }
+
+      // Prepare data for submission
+      const locationData: LocationSchema = {
+        ...data,
+        id: location?.id,
+        activity_id: activityId,
+        source: 'manual',
+        validation_status: 'valid',
+      };
+
+      await onSave(locationData);
+
+      toast.success(location?.id ? 'Location updated successfully' : 'Location added successfully');
+      onClose();
+    } catch (error) {
+      console.error('Error saving location:', error);
+      toast.error('Failed to save location. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle delete
+  const handleDelete = async () => {
+    if (!location?.id || !onDelete) return;
+
+    try {
+      await onDelete(location.id);
+      toast.success('Location deleted successfully');
+      onClose();
+    } catch (error) {
+      console.error('Error deleting location:', error);
+      toast.error('Failed to delete location. Please try again.');
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            {location?.id ? 'Edit Location' : 'Add Location'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Map Section */}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Map className="h-4 w-4" />
+                    Location Map
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    {/* Layer Selector */}
+                    <select
+                      value={currentLayer}
+                      onChange={(e) => handleLayerChange(e.target.value as 'roads' | 'terrain' | 'political' | 'satellite')}
+                      className="text-xs border border-gray-300 rounded px-2 py-1 bg-white"
+                    >
+                      <option value="roads">Roads</option>
+                      <option value="terrain">Terrain</option>
+                      <option value="political">Political</option>
+                      <option value="satellite">Satellite</option>
+                    </select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setMapCenter(DEFAULT_CENTER);
+                        setMapZoom(DEFAULT_ZOOM);
+                        setMarkerPosition(null);
+                        // Actually move the map to the new center
+                        if (mapRef.current) {
+                          mapRef.current.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+                        }
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Reset View
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="relative h-[480px] bg-gray-100 rounded-lg overflow-hidden">
+                  {mapError && (
+                    <div className="absolute top-0 left-0 right-0 z-50 bg-red-100 border-b border-red-200 p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-red-800">
+                          <AlertCircle className="h-4 w-4" />
+                          <span className="text-sm">{mapError}</span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRetry}
+                          disabled={isRetrying}
+                          className="text-red-800 border-red-300 hover:bg-red-50"
+                        >
+                          {isRetrying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                          Retry
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <LocationMap
+                    mapCenter={mapCenter}
+                    mapZoom={mapZoom}
+                    mapRef={mapRef}
+                    mapLayers={MAP_LAYERS}
+                    currentLayer={currentLayer}
+                    getLayerUrl={getLayerUrl}
+                    onLayerChange={handleLayerChange}
+                    onMapError={handleMapError}
+                    existingLocations={existingLocations}
+                    currentLocationId={location?.id}
+                    markerPosition={markerPosition}
+                    onMarkerDragEnd={handleMarkerDragEnd}
+                    onMapClick={handleMapClick}
+                    locationName={watch('location_name')}
+                    displayLatitude={watchedLatitude}
+                    displayLongitude={watchedLongitude}
+                  />
+
+                  <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded shadow text-xs text-gray-600">
+                    💡 Click on the map to set coordinates
+                  </div>
+
+                  <div className="absolute top-4 left-4 bg-white/90 p-2 rounded shadow text-xs text-gray-600">
+                    Layer: {MAP_LAYERS[currentLayer].name}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Search Section */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium">Search Locations</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search for a location (e.g., 'Yangon', 'Mandalay')..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+
+                    {/* Search Results Dropdown */}
+                    {searchResults.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto z-50">
+                        {searchResults.map((result, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleSelectSearchResult(result)}
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                          >
+                      <div className="font-medium text-gray-900">{result.name || result.display_name}</div>
+                            <div className="text-sm text-gray-500 mt-1">{result.display_name}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {isSearching && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Searching...
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Form Section */}
+          <div className="space-y-4">
+            <Tabs defaultValue="general" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="advanced">Advanced (IATI)</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="general" className="space-y-4 mt-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  {/* Location Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="location_type">Location Type</Label>
+                    <SelectIATI
+                      groups={LOCATION_TYPE_GROUPS}
+                      value={watchedLocationType}
+                      onValueChange={(value) => {
+                        const type = (value as 'site' | 'coverage') || 'site';
+                        setValue('location_type', type);
+                        if (type === 'coverage') {
+                          setValue('latitude', undefined);
+                          setValue('longitude', undefined);
+                          setMarkerPosition(null);
+                        }
+                      }}
+                      placeholder="Select location type"
+                    />
+                  </div>
+
+                  {/* Location Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="location_name">Location Name</Label>
+                    <Input
+                      id="location_name"
+                      {...register('location_name')}
+                      placeholder="Enter location name"
+                    />
+                    {errors.location_name && (
+                      <p className="text-sm text-red-600">{errors.location_name.message}</p>
+                    )}
+                  </div>
+
+                  {/* Coordinates (Site only) */}
+                  {watchedLocationType === 'site' && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="latitude">Latitude</Label>
+                          <Input
+                            id="latitude"
+                            type="number"
+                            step="any"
+                            {...register('latitude', { valueAsNumber: true })}
+                            placeholder="0.000000"
+                          />
+                          {errors.latitude && (
+                            <p className="text-sm text-red-600">{errors.latitude.message}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="longitude">Longitude</Label>
+                          <Input
+                            id="longitude"
+                            type="number"
+                            step="any"
+                            {...register('longitude', { valueAsNumber: true })}
+                            placeholder="0.000000"
+                          />
+                          {errors.longitude && (
+                            <p className="text-sm text-red-600">{errors.longitude.message}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Coordinates Copy Button */}
+                      {(watchedLatitude !== undefined && watchedLongitude !== undefined) && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">Coordinates:</span>
+                          <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                            {watchedLatitude.toFixed(6)}, {watchedLongitude.toFixed(6)}
+                          </code>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const coords = `${watchedLatitude.toFixed(6)}, ${watchedLongitude.toFixed(6)}`;
+                              navigator.clipboard.writeText(coords);
+                              toast.success('Coordinates copied to clipboard');
+                            }}
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Coverage Scope (Coverage only) */}
+                  {watchedLocationType === 'coverage' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="coverage_scope">Coverage Scope</Label>
+                  <SelectIATI
+                    groups={COVERAGE_SCOPE_GROUPS}
+                    value={watch('coverage_scope')}
+                    onValueChange={(value) => setValue('coverage_scope', value as any)}
+                    placeholder="Select coverage scope"
+                  />
+                    </div>
+                  )}
+
+                  {/* Site Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="site_type">Site Type</Label>
+                  <SelectIATI
+                    groups={SITE_TYPE_GROUPS}
+                    value={watch('site_type')}
+                    onValueChange={(value) => setValue('site_type', value as any)}
+                    placeholder="Select site type"
+                  />
+                  </div>
+
+                  {/* Address Fields */}
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Textarea
+                      id="address"
+                      {...register('address')}
+                      placeholder="Full address or description"
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Administrative Areas */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="state_region_name">State/Region</Label>
+                      <Input
+                        id="state_region_name"
+                        {...register('state_region_name')}
+                        placeholder="e.g., Yangon Region"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="township_name">Township</Label>
+                      <Input
+                        id="township_name"
+                        {...register('township_name')}
+                        placeholder="e.g., Hlaing Township"
+                      />
+                    </div>
+                  </div>
+
+                  {/* City and Postal Code */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        {...register('city')}
+                        placeholder="e.g., Yangon"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="postal_code">Postal Code</Label>
+                      <Input
+                        id="postal_code"
+                        {...register('postal_code')}
+                        placeholder="e.g., 11001"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      {...register('description')}
+                      placeholder="Additional location details"
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Use Map Values Toggle */}
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="use-map-values"
+                      checked={useMapValues}
+                      onCheckedChange={setUseMapValues}
+                    />
+                    <Label htmlFor="use-map-values" className="text-sm">
+                      Auto-populate fields from map clicks
+                    </Label>
+                  </div>
+
+
+                  {/* Validation Errors */}
+                  {Object.keys(validationErrors).length > 0 && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="space-y-1">
+                          {Object.entries(validationErrors).map(([field, message]) => (
+                            <div key={field}>{message}</div>
+                          ))}
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </form>
+              </TabsContent>
+
+              <TabsContent value="advanced" className="space-y-4 mt-4">
+                {/* IATI Advanced Fields */}
+                <div className="space-y-4">
+                  {/* Location Reach */}
+                  <SelectIATI
+                    groups={LOCATION_REACH_GROUPS}
+                    value={watch('location_reach')}
+                    onValueChange={(value) => setValue('location_reach', value)}
+                    label="Location Reach"
+                    helperText="Clarifies whether the activity happens at this location or if beneficiaries live here"
+                    dropdownId="location-reach-select"
+                  />
+
+                  {/* Exactness */}
+                  <SelectIATI
+                    groups={LOCATION_EXACTNESS_GROUPS}
+                    value={watch('exactness')}
+                    onValueChange={(value) => setValue('exactness', value)}
+                    label="Exactness"
+                    helperText="How precisely the location is known"
+                    dropdownId="location-exactness-select"
+                  />
+
+                  {/* Location Class */}
+                  <SelectIATI
+                    groups={LOCATION_CLASS_GROUPS}
+                    value={watch('location_class')}
+                    onValueChange={(value) => setValue('location_class', value)}
+                    label="Location Class"
+                    helperText="Type of geographic feature or administrative unit"
+                    dropdownId="location-class-select"
+                  />
+
+                  {/* Gazetteer Information */}
+                  <div className="space-y-4">
+                    <div>
+                      <SelectIATI
+                        groups={LOCATION_ID_VOCABULARY_GROUPS}
+                        value={watch('location_id_vocabulary')}
+                        onValueChange={(value) => setValue('location_id_vocabulary', value)}
+                        label="Gazetteer Vocabulary"
+                        helperText="Standard vocabulary for identifying the location"
+                        dropdownId="gazetteer-vocabulary-select"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="location_id_code" className="flex items-center gap-2">
+                        Gazetteer Code
+                        {watch('location_id_vocabulary') && <span className="text-red-500">*</span>}
+                        <HelpTextTooltip content="Unique identifier from the selected gazetteer" />
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="location_id_code"
+                          {...register('location_id_code')}
+                          placeholder="e.g., 1868373176"
+                          className="flex-1"
+                        />
+                        {watch('location_id_code') && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(watch('location_id_code') || '');
+                              toast.success('Code copied to clipboard');
+                            }}
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Administrative Divisions */}
+                  <div className="space-y-4">
+                    <div>
+                      <SelectIATI
+                        groups={ADMINISTRATIVE_LEVEL_GROUPS}
+                        value={watch('admin_level')}
+                        onValueChange={(value) => setValue('admin_level', value)}
+                        label="Administrative Level"
+                        helperText="Level of administrative division"
+                        dropdownId="admin-level-select"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="admin_code" className="flex items-center gap-2">
+                        Administrative Code
+                        {watch('admin_level') && <span className="text-red-500">*</span>}
+                        <HelpTextTooltip content="Code for the administrative division at the selected level" />
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="admin_code"
+                          {...register('admin_code')}
+                          placeholder="e.g., MMR013"
+                          className="flex-1"
+                        />
+                        {watch('admin_code') && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(watch('admin_code') || '');
+                              toast.success('Code copied to clipboard');
+                            }}
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Activity Description at Location */}
+                  <div className="space-y-2">
+                    <Label htmlFor="activity_location_description" className="flex items-center gap-2">
+                      Activity Description at Location
+                      <HelpTextTooltip content="Describe what happens at this specific location" />
+                    </Label>
+                    <Textarea
+                      id="activity_location_description"
+                      {...register('activity_location_description')}
+                      placeholder="Describe the activity at this location"
+                      rows={3}
+                    />
+                  </div>
+
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+
+        <DialogFooter className="flex items-center justify-between">
+          <div className="flex gap-2">
+            {location?.id && onDelete && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              onClick={handleSubmit(onSubmit)}
+              disabled={isSaving}
+              className="flex items-center gap-2"
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {location?.id ? 'Update' : 'Save'} Location
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

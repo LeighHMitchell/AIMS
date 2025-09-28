@@ -1,0 +1,19 @@
+Add this useEffect after line 498 (after the existing useEffect that ends with }, [location, reset]);):
+
+  // Reset form when modal opens for new location
+  useEffect(() => {
+    if (isOpen && !location) {
+      // Force reset to defaults when modal opens for new location
+      const defaults = getDefaultLocationValues('site');
+      reset({
+        ...defaults,
+      } as LocationFormSchema);
+      setSelectedLocation({});
+      setMarkerPosition(null);
+      setMapCenter(DEFAULT_CENTER);
+      setMapZoom(DEFAULT_ZOOM);
+      setValidationErrors({});
+      setSearchQuery('');
+      setSearchResults([]);
+    }
+  }, [isOpen, location, reset]);

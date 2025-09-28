@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Leaflet CSS for maps */
-@import 'leaflet/dist/leaflet.css';
-
 /* React DatePicker CSS - imported in components as needed */
 
 /* Hide number input stepper controls */

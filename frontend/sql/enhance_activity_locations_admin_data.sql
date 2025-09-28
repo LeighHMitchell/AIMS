@@ -20,6 +20,18 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'activity_locations' AND column_name = 'township_name') THEN
         ALTER TABLE activity_locations ADD COLUMN township_name VARCHAR(255);
     END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'activity_locations' AND column_name = 'country_code') THEN
+        ALTER TABLE activity_locations ADD COLUMN country_code CHAR(2);
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'activity_locations' AND column_name = 'admin_unit') THEN
+        ALTER TABLE activity_locations ADD COLUMN admin_unit TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'activity_locations' AND column_name = 'admin_area_name') THEN
+        ALTER TABLE activity_locations ADD COLUMN admin_area_name TEXT;
+    END IF;
 END $$;
 
 -- Add better indexes for administrative lookups
@@ -48,3 +60,22 @@ CHECK (
     (township_code IS NULL AND township_name IS NULL) OR 
     (township_code IS NOT NULL AND township_name IS NOT NULL AND state_region_code IS NOT NULL AND state_region_name IS NOT NULL)
 );
+
+-- Remove previously added unconditional column alters
+-- UPDATE section now guarded by column existence
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'activity_locations' AND column_name = 'country_code')
+       AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'activity_locations' AND column_name = 'admin_country_code') THEN
+        UPDATE activity_locations
+        SET country_code = COALESCE(country_code, admin_country_code)
+        WHERE country_code IS NULL AND admin_country_code IS NOT NULL;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'activity_locations' AND column_name = 'admin_area_name')
+       AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'activity_locations' AND column_name = 'admin_area') THEN
+        UPDATE activity_locations
+        SET admin_area_name = COALESCE(admin_area_name, admin_area)
+        WHERE admin_area_name IS NULL AND admin_area IS NOT NULL;
+    END IF;
+END $$;

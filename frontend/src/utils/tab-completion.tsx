@@ -231,16 +231,22 @@ export function checkLocationsTabCompletion(data: {
     const isValidTotal = Math.abs(totalPercentage - 100) < 0.01 // Allow for floating point precision
     const hasAnyValues = Object.values(data.subnationalBreakdowns).some(value => value > 0)
     
-    if (isValidTotal && hasAnyValues) {
+    // Show as complete if we have any values (even if total isn't 100% yet)
+    if (hasAnyValues) {
       hasCompleteSubnational = true
       completedFields.push('subnational_breakdown')
+    }
+    
+    // Also mark as complete if total is valid (existing logic)
+    if (isValidTotal && hasAnyValues) {
+      completedFields.push('subnational_breakdown_complete')
     }
   }
   
   // The Locations tab is complete if ANY condition is met:
   // 1. At least one valid location is saved OR
-  // 2. Countries & regions totals 100% OR
-  // 3. Subnational breakdown totals 100%
+  // 2. Countries & regions have any data OR
+  // 3. Subnational breakdown has any data
   const isComplete = hasValidLocations || hasValidCountriesRegions || hasCompleteSubnational
   
   // If none are complete, we consider it missing

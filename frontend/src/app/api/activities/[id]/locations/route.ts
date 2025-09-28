@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { locationFormSchema, type LocationFormSchema } from '@/lib/schemas/location';
 
-// GET - Fetch all locations for an activity
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -16,7 +16,6 @@ export async function GET(
       );
     }
 
-    // Fetch locations from database
     const { data: locations, error } = await getSupabaseAdmin()
       .from('activity_locations')
       .select('*')
@@ -31,27 +30,41 @@ export async function GET(
       );
     }
 
-    // Transform to match frontend format
     const transformedLocations = locations?.map((location: any) => ({
       id: location.id,
       activity_id: location.activity_id,
       location_type: location.location_type,
       location_name: location.location_name,
       description: location.description,
-      latitude: location.latitude ? parseFloat(location.latitude) : null,
-      longitude: location.longitude ? parseFloat(location.longitude) : null,
+      location_description: location.location_description,
+      activity_location_description: location.activity_location_description,
+      latitude: location.latitude ? parseFloat(location.latitude) : undefined,
+      longitude: location.longitude ? parseFloat(location.longitude) : undefined,
       address: location.address,
+      address_line1: location.address_line1,
+      address_line2: location.address_line2,
+      city: location.city,
+      postal_code: location.postal_code,
       site_type: location.site_type,
-      admin_unit: location.admin_unit,
-      coverage_scope: location.coverage_scope,
       state_region_code: location.state_region_code,
       state_region_name: location.state_region_name,
       township_code: location.township_code,
       township_name: location.township_name,
-      created_at: location.created_at,
-      updated_at: location.updated_at,
-      created_by: location.created_by,
-      updated_by: location.updated_by
+      village_name: location.village_name,
+      country_code: location.country_code,
+      admin_area_name: location.admin_area_name,
+      admin_unit: location.admin_unit,
+      location_reach: location.location_reach,
+      exactness: location.exactness,
+      location_class: location.location_class,
+      feature_designation: location.feature_designation,
+      location_id_vocabulary: location.location_id_vocabulary,
+      location_id_code: location.location_id_code,
+      admin_level: location.admin_level,
+      admin_code: location.admin_code,
+      srs_name: location.srs_name,
+      validation_status: location.validation_status,
+      source: location.source
     })) || [];
 
     return NextResponse.json({
@@ -68,7 +81,6 @@ export async function GET(
   }
 }
 
-// POST - Create a new location
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -84,66 +96,75 @@ export async function POST(
       );
     }
 
-    // Validate required fields
-    if (!body.location_name || !body.location_type) {
+    const validationResult = locationFormSchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Location name and type are required' },
+        {
+          error: 'Invalid location data',
+          details: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        },
         { status: 400 }
       );
     }
 
-    // For site locations, require coordinates
-    if (body.location_type === 'site' && (!body.latitude || !body.longitude)) {
-      return NextResponse.json(
-        { error: 'Latitude and longitude are required for site locations' },
-        { status: 400 }
-      );
-    }
+    const locationData = validationResult.data;
 
-    // For coverage locations, require coverage scope
-    if (body.location_type === 'coverage' && !body.coverage_scope) {
-      return NextResponse.json(
-        { error: 'Coverage scope is required for coverage locations' },
-        { status: 400 }
-      );
-    }
-
-    // Prepare data for insertion
-    const locationData: any = {
+    const insertData: Record<string, any> = {
       activity_id: activityId,
-      location_type: body.location_type,
-      location_name: body.location_name,
-      description: body.description || null,
-      created_by: body.user_id || null,
-      updated_by: body.user_id || null
+      location_type: locationData.location_type,
+      location_name: locationData.location_name,
+      description: locationData.description || null,
+      location_description: locationData.location_description || null,
+      activity_location_description: locationData.activity_location_description || null,
+      source: locationData.source || 'manual',
     };
 
-    // Add site-specific fields
-    if (body.location_type === 'site') {
-      locationData.latitude = body.latitude;
-      locationData.longitude = body.longitude;
-      locationData.address = body.address || null;
-      locationData.site_type = body.site_type || 'project_site';
-      locationData.state_region_code = body.state_region_code || null;
-      locationData.state_region_name = body.state_region_name || null;
-      locationData.township_code = body.township_code || null;
-      locationData.township_name = body.township_name || null;
+    if (locationData.location_type === 'site') {
+      insertData.latitude = locationData.latitude;
+      insertData.longitude = locationData.longitude;
+      insertData.address = locationData.address || null;
+      insertData.address_line1 = locationData.address_line1 || null;
+      insertData.address_line2 = locationData.address_line2 || null;
+      insertData.city = locationData.city || null;
+      insertData.postal_code = locationData.postal_code || null;
+      insertData.site_type = locationData.site_type || 'project_site';
+      insertData.state_region_code = locationData.state_region_code || null;
+      insertData.state_region_name = locationData.state_region_name || null;
+      insertData.township_code = locationData.township_code || null;
+      insertData.township_name = locationData.township_name || null;
+      insertData.village_name = locationData.village_name || null;
+      insertData.country_code = locationData.country_code || null;
+      insertData.admin_area_name = locationData.admin_area_name || null;
+      insertData.admin_unit = locationData.admin_unit || null;
     }
 
-    // Add coverage-specific fields
-    if (body.location_type === 'coverage') {
-      locationData.admin_unit = body.admin_unit || null;
-      locationData.coverage_scope = body.coverage_scope;
-      locationData.state_region_code = body.state_region_code || null;
-      locationData.state_region_name = body.state_region_name || null;
-      locationData.township_code = body.township_code || null;
-      locationData.township_name = body.township_name || null;
+    if (locationData.location_type === 'coverage') {
+      insertData.coverage_scope = locationData.coverage_scope;
+      insertData.admin_unit = locationData.admin_unit || null;
+      insertData.state_region_code = locationData.state_region_code || null;
+      insertData.state_region_name = locationData.state_region_name || null;
+      insertData.township_code = locationData.township_code || null;
+      insertData.township_name = locationData.township_name || null;
+      insertData.country_code = locationData.country_code || null;
+      insertData.admin_area_name = locationData.admin_area_name || null;
     }
 
-    // Insert into database
+    insertData.location_reach = locationData.location_reach || null;
+    insertData.exactness = locationData.exactness || null;
+    insertData.location_class = locationData.location_class || null;
+    insertData.feature_designation = locationData.feature_designation || null;
+    insertData.location_id_vocabulary = locationData.location_id_vocabulary || null;
+    insertData.location_id_code = locationData.location_id_code || null;
+    insertData.admin_level = locationData.admin_level || null;
+    insertData.admin_code = locationData.admin_code || null;
+    insertData.srs_name = locationData.srs_name || 'http://www.opengis.net/def/crs/EPSG/0/4326';
+
     const { data: newLocation, error } = await getSupabaseAdmin()
       .from('activity_locations')
-      .insert(locationData)
+      .insert(insertData)
       .select()
       .single();
 
@@ -169,7 +190,6 @@ export async function POST(
   }
 }
 
-// PUT - Update all locations for an activity (bulk replace)
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -185,7 +205,38 @@ export async function PUT(
       );
     }
 
-    // Delete existing locations
+    if (!body.locations || !Array.isArray(body.locations)) {
+      return NextResponse.json(
+        { error: 'Locations array is required' },
+        { status: 400 }
+      );
+    }
+
+    const validationErrors: string[] = [];
+    const validLocations: LocationFormSchema[] = [];
+
+    body.locations.forEach((location: unknown, index: number) => {
+      const validationResult = locationFormSchema.safeParse(location);
+      if (!validationResult.success) {
+        validationResult.error.issues.forEach(issue => {
+          validationErrors.push(`Location ${index + 1}: ${issue.path.join('.')} - ${issue.message}`);
+        });
+      } else {
+        validLocations.push(validationResult.data);
+      }
+    });
+
+    if (validationErrors.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Invalid location data',
+          details: validationErrors
+        },
+        { status: 400 }
+      );
+    }
+
+
     const { error: deleteError } = await getSupabaseAdmin()
       .from('activity_locations')
       .delete()
@@ -199,58 +250,62 @@ export async function PUT(
       );
     }
 
-    // Prepare locations for insertion
-    const locationsToInsert: any[] = [];
-    
-    if (body.locations && Array.isArray(body.locations)) {
-      body.locations.forEach((location: any) => {
-        // Skip temporary IDs
-        if (location.id && location.id.startsWith('temp_')) {
-          delete location.id;
-        }
+    const locationsToInsert: Record<string, any>[] = [];
 
-        const locationData: any = {
-          activity_id: activityId,
-          location_type: location.location_type || 'site',
-          location_name: location.location_name,
-          description: location.description || null,
-          created_by: body.user_id || null,
-          updated_by: body.user_id || null
-        };
+    validLocations.forEach((location) => {
+      const locationData: Record<string, any> = {
+        activity_id: activityId,
+        location_type: location.location_type,
+        location_name: location.location_name,
+        description: location.description || null,
+        location_description: location.location_description || null,
+        activity_location_description: location.activity_location_description || null,
+        source: location.source || 'manual',
+        location_reach: location.location_reach || null,
+        exactness: location.exactness || null,
+        location_class: location.location_class || null,
+        feature_designation: location.feature_designation || null,
+        location_id_vocabulary: location.location_id_vocabulary || null,
+        location_id_code: location.location_id_code || null,
+        admin_level: location.admin_level || null,
+        admin_code: location.admin_code || null,
+        srs_name: location.srs_name || 'http://www.opengis.net/def/crs/EPSG/0/4326',
+        admin_unit: location.admin_unit || null,
+        country_code: location.country_code || null,
+        admin_area_name: location.admin_area_name || null,
+      };
 
-        // Add site-specific fields
-        if (location.location_type === 'site') {
-          locationData.latitude = location.latitude;
-          locationData.longitude = location.longitude;
-          locationData.address = location.address || null;
-          locationData.site_type = location.site_type || 'project_site';
-          locationData.state_region_code = location.state_region_code || null;
-          locationData.state_region_name = location.state_region_name || null;
-          locationData.township_code = location.township_code || null;
-          locationData.township_name = location.township_name || null;
-        }
+      if (location.location_type === 'site') {
+        locationData.latitude = location.latitude;
+        locationData.longitude = location.longitude;
+        locationData.address = location.address || null;
+        locationData.address_line1 = location.address_line1 || null;
+        locationData.address_line2 = location.address_line2 || null;
+        locationData.city = location.city || null;
+        locationData.postal_code = location.postal_code || null;
+        locationData.site_type = location.site_type || 'project_site';
+        locationData.state_region_code = location.state_region_code || null;
+        locationData.state_region_name = location.state_region_name || null;
+        locationData.township_code = location.township_code || null;
+        locationData.township_name = location.township_name || null;
+        locationData.village_name = location.village_name || null;
+      }
 
-        // Add coverage-specific fields
-        if (location.location_type === 'coverage') {
-          locationData.admin_unit = location.admin_unit || null;
-          locationData.coverage_scope = location.coverage_scope;
-          locationData.state_region_code = location.state_region_code || null;
-          locationData.state_region_name = location.state_region_name || null;
-          locationData.township_code = location.township_code || null;
-          locationData.township_name = location.township_name || null;
-        }
+      if (location.location_type === 'coverage') {
+        locationData.coverage_scope = location.coverage_scope;
+        locationData.state_region_code = location.state_region_code || null;
+        locationData.state_region_name = location.state_region_name || null;
+        locationData.township_code = location.township_code || null;
+        locationData.township_name = location.township_name || null;
+      }
 
-        locationsToInsert.push(locationData);
-      });
-    }
+      locationsToInsert.push(locationData);
+    });
 
-    // Insert new locations
-    let newLocations = [];
     if (locationsToInsert.length > 0) {
-      const { data: insertedLocations, error: insertError } = await getSupabaseAdmin()
+      const { error: insertError } = await getSupabaseAdmin()
         .from('activity_locations')
-        .insert(locationsToInsert)
-        .select();
+        .insert(locationsToInsert);
 
       if (insertError) {
         console.error('[Locations API] Error inserting locations:', insertError);
@@ -259,13 +314,11 @@ export async function PUT(
           { status: 500 }
         );
       }
-
-      newLocations = insertedLocations || [];
     }
 
     return NextResponse.json({
       success: true,
-      locations: newLocations
+      locations: locationsToInsert
     });
 
   } catch (error) {
@@ -277,7 +330,6 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete all locations for an activity
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -292,7 +344,6 @@ export async function DELETE(
       );
     }
 
-    // Delete all locations for this activity
     const { error } = await getSupabaseAdmin()
       .from('activity_locations')
       .delete()
@@ -318,4 +369,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-} 
+}
