@@ -171,8 +171,8 @@ const LOCATION_REACH_GROUPS: SelectIATIGroup[] = [
   {
     label: 'Location Reach',
     options: [
-      { code: '1', name: 'Activity happens here', description: 'The activity is physically implemented at this location' },
-      { code: '2', name: 'Beneficiaries live here', description: 'The beneficiaries of the activity live at this location' }
+      { code: '1', name: 'Activity', description: 'The location specifies where the activity is carried out' },
+      { code: '2', name: 'Intended Beneficiaries', description: 'The location specifies where the intended beneficiaries of the activity live' }
     ]
   }
 ];
@@ -203,29 +203,28 @@ const LOCATION_CLASS_GROUPS: SelectIATIGroup[] = [
 
 const LOCATION_ID_VOCABULARY_GROUPS: SelectIATIGroup[] = [
   {
-    label: 'Gazetteer Vocabularies',
+    label: 'Geographic Vocabularies',
     options: [
-      { code: 'G1', name: 'GeoNames', description: 'GeoNames geographical database' },
-      { code: 'G2', name: 'OpenStreetMap', description: 'OpenStreetMap database' },
-      { code: 'A1', name: 'GADM', description: 'Global Administrative Areas' },
-      { code: 'A4', name: 'HASC', description: 'Hierarchical Administrative Subdivision Codes' },
-      { code: 'A5', name: 'ISO 3166-1', description: 'ISO 3166-1 country codes' },
-      { code: 'A6', name: 'ISO 3166-2', description: 'ISO 3166-2 subdivision codes' },
-      { code: 'A8', name: 'UN', description: 'United Nations codes' }
+      { code: 'A1', name: 'Global Admininistrative Unit Layers', description: '' },
+      { code: 'A2', name: 'UN Second Administrative Level Boundary Project', description: 'Note: the unsalb.org website is no longer accessible, and public access to the boundaries resources has been removed' },
+      { code: 'A3', name: 'Global Administrative Areas', description: '' },
+      { code: 'A4', name: 'ISO Country (3166-1 alpha-2)', description: '' },
+      { code: 'G1', name: 'Geonames', description: '' },
+      { code: 'G2', name: 'OpenStreetMap', description: 'Note: the code should be formed by prefixing the relevant OpenStreetMap ID with node/ way/ or relation/ as appropriate, e.g. node/1234567' }
     ]
   }
 ];
 
 const ADMINISTRATIVE_LEVEL_GROUPS: SelectIATIGroup[] = [
   {
-    label: 'Administrative Levels',
+    label: 'Administrative Vocabularies',
     options: [
-      { code: '0', name: 'Country', description: 'Country level' },
-      { code: '1', name: 'Province/State', description: 'First-level administrative division' },
-      { code: '2', name: 'District/County', description: 'Second-level administrative division' },
-      { code: '3', name: 'Township/Municipality', description: 'Third-level administrative division' },
-      { code: '4', name: 'Ward/Neighborhood', description: 'Fourth-level administrative division' },
-      { code: '5', name: 'Village/Settlement', description: 'Fifth-level administrative division' }
+      { code: 'A1', name: 'Global Admininistrative Unit Layers', description: '', url: 'http://www.fao.org/geonetwork/srv/en/metadata.show?id=12691' },
+      { code: 'A2', name: 'UN Second Administrative Level Boundary Project', description: 'Note: the unsalb.org website is no longer accessible, and public access to the boundaries resources has been removed', url: 'http://www.unsalb.org/' },
+      { code: 'A3', name: 'Global Administrative Areas', description: '', url: 'http://www.gadm.org/' },
+      { code: 'A4', name: 'ISO Country (3166-1 alpha-2)', description: '', url: 'http://reference.iatistandard.org/codelists/Country/' },
+      { code: 'G1', name: 'Geonames', description: '', url: 'http://www.geonames.org/' },
+      { code: 'G2', name: 'OpenStreetMap', description: 'Note: the code should be formed by prefixing the relevant OpenStreetMap ID with node/ way/ or relation/ as appropriate, e.g. node/1234567', url: 'http://www.openstreetmap.org/' }
     ]
   }
 ];
@@ -353,7 +352,6 @@ export default function LocationModal({
   const [mapZoom, setMapZoom] = useState(DEFAULT_ZOOM);
   const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<Partial<LocationFormSchema>>({});
-  const [useMapValues, setUseMapValues] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [currentLayer, setCurrentLayer] = useState<'roads' | 'satellite'>('roads');
   const [mapError, setMapError] = useState<string | null>(null);
@@ -504,10 +502,6 @@ export default function LocationModal({
       setSearchResults([]);
     }
   }, [isOpen, location, reset]);
-  // Default toggle on for map auto-population
-  useEffect(() => {
-    setUseMapValues(true);
-  }, []);
 
   // Search functionality
   useEffect(() => {
@@ -613,7 +607,7 @@ const autoPopulateIatiFields = useCallback((params: {
       setValue('township_name', result.address.county || result.address.district || '');
       setValue('village_name', result.address.village || result.address.suburb || result.address.hamlet || '');
       setValue('postal_code', result.address.postcode || '');
-      setValue('country_code', result.address.country_code?.toUpperCase() || '');
+      setValue('country_code', result.address.country || '');
     }
 
     autoPopulateIatiFields({
@@ -637,77 +631,15 @@ const autoPopulateIatiFields = useCallback((params: {
     setValue('longitude', lng);
     setMarkerPosition([lat, lng]);
 
-    // If user wants to use map values, populate other fields
-    if (useMapValues) {
-      try {
-        const geocodingResult = await reverseGeocode(lat, lng);
-        const adminInfo = extractAdministrativeInfo(geocodingResult);
-
-        setValue('address', geocodingResult.display_name);
-        setValue('location_name', geocodingResult.name || geocodingResult.display_name);
-        setValue('city', adminInfo.city || '');
-        setValue('state_region_name', adminInfo.state || '');
-        setValue('township_name', adminInfo.county || '');
-        setValue('village_name', adminInfo.village || '');
-        setValue('postal_code', adminInfo.postcode || '');
-        setValue('country_code', geocodingResult.address?.country_code?.toUpperCase() || '');
-
-        autoPopulateIatiFields({
-          type: geocodingResult.type,
-          category: geocodingResult.category,
-          osmType: geocodingResult.osm_type,
-          osmId: String(geocodingResult.osm_id),
-          address: geocodingResult.address as Record<string, string | undefined>,
-          displayName: geocodingResult.display_name,
-          name: geocodingResult.name,
-        });
-
-        toast.success('Location details updated from map');
-      } catch (error) {
-        console.error('Reverse geocoding error:', error);
-        setValue('address', `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`);
-        toast.warning('Could not get address details, but coordinates are set');
-      }
-    } else {
-      toast.success('Click coordinates set. Enable "Use map values" to auto-populate fields.');
-    }
-  }, [setValue, useMapValues]);
+    toast.success('Coordinates set');
+  }, [setValue]);
 
   // Handle marker drag
   const handleMarkerDragEnd = useCallback(async (lat: number, lng: number) => {
     setValue('latitude', lat);
     setValue('longitude', lng);
 
-    if (useMapValues) {
-      try {
-        const geocodingResult = await reverseGeocode(lat, lng);
-        const adminInfo = extractAdministrativeInfo(geocodingResult);
-
-        setValue('address', geocodingResult.display_name);
-        setValue('location_name', geocodingResult.name || geocodingResult.display_name);
-        setValue('city', adminInfo.city || '');
-        setValue('state_region_name', adminInfo.state || '');
-        setValue('township_name', adminInfo.county || '');
-        setValue('village_name', adminInfo.village || '');
-        setValue('postal_code', adminInfo.postcode || '');
-        setValue('country_code', geocodingResult.address?.country_code?.toUpperCase() || '');
-
-        autoPopulateIatiFields({
-          type: geocodingResult.type,
-          category: geocodingResult.category,
-          osmType: geocodingResult.osm_type,
-          osmId: String(geocodingResult.osm_id),
-          address: geocodingResult.address as Record<string, string | undefined>,
-          displayName: geocodingResult.display_name,
-          name: geocodingResult.name,
-        });
-
-        toast.success('Location details updated from dragged position');
-      } catch (error) {
-        console.error('Reverse geocoding error:', error);
-      }
-    }
-  }, [setValue, useMapValues]);
+  }, [setValue]);
 
 
   // Form submission
@@ -919,33 +851,14 @@ const autoPopulateIatiFields = useCallback((params: {
 
           {/* Form Section */}
           <div className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)}>
             <Tabs defaultValue="general" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced (IATI)</TabsTrigger>
+                <TabsTrigger value="advanced">Advanced</TabsTrigger>
               </TabsList>
 
               <TabsContent value="general" className="space-y-4 mt-4">
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  {/* Location Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="location_type">Location Type</Label>
-                    <SelectIATI
-                      groups={LOCATION_TYPE_GROUPS}
-                      value={watchedLocationType}
-                      onValueChange={(value) => {
-                        const type = (value as 'site' | 'coverage') || 'site';
-                        setValue('location_type', type);
-                        if (type === 'coverage') {
-                          setValue('latitude', undefined);
-                          setValue('longitude', undefined);
-                          setMarkerPosition(null);
-                        }
-                      }}
-                      placeholder="Select location type"
-                      dropdownId="location-type-select"
-                    />
-                  </div>
 
                   {/* Location Name */}
                   <div className="space-y-2">
@@ -979,42 +892,37 @@ const autoPopulateIatiFields = useCallback((params: {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="longitude">Longitude</Label>
-                          <Input
-                            id="longitude"
-                            type="number"
-                            step="any"
-                            {...register('longitude', { valueAsNumber: true })}
-                            placeholder="0.000000"
-                          />
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="longitude"
+                              type="number"
+                              step="any"
+                              {...register('longitude', { valueAsNumber: true })}
+                              placeholder="0.000000"
+                              className="flex-1"
+                            />
+                            {(watchedLatitude !== undefined && watchedLongitude !== undefined) && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const coords = `${watchedLatitude.toFixed(6)}, ${watchedLongitude.toFixed(6)}`;
+                                  navigator.clipboard.writeText(coords);
+                                  toast.success('Coordinates copied to clipboard');
+                                }}
+                                className="px-2"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                           {errors.longitude && (
                             <p className="text-sm text-red-600">{errors.longitude.message}</p>
                           )}
                         </div>
                       </div>
 
-                      {/* Coordinates Copy Button */}
-                      {(watchedLatitude !== undefined && watchedLongitude !== undefined) && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Coordinates:</span>
-                          <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                            {watchedLatitude.toFixed(6)}, {watchedLongitude.toFixed(6)}
-                          </code>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const coords = `${watchedLatitude.toFixed(6)}, ${watchedLongitude.toFixed(6)}`;
-                              navigator.clipboard.writeText(coords);
-                              toast.success('Coordinates copied to clipboard');
-                            }}
-                          >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -1032,17 +940,6 @@ const autoPopulateIatiFields = useCallback((params: {
                     </div>
                   )}
 
-                  {/* Site Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="site_type">Site Type</Label>
-                  <SelectIATI
-                    groups={SITE_TYPE_GROUPS}
-                    value={watch('site_type')}
-                    onValueChange={(value) => setValue('site_type', value as any)}
-                    placeholder="Select site type"
-                    dropdownId="site-type-select"
-                  />
-                  </div>
 
                   {/* Address Fields */}
                   <div className="space-y-2">
@@ -1095,9 +992,19 @@ const autoPopulateIatiFields = useCallback((params: {
                     </div>
                   </div>
 
-                  {/* Description */}
+                  {/* Country */}
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="country_code">Country</Label>
+                    <Input
+                      id="country_code"
+                      {...register('country_code')}
+                      placeholder="e.g., Myanmar"
+                    />
+                  </div>
+
+                  {/* Location Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Location Description</Label>
                     <Textarea
                       id="description"
                       {...register('description')}
@@ -1106,17 +1013,17 @@ const autoPopulateIatiFields = useCallback((params: {
                     />
                   </div>
 
-                  {/* Use Map Values Toggle */}
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="use-map-values"
-                      checked={useMapValues}
-                      onCheckedChange={setUseMapValues}
+                  {/* Activity Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="activity_location_description">Activity Description</Label>
+                    <Textarea
+                      id="activity_location_description"
+                      {...register('activity_location_description')}
+                      placeholder="Description of the activity at this location"
+                      rows={3}
                     />
-                    <Label htmlFor="use-map-values" className="text-sm">
-                      Auto-populate fields from map clicks
-                    </Label>
                   </div>
+
 
 
                   {/* Validation Errors */}
@@ -1132,10 +1039,41 @@ const autoPopulateIatiFields = useCallback((params: {
                       </AlertDescription>
                     </Alert>
                   )}
-                </form>
               </TabsContent>
 
               <TabsContent value="advanced" className="space-y-4 mt-4">
+                {/* Location Type (Site/Coverage) */}
+                <div className="space-y-2">
+                  <Label htmlFor="location_type">Location Type</Label>
+                  <SelectIATI
+                    groups={LOCATION_TYPE_GROUPS}
+                    value={watchedLocationType}
+                    onValueChange={(value) => {
+                      const type = (value as 'site' | 'coverage') || 'site';
+                      setValue('location_type', type);
+                      if (type === 'coverage') {
+                        setValue('latitude', undefined);
+                        setValue('longitude', undefined);
+                        setMarkerPosition(null);
+                      }
+                    }}
+                    placeholder="Select location type"
+                    dropdownId="location-type-select"
+                  />
+                </div>
+
+                {/* Site Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="site_type">Site Type</Label>
+                  <SelectIATI
+                    groups={SITE_TYPE_GROUPS}
+                    value={watch('site_type')}
+                    onValueChange={(value) => setValue('site_type', value as any)}
+                    placeholder="Select location type"
+                    dropdownId="site-type-select"
+                  />
+                </div>
+
                 {/* IATI Advanced Fields */}
                 <div className="space-y-4">
                   {/* Location Reach */}
@@ -1144,7 +1082,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     value={watch('location_reach')}
                     onValueChange={(value) => setValue('location_reach', value)}
                     label="Location Reach"
-                    helperText="Clarifies whether the activity happens at this location or if beneficiaries live here"
+                    helperText="Clarifies whether this location specifies where the activity is carried out or where intended beneficiaries live"
                     dropdownId="location-reach-select"
                   />
 
@@ -1168,14 +1106,14 @@ const autoPopulateIatiFields = useCallback((params: {
                     dropdownId="location-class-select"
                   />
 
-                  {/* Gazetteer Information */}
+                  {/* Geographic Information */}
                   <div className="space-y-4">
                     <div>
                       <SelectIATI
                         groups={LOCATION_ID_VOCABULARY_GROUPS}
                         value={watch('location_id_vocabulary')}
                         onValueChange={(value) => setValue('location_id_vocabulary', value)}
-                        label="Gazetteer Vocabulary"
+                        label="Geographic Vocabulary"
                         helperText="Standard vocabulary for identifying the location"
                         dropdownId="gazetteer-vocabulary-select"
                       />
@@ -1220,8 +1158,8 @@ const autoPopulateIatiFields = useCallback((params: {
                         groups={ADMINISTRATIVE_LEVEL_GROUPS}
                         value={watch('admin_level')}
                         onValueChange={(value) => setValue('admin_level', value)}
-                        label="Administrative Level"
-                        helperText="Level of administrative division"
+                        label="Administrative Vocabulary"
+                        helperText="Standard vocabulary for identifying administrative divisions"
                         dropdownId="admin-level-select"
                       />
                     </div>
@@ -1275,6 +1213,7 @@ const autoPopulateIatiFields = useCallback((params: {
                 </div>
               </TabsContent>
             </Tabs>
+            </form>
           </div>
         </div>
 
@@ -1299,7 +1238,6 @@ const autoPopulateIatiFields = useCallback((params: {
             </Button>
             <Button
               type="submit"
-              onClick={handleSubmit(onSubmit)}
               disabled={isSaving}
               className="flex items-center gap-2"
             >
