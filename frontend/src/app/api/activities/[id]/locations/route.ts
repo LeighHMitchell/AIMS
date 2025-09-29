@@ -60,8 +60,10 @@ export async function GET(
       feature_designation: location.feature_designation,
       location_id_vocabulary: location.location_id_vocabulary,
       location_id_code: location.location_id_code,
+      admin_vocabulary: location.admin_vocabulary,
       admin_level: location.admin_level,
       admin_code: location.admin_code,
+      spatial_reference_system: location.spatial_reference_system,
       srs_name: location.srs_name,
       validation_status: location.validation_status,
       source: location.source
@@ -158,8 +160,10 @@ export async function POST(
     insertData.feature_designation = locationData.feature_designation || null;
     insertData.location_id_vocabulary = locationData.location_id_vocabulary || null;
     insertData.location_id_code = locationData.location_id_code || null;
+    insertData.admin_vocabulary = locationData.admin_vocabulary || null;
     insertData.admin_level = locationData.admin_level || null;
     insertData.admin_code = locationData.admin_code || null;
+    insertData.spatial_reference_system = locationData.spatial_reference_system || null;
     insertData.srs_name = locationData.srs_name || 'http://www.opengis.net/def/crs/EPSG/0/4326';
 
     const { data: newLocation, error } = await getSupabaseAdmin()
@@ -267,8 +271,10 @@ export async function PUT(
         feature_designation: location.feature_designation || null,
         location_id_vocabulary: location.location_id_vocabulary || null,
         location_id_code: location.location_id_code || null,
+        admin_vocabulary: location.admin_vocabulary || null,
         admin_level: location.admin_level || null,
         admin_code: location.admin_code || null,
+        spatial_reference_system: location.spatial_reference_system || null,
         srs_name: location.srs_name || 'http://www.opengis.net/def/crs/EPSG/0/4326',
         admin_unit: location.admin_unit || null,
         country_code: location.country_code || null,

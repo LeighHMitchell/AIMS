@@ -1,216 +1,466 @@
-// IATI Location Reach types
-export const LOCATION_REACH_TYPES = [
+import type { SelectIATIGroup } from '@/components/ui/enhanced-searchable-select';
+
+// IATI Location Type Codelist - Complete Implementation
+// Source: https://iatistandard.org/fr/iati-standard/203/codelists/locationtype/
+
+export const IATI_LOCATION_TYPE_GROUPS: SelectIATIGroup[] = [
   {
-    code: '1',
-    name: 'Activity happens at this location',
-    description: 'The activity is physically implemented at this location'
+    label: 'Administrative Features',
+    options: [
+      { code: 'ADMD', name: 'administrative division', description: 'an administrative division of a political entity, undifferentiated as to administrative level' },
+      { code: 'ADMF', name: 'administrative facility', description: 'a government building' },
+      { code: 'ADM1', name: 'first-order administrative division', description: 'a primary administrative division of a country, such as a state in the United States' },
+      { code: 'ADM2', name: 'second-order administrative division', description: 'a subdivision of a first-order administrative division' },
+      { code: 'ADM3', name: 'third-order administrative division', description: 'a subdivision of a second-order administrative division' },
+      { code: 'ADM4', name: 'fourth-order administrative division', description: 'a subdivision of a third-order administrative division' },
+      { code: 'ADM5', name: 'fifth-order administrative division', description: 'a subdivision of a fourth-order administrative division' },
+      { code: 'ADMDH', name: 'historical administrative division', description: 'a former administrative division of a political entity, undifferentiated as to administrative level' },
+      { code: 'ADM1H', name: 'historical first-order administrative division', description: 'a former first-order administrative division' },
+      { code: 'ADM2H', name: 'historical second-order administrative division', description: 'a former second-order administrative division' },
+      { code: 'ADM3H', name: 'historical third-order administrative division', description: 'a former third-order administrative division' },
+      { code: 'ADM4H', name: 'historical fourth-order administrative division', description: 'a former fourth-order administrative division' },
+      { code: 'ADMS', name: 'school district', description: 'school district' },
+      { code: 'PCLD', name: 'dependent political entity', description: 'dependent political entity' },
+      { code: 'PCLF', name: 'freely associated state', description: 'freely associated state' },
+      { code: 'PCLH', name: 'historical political entity', description: 'a former political entity' },
+      { code: 'PCLI', name: 'independent political entity', description: 'independent political entity' },
+      { code: 'PCLIX', name: 'section of independent political entity', description: 'section of independent political entity' },
+      { code: 'PCLS', name: 'semi-independent political entity', description: 'semi-independent political entity' },
+      { code: 'PCL', name: 'political entity', description: 'political entity' },
+      { code: 'PRSH', name: 'parish', description: 'an ecclesiastical district' },
+      { code: 'TERR', name: 'territory', description: 'territory' },
+      { code: 'ZNB', name: 'buffer zone', description: 'a zone recognized as a buffer between two nations in which military presence is minimal or absent' },
+      { code: 'ZN', name: 'zone', description: 'zone' },
+    ]
   },
   {
-    code: '2', 
-    name: 'Beneficiaries live here',
-    description: 'The beneficiaries of the activity live at this location'
+    label: 'Populated Places',
+    options: [
+      { code: 'PPL', name: 'populated place', description: 'a city, town, village, or other agglomeration of buildings where people live and work' },
+      { code: 'PPLC', name: 'capital of a political entity', description: 'capital of a political entity' },
+      { code: 'PPLA', name: 'seat of a first-order administrative division', description: 'seat of a first-order administrative division (PPLC takes precedence over PPLA)' },
+      { code: 'PPLA2', name: 'seat of a second-order administrative division', description: 'seat of a second-order administrative division' },
+      { code: 'PPLA3', name: 'seat of a third-order administrative division', description: 'seat of a third-order administrative division' },
+      { code: 'PPLA4', name: 'seat of a fourth-order administrative division', description: 'seat of a fourth-order administrative division' },
+      { code: 'PPLF', name: 'farm village', description: 'a populated place where the population is largely engaged in agricultural activities' },
+      { code: 'PPLG', name: 'seat of government of a political entity', description: 'seat of government of a political entity' },
+      { code: 'PPLH', name: 'historical populated place', description: 'a populated place that no longer exists' },
+      { code: 'PPLQ', name: 'abandoned populated place', description: 'abandoned populated place' },
+      { code: 'PPLR', name: 'religious populated place', description: 'a populated place whose population is largely engaged in religious occupations' },
+      { code: 'PPLS', name: 'populated places', description: 'cities, towns, villages, or other agglomerations of buildings where people live and work' },
+      { code: 'PPLW', name: 'destroyed populated place', description: 'a village, town or city destroyed by a natural disaster, or by war' },
+      { code: 'PPLX', name: 'section of populated place', description: 'section of populated place' },
+      { code: 'PPLL', name: 'populated locality', description: 'an area similar to a locality but with a small group of dwellings or other buildings' },
+      { code: 'STLMT', name: 'Israeli settlement', description: 'Israeli settlement' },
+    ]
+  },
+  {
+    label: 'Structures',
+    options: [
+      { code: 'BLDG', name: 'building(s)', description: 'a structure built for permanent use, as a house, factory, etc.' },
+      { code: 'SCH', name: 'school', description: 'building(s) where instruction in one or more branches of knowledge takes place' },
+      { code: 'HSP', name: 'hospital', description: 'a building in which sick or injured, especially those confined to bed, are medically treated' },
+      { code: 'CH', name: 'church', description: 'a building for public Christian worship' },
+      { code: 'MSQE', name: 'mosque', description: 'a building for public Islamic worship' },
+      { code: 'TMPL', name: 'temple(s)', description: 'an edifice dedicated to religious worship' },
+      { code: 'SYG', name: 'synagogue', description: 'a place for Jewish worship and religious instruction' },
+      { code: 'CSTL', name: 'castle', description: 'a large fortified building or set of buildings' },
+      { code: 'FT', name: 'fort', description: 'a defensive structure or earthworks' },
+      { code: 'PAL', name: 'palace', description: 'a large stately house, often a royal or presidential residence' },
+      { code: 'PYR', name: 'pyramid', description: 'an ancient massive structure of square ground plan with four triangular faces meeting at a point and used for enclosing tombs' },
+      { code: 'PYRS', name: 'pyramids', description: 'ancient massive structures of square ground plan with four triangular faces meeting at a point and used for enclosing tombs' },
+      { code: 'RUIN', name: 'ruin(s)', description: 'a destroyed or decayed structure which is no longer functional' },
+      { code: 'BDGQ', name: 'ruined bridge', description: 'a destroyed or decayed bridge which is no longer functional' },
+      { code: 'DAMQ', name: 'ruined dam', description: 'a destroyed or decayed dam which is no longer functional' },
+      { code: 'MNMT', name: 'monument', description: 'a commemorative structure or statue' },
+      { code: 'CARN', name: 'cairn', description: 'a heap of stones erected as a landmark or for other purposes' },
+      { code: 'SHRN', name: 'shrine', description: 'a structure or place memorializing a person or religious concept' },
+      { code: 'TMB', name: 'tomb(s)', description: 'a structure for interring bodies' },
+      { code: 'TOWR', name: 'tower', description: 'a high conspicuous structure, typically much higher than its diameter' },
+      { code: 'LTHSE', name: 'lighthouse', description: 'a distinctive structure exhibiting a major navigation light' },
+      { code: 'BCN', name: 'beacon', description: 'a fixed artificial navigation mark' },
+      { code: 'BDG', name: 'bridge', description: 'a structure erected across an obstacle such as a stream, road, etc., in order to carry roads, railroads, and pedestrians across' },
+      { code: 'DAM', name: 'dam', description: 'a barrier constructed across a stream to impound water' },
+      { code: 'PIER', name: 'pier', description: 'a structure built out into navigable water on piles providing berthing for ships and recreation' },
+      { code: 'QUAY', name: 'quay', description: 'a structure of solid construction along a shore or bank which provides berthing for ships and which generally provides cargo handling facilities' },
+      { code: 'WHRF', name: 'wharf(-ves)', description: 'a structure of open rather than solid construction along a shore or a bank which provides berthing for ships and cargo-handling facilities' },
+      { code: 'BRKW', name: 'breakwater', description: 'a structure erected to break the force of waves at the entrance to a harbor or port' },
+      { code: 'MOLE', name: 'mole', description: 'a massive structure of masonry or large stones serving as a pier or breakwater' },
+      { code: 'JTY', name: 'jetty', description: 'a structure built out into the water at a river mouth or harbor entrance to regulate currents and silting' },
+      { code: 'WALL', name: 'wall', description: 'a thick masonry structure, usually enclosing a field or building, or forming the side of a structure' },
+      { code: 'WALLA', name: 'ancient wall', description: 'the remains of a linear defensive stone structure' },
+      { code: 'BP', name: 'boundary marker', description: 'a fixture marking a point along a boundary' },
+      { code: 'GATE', name: 'gate', description: 'a controlled access entrance or exit' },
+      { code: 'PKLT', name: 'parking lot', description: 'an area used for parking vehicles' },
+      { code: 'GARG', name: 'parking garage', description: 'a building or underground facility used exclusively for parking vehicles' },
+      { code: 'STPS', name: 'steps', description: 'stones or slabs placed for ease in ascending or descending a steep slope' },
+      { code: 'STBL', name: 'stable', description: 'a building for the shelter and feeding of farm animals, especially horses' },
+      { code: 'STDM', name: 'stadium', description: 'a structure with an enclosure for athletic games with tiers of seats for spectators' },
+      { code: 'ATHF', name: 'athletic field', description: 'a tract of land used for playing team sports, and athletic track and field events' },
+      { code: 'RECR', name: 'racetrack', description: 'a track where races are held' },
+      { code: 'RECG', name: 'golf course', description: 'a recreation field where golf is played' },
+      { code: 'SPA', name: 'spa', description: 'a resort area usually developed around a medicinal spring' },
+      { code: 'RSRT', name: 'resort', description: 'a specialized facility for vacation, health, or participation sports activities' },
+      { code: 'RHSE', name: 'resthouse', description: 'a structure maintained for the rest and shelter of travelers' },
+      { code: 'HUT', name: 'hut', description: 'a small primitive house' },
+      { code: 'HUTS', name: 'huts', description: 'small primitive houses' },
+      { code: 'HSE', name: 'house(s)', description: 'a building used as a human habitation' },
+      { code: 'BLDA', name: 'apartment building', description: 'a building containing several individual apartments' },
+      { code: 'BLDO', name: 'office building', description: 'commercial building where business and/or services are conducted' },
+      { code: 'HSEC', name: 'country house', description: 'a large house, mansion, or chateau, on a large estate' },
+      { code: 'HTL', name: 'hotel', description: 'a building providing lodging and/or meals for the public' },
+      { code: 'GHSE', name: 'guest house', description: 'a house used to provide lodging for paying guests' },
+      { code: 'MSTY', name: 'monastery', description: 'a building and grounds where a community of monks lives in seclusion' },
+      { code: 'CVNT', name: 'convent', description: 'a building where a community of nuns lives in seclusion' },
+      { code: 'HERM', name: 'hermitage', description: 'a secluded residence, usually for religious sects' },
+      { code: 'NOV', name: 'novitiate', description: 'a religious house or school where novices are trained' },
+      { code: 'RLGR', name: 'retreat', description: 'a place of temporary seclusion, especially for religious groups' },
+      { code: 'MSSN', name: 'mission', description: 'a place characterized by dwellings, school, church, hospital and other facilities operated by a religious group for the purpose of providing charitable services and to propagate religion' },
+      { code: 'MSSNQ', name: 'abandoned mission', description: 'abandoned mission' },
+      { code: 'CMP', name: 'camp(s)', description: 'a site occupied by tents, huts, or other shelters for temporary use' },
+      { code: 'CMPQ', name: 'abandoned camp', description: 'abandoned camp' },
+      { code: 'CMPLA', name: 'labor camp', description: 'a camp used by migrant or temporary laborers' },
+      { code: 'CMPL', name: 'logging camp', description: 'a camp used by loggers' },
+      { code: 'CMPMN', name: 'mining camp', description: 'a camp used by miners' },
+      { code: 'CMPO', name: 'oil camp', description: 'a camp used by oilfield workers' },
+      { code: 'CMPRF', name: 'refugee camp', description: 'a camp used by refugees' },
+      { code: 'FCL', name: 'facility', description: 'a building or buildings housing a center, institute, foundation, hospital, prison, mission, courthouse, etc.' },
+      { code: 'CTRF', name: 'facility center', description: 'a place where more than one facility is situated' },
+      { code: 'CTRM', name: 'medical center', description: 'a complex of health care buildings including two or more of the following: hospital, medical school, clinic, pharmacy, doctor\'s offices, etc.' },
+      { code: 'CTRR', name: 'religious center', description: 'a facility where more than one religious activity is carried out, e.g., retreat, school, monastery, worship' },
+      { code: 'CTRB', name: 'business center', description: 'a place where a number of businesses are located' },
+      { code: 'CTRS', name: 'space center', description: 'a facility for launching, tracking, or controlling satellites and space vehicles' },
+      { code: 'CTRCM', name: 'community center', description: 'a facility for community recreation and other activities' },
+      { code: 'COMC', name: 'communication center', description: 'a facility, including buildings, antennae, towers and electronic equipment for receiving and transmitting information' },
+      { code: 'MFG', name: 'factory', description: 'one or more buildings where goods are manufactured, processed or fabricated' },
+      { code: 'MFGQ', name: 'abandoned factory', description: 'abandoned factory' },
+      { code: 'MFGB', name: 'brewery', description: 'one or more buildings where beer is brewed' },
+      { code: 'MFGC', name: 'cannery', description: 'a building where food items are canned' },
+      { code: 'MFGCU', name: 'copper works', description: 'a facility for processing copper ore' },
+      { code: 'MFGLM', name: 'limekiln', description: 'a furnace in which limestone is reduced to lime' },
+      { code: 'MFGM', name: 'munitions plant', description: 'a factory where ammunition is made' },
+      { code: 'MFGPH', name: 'phosphate works', description: 'a facility for producing fertilizer' },
+      { code: 'MFGSG', name: 'sugar refinery', description: 'a facility for converting raw sugar into refined sugar' },
+      { code: 'FNDY', name: 'foundry', description: 'a building or works where metal casting is carried out' },
+      { code: 'ML', name: 'mill(s)', description: 'a building housing machines for transforming, shaping, finishing, grinding, or extracting products' },
+      { code: 'MLSG', name: 'sugar mill', description: 'a facility where sugar cane is processed into raw sugar' },
+      { code: 'MLSGQ', name: 'former sugar mill', description: 'a sugar mill no longer used as a sugar mill' },
+      { code: 'MLSW', name: 'sawmill', description: 'a mill where logs or lumber are sawn to specified shapes and sizes' },
+      { code: 'MLWTR', name: 'water mill', description: 'a mill powered by running water' },
+      { code: 'MLWND', name: 'windmill', description: 'a mill or water pump powered by wind' },
+      { code: 'MLO', name: 'olive oil mill', description: 'a mill where oil is extracted from olives' },
+      { code: 'MLM', name: 'ore treatment plant', description: 'a facility for improving the metal content of ore by concentration' },
+      { code: 'SCHC', name: 'college', description: 'the grounds and buildings of an institution of higher learning' },
+      { code: 'SCHN', name: 'maritime school', description: 'a school at which maritime sciences form the core of the curriculum' },
+      { code: 'SCHM', name: 'military school', description: 'a school at which military science forms the core of the curriculum' },
+      { code: 'SCHA', name: 'agricultural school', description: 'a school with a curriculum focused on agriculture' },
+      { code: 'SCHT', name: 'technical school', description: 'post-secondary school with a specifically technical or vocational curriculum' },
+      { code: 'HSPC', name: 'clinic', description: 'a medical facility associated with a hospital for outpatients' },
+      { code: 'HSPD', name: 'dispensary', description: 'a building where medical or dental aid is dispensed' },
+      { code: 'HSPL', name: 'leprosarium', description: 'an asylum or hospital for lepers' },
+      { code: 'SNTR', name: 'sanatorium', description: 'a facility where victims of physical or mental disorders are treated' },
+      { code: 'ASYL', name: 'asylum', description: 'a facility where the insane are cared for and protected' },
+      { code: 'PRNJ', name: 'reformatory', description: 'a facility for confining, training, and reforming young law offenders' },
+      { code: 'PRN', name: 'prison', description: 'a facility for confining prisoners' },
+      { code: 'PRNQ', name: 'abandoned prison', description: 'abandoned prison' },
+      { code: 'CTHSE', name: 'courthouse', description: 'a building in which courts of law are held' },
+      { code: 'GOVL', name: 'local government office', description: 'a facility housing local governmental offices, usually a city, town, or village hall' },
+      { code: 'PP', name: 'police post', description: 'a building in which police are stationed' },
+      { code: 'PPQ', name: 'abandoned police post', description: 'abandoned police post' },
+      { code: 'PSTP', name: 'patrol post', description: 'a post from which patrols are sent out' },
+      { code: 'PSTB', name: 'border post', description: 'a post or station at an international boundary for the regulation of movement of people and goods' },
+      { code: 'PSTC', name: 'customs post', description: 'a building at an international boundary where customs and duties are paid on goods' },
+      { code: 'CSTM', name: 'customs house', description: 'a building in a port where customs and duties are paid, and where vessels are entered and cleared' },
+      { code: 'DIP', name: 'diplomatic facility', description: 'office, residence, or facility of a foreign government, which may include an embassy, consulate, chancery, office of charge d\'affaires, or other diplomatic, economic, military, or cultural mission' },
+      { code: 'FIRE', name: 'fire station', description: 'building housing firefighters and/or fire fighting equipment' },
+      { code: 'MKT', name: 'market', description: 'a place where goods are bought and sold at regular intervals' },
+      { code: 'SHOPC', name: 'shopping center or mall', description: 'an urban shopping area featuring a variety of shops surrounding a usually open-air concourse reserved for pedestrian traffic; or a large suburban building or group of buildings containing various shops with associated passageways' },
+      { code: 'RET', name: 'store', description: 'a building where goods and/or services are offered for sale' },
+      { code: 'SHSE', name: 'storehouse', description: 'a building for storing goods, especially provisions' },
+      { code: 'MUS', name: 'museum', description: 'a building where objects of permanent interest in one or more of the arts and sciences are preserved and exhibited' },
+      { code: 'GDN', name: 'garden(s)', description: 'an enclosure for displaying selected plant or animal life' },
+      { code: 'ZOO', name: 'zoo', description: 'a zoological garden or park where wild animals are kept for exhibition' },
+      { code: 'AQC', name: 'aquaculture facility', description: 'facility or area for the cultivation of aquatic animals and plants, especially fish, shellfish, and seaweed, in natural or controlled marine or freshwater environments; underwater agriculture' },
+      { code: 'BSTN', name: 'baling station', description: 'a facility for baling agricultural products' },
+      { code: 'DARY', name: 'dairy', description: 'a facility for the processing, sale and distribution of milk or milk products' },
+      { code: 'VETF', name: 'veterinary facility', description: 'a building or camp at which veterinary services are available' },
+      { code: 'TNKD', name: 'cattle dipping tank', description: 'a small artificial pond used for immersing cattle in chemically treated water for disease control' },
+      { code: 'SHPF', name: 'sheepfold', description: 'a fence or wall enclosure for sheep and other small herd animals' },
+      { code: 'CRRL', name: 'corral(s)', description: 'a pen or enclosure for confining or capturing animals' },
+      { code: 'RKRY', name: 'rookery', description: 'a breeding place of a colony of birds or seals' },
+      { code: 'STNW', name: 'whaling station', description: 'a facility for butchering whales and processing train oil' },
+      { code: 'LEPC', name: 'leper colony', description: 'a settled area inhabited by lepers in relative isolation' },
+      { code: 'ASTR', name: 'astronomical station', description: 'a point on the earth whose position has been determined by observations of celestial bodies' },
+      { code: 'OBS', name: 'observatory', description: 'a facility equipped for observation of atmospheric or space phenomena' },
+      { code: 'OBSR', name: 'radio observatory', description: 'a facility equipped with an array of antennae for receiving radio waves from space' },
+      { code: 'STNR', name: 'radio station', description: 'a facility for producing and transmitting information by radio waves' },
+      { code: 'STNS', name: 'satellite station', description: 'a facility for tracking and communicating with orbiting satellites' },
+      { code: 'STNM', name: 'meteorological station', description: 'a station at which weather elements are recorded' },
+      { code: 'STNI', name: 'inspection station', description: 'a station at which vehicles, goods, and people are inspected' },
+      { code: 'STMD', name: 'distributary(-ies)', description: 'a branch which flows away from the main stream, as in a delta or irrigation canal' },
+      { code: 'STMGS', name: 'stream gauging station', description: 'named place where a measuring station for a watercourse, reservoir or other water body exists' },
+      { code: 'STNF', name: 'forest station', description: 'a collection of buildings and facilities for carrying out forest management' },
+      { code: 'STNE', name: 'experiment station', description: 'a facility for carrying out experiments' },
+      { code: 'STNB', name: 'scientific research base', description: 'a scientific facility used as a base from which research is carried out or monitored' },
+      { code: 'ITTR', name: 'research institute', description: 'a facility where research is carried out' },
+      { code: 'CTRA', name: 'atomic center', description: 'a facility where atomic research is carried out' },
+      { code: 'INSM', name: 'military installation', description: 'a facility for use of and control by armed forces' },
+      { code: 'MILB', name: 'military base', description: 'a place used by an army or other armed service for storing arms and supplies, and for accommodating and training troops, a base from which operations can be initiated' },
+      { code: 'NVB', name: 'naval base', description: 'an area used to store supplies, provide barracks for troops and naval personnel, a port for naval vessels, and from which operations can be initiated' },
+      { code: 'AIRB', name: 'airbase', description: 'an area used to store supplies, provide barracks for air force personnel, hangars and runways for aircraft, and from which operations are initiated' },
+      { code: 'AIRF', name: 'airfield', description: 'a place on land where aircraft land and take off; no facilities provided for the commercial handling of passengers and cargo' },
+      { code: 'AIRP', name: 'airport', description: 'a place where aircraft regularly land and take off, with runways, navigational aids, and major facilities for the commercial handling of passengers and cargo' },
+      { code: 'AIRH', name: 'heliport', description: 'a place where helicopters land and take off' },
+      { code: 'AIRG', name: 'hangar', description: 'a covered and usually enclosed area for housing and repairing aircraft' },
+      { code: 'AIRS', name: 'seaplane landing area', description: 'a place on a waterbody where floatplanes land and take off' },
+      { code: 'AIRT', name: 'terminal', description: 'airport facilities for the handling of freight and passengers' },
+      { code: 'TRANT', name: 'transit terminal', description: 'facilities for the handling of vehicular freight and passengers' },
+      { code: 'TRIG', name: 'triangulation station', description: 'a point on the earth whose position has been determined by triangulation' },
+      { code: 'OBPT', name: 'observation point', description: 'a wildlife or scenic observation point' },
+      { code: 'LNDF', name: 'landfill', description: 'a place for trash and garbage disposal in which the waste is buried between layers of earth to build up low-lying land' },
+      { code: 'SWT', name: 'sewage treatment plant', description: 'facility for the processing of sewage and/or wastewater' },
+      { code: 'WTRW', name: 'waterworks', description: 'a facility for supplying potable water through a water source and a system of pumps and filtration beds' },
+      { code: 'PMPW', name: 'water pumping station', description: 'a facility for pumping water from a major well or through a pipeline' },
+      { code: 'PMPO', name: 'oil pumping station', description: 'a facility for pumping oil through a pipeline' },
+      { code: 'OILP', name: 'oil pipeline', description: 'a pipeline used for transporting oil' },
+      { code: 'OILJ', name: 'oil pipeline junction', description: 'a section of an oil pipeline where two or more pipes join together' },
+      { code: 'TRMO', name: 'oil pipeline terminal', description: 'a tank farm or loading facility at the end of an oil pipeline' },
+      { code: 'OILR', name: 'oil refinery', description: 'a facility for converting crude oil into refined petroleum products' },
+      { code: 'OILT', name: 'tank farm', description: 'a tract of land occupied by large, cylindrical, metal tanks in which oil or liquid petrochemicals are stored' },
+      { code: 'GOSP', name: 'gas-oil separator plant', description: 'a facility for separating gas from oil' },
+      { code: 'PS', name: 'power station', description: 'a facility for generating electric power' },
+      { code: 'PSH', name: 'hydroelectric power station', description: 'a building where electricity is generated from water power' },
+      { code: 'PSN', name: 'nuclear power station', description: 'nuclear power station' },
+      { code: 'SLCE', name: 'sluice', description: 'a conduit or passage for carrying off surplus water from a waterbody, usually regulated by means of a sluice gate' },
+      { code: 'SPLY', name: 'spillway', description: 'a passage or outlet through which surplus water flows over, around or through a dam' },
+      { code: 'TOLL', name: 'toll gate/barrier', description: 'highway toll collection station' },
+      { code: 'RDCR', name: 'traffic circle', description: 'a road junction formed around a central circle about which traffic moves in one direction only' },
+      { code: 'WRCK', name: 'wreck', description: 'the site of the remains of a wrecked vessel' },
+    ]
+  },
+  {
+    label: 'Hydrographic Features',
+    options: [
+      { code: 'STM', name: 'stream', description: 'a body of running water moving to a lower level in a channel on land' },
+      { code: 'LK', name: 'lake', description: 'a large inland body of standing water' },
+      { code: 'BAY', name: 'bay', description: 'a coastal indentation between two capes or headlands, larger than a cove but smaller than a gulf' },
+      { code: 'HBR', name: 'harbor(s)', description: 'a haven or space of deep water so sheltered by the adjacent land as to afford a safe anchorage for ships' },
+      { code: 'WLL', name: 'well', description: 'a cylindrical hole, pit, or tunnel drilled or dug down to a depth from which water, oil, or gas can be pumped or brought to the surface' },
+      { code: 'WLLS', name: 'wells', description: 'cylindrical holes, pits, or tunnels drilled or dug down to a depth from which water, oil, or gas can be pumped or brought to the surface' },
+      { code: 'RSVT', name: 'water tank', description: 'a contained pool or tank of water at, below, or above ground level' },
+      { code: 'WTRC', name: 'watercourse', description: 'a natural, well-defined channel produced by flowing water, or an artificial channel designed to carry flowing water' },
+      { code: 'FLLS', name: 'waterfall(s)', description: 'a perpendicular or very steep descent of the water of a stream' },
+      { code: 'WTRH', name: 'waterhole(s)', description: 'a natural hole, hollow, or small depression that contains water, used by man and animals, especially in arid areas' },
+      { code: 'WEIR', name: 'weir(s)', description: 'a small dam in a stream, designed to raise the water level or to divert stream flow through a desired channel' },
+      { code: 'WHRL', name: 'whirlpool', description: 'a turbulent, rotating movement of water in a stream' },
+      { code: 'WTLD', name: 'wetland', description: 'an area subject to inundation, usually characterized by bog, marsh, or swamp vegetation' },
+      { code: 'COVE', name: 'cove(s)', description: 'a small coastal indentation, smaller than a bay' },
+      { code: 'CHN', name: 'channel', description: 'the deepest part of a stream, bay, lagoon, or strait, through which the main current flows' },
+      { code: 'CHNL', name: 'lake channel(s)', description: 'that part of a lake having water deep enough for navigation between islands, shoals, etc.' },
+      { code: 'CHNM', name: 'marine channel', description: 'that part of a body of water deep enough for navigation through an area otherwise not suitable for navigation' },
+      { code: 'CHNN', name: 'navigation channel(s)', description: 'the bed and banks of a navigable stream; a natural or artificial channel maintained for navigation' },
+      { code: 'CHNO', name: 'ocean channel', description: 'that part of a body of water deep enough for navigation through an area otherwise not suitable for navigation' },
+      { code: 'CHNR', name: 'river channel', description: 'the deepest part of a stream channel, through which the main volume of water flows' },
+      { code: 'CHNW', name: 'lake channel(s)', description: 'that part of a lake having water deep enough for navigation between islands, shoals, etc.' },
+      { code: 'CHNY', name: 'stream channel', description: 'the bed and banks of a stream; a natural or artificial channel maintained for navigation' },
+      { code: 'CNLS', name: 'canals', description: 'artificial waterways maintained for navigation' },
+      { code: 'CNL', name: 'canal', description: 'an artificial waterway' },
+      { code: 'CNLB', name: 'aqueduct', description: 'a conduit used to carry water' },
+      { code: 'CNLD', name: 'drainage canal', description: 'an artificial waterway carrying water away from a wetland or from drainage ditches' },
+      { code: 'CNLI', name: 'irrigation canal', description: 'a canal which serves as the main artery of an irrigation system' },
+      { code: 'CNLN', name: 'navigation canal(s)', description: 'a canal maintained for navigation' },
+      { code: 'CNLQ', name: 'abandoned canal', description: 'a former artificial waterway' },
+      { code: 'CNLSB', name: 'supply canal', description: 'a canal that serves to feed water into a primary canal' },
+      { code: 'CNLX', name: 'section of canal', description: 'section of canal' },
+      { code: 'ESTY', name: 'estuary', description: 'a funnel-shaped stream mouth or embayment where fresh water mixes with sea water under tidal influences' },
+      { code: 'FISH', name: 'fishing area', description: 'a fishing ground, bank or area where fishermen go to catch fish' },
+      { code: 'FJD', name: 'fjord', description: 'a long, narrow, steep-walled, deep-water arm of the sea at high latitudes, usually along mountainous coasts' },
+      { code: 'FJDS', name: 'fjords', description: 'long, narrow, steep-walled, deep-water arms of the sea at high latitudes, usually along mountainous coasts' },
+      { code: 'FLLS', name: 'waterfall(s)', description: 'a perpendicular or very steep descent of the water of a stream' },
+      { code: 'FLLSX', name: 'section of waterfall(s)', description: 'section of waterfall(s)' },
+      { code: 'GEO', name: 'geyser', description: 'a type of hot spring with intermittent eruptions of jets of hot water and steam' },
+      { code: 'GEYS', name: 'geysers', description: 'hot springs with intermittent eruptions of jets of hot water and steam' },
+      { code: 'GLCR', name: 'glacier(s)', description: 'a mass of ice, usually at high latitudes or high elevations, with sufficient thickness to flow away from the source area in lobes, tongues, or masses' },
+      { code: 'GULF', name: 'gulf', description: 'a large recess in the coastline, larger than a bay' },
+      { code: 'GYSR', name: 'geyser', description: 'a type of hot spring with intermittent eruptions of jets of hot water and steam' },
+      { code: 'HBR', name: 'harbor(s)', description: 'a haven or space of deep water so sheltered by the adjacent land as to afford a safe anchorage for ships' },
+      { code: 'HBRO', name: 'ocean harbor(s)', description: 'a haven or space of deep water so sheltered by the adjacent land as to afford a safe anchorage for ships' },
+      { code: 'HBRX', name: 'section of harbor', description: 'section of harbor' },
+      { code: 'INLT', name: 'inlet', description: 'a narrow waterway extending into the land, or connecting a bay or lagoon with a larger body of water' },
+      { code: 'INLTQ', name: 'abandoned inlet', description: 'abandoned inlet' },
+      { code: 'LBED', name: 'lake bed(s)', description: 'a dried up or drained area of a former lake' },
+      { code: 'LGN', name: 'lagoon', description: 'a shallow coastal waterbody, completely or partly separated from a larger body of water by a barrier island, coral reef or other depositional feature' },
+      { code: 'LGNS', name: 'lagoons', description: 'shallow coastal waterbodies, completely or partly separated from a larger body of water by a barrier island, coral reef or other depositional feature' },
+      { code: 'LGNX', name: 'section of lagoon', description: 'section of lagoon' },
+      { code: 'LK', name: 'lake', description: 'a large inland body of standing water' },
+      { code: 'LKSC', name: 'crater lake', description: 'a lake in a crater or caldera' },
+      { code: 'LKS', name: 'lakes', description: 'large inland bodies of standing water' },
+      { code: 'LKSB', name: 'intermittent lake', description: 'intermittent lake' },
+      { code: 'LKSI', name: 'intermittent lakes', description: 'intermittent lakes' },
+      { code: 'LKSN', name: 'salt lake(s)', description: 'a standing body of salt water often in a desert or semi-arid area' },
+      { code: 'LKSNI', name: 'intermittent salt lake(s)', description: 'intermittent salt lake(s)' },
+      { code: 'LKX', name: 'section of lake', description: 'section of lake' },
+      { code: 'MFGN', name: 'salt evaporation ponds', description: 'diked salt ponds used in the production of solar evaporated salt' },
+      { code: 'MGV', name: 'mangrove swamp', description: 'a tropical tidal mud flat characterized by mangrove vegetation' },
+      { code: 'MOOR', name: 'moor(s)', description: 'an area of open ground overlaid with wet peaty soils dominated by heather' },
+      { code: 'MRSH', name: 'marsh(es)', description: 'a wetland dominated by grass-like vegetation' },
+      { code: 'MRSHN', name: 'salt marsh', description: 'a marsh subject to occasional overflow by salt water' },
+      { code: 'NRWS', name: 'narrows', description: 'a navigable narrow part of a bay, strait, river, etc.' },
+      { code: 'OCN', name: 'ocean', description: 'one of the major divisions of the earth\'s water surface' },
+      { code: 'OVF', name: 'overflow', description: 'a section of the stream that overflow its banks, used in irrigated areas' },
+      { code: 'PND', name: 'pond', description: 'a small standing waterbody' },
+      { code: 'PNDI', name: 'intermittent pond', description: 'intermittent pond' },
+      { code: 'PNDN', name: 'salt pond(s)', description: 'a small standing body of salt water often in a marsh or swamp, usually along a seacoast' },
+      { code: 'PNDSF', name: 'fishponds', description: 'ponds or enclosures in which fish are kept or raised' },
+      { code: 'PNDSI', name: 'intermittent salt pond(s)', description: 'intermittent salt pond(s)' },
+      { code: 'PNDSN', name: 'salt pond(s)', description: 'a small standing body of salt water often in a marsh or swamp, usually along a seacoast' },
+      { code: 'POOL', name: 'pool(s)', description: 'a small and comparatively still, deep part of a larger body of water such as a stream or harbor; or a small body of standing water' },
+      { code: 'POOLI', name: 'intermittent pool', description: 'intermittent pool' },
+      { code: 'RCH', name: 'reach', description: 'a straight section of a navigable stream or channel between two bends' },
+      { code: 'RDGG', name: 'icecap ridge', description: 'a linear elevation on an icecap' },
+      { code: 'RDST', name: 'roadstead', description: 'an area of comparatively shallow water adjoining a harbor where vessels can ride at anchor' },
+      { code: 'RF', name: 'reef(s)', description: 'a surface-navigation hazard composed of consolidated material' },
+      { code: 'RFC', name: 'coral reef(s)', description: 'a surface-navigation hazard composed of coral' },
+      { code: 'RFX', name: 'section of reef', description: 'section of reef' },
+      { code: 'RPDS', name: 'rapids', description: 'a turbulent section of a stream associated with a steep, irregular stream bed' },
+      { code: 'RSV', name: 'reservoir(s)', description: 'an artificial pond or lake' },
+      { code: 'RSVI', name: 'intermittent reservoir', description: 'intermittent reservoir' },
+      { code: 'RSVT', name: 'water tank', description: 'a contained pool or tank of water at, below, or above ground level' },
+      { code: 'RSVX', name: 'section of reservoir', description: 'section of reservoir' },
+      { code: 'SBKH', name: 'sabkha(s)', description: 'a salt flat or salt encrusted plain subject to periodic flooding by tides or rains' },
+      { code: 'SD', name: 'sound', description: 'a long arm of the sea forming a channel between the mainland and an island or islands; or connecting two larger bodies of water' },
+      { code: 'SEA', name: 'sea', description: 'a large body of salt water more or less definitely marked off by land boundaries' },
+      { code: 'SHOL', name: 'shoal(s)', description: 'a surface-navigation hazard composed of unconsolidated material' },
+      { code: 'SHOLI', name: 'intermittent shoal', description: 'intermittent shoal' },
+      { code: 'SILL', name: 'sill', description: 'the low part of an underwater gap or saddle separating basins, including a similar feature at the mouth of a fjord' },
+      { code: 'SPNG', name: 'hot spring(s)', description: 'a place where hot ground water rises to the surface through fissures or cracks' },
+      { code: 'SPNS', name: 'sulphur spring(s)', description: 'a place where sulphur ground water rises to the surface' },
+      { code: 'SPNT', name: 'thermal spring(s)', description: 'a place where hot ground water rises to the surface through fissures or cracks' },
+      { code: 'STM', name: 'stream', description: 'a body of running water moving to a lower level in a channel on land' },
+      { code: 'STMA', name: 'anabranch', description: 'a diverging branch flowing out of a main stream and rejoining it downstream' },
+      { code: 'STMB', name: 'stream bend', description: 'a conspicuously curved or bent segment of a stream' },
+      { code: 'STMC', name: 'canal', description: 'an artificial waterway' },
+      { code: 'STMD', name: 'distributary(-ies)', description: 'a branch which flows away from the main stream, as in a delta or irrigation canal' },
+      { code: 'STMDI', name: 'intermittent distributary(-ies)', description: 'intermittent distributary(-ies)' },
+      { code: 'STMI', name: 'intermittent stream', description: 'intermittent stream' },
+      { code: 'STMIX', name: 'section of intermittent stream', description: 'section of intermittent stream' },
+      { code: 'STMM', name: 'stream mouth', description: 'a place where a stream discharges into a lagoon, lake or the sea' },
+      { code: 'STMQ', name: 'abandoned watercourse', description: 'abandoned watercourse' },
+      { code: 'STMS', name: 'streams', description: 'bodies of running water moving to a lower level in a channel on land' },
+      { code: 'STMSB', name: 'intermittent streams', description: 'intermittent streams' },
+      { code: 'STMX', name: 'section of stream', description: 'section of stream' },
+      { code: 'STRT', name: 'strait', description: 'a relatively narrow waterway, usually narrower and less extensive than a sound, connecting two larger bodies of water' },
+      { code: 'SWMP', name: 'swamp', description: 'a wetland dominated by tree vegetation' },
+      { code: 'SYSI', name: 'irrigation system', description: 'a network of ditches and one or more of the following elements: water supply, reservoir, canal, pump, well, drain' },
+      { code: 'TAL', name: 'talus slope', description: 'a steep concave slope formed by an accumulation of loose rock fragments at the base of a cliff or steep slope' },
+      { code: 'TRR', name: 'terrace', description: 'a long, narrow alluvial platform bounded by steeper slopes above and below, usually overlooking a waterbody' },
+      { code: 'VAL', name: 'valley', description: 'an elongated depression usually traversed by a stream' },
+      { code: 'VALS', name: 'valleys', description: 'elongated depressions usually traversed by a stream' },
+      { code: 'VALX', name: 'section of valley', description: 'section of valley' },
+      { code: 'WAD', name: 'wadi', description: 'a valley or ravine, bounded by relatively steep banks, which in the rainy season becomes a watercourse; found primarily in North Africa and the Middle East' },
+      { code: 'WADB', name: 'wadi bend', description: 'a conspicuously curved or bent segment of a wadi' },
+      { code: 'WADJ', name: 'wadi junction', description: 'a place where two or more wadies join' },
+      { code: 'WADM', name: 'wadi mouth', description: 'the lower terminus of a wadi where it widens into an adjoining floodplain, depression, or waterbody' },
+      { code: 'WADS', name: 'wadies', description: 'valleys or ravines, bounded by relatively steep banks, which in the rainy season become watercourses; found primarily in North Africa and the Middle East' },
+      { code: 'WHRL', name: 'whirlpool', description: 'a turbulent, rotating movement of water in a stream' },
+      { code: 'WLL', name: 'well', description: 'a cylindrical hole, pit, or tunnel drilled or dug down to a depth from which water, oil, or gas can be pumped or brought to the surface' },
+      { code: 'WLLN', name: 'salt well', description: 'a well from which salt water is obtained' },
+      { code: 'WLLQ', name: 'abandoned well', description: 'abandoned well' },
+      { code: 'WLLS', name: 'wells', description: 'cylindrical holes, pits, or tunnels drilled or dug down to a depth from which water, oil, or gas can be pumped or brought to the surface' },
+      { code: 'WTLD', name: 'wetland', description: 'an area subject to inundation, usually characterized by bog, marsh, or swamp vegetation' },
+      { code: 'WTLDI', name: 'intermittent wetland', description: 'intermittent wetland' },
+      { code: 'WTRC', name: 'watercourse', description: 'a natural, well-defined channel produced by flowing water, or an artificial channel designed to carry flowing water' },
+      { code: 'WTRH', name: 'waterhole(s)', description: 'a natural hole, hollow, or small depression that contains water, used by man and animals, especially in arid areas' },
+    ]
+  },
+  {
+    label: 'Topographic Features',
+    options: [
+      { code: 'MT', name: 'mountain', description: 'an elevation standing high above the surrounding area with small summit area, steep slopes and local relief of 300m or more' },
+      { code: 'HLL', name: 'hill', description: 'a rounded elevation of limited extent rising above the surrounding land with local relief of less than 300m' },
+      { code: 'VAL', name: 'valley', description: 'an elongated depression usually traversed by a stream' },
+      { code: 'PLN', name: 'plain(s)', description: 'an extensive area of comparatively level to gently undulating land, lacking surface irregularities, and usually adjacent to a higher area' },
+      { code: 'ISL', name: 'island', description: 'a tract of land, smaller than a continent, surrounded by water at high water' },
+      { code: 'CRDR', name: 'crater(s)', description: 'a generally circular saucer or bowl-shaped depression caused by volcanic or meteorite explosive action' },
+      { code: 'CRQ', name: 'crater(s)', description: 'a generally circular saucer or bowl-shaped depression caused by volcanic or meteorite explosive action' },
+      { code: 'CRQS', name: 'craters', description: 'generally circular saucer or bowl-shaped depressions caused by volcanic or meteorite explosive action' },
+      { code: 'CRTR', name: 'crater', description: 'a generally circular saucer or bowl-shaped depression caused by volcanic or meteorite explosive action' },
+      { code: 'DUNE', name: 'dune(s)', description: 'a wave form, ridge or star shape feature composed of sand' },
+      { code: 'DUNES', name: 'dunes', description: 'wave forms, ridges or star shaped features composed of sand' },
+      { code: 'FLD', name: 'field(s)', description: 'an open as opposed to wooded area, usually of low elevation, often dominated by grasses, herbs or shrubs' },
+      { code: 'FLDI', name: 'intermittent field(s)', description: 'intermittent field(s)' },
+      { code: 'GAP', name: 'gap', description: 'a low place in a ridge, not used for transportation' },
+      { code: 'GRGE', name: 'gorge(s)', description: 'a short, narrow, steep-sided section of a stream valley' },
+      { code: 'HDLD', name: 'headland', description: 'a high projection of land extending into a large body of water beyond the line of the coast' },
+      { code: 'HLL', name: 'hill', description: 'a rounded elevation of limited extent rising above the surrounding land with local relief of less than 300m' },
+      { code: 'HLLS', name: 'hills', description: 'rounded elevations of limited extent rising above the surrounding land with local relief of less than 300m' },
+      { code: 'HLLSB', name: 'intermittent hills', description: 'intermittent hills' },
+      { code: 'HLLX', name: 'section of hill', description: 'section of hill' },
+      { code: 'ISL', name: 'island', description: 'a tract of land, smaller than a continent, surrounded by water at high water' },
+      { code: 'ISLF', name: 'artificial island', description: 'an island created by landfill or diking and filling in a wetland, bay, or lagoon' },
+      { code: 'ISLM', name: 'mangrove island', description: 'a mangrove swamp surrounded by a waterbody' },
+      { code: 'ISLS', name: 'islands', description: 'tracts of land, smaller than a continent, surrounded by water at high water' },
+      { code: 'ISLSB', name: 'intermittent islands', description: 'intermittent islands' },
+      { code: 'ISLT', name: 'land-tied island', description: 'a coastal island connected to the mainland by barrier beaches, levees or dikes' },
+      { code: 'ISLX', name: 'section of island', description: 'section of island' },
+      { code: 'ISTH', name: 'isthmus', description: 'a narrow strip of land connecting two larger land masses and bordered by water' },
+      { code: 'KRST', name: 'karst area', description: 'a distinctive landscape developed on soluble rock such as limestone characterized by sinkholes, caves, disappearing streams, and underground drainage' },
+      { code: 'LAVA', name: 'lava area', description: 'an area of solidified lava' },
+      { code: 'LEV', name: 'levee', description: 'a natural low embankment bordering a distributary or meandering stream; often built up artificially to control floods' },
+      { code: 'LEVE', name: 'levees', description: 'natural low embankments bordering a distributary or meandering stream; often built up artificially to control floods' },
+      { code: 'MESA', name: 'mesa(s)', description: 'a flat-topped, isolated elevation with steep slopes on all sides, less extensive than a plateau' },
+      { code: 'MESAS', name: 'mesas', description: 'flat-topped, isolated elevations with steep slopes on all sides, less extensive than a plateau' },
+      { code: 'MND', name: 'mound(s)', description: 'a low, isolated, rounded hill' },
+      { code: 'MNDS', name: 'mounds', description: 'low, isolated, rounded hills' },
+      { code: 'MT', name: 'mountain', description: 'an elevation standing high above the surrounding area with small summit area, steep slopes and local relief of 300m or more' },
+      { code: 'MTS', name: 'mountains', description: 'elevations standing high above the surrounding area with small summit area, steep slopes and local relief of 300m or more' },
+      { code: 'MTX', name: 'section of mountain', description: 'section of mountain' },
+      { code: 'NKM', name: 'meander neck', description: 'a narrow strip of land between the two limbs of an incised meander' },
+      { code: 'NTK', name: 'nunatak', description: 'a rock or mountain peak protruding through glacial ice' },
+      { code: 'NTKS', name: 'nunataks', description: 'rocks or mountain peaks protruding through glacial ice' },
+      { code: 'PAN', name: 'pan', description: 'a near-level shallow, natural depression or basin, usually containing an intermittent lake, pond, or marsh' },
+      { code: 'PANS', name: 'pans', description: 'near-level shallow, natural depressions or basins, usually containing an intermittent lake, pond, or marsh' },
+      { code: 'PASS', name: 'pass', description: 'a break in a mountain range or other high obstruction, used for transportation from one side to the other' },
+      { code: 'PEN', name: 'peninsula', description: 'an elongate area of land projecting into a body of water and nearly surrounded by water' },
+      { code: 'PENX', name: 'section of peninsula', description: 'section of peninsula' },
+      { code: 'PK', name: 'peak', description: 'a pointed elevation atop a mountain, ridge, or other upland' },
+      { code: 'PKS', name: 'peaks', description: 'pointed elevations atop a mountain, ridge, or other upland' },
+      { code: 'PKX', name: 'section of peak', description: 'section of peak' },
+      { code: 'PLAT', name: 'plateau', description: 'an elevated plain with steep slopes on one or more sides, and often dissected by streams' },
+      { code: 'PLATX', name: 'section of plateau', description: 'section of plateau' },
+      { code: 'PLN', name: 'plain(s)', description: 'an extensive area of comparatively level to gently undulating land, lacking surface irregularities, and usually adjacent to a higher area' },
+      { code: 'PLNX', name: 'section of plain', description: 'section of plain' },
+      { code: 'PROM', name: 'promontory(-ies)', description: 'a bluff or prominent hill overlooking or projecting into a lowland' },
+      { code: 'PT', name: 'point', description: 'a tapering piece of land projecting into a body of water, less prominent than a cape' },
+      { code: 'PTS', name: 'points', description: 'tapering pieces of land projecting into a body of water, less prominent than a cape' },
+      { code: 'PTX', name: 'section of point', description: 'section of point' },
+      { code: 'RDGE', name: 'ridge(s)', description: 'a long narrow elevation with steep sides, and a more or less continuous crest' },
+      { code: 'RDGES', name: 'ridges', description: 'long narrow elevations with steep sides, and a more or less continuous crest' },
+      { code: 'RDGX', name: 'section of ridge', description: 'section of ridge' },
+      { code: 'RKS', name: 'rocks', description: 'conspicuous, isolated rocky masses' },
+      { code: 'RK', name: 'rock', description: 'a conspicuous, isolated rocky mass' },
+      { code: 'SADDLE', name: 'saddle', description: 'a broad, open pass crossing a ridge or between hills or mountains' },
+      { code: 'SBKH', name: 'sabkha(s)', description: 'a salt flat or salt encrusted plain subject to periodic flooding by tides or rains' },
+      { code: 'SCRB', name: 'scrubland', description: 'an area of low trees, bushes, and shrubs stunted by some environmental limitation' },
+      { code: 'SDL', name: 'saddle', description: 'a broad, open pass crossing a ridge or between hills or mountains' },
+      { code: 'SHOR', name: 'shore', description: 'a narrow zone bordering a waterbody which covers and uncovers at high and low water, respectively' },
+      { code: 'SHORI', name: 'intermittent shore', description: 'intermittent shore' },
+      { code: 'SLP', name: 'slope(s)', description: 'a surface with a relatively uniform slope angle' },
+      { code: 'SLPS', name: 'slopes', description: 'surfaces with a relatively uniform slope angle' },
+      { code: 'SPIT', name: 'spit', description: 'a narrow, straight or curved continuation of a beach into a waterbody' },
+      { code: 'SPUR', name: 'spur(s)', description: 'a subordinate elevation, ridge, or rise projecting outward from a larger feature' },
+      { code: 'SPURS', name: 'spurs', description: 'subordinate elevations, ridges, or rises projecting outward from a larger feature' },
+      { code: 'TAL', name: 'talus slope', description: 'a steep concave slope formed by an accumulation of loose rock fragments at the base of a cliff or steep slope' },
+      { code: 'TERR', name: 'terrace', description: 'a long, narrow alluvial platform bounded by steeper slopes above and below, usually overlooking a waterbody' },
+      { code: 'TERRA', name: 'area of terracing', description: 'an area of terracing' },
+      { code: 'TERRS', name: 'terraces', description: 'long, narrow alluvial platforms bounded by steeper slopes above and below, usually overlooking a waterbody' },
+      { code: 'UPLD', name: 'upland', description: 'an extensive interior region of high land with low to moderate surface relief' },
+      { code: 'VAL', name: 'valley', description: 'an elongated depression usually traversed by a stream' },
+      { code: 'VALS', name: 'valleys', description: 'elongated depressions usually traversed by a stream' },
+      { code: 'VALX', name: 'section of valley', description: 'section of valley' },
+      { code: 'VLC', name: 'volcano', description: 'a conical elevation composed of volcanic materials with a crater at the top' },
+      { code: 'VLCS', name: 'volcanoes', description: 'conical elevations composed of volcanic materials with a crater at the top' },
+      { code: 'VLCX', name: 'section of volcano', description: 'section of volcano' },
+    ]
   }
-] as const;
-
-// IATI Location ID Vocabulary types
-export const LOCATION_ID_VOCABULARIES = [
-  {
-    code: 'A1',
-    name: 'GeoNames',
-    description: 'GeoNames geographical database'
-  },
-  {
-    code: 'A2',
-    name: 'OpenStreetMap',
-    description: 'OpenStreetMap database'
-  },
-  {
-    code: 'A3',
-    name: 'GADM',
-    description: 'Global Administrative Areas'
-  },
-  {
-    code: 'A4',
-    name: 'HASC',
-    description: 'Hierarchical Administrative Subdivision Codes'
-  },
-  {
-    code: 'A5',
-    name: 'ISO',
-    description: 'ISO 3166-1 country codes'
-  },
-  {
-    code: 'A6',
-    name: 'ISO2',
-    description: 'ISO 3166-2 subdivision codes'
-  },
-  {
-    code: 'A7',
-    name: 'ISO3',
-    description: 'ISO 3166-3 country codes'
-  },
-  {
-    code: 'A8',
-    name: 'UN',
-    description: 'United Nations codes'
-  },
-  {
-    code: 'A9',
-    name: 'Custom',
-    description: 'Custom vocabulary'
-  }
-] as const;
-
-// Administrative Division Levels
-export const ADMINISTRATIVE_LEVELS = [
-  {
-    code: '1',
-    name: 'Province/State',
-    description: 'First-level administrative division'
-  },
-  {
-    code: '2',
-    name: 'District/County',
-    description: 'Second-level administrative division'
-  },
-  {
-    code: '3',
-    name: 'Township/Municipality',
-    description: 'Third-level administrative division'
-  },
-  {
-    code: '4',
-    name: 'Ward/Neighborhood',
-    description: 'Fourth-level administrative division'
-  },
-  {
-    code: '5',
-    name: 'Village/Settlement',
-    description: 'Fifth-level administrative division'
-  }
-] as const;
-
-// Location Exactness types
-export const LOCATION_EXACTNESS_TYPES = [
-  {
-    code: '1',
-    name: 'Exact',
-    description: 'Location is precisely known'
-  },
-  {
-    code: '2',
-    name: 'Approximate',
-    description: 'Location is approximately known'
-  },
-  {
-    code: '3',
-    name: 'Extrapolated',
-    description: 'Location is estimated or extrapolated'
-  }
-] as const;
-
-// Location Class types
-export const LOCATION_CLASS_TYPES = [
-  {
-    code: '1',
-    name: 'Administrative Region',
-    description: 'Administrative or political division'
-  },
-  {
-    code: '2',
-    name: 'Settlement',
-    description: 'Populated place or settlement'
-  },
-  {
-    code: '3',
-    name: 'Structure',
-    description: 'Building or structure'
-  },
-  {
-    code: '4',
-    name: 'Site',
-    description: 'Specific site or location'
-  },
-  {
-    code: '5',
-    name: 'Area',
-    description: 'Geographic area or region'
-  }
-] as const;
-
-// Feature Designation types (UN/Geonames codes)
-export const FEATURE_DESIGNATION_TYPES = [
-  // Administrative divisions
-  { code: 'ADM1', name: 'First-order administrative division', category: 'Administrative' },
-  { code: 'ADM2', name: 'Second-order administrative division', category: 'Administrative' },
-  { code: 'ADM3', name: 'Third-order administrative division', category: 'Administrative' },
-  { code: 'ADM4', name: 'Fourth-order administrative division', category: 'Administrative' },
-  { code: 'ADM5', name: 'Fifth-order administrative division', category: 'Administrative' },
-  { code: 'ADMF', name: 'Administrative facility', category: 'Administrative' },
-  
-  // Populated places
-  { code: 'PPL', name: 'Populated place', category: 'Settlement' },
-  { code: 'PPLA', name: 'Seat of a first-order administrative division', category: 'Settlement' },
-  { code: 'PPLA2', name: 'Seat of a second-order administrative division', category: 'Settlement' },
-  { code: 'PPLA3', name: 'Seat of a third-order administrative division', category: 'Settlement' },
-  { code: 'PPLA4', name: 'Seat of a fourth-order administrative division', category: 'Settlement' },
-  { code: 'PPLG', name: 'Seat of government of a political entity', category: 'Settlement' },
-  { code: 'PPLS', name: 'Populated places', category: 'Settlement' },
-  { code: 'PPLX', name: 'Section of populated place', category: 'Settlement' },
-  
-  // Structures and facilities
-  { code: 'BLDG', name: 'Building', category: 'Structure' },
-  { code: 'SCH', name: 'School', category: 'Structure' },
-  { code: 'HSP', name: 'Hospital', category: 'Structure' },
-  { code: 'CLIN', name: 'Clinic', category: 'Structure' },
-  { code: 'FAC', name: 'Facility', category: 'Structure' },
-  { code: 'MIL', name: 'Military facility', category: 'Structure' },
-  { code: 'GOV', name: 'Government facility', category: 'Structure' },
-  
-  // Geographic features
-  { code: 'MT', name: 'Mountain', category: 'Geographic' },
-  { code: 'HLL', name: 'Hill', category: 'Geographic' },
-  { code: 'VLY', name: 'Valley', category: 'Geographic' },
-  { code: 'RGN', name: 'Region', category: 'Geographic' },
-  { code: 'AREA', name: 'Area', category: 'Geographic' },
-  { code: 'ZONE', name: 'Zone', category: 'Geographic' },
-  
-  // Water features
-  { code: 'STM', name: 'Stream', category: 'Water' },
-  { code: 'LK', name: 'Lake', category: 'Water' },
-  { code: 'RIV', name: 'River', category: 'Water' },
-  { code: 'SEA', name: 'Sea', category: 'Water' },
-  { code: 'OCN', name: 'Ocean', category: 'Water' }
-] as const;
-
-// Type definitions
-export type LocationReachType = typeof LOCATION_REACH_TYPES[number];
-export type LocationIdVocabulary = typeof LOCATION_ID_VOCABULARIES[number];
-export type AdministrativeLevel = typeof ADMINISTRATIVE_LEVELS[number];
-export type LocationExactnessType = typeof LOCATION_EXACTNESS_TYPES[number];
-export type LocationClassType = typeof LOCATION_CLASS_TYPES[number];
-export type FeatureDesignationType = typeof FEATURE_DESIGNATION_TYPES[number];
-
-// Advanced location data structure
-export interface AdvancedLocationData {
-  id: string;
-  locationReach?: string;
-  locationId?: {
-    vocabulary: string;
-    code: string;
-  };
-  administrative?: {
-    level: string;
-    code: string;
-  };
-  exactness?: string;
-  locationClass?: string;
-  featureDesignation?: string;
-  activityDescription?: string;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-  percentage?: number; // For percentage allocation across multiple locations
-}
-
+];

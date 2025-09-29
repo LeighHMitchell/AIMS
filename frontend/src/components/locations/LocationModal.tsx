@@ -63,6 +63,7 @@ import {
 
 import { SelectIATI, type SelectIATIGroup } from '@/components/ui/SelectIATI';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { IATI_LOCATION_TYPE_GROUPS } from '@/data/iati-location-types';
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
@@ -74,15 +75,7 @@ const LocationMap = dynamic(() => import('./LocationMap'), {
 });
 
 // IATI Select Groups Configuration
-const LOCATION_TYPE_GROUPS: SelectIATIGroup[] = [
-  {
-    label: 'Location Type',
-    options: [
-      { code: 'site', name: 'Site Location', description: 'Specific point-based locations' },
-      { code: 'coverage', name: 'Coverage Area', description: 'Geographical areas representing coverage' },
-    ],
-  },
-];
+// Use comprehensive IATI Location Type codelist from imported data
 
 const COVERAGE_SCOPE_GROUPS: SelectIATIGroup[] = [
   {
@@ -181,9 +174,8 @@ const LOCATION_EXACTNESS_GROUPS: SelectIATIGroup[] = [
   {
     label: 'Exactness',
     options: [
-      { code: '1', name: 'Exact', description: 'Location is precisely known' },
-      { code: '2', name: 'Approximate', description: 'Location is approximately known' },
-      { code: '3', name: 'Extrapolated', description: 'Location is estimated or extrapolated' }
+      { code: '1', name: 'Exact', description: 'The designated geographic location is exact' },
+      { code: '2', name: 'Approximate', description: 'The designated geographic location is approximate' }
     ]
   }
 ];
@@ -192,18 +184,17 @@ const LOCATION_CLASS_GROUPS: SelectIATIGroup[] = [
   {
     label: 'Location Class',
     options: [
-      { code: '1', name: 'Administrative Region', description: 'Administrative or political division' },
-      { code: '2', name: 'Settlement', description: 'Populated place or settlement' },
-      { code: '3', name: 'Structure', description: 'Building or structure' },
-      { code: '4', name: 'Site', description: 'Specific site or location' },
-      { code: '5', name: 'Area', description: 'Geographic area or region' }
+      { code: '1', name: 'Administrative Region', description: 'The designated geographic location is an administrative region (state, county, province, district, municipality etc.)' },
+      { code: '2', name: 'Populated Place', description: 'The designated geographic location is a populated place (town, village, farm etc.)' },
+      { code: '3', name: 'Structure', description: 'The designated geopgraphic location is a structure (such as a school or a clinic)' },
+      { code: '4', name: 'Other Topographical Feature', description: 'The designated geographic location is a topographical feature, such as a mountain, a river, a forest' }
     ]
   }
 ];
 
 const LOCATION_ID_VOCABULARY_GROUPS: SelectIATIGroup[] = [
   {
-    label: 'Geographic Vocabularies',
+    label: 'Location ID Vocabularies',
     options: [
       { code: 'A1', name: 'Global Admininistrative Unit Layers', description: '' },
       { code: 'A2', name: 'UN Second Administrative Level Boundary Project', description: 'Note: the unsalb.org website is no longer accessible, and public access to the boundaries resources has been removed' },
@@ -215,79 +206,163 @@ const LOCATION_ID_VOCABULARY_GROUPS: SelectIATIGroup[] = [
   }
 ];
 
-const ADMINISTRATIVE_LEVEL_GROUPS: SelectIATIGroup[] = [
+const ADMINISTRATIVE_VOCABULARY_GROUPS: SelectIATIGroup[] = [
   {
     label: 'Administrative Vocabularies',
     options: [
-      { code: 'A1', name: 'Global Admininistrative Unit Layers', description: '', url: 'http://www.fao.org/geonetwork/srv/en/metadata.show?id=12691' },
-      { code: 'A2', name: 'UN Second Administrative Level Boundary Project', description: 'Note: the unsalb.org website is no longer accessible, and public access to the boundaries resources has been removed', url: 'http://www.unsalb.org/' },
-      { code: 'A3', name: 'Global Administrative Areas', description: '', url: 'http://www.gadm.org/' },
-      { code: 'A4', name: 'ISO Country (3166-1 alpha-2)', description: '', url: 'http://reference.iatistandard.org/codelists/Country/' },
-      { code: 'G1', name: 'Geonames', description: '', url: 'http://www.geonames.org/' },
-      { code: 'G2', name: 'OpenStreetMap', description: 'Note: the code should be formed by prefixing the relevant OpenStreetMap ID with node/ way/ or relation/ as appropriate, e.g. node/1234567', url: 'http://www.openstreetmap.org/' }
+      { code: 'A1', name: 'Global Admininistrative Unit Layers', description: '' },
+      { code: 'A2', name: 'UN Second Administrative Level Boundary Project', description: 'Note: the unsalb.org website is no longer accessible, and public access to the boundaries resources has been removed http://www.ungiwg.org/content/united-nations-international-and-administrative-boundaries-resources' },
+      { code: 'A3', name: 'Global Administrative Areas', description: '' },
+      { code: 'A4', name: 'ISO Country (3166-1 alpha-2)', description: '' },
+      { code: 'G1', name: 'Geonames', description: '' },
+      { code: 'G2', name: 'OpenStreetMap', description: 'Note: the code should be formed by prefixing the relevant OpenStreetMap ID with node/ way/ or relation/ as appropriate, e.g. node/1234567' }
     ]
   }
 ];
 
-const FEATURE_DESIGNATION_GROUPS: SelectIATIGroup[] = [
+const ADMINISTRATIVE_LEVEL_GROUPS: SelectIATIGroup[] = [
   {
-    label: 'Administrative',
+    label: 'Administrative Levels',
     options: [
-      { code: 'ADM1', name: 'First-order administrative division' },
-      { code: 'ADM2', name: 'Second-order administrative division' },
-      { code: 'ADM3', name: 'Third-order administrative division' },
-      { code: 'ADM4', name: 'Fourth-order administrative division' },
-      { code: 'ADM5', name: 'Fifth-order administrative division' },
-      { code: 'ADMF', name: 'Administrative facility' }
-    ]
-  },
-  {
-    label: 'Settlement',
-    options: [
-      { code: 'PPL', name: 'Populated place' },
-      { code: 'PPLA', name: 'Seat of first-order administrative division' },
-      { code: 'PPLA2', name: 'Seat of second-order administrative division' },
-      { code: 'PPLA3', name: 'Seat of third-order administrative division' },
-      { code: 'PPLA4', name: 'Seat of fourth-order administrative division' },
-      { code: 'PPLG', name: 'Seat of government' },
-      { code: 'PPLS', name: 'Populated places' },
-      { code: 'PPLX', name: 'Section of populated place' }
-    ]
-  },
-  {
-    label: 'Structure',
-    options: [
-      { code: 'BLDG', name: 'Building' },
-      { code: 'SCH', name: 'School' },
-      { code: 'HSP', name: 'Hospital' },
-      { code: 'CLIN', name: 'Clinic' },
-      { code: 'FAC', name: 'Facility' },
-      { code: 'MIL', name: 'Military facility' },
-      { code: 'GOV', name: 'Government facility' }
-    ]
-  },
-  {
-    label: 'Geographic',
-    options: [
-      { code: 'MT', name: 'Mountain' },
-      { code: 'HLL', name: 'Hill' },
-      { code: 'VLY', name: 'Valley' },
-      { code: 'RGN', name: 'Region' },
-      { code: 'AREA', name: 'Area' },
-      { code: 'ZONE', name: 'Zone' }
-    ]
-  },
-  {
-    label: 'Water',
-    options: [
-      { code: 'STM', name: 'Stream' },
-      { code: 'LK', name: 'Lake' },
-      { code: 'RIV', name: 'River' },
-      { code: 'SEA', name: 'Sea' },
-      { code: 'OCN', name: 'Ocean' }
+      { code: 'admin1', name: 'Administrative Level 1', description: 'First-level administrative division (e.g., state, province)' },
+      { code: 'admin2', name: 'Administrative Level 2', description: 'Second-level administrative division (e.g., district, county)' },
+      { code: 'admin3', name: 'Administrative Level 3', description: 'Third-level administrative division (e.g., township, municipality)' },
+      { code: 'admin4', name: 'Administrative Level 4', description: 'Fourth-level administrative division (e.g., ward, neighborhood)' }
     ]
   }
 ];
+
+const COUNTRY_GROUPS: SelectIATIGroup[] = [
+  {
+    label: 'Countries',
+    options: [
+      { code: 'MM', name: 'Myanmar', description: '' },
+      { code: 'TH', name: 'Thailand', description: '' },
+      { code: 'VN', name: 'Vietnam', description: '' },
+      { code: 'KH', name: 'Cambodia', description: '' },
+      { code: 'LA', name: 'Laos', description: '' },
+      { code: 'PH', name: 'Philippines', description: '' },
+      { code: 'ID', name: 'Indonesia', description: '' },
+      { code: 'MY', name: 'Malaysia', description: '' },
+      { code: 'SG', name: 'Singapore', description: '' },
+      { code: 'BN', name: 'Brunei', description: '' },
+      { code: 'US', name: 'United States', description: '' },
+      { code: 'CA', name: 'Canada', description: '' },
+      { code: 'GB', name: 'United Kingdom', description: '' },
+      { code: 'FR', name: 'France', description: '' },
+      { code: 'DE', name: 'Germany', description: '' },
+      { code: 'IT', name: 'Italy', description: '' },
+      { code: 'ES', name: 'Spain', description: '' },
+      { code: 'NL', name: 'Netherlands', description: '' },
+      { code: 'AU', name: 'Australia', description: '' },
+      { code: 'JP', name: 'Japan', description: '' },
+      { code: 'KR', name: 'South Korea', description: '' },
+      { code: 'CN', name: 'China', description: '' },
+      { code: 'IN', name: 'India', description: '' },
+      { code: 'BD', name: 'Bangladesh', description: '' },
+      { code: 'PK', name: 'Pakistan', description: '' },
+      { code: 'LK', name: 'Sri Lanka', description: '' },
+      { code: 'NP', name: 'Nepal', description: '' },
+      { code: 'BT', name: 'Bhutan', description: '' },
+      { code: 'AF', name: 'Afghanistan', description: '' },
+      { code: 'IR', name: 'Iran', description: '' },
+      { code: 'IQ', name: 'Iraq', description: '' },
+      { code: 'SA', name: 'Saudi Arabia', description: '' },
+      { code: 'AE', name: 'United Arab Emirates', description: '' },
+      { code: 'QA', name: 'Qatar', description: '' },
+      { code: 'KW', name: 'Kuwait', description: '' },
+      { code: 'BH', name: 'Bahrain', description: '' },
+      { code: 'OM', name: 'Oman', description: '' },
+      { code: 'YE', name: 'Yemen', description: '' },
+      { code: 'JO', name: 'Jordan', description: '' },
+      { code: 'LB', name: 'Lebanon', description: '' },
+      { code: 'SY', name: 'Syria', description: '' },
+      { code: 'TR', name: 'Turkey', description: '' },
+      { code: 'IL', name: 'Israel', description: '' },
+      { code: 'PS', name: 'Palestine', description: '' },
+      { code: 'EG', name: 'Egypt', description: '' },
+      { code: 'LY', name: 'Libya', description: '' },
+      { code: 'TN', name: 'Tunisia', description: '' },
+      { code: 'DZ', name: 'Algeria', description: '' },
+      { code: 'MA', name: 'Morocco', description: '' },
+      { code: 'SD', name: 'Sudan', description: '' },
+      { code: 'SS', name: 'South Sudan', description: '' },
+      { code: 'ET', name: 'Ethiopia', description: '' },
+      { code: 'ER', name: 'Eritrea', description: '' },
+      { code: 'DJ', name: 'Djibouti', description: '' },
+      { code: 'SO', name: 'Somalia', description: '' },
+      { code: 'KE', name: 'Kenya', description: '' },
+      { code: 'UG', name: 'Uganda', description: '' },
+      { code: 'TZ', name: 'Tanzania', description: '' },
+      { code: 'RW', name: 'Rwanda', description: '' },
+      { code: 'BI', name: 'Burundi', description: '' },
+      { code: 'CD', name: 'Democratic Republic of the Congo', description: '' },
+      { code: 'CG', name: 'Republic of the Congo', description: '' },
+      { code: 'CF', name: 'Central African Republic', description: '' },
+      { code: 'TD', name: 'Chad', description: '' },
+      { code: 'CM', name: 'Cameroon', description: '' },
+      { code: 'NG', name: 'Nigeria', description: '' },
+      { code: 'NE', name: 'Niger', description: '' },
+      { code: 'BF', name: 'Burkina Faso', description: '' },
+      { code: 'ML', name: 'Mali', description: '' },
+      { code: 'SN', name: 'Senegal', description: '' },
+      { code: 'GM', name: 'Gambia', description: '' },
+      { code: 'GN', name: 'Guinea', description: '' },
+      { code: 'GW', name: 'Guinea-Bissau', description: '' },
+      { code: 'SL', name: 'Sierra Leone', description: '' },
+      { code: 'LR', name: 'Liberia', description: '' },
+      { code: 'CI', name: 'Côte d\'Ivoire', description: '' },
+      { code: 'GH', name: 'Ghana', description: '' },
+      { code: 'TG', name: 'Togo', description: '' },
+      { code: 'BJ', name: 'Benin', description: '' },
+      { code: 'ZA', name: 'South Africa', description: '' },
+      { code: 'NA', name: 'Namibia', description: '' },
+      { code: 'BW', name: 'Botswana', description: '' },
+      { code: 'ZW', name: 'Zimbabwe', description: '' },
+      { code: 'ZM', name: 'Zambia', description: '' },
+      { code: 'MW', name: 'Malawi', description: '' },
+      { code: 'MZ', name: 'Mozambique', description: '' },
+      { code: 'MG', name: 'Madagascar', description: '' },
+      { code: 'MU', name: 'Mauritius', description: '' },
+      { code: 'SC', name: 'Seychelles', description: '' },
+      { code: 'KM', name: 'Comoros', description: '' },
+      { code: 'BR', name: 'Brazil', description: '' },
+      { code: 'AR', name: 'Argentina', description: '' },
+      { code: 'CL', name: 'Chile', description: '' },
+      { code: 'CO', name: 'Colombia', description: '' },
+      { code: 'VE', name: 'Venezuela', description: '' },
+      { code: 'PE', name: 'Peru', description: '' },
+      { code: 'EC', name: 'Ecuador', description: '' },
+      { code: 'BO', name: 'Bolivia', description: '' },
+      { code: 'PY', name: 'Paraguay', description: '' },
+      { code: 'UY', name: 'Uruguay', description: '' },
+      { code: 'GY', name: 'Guyana', description: '' },
+      { code: 'SR', name: 'Suriname', description: '' },
+      { code: 'MX', name: 'Mexico', description: '' },
+      { code: 'GT', name: 'Guatemala', description: '' },
+      { code: 'BZ', name: 'Belize', description: '' },
+      { code: 'SV', name: 'El Salvador', description: '' },
+      { code: 'HN', name: 'Honduras', description: '' },
+      { code: 'NI', name: 'Nicaragua', description: '' },
+      { code: 'CR', name: 'Costa Rica', description: '' },
+      { code: 'PA', name: 'Panama', description: '' },
+      { code: 'CU', name: 'Cuba', description: '' },
+      { code: 'JM', name: 'Jamaica', description: '' },
+      { code: 'HT', name: 'Haiti', description: '' },
+      { code: 'DO', name: 'Dominican Republic', description: '' },
+      { code: 'TT', name: 'Trinidad and Tobago', description: '' },
+      { code: 'BB', name: 'Barbados', description: '' },
+      { code: 'RU', name: 'Russia', description: '' },
+      { code: 'KZ', name: 'Kazakhstan', description: '' },
+      { code: 'UZ', name: 'Uzbekistan', description: '' },
+      { code: 'TM', name: 'Turkmenistan', description: '' },
+      { code: 'TJ', name: 'Tajikistan', description: '' },
+      { code: 'KG', name: 'Kyrgyzstan', description: '' },
+      { code: 'MN', name: 'Mongolia', description: '' }
+    ]
+  }
+];
+
 
 // Default center (Myanmar)
 const DEFAULT_CENTER: [number, number] = [21.9162, 96.0785];
@@ -560,21 +635,20 @@ const autoPopulateIatiFields = useCallback((params: {
       setValue('feature_designation', FEATURE_DESIGNATION_BY_TYPE[normalizedType]);
     }
 
-    // Gazetteer vocabulary & code (OSM)
+    // Location ID vocabulary & code (OSM)
     if (osmId && osmType) {
       const vocabulary = 'G2';
-      const prefix = OSM_TYPE_PREFIX[osmType.toLowerCase()] || 'node';
       setValue('location_id_vocabulary', vocabulary);
-      setValue('location_id_code', `${prefix}/${osmId}`);
+      setValue('location_id_code', osmId);
     }
 
     // Administrative level & code (if available)
     if (address) {
       if (address.state || address.province) {
-        setValue('admin_level', '1');
+        setValue('admin_level', 'admin1');
         setValue('admin_code', address.state || address.province || '');
       } else if (address.county || address.district) {
-        setValue('admin_level', '2');
+        setValue('admin_level', 'admin2');
         setValue('admin_code', address.county || address.district || '');
       }
     }
@@ -607,7 +681,18 @@ const autoPopulateIatiFields = useCallback((params: {
       setValue('township_name', result.address.county || result.address.district || '');
       setValue('village_name', result.address.village || result.address.suburb || result.address.hamlet || '');
       setValue('postal_code', result.address.postcode || '');
-      setValue('country_code', result.address.country || '');
+      // Set country code if available, otherwise try to match by country name
+      if (result.address.country_code) {
+        setValue('country_code', result.address.country_code);
+      } else if (result.address.country) {
+        // Try to find matching country code by name
+        const countryOption = COUNTRY_GROUPS[0].options.find(option => 
+          option.name.toLowerCase().includes(result.address.country?.toLowerCase() || '')
+        );
+        if (countryOption) {
+          setValue('country_code', countryOption.code);
+        }
+      }
     }
 
     autoPopulateIatiFields({
@@ -720,10 +805,10 @@ const autoPopulateIatiFields = useCallback((params: {
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Map className="h-4 w-4" />
-                    Location Map
-                  </CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Map className="h-4 w-4" />
+                  Location Map
+                </CardTitle>
                   <div className="flex items-center gap-2">
                     {/* Map Layer Toggle */}
                     <Button
@@ -893,33 +978,33 @@ const autoPopulateIatiFields = useCallback((params: {
                         <div className="space-y-2">
                           <Label htmlFor="longitude">Longitude</Label>
                           <div className="flex items-center gap-2">
-                            <Input
-                              id="longitude"
-                              type="number"
-                              step="any"
-                              {...register('longitude', { valueAsNumber: true })}
-                              placeholder="0.000000"
+                          <Input
+                            id="longitude"
+                            type="number"
+                            step="any"
+                            {...register('longitude', { valueAsNumber: true })}
+                            placeholder="0.000000"
                               className="flex-1"
                             />
-                            {(watchedLatitude !== undefined && watchedLongitude !== undefined) && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const coords = `${watchedLatitude.toFixed(6)}, ${watchedLongitude.toFixed(6)}`;
-                                  navigator.clipboard.writeText(coords);
-                                  toast.success('Coordinates copied to clipboard');
-                                }}
+                      {(watchedLatitude !== undefined && watchedLongitude !== undefined) && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const coords = `${watchedLatitude.toFixed(6)}, ${watchedLongitude.toFixed(6)}`;
+                              navigator.clipboard.writeText(coords);
+                              toast.success('Coordinates copied to clipboard');
+                            }}
                                 className="px-2"
-                              >
+                          >
                                 <Copy className="h-4 w-4" />
-                              </Button>
+                          </Button>
                             )}
-                          </div>
+                        </div>
                           {errors.longitude && (
                             <p className="text-sm text-red-600">{errors.longitude.message}</p>
-                          )}
+                      )}
                         </div>
                       </div>
 
@@ -995,10 +1080,12 @@ const autoPopulateIatiFields = useCallback((params: {
                   {/* Country */}
                   <div className="space-y-2">
                     <Label htmlFor="country_code">Country</Label>
-                    <Input
-                      id="country_code"
-                      {...register('country_code')}
-                      placeholder="e.g., Myanmar"
+                    <SelectIATI
+                      groups={COUNTRY_GROUPS}
+                      value={watch('country_code')}
+                      onValueChange={(value) => setValue('country_code', value)}
+                      placeholder="Select country"
+                      dropdownId="country-select"
                     />
                   </div>
 
@@ -1042,23 +1129,15 @@ const autoPopulateIatiFields = useCallback((params: {
               </TabsContent>
 
               <TabsContent value="advanced" className="space-y-4 mt-4">
-                {/* Location Type (Site/Coverage) */}
+                {/* Feature Designation */}
                 <div className="space-y-2">
-                  <Label htmlFor="location_type">Location Type</Label>
+                  <Label htmlFor="feature_designation">Feature Designation</Label>
                   <SelectIATI
-                    groups={LOCATION_TYPE_GROUPS}
-                    value={watchedLocationType}
-                    onValueChange={(value) => {
-                      const type = (value as 'site' | 'coverage') || 'site';
-                      setValue('location_type', type);
-                      if (type === 'coverage') {
-                        setValue('latitude', undefined);
-                        setValue('longitude', undefined);
-                        setMarkerPosition(null);
-                      }
-                    }}
-                    placeholder="Select location type"
-                    dropdownId="location-type-select"
+                    groups={IATI_LOCATION_TYPE_GROUPS}
+                    value={watch('feature_designation')}
+                    onValueChange={(value) => setValue('feature_designation', value)}
+                    placeholder="Select feature designation"
+                    dropdownId="feature-designation-select"
                   />
                 </div>
 
@@ -1106,30 +1185,33 @@ const autoPopulateIatiFields = useCallback((params: {
                     dropdownId="location-class-select"
                   />
 
-                  {/* Geographic Information */}
+                  {/* Location ID Information */}
                   <div className="space-y-4">
                     <div>
                       <SelectIATI
                         groups={LOCATION_ID_VOCABULARY_GROUPS}
                         value={watch('location_id_vocabulary')}
                         onValueChange={(value) => setValue('location_id_vocabulary', value)}
-                        label="Geographic Vocabulary"
+                        label="Location ID Vocabulary"
                         helperText="Standard vocabulary for identifying the location"
-                        dropdownId="gazetteer-vocabulary-select"
+                        dropdownId="location-id-vocabulary-select"
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="location_id_code" className="flex items-center gap-2">
-                        Gazetteer Code
+                        Location ID Code
                         {watch('location_id_vocabulary') && <span className="text-red-500">*</span>}
-                        <HelpTextTooltip content="Unique identifier from the selected gazetteer" />
+                        <HelpTextTooltip content="Unique identifier from the selected vocabulary" />
                       </Label>
                       <div className="flex gap-2">
                         <Input
                           id="location_id_code"
-                          {...register('location_id_code')}
-                          placeholder="e.g., 1868373176"
+                          type="text"
+                          {...register('location_id_code', { 
+                            setValueAs: (value) => value === '' ? undefined : Number(value)
+                          })}
+                          placeholder="e.g., 1821306"
                           className="flex-1"
                         />
                         {watch('location_id_code') && (
@@ -1138,13 +1220,12 @@ const autoPopulateIatiFields = useCallback((params: {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              navigator.clipboard.writeText(watch('location_id_code') || '');
+                              const codeValue = watch('location_id_code');
+                              navigator.clipboard.writeText(String(codeValue || ''));
                               toast.success('Code copied to clipboard');
                             }}
                           >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
+                            <Copy className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -1155,11 +1236,22 @@ const autoPopulateIatiFields = useCallback((params: {
                   <div className="space-y-4">
                     <div>
                       <SelectIATI
+                        groups={ADMINISTRATIVE_VOCABULARY_GROUPS}
+                        value={watch('admin_vocabulary')}
+                        onValueChange={(value) => setValue('admin_vocabulary', value)}
+                        label="Administrative Vocabulary"
+                        helperText="Standard vocabulary for identifying administrative divisions"
+                        dropdownId="admin-vocabulary-select"
+                      />
+                    </div>
+
+                    <div>
+                      <SelectIATI
                         groups={ADMINISTRATIVE_LEVEL_GROUPS}
                         value={watch('admin_level')}
                         onValueChange={(value) => setValue('admin_level', value)}
-                        label="Administrative Vocabulary"
-                        helperText="Standard vocabulary for identifying administrative divisions"
+                        label="Administrative Level"
+                        helperText="Level of administrative division"
                         dropdownId="admin-level-select"
                       />
                     </div>
@@ -1187,26 +1279,23 @@ const autoPopulateIatiFields = useCallback((params: {
                               toast.success('Code copied to clipboard');
                             }}
                           >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
+                            <Copy className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Activity Description at Location */}
+                  {/* Spatial Reference System */}
                   <div className="space-y-2">
-                    <Label htmlFor="activity_location_description" className="flex items-center gap-2">
-                      Activity Description at Location
-                      <HelpTextTooltip content="Describe what happens at this specific location" />
+                    <Label htmlFor="spatial_reference_system" className="flex items-center gap-2">
+                      Spatial Reference System
                     </Label>
-                    <Textarea
-                      id="activity_location_description"
-                      {...register('activity_location_description')}
-                      placeholder="Describe the activity at this location"
-                      rows={3}
+                    <Input
+                      id="spatial_reference_system"
+                      {...register('spatial_reference_system')}
+                      placeholder=""
+                      className="w-full"
                     />
                   </div>
 

@@ -1,5 +1,6 @@
 'use client';
 
+// LocationMap component for displaying interactive maps
 import { memo, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl, useMapEvents } from 'react-leaflet';
 import type { Map as LeafletMap } from 'leaflet';

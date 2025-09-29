@@ -14,6 +14,7 @@ export interface SelectIATIGroup {
     code: string;
     name: string;
     description?: string;
+    url?: string;
   }>;
 }
 
@@ -75,7 +76,8 @@ export function SelectIATI({
     return allOptions.filter(option =>
       option.code.toLowerCase().includes(query) ||
       option.name.toLowerCase().includes(query) ||
-      (option.description && option.description.toLowerCase().includes(query))
+      (option.description && option.description.toLowerCase().includes(query)) ||
+      (option.url && option.url.toLowerCase().includes(query))
     );
   }, [searchQuery, allOptions]);
 
@@ -233,6 +235,13 @@ export function SelectIATI({
                         {option.description && (
                           <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
                             {option.description}
+                          </div>
+                        )}
+                        {option.url && (
+                          <div className="text-xs text-blue-600 mt-1 underline">
+                            <a href={option.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                              {option.url}
+                            </a>
                           </div>
                         )}
                       </div>

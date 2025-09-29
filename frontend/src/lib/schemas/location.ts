@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 // IATI Location Reach codes
 export const LOCATION_REACH_CODES = ['1', '2'] as const;
-export const LOCATION_EXACTNESS_CODES = ['1', '2', '3'] as const;
-export const LOCATION_CLASS_CODES = ['1', '2', '3', '4', '5'] as const;
+export const LOCATION_EXACTNESS_CODES = ['1', '2'] as const;
+export const LOCATION_CLASS_CODES = ['1', '2', '3', '4'] as const;
 
 // IATI Gazetteer vocabularies
 export const LOCATION_ID_VOCABULARIES = [
@@ -21,7 +21,7 @@ export const LOCATION_ID_VOCABULARIES = [
 ] as const;
 
 // Administrative levels
-export const ADMIN_LEVELS = ['0', '1', '2', '3', '4', '5'] as const;
+export const ADMIN_LEVELS = ['admin1', 'admin2', 'admin3', 'admin4'] as const;
 
 // Site types
 export const SITE_TYPES = [
@@ -69,8 +69,10 @@ const iatiFieldsSchema = z.object({
   feature_designation: z.string().optional(),
   location_id_vocabulary: z.enum(LOCATION_ID_VOCABULARIES).optional(),
   location_id_code: z.string().optional(),
+  admin_vocabulary: z.enum(LOCATION_ID_VOCABULARIES).optional(),
   admin_level: z.enum(ADMIN_LEVELS).optional(),
   admin_code: z.string().optional(),
+  spatial_reference_system: z.string().optional(),
   srs_name: z.string().default('http://www.opengis.net/def/crs/EPSG/0/4326'),
 
   // Activity-specific fields
@@ -79,7 +81,6 @@ const iatiFieldsSchema = z.object({
 
   // Location descriptions (IATI compliant)
   location_description: z.string().optional(),
-  activity_location_description: z.string().optional(),
 });
 
 // Site-specific location schema
@@ -155,8 +156,10 @@ export const locationFormSchema = z.object({
   feature_designation: z.string().optional(),
   location_id_vocabulary: z.enum(LOCATION_ID_VOCABULARIES).optional(),
   location_id_code: z.string().optional(),
+  admin_vocabulary: z.enum(LOCATION_ID_VOCABULARIES).optional(),
   admin_level: z.enum(ADMIN_LEVELS).optional(),
   admin_code: z.string().optional(),
+  spatial_reference_system: z.string().optional(),
   srs_name: z.string().optional(),
   
   // Activity fields
@@ -165,7 +168,6 @@ export const locationFormSchema = z.object({
   
   // Descriptions
   location_description: z.string().optional(),
-  activity_location_description: z.string().optional(),
   description: z.string().optional(),
   id: z.string().optional(),
   activity_id: z.string().optional(),
