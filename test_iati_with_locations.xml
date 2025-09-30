@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2024-12-20T10:00:00Z">
+  <iati-activity xml:lang="en" default-currency="USD" last-updated-datetime="2024-12-20T10:00:00Z">
+    
+    <!-- IATI Identifier -->
+    <iati-identifier>GB-GOV-1-WATERPROJECT-LOCATIONS-TEST-001</iati-identifier>
+    
+    <!-- Activity Title -->
+    <title>
+      <narrative xml:lang="en">Rural Water Supply Project with Detailed Locations - Phase 1</narrative>
+    </title>
+    
+    <!-- Activity Description -->
+    <description type="1">
+      <narrative xml:lang="en">Construction of 25 water wells and installation of solar-powered water pumping systems in rural communities of Northern Region, providing clean water access to approximately 5,000 beneficiaries.</narrative>
+    </description>
+    
+    <!-- Activity Status -->
+    <activity-status code="2" />
+    
+    <!-- Collaboration Type -->
+    <collaboration-type code="1" />
+    
+    <!-- Activity Dates -->
+    <activity-date iso-date="2024-01-15" type="1">
+      <narrative>Planned start date</narrative>
+    </activity-date>
+    
+    <activity-date iso-date="2024-02-01" type="2">
+      <narrative>Actual start date</narrative>
+    </activity-date>
+    
+    <activity-date iso-date="2025-01-14" type="3">
+      <narrative>Planned end date</narrative>
+    </activity-date>
+    
+    <!-- Sectors -->
+    <sector vocabulary="1" code="14030" percentage="80">
+      <narrative>Basic drinking water supply</narrative>
+    </sector>
+    
+    <sector vocabulary="1" code="14081" percentage="20">
+      <narrative>Education and training in water supply and sanitation</narrative>
+    </sector>
+    
+    <!-- Recipient Countries -->
+    <recipient-country code="UG" percentage="100">
+      <narrative>Uganda</narrative>
+    </recipient-country>
+    
+    <!-- ========== DETAILED LOCATION ELEMENTS ========== -->
+    
+    <!-- Location 1: Water Well Site with Exact Coordinates -->
+    <location ref="UG-WELL-001">
+      <location-reach code="1" />
+      <location-id vocabulary="G1" code="223816" />
+      <name>
+        <narrative>Kitgum Water Well Site</narrative>
+      </name>
+      <description>
+        <narrative>Primary water well location in Kitgum District serving 3 villages</narrative>
+      </description>
+      <activity-description>
+        <narrative>Solar-powered borehole and water distribution system installation site</narrative>
+      </activity-description>
+      <administrative vocabulary="G1" level="2" code="UG-KIT" />
+      <point srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+        <pos>3.2819 32.8836</pos>
+      </point>
+      <exactness code="1"/>
+      <location-class code="2"/>
+      <feature-designation code="WTRH"/>
+    </location>
+    
+    <!-- Location 2: Training Center with Approximate Coordinates -->
+    <location ref="UG-TRAIN-001">
+      <location-reach code="2" />
+      <name>
+        <narrative>Gulu Community Training Center</narrative>
+      </name>
+      <description>
+        <narrative>Training facility for water management and maintenance</narrative>
+      </description>
+      <activity-description>
+        <narrative>Capacity building activities for local water committee members</narrative>
+      </activity-description>
+      <administrative vocabulary="G1" level="2" code="UG-GUL" />
+      <point srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+        <pos>2.7804 32.2990</pos>
+      </point>
+      <exactness code="2"/>
+      <location-class code="3"/>
+      <feature-designation code="BLDG"/>
+    </location>
+    
+    <!-- Location 3: Beneficiary Coverage Area (no exact coordinates) -->
+    <location ref="UG-COVERAGE-001">
+      <location-reach code="2" />
+      <name>
+        <narrative>Northern Uganda Beneficiary Area</narrative>
+      </name>
+      <description>
+        <narrative>Broad coverage area for beneficiaries across Kitgum and Gulu districts</narrative>
+      </description>
+      <activity-description>
+        <narrative>Geographic area where project beneficiaries reside</narrative>
+      </activity-description>
+      <administrative vocabulary="G1" level="1" code="UG-N" />
+      <exactness code="3"/>
+      <location-class code="1"/>
+    </location>
+    
+    <!-- Sample Transaction -->
+    <transaction ref="TXN-001">
+      <transaction-type code="3" />
+      <transaction-date iso-date="2024-02-15" />
+      <value currency="USD" value-date="2024-02-15">150000</value>
+      <description>
+        <narrative>Initial disbursement for equipment procurement</narrative>
+      </description>
+      <provider-org ref="GB-GOV-1" type="10">
+        <narrative>UK Department for International Development</narrative>
+      </provider-org>
+      <receiver-org ref="UG-NGO-001" type="21">
+        <narrative>Uganda Water Development Foundation</narrative>
+      </receiver-org>
+    </transaction>
+    
+    <!-- Reporting Organisation -->
+    <reporting-org ref="GB-GOV-1" type="10">
+      <narrative>UK Department for International Development</narrative>
+    </reporting-org>
+    
+    <!-- Implementing Partner -->
+    <participating-org role="4" type="21" ref="UG-NGO-001">
+      <narrative>Uganda Water Development Foundation</narrative>
+    </participating-org>
+    
+  </iati-activity>
+</iati-activities>

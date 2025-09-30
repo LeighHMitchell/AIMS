@@ -1692,6 +1692,52 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      // Detailed Location Elements (Activity Sites)
+      if (parsedActivity.locations && parsedActivity.locations.length > 0) {
+        parsedActivity.locations.forEach((location: any, locIndex: number) => {
+          const locationReachMap: Record<string, string> = {
+            '1': 'Activity',
+            '2': 'Intended Beneficiaries'
+          };
+          const exactnessMap: Record<string, string> = {
+            '1': 'Exact',
+            '2': 'Approximate',
+            '3': 'Extrapolated'
+          };
+          const locationClassMap: Record<string, string> = {
+            '1': 'Administrative Region',
+            '2': 'Populated Place',
+            '3': 'Structure',
+            '4': 'Other Topographical Feature'
+          };
+
+          const locationParts = [
+            location.name || 'Unnamed Location',
+            location.point?.pos ? `📍 ${location.point.pos}` : null,
+            location.locationReach ? locationReachMap[location.locationReach] || `Reach: ${location.locationReach}` : null,
+            location.exactness ? exactnessMap[location.exactness] || `Exactness: ${location.exactness}` : null,
+            location.locationClass ? locationClassMap[location.locationClass] || `Class: ${location.locationClass}` : null,
+            location.administrative?.code ? `Admin: ${location.administrative.code}` : null,
+            location.locationId?.code ? `ID: ${location.locationId.code}` : null
+          ].filter(Boolean);
+
+          const locationSummary = locationParts.join(' | ');
+          
+          fields.push({
+            fieldName: `Location ${locIndex + 1}`,
+            iatiPath: `iati-activity/location[${locIndex + 1}]`,
+            currentValue: null,
+            importValue: locationSummary,
+            selected: false,
+            hasConflict: false,
+            tab: 'locations',
+            description: location.description || location.activityDescription || 'Activity location with coordinates and metadata',
+            isLocationItem: true,
+            locationData: location
+          });
+        });
+      }
+
       // === SECTORS TAB ===
       
       if (parsedActivity.sectors && parsedActivity.sectors.length > 0) {
@@ -2293,6 +2339,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 updateData.importedTransactions.push(parsedActivity.transactions[transactionIndex]);
               }
               console.log(`[XML Import] Adding transaction ${transactionIndex + 1} for import`);
+            } else if (field.fieldName.startsWith('Location ')) {
+              // Collect location data for import
+              if (!updateData.importedLocations) updateData.importedLocations = [];
+              const locationIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
+              if (parsedActivity.locations && parsedActivity.locations[locationIndex]) {
+                updateData.importedLocations.push(parsedActivity.locations[locationIndex]);
+              }
+              console.log(`[XML Import] Adding location ${locationIndex + 1} for import`);
             }
             break;
         }
@@ -2432,6 +2486,85 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           } else {
             console.log('[XML Import] No sectors to import');
           }
+        }
+      }
+
+      // Handle locations import if any
+      if (updateData.importedLocations && updateData.importedLocations.length > 0) {
+        console.log('[XML Import] Processing locations import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 87,
+          message: 'Importing locations...'
+        });
+
+        try {
+          const locationsToImport = updateData.importedLocations.map((loc: any) => {
+            // Parse coordinates if present
+            let latitude = null;
+            let longitude = null;
+            if (loc.point?.pos) {
+              const coords = loc.point.pos.split(' ');
+              if (coords.length === 2) {
+                latitude = parseFloat(coords[0]);
+                longitude = parseFloat(coords[1]);
+              }
+            }
+            
+            // Determine location type
+            const locationType = (latitude && longitude) ? 'site' : 'coverage';
+            
+            return {
+              location_type: locationType,
+              location_name: loc.name || 'Unnamed Location',
+              description: loc.description,
+              location_description: loc.description,
+              activity_location_description: loc.activityDescription,
+              latitude,
+              longitude,
+              srs_name: loc.point?.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326',
+              location_reach: loc.locationReach ? parseInt(loc.locationReach) : null,
+              exactness: loc.exactness ? parseInt(loc.exactness) : null,
+              location_class: loc.locationClass ? parseInt(loc.locationClass) : null,
+              feature_designation: loc.featureDesignation,
+              location_id_vocabulary: loc.locationId?.vocabulary,
+              location_id_code: loc.locationId?.code,
+              admin_vocabulary: loc.administrative?.vocabulary,
+              admin_level: loc.administrative?.level,
+              admin_code: loc.administrative?.code,
+              source: 'import',
+              validation_status: 'valid'
+            };
+          });
+
+          console.log('[XML Import] Importing locations to database:', locationsToImport);
+          
+          const locationsResponse = await fetch(`/api/activities/${activityId}/locations`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ locations: locationsToImport, replace: false }),
+          });
+
+          if (!locationsResponse.ok) {
+            const errorData = await locationsResponse.json();
+            console.error('[XML Import] Locations import API error:', errorData);
+            toast.error('Failed to import locations', {
+              description: errorData.error || 'Could not import location data. Main activity data was imported successfully.'
+            });
+          } else {
+            const successData = await locationsResponse.json();
+            console.log('[XML Import] Locations imported successfully:', successData);
+            toast.success(`Locations imported successfully`, {
+              description: `${locationsToImport.length} location(s) added to the activity`
+            });
+          }
+        } catch (locationError) {
+          console.error('[XML Import] Locations import network error:', locationError);
+          toast.error('Failed to import locations', {
+            description: 'Network error occurred while importing locations. Please check your connection and try again.'
+          });
         }
       }
 

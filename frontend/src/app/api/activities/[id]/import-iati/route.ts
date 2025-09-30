@@ -280,6 +280,90 @@ export async function POST(
       updatedFields.push('participating_orgs');
     }
     
+    // Handle locations if selected
+    if (fields.locations && iati_data.locations) {
+      console.log('[IATI Import] Updating locations');
+      
+      // Store previous locations
+      const { data: previousLocations } = await supabase
+        .from('activity_locations')
+        .select('*')
+        .eq('activity_id', activityId);
+      
+      previousValues.locations = previousLocations;
+      
+      // Clear existing locations (optional - could merge instead)
+      await supabase
+        .from('activity_locations')
+        .delete()
+        .eq('activity_id', activityId);
+      
+      // Insert new locations
+      if (Array.isArray(iati_data.locations) && iati_data.locations.length > 0) {
+        const locationData = iati_data.locations.map((loc: any) => {
+          // Parse coordinates if present
+          let latitude = null;
+          let longitude = null;
+          if (loc.point?.pos) {
+            const coords = loc.point.pos.split(' ');
+            if (coords.length === 2) {
+              latitude = parseFloat(coords[0]);
+              longitude = parseFloat(coords[1]);
+            }
+          }
+          
+          // Determine location type - site if has coordinates, coverage otherwise
+          const locationType = (latitude && longitude) ? 'site' : 'coverage';
+          
+          return {
+            activity_id: activityId,
+            location_type: locationType,
+            location_name: loc.name || 'Unnamed Location',
+            description: loc.description,
+            location_description: loc.description,
+            activity_location_description: loc.activityDescription,
+            
+            // Coordinates (if site)
+            latitude,
+            longitude,
+            srs_name: loc.point?.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326',
+            
+            // IATI fields
+            location_reach: loc.locationReach ? parseInt(loc.locationReach) : null,
+            exactness: loc.exactness ? parseInt(loc.exactness) : null,
+            location_class: loc.locationClass ? parseInt(loc.locationClass) : null,
+            feature_designation: loc.featureDesignation,
+            
+            // Gazetteer
+            location_id_vocabulary: loc.locationId?.vocabulary,
+            location_id_code: loc.locationId?.code,
+            
+            // Administrative
+            admin_vocabulary: loc.administrative?.vocabulary,
+            admin_level: loc.administrative?.level,
+            admin_code: loc.administrative?.code,
+            
+            // Metadata
+            source: 'import',
+            validation_status: 'valid',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+        });
+        
+        const { error: locationsError } = await supabase
+          .from('activity_locations')
+          .insert(locationData);
+        
+        if (locationsError) {
+          console.error('[IATI Import] Error inserting locations:', locationsError);
+          // Don't throw - continue with other updates
+        } else {
+          updatedFields.push('locations');
+        }
+      }
+    }
+
     // Handle transactions if selected
     let newTransactionsCount = 0;
     

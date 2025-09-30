@@ -43,6 +43,31 @@ interface ParsedActivity {
     narrative?: string;
   }>;
   
+  // Detailed Location Data (IATI location elements)
+  locations?: Array<{
+    ref?: string;
+    locationReach?: string;
+    locationId?: {
+      vocabulary?: string;
+      code?: string;
+    };
+    name?: string;
+    description?: string;
+    activityDescription?: string;
+    administrative?: {
+      vocabulary?: string;
+      level?: string;
+      code?: string;
+    };
+    point?: {
+      srsName?: string;
+      pos?: string;  // "latitude longitude"
+    };
+    exactness?: string;
+    locationClass?: string;
+    featureDesignation?: string;
+  }>;
+  
   // Sectors
   sectors?: Array<{
     vocabulary?: string;
@@ -501,6 +526,66 @@ export class IATIXMLParser {
       }
     }
 
+    // Detailed Locations - IATI location elements with full metadata
+    const locationElements = activity.querySelectorAll('location');
+    if (locationElements.length > 0) {
+      result.locations = [];
+      for (let i = 0; i < locationElements.length; i++) {
+        const location = locationElements[i];
+        const locationName = location.querySelector('name');
+        const locationDesc = location.querySelector('description');
+        const activityDesc = location.querySelector('activity-description');
+        const locationReach = location.querySelector('location-reach');
+        const locationId = location.querySelector('location-id');
+        const administrative = location.querySelector('administrative');
+        const point = location.querySelector('point');
+        const exactness = location.querySelector('exactness');
+        const locationClass = location.querySelector('location-class');
+        const featureDesignation = location.querySelector('feature-designation');
+
+        const locationData: any = {
+          ref: location.getAttribute('ref') || undefined,
+          name: this.extractNarrative(locationName),
+          description: this.extractNarrative(locationDesc),
+          activityDescription: this.extractNarrative(activityDesc),
+          locationReach: locationReach?.getAttribute('code') || undefined,
+          exactness: exactness?.getAttribute('code') || undefined,
+          locationClass: locationClass?.getAttribute('code') || undefined,
+          featureDesignation: featureDesignation?.getAttribute('code') || undefined,
+        };
+
+        // Location ID (gazetteer reference)
+        if (locationId) {
+          locationData.locationId = {
+            vocabulary: locationId.getAttribute('vocabulary') || undefined,
+            code: locationId.getAttribute('code') || undefined,
+          };
+        }
+
+        // Administrative divisions
+        if (administrative) {
+          locationData.administrative = {
+            vocabulary: administrative.getAttribute('vocabulary') || undefined,
+            level: administrative.getAttribute('level') || undefined,
+            code: administrative.getAttribute('code') || undefined,
+          };
+        }
+
+        // Point coordinates
+        if (point) {
+          const pos = point.querySelector('pos');
+          if (pos && pos.textContent) {
+            locationData.point = {
+              srsName: point.getAttribute('srsName') || 'http://www.opengis.net/def/crs/EPSG/0/4326',
+              pos: pos.textContent.trim(),
+            };
+          }
+        }
+
+        result.locations.push(locationData);
+      }
+    }
+
     // === SECTORS ===
     
     // Only get direct child sectors, not those nested in transactions
@@ -910,6 +995,7 @@ export class IATIXMLParser {
         hasActualDates: !!(activity.actualStartDate || activity.actualEndDate),
         sectorCount: activity.sectors?.length || 0,
         countryCount: activity.recipientCountries?.length || 0,
+        locationCount: activity.locations?.length || 0,
         transactionCount: activity.transactions?.length || 0,
       };
     } catch (error) {

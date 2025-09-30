@@ -2,6 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
+interface ParsedLocation {
+  ref?: string;
+  locationReach?: string;
+  locationId?: {
+    vocabulary?: string;
+    code?: string;
+  };
+  name?: string;
+  description?: string;
+  activityDescription?: string;
+  administrative?: {
+    vocabulary?: string;
+    level?: string;
+    code?: string;
+  };
+  point?: {
+    srsName?: string;
+    pos?: string;
+  };
+  exactness?: string;
+  locationClass?: string;
+  featureDesignation?: string;
+}
+
 interface ParsedActivity {
   iatiIdentifier: string;
   iati_id: string;
@@ -16,6 +40,7 @@ interface ParsedActivity {
   planned_end_date?: string;
   actual_end_date?: string;
   transactions: ParsedTransaction[];
+  locations?: ParsedLocation[];
 }
 
 interface ParsedTransaction {
@@ -280,6 +305,50 @@ export async function POST(request: NextRequest) {
         actual_end_date: xmlActivity['activity-date']?.find((d: any) => d['@_type'] === '4')?.['@_iso-date'],
         transactions: []
       };
+
+      // Parse locations
+      const xmlLocations = xmlActivity.location ? ensureArray(xmlActivity.location) : [];
+      if (xmlLocations.length > 0) {
+        activity.locations = xmlLocations.map((loc: any) => {
+          const location: ParsedLocation = {
+            ref: loc['@_ref'],
+            name: extractNarrative(loc.name),
+            description: extractNarrative(loc.description),
+            activityDescription: extractNarrative(loc['activity-description']),
+            locationReach: loc['location-reach']?.['@_code'],
+            exactness: loc['exactness']?.['@_code'],
+            locationClass: loc['location-class']?.['@_code'],
+            featureDesignation: loc['feature-designation']?.['@_code'],
+          };
+          
+          // Location ID (gazetteer reference)
+          if (loc['location-id']) {
+            location.locationId = {
+              vocabulary: loc['location-id']['@_vocabulary'],
+              code: loc['location-id']['@_code']
+            };
+          }
+          
+          // Administrative divisions
+          if (loc['administrative']) {
+            location.administrative = {
+              vocabulary: loc['administrative']['@_vocabulary'],
+              level: loc['administrative']['@_level'],
+              code: loc['administrative']['@_code']
+            };
+          }
+          
+          // Point coordinates
+          if (loc['point'] && loc['point']['pos']) {
+            location.point = {
+              srsName: loc['point']['@_srsName'] || 'http://www.opengis.net/def/crs/EPSG/0/4326',
+              pos: loc['point']['pos']['#text'] || loc['point']['pos']
+            };
+          }
+          
+          return location;
+        });
+      }
       
       xmlActivityMap.set(iatiIdentifier, activity);
       result.activities.push(activity);
