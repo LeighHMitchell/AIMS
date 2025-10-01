@@ -1769,26 +1769,36 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             '4': 'Other Topographical Feature'
           };
 
-          // Format location with inline badge + label styling
-          // Pattern: [CODE_BADGE] [NAME] [COORDINATES]
+          // Format location to match exact visual pattern of Recipient Countries/Regions/Geographies
+          // Pattern: [BADGE] [LABEL] [COORDINATES] [TYPE]
           const locationName = location.name || 'Unnamed Location';
           const locationCode = location.ref || `LOC${locIndex + 1}`;
           const coordinates = location.point?.pos ? location.point.pos : '';
           
-          // Create styled location display
+          // Create styled location display matching other geographical fields
           const locationSummary = (
-            <div className="flex items-center gap-3">
-              <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm font-mono">
+            <div className="flex items-center gap-2">
+              {/* Location Code Badge - matches AF/AG/489/A1 style */}
+              <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
                 {locationCode}
               </span>
-              <span className="text-base font-medium">
+              
+              {/* Location Name - matches Afghanistan (25%) style */}
+              <span className="text-sm font-medium text-gray-900">
                 {locationName}
               </span>
+              
+              {/* Coordinates - matches numerical style */}
               {coordinates && (
-                <span className="text-gray-600 text-sm">
+                <span className="text-xs text-gray-600 font-mono">
                   {coordinates}
                 </span>
               )}
+              
+              {/* Type - matches ISO Country/OECD DAC/Custom style */}
+              <span className="text-xs text-gray-500">
+                ISO Country
+              </span>
             </div>
           );
           
