@@ -1830,7 +1830,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           fields.push({
             fieldName: `Location ${locIndex + 1}`,
             iatiPath: `iati-activity/location[${locIndex + 1}]`,
-            currentValue: (() => {
+            currentValue: () => {
             // Get current location at this index - this will be evaluated when displayed
             console.log('[XmlImportTab] Debug - locIndex:', locIndex, 'currentActivityData.locations:', currentActivityData.locations);
             const currentLocation = currentActivityData.locations && currentActivityData.locations[locIndex];
@@ -1859,7 +1859,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 )}
               </div>
             );
-          },
+          }),
             importValue: locationSummary,
             selected: false,
             hasConflict: false,
@@ -3228,7 +3228,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       <td className="px-4 py-3 w-40">
         <div className="space-y-1">
         {(() => {
-          const currentValue = typeof field.currentValue === 'function' ? field.currentValue() : field.currentValue;
+          const currentValue = typeof currentValue === 'function' ? currentValue() : currentValue;
           return currentValue ? (
             Array.isArray(currentValue) ? (
               currentValue.map((item, index) => (
