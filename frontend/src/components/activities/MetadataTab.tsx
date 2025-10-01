@@ -38,6 +38,7 @@ import { USER_ROLES } from '@/types/user';
 import { toast } from 'sonner';
 import { LanguageSearchableSelect } from '@/components/forms/LanguageSearchableSelect';
 import { useFieldAutosave } from '@/hooks/use-field-autosave-new';
+import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 
 interface MetadataTabProps {
   activityId: string;
@@ -555,7 +556,14 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
               </div>
             </div>
             <div className="pt-4 border-t border-gray-100">
-              <div className="font-medium text-gray-600 mb-2">Narrative Language</div>
+              <LabelSaveIndicator
+                isSaving={languageAutosave.isSaving}
+                isSaved={languageAutosave.isPersistentlySaved}
+                hasValue={!!language}
+                className="mb-2"
+              >
+                Narrative Language
+              </LabelSaveIndicator>
               <LanguageSearchableSelect
                 value={language}
                 onValueChange={(value) => {
