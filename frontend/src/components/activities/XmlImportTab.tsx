@@ -1769,28 +1769,28 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             '4': 'Other Topographical Feature'
           };
 
-          // Format location to match exact visual pattern of Recipient Countries/Regions/Geographies
-          // Pattern: [BADGE] [LABEL] [COORDINATES] [TYPE]
+          // Format location to match exact inline pattern of Recipient Countries
+          // Pattern: [BADGE] [NAME] [COORDINATES] [TYPE] - all inline on one line
           const locationName = location.name || 'Unnamed Location';
           const locationCode = location.ref || `LOC${locIndex + 1}`;
           const coordinates = location.point?.pos ? location.point.pos : '';
           
-          // Create styled location display matching other geographical fields
+          // Create inline styled location display matching other geographical fields
           const locationSummary = (
-            <div className="flex items-center gap-2">
-              {/* Location Code Badge - matches AF/AG/489/A1 style */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Location code badge - matches AF/AG/489/A1 style */}
               <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
                 {locationCode}
               </span>
               
-              {/* Location Name - matches Afghanistan (25%) style */}
+              {/* Location name - matches Afghanistan (25%) style */}
               <span className="text-sm font-medium text-gray-900">
                 {locationName}
               </span>
               
               {/* Coordinates - matches numerical style */}
               {coordinates && (
-                <span className="text-xs text-gray-600 font-mono">
+                <span className="text-xs font-mono text-gray-600">
                   {coordinates}
                 </span>
               )}
