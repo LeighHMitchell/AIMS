@@ -2482,58 +2482,98 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         setImportStatus({ 
           stage: 'importing', 
           progress: 87,
-          message: 'Importing locations...'
+          message: 'Geocoding coordinates and importing locations...'
         });
 
         try {
-          const locationsToImport = updateData.importedLocations.map((loc: any) => {
-            // Parse coordinates if present
-            let latitude = null;
-            let longitude = null;
-            if (loc.point?.pos) {
-              const coords = loc.point.pos.split(' ');
-              if (coords.length === 2) {
-                latitude = parseFloat(coords[0]);
-                longitude = parseFloat(coords[1]);
+          // Process locations and add reverse geocoding for coordinates
+          const locationsToImport = await Promise.all(
+            updateData.importedLocations.map(async (loc: any) => {
+              // Parse coordinates if present
+              let latitude = null;
+              let longitude = null;
+              if (loc.point?.pos) {
+                const coords = loc.point.pos.split(' ');
+                if (coords.length === 2) {
+                  latitude = parseFloat(coords[0]);
+                  longitude = parseFloat(coords[1]);
+                }
               }
-            }
-            
-            // Determine location type
-            const locationType = (latitude && longitude) ? 'site' : 'coverage';
-            
-            const locationData: any = {
-              location_type: locationType,
-              location_name: loc.name || 'Unnamed Location',
-              description: loc.description,
-              location_description: loc.description,
-              activity_location_description: loc.activityDescription,
-              srs_name: loc.point?.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326',
-              location_reach: loc.locationReach || undefined,  // Keep as string
-              exactness: loc.exactness || undefined,  // Keep as string
-              location_class: loc.locationClass || undefined,  // Keep as string
-              feature_designation: loc.featureDesignation,
-              location_id_vocabulary: loc.locationId?.vocabulary,
-              location_id_code: loc.locationId?.code,
-              admin_vocabulary: loc.administrative?.vocabulary,
-              admin_level: loc.administrative?.level,  // Keep as string
-              admin_code: loc.administrative?.code,
-              source: 'import',
-              validation_status: 'valid'
-            };
+              
+              // Determine location type
+              const locationType = (latitude && longitude) ? 'site' : 'coverage';
+              
+              const locationData: any = {
+                location_type: locationType,
+                location_name: loc.name || 'Unnamed Location',
+                description: loc.description,
+                location_description: loc.description,
+                activity_location_description: loc.activityDescription,
+                srs_name: loc.point?.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326',
+                location_reach: loc.locationReach || undefined,  // Keep as string
+                exactness: loc.exactness || undefined,  // Keep as string
+                location_class: loc.locationClass || undefined,  // Keep as string
+                feature_designation: loc.featureDesignation,
+                location_id_vocabulary: loc.locationId?.vocabulary,
+                location_id_code: loc.locationId?.code,
+                admin_vocabulary: loc.administrative?.vocabulary,
+                admin_level: loc.administrative?.level,  // Keep as string
+                admin_code: loc.administrative?.code,
+                source: 'import',
+                validation_status: 'valid'
+              };
 
-            // Add site-specific fields
-            if (locationType === 'site') {
-              locationData.latitude = latitude;
-              locationData.longitude = longitude;
-            }
+              // Add site-specific fields
+              if (locationType === 'site' && latitude && longitude) {
+                locationData.latitude = latitude;
+                locationData.longitude = longitude;
 
-            // Add coverage-specific fields
-            if (locationType === 'coverage') {
-              locationData.coverage_scope = 'regional'; // Default for imported coverage areas
-            }
+                // Perform reverse geocoding to populate address fields
+                try {
+                  console.log(`[XML Import] Reverse geocoding coordinates: ${latitude}, ${longitude}`);
+                  const geocodeResponse = await fetch(`/api/geocoding/reverse?lat=${latitude}&lon=${longitude}`);
+                  
+                  if (geocodeResponse.ok) {
+                    const geocodeData = await geocodeResponse.json();
+                    console.log('[XML Import] Geocoding result:', geocodeData);
+                    
+                    // Populate address fields from geocoding
+                    if (geocodeData.address) {
+                      locationData.address = geocodeData.display_name;
+                      locationData.city = geocodeData.address.city || 
+                                         geocodeData.address.town || 
+                                         geocodeData.address.village;
+                      locationData.postal_code = geocodeData.address.postcode;
+                      locationData.country_code = geocodeData.address.country_code?.toUpperCase();
+                      
+                      // Myanmar-specific admin boundaries
+                      locationData.state_region_name = geocodeData.address.state || 
+                                                       geocodeData.address.province;
+                      locationData.township_name = geocodeData.address.county || 
+                                                  geocodeData.address.municipality;
+                      locationData.district_name = geocodeData.address.district;
+                      locationData.village_name = geocodeData.address.village || 
+                                                 geocodeData.address.hamlet;
+                      
+                      console.log('[XML Import] Address fields populated from geocoding');
+                    }
+                  } else {
+                    console.warn('[XML Import] Reverse geocoding failed, continuing without address data');
+                  }
+                } catch (geocodeError) {
+                  console.error('[XML Import] Geocoding error:', geocodeError);
+                  // Continue import even if geocoding fails
+                }
+              }
 
-            return locationData;
-          });
+              // Add coverage-specific fields
+              if (locationType === 'coverage') {
+                locationData.coverage_scope = 'regional'; // Default for imported coverage areas
+              }
+
+              return locationData;
+            })
+          );
 
           console.log('[XML Import] Importing locations to database:', locationsToImport);
           

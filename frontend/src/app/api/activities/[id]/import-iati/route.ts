@@ -300,65 +300,105 @@ export async function POST(
       
       // Insert new locations
       if (Array.isArray(iati_data.locations) && iati_data.locations.length > 0) {
-        const locationData = iati_data.locations.map((loc: any) => {
-          // Parse coordinates if present
-          let latitude = null;
-          let longitude = null;
-          if (loc.point?.pos) {
-            const coords = loc.point.pos.split(' ');
-            if (coords.length === 2) {
-              latitude = parseFloat(coords[0]);
-              longitude = parseFloat(coords[1]);
+        const locationData = await Promise.all(
+          iati_data.locations.map(async (loc: any) => {
+            // Parse coordinates if present
+            let latitude = null;
+            let longitude = null;
+            if (loc.point?.pos) {
+              const coords = loc.point.pos.split(' ');
+              if (coords.length === 2) {
+                latitude = parseFloat(coords[0]);
+                longitude = parseFloat(coords[1]);
+              }
             }
-          }
-          
-          // Determine location type - site if has coordinates, coverage otherwise
-          const locationType = (latitude && longitude) ? 'site' : 'coverage';
-          
-          const locationEntry: any = {
-            activity_id: activityId,
-            location_type: locationType,
-            location_name: loc.name || 'Unnamed Location',
-            description: loc.description,
-            location_description: loc.description,
-            activity_location_description: loc.activityDescription,
-            srs_name: loc.point?.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326',
             
-            // IATI fields - keep as strings, not integers
-            location_reach: loc.locationReach || undefined,
-            exactness: loc.exactness || undefined,
-            location_class: loc.locationClass || undefined,
-            feature_designation: loc.featureDesignation,
+            // Determine location type - site if has coordinates, coverage otherwise
+            const locationType = (latitude && longitude) ? 'site' : 'coverage';
             
-            // Gazetteer
-            location_id_vocabulary: loc.locationId?.vocabulary,
-            location_id_code: loc.locationId?.code,
-            
-            // Administrative - keep level as string
-            admin_vocabulary: loc.administrative?.vocabulary,
-            admin_level: loc.administrative?.level,
-            admin_code: loc.administrative?.code,
-            
-            // Metadata
-            source: 'import',
-            validation_status: 'valid',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
+            const locationEntry: any = {
+              activity_id: activityId,
+              location_type: locationType,
+              location_name: loc.name || 'Unnamed Location',
+              description: loc.description,
+              location_description: loc.description,
+              activity_location_description: loc.activityDescription,
+              srs_name: loc.point?.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326',
+              
+              // IATI fields - keep as strings, not integers
+              location_reach: loc.locationReach || undefined,
+              exactness: loc.exactness || undefined,
+              location_class: loc.locationClass || undefined,
+              feature_designation: loc.featureDesignation,
+              
+              // Gazetteer
+              location_id_vocabulary: loc.locationId?.vocabulary,
+              location_id_code: loc.locationId?.code,
+              
+              // Administrative - keep level as string
+              admin_vocabulary: loc.administrative?.vocabulary,
+              admin_level: loc.administrative?.level,
+              admin_code: loc.administrative?.code,
+              
+              // Metadata
+              source: 'import',
+              validation_status: 'valid',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
 
-          // Add site-specific fields
-          if (locationType === 'site') {
-            locationEntry.latitude = latitude;
-            locationEntry.longitude = longitude;
-          }
+            // Add site-specific fields
+            if (locationType === 'site' && latitude && longitude) {
+              locationEntry.latitude = latitude;
+              locationEntry.longitude = longitude;
 
-          // Add coverage-specific fields
-          if (locationType === 'coverage') {
-            locationEntry.coverage_scope = 'regional'; // Default for imported coverage areas
-          }
+              // Perform reverse geocoding to populate address fields
+              try {
+                console.log(`[IATI Import] Reverse geocoding coordinates: ${latitude}, ${longitude}`);
+                const geocodeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/api/geocoding/reverse?lat=${latitude}&lon=${longitude}`;
+                const geocodeResponse = await fetch(geocodeUrl);
+                
+                if (geocodeResponse.ok) {
+                  const geocodeData = await geocodeResponse.json();
+                  console.log('[IATI Import] Geocoding result:', geocodeData);
+                  
+                  // Populate address fields from geocoding
+                  if (geocodeData.address) {
+                    locationEntry.address = geocodeData.display_name;
+                    locationEntry.city = geocodeData.address.city || 
+                                        geocodeData.address.town || 
+                                        geocodeData.address.village;
+                    locationEntry.postal_code = geocodeData.address.postcode;
+                    locationEntry.country_code = geocodeData.address.country_code?.toUpperCase();
+                    
+                    // Myanmar-specific admin boundaries
+                    locationEntry.state_region_name = geocodeData.address.state || 
+                                                      geocodeData.address.province;
+                    locationEntry.township_name = geocodeData.address.county || 
+                                                 geocodeData.address.municipality;
+                    locationEntry.district_name = geocodeData.address.district;
+                    locationEntry.village_name = geocodeData.address.village || 
+                                                geocodeData.address.hamlet;
+                    
+                    console.log('[IATI Import] Address fields populated from reverse geocoding');
+                  }
+                } else {
+                  console.warn('[IATI Import] Reverse geocoding failed, continuing without address data');
+                }
+              } catch (geocodeError) {
+                console.error('[IATI Import] Geocoding error:', geocodeError);
+                // Continue import even if geocoding fails
+              }
+            }
 
-          return locationEntry;
-        });
+            // Add coverage-specific fields
+            if (locationType === 'coverage') {
+              locationEntry.coverage_scope = 'regional'; // Default for imported coverage areas
+            }
+
+            return locationEntry;
+          })
+        );
         
         const { error: locationsError } = await supabase
           .from('activity_locations')
