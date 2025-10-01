@@ -937,13 +937,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       const text = await navigator.clipboard.readText();
       console.log('[XML Import Debug] Paste button - clipboard text:', text);
       if (text && text.trim()) {
-        // Clear the field first to prevent accumulation
-        setXmlUrl('');
-        // Use setTimeout to ensure the clear happens first
-        setTimeout(() => {
-          console.log('[XML Import Debug] Paste button - setting URL:', text.trim());
-          setXmlUrl(text.trim());
-        }, 10);
+        // Extract the clean URL by finding the first occurrence of the URL pattern
+        const urlPattern = /https?:\/\/[^\s]+/;
+        const match = text.match(urlPattern);
+        const cleanUrl = match ? match[0] : text.trim();
+        
+        console.log('[XML Import Debug] Paste button - clean URL:', cleanUrl);
+        setXmlUrl(cleanUrl);
         toast.success('URL pasted from clipboard');
       } else {
         toast.error('No text found in clipboard');
@@ -3808,7 +3808,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               <div className="flex gap-4 mt-2">
                 <Button
                   variant={importMethod === 'file' ? 'default' : 'outline'}
-                  onClick={() => setImportMethod('file')}
+                  onClick={() => {
+                    setImportMethod('file');
+                    setXmlUrl(''); // Clear URL when switching to file mode
+                  }}
                   className="flex-1"
                 >
                   <FileCode className="h-4 w-4 mr-2" />
@@ -3816,7 +3819,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 </Button>
                 <Button
                   variant={importMethod === 'url' ? 'default' : 'outline'}
-                  onClick={() => setImportMethod('url')}
+                  onClick={() => {
+                    setImportMethod('url');
+                    setXmlUrl(''); // Clear URL when switching to URL mode to prevent duplication
+                  }}
                   className="flex-1"
                 >
                   <Globe className="h-4 w-4 mr-2" />
@@ -3884,13 +3890,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                           const pastedText = e.clipboardData.getData('text');
                           console.log('[XML Import Debug] Manual paste - pasted text:', pastedText);
                           if (pastedText && pastedText.trim()) {
-                            // Clear the field first to prevent accumulation
-                            setXmlUrl('');
-                            // Use setTimeout to ensure the clear happens first
-                            setTimeout(() => {
-                              console.log('[XML Import Debug] Manual paste - setting URL:', pastedText.trim());
-                              setXmlUrl(pastedText.trim());
-                            }, 10);
+                            // Extract the clean URL by finding the first occurrence of the URL pattern
+                            const urlPattern = /https?:\/\/[^\s]+/;
+                            const match = pastedText.match(urlPattern);
+                            const cleanUrl = match ? match[0] : pastedText.trim();
+                            
+                            console.log('[XML Import Debug] Manual paste - clean URL:', cleanUrl);
+                            setXmlUrl(cleanUrl);
                           }
                         }}
                         className="text-center pr-10"
