@@ -824,6 +824,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     activityId
   });
 
+  // Trigger to re-fetch activity data
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
+
   // Fetch current activity data
   useEffect(() => {
     const fetchActivityData = async () => {
@@ -924,7 +927,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     };
 
     fetchActivityData();
-  }, [activityId]);
+  }, [activityId, refetchTrigger]);
 
   // Handle file selection
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -3099,6 +3102,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       // Clear refined sectors after successful import
       setSavedRefinedSectors([]);
+
+      // Re-fetch activity data to get updated locations for subsequent imports
+      console.log('[XML Import] Re-fetching activity data after successful import');
+      setRefetchTrigger(prev => prev + 1);
 
       // Trigger a page refresh after a short delay to ensure all components get fresh data
       setTimeout(() => {
