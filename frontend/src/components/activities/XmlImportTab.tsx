@@ -1769,17 +1769,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             '4': 'Other Topographical Feature'
           };
 
-          const locationParts = [
-            location.name || 'Unnamed Location',
-            location.point?.pos ? `📍 ${location.point.pos}` : null,
-            location.locationReach ? locationReachMap[location.locationReach] || `Reach: ${location.locationReach}` : null,
-            location.exactness ? exactnessMap[location.exactness] || `Exactness: ${location.exactness}` : null,
-            location.locationClass ? locationClassMap[location.locationClass] || `Class: ${location.locationClass}` : null,
-            location.administrative?.code ? `Admin: ${location.administrative.code}` : null,
-            location.locationId?.code ? `ID: ${location.locationId.code}` : null
-          ].filter(Boolean);
-
-          const locationSummary = locationParts.join(' | ');
+          // Format location similar to recipient countries and custom geographies
+          const locationName = location.name || 'Unnamed Location';
+          const coordinates = location.point?.pos ? `📍 ${location.point.pos}` : '';
+          const locationType = location.locationReach ? locationReachMap[location.locationReach] || `Reach: ${location.locationReach}` : 'Location';
+          
+          const locationSummary = `${locationName}${coordinates ? ` ${coordinates}` : ''} ${locationType}`;
           
           fields.push({
             fieldName: `Location ${locIndex + 1}`,
