@@ -1830,9 +1830,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           fields.push({
             fieldName: `Location ${locIndex + 1}`,
             iatiPath: `iati-activity/location[${locIndex + 1}]`,
-            currentValue: (() => {
-            // Get current location at this index
+            currentValue: currentValue: (() => {
+            // Get current location at this index - this will be evaluated when displayed
+            console.log('[XmlImportTab] Debug - locIndex:', locIndex, 'currentActivityData.locations:', currentActivityData.locations);
             const currentLocation = currentActivityData.locations && currentActivityData.locations[locIndex];
+            console.log('[XmlImportTab] Debug - currentLocation:', currentLocation);
             if (!currentLocation) return null;
             
             // Format current location to match the import value format
