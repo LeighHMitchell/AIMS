@@ -526,8 +526,8 @@ export class IATIXMLParser {
       }
     }
 
-    // Detailed Locations - IATI location elements with full metadata
-    const locationElements = activity.querySelectorAll('location');
+    // Detailed Locations - only direct children of activity (not nested in transactions/results)
+    const locationElements = Array.from(activity.children).filter(child => child.tagName === 'location');
     if (locationElements.length > 0) {
       result.locations = [];
       for (let i = 0; i < locationElements.length; i++) {
