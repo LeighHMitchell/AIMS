@@ -120,6 +120,22 @@ interface ActivityData {
     vocabularyUri: string;
     narrative?: string;
   }>;
+  locations?: Array<{
+    id: string;
+    location_name: string;
+    description?: string;
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+    city?: string;
+    country_code?: string;
+    location_type?: string;
+    location_reach?: string;
+    exactness?: string;
+    location_class?: string;
+    feature_designation?: string;
+    [key: string]: any;
+  }>;
 }
 
 interface ParsedField {
@@ -823,6 +839,18 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           recipient_regions: data.recipient_regions,
           custom_geographies: data.custom_geographies
         });
+
+        
+        // Also fetch current activity locations
+        
+        console.log('[XmlImportTab] Fetching current activity locations...');
+        
+        const locationsResponse = await fetch(`/api/activities/${activityId}/locations`);
+        
+        const currentLocations = locationsResponse.ok ? await locationsResponse.json() : [];
+        
+        console.log('[XmlImportTab] Current locations:', currentLocations);
+        
         
         // Map the data correctly - the API returns both camelCase and snake_case versions
         setCurrentActivityData({
@@ -850,6 +878,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           recipient_countries: data.recipient_countries || [],
           recipient_regions: data.recipient_regions || [],
           custom_geographies: data.custom_geographies || [],
+          locations: currentLocations || [],
         });
         console.log('[XmlImportTab] Set current activity data with title:', data.title_narrative || data.title);
       } catch (error) {
@@ -1081,6 +1110,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           recipient_countries: data.recipient_countries || [],
           recipient_regions: data.recipient_regions || [],
           custom_geographies: data.custom_geographies || [],
+              locations: currentLocations || [],
         });
       } catch (error) {
         console.error('[XML Import Debug] Failed to fetch activity data:', error);
