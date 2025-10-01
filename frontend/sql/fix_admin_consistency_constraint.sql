@@ -6,15 +6,11 @@
 ALTER TABLE activity_locations 
 DROP CONSTRAINT IF EXISTS activity_locations_admin_consistency;
 
--- Add a more flexible constraint that only requires township_name and state_region_name
--- to both be present or both be null (if we have township data, we should have state data)
+-- Add a simple constraint: if township_name exists, state_region_name must also exist
 ALTER TABLE activity_locations 
 ADD CONSTRAINT activity_locations_admin_consistency 
 CHECK (
-    -- Either both township and state region names are null
-    (township_name IS NULL AND state_region_name IS NULL) OR 
-    -- Or both township and state region names are present
-    (township_name IS NOT NULL AND state_region_name IS NOT NULL)
+    township_name IS NULL OR state_region_name IS NOT NULL
 );
 
 -- Add a comment explaining the constraint
