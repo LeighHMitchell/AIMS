@@ -3778,31 +3778,6 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Debug Console Button */}
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowDebugConsole(true)}
-            className="flex items-center gap-2"
-          >
-            <Bug className="h-4 w-4" />
-            Debug Console ({debugLogs.length})
-          </Button>
-          {debugLogs.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearDebugLogs}
-              className="text-red-600 hover:text-red-700"
-            >
-              Clear Logs
-            </Button>
-          )}
-        </div>
-      </div>
-
       {/* Import Method Selection and Input */}
       {importStatus.stage === 'idle' && !selectedFile && !xmlContent && (
         <div>
@@ -3867,10 +3842,6 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   <Link className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                   <p className="text-gray-600 mb-2">Enter the URL of an IATI XML file</p>
                   <p className="text-sm text-gray-500 mb-4">Must be a publicly accessible XML document</p>
-                  <div className="text-xs text-gray-400 mb-4 space-y-1">
-                    <p>• Try the IATI example: <code className="bg-gray-100 px-1 rounded">https://raw.githubusercontent.com/IATI/IATI-Extra-Documentation/version-2.03/en/activity-standard/activity-standard-example-annotated.xml</code></p>
-                    <p>• Or upload an XML file instead using the "Upload File" option above</p>
-                  </div>
                   
                   <div className="max-w-md mx-auto space-y-3">
                     <div className="relative">
