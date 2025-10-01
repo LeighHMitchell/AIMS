@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { IATIXMLParser, validateIATIXML } from '@/lib/xml-parser';
 import { IATI_REGIONS } from '@/data/iati-regions';
 import { IATI_COUNTRIES } from '@/data/iati-countries';
+import { LANGUAGES } from '@/data/languages';
 import { ExternalPublisherModal } from '@/components/import/ExternalPublisherModal';
 import { extractIatiMeta } from '@/lib/iati/parseMeta';
 import { useUser } from '@/hooks/useUser';
@@ -285,30 +286,15 @@ const getActivityScopeLabel = (code: string): { code: string, name: string } | n
 
 const getLanguageLabel = (code: string): { code: string, name: string } | null => {
   if (!code) return null;
-  const languageMap: Record<string, string> = {
-    'en': 'English',
-    'es': 'Spanish',
-    'fr': 'French',
-    'de': 'German',
-    'zh': 'Chinese',
-    'ar': 'Arabic',
-    'pt': 'Portuguese',
-    'ru': 'Russian',
-    'ja': 'Japanese',
-    'ko': 'Korean',
-    'it': 'Italian',
-    'nl': 'Dutch',
-    'sv': 'Swedish',
-    'no': 'Norwegian',
-    'da': 'Danish',
-    'fi': 'Finnish',
-    'pl': 'Polish',
-    'cs': 'Czech',
-    'hu': 'Hungarian',
-    'tr': 'Turkish'
-  };
-  const languageName = languageMap[code] || 'Unknown Language';
-  return { code: code.toUpperCase(), name: `${code.toUpperCase()} ${languageName}` };
+  
+  // Use comprehensive language data from LANGUAGES
+  const allLanguages = LANGUAGES[0]?.types || [];
+  const languageData = allLanguages.find(lang => lang.code.toLowerCase() === code.toLowerCase());
+  
+  const languageName = languageData?.name || 'Unknown Language';
+  const languageCode = code.toLowerCase();
+  
+  return { code: languageCode, name: `${languageCode} ${languageName}` };
 };
 
 // Create a singleton cache for parsed XML data per activity
