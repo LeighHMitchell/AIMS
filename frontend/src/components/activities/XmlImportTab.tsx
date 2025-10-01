@@ -1724,7 +1724,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             code: r.code,
             name: `${r.narrative || r.code}${r.percentage ? ` (${r.percentage}%)` : ''}`,
             vocabulary: `99 Custom`,
-            vocabularyUri: undefined
+            vocabularyUri: r.vocabularyUri || null
           }))
         : null;
       
