@@ -1830,7 +1830,34 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           fields.push({
             fieldName: `Location ${locIndex + 1}`,
             iatiPath: `iati-activity/location[${locIndex + 1}]`,
-            currentValue: null,
+            currentValue: (() => {
+            // Get current location at this index
+            const currentLocation = currentActivityData.locations && currentActivityData.locations[locIndex];
+            if (!currentLocation) return null;
+            
+            // Format current location to match the import value format
+            const currentLocationName = currentLocation.location_name || 'Unnamed Location';
+            const currentLocationCode = currentLocation.id || `LOC${locIndex + 1}`;
+            const currentCoordinates = currentLocation.latitude && currentLocation.longitude 
+              ? `${currentLocation.latitude} ${currentLocation.longitude}` 
+              : '';
+            
+            return (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                  {currentLocationCode}
+                </span>
+                <span className="text-sm font-medium text-gray-900">
+                  {currentLocationName}
+                </span>
+                {currentCoordinates && (
+                  <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                    {currentCoordinates}
+                  </span>
+                )}
+              </div>
+            );
+          })(),
             importValue: locationSummary,
             selected: false,
             hasConflict: false,
