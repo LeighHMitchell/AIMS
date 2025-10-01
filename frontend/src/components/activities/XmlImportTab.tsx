@@ -327,6 +327,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [xmlUrl, setXmlUrl] = useState<string>('');
   const [importMethod, setImportMethod] = useState<'file' | 'url'>('file');
   const urlInputRef = useRef<HTMLInputElement>(null);
+  const [isUsingPasteButton, setIsUsingPasteButton] = useState(false);
   const [showSectorRefinement, setShowSectorRefinement] = useState(false);
   const [sectorRefinementData, setSectorRefinementData] = useState<{
     originalSectors: any[];
@@ -915,7 +916,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   };
 
   // Handle paste from clipboard
-  const handlePasteUrl = async () => {
+  const handlePasteUrl = async (e?: React.MouseEvent) => {
+    // Prevent event bubbling to avoid triggering onPaste on input
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Set flag to prevent onPaste handler from running
+    setIsUsingPasteButton(true);
+    
     try {
       // Check if clipboard API is available and supported
       if (!navigator.clipboard || !navigator.clipboard.readText) {
@@ -926,7 +936,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // Try to read clipboard with better error handling
       const text = await navigator.clipboard.readText();
       if (text && text.trim()) {
-        setXmlUrl(text.trim());
+        // Clear the field first to prevent accumulation
+        setXmlUrl('');
+        // Use setTimeout to ensure the clear happens first
+        setTimeout(() => {
+          setXmlUrl(text.trim());
+        }, 10);
         toast.success('URL pasted from clipboard');
       } else {
         toast.error('No text found in clipboard');
@@ -946,6 +961,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       } else {
         toast.error('Clipboard access not available. Please paste manually (Ctrl+V)');
       }
+    } finally {
+      // Reset flag after a short delay
+      setTimeout(() => setIsUsingPasteButton(false), 100);
     }
   };
 
@@ -3848,11 +3866,21 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                         value={xmlUrl}
                         onChange={(e) => setXmlUrl(e.target.value)}
                         onPaste={(e) => {
+                          // Skip if we're using the paste button to avoid conflicts
+                          if (isUsingPasteButton) {
+                            return;
+                          }
+                          
                           // Prevent default to avoid duplication, then manually set the value
                           e.preventDefault();
                           const pastedText = e.clipboardData.getData('text');
                           if (pastedText && pastedText.trim()) {
-                            setXmlUrl(pastedText.trim());
+                            // Clear the field first to prevent accumulation
+                            setXmlUrl('');
+                            // Use setTimeout to ensure the clear happens first
+                            setTimeout(() => {
+                              setXmlUrl(pastedText.trim());
+                            }, 10);
                           }
                         }}
                         className="text-center pr-10"
