@@ -1317,7 +1317,7 @@ function ActivitiesPageContent() {
                               )}
                             </h3>
                             {(activity.partnerId || activity.iatiIdentifier) && (
-                              <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
+                              <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1 text-left">
                                 {activity.partnerId && (
                                   <>
                                     <span>{activity.partnerId}</span>
