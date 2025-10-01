@@ -555,7 +555,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
               </div>
             </div>
             <div className="pt-4 border-t border-gray-100">
-              <div className="font-medium text-gray-600 mb-2">Language</div>
+              <div className="font-medium text-gray-600 mb-2">Narrative Language</div>
               <LanguageSearchableSelect
                 value={language}
                 onValueChange={(value) => {
