@@ -1769,16 +1769,28 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             '4': 'Other Topographical Feature'
           };
 
-          // Format location to match recipient countries pattern exactly
-          // Pattern: [CODE] [NAME] [VOCAB_CODE] [VOCAB_NAME]
-          // Example: "AF Afghanistan (25%) A4 ISO Country"
+          // Format location with inline badge + label styling
+          // Pattern: [CODE_BADGE] [NAME] [COORDINATES]
           const locationName = location.name || 'Unnamed Location';
           const locationCode = location.ref || `LOC${locIndex + 1}`;
           const coordinates = location.point?.pos ? location.point.pos : '';
-          const vocabularyCode = coordinates ? coordinates : '1';
-          const vocabularyName = 'ISO Country';
           
-          const locationSummary = `${locationCode} ${locationName} ${vocabularyCode} ${vocabularyName}`;
+          // Create styled location display
+          const locationSummary = (
+            <div className="flex items-center gap-3">
+              <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm font-mono">
+                {locationCode}
+              </span>
+              <span className="text-base font-medium">
+                {locationName}
+              </span>
+              {coordinates && (
+                <span className="text-gray-600 text-sm">
+                  {coordinates}
+                </span>
+              )}
+            </div>
+          );
           
           fields.push({
             fieldName: `Location ${locIndex + 1}`,
