@@ -1859,7 +1859,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 )}
               </div>
             );
-          }),
+          },
             importValue: locationSummary,
             selected: false,
             hasConflict: false,
