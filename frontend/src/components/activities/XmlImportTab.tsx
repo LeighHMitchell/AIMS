@@ -3807,9 +3807,23 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   ) : (
                     <>
                       <p className="font-medium">XML from URL</p>
-                      <p className="text-sm text-gray-500 max-w-md truncate">
-                        {xmlUrl}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-500 max-w-md truncate">
+                          {xmlUrl}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-gray-100"
+                          onClick={() => {
+                            navigator.clipboard.writeText(xmlUrl);
+                            toast.success('URL copied to clipboard');
+                          }}
+                          title="Copy URL"
+                        >
+                          <Copy className="h-3 w-3 text-gray-500" />
+                        </Button>
+                      </div>
                     </>
                   )}
                 </div>
