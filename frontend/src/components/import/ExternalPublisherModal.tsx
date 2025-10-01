@@ -159,6 +159,7 @@ export function ExternalPublisherModal({
                         className="h-4 w-4 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
                         type="button"
                         aria-label="Help"
+                        tabIndex={-1}
                       >
                         <HelpCircle className="h-3 w-3" />
                       </Button>
@@ -224,6 +225,7 @@ export function ExternalPublisherModal({
                       className="h-4 w-4 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
                       type="button"
                       aria-label="Help"
+                      tabIndex={-1}
                     >
                       <HelpCircle className="h-3 w-3" />
                     </Button>
