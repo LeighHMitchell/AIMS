@@ -48,7 +48,7 @@ import {
   Trash2,
   Bug,
   Copy,
-  Clipboard,
+  ClipboardPaste,
 } from 'lucide-react';
 
 interface XmlImportTabProps {
@@ -917,6 +917,19 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   // Handle paste from clipboard
   const handlePasteUrl = async () => {
     try {
+      // Check if clipboard API is available
+      if (!navigator.clipboard) {
+        toast.error('Clipboard API not available. Please paste manually (Ctrl+V)');
+        return;
+      }
+
+      // Check if we have permission to read clipboard
+      const permission = await navigator.permissions.query({ name: 'clipboard-read' as PermissionName });
+      if (permission.state === 'denied') {
+        toast.error('Clipboard access denied. Please paste manually (Ctrl+V)');
+        return;
+      }
+
       const text = await navigator.clipboard.readText();
       if (text && text.trim()) {
         setXmlUrl(text.trim());
@@ -926,7 +939,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       }
     } catch (error) {
       console.error('Failed to read clipboard:', error);
-      toast.error('Failed to paste from clipboard. Please paste manually (Ctrl+V)');
+      // Don't show error toast for permission issues, just fail silently
+      // User can still use Ctrl+V manually
+      toast.error('Clipboard access not available. Please paste manually (Ctrl+V)');
     }
   };
 
@@ -3830,7 +3845,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
                         title="Paste from clipboard"
                       >
-                        <Clipboard className="h-4 w-4" />
+                        <ClipboardPaste className="h-4 w-4" />
                       </Button>
                     </div>
                     <Button 
