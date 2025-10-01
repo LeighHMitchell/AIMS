@@ -1769,13 +1769,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             '4': 'Other Topographical Feature'
           };
 
-          // Format location to match recipient countries/custom geographies pattern
-          // Pattern: [CODE] [NAME] ([PERCENTAGE]) [VOCAB_CODE] [VOCAB_NAME]
+          // Format location to match recipient countries pattern exactly
+          // Pattern: [CODE] [NAME] [VOCAB_CODE] [VOCAB_NAME]
+          // Example: "AF Afghanistan (25%) A4 ISO Country"
           const locationName = location.name || 'Unnamed Location';
           const locationCode = location.ref || `LOC${locIndex + 1}`;
-          const locationType = location.locationReach ? locationReachMap[location.locationReach] || `Reach: ${location.locationReach}` : 'Location';
-          const vocabularyCode = location.locationReach || '1';
-          const vocabularyName = 'IATI Location';
+          const coordinates = location.point?.pos ? location.point.pos : '';
+          const vocabularyCode = coordinates ? coordinates : '1';
+          const vocabularyName = 'ISO Country';
           
           const locationSummary = `${locationCode} ${locationName} ${vocabularyCode} ${vocabularyName}`;
           
