@@ -3228,7 +3228,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       <td className="px-4 py-3 w-40">
         <div className="space-y-1">
         {(() => {
-          const currentValue = typeof currentValue === 'function' ? currentValue() : currentValue;
+          const currentValue = typeof field.currentValue === 'function' ? field.currentValue() : field.currentValue;
           return currentValue ? (
             Array.isArray(currentValue) ? (
               currentValue.map((item, index) => (
