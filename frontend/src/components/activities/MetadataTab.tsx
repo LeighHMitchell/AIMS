@@ -558,7 +558,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
             <div className="pt-4 border-t border-gray-100">
               <LabelSaveIndicator
                 isSaving={languageAutosave.isSaving}
-                isSaved={languageAutosave.isPersistentlySaved}
+                isSaved={languageAutosave.isPersistentlySaved || !!language}
                 hasValue={!!language}
                 className="mb-2"
               >
