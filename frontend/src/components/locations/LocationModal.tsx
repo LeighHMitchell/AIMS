@@ -29,7 +29,7 @@ import {
   Check
 } from 'lucide-react';
 
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
@@ -64,6 +64,7 @@ import {
 import { SelectIATI, type SelectIATIGroup } from '@/components/ui/SelectIATI';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { IATI_LOCATION_TYPE_GROUPS } from '@/data/iati-location-types';
+import { countries } from '@/data/countries';
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
@@ -159,7 +160,148 @@ const FEATURE_DESIGNATION_BY_TYPE: Record<string, string> = {
 
 const DEFAULT_LOCATION_REACH: '1' = '1';
 const DEFAULT_EXACTNESS: '1' = '1';
+const DEFAULT_SPATIAL_REFERENCE_SYSTEM = 'http://www.opengis.net/def/crs/EPSG/0/4326';
 
+type GeocodeAddress = Record<string, string | undefined>;
+
+const ISO_LEVEL_MAPPINGS: Array<{ key: string; level: typeof ADMIN_LEVELS[number] }> = [
+  { key: 'ISO3166-2-lvl6', level: 'admin3' },
+  { key: 'ISO3166-2-lvl5', level: 'admin2' },
+  { key: 'ISO3166-2-lvl4', level: 'admin1' },
+];
+
+const FALLBACK_ADMIN_ORDER: Array<{ level: typeof ADMIN_LEVELS[number]; keys: string[] }> = [
+  { level: 'admin1', keys: ['state', 'province', 'region', 'state_district'] },
+  { level: 'admin2', keys: ['county', 'district', 'municipality'] },
+  { level: 'admin3', keys: ['city', 'town', 'city_district'] },
+  { level: 'admin4', keys: ['village', 'hamlet', 'suburb', 'township'] },
+];
+
+function formatOsmIdentifier(osmType?: string, osmId?: string | number): string | undefined {
+  if (!osmType || osmId === undefined || osmId === null) {
+    return undefined;
+  }
+
+  const idString = typeof osmId === 'number' ? osmId.toString() : osmId;
+  const normalizedType = osmType.toLowerCase();
+
+  if (!idString) {
+    return undefined;
+  }
+
+  if (['node', 'way', 'relation'].includes(normalizedType) && !idString.includes('/')) {
+    return `${normalizedType}/${idString}`;
+  }
+
+  return idString;
+}
+
+function inferFeatureDesignation(
+  type?: string,
+  category?: string,
+  address?: GeocodeAddress
+): string | undefined {
+  const normalizedType = type?.toLowerCase();
+  if (normalizedType && FEATURE_DESIGNATION_BY_TYPE[normalizedType]) {
+    return FEATURE_DESIGNATION_BY_TYPE[normalizedType];
+  }
+
+  const normalizedCategory = category?.toLowerCase();
+  switch (normalizedCategory) {
+    case 'boundary':
+      return 'ADM1';
+    case 'place':
+      return 'PPL';
+    case 'building':
+    case 'amenity':
+      return 'BLDG';
+    default:
+      break;
+  }
+
+  if (address) {
+    if (address.city || address.town || address.village || address.hamlet) {
+      return 'PPL';
+    }
+    if (address.state || address.county || address.district) {
+      return 'ADM1';
+    }
+  }
+
+  return undefined;
+}
+
+function inferLocationClass(
+  type?: string,
+  category?: string,
+  address?: GeocodeAddress
+): '1' | '2' | '3' | '4' | undefined {
+  const normalizedType = type?.toLowerCase();
+  const normalizedCategory = category?.toLowerCase();
+
+  if (
+    normalizedCategory === 'boundary' ||
+    normalizedType === 'administrative' ||
+    (address && (address.state || address.province || address.region || address.county))
+  ) {
+    return '1';
+  }
+
+  if (
+    normalizedCategory === 'place' ||
+    (address && (address.city || address.town || address.village || address.hamlet))
+  ) {
+    return '2';
+  }
+
+  if (
+    normalizedCategory === 'building' ||
+    normalizedCategory === 'amenity' ||
+    normalizedType === 'building'
+  ) {
+    return '3';
+  }
+
+  if (normalizedCategory) {
+    return '4';
+  }
+
+  return undefined;
+}
+
+function deriveAdminData(address?: GeocodeAddress):
+  | { vocabulary: string; level: typeof ADMIN_LEVELS[number]; code: string }
+  | undefined {
+  if (!address) {
+    return undefined;
+  }
+
+  for (const mapping of ISO_LEVEL_MAPPINGS) {
+    const code = address[mapping.key];
+    if (code) {
+      return {
+        vocabulary: 'A4',
+        level: mapping.level,
+        code,
+      };
+    }
+  }
+
+  for (const fallback of FALLBACK_ADMIN_ORDER) {
+    for (const key of fallback.keys) {
+      const value = address[key];
+      if (value) {
+        return {
+          vocabulary: 'G2',
+          level: fallback.level,
+          code: value,
+        };
+      }
+    }
+  }
+
+  return undefined;
+}
 const LOCATION_REACH_GROUPS: SelectIATIGroup[] = [
   {
     label: 'Location Reach',
@@ -534,11 +676,23 @@ export default function LocationModal({
   // Initialize form with existing location data
   useEffect(() => {
     if (location) {
+      console.log('Loading location data:', location);
+      console.log('Country code from location:', location.country_code);
+      
       reset({
         ...location,
         latitude: location.latitude || undefined,
         longitude: location.longitude || undefined,
+        country_display: location.country_code
+          ? COUNTRY_GROUPS[0]?.options.find(option => option.code === location.country_code)?.name
+          : undefined,
       } as LocationFormSchema);
+
+      // Debug: Check form value after reset
+      setTimeout(() => {
+        console.log('Form country_code value after reset:', watch('country_code'));
+        console.log('All form values after reset:', watch());
+      }, 100);
 
       if (location.latitude && location.longitude) {
         setMarkerPosition([location.latitude, location.longitude]);
@@ -552,6 +706,7 @@ export default function LocationModal({
       const defaults = getDefaultLocationValues('site');
       reset({
         ...defaults,
+        country_display: undefined,
       } as LocationFormSchema);
       setSelectedLocation({});
       setMarkerPosition(null);
@@ -622,37 +777,38 @@ const autoPopulateIatiFields = useCallback((params: {
       setValue('exactness', DEFAULT_EXACTNESS);
     }
 
-    // Location class
-    const normalizedType = type?.toLowerCase();
-    if (normalizedType && LOCATION_CLASS_BY_TYPE[normalizedType]) {
-      if (!watch('location_class')) {
-        setValue('location_class', LOCATION_CLASS_BY_TYPE[normalizedType]);
-      }
+    // Spatial reference system default
+    if (!watch('spatial_reference_system')) {
+      setValue('spatial_reference_system', DEFAULT_SPATIAL_REFERENCE_SYSTEM);
     }
 
     // Feature designation
-    if (normalizedType && FEATURE_DESIGNATION_BY_TYPE[normalizedType]) {
-      setValue('feature_designation', FEATURE_DESIGNATION_BY_TYPE[normalizedType]);
+    const inferredFeatureDesignation = inferFeatureDesignation(type, category, address);
+    if (inferredFeatureDesignation) {
+      setValue('feature_designation', inferredFeatureDesignation);
+    }
+
+    // Location class
+    const inferredLocationClass = inferLocationClass(type, category, address);
+    if (inferredLocationClass) {
+      setValue('location_class', inferredLocationClass);
     }
 
     // Location ID vocabulary & code (OSM)
-    if (osmId && osmType) {
-      const vocabulary = 'G2';
-      setValue('location_id_vocabulary', vocabulary);
-      setValue('location_id_code', osmId);
+    const formattedOsmId = formatOsmIdentifier(osmType, osmId);
+    if (formattedOsmId) {
+      setValue('location_id_vocabulary', 'G2');
+      setValue('location_id_code', formattedOsmId);
     }
 
-    // Administrative level & code (if available)
-    if (address) {
-      if (address.state || address.province) {
-        setValue('admin_level', 'admin1');
-        setValue('admin_code', address.state || address.province || '');
-      } else if (address.county || address.district) {
-        setValue('admin_level', 'admin2');
-        setValue('admin_code', address.county || address.district || '');
-      }
+    // Administrative data
+    const adminData = deriveAdminData(address);
+    if (adminData) {
+      setValue('admin_vocabulary', adminData.vocabulary);
+      setValue('admin_level', adminData.level);
+      setValue('admin_code', adminData.code);
     }
-  }, [setValue]);
+  }, [setValue, watch]);
 
   const handleSelectSearchResult = useCallback((result: LocationSearchResult) => {
     const lat = result.lat;
@@ -672,13 +828,17 @@ const autoPopulateIatiFields = useCallback((params: {
     setSearchResults([]);
 
     // Populate address fields
-    setValue('address', result.display_name);
+    // Only set address if it's not just coordinates
+    const displayName = result.display_name || '';
+    const isCoordinateString = /Lat:\s*\d+\.\d+,\s*Lng:\s*\d+\.\d+/.test(displayName);
+    setValue('address', isCoordinateString ? '' : displayName);
     setValue('location_name', result.name || result.display_name);
 
     if (result.address) {
       setValue('city', result.address.city || result.address.town || '');
       setValue('state_region_name', result.address.state || result.address.province || '');
-      setValue('township_name', result.address.county || result.address.district || '');
+      setValue('township_name', result.address.county || '');
+      setValue('district_name', result.address.district || '');
       setValue('village_name', result.address.village || result.address.suburb || result.address.hamlet || '');
       setValue('postal_code', result.address.postcode || '');
       // Set country code if available, otherwise try to match by country name
@@ -710,21 +870,147 @@ const autoPopulateIatiFields = useCallback((params: {
 
   // Handle map click
   const handleMapClick = useCallback(async (lat: number, lng: number) => {
-    if (!isValidCoordinate(lat, lng)) return;
+    console.log('[MAP CLICK] handleMapClick called with lat:', lat, 'lng:', lng);
+    if (!isValidCoordinate(lat, lng)) {
+      console.log('[MAP CLICK] Invalid coordinates, returning');
+      return;
+    }
 
+    console.log('[MAP CLICK] Setting coordinates and marker position...');
     setValue('latitude', lat);
     setValue('longitude', lng);
     setMarkerPosition([lat, lng]);
 
-    toast.success('Coordinates set');
-  }, [setValue]);
+    // Perform reverse geocoding to populate address fields
+    try {
+      console.log('[MAP CLICK] Starting reverse geocoding...');
+      const result = await reverseGeocode(lat, lng);
+      
+      console.log('[MAP CLICK] Reverse geocoding result:', result);
+      console.log('Address fields:', result.address);
+      
+      if (result && result.address) {
+        // Populate all address fields from reverse geocoding
+        const cityValue = result.address.city || result.address.town || result.address.city_district || '';
+        const stateValue = result.address.state || result.address.province || result.address.region || '';
+        const townshipValue = result.address.county || result.address.municipality || result.address.township || '';
+        const districtValue = result.address.district || result.address.city_district || result.address.county || '';
+        const villageValue = result.address.village || result.address.suburb || result.address.hamlet || result.address.neighbourhood || '';
+        
+        console.log('Setting values:', {
+          address: result.display_name || '',
+          city: cityValue,
+          state: stateValue,
+          township: townshipValue,
+          district: districtValue,
+          village: villageValue,
+          postal: result.address.postcode || '',
+          country_code: result.address.country_code,
+          country: result.address.country
+        });
+        
+        // Only set address if it's not just coordinates
+        const displayName = result.display_name || '';
+        const isCoordinateString = /Lat:\s*\d+\.\d+,\s*Lng:\s*\d+\.\d+/.test(displayName);
+        setValue('address', isCoordinateString ? '' : displayName);
+        setValue('city', cityValue || '');
+        setValue('state_region_name', stateValue);
+        setValue('township_name', townshipValue);
+        setValue('district_name', districtValue);
+        setValue('village_name', villageValue);
+        setValue('postal_code', result.address.postcode || '');
+
+        if (result.address.country_code) {
+          const countryCodeUpper = result.address.country_code.toUpperCase();
+          const countryExists = COUNTRY_GROUPS[0]?.options.find(
+            country => country.code === countryCodeUpper
+          );
+          if (countryExists) {
+            setValue('country_code', countryCodeUpper, { shouldValidate: true, shouldDirty: true });
+          }
+        } else if (result.address.country) {
+          const matchingCountry = COUNTRY_GROUPS[0]?.options.find(
+            country => country.name.toLowerCase() === result.address?.country?.toLowerCase()
+          );
+          if (matchingCountry) {
+            setValue('country_code', matchingCountry.code, { shouldValidate: true, shouldDirty: true });
+          }
+        }
+
+        autoPopulateIatiFields({
+          type: result.type,
+          category: (result as any).category,
+          osmType: result.osm_type,
+          osmId: result.osm_id,
+          address: result.address as GeocodeAddress,
+          displayName: result.display_name,
+          name: result.name,
+        });
+      }
+    } catch (error) {
+      console.error('Error reverse geocoding:', error);
+    }
+  }, [setValue, autoPopulateIatiFields, watch]);
 
   // Handle marker drag
   const handleMarkerDragEnd = useCallback(async (lat: number, lng: number) => {
     setValue('latitude', lat);
     setValue('longitude', lng);
+    setMarkerPosition([lat, lng]);
 
-  }, [setValue]);
+    // Perform reverse geocoding to populate address fields
+    try {
+      const result = await reverseGeocode(lat, lng);
+      
+      console.log('Reverse geocoding result (marker drag):', result);
+      console.log('Address fields (marker drag):', result.address);
+      
+      if (result && result.address) {
+        // Populate all address fields from reverse geocoding
+        // Only set address if it's not just coordinates
+        const displayName = result.display_name || '';
+        const isCoordinateString = /Lat:\s*\d+\.\d+,\s*Lng:\s*\d+\.\d+/.test(displayName);
+        setValue('address', isCoordinateString ? '' : displayName);
+        setValue('city', result.address.city || result.address.town || result.address.city_district || '');
+        setValue('state_region_name', result.address.state || result.address.province || result.address.region || '');
+        setValue('township_name', result.address.county || result.address.municipality || result.address.township || '');
+        setValue('district_name', result.address.district || result.address.city_district || result.address.county || '');
+        setValue('village_name', result.address.village || result.address.suburb || result.address.hamlet || result.address.neighbourhood || '');
+        setValue('postal_code', result.address.postcode || '');
+        
+        if (result.address.country_code) {
+          const countryCodeUpper = result.address.country_code.toUpperCase();
+          const countryExists = COUNTRY_GROUPS[0]?.options.find(
+            country => country.code === countryCodeUpper
+          );
+          if (countryExists) {
+            setValue('country_code', countryCodeUpper, { shouldValidate: true, shouldDirty: true });
+          }
+        } else if (result.address.country) {
+          const matchingCountry = COUNTRY_GROUPS[0]?.options.find(
+            country => country.name.toLowerCase() === result.address?.country?.toLowerCase()
+          );
+          if (matchingCountry) {
+            setValue('country_code', matchingCountry.code, { shouldValidate: true, shouldDirty: true });
+          }
+        }
+
+        autoPopulateIatiFields({
+          type: result.type,
+          category: (result as any).category,
+          osmType: result.osm_type,
+          osmId: result.osm_id,
+          address: result.address as GeocodeAddress,
+          displayName: result.display_name,
+          name: result.name,
+        });
+
+        toast.success('Location details updated from marker position');
+      }
+      } catch (error) {
+      console.error('Error reverse geocoding:', error);
+    }
+  }, [setValue, autoPopulateIatiFields]);
 
 
   // Form submission
@@ -740,12 +1026,6 @@ const autoPopulateIatiFields = useCallback((params: {
         if (data.latitude === undefined || data.longitude === undefined || !validateCoordinates(data.latitude, data.longitude)) {
           errors.coordinates = 'Valid latitude and longitude are required for site locations';
         }
-        if (!data.location_reach) {
-          errors.location_reach = 'Location reach is required when coordinates are provided';
-        }
-        if (!data.exactness) {
-          errors.exactness = 'Exactness is required when coordinates are provided';
-        }
       }
 
 
@@ -755,13 +1035,22 @@ const autoPopulateIatiFields = useCallback((params: {
       }
 
       // Prepare data for submission
+      const allFormValues = watch();
       const locationData: LocationSchema = {
         ...data,
+        ...allFormValues, // Include all form values, including country_code
         id: location?.id,
         activity_id: activityId,
         source: 'manual',
         validation_status: 'valid',
       };
+
+      console.log('[LocationModal] Form data being submitted:', data);
+      console.log('[LocationModal] Country code in form data:', data.country_code);
+      console.log('[LocationModal] All form field names:', Object.keys(data));
+      console.log('[LocationModal] All form values:', watch());
+      console.log('[LocationModal] Final location data:', locationData);
+      console.log('[LocationModal] Country code in final location data:', locationData.country_code);
 
       await onSave(locationData);
 
@@ -947,7 +1236,10 @@ const autoPopulateIatiFields = useCallback((params: {
 
                   {/* Location Name */}
                   <div className="space-y-2">
-                    <Label htmlFor="location_name">Location Name</Label>
+                    <Label htmlFor="location_name" className="flex items-center gap-2">
+                      Location Name
+                      <HelpTextTooltip content="A human-readable name for the place. This provides a clear label for identifying the location within the activity record." />
+                    </Label>
                     <Input
                       id="location_name"
                       {...register('location_name')}
@@ -958,56 +1250,99 @@ const autoPopulateIatiFields = useCallback((params: {
                     )}
                   </div>
 
+                  {/* Location Description */}
+                        <div className="space-y-2">
+                    <Label htmlFor="description" className="flex items-center gap-2">
+                      Location Description
+                      <HelpTextTooltip content="A short narrative describing the place and its significance. This explains why the location is relevant to the activity." />
+                    </Label>
+                    <Textarea
+                      id="description"
+                      {...register('description')}
+                      placeholder="Additional location details"
+                      rows={3}
+                    />
+                        </div>
+
+                  {/* Activity Description */}
+                        <div className="space-y-2">
+                    <Label htmlFor="activity_location_description" className="flex items-center gap-2">
+                      Activity Description
+                      <HelpTextTooltip content="Describes the nature of the activity that occurs at this location. This should distinguish between activities when multiple locations are reported." />
+                    </Label>
+                    <Textarea
+                      id="activity_location_description"
+                      {...register('activity_location_description')}
+                      placeholder="Description of the activity at this location"
+                      rows={3}
+                    />
+                      </div>
+
                   {/* Coordinates (Site only) */}
                   {watchedLocationType === 'site' && (
                     <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="latitude">Latitude</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="coordinates" className="flex items-center gap-2">
+                          Coordinates
+                          <HelpTextTooltip content="The geographic coordinates of the location in decimal degrees (latitude longitude). Must follow the WGS84 spatial reference standard (EPSG:4326)." />
+                        </Label>
+                        <div className="flex items-center gap-2">
                           <Input
-                            id="latitude"
-                            type="number"
-                            step="any"
-                            {...register('latitude', { valueAsNumber: true })}
-                            placeholder="0.000000"
+                            id="coordinates"
+                            type="text"
+                            value={watchedLatitude !== undefined && watchedLongitude !== undefined 
+                              ? `${watchedLatitude.toFixed(6)} ${watchedLongitude.toFixed(6)}`
+                              : ''
+                            }
+                            onChange={(e) => {
+                              const value = e.target.value.trim();
+                              if (value) {
+                                const parts = value.split(/\s+/);
+                                if (parts.length === 2) {
+                                  const lat = parseFloat(parts[0]);
+                                  const lng = parseFloat(parts[1]);
+                                  if (!isNaN(lat) && !isNaN(lng) && validateCoordinates(lat, lng)) {
+                                    setValue('latitude', lat);
+                                    setValue('longitude', lng);
+                                    // Clear any existing coordinate errors
+                                    if (validationErrors.coordinates) {
+                                      setValidationErrors(prev => {
+                                        const { coordinates, ...rest } = prev;
+                                        return rest;
+                                      });
+                                    }
+                                  }
+                                }
+                              } else {
+                                setValue('latitude', undefined);
+                                setValue('longitude', undefined);
+                              }
+                            }}
+                            placeholder="31.616944 65.716944"
+                            className="flex-1"
                           />
-                          {errors.latitude && (
-                            <p className="text-sm text-red-600">{errors.latitude.message}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="longitude">Longitude</Label>
-                          <div className="flex items-center gap-2">
-                          <Input
-                            id="longitude"
-                            type="number"
-                            step="any"
-                            {...register('longitude', { valueAsNumber: true })}
-                            placeholder="0.000000"
-                              className="flex-1"
-                            />
-                      {(watchedLatitude !== undefined && watchedLongitude !== undefined) && (
+                          {watchedLatitude !== undefined && watchedLongitude !== undefined && (
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              const coords = `${watchedLatitude.toFixed(6)}, ${watchedLongitude.toFixed(6)}`;
+                                const coords = `${watchedLatitude.toFixed(6)} ${watchedLongitude.toFixed(6)}`;
                               navigator.clipboard.writeText(coords);
                               toast.success('Coordinates copied to clipboard');
                             }}
-                                className="px-2"
+                              className="px-2"
                           >
-                                <Copy className="h-4 w-4" />
+                              <Copy className="h-4 w-4" />
                           </Button>
-                            )}
+                          )}
                         </div>
-                          {errors.longitude && (
-                            <p className="text-sm text-red-600">{errors.longitude.message}</p>
+                        {(errors.latitude || errors.longitude) && (
+                          <p className="text-sm text-red-600">
+                            {errors.latitude?.message || errors.longitude?.message}
+                          </p>
                       )}
-                        </div>
                       </div>
-
                     </div>
                   )}
 
@@ -1028,7 +1363,10 @@ const autoPopulateIatiFields = useCallback((params: {
 
                   {/* Address Fields */}
                   <div className="space-y-2">
-                    <Label htmlFor="address">Address</Label>
+                    <Label htmlFor="address" className="flex items-center gap-2">
+                      Address
+                      <HelpTextTooltip content="The street or site address of the location. Use when available to provide additional geographic context." />
+                    </Label>
                     <Textarea
                       id="address"
                       {...register('address')}
@@ -1037,10 +1375,65 @@ const autoPopulateIatiFields = useCallback((params: {
                     />
                   </div>
 
-                  {/* Administrative Areas */}
+                  {/* Ward/Village Tract and Town/City */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="state_region_name">State/Region</Label>
+                      <Label htmlFor="village_name" className="flex items-center gap-2">
+                        Ward/Village Tract
+                        <HelpTextTooltip content="The lowest administrative unit relevant to the location. This adds detail to sub-national geographic reporting." />
+                      </Label>
+                      <Input
+                        id="village_name"
+                        {...register('village_name')}
+                        placeholder="e.g., Ward 1, Village Tract"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city" className="flex items-center gap-2">
+                        Town/City
+                        <HelpTextTooltip content="The town or city where the activity is located. This field helps in identifying urban-level geography." />
+                      </Label>
+                      <Input
+                        id="city"
+                        {...register('city')}
+                        placeholder="e.g., Yangon"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Township and District */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="township_name" className="flex items-center gap-2">
+                        Township
+                        <HelpTextTooltip content="The township or equivalent mid-level administrative division. This allows further disaggregation of location reporting." />
+                      </Label>
+                      <Input
+                        id="township_name"
+                        {...register('township_name')}
+                        placeholder="e.g., Hlaing Township"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="district_name" className="flex items-center gap-2">
+                        District
+                        <HelpTextTooltip content="The district or county in which the location is situated. This provides clarity at a higher administrative level." />
+                      </Label>
+                      <Input
+                        id="district_name"
+                        {...register('district_name')}
+                        placeholder="e.g., Yangon District"
+                      />
+                    </div>
+                  </div>
+
+                  {/* State/Region/Union Territory and Postal Code */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="state_region_name" className="flex items-center gap-2">
+                        State/Region/Union Territory
+                        <HelpTextTooltip content="The larger administrative area such as a state, province, or region. This ensures consistency with national administrative classifications." />
+                      </Label>
                       <Input
                         id="state_region_name"
                         {...register('state_region_name')}
@@ -1048,27 +1441,10 @@ const autoPopulateIatiFields = useCallback((params: {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="township_name">Township</Label>
-                      <Input
-                        id="township_name"
-                        {...register('township_name')}
-                        placeholder="e.g., Hlaing Township"
-                      />
-                    </div>
-                  </div>
-
-                  {/* City and Postal Code */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City</Label>
-                      <Input
-                        id="city"
-                        {...register('city')}
-                        placeholder="e.g., Yangon"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="postal_code">Postal Code</Label>
+                      <Label htmlFor="postal_code" className="flex items-center gap-2">
+                        Postal Code
+                        <HelpTextTooltip content="The postal or ZIP code for the location. This adds precision for locating the site." />
+                      </Label>
                       <Input
                         id="postal_code"
                         {...register('postal_code')}
@@ -1079,37 +1455,27 @@ const autoPopulateIatiFields = useCallback((params: {
 
                   {/* Country */}
                   <div className="space-y-2">
-                    <Label htmlFor="country_code">Country</Label>
-                    <SelectIATI
-                      groups={COUNTRY_GROUPS}
-                      value={watch('country_code')}
-                      onValueChange={(value) => setValue('country_code', value)}
-                      placeholder="Select country"
-                      dropdownId="country-select"
+                    <Label htmlFor="country_code" className="flex items-center gap-2">
+                      Country
+                      <HelpTextTooltip content="The country in which the location is situated. Must follow the ISO 3166-1 standard." />
+                    </Label>
+                    <Controller
+                      name="country_code"
+                      control={form.control}
+                      render={({ field }) => (
+                        <SelectIATI
+                          groups={COUNTRY_GROUPS}
+                          value={field.value ?? undefined}
+                          onValueChange={(value) => {
+                            field.onChange(value || undefined);
+                          }}
+                          placeholder="Select country"
+                          dropdownId="country-select"
+                        />
+                      )}
                     />
                   </div>
 
-                  {/* Location Description */}
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Location Description</Label>
-                    <Textarea
-                      id="description"
-                      {...register('description')}
-                      placeholder="Additional location details"
-                      rows={3}
-                    />
-                  </div>
-
-                  {/* Activity Description */}
-                  <div className="space-y-2">
-                    <Label htmlFor="activity_location_description">Activity Description</Label>
-                    <Textarea
-                      id="activity_location_description"
-                      {...register('activity_location_description')}
-                      placeholder="Description of the activity at this location"
-                      rows={3}
-                    />
-                  </div>
 
 
 
@@ -1131,7 +1497,10 @@ const autoPopulateIatiFields = useCallback((params: {
               <TabsContent value="advanced" className="space-y-4 mt-4">
                 {/* Feature Designation */}
                 <div className="space-y-2">
-                  <Label htmlFor="feature_designation">Feature Designation</Label>
+                  <Label htmlFor="feature_designation" className="flex items-center gap-2">
+                    Feature Designation
+                    <HelpTextTooltip content="A detailed coded classification of the site type based on an authorised vocabulary. This refines the description of the location beyond class or reach." />
+                  </Label>
                   <SelectIATI
                     groups={IATI_LOCATION_TYPE_GROUPS}
                     value={watch('feature_designation')}
@@ -1141,59 +1510,61 @@ const autoPopulateIatiFields = useCallback((params: {
                   />
                 </div>
 
-                {/* Site Type */}
-                <div className="space-y-2">
-                  <Label htmlFor="site_type">Site Type</Label>
-                  <SelectIATI
-                    groups={SITE_TYPE_GROUPS}
-                    value={watch('site_type')}
-                    onValueChange={(value) => setValue('site_type', value as any)}
-                    placeholder="Select location type"
-                    dropdownId="site-type-select"
-                  />
-                </div>
-
                 {/* IATI Advanced Fields */}
                 <div className="space-y-4">
                   {/* Location Reach */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      Location Reach
+                      <HelpTextTooltip content="Clarifies whether the location is where the activity is implemented (Activity) or where intended beneficiaries live (Beneficiaries)." />
+                    </Label>
                   <SelectIATI
                     groups={LOCATION_REACH_GROUPS}
                     value={watch('location_reach')}
                     onValueChange={(value) => setValue('location_reach', value)}
-                    label="Location Reach"
-                    helperText="Clarifies whether this location specifies where the activity is carried out or where intended beneficiaries live"
                     dropdownId="location-reach-select"
                   />
+                  </div>
 
                   {/* Exactness */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      Exactness
+                      <HelpTextTooltip content="Indicates how precisely the location is known (e.g., exact site, approximate area, unknown)." />
+                    </Label>
                   <SelectIATI
                     groups={LOCATION_EXACTNESS_GROUPS}
                     value={watch('exactness')}
                     onValueChange={(value) => setValue('exactness', value)}
-                    label="Exactness"
-                    helperText="How precisely the location is known"
                     dropdownId="location-exactness-select"
                   />
+                  </div>
 
                   {/* Location Class */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      Location Class
+                      <HelpTextTooltip content="Specifies whether this is a site, a populated place, an administrative division, or another geographic feature." />
+                    </Label>
                   <SelectIATI
                     groups={LOCATION_CLASS_GROUPS}
                     value={watch('location_class')}
                     onValueChange={(value) => setValue('location_class', value)}
-                    label="Location Class"
-                    helperText="Type of geographic feature or administrative unit"
                     dropdownId="location-class-select"
                   />
+                  </div>
 
                   {/* Location ID Information */}
                   <div className="space-y-4">
-                    <div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        Location ID Vocabulary
+                        <HelpTextTooltip content="The reference system used to identify the location (e.g., G1 = GeoNames, G2 = OpenStreetMap)." />
+                      </Label>
                       <SelectIATI
                         groups={LOCATION_ID_VOCABULARY_GROUPS}
                         value={watch('location_id_vocabulary')}
                         onValueChange={(value) => setValue('location_id_vocabulary', value)}
-                        label="Location ID Vocabulary"
-                        helperText="Standard vocabulary for identifying the location"
                         dropdownId="location-id-vocabulary-select"
                       />
                     </div>
@@ -1202,7 +1573,7 @@ const autoPopulateIatiFields = useCallback((params: {
                       <Label htmlFor="location_id_code" className="flex items-center gap-2">
                         Location ID Code
                         {watch('location_id_vocabulary') && <span className="text-red-500">*</span>}
-                        <HelpTextTooltip content="Unique identifier from the selected vocabulary" />
+                        <HelpTextTooltip content="The actual identifier from the chosen vocabulary (e.g., GeoNames ID or OSM ID)." />
                       </Label>
                       <div className="flex gap-2">
                         <Input
@@ -1234,24 +1605,28 @@ const autoPopulateIatiFields = useCallback((params: {
 
                   {/* Administrative Divisions */}
                   <div className="space-y-4">
-                    <div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        Administrative Vocabulary
+                        <HelpTextTooltip content="The system used to classify administrative divisions (e.g., GeoNames, OSM)." />
+                      </Label>
                       <SelectIATI
                         groups={ADMINISTRATIVE_VOCABULARY_GROUPS}
                         value={watch('admin_vocabulary')}
                         onValueChange={(value) => setValue('admin_vocabulary', value)}
-                        label="Administrative Vocabulary"
-                        helperText="Standard vocabulary for identifying administrative divisions"
                         dropdownId="admin-vocabulary-select"
                       />
                     </div>
 
-                    <div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        Administrative Level
+                        <HelpTextTooltip content="The level of administrative hierarchy (e.g., 1 = state/province, 2 = district, 3 = township)." />
+                      </Label>
                       <SelectIATI
                         groups={ADMINISTRATIVE_LEVEL_GROUPS}
                         value={watch('admin_level')}
                         onValueChange={(value) => setValue('admin_level', value)}
-                        label="Administrative Level"
-                        helperText="Level of administrative division"
                         dropdownId="admin-level-select"
                       />
                     </div>
@@ -1260,7 +1635,7 @@ const autoPopulateIatiFields = useCallback((params: {
                       <Label htmlFor="admin_code" className="flex items-center gap-2">
                         Administrative Code
                         {watch('admin_level') && <span className="text-red-500">*</span>}
-                        <HelpTextTooltip content="Code for the administrative division at the selected level" />
+                        <HelpTextTooltip content="The code from the chosen vocabulary identifying the specific administrative unit." />
                       </Label>
                       <div className="flex gap-2">
                         <Input
@@ -1290,11 +1665,13 @@ const autoPopulateIatiFields = useCallback((params: {
                   <div className="space-y-2">
                     <Label htmlFor="spatial_reference_system" className="flex items-center gap-2">
                       Spatial Reference System
+                      <HelpTextTooltip content="Defines the coordinate reference system used for latitude/longitude. Default is EPSG:4326 (WGS84)." />
                     </Label>
                     <Input
                       id="spatial_reference_system"
                       {...register('spatial_reference_system')}
-                      placeholder=""
+                      defaultValue="http://www.opengis.net/def/crs/EPSG/0/4326"
+                      placeholder="http://www.opengis.net/def/crs/EPSG/0/4326"
                       className="w-full"
                     />
                   </div>
@@ -1302,11 +1679,9 @@ const autoPopulateIatiFields = useCallback((params: {
                 </div>
               </TabsContent>
             </Tabs>
-            </form>
-          </div>
-        </div>
 
-        <DialogFooter className="flex items-center justify-between">
+            {/* Form Actions */}
+            <div className="flex items-center justify-between pt-6 border-t">
           <div className="flex gap-2">
             {location?.id && onDelete && (
               <Button
@@ -1338,7 +1713,10 @@ const autoPopulateIatiFields = useCallback((params: {
               {location?.id ? 'Update' : 'Save'} Location
             </Button>
           </div>
-        </DialogFooter>
+            </div>
+            </form>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

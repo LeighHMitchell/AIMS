@@ -104,6 +104,8 @@ export const siteLocationSchema = locationBaseSchema.extend({
   state_region_code: z.string().optional(),
   township_name: z.string().optional(),
   township_code: z.string().optional(),
+  district_name: z.string().optional(),
+  district_code: z.string().optional(),
   village_name: z.string().optional(),
 }).merge(iatiFieldsSchema);
 
@@ -129,6 +131,7 @@ export const locationFormSchema = z.object({
   // Required fields
   location_name: z.string().min(1, 'Location name is required'),
   location_type: z.enum(['site', 'coverage']),
+  country_code: z.string().optional(),
   
   // Site-specific fields
   latitude: z.number().optional(),
@@ -143,6 +146,8 @@ export const locationFormSchema = z.object({
   state_region_code: z.string().optional(),
   township_name: z.string().optional(),
   township_code: z.string().optional(),
+  district_name: z.string().optional(),
+  district_code: z.string().optional(),
   village_name: z.string().optional(),
   
   // Coverage-specific fields
@@ -312,7 +317,9 @@ export const validateLocationForm = (data: unknown): LocationFormSchema => {
 export const getDefaultLocationValues = (type: 'site' | 'coverage'): Partial<LocationFormSchema> => {
   const base = {
     location_type: type,
+    country_code: undefined,
     srs_name: 'http://www.opengis.net/def/crs/EPSG/0/4326',
+    spatial_reference_system: 'http://www.opengis.net/def/crs/EPSG/0/4326',
     source: 'manual' as const,
     validation_status: 'valid' as const,
   };

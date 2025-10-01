@@ -59,6 +59,8 @@ export async function GET(
       state_region_name: location.state_region_name,
       township_code: location.township_code,
       township_name: location.township_name,
+      district_code: location.district_code,
+      district_name: location.district_name,
       village_name: location.village_name,
       country_code: location.country_code,
       admin_unit: location.admin_unit,
@@ -71,10 +73,12 @@ export async function GET(
       feature_designation: location.feature_designation,
       location_id_vocabulary: location.location_id_vocabulary,
       location_id_code: location.location_id_code,
-      admin_vocabulary: location.admin_vocabulary,
+      // Temporarily exclude admin_vocabulary until database migration is run
+      // admin_vocabulary: location.admin_vocabulary,
       admin_level: location.admin_level,
       admin_code: location.admin_code,
-      spatial_reference_system: location.spatial_reference_system,
+      // Temporarily exclude spatial_reference_system until database migration is run
+      // spatial_reference_system: location.spatial_reference_system,
       srs_name: location.srs_name,
       validation_status: location.validation_status,
       source: location.source,
@@ -155,10 +159,12 @@ export async function PATCH(
       feature_designation: locationData.feature_designation || null,
       location_id_vocabulary: locationData.location_id_vocabulary || null,
       location_id_code: locationData.location_id_code || null,
-      admin_vocabulary: locationData.admin_vocabulary || null,
+      // Temporarily exclude admin_vocabulary until database migration is run
+      // admin_vocabulary: locationData.admin_vocabulary || null,
       admin_level: locationData.admin_level || null,
       admin_code: locationData.admin_code || null,
-      spatial_reference_system: locationData.spatial_reference_system || null,
+      // Temporarily exclude spatial_reference_system until database migration is run
+      // spatial_reference_system: locationData.spatial_reference_system || null,
       srs_name: locationData.srs_name || 'http://www.opengis.net/def/crs/EPSG/0/4326',
     };
 
@@ -176,6 +182,8 @@ export async function PATCH(
       updateData.state_region_name = locationData.state_region_name || null;
       updateData.township_code = locationData.township_code || null;
       updateData.township_name = locationData.township_name || null;
+      updateData.district_code = locationData.district_code || null;
+      updateData.district_name = locationData.district_name || null;
       updateData.village_name = locationData.village_name || null;
       updateData.country_code = locationData.country_code || null;
       updateData.admin_area_name = locationData.admin_area_name || null;
@@ -190,6 +198,8 @@ export async function PATCH(
       updateData.state_region_name = locationData.state_region_name || null;
       updateData.township_code = locationData.township_code || null;
       updateData.township_name = locationData.township_name || null;
+      updateData.district_code = locationData.district_code || null;
+      updateData.district_name = locationData.district_name || null;
       updateData.country_code = locationData.country_code || null;
       updateData.admin_area_name = locationData.admin_area_name || null;
     }

@@ -92,7 +92,8 @@ export function HierarchicalAdminSelect({
     } else {
       onChange([...selected, unitId])
     }
-    setOpen(false)
+    // Don't close the dropdown for multi-select - keep it open
+    // setOpen(false)
   }
 
   const handleUnselect = (unitId: string) => {

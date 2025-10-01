@@ -31,6 +31,7 @@ interface LocationsTabProps {
   activityTitle?: string;
   activitySector?: string;
   canEdit?: boolean;
+  onLocationsChange?: (locations: LocationSchema[]) => void;
 }
 
 export default function LocationsTab({
@@ -38,6 +39,7 @@ export default function LocationsTab({
   activityTitle,
   activitySector,
   canEdit = true,
+  onLocationsChange,
 }: LocationsTabProps) {
   // State
   const [locations, setLocations] = useState<LocationSchema[]>([]);
@@ -87,26 +89,41 @@ export default function LocationsTab({
     loadLocations();
   }, [loadLocations]);
 
+  // Notify parent when locations change
+  useEffect(() => {
+    if (onLocationsChange) {
+      onLocationsChange(locations);
+    }
+  }, [locations, onLocationsChange]);
+
 
   // Handle save location (create or update)
   const handleSaveLocation = useCallback(async (locationData: LocationSchema) => {
     try {
+      console.log('[LocationsTab] handleSaveLocation called with:', locationData);
+      console.log('[LocationsTab] Country code in locationData:', locationData.country_code);
+      
       const isUpdate = !!locationData.id;
       const url = isUpdate
         ? `/api/locations/${locationData.id}`
         : `/api/activities/${activityId}/locations`;
 
       const method = isUpdate ? 'PATCH' : 'POST';
+      
+      const requestBody = {
+        ...locationData,
+        user_id: userId,
+      };
+      
+      console.log('[LocationsTab] Request body being sent:', requestBody);
+      console.log('[LocationsTab] Country code in request body:', requestBody.country_code);
 
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...locationData,
-          user_id: userId,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {

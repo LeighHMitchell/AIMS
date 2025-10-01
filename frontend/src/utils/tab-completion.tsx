@@ -192,7 +192,7 @@ export function checkLocationsTabCompletion(data: {
   if (data.specificLocations && data.specificLocations.length > 0) {
     // Check if we have at least one valid location with name and coordinates
     hasValidLocations = data.specificLocations.some(location => 
-      location.name?.trim() && 
+      (location.location_name?.trim() || location.name?.trim()) && // Support both field names
       typeof location.latitude === 'number' && 
       typeof location.longitude === 'number'
     );

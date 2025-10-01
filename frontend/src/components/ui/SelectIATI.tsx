@@ -138,32 +138,30 @@ export function SelectIATI({
           </span>
           <div className="flex items-center gap-2">
             {copyValue && (
-              <button
-                type="button"
+              <div
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCopy();
                 }}
-                className="h-4 w-4 rounded hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                className="h-4 w-4 rounded hover:bg-muted-foreground/20 flex items-center justify-center transition-colors cursor-pointer"
                 title="Copy value"
               >
                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-              </button>
+              </div>
             )}
             {selectedOption && (
-              <button
-                type="button"
+              <div
                 onClick={(e) => {
                   e.stopPropagation();
                   onValueChange?.('');
                 }}
-                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Clear selection"
               >
                 <X className="h-3 w-3" />
-              </button>
+              </div>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>

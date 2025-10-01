@@ -91,16 +91,22 @@ export default function CombinedLocationsTab({
   const [countries, setCountries] = useState<CountryAllocation[]>(initialCountries);
   const [regions, setRegions] = useState<RegionAllocation[]>(initialRegions);
   const [advancedLocationsState, setAdvancedLocationsState] = useState<AdvancedLocationData[]>(advancedLocations);
+  
+  // Track locations from the LocationsTab component
+  const [currentLocations, setCurrentLocations] = useState<any[]>([]);
 
   // Calculate completion status for sub-tabs
   const hasValidLocations = useMemo(() => {
+    // Use currentLocations from LocationsTab if available, otherwise fall back to specificLocations
+    const locationsToCheck = currentLocations.length > 0 ? currentLocations : specificLocations;
+    
     // Check specific locations for validity
-    return specificLocations.some(location =>
-      location.name?.trim() &&
+    return locationsToCheck.some(location =>
+      location.location_name?.trim() && // Use location_name from LocationSchema
       typeof location.latitude === 'number' &&
       typeof location.longitude === 'number'
     );
-  }, [specificLocations]);
+  }, [currentLocations, specificLocations]);
 
   const hasCompleteSubnational = useMemo(() => {
     const totalPercentage = Object.values(subnationalBreakdowns).reduce((sum, value) => sum + (value || 0), 0);
@@ -160,6 +166,15 @@ export default function CombinedLocationsTab({
     }
   };
 
+  // Handle locations change from LocationsTab
+  const handleLocationsChange = (newLocations: any[]) => {
+    setCurrentLocations(newLocations);
+    // Also update the parent's specificLocations if callback is provided
+    if (onSpecificLocationsChange) {
+      onSpecificLocationsChange(newLocations);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
@@ -184,6 +199,7 @@ export default function CombinedLocationsTab({
             activityTitle={activityTitle}
             activitySector={activitySector}
             canEdit={canEdit}
+            onLocationsChange={handleLocationsChange}
           />
         </TabsContent>
 

@@ -30,7 +30,11 @@ export async function GET(
       );
     }
 
-    const transformedLocations = locations?.map((location: any) => ({
+    console.log('[Locations API] Raw locations from database:', locations);
+    
+    const transformedLocations = locations?.map((location: any) => {
+      console.log('[Locations API] Processing location:', location.id, 'country_code:', location.country_code);
+      return {
       id: location.id,
       activity_id: location.activity_id,
       location_type: location.location_type,
@@ -50,6 +54,8 @@ export async function GET(
       state_region_name: location.state_region_name,
       township_code: location.township_code,
       township_name: location.township_name,
+      district_code: location.district_code,
+      district_name: location.district_name,
       village_name: location.village_name,
       country_code: location.country_code,
       admin_area_name: location.admin_area_name,
@@ -60,14 +66,17 @@ export async function GET(
       feature_designation: location.feature_designation,
       location_id_vocabulary: location.location_id_vocabulary,
       location_id_code: location.location_id_code,
-      admin_vocabulary: location.admin_vocabulary,
+      // Temporarily exclude admin_vocabulary until database migration is run
+      // admin_vocabulary: location.admin_vocabulary,
       admin_level: location.admin_level,
       admin_code: location.admin_code,
-      spatial_reference_system: location.spatial_reference_system,
+      // Temporarily exclude spatial_reference_system until database migration is run
+      // spatial_reference_system: location.spatial_reference_system,
       srs_name: location.srs_name,
       validation_status: location.validation_status,
       source: location.source
-    })) || [];
+    };
+    }) || [];
 
     return NextResponse.json({
       success: true,
@@ -113,6 +122,9 @@ export async function POST(
     }
 
     const locationData = validationResult.data;
+    
+    console.log('[Locations API] Received location data:', locationData);
+    console.log('[Locations API] Country code from form:', locationData.country_code);
 
     const insertData: Record<string, any> = {
       activity_id: activityId,
@@ -137,6 +149,8 @@ export async function POST(
       insertData.state_region_name = locationData.state_region_name || null;
       insertData.township_code = locationData.township_code || null;
       insertData.township_name = locationData.township_name || null;
+      insertData.district_code = locationData.district_code || null;
+      insertData.district_name = locationData.district_name || null;
       insertData.village_name = locationData.village_name || null;
       insertData.country_code = locationData.country_code || null;
       insertData.admin_area_name = locationData.admin_area_name || null;
@@ -150,6 +164,8 @@ export async function POST(
       insertData.state_region_name = locationData.state_region_name || null;
       insertData.township_code = locationData.township_code || null;
       insertData.township_name = locationData.township_name || null;
+      insertData.district_code = locationData.district_code || null;
+      insertData.district_name = locationData.district_name || null;
       insertData.country_code = locationData.country_code || null;
       insertData.admin_area_name = locationData.admin_area_name || null;
     }
@@ -160,11 +176,16 @@ export async function POST(
     insertData.feature_designation = locationData.feature_designation || null;
     insertData.location_id_vocabulary = locationData.location_id_vocabulary || null;
     insertData.location_id_code = locationData.location_id_code || null;
-    insertData.admin_vocabulary = locationData.admin_vocabulary || null;
+    // Temporarily exclude admin_vocabulary until database migration is run
+    // insertData.admin_vocabulary = locationData.admin_vocabulary || null;
     insertData.admin_level = locationData.admin_level || null;
     insertData.admin_code = locationData.admin_code || null;
-    insertData.spatial_reference_system = locationData.spatial_reference_system || null;
+    // Temporarily exclude spatial_reference_system until database migration is run
+    // insertData.spatial_reference_system = locationData.spatial_reference_system || null;
     insertData.srs_name = locationData.srs_name || 'http://www.opengis.net/def/crs/EPSG/0/4326';
+    
+    console.log('[Locations API] Final insert data:', insertData);
+    console.log('[Locations API] Country code in insert data:', insertData.country_code);
 
     const { data: newLocation, error } = await getSupabaseAdmin()
       .from('activity_locations')
@@ -271,10 +292,12 @@ export async function PUT(
         feature_designation: location.feature_designation || null,
         location_id_vocabulary: location.location_id_vocabulary || null,
         location_id_code: location.location_id_code || null,
-        admin_vocabulary: location.admin_vocabulary || null,
+        // Temporarily exclude admin_vocabulary until database migration is run
+        // admin_vocabulary: location.admin_vocabulary || null,
         admin_level: location.admin_level || null,
         admin_code: location.admin_code || null,
-        spatial_reference_system: location.spatial_reference_system || null,
+        // Temporarily exclude spatial_reference_system until database migration is run
+        // spatial_reference_system: location.spatial_reference_system || null,
         srs_name: location.srs_name || 'http://www.opengis.net/def/crs/EPSG/0/4326',
         admin_unit: location.admin_unit || null,
         country_code: location.country_code || null,
@@ -294,6 +317,8 @@ export async function PUT(
         locationData.state_region_name = location.state_region_name || null;
         locationData.township_code = location.township_code || null;
         locationData.township_name = location.township_name || null;
+        locationData.district_code = location.district_code || null;
+        locationData.district_name = location.district_name || null;
         locationData.village_name = location.village_name || null;
       }
 
@@ -303,6 +328,8 @@ export async function PUT(
         locationData.state_region_name = location.state_region_name || null;
         locationData.township_code = location.township_code || null;
         locationData.township_name = location.township_name || null;
+        locationData.district_code = location.district_code || null;
+        locationData.district_name = location.district_name || null;
       }
 
       locationsToInsert.push(locationData);

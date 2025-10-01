@@ -8,7 +8,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
 
 
-import { MapPin, Trash2, Sparkles, Loader2 } from 'lucide-react'
+import { MapPin, Trash2, Sparkles, Loader2, Check } from 'lucide-react'
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
 import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
@@ -268,15 +268,14 @@ export function EnhancedSubnationalBreakdown({
     setSaving(true)
     try {
       // Convert entries back to backend format
-      const payload = entries
-        .filter(entry => entry.percentage > 0)
-        .map(entry => ({
-          region_name: entry.adminUnit.type === 'township' 
-            ? `${entry.adminUnit.parentName} - ${entry.adminUnit.name}`
-            : entry.adminUnit.name,
-          percentage: entry.percentage,
-          is_nationwide: false // We don't use nationwide with specific breakdowns
-        }))
+      // Include all entries, even those with 0% (just selections)
+      const payload = entries.map(entry => ({
+        region_name: entry.adminUnit.type === 'township' 
+          ? `${entry.adminUnit.parentName} - ${entry.adminUnit.name}`
+          : entry.adminUnit.name,
+        percentage: entry.percentage || 0,
+        is_nationwide: false // We don't use nationwide with specific breakdowns
+      }))
 
       const response = await fetch(`/api/activities/${activityId}/subnational-breakdown`, {
         method: 'POST',
@@ -285,7 +284,10 @@ export function EnhancedSubnationalBreakdown({
       })
 
       if (response.ok) {
-        toast.success('Breakdown saved', { duration: 2000 })
+        // Only show success toast for manual saves, not auto-saves
+        if (entries.some(entry => entry.percentage > 0)) {
+          toast.success('Breakdown saved', { duration: 2000 })
+        }
       } else {
         throw new Error(`Failed to save: ${response.status}`)
       }
@@ -373,13 +375,13 @@ export function EnhancedSubnationalBreakdown({
     }
   }, [breakdownsForMap, onDataChange, loading])
 
-  // Auto-save when entries change
+  // Auto-save when entries change (including just selections without percentages)
   useEffect(() => {
-    if (!loading && entries.length > 0 && activityId) {
+    if (!loading && activityId) {
       const timeoutId = setTimeout(autoSave, 2000)
       return () => clearTimeout(timeoutId)
     }
-  }, [entries, loading, activityId, autoSave])
+  }, [entries, selectedUnits, loading, activityId, autoSave])
 
   if (loading) {
     console.log('[EnhancedSubnationalBreakdown] Still loading, activityId:', activityId)
@@ -500,6 +502,20 @@ export function EnhancedSubnationalBreakdown({
             {/* Action Buttons */}
             {entries.length > 0 && canEdit && (
               <div className="flex justify-end gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={autoSave}
+                  disabled={saving}
+                  className="text-xs bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {saving ? (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <Check className="h-3 w-3 mr-1" />
+                  )}
+                  Save Now
+                </Button>
                 <Button
                   variant="default"
                   size="sm"

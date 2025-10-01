@@ -146,7 +146,17 @@ export default function LocationCard({
     if (location.city) parts.push(location.city);
     if (location.state_region_name) parts.push(location.state_region_name);
     if (location.township_name) parts.push(location.township_name);
-    return parts.join(', ') || location.address || 'No address';
+    if (location.district_name) parts.push(location.district_name);
+    if (location.village_name) parts.push(location.village_name);
+    
+    const formattedAddress = parts.join(', ');
+    if (formattedAddress) return formattedAddress;
+    
+    // Fallback to other address fields
+    if (location.address) return location.address;
+    if (location.address_line1) return location.address_line1;
+    
+    return 'No address';
   };
 
   // Get site type label
@@ -183,64 +193,64 @@ export default function LocationCard({
           {/* Location Details */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between mb-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+              <div className="flex-1 min-w-0 space-y-2">
+                {/* 1. Location Name */}
+                <div>
                   <h4 className="font-semibold text-gray-900 truncate">
                     {location.location_name}
                   </h4>
                 </div>
 
-                <div className="flex items-center gap-2 mb-2">
-                  <LocationTypeBadge type={location.location_type} />
-                  {location.location_type === 'site' && location.site_type && (
-                    <Badge variant="outline" className="text-xs">
-                      <SiteTypeIcon siteType={location.site_type} />
-                      <span className="ml-1">{getSiteTypeLabel(location.site_type)}</span>
-                    </Badge>
+                {/* 2. Location Description */}
+                <div className="text-sm text-gray-600">
+                  {(location.description || location.location_description) ? (
+                    (() => {
+                      const desc = location.description || location.location_description || '';
+                      return showFullDescription || desc.length <= 100 ? (
+                        <div>
+                          {desc}
+                          {desc.length > 100 && (
+                            <button
+                              onClick={() => setShowFullDescription(false)}
+                              className="text-blue-600 hover:text-blue-800 ml-1"
+                            >
+                              Show less
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          {desc.substring(0, 100)}...
+                          <button
+                            onClick={() => setShowFullDescription(true)}
+                            className="text-blue-600 hover:text-blue-800 ml-1"
+                          >
+                            Show more
+                          </button>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <span className="text-gray-400 italic">No description</span>
                   )}
                 </div>
 
-                {/* Coordinates and Address */}
-                {location.location_type === 'site' && location.latitude && location.longitude && (
-                  <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {formatCoordinates(location.latitude, location.longitude)}
+                {/* 3. Coordinates */}
+                {location.latitude && location.longitude && (
+                  <div className="text-sm text-gray-600 flex items-center gap-1">
+                    <MapPin className="h-3 w-3 flex-shrink-0" />
+                    <span>{formatCoordinates(location.latitude, location.longitude)}</span>
                   </div>
                 )}
 
-                <div className="text-sm text-gray-600 mb-2">
-                  {formatAddress()}
+                {/* 4. Address */}
+                <div className="text-sm text-gray-600">
+                  {formatAddress() === 'No address' ? (
+                    <span className="text-gray-400 italic">No address</span>
+                  ) : (
+                    formatAddress()
+                  )}
                 </div>
-
-
-                {/* Description */}
-                {location.description && (
-                  <div className="text-sm text-gray-600">
-                    {showFullDescription || location.description.length <= 100 ? (
-                      <div>
-                        {location.description}
-                        {location.description.length > 100 && (
-                          <button
-                            onClick={() => setShowFullDescription(false)}
-                            className="text-blue-600 hover:text-blue-800 ml-1"
-                          >
-                            Show less
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div>
-                        {location.description.substring(0, 100)}...
-                        <button
-                          onClick={() => setShowFullDescription(true)}
-                          className="text-blue-600 hover:text-blue-800 ml-1"
-                        >
-                          Show more
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
 
             </div>

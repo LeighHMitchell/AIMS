@@ -8,9 +8,8 @@ import {
 } from '@/lib/schemas/location';
 
 // Nominatim API configuration
-const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org';
-const NOMINATIM_SEARCH_URL = `${NOMINATIM_BASE_URL}/search`;
-const NOMINATIM_REVERSE_URL = `${NOMINATIM_BASE_URL}/reverse`;
+const NOMINATIM_SEARCH_URL = '/api/geocoding/search';
+const NOMINATIM_REVERSE_URL = '/api/geocoding/reverse';
 
 // Default request parameters
 const DEFAULT_SEARCH_PARAMS = {
