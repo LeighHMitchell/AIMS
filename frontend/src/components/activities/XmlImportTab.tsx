@@ -2190,7 +2190,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           case 'Activity Scope':
             updateData.activity_scope = typeof field.importValue === 'object' ? field.importValue.code : field.importValue;
             break;
-          case 'Language':
+          case 'Narrative Language':
             updateData.language = typeof field.importValue === 'object' ? field.importValue.code : field.importValue;
             break;
           case 'Default Currency':
@@ -2848,6 +2848,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               break;
             case 'Activity Scope':
               saveKey = 'activityScope';
+              break;
+            case 'Narrative Language':
+              saveKey = 'language';
               break;
             case 'Default Currency':
               saveKey = 'defaultCurrency';
