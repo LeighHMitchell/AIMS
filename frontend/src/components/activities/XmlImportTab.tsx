@@ -307,7 +307,8 @@ const getLanguageLabel = (code: string): { code: string, name: string } | null =
     'hu': 'Hungarian',
     'tr': 'Turkish'
   };
-  return { code, name: languageMap[code] || `Language (${code})` };
+  const languageName = languageMap[code] || 'Unknown Language';
+  return { code: code.toUpperCase(), name: `${code.toUpperCase()} ${languageName}` };
 };
 
 // Create a singleton cache for parsed XML data per activity
