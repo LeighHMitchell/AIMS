@@ -3848,7 +3848,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                         value={xmlUrl}
                         onChange={(e) => setXmlUrl(e.target.value)}
                         onPaste={(e) => {
-                          // Allow manual paste (Ctrl+V) to work normally
+                          // Prevent default to avoid duplication, then manually set the value
+                          e.preventDefault();
                           const pastedText = e.clipboardData.getData('text');
                           if (pastedText && pastedText.trim()) {
                             setXmlUrl(pastedText.trim());
