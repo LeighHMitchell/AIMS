@@ -2501,37 +2501,48 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             // Determine location type
             const locationType = (latitude && longitude) ? 'site' : 'coverage';
             
-            return {
+            const locationData: any = {
               location_type: locationType,
               location_name: loc.name || 'Unnamed Location',
               description: loc.description,
               location_description: loc.description,
               activity_location_description: loc.activityDescription,
-              latitude,
-              longitude,
               srs_name: loc.point?.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326',
-              location_reach: loc.locationReach ? parseInt(loc.locationReach) : null,
-              exactness: loc.exactness ? parseInt(loc.exactness) : null,
-              location_class: loc.locationClass ? parseInt(loc.locationClass) : null,
+              location_reach: loc.locationReach || undefined,  // Keep as string
+              exactness: loc.exactness || undefined,  // Keep as string
+              location_class: loc.locationClass || undefined,  // Keep as string
               feature_designation: loc.featureDesignation,
               location_id_vocabulary: loc.locationId?.vocabulary,
               location_id_code: loc.locationId?.code,
               admin_vocabulary: loc.administrative?.vocabulary,
-              admin_level: loc.administrative?.level,
+              admin_level: loc.administrative?.level,  // Keep as string
               admin_code: loc.administrative?.code,
               source: 'import',
               validation_status: 'valid'
             };
+
+            // Add site-specific fields
+            if (locationType === 'site') {
+              locationData.latitude = latitude;
+              locationData.longitude = longitude;
+            }
+
+            // Add coverage-specific fields
+            if (locationType === 'coverage') {
+              locationData.coverage_scope = 'regional'; // Default for imported coverage areas
+            }
+
+            return locationData;
           });
 
           console.log('[XML Import] Importing locations to database:', locationsToImport);
           
           const locationsResponse = await fetch(`/api/activities/${activityId}/locations`, {
-            method: 'POST',
+            method: 'PUT',  // Changed from POST to PUT for batch import
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ locations: locationsToImport, replace: false }),
+            body: JSON.stringify({ locations: locationsToImport }),
           });
 
           if (!locationsResponse.ok) {

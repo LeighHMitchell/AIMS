@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 // IATI Location Reach codes
 export const LOCATION_REACH_CODES = ['1', '2'] as const;
-export const LOCATION_EXACTNESS_CODES = ['1', '2'] as const;
-export const LOCATION_CLASS_CODES = ['1', '2', '3', '4'] as const;
+export const LOCATION_EXACTNESS_CODES = ['1', '2', '3'] as const; // 1=Exact, 2=Approximate, 3=Extrapolated
+export const LOCATION_CLASS_CODES = ['1', '2', '3', '4', '5'] as const;
 
 // IATI Gazetteer vocabularies
 export const LOCATION_ID_VOCABULARIES = [
@@ -20,8 +20,8 @@ export const LOCATION_ID_VOCABULARIES = [
   'G2', // OpenStreetMap (alternative)
 ] as const;
 
-// Administrative levels
-export const ADMIN_LEVELS = ['admin1', 'admin2', 'admin3', 'admin4'] as const;
+// Administrative levels (IATI uses '0'-'5' string values)
+export const ADMIN_LEVELS = ['0', '1', '2', '3', '4', '5'] as const;
 
 // Site types
 export const SITE_TYPES = [
@@ -44,7 +44,7 @@ export const COVERAGE_SCOPES = [
 ] as const;
 
 // Sources
-export const LOCATION_SOURCES = ['map', 'search', 'manual'] as const;
+export const LOCATION_SOURCES = ['map', 'search', 'manual', 'import'] as const;
 
 // Validation statuses
 export const VALIDATION_STATUSES = ['valid', 'warning', 'error'] as const;
@@ -173,6 +173,7 @@ export const locationFormSchema = z.object({
   
   // Descriptions
   location_description: z.string().optional(),
+  activity_location_description: z.string().optional(),
   description: z.string().optional(),
   id: z.string().optional(),
   activity_id: z.string().optional(),
@@ -185,15 +186,6 @@ export const locationFormSchema = z.object({
 }, {
   message: 'Site locations must have latitude and longitude',
   path: ['latitude'],
-}).refine((data) => {
-  // Coverage locations must have coverage scope
-  if (data.location_type === 'coverage') {
-    return data.coverage_scope !== undefined;
-  }
-  return true;
-}, {
-  message: 'Coverage locations must have a coverage scope',
-  path: ['coverage_scope'],
 }).refine((data) => {
   // If gazetteer vocabulary is provided, code must also be provided
   if (data.location_id_vocabulary && !data.location_id_code) {

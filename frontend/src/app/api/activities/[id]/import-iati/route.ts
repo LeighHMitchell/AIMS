@@ -315,30 +315,26 @@ export async function POST(
           // Determine location type - site if has coordinates, coverage otherwise
           const locationType = (latitude && longitude) ? 'site' : 'coverage';
           
-          return {
+          const locationEntry: any = {
             activity_id: activityId,
             location_type: locationType,
             location_name: loc.name || 'Unnamed Location',
             description: loc.description,
             location_description: loc.description,
             activity_location_description: loc.activityDescription,
-            
-            // Coordinates (if site)
-            latitude,
-            longitude,
             srs_name: loc.point?.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326',
             
-            // IATI fields
-            location_reach: loc.locationReach ? parseInt(loc.locationReach) : null,
-            exactness: loc.exactness ? parseInt(loc.exactness) : null,
-            location_class: loc.locationClass ? parseInt(loc.locationClass) : null,
+            // IATI fields - keep as strings, not integers
+            location_reach: loc.locationReach || undefined,
+            exactness: loc.exactness || undefined,
+            location_class: loc.locationClass || undefined,
             feature_designation: loc.featureDesignation,
             
             // Gazetteer
             location_id_vocabulary: loc.locationId?.vocabulary,
             location_id_code: loc.locationId?.code,
             
-            // Administrative
+            // Administrative - keep level as string
             admin_vocabulary: loc.administrative?.vocabulary,
             admin_level: loc.administrative?.level,
             admin_code: loc.administrative?.code,
@@ -349,6 +345,19 @@ export async function POST(
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
+
+          // Add site-specific fields
+          if (locationType === 'site') {
+            locationEntry.latitude = latitude;
+            locationEntry.longitude = longitude;
+          }
+
+          // Add coverage-specific fields
+          if (locationType === 'coverage') {
+            locationEntry.coverage_scope = 'regional'; // Default for imported coverage areas
+          }
+
+          return locationEntry;
         });
         
         const { error: locationsError } = await supabase
