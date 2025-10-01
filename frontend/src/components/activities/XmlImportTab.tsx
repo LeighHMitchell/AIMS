@@ -1770,7 +1770,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           };
 
           // Format location to match exact inline pattern of Recipient Countries
-          // Pattern: [BADGE] [NAME] [COORDINATES] [TYPE] - all inline on one line
+          // Pattern: [BADGE] [NAME] [COORDINATES_BADGE] - all inline on one line
           const locationName = location.name || 'Unnamed Location';
           const locationCode = location.ref || `LOC${locIndex + 1}`;
           const coordinates = location.point?.pos ? location.point.pos : '';
@@ -1788,17 +1788,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 {locationName}
               </span>
               
-              {/* Coordinates - matches numerical style */}
+              {/* Coordinates as gray pill badge - matches AF/AG style */}
               {coordinates && (
-                <span className="text-xs font-mono text-gray-600">
+                <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
                   {coordinates}
                 </span>
               )}
-              
-              {/* Type - matches ISO Country/OECD DAC/Custom style */}
-              <span className="text-xs text-gray-500">
-                ISO Country
-              </span>
             </div>
           );
           
@@ -3190,12 +3185,6 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                       </>
                     )}
                   </div>
-                  {item.vocabularyUri && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">URI</span>
-                      <span className="text-xs text-gray-500 font-normal">{item.vocabularyUri}</span>
-                    </div>
-                  )}
                 </div>
               ))
             ) : field.isPolicyMarker ? (
@@ -3454,12 +3443,6 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     </>
                   )}
                 </div>
-                {item.vocabularyUri && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">URI</span>
-                    <span className="text-xs text-gray-500 font-normal">{item.vocabularyUri}</span>
-                  </div>
-                )}
               </div>
             ))
           ) : typeof field.importValue === 'object' && field.importValue?.code ? (
