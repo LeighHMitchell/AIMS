@@ -48,6 +48,7 @@ import {
   Trash2,
   Bug,
   Copy,
+  Clipboard,
 } from 'lucide-react';
 
 interface XmlImportTabProps {
@@ -325,6 +326,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [parsedActivity, setParsedActivity] = useState<any>(null);
   const [xmlUrl, setXmlUrl] = useState<string>('');
   const [importMethod, setImportMethod] = useState<'file' | 'url'>('file');
+  const urlInputRef = useRef<HTMLInputElement>(null);
   const [showSectorRefinement, setShowSectorRefinement] = useState(false);
   const [sectorRefinementData, setSectorRefinementData] = useState<{
     originalSectors: any[];
@@ -909,6 +911,22 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       setImportStatus({ stage: 'idle' });
       setParsedFields([]);
       setXmlMetadata(null);
+    }
+  };
+
+  // Handle paste from clipboard
+  const handlePasteUrl = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim()) {
+        setXmlUrl(text.trim());
+        toast.success('URL pasted from clipboard');
+      } else {
+        toast.error('No text found in clipboard');
+      }
+    } catch (error) {
+      console.error('Failed to read clipboard:', error);
+      toast.error('Failed to paste from clipboard. Please paste manually (Ctrl+V)');
     }
   };
 
@@ -3788,13 +3806,33 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   <p className="text-sm text-gray-500 mb-4">Must be a publicly accessible XML document</p>
                   
                   <div className="max-w-md mx-auto space-y-3">
-                    <Input
-                      type="url"
-                      placeholder="https://example.com/iati-activity.xml"
-                      value={xmlUrl}
-                      onChange={(e) => setXmlUrl(e.target.value)}
-                      className="text-center"
-                    />
+                    <div className="relative">
+                      <Input
+                        ref={urlInputRef}
+                        type="url"
+                        placeholder="https://example.com/iati-activity.xml"
+                        value={xmlUrl}
+                        onChange={(e) => setXmlUrl(e.target.value)}
+                        onPaste={(e) => {
+                          // Allow manual paste (Ctrl+V) to work normally
+                          const pastedText = e.clipboardData.getData('text');
+                          if (pastedText && pastedText.trim()) {
+                            setXmlUrl(pastedText.trim());
+                          }
+                        }}
+                        className="text-center pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handlePasteUrl}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
+                        title="Paste from clipboard"
+                      >
+                        <Clipboard className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <Button 
                       onClick={parseXmlFile}
                       disabled={!xmlUrl.trim()}
