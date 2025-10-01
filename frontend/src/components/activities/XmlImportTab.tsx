@@ -935,11 +935,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       // Try to read clipboard with better error handling
       const text = await navigator.clipboard.readText();
+      console.log('[XML Import Debug] Paste button - clipboard text:', text);
       if (text && text.trim()) {
         // Clear the field first to prevent accumulation
         setXmlUrl('');
         // Use setTimeout to ensure the clear happens first
         setTimeout(() => {
+          console.log('[XML Import Debug] Paste button - setting URL:', text.trim());
           setXmlUrl(text.trim());
         }, 10);
         toast.success('URL pasted from clipboard');
@@ -991,6 +993,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const fetchXmlFromUrl = async (url: string): Promise<string> => {
     try {
       console.log('[XML Import Debug] Fetching XML from URL via proxy:', url);
+      console.log('[XML Import Debug] URL length:', url.length);
+      console.log('[XML Import Debug] URL first 100 chars:', url.substring(0, 100));
+      console.log('[XML Import Debug] URL last 100 chars:', url.substring(url.length - 100));
       
       // Use our server-side API to fetch the XML
       const response = await fetch('/api/xml/fetch', {
@@ -3864,7 +3869,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                         type="url"
                         placeholder="https://example.com/iati-activity.xml"
                         value={xmlUrl}
-                        onChange={(e) => setXmlUrl(e.target.value)}
+                        onChange={(e) => {
+                          console.log('[XML Import Debug] URL input onChange:', e.target.value);
+                          setXmlUrl(e.target.value);
+                        }}
                         onPaste={(e) => {
                           // Skip if we're using the paste button to avoid conflicts
                           if (isUsingPasteButton) {
@@ -3874,11 +3882,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                           // Prevent default to avoid duplication, then manually set the value
                           e.preventDefault();
                           const pastedText = e.clipboardData.getData('text');
+                          console.log('[XML Import Debug] Manual paste - pasted text:', pastedText);
                           if (pastedText && pastedText.trim()) {
                             // Clear the field first to prevent accumulation
                             setXmlUrl('');
                             // Use setTimeout to ensure the clear happens first
                             setTimeout(() => {
+                              console.log('[XML Import Debug] Manual paste - setting URL:', pastedText.trim());
                               setXmlUrl(pastedText.trim());
                             }, 10);
                           }
