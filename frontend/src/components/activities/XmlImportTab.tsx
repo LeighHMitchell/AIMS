@@ -1859,7 +1859,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 )}
               </div>
             );
-          })(),
+          },
             importValue: locationSummary,
             selected: false,
             hasConflict: false,
@@ -3227,9 +3227,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       </td>
       <td className="px-4 py-3 w-40">
         <div className="space-y-1">
-        {field.currentValue ? (
-            Array.isArray(field.currentValue) ? (
-              field.currentValue.map((item, index) => (
+        {(() => {
+          const currentValue = typeof field.currentValue === 'function' ? field.currentValue() : field.currentValue;
+          return currentValue ? (
+            Array.isArray(currentValue) ? (
+              currentValue.map((item, index) => (
                 <div key={index} className="flex flex-col gap-1">
                   <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
@@ -3249,126 +3251,127 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             ) : field.isPolicyMarker ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.code}</span>
                   <span className="text-sm font-medium text-gray-900">Policy Marker</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-500">Significance:</span>
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.significance}</span>
-                  {field.currentValue.vocabulary && (
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.significance}</span>
+                  {currentValue.vocabulary && (
                     <>
                       <span className="text-xs text-gray-500 ml-2">Vocabulary:</span>
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.vocabulary}</span>
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.vocabulary}</span>
                     </>
                   )}
                 </div>
-                {field.currentValue.rationale && (
+                {currentValue.rationale && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Rationale:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.rationale}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.rationale}</span>
                   </div>
                 )}
               </div>
-            ) : field.tab === 'contacts' && typeof field.currentValue === 'object' ? (
+            ) : field.tab === 'contacts' && typeof currentValue === 'object' ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.type}</span>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.type}</span>
                   <span className="text-sm font-medium text-gray-900">Contact</span>
                 </div>
-                {field.currentValue.organization && (
+                {currentValue.organization && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Organization:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.organization}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.organization}</span>
                   </div>
                 )}
-                {field.currentValue.personName && (
+                {currentValue.personName && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Person:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.personName}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.personName}</span>
                   </div>
                 )}
-                {field.currentValue.jobTitle && (
+                {currentValue.jobTitle && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Title:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.jobTitle}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.jobTitle}</span>
                   </div>
                 )}
-                {field.currentValue.email && (
+                {currentValue.email && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Email:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.email}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.email}</span>
                   </div>
                 )}
-                {field.currentValue.telephone && (
+                {currentValue.telephone && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Phone:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.telephone}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.telephone}</span>
                   </div>
                 )}
               </div>
-            ) : field.tab === 'participating_orgs' && typeof field.currentValue === 'object' ? (
+            ) : field.tab === 'participating_orgs' && typeof currentValue === 'object' ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.role}</span>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.role}</span>
                   <span className="text-sm font-medium text-gray-900">Participating Org</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-500">Name:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.name}</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.name}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-500">Role:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.role}</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.role}</span>
                 </div>
-                {field.currentValue.ref && (
+                {currentValue.ref && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Ref:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.ref}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.ref}</span>
                   </div>
                 )}
-                {field.currentValue.type && (
+                {currentValue.type && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Type:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.type}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.type}</span>
                   </div>
                 )}
               </div>
-            ) : field.tab === 'reporting_org' && typeof field.currentValue === 'object' ? (
+            ) : field.tab === 'reporting_org' && typeof currentValue === 'object' ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
                   <span className="text-sm font-medium text-gray-900">Organization</span>
                 </div>
-                {field.currentValue.name && (
+                {currentValue.name && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Name:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.name}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.name}</span>
                   </div>
                 )}
-                {field.currentValue.acronym && (
+                {currentValue.acronym && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Acronym:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.acronym}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.acronym}</span>
                   </div>
                 )}
               </div>
-            ) : typeof field.currentValue === 'object' && field.currentValue?.code ? (
+            ) : typeof currentValue === 'object' && currentValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
-              <span className="text-sm font-medium text-gray-900">{field.currentValue.name}</span>
-                {field.currentValue.vocabulary && (
+              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.code}</span>
+              <span className="text-sm font-medium text-gray-900">{currentValue.name}</span>
+                {currentValue.vocabulary && (
                   <>
-                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.vocabulary.split(' ')[0]}</span>
-                    <span className="text-xs text-gray-400 font-normal ml-1">{field.currentValue.vocabulary.split(' ').slice(1).join(' ')}</span>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.vocabulary.split(' ')[0]}</span>
+                    <span className="text-xs text-gray-400 font-normal ml-1">{currentValue.vocabulary.split(' ').slice(1).join(' ')}</span>
                   </>
                 )}
             </div>
           ) : (
-            <span className="text-sm font-medium text-gray-900">{field.currentValue}</span>
+            <span className="text-sm font-medium text-gray-900">{currentValue}</span>
           )
         ) : (
           <span className="text-sm text-gray-400 italic">Empty</span>
-        )}
+          );
+        })()}
         </div>
       </td>
       <td className="px-4 py-3 w-40">
