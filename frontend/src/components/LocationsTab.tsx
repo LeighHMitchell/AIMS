@@ -239,7 +239,7 @@ export default function LocationsTab({
         </div>
 
         <div className="flex items-center gap-2">
-          {canEdit && (
+          {canEdit && locations.length > 0 && (
             <Button onClick={handleAddLocation} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Add Location
@@ -273,14 +273,16 @@ export default function LocationsTab({
         <div className="text-center py-12">
           <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
           <h4 className="text-lg font-medium text-gray-900 mb-2">No locations added</h4>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-6">
             Add locations to specify where your activity takes place or where beneficiaries are located.
           </p>
           {canEdit && (
-            <Button onClick={handleAddLocation} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Your First Location
-            </Button>
+            <div className="flex justify-center">
+              <Button onClick={handleAddLocation} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Your First Location
+              </Button>
+            </div>
           )}
         </div>
       ) : (

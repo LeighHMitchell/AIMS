@@ -191,75 +191,70 @@ export default function LocationCard({
           <MapThumbnail location={location} />
 
           {/* Location Details */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1 min-w-0 space-y-2">
-                {/* 1. Location Name */}
-                <div>
-                  <h4 className="font-semibold text-gray-900 truncate">
-                    {location.location_name}
-                  </h4>
-                </div>
-
-                {/* 2. Location Description */}
-                <div className="text-sm text-gray-600">
-                  {(location.description || location.location_description) ? (
-                    (() => {
-                      const desc = location.description || location.location_description || '';
-                      return showFullDescription || desc.length <= 100 ? (
-                        <div>
-                          {desc}
-                          {desc.length > 100 && (
-                            <button
-                              onClick={() => setShowFullDescription(false)}
-                              className="text-blue-600 hover:text-blue-800 ml-1"
-                            >
-                              Show less
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <div>
-                          {desc.substring(0, 100)}...
-                          <button
-                            onClick={() => setShowFullDescription(true)}
-                            className="text-blue-600 hover:text-blue-800 ml-1"
-                          >
-                            Show more
-                          </button>
-                        </div>
-                      );
-                    })()
-                  ) : (
-                    <span className="text-gray-400 italic">No description</span>
-                  )}
-                </div>
-
-                {/* 3. Coordinates */}
-                {location.latitude && location.longitude && (
-                  <div className="text-sm text-gray-600 flex items-center gap-1">
-                    <MapPin className="h-3 w-3 flex-shrink-0" />
-                    <span>{formatCoordinates(location.latitude, location.longitude)}</span>
-                  </div>
-                )}
-
-                {/* 4. Address */}
-                <div className="text-sm text-gray-600">
-                  {formatAddress() === 'No address' ? (
-                    <span className="text-gray-400 italic">No address</span>
-                  ) : (
-                    formatAddress()
-                  )}
-                </div>
+          <div className="flex-1 min-w-0 flex flex-col h-full">
+            <div className="flex-1 space-y-2">
+              {/* 1. Location Name */}
+              <div>
+                <h4 className="font-semibold text-gray-900 truncate">
+                  {location.location_name}
+                </h4>
               </div>
 
+              {/* 2. Location Description */}
+              <div className="text-sm text-gray-600">
+                {(location.description || location.location_description) ? (
+                  (() => {
+                    const desc = location.description || location.location_description || '';
+                    return showFullDescription || desc.length <= 100 ? (
+                      <div>
+                        {desc}
+                        {desc.length > 100 && (
+                          <button
+                            onClick={() => setShowFullDescription(false)}
+                            className="text-blue-600 hover:text-blue-800 ml-1"
+                          >
+                            Show less
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        {desc.substring(0, 100)}...
+                        <button
+                          onClick={() => setShowFullDescription(true)}
+                          className="text-blue-600 hover:text-blue-800 ml-1"
+                        >
+                          Show more
+                        </button>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <span className="text-gray-400 italic">No description</span>
+                )}
+              </div>
+
+              {/* 3. Coordinates */}
+              {location.latitude && location.longitude && (
+                <div className="text-sm text-gray-600 flex items-center gap-1">
+                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                  <span>{formatCoordinates(location.latitude, location.longitude)}</span>
+                </div>
+              )}
+
+              {/* 4. Address */}
+              <div className="text-sm text-gray-600">
+                {formatAddress() === 'No address' ? (
+                  <span className="text-gray-400 italic">No address</span>
+                ) : (
+                  formatAddress()
+                )}
+              </div>
             </div>
-
-
 
             {/* Action Menu - Bottom Right */}
             {canEdit && (
-              <div className="absolute bottom-4 right-4">
+              <div className="mt-auto pt-2 flex justify-end">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
