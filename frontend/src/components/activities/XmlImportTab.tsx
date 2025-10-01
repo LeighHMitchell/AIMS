@@ -917,19 +917,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   // Handle paste from clipboard
   const handlePasteUrl = async () => {
     try {
-      // Check if clipboard API is available
-      if (!navigator.clipboard) {
-        toast.error('Clipboard API not available. Please paste manually (Ctrl+V)');
+      // Check if clipboard API is available and supported
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        toast.error('Clipboard API not supported in this browser. Please paste manually (Ctrl+V)');
         return;
       }
 
-      // Check if we have permission to read clipboard
-      const permission = await navigator.permissions.query({ name: 'clipboard-read' as PermissionName });
-      if (permission.state === 'denied') {
-        toast.error('Clipboard access denied. Please paste manually (Ctrl+V)');
-        return;
-      }
-
+      // Try to read clipboard with better error handling
       const text = await navigator.clipboard.readText();
       if (text && text.trim()) {
         setXmlUrl(text.trim());
@@ -939,9 +933,19 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       }
     } catch (error) {
       console.error('Failed to read clipboard:', error);
-      // Don't show error toast for permission issues, just fail silently
-      // User can still use Ctrl+V manually
-      toast.error('Clipboard access not available. Please paste manually (Ctrl+V)');
+      
+      // Handle specific error types
+      if (error instanceof TypeError) {
+        toast.error('Clipboard access not supported. Please paste manually (Ctrl+V)');
+      } else if (error instanceof DOMException) {
+        if (error.name === 'NotAllowedError') {
+          toast.error('Clipboard access denied. Please paste manually (Ctrl+V)');
+        } else {
+          toast.error('Clipboard access failed. Please paste manually (Ctrl+V)');
+        }
+      } else {
+        toast.error('Clipboard access not available. Please paste manually (Ctrl+V)');
+      }
     }
   };
 
@@ -981,7 +985,18 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to fetch XML: ${response.status} ${response.statusText}`);
+        const errorMessage = errorData.error || `Failed to fetch XML: ${response.status} ${response.statusText}`;
+        
+        // Provide more helpful error messages based on status code
+        if (response.status === 404) {
+          throw new Error(`XML file not found at this URL. Please check that the URL is correct and the file exists.`);
+        } else if (response.status === 403) {
+          throw new Error(`Access denied to XML file. The server may require authentication or block automated requests.`);
+        } else if (response.status === 500) {
+          throw new Error(`Server error while fetching XML. The remote server may be temporarily unavailable.`);
+        } else {
+          throw new Error(errorMessage);
+        }
       }
 
       const data = await response.json();
@@ -3819,6 +3834,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   <Link className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                   <p className="text-gray-600 mb-2">Enter the URL of an IATI XML file</p>
                   <p className="text-sm text-gray-500 mb-4">Must be a publicly accessible XML document</p>
+                  <div className="text-xs text-gray-400 mb-4 space-y-1">
+                    <p>• Try the IATI example: <code className="bg-gray-100 px-1 rounded">https://raw.githubusercontent.com/IATI/IATI-Extra-Documentation/version-2.03/en/activity-standard/activity-standard-example-annotated.xml</code></p>
+                    <p>• Or upload an XML file instead using the "Upload File" option above</p>
+                  </div>
                   
                   <div className="max-w-md mx-auto space-y-3">
                     <div className="relative">
