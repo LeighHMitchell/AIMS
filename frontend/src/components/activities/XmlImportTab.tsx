@@ -49,6 +49,7 @@ import {
   Bug,
   Copy,
   ClipboardPaste,
+  Loader2,
 } from 'lucide-react';
 
 interface XmlImportTabProps {
@@ -336,6 +337,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [parsedFields, setParsedFields] = useState<ParsedField[]>(cachedData?.parsedFields || []);
   const [importStatus, setImportStatus] = useState<ImportStatus>(cachedData?.importStatus || { stage: 'idle' });
   const [xmlContent, setXmlContent] = useState<string>(cachedData?.xmlContent || '');
+  const [isParsing, setIsParsing] = useState(false);
   const [showXmlPreview, setShowXmlPreview] = useState(false);
   const [currentActivityData, setCurrentActivityData] = useState<ActivityData>({});
   const [activeImportTab, setActiveImportTab] = useState('basic');
@@ -824,9 +826,6 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     activityId
   });
 
-  // Trigger to re-fetch activity data
-  const [refetchTrigger, setRefetchTrigger] = useState(0);
-
   // Fetch current activity data
   useEffect(() => {
     const fetchActivityData = async () => {
@@ -927,7 +926,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     };
 
     fetchActivityData();
-  }, [activityId, refetchTrigger]);
+  }, [activityId]);
 
   // Handle file selection
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1124,6 +1123,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     console.log('[XML Import Debug] Setting status to uploading');
     setImportStatus({ stage: 'uploading', progress: 20 });
 
+    setIsParsing(true);
     try {
       let content: string;
       let fileToCheck: File | null = null;
@@ -1833,7 +1833,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           fields.push({
             fieldName: `Location ${locIndex + 1}`,
             iatiPath: `iati-activity/location[${locIndex + 1}]`,
-            currentValue: () => {
+            currentValue: (() => {
             // Get current location at this index - this will be evaluated when displayed
             console.log('[XmlImportTab] Debug - locIndex:', locIndex, 'currentActivityData.locations:', currentActivityData.locations);
             const currentLocation = currentActivityData.locations && currentActivityData.locations[locIndex];
@@ -1862,7 +1862,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 )}
               </div>
             );
-          },
+          })(),
             importValue: locationSummary,
             selected: false,
             hasConflict: false,
@@ -2216,6 +2216,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       toast.error('Failed to parse XML file', {
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       });
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -3103,10 +3105,6 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // Clear refined sectors after successful import
       setSavedRefinedSectors([]);
 
-      // Re-fetch activity data to get updated locations for subsequent imports
-      console.log('[XML Import] Re-fetching activity data after successful import');
-      setRefetchTrigger(prev => prev + 1);
-
       // Trigger a page refresh after a short delay to ensure all components get fresh data
       setTimeout(() => {
         console.log('[XML Import] Refreshing page to show updated data');
@@ -3234,11 +3232,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       </td>
       <td className="px-4 py-3 w-40">
         <div className="space-y-1">
-        {(() => {
-          const currentValue = typeof field.currentValue === 'function' ? field.currentValue() : field.currentValue;
-          return currentValue ? (
-            Array.isArray(currentValue) ? (
-              currentValue.map((item, index) => (
+        {field.currentValue ? (
+            Array.isArray(field.currentValue) ? (
+              field.currentValue.map((item, index) => (
                 <div key={index} className="flex flex-col gap-1">
                   <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
@@ -3258,127 +3254,126 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             ) : field.isPolicyMarker ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.code}</span>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
                   <span className="text-sm font-medium text-gray-900">Policy Marker</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-500">Significance:</span>
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.significance}</span>
-                  {currentValue.vocabulary && (
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.significance}</span>
+                  {field.currentValue.vocabulary && (
                     <>
                       <span className="text-xs text-gray-500 ml-2">Vocabulary:</span>
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.vocabulary}</span>
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.vocabulary}</span>
                     </>
                   )}
                 </div>
-                {currentValue.rationale && (
+                {field.currentValue.rationale && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Rationale:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.rationale}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.rationale}</span>
                   </div>
                 )}
               </div>
-            ) : field.tab === 'contacts' && typeof currentValue === 'object' ? (
+            ) : field.tab === 'contacts' && typeof field.currentValue === 'object' ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.type}</span>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.type}</span>
                   <span className="text-sm font-medium text-gray-900">Contact</span>
                 </div>
-                {currentValue.organization && (
+                {field.currentValue.organization && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Organization:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.organization}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.organization}</span>
                   </div>
                 )}
-                {currentValue.personName && (
+                {field.currentValue.personName && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Person:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.personName}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.personName}</span>
                   </div>
                 )}
-                {currentValue.jobTitle && (
+                {field.currentValue.jobTitle && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Title:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.jobTitle}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.jobTitle}</span>
                   </div>
                 )}
-                {currentValue.email && (
+                {field.currentValue.email && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Email:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.email}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.email}</span>
                   </div>
                 )}
-                {currentValue.telephone && (
+                {field.currentValue.telephone && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Phone:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.telephone}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.telephone}</span>
                   </div>
                 )}
               </div>
-            ) : field.tab === 'participating_orgs' && typeof currentValue === 'object' ? (
+            ) : field.tab === 'participating_orgs' && typeof field.currentValue === 'object' ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.role}</span>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.role}</span>
                   <span className="text-sm font-medium text-gray-900">Participating Org</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-500">Name:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.name}</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.name}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-500">Role:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.role}</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.role}</span>
                 </div>
-                {currentValue.ref && (
+                {field.currentValue.ref && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Ref:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.ref}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.ref}</span>
                   </div>
                 )}
-                {currentValue.type && (
+                {field.currentValue.type && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Type:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.type}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.type}</span>
                   </div>
                 )}
               </div>
-            ) : field.tab === 'reporting_org' && typeof currentValue === 'object' ? (
+            ) : field.tab === 'reporting_org' && typeof field.currentValue === 'object' ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
                   <span className="text-sm font-medium text-gray-900">Organization</span>
                 </div>
-                {currentValue.name && (
+                {field.currentValue.name && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Name:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.name}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.name}</span>
                   </div>
                 )}
-                {currentValue.acronym && (
+                {field.currentValue.acronym && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Acronym:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{currentValue.acronym}</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.acronym}</span>
                   </div>
                 )}
               </div>
-            ) : typeof currentValue === 'object' && currentValue?.code ? (
+            ) : typeof field.currentValue === 'object' && field.currentValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.code}</span>
-              <span className="text-sm font-medium text-gray-900">{currentValue.name}</span>
-                {currentValue.vocabulary && (
+              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
+              <span className="text-sm font-medium text-gray-900">{field.currentValue.name}</span>
+                {field.currentValue.vocabulary && (
                   <>
-                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currentValue.vocabulary.split(' ')[0]}</span>
-                    <span className="text-xs text-gray-400 font-normal ml-1">{currentValue.vocabulary.split(' ').slice(1).join(' ')}</span>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.vocabulary.split(' ')[0]}</span>
+                    <span className="text-xs text-gray-400 font-normal ml-1">{field.currentValue.vocabulary.split(' ').slice(1).join(' ')}</span>
                   </>
                 )}
             </div>
           ) : (
-            <span className="text-sm font-medium text-gray-900">{currentValue}</span>
+            <span className="text-sm font-medium text-gray-900">{field.currentValue}</span>
           )
         ) : (
           <span className="text-sm text-gray-400 italic">Empty</span>
-          );
-        })()}
+        )}
         </div>
       </td>
       <td className="px-4 py-3 w-40">
@@ -3542,10 +3537,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             <CheckCircle className="h-3 w-3 mr-1" />
             Resolved
           </Badge>
-        ) : (() => {
-          const evaluatedCurrentValue = typeof field.currentValue === 'function' ? field.currentValue() : field.currentValue;
-          return evaluatedCurrentValue;
-        })() ? (
+        ) : field.currentValue ? (
           <Badge variant="outline" className="text-xs border-green-400 text-green-700">
             <CheckCircle className="h-3 w-3 mr-1" />
             Match
@@ -3961,11 +3953,20 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     </div>
                     <Button 
                       onClick={parseXmlFile}
-                      disabled={!xmlUrl.trim()}
+                      disabled={!xmlUrl.trim() || isParsing}
                       className="w-full"
                     >
-                      <Globe className="h-4 w-4 mr-2" />
-                      Fetch and Parse XML
+                      {isParsing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Parsing XML...
+                        </>
+                      ) : (
+                        <>
+                          <Globe className="h-4 w-4 mr-2" />
+                          Fetch and Parse XML
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>

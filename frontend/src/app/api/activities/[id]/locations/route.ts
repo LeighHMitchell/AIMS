@@ -73,6 +73,7 @@ export async function GET(
       // Temporarily exclude spatial_reference_system until database migration is run
       // spatial_reference_system: location.spatial_reference_system,
       srs_name: location.srs_name,
+      location_ref: location.location_ref,  // IATI location reference (ref attribute)
       validation_status: location.validation_status,
       source: location.source
     };
@@ -170,6 +171,7 @@ export async function POST(
       insertData.admin_area_name = locationData.admin_area_name || null;
     }
 
+    insertData.location_ref = locationData.location_ref || null;
     insertData.location_reach = locationData.location_reach || null;
     insertData.exactness = locationData.exactness || null;
     insertData.location_class = locationData.location_class || null;
@@ -286,6 +288,7 @@ export async function PUT(
         location_description: location.location_description || null,
         activity_location_description: location.activity_location_description || null,
         source: location.source || 'manual',
+        location_ref: location.location_ref || null,
         location_reach: location.location_reach || null,
         exactness: location.exactness || null,
         location_class: location.location_class || null,

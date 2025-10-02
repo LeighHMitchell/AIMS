@@ -349,7 +349,25 @@ export default function AdvancedLocationFields({
                       {/* Administrative Divisions */}
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Administrative Divisions</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor={`admin-vocab-${location.id}`}>Vocabulary</Label>
+                            <EnhancedSearchableSelect
+                              groups={LOCATION_ID_VOCABULARY_GROUPS}
+                              value={location.administrative?.vocabulary || ''}
+                              onValueChange={(value) => updateLocation(location.id, { 
+                                administrative: { 
+                                  ...location.administrative, 
+                                  vocabulary: value 
+                                } 
+                              })}
+                              disabled={!canEdit}
+                              placeholder="Select vocabulary"
+                              searchPlaceholder={LOCATION_SELECT_SETTINGS.searchPlaceholder}
+                              emptyStateMessage={LOCATION_SELECT_SETTINGS.emptyStateMessage}
+                              emptyStateSubMessage={LOCATION_SELECT_SETTINGS.emptyStateSubMessage}
+                            />
+                          </div>
                           <div className="space-y-2">
                             <Label htmlFor={`admin-level-${location.id}`}>Level</Label>
                             <EnhancedSearchableSelect
@@ -483,6 +501,36 @@ export default function AdvancedLocationFields({
                           value={location.percentage || ''}
                           onChange={(e) => updateLocation(location.id, { percentage: parseFloat(e.target.value) || 0 })}
                           placeholder="Enter percentage (0-100)"
+                          disabled={!canEdit}
+                        />
+                      </div>
+
+                      {/* Location Reference */}
+                      <div className="space-y-2">
+                        <Label htmlFor={`location-ref-${location.id}`} className="flex items-center gap-2">
+                          Location Reference
+                          <HelpTextTooltip content="IATI location reference identifier (e.g., AF-KAN, KH-PNH)" />
+                        </Label>
+                        <Input
+                          id={`location-ref-${location.id}`}
+                          value={location.locationRef || ''}
+                          onChange={(e) => updateLocation(location.id, { locationRef: e.target.value })}
+                          placeholder="e.g., AF-KAN, KH-PNH"
+                          disabled={!canEdit}
+                        />
+                      </div>
+
+                      {/* Spatial Reference System */}
+                      <div className="space-y-2">
+                        <Label htmlFor={`srs-name-${location.id}`} className="flex items-center gap-2">
+                          Spatial Reference System
+                          <HelpTextTooltip content="The coordinate reference system used for the coordinates (default: WGS84)" />
+                        </Label>
+                        <Input
+                          id={`srs-name-${location.id}`}
+                          value={location.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326'}
+                          onChange={(e) => updateLocation(location.id, { srsName: e.target.value })}
+                          placeholder="http://www.opengis.net/def/crs/EPSG/0/4326"
                           disabled={!canEdit}
                         />
                       </div>

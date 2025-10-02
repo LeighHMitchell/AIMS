@@ -663,10 +663,23 @@ export default function LocationModal({
   // Form setup
   const form = useForm<LocationFormSchema>({
     resolver: zodResolver(locationFormSchema),
+    mode: 'onSubmit', // Only validate on submit, not on change
+    reValidateMode: 'onSubmit',
     defaultValues: getDefaultLocationValues('site'),
   });
 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = form;
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting, isValid } } = form;
+  
+  // Debug form state
+  if (Object.keys(errors).length > 0) {
+    console.log('[LocationModal] ❌ FORM HAS ERRORS:', errors);
+    // Extract just the error messages without circular references
+    const errorMessages = Object.keys(errors).reduce((acc, key) => {
+      acc[key] = (errors as any)[key]?.message || 'Unknown error';
+      return acc;
+    }, {} as Record<string, string>);
+    console.log('[LocationModal] Error messages:', errorMessages);
+  }
 
   // Watch form values
   const watchedLocationType = watch('location_type');
@@ -678,19 +691,51 @@ export default function LocationModal({
     if (location) {
       console.log('Loading location data:', location);
       console.log('Country code from location:', location.country_code);
+      console.log('Location ref from location:', location.location_ref);
       
-      reset({
+      // Convert numeric IATI codes to strings for the form (database stores as integers)
+      // Also convert all null values to undefined for Zod validation
+      const formData = {
         ...location,
         latitude: location.latitude || undefined,
         longitude: location.longitude || undefined,
         country_display: location.country_code
           ? COUNTRY_GROUPS[0]?.options.find(option => option.code === location.country_code)?.name
           : undefined,
-      } as LocationFormSchema);
+        // Convert numeric codes to string enums
+        location_reach: location.location_reach ? String(location.location_reach) as '1' | '2' : undefined,
+        exactness: location.exactness ? String(location.exactness) as '1' | '2' | '3' : undefined,
+        location_class: location.location_class ? String(location.location_class) as '1' | '2' | '3' | '4' | '5' : undefined,
+        admin_level: location.admin_level ? String(location.admin_level) as '0' | '1' | '2' | '3' | '4' | '5' : undefined,
+        // Convert all null values to undefined
+        address_line1: location.address_line1 || undefined,
+        address_line2: location.address_line2 || undefined,
+        state_region_code: location.state_region_code || undefined,
+        township_code: location.township_code || undefined,
+        district_name: location.district_name || undefined,
+        district_code: location.district_code || undefined,
+        village_name: location.village_name || undefined,
+        postal_code: location.postal_code || undefined,
+        city: location.city || undefined,
+        address: location.address || undefined,
+        description: location.description || undefined,
+        location_description: location.location_description || undefined,
+        activity_location_description: location.activity_location_description || undefined,
+        feature_designation: location.feature_designation || undefined,
+        location_id_code: location.location_id_code || undefined,
+        admin_code: location.admin_code || undefined,
+        spatial_reference_system: location.spatial_reference_system || undefined,
+        admin_unit: location.admin_unit || undefined,
+        state_region_name: location.state_region_name || undefined,
+        township_name: location.township_name || undefined,
+      };
+      
+      reset(formData as LocationFormSchema);
 
       // Debug: Check form value after reset
       setTimeout(() => {
         console.log('Form country_code value after reset:', watch('country_code'));
+        console.log('Form location_ref value after reset:', watch('location_ref'));
         console.log('All form values after reset:', watch());
       }, 100);
 
@@ -1015,22 +1060,27 @@ const autoPopulateIatiFields = useCallback((params: {
 
   // Form submission
   const onSubmit = async (data: LocationFormSchema) => {
+    console.log('[LocationModal] 🔥 onSubmit called!');
+    console.log('[LocationModal] Form data:', data);
+    console.log('[LocationModal] Form errors:', errors);
+    
     try {
       setIsSaving(true);
       setValidationErrors({});
 
       // Additional validation
-      const errors: Record<string, string> = {};
+      const validationErrors: Record<string, string> = {};
 
       if (data.location_type === 'site') {
         if (data.latitude === undefined || data.longitude === undefined || !validateCoordinates(data.latitude, data.longitude)) {
-          errors.coordinates = 'Valid latitude and longitude are required for site locations';
+          validationErrors.coordinates = 'Valid latitude and longitude are required for site locations';
         }
       }
 
 
-      if (Object.keys(errors).length > 0) {
-        setValidationErrors(errors);
+      if (Object.keys(validationErrors).length > 0) {
+        console.log('[LocationModal] ❌ Validation errors:', validationErrors);
+        setValidationErrors(validationErrors);
         return;
       }
 
@@ -1045,19 +1095,14 @@ const autoPopulateIatiFields = useCallback((params: {
         validation_status: 'valid',
       };
 
-      console.log('[LocationModal] Form data being submitted:', data);
-      console.log('[LocationModal] Country code in form data:', data.country_code);
-      console.log('[LocationModal] All form field names:', Object.keys(data));
-      console.log('[LocationModal] All form values:', watch());
-      console.log('[LocationModal] Final location data:', locationData);
-      console.log('[LocationModal] Country code in final location data:', locationData.country_code);
+      console.log('[LocationModal] ✅ Submitting location data:', locationData);
 
       await onSave(locationData);
 
       toast.success(location?.id ? 'Location updated successfully' : 'Location added successfully');
       onClose();
     } catch (error) {
-      console.error('Error saving location:', error);
+      console.error('[LocationModal] ❌ Error saving location:', error);
       toast.error('Failed to save location. Please try again.');
     } finally {
       setIsSaving(false);
@@ -1510,6 +1555,19 @@ const autoPopulateIatiFields = useCallback((params: {
                   />
                 </div>
 
+                {/* Location Reference */}
+                <div className="space-y-2">
+                  <Label htmlFor="location_ref" className="flex items-center gap-2">
+                    Location Reference
+                    <HelpTextTooltip content="A unique identifier for this location (e.g., AF-KAN, KH-PNH). This is typically assigned by the reporting organization and matches the IATI location ref attribute." />
+                  </Label>
+                  <Input
+                    id="location_ref"
+                    {...register('location_ref')}
+                    placeholder="e.g., AF-KAN, KH-PNH"
+                  />
+                </div>
+
                 {/* IATI Advanced Fields */}
                 <div className="space-y-4">
                   {/* Location Reach */}
@@ -1703,6 +1761,12 @@ const autoPopulateIatiFields = useCallback((params: {
             <Button
               type="submit"
               disabled={isSaving}
+              onClick={() => {
+                console.log('[LocationModal] 🖱️ Submit button clicked!');
+                console.log('[LocationModal] Current form errors:', errors);
+                console.log('[LocationModal] Form values:', watch());
+                console.log('[LocationModal] Is form valid:', isValid);
+              }}
               className="flex items-center gap-2"
             >
               {isSaving ? (

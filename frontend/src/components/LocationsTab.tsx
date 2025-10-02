@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +19,7 @@ import { useFieldAutosave } from '@/hooks/use-field-autosave-new';
 
 import LocationModal from './locations/LocationModal';
 import LocationCard from './locations/LocationCard';
+import { LocationsSkeleton } from './activities/TabSkeletons';
 
 import {
   type LocationSchema,
@@ -100,103 +99,103 @@ export default function LocationsTab({
   // Handle save location (create or update)
   const handleSaveLocation = useCallback(async (locationData: LocationSchema) => {
     try {
-      console.log('[LocationsTab] handleSaveLocation called with:', locationData);
-      console.log('[LocationsTab] Country code in locationData:', locationData.country_code);
-      
-      const isUpdate = !!locationData.id;
-      const url = isUpdate
-        ? `/api/locations/${locationData.id}`
+      const url = editingLocation 
+        ? `/api/activities/${activityId}/locations/${editingLocation.id}`
         : `/api/activities/${activityId}/locations`;
-
-      const method = isUpdate ? 'PATCH' : 'POST';
       
-      const requestBody = {
-        ...locationData,
-        user_id: userId,
-      };
+      const method = editingLocation ? 'PUT' : 'POST';
       
-      console.log('[LocationsTab] Request body being sent:', requestBody);
-      console.log('[LocationsTab] Country code in request body:', requestBody.country_code);
-
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(locationData),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save location');
+        throw new Error('Failed to save location');
       }
 
       const result = await response.json();
-
-      if (isUpdate) {
-        // Update existing location in state
-        setLocations(prev =>
-          prev.map(loc =>
-            loc.id === locationData.id ? result.location : loc
-          )
-        );
+      
+      if (result.success) {
+        toast.success(editingLocation ? 'Location updated successfully' : 'Location added successfully');
+        await loadLocations();
+        setIsModalOpen(false);
+        setEditingLocation(undefined);
       } else {
-        // Add new location to state
-        setLocations(prev => [...prev, result.location]);
+        throw new Error(result.error || 'Failed to save location');
       }
-
-      // Reload to get updated percentage summary
-      await loadLocations();
-
-    } catch (error) {
-      console.error('Error saving location:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error saving location:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to save location');
     }
-  }, [activityId, userId, loadLocations]);
+  }, [activityId, editingLocation, loadLocations]);
 
   // Handle delete location
   const handleDeleteLocation = useCallback(async (locationId: string) => {
     try {
-      const response = await fetch(`/api/locations/${locationId}`, {
+      const response = await fetch(`/api/activities/${activityId}/locations/${locationId}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete location');
+        throw new Error('Failed to delete location');
       }
 
-      // Remove location from state
-      setLocations(prev => prev.filter(loc => loc.id !== locationId));
-
-      // Reload to get updated percentage summary
-      await loadLocations();
-
-      toast.success('Location deleted successfully');
-    } catch (error) {
-      console.error('Error deleting location:', error);
-      toast.error('Failed to delete location. Please try again.');
-      throw error;
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Location deleted successfully');
+        await loadLocations();
+      } else {
+        throw new Error(result.error || 'Failed to delete location');
+      }
+    } catch (err) {
+      console.error('Error deleting location:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to delete location');
     }
-  }, [loadLocations]);
+  }, [activityId, loadLocations]);
+
+  // Handle duplicate location
+  const handleDuplicateLocation = useCallback(async (location: LocationSchema) => {
+    try {
+      const duplicateData = {
+        ...location,
+        id: undefined, // Remove ID to create new location
+        location_name: `${location.location_name} (Copy)`,
+      };
+
+      const response = await fetch(`/api/activities/${activityId}/locations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(duplicateData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to duplicate location');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Location duplicated successfully');
+        await loadLocations();
+      } else {
+        throw new Error(result.error || 'Failed to duplicate location');
+      }
+    } catch (err) {
+      console.error('Error duplicating location:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to duplicate location');
+    }
+  }, [activityId, loadLocations]);
 
   // Handle edit location
   const handleEditLocation = useCallback((location: LocationSchema) => {
     setEditingLocation(location);
-    setIsModalOpen(true);
-  }, []);
-
-  // Handle duplicate location
-  const handleDuplicateLocation = useCallback((location: LocationSchema) => {
-    const duplicatedLocation: LocationSchema = {
-      ...location,
-      id: undefined,
-      location_name: `${location.location_name} (Copy)`,
-      created_at: undefined,
-      updated_at: undefined,
-    };
-
-    setEditingLocation(duplicatedLocation);
     setIsModalOpen(true);
   }, []);
 
@@ -218,16 +217,9 @@ export default function LocationsTab({
   }, [loadLocations]);
 
 
-  // Show loading state
+  // Show loading state with skeleton
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Loading locations...</span>
-            </div>
-      </div>
-    );
+    return <LocationsSkeleton />;
   }
 
   return (
@@ -305,13 +297,11 @@ export default function LocationsTab({
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onSave={handleSaveLocation}
-        onDelete={handleDeleteLocation}
-        activityId={activityId || 'new'}
         location={editingLocation}
-        existingLocations={locations}
+        activityId={activityId}
+        activityTitle={activityTitle}
+        activitySector={activitySector}
       />
-
     </div>
   );
 }
-

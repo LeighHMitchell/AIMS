@@ -300,8 +300,18 @@ export async function POST(
       
       // Insert new locations
       if (Array.isArray(iati_data.locations) && iati_data.locations.length > 0) {
-        const locationData = await Promise.all(
-          iati_data.locations.map(async (loc: any) => {
+        console.log('[IATI Import] About to process', iati_data.locations.length, 'locations');
+        try {
+          const locationData = await Promise.all(
+            iati_data.locations.map(async (loc: any) => {
+            console.log('[IATI Import] Processing location:', {
+              ref: loc.ref,
+              name: loc.name,
+              locationReach: loc.locationReach,
+              exactness: loc.exactness,
+              fullLocation: loc
+            });
+            
             // Parse coordinates if present
             let latitude = null;
             let longitude = null;
@@ -312,6 +322,7 @@ export async function POST(
                 longitude = parseFloat(coords[1]);
               }
             }
+            console.log('[IATI Import] Parsed coordinates:', { latitude, longitude });
             
             // Determine location type - site if has coordinates, coverage otherwise
             const locationType = (latitude && longitude) ? 'site' : 'coverage';
@@ -324,6 +335,9 @@ export async function POST(
               location_description: loc.description,
               activity_location_description: loc.activityDescription,
               srs_name: loc.point?.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326',
+              
+              // IATI location reference (ref attribute)
+              location_ref: loc.ref || undefined,
               
               // IATI fields - keep as strings, not integers
               location_reach: loc.locationReach || undefined,
@@ -396,9 +410,21 @@ export async function POST(
               locationEntry.coverage_scope = 'regional'; // Default for imported coverage areas
             }
 
+            console.log('[IATI Import] Returning locationEntry:', {
+              location_name: locationEntry.location_name,
+              location_ref: locationEntry.location_ref,
+              location_type: locationEntry.location_type
+            });
             return locationEntry;
           })
         );
+        console.log('[IATI Import] Promise.all completed, locationData length:', locationData.length);
+        
+        console.log('[IATI Import] Location data to insert:', locationData.map(loc => ({
+          location_name: loc.location_name,
+          location_ref: loc.location_ref,
+          location_reach: loc.location_reach
+        })));
         
         const { error: locationsError } = await supabase
           .from('activity_locations')
@@ -408,7 +434,12 @@ export async function POST(
           console.error('[IATI Import] Error inserting locations:', locationsError);
           // Don't throw - continue with other updates
         } else {
+          console.log('[IATI Import] Locations inserted successfully');
           updatedFields.push('locations');
+        }
+        } catch (locationProcessingError) {
+          console.error('[IATI Import] Error processing locations:', locationProcessingError);
+          // Don't throw - continue with other updates
         }
       }
     }

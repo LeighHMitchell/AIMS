@@ -464,3 +464,110 @@ export const IATI_LOCATION_TYPE_GROUPS: SelectIATIGroup[] = [
     ]
   }
 ];
+
+// IATI Location Reach Types
+export const LOCATION_REACH_TYPES = [
+  { code: '1', name: 'Activity', description: 'The activity happens at this location' },
+  { code: '2', name: 'Beneficiary', description: 'Beneficiaries live at this location' }
+];
+
+// IATI Location Exactness Types
+export const LOCATION_EXACTNESS_TYPES = [
+  { code: '1', name: 'Exact', description: 'The coordinates are exact' },
+  { code: '2', name: 'Approximate', description: 'The coordinates are approximate' },
+  { code: '3', name: 'Extrapolated', description: 'The coordinates are extrapolated' }
+];
+
+// IATI Location Class Types
+export const LOCATION_CLASS_TYPES = [
+  { code: '1', name: 'Administrative Region', description: 'An administrative region' },
+  { code: '2', name: 'Populated Place', description: 'A populated place such as a city, town, or village' },
+  { code: '3', name: 'Structure', description: 'A structure such as a building or facility' },
+  { code: '4', name: 'Site', description: 'A specific site or location' },
+  { code: '5', name: 'Other', description: 'Other type of location' }
+];
+
+// IATI Location ID Vocabularies
+export const LOCATION_ID_VOCABULARIES = [
+  { code: 'A1', name: 'GeoNames', description: 'GeoNames database' },
+  { code: 'A2', name: 'OpenStreetMap', description: 'OpenStreetMap database' },
+  { code: 'A3', name: 'GADM', description: 'Global Administrative Areas' },
+  { code: 'A4', name: 'HASC', description: 'Hierarchical Administrative Subdivision Codes' },
+  { code: 'A5', name: 'ISO 3166-1', description: 'ISO 3166-1 country codes' },
+  { code: 'A6', name: 'ISO 3166-2', description: 'ISO 3166-2 subdivision codes' },
+  { code: 'A7', name: 'ISO 3166-3', description: 'ISO 3166-3 country codes for formerly used names' },
+  { code: 'A8', name: 'UN', description: 'United Nations codes' },
+  { code: 'A9', name: 'Custom', description: 'Custom vocabulary' },
+  { code: 'G1', name: 'GeoNames (Alternative)', description: 'GeoNames database (alternative code)' },
+  { code: 'G2', name: 'OpenStreetMap (Alternative)', description: 'OpenStreetMap database (alternative code)' }
+];
+
+// IATI Administrative Levels
+export const ADMINISTRATIVE_LEVELS = [
+  { code: '0', name: 'Country', description: 'Country level' },
+  { code: '1', name: 'First Order', description: 'First-order administrative division (e.g., state, province)' },
+  { code: '2', name: 'Second Order', description: 'Second-order administrative division (e.g., district, county)' },
+  { code: '3', name: 'Third Order', description: 'Third-order administrative division (e.g., township, municipality)' },
+  { code: '4', name: 'Fourth Order', description: 'Fourth-order administrative division (e.g., village, ward)' },
+  { code: '5', name: 'Fifth Order', description: 'Fifth-order administrative division' }
+];
+
+// IATI Feature Designation Types (grouped by category) - Comprehensive list
+export const FEATURE_DESIGNATION_TYPES = [
+  // Administrative Features
+  { code: 'ADMD', name: 'Administrative Division', category: 'Administrative Features' },
+  { code: 'ADMF', name: 'Administrative Facility', category: 'Administrative Features' },
+  { code: 'ADM1', name: 'First-Order Administrative Division', category: 'Administrative Features' },
+  { code: 'ADM2', name: 'Second-Order Administrative Division', category: 'Administrative Features' },
+  { code: 'ADM3', name: 'Third-Order Administrative Division', category: 'Administrative Features' },
+  { code: 'ADM4', name: 'Fourth-Order Administrative Division', category: 'Administrative Features' },
+  { code: 'ADM5', name: 'Fifth-Order Administrative Division', category: 'Administrative Features' },
+  
+  // Populated Places
+  { code: 'PPL', name: 'Populated Place', category: 'Populated Places' },
+  { code: 'PPLC', name: 'Capital', category: 'Populated Places' },
+  { code: 'PPLA', name: 'Seat of First-Order Admin Division', category: 'Populated Places' },
+  { code: 'PPLA2', name: 'Seat of Second-Order Admin Division', category: 'Populated Places' },
+  { code: 'PPLA3', name: 'Seat of Third-Order Admin Division', category: 'Populated Places' },
+  { code: 'PPLA4', name: 'Seat of Fourth-Order Admin Division', category: 'Populated Places' },
+  
+  // Common Structures
+  { code: 'BLDG', name: 'Building', category: 'Structures' },
+  { code: 'SCH', name: 'School', category: 'Structures' },
+  { code: 'HSP', name: 'Hospital', category: 'Structures' },
+  { code: 'CH', name: 'Church', category: 'Structures' },
+  { code: 'MSQE', name: 'Mosque', category: 'Structures' },
+  { code: 'TMPL', name: 'Temple', category: 'Structures' },
+  { code: 'CMPRF', name: 'Refugee Camp', category: 'Structures' },
+  { code: 'FCL', name: 'Facility', category: 'Structures' },
+  { code: 'CTRM', name: 'Medical Center', category: 'Structures' },
+  { code: 'AIRP', name: 'Airport', category: 'Structures' },
+  { code: 'MKT', name: 'Market', category: 'Structures' },
+  { code: 'PS', name: 'Power Station', category: 'Structures' }
+];
+
+// Advanced Location Data Interface
+export interface AdvancedLocationData {
+  id: string;
+  locationReach?: string;
+  exactness?: string;
+  locationClass?: string;
+  featureDesignation?: string;
+  locationId?: {
+    vocabulary?: string;
+    code?: string;
+  };
+  administrative?: {
+    vocabulary?: string;
+    level?: string;
+    code?: string;
+  };
+  coordinates?: {
+    latitude?: number;
+    longitude?: number;
+  };
+  activityDescription?: string;
+  percentage?: number;
+  srsName?: string;
+  locationRef?: string;
+}
