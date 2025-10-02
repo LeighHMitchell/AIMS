@@ -3542,7 +3542,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             <CheckCircle className="h-3 w-3 mr-1" />
             Resolved
           </Badge>
-        ) : field.currentValue ? (
+        ) : (() => {
+          const evaluatedCurrentValue = typeof field.currentValue === 'function' ? field.currentValue() : field.currentValue;
+          return evaluatedCurrentValue;
+        })() ? (
           <Badge variant="outline" className="text-xs border-green-400 text-green-700">
             <CheckCircle className="h-3 w-3 mr-1" />
             Match
