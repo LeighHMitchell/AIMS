@@ -33,11 +33,34 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Optimized query - only select needed fields for better performance
-    const { data: organizations, error } = await getSupabaseAdmin()
+    // Get query parameters for filtering
+    const searchParams = request.nextUrl.searchParams;
+    const iatiOrgId = searchParams.get('iati_org_id');
+    const searchTerm = searchParams.get('search');
+    
+    console.log('[AIMS] GET /api/organizations - Filters:', { iatiOrgId, searchTerm });
+    
+    // Build query with filters
+    let query = getSupabaseAdmin()
       .from('organizations')
-      .select('id, name, acronym, type, organisation_type, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at')
-      .order('name');
+      .select('id, name, acronym, type, organisation_type, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at');
+    
+    // Filter by IATI org ID (exact match)
+    if (iatiOrgId) {
+      console.log('[AIMS] Filtering by IATI org ID:', iatiOrgId);
+      query = query.eq('iati_org_id', iatiOrgId);
+    }
+    
+    // Filter by search term (fuzzy search on name and acronym)
+    if (searchTerm && !iatiOrgId) {
+      console.log('[AIMS] Filtering by search term:', searchTerm);
+      query = query.or(`name.ilike.%${searchTerm}%,acronym.ilike.%${searchTerm}%`);
+    }
+    
+    // Order results
+    query = query.order('name');
+    
+    const { data: organizations, error } = await query;
     
     if (error) {
       console.error('[AIMS] Error fetching organizations:', error);

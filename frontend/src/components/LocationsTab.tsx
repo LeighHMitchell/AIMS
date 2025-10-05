@@ -99,11 +99,15 @@ export default function LocationsTab({
   // Handle save location (create or update)
   const handleSaveLocation = useCallback(async (locationData: LocationSchema) => {
     try {
+      console.log('[LocationsTab] 🚀 Starting save process for location:', locationData);
+      
       const url = editingLocation 
-        ? `/api/activities/${activityId}/locations/${editingLocation.id}`
+        ? `/api/locations/${editingLocation.id}`
         : `/api/activities/${activityId}/locations`;
       
-      const method = editingLocation ? 'PUT' : 'POST';
+      const method = editingLocation ? 'PATCH' : 'POST';
+      
+      console.log('[LocationsTab] 📡 Making API request:', { url, method, isUpdate: !!editingLocation });
       
       const response = await fetch(url, {
         method,
@@ -113,22 +117,30 @@ export default function LocationsTab({
         body: JSON.stringify(locationData),
       });
 
+      console.log('[LocationsTab] 📡 API response status:', response.status);
+
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[LocationsTab] ❌ API error response:', errorData);
         throw new Error('Failed to save location');
       }
 
       const result = await response.json();
+      console.log('[LocationsTab] ✅ API success response:', result);
       
       if (result.success) {
+        console.log('[LocationsTab] ✅ Location saved successfully, reloading...');
         toast.success(editingLocation ? 'Location updated successfully' : 'Location added successfully');
         await loadLocations();
+        console.log('[LocationsTab] ✅ Locations reloaded, closing modal');
         setIsModalOpen(false);
         setEditingLocation(undefined);
       } else {
+        console.error('[LocationsTab] ❌ API returned success: false:', result);
         throw new Error(result.error || 'Failed to save location');
       }
     } catch (err) {
-      console.error('Error saving location:', err);
+      console.error('[LocationsTab] ❌ Error saving location:', err);
       toast.error(err instanceof Error ? err.message : 'Failed to save location');
     }
   }, [activityId, editingLocation, loadLocations]);

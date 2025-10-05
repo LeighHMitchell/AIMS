@@ -1181,7 +1181,7 @@ function ActivitiesPageContent() {
       ) : viewMode === 'table' ? (
         <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed border-collapse min-w-[1300px]">
+            <table className="w-full table-fixed border-collapse min-w-[1300px] activities-table">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>
                   <th 
@@ -1390,11 +1390,11 @@ function ActivitiesPageContent() {
                           </Tooltip>
                         </TooltipProvider>
                       </td>
-                      <td className="px-4 py-2 text-sm text-foreground">
+                      <td className="px-4 py-2 text-sm text-foreground text-left" style={{textAlign: 'left'}}>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
-                              <div>
+                              <div className="text-left" style={{textAlign: 'left'}}>
                                 {creatorOrg}
                               </div>
                             </TooltipTrigger>

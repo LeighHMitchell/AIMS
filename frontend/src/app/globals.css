@@ -666,6 +666,16 @@ body:has([data-radix-dialog-content]) {
   border: none !important;
 }
 
+/* Force left alignment for Reported by column in activities table */
+table td:has(div:contains("AA-AAA")) {
+  text-align: left !important;
+}
+
+/* Force left alignment for all Reported by column content */
+.activities-table td:nth-child(4) {
+  text-align: left !important;
+}
+
 /* Debug overlay for test marker - temporarily disabled */
 .leaflet-container.debug-mode::after {
   content: "🎯 Looking for red pin at center" !important;

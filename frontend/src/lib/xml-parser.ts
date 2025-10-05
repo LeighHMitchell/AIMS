@@ -87,6 +87,9 @@ interface ParsedActivity {
     type?: string;
     role?: string;
     narrative?: string;
+    activityId?: string;
+    crsChannelCode?: string;
+    narrativeLang?: string;
   }>;
   
   // Results
@@ -621,11 +624,53 @@ export class IATIXMLParser {
       result.participatingOrgs = [];
       for (let i = 0; i < participatingOrgs.length; i++) {
         const org = participatingOrgs[i];
+        
+        // Get ALL narratives including multilingual ones
+        const narrativeElements = org.querySelectorAll('narrative');
+        let primaryNarrative = '';
+        let narrativeLang = 'en';
+        const multilingualNarratives: Array<{ lang: string; text: string }> = [];
+        
+        if (narrativeElements.length > 0) {
+          // Try to find narrative without xml:lang first (primary)
+          let foundPrimary = false;
+          for (let j = 0; j < narrativeElements.length; j++) {
+            const narrative = narrativeElements[j];
+            const lang = narrative.getAttribute('xml:lang');
+            const text = narrative.textContent?.trim() || '';
+            
+            if (!lang || lang === 'en') {
+              if (!foundPrimary) {
+                primaryNarrative = text;
+                narrativeLang = lang || 'en';
+                foundPrimary = true;
+              }
+            } else {
+              // Add non-English narratives to multilingual array
+              if (text) {
+                multilingualNarratives.push({ lang, text });
+              }
+            }
+          }
+          
+          // If no primary found, use the first one
+          if (!foundPrimary && narrativeElements.length > 0) {
+            primaryNarrative = narrativeElements[0].textContent?.trim() || '';
+            narrativeLang = narrativeElements[0].getAttribute('xml:lang') || 'en';
+          }
+        }
+        
+        console.log('[XML Parser] Participating org:', org.getAttribute('ref'), 'Multilingual narratives:', multilingualNarratives);
+        
         result.participatingOrgs.push({
           ref: org.getAttribute('ref') || undefined,
           type: org.getAttribute('type') || undefined,
           role: org.getAttribute('role') || undefined,
-          narrative: this.extractNarrative(org),
+          activityId: org.getAttribute('activity-id') || undefined,
+          crsChannelCode: org.getAttribute('crs-channel-code') || undefined,
+          narrative: primaryNarrative || undefined,
+          narrativeLang: narrativeLang,
+          narratives: multilingualNarratives.length > 0 ? multilingualNarratives : undefined,
         });
       }
     }

@@ -155,7 +155,7 @@ export const locationFormSchema = z.object({
   admin_unit: z.string().optional(),
   
   // IATI fields
-  location_ref: z.string().optional(),
+  location_ref: z.string().optional().nullable(),
   location_reach: z.enum(LOCATION_REACH_CODES).optional(),
   exactness: z.enum(LOCATION_EXACTNESS_CODES).optional(),
   location_class: z.enum(LOCATION_CLASS_CODES).optional(),

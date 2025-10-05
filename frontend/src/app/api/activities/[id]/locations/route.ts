@@ -225,6 +225,9 @@ export async function PUT(
     const activityId = params.id;
     const body = await request.json();
 
+    console.log('[Locations API] 🔄 PUT request received for activity:', activityId);
+    console.log('[Locations API] 📦 Request body:', body);
+
     if (!activityId) {
       return NextResponse.json(
         { error: 'Activity ID is required' },
@@ -233,6 +236,7 @@ export async function PUT(
     }
 
     if (!body.locations || !Array.isArray(body.locations)) {
+      console.error('[Locations API] ❌ Invalid request body - locations array required');
       return NextResponse.json(
         { error: 'Locations array is required' },
         { status: 400 }
@@ -352,6 +356,7 @@ export async function PUT(
       }
     }
 
+    console.log('[Locations API] ✅ Locations updated successfully:', locationsToInsert);
     return NextResponse.json({
       success: true,
       locations: locationsToInsert

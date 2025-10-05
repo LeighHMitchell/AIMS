@@ -5,10 +5,24 @@ export interface ParticipatingOrganization {
   id: string;
   activity_id: string;
   organization_id: string;
-  role_type: 'extending' | 'implementing' | 'government';
+  role_type: 'extending' | 'implementing' | 'government' | 'funding';
   display_order: number;
   created_at: string;
   updated_at: string;
+  
+  // IATI Standard fields
+  iati_role_code: number;
+  iati_org_ref?: string;
+  org_type?: string;
+  activity_id_ref?: string;
+  crs_channel_code?: string;
+  narrative?: string;
+  narrative_lang?: string;
+  narratives?: Array<{ lang: string; text: string }>;
+  org_activity_id?: string;
+  reporting_org_ref?: string;
+  secondary_reporter?: boolean;
+  
   organization?: Organization;
 }
 
@@ -71,11 +85,11 @@ export function useParticipatingOrganizations({
     }
   }, [activityId, onError, hasInitiallyLoaded]);
 
-  // Add participating organization
+  // Add participating organization with full IATI support
   const addParticipatingOrganization = useCallback(async (
     organizationId: string, 
-    roleType: 'extending' | 'implementing' | 'government',
-    displayOrder: number = 0
+    roleType: 'extending' | 'implementing' | 'government' | 'funding',
+    additionalData?: Partial<ParticipatingOrganization>
   ) => {
     if (!activityId) return;
 
@@ -91,7 +105,17 @@ export function useParticipatingOrganizations({
         body: JSON.stringify({
           organization_id: organizationId,
           role_type: roleType,
-          display_order: displayOrder,
+          display_order: additionalData?.display_order ?? 0,
+          iati_org_ref: additionalData?.iati_org_ref,
+          org_type: additionalData?.org_type,
+          activity_id_ref: additionalData?.activity_id_ref,
+          crs_channel_code: additionalData?.crs_channel_code,
+          narrative: additionalData?.narrative,
+          narrative_lang: additionalData?.narrative_lang || 'en',
+          narratives: additionalData?.narratives || [],
+          org_activity_id: additionalData?.org_activity_id,
+          reporting_org_ref: additionalData?.reporting_org_ref,
+          secondary_reporter: additionalData?.secondary_reporter || false,
         }),
       });
 
@@ -107,6 +131,7 @@ export function useParticipatingOrganizations({
       setError(errorMessage);
       onError?.(errorMessage);
       console.error('[AIMS] Error adding participating organization:', err);
+      throw err; // Re-throw to allow caller to handle
     } finally {
       setLoading(false);
     }
@@ -115,7 +140,7 @@ export function useParticipatingOrganizations({
   // Remove participating organization
   const removeParticipatingOrganization = useCallback(async (
     organizationId: string, 
-    roleType: 'extending' | 'implementing' | 'government'
+    roleType: 'extending' | 'implementing' | 'government' | 'funding'
   ) => {
     if (!activityId) return;
 
@@ -143,22 +168,28 @@ export function useParticipatingOrganizations({
       setError(errorMessage);
       onError?.(errorMessage);
       console.error('[AIMS] Error removing participating organization:', err);
+      throw err; // Re-throw to allow caller to handle
     } finally {
       setLoading(false);
     }
   }, [activityId, onError]);
 
   // Get organizations by role type
-  const getOrganizationsByRole = useCallback((roleType: 'extending' | 'implementing' | 'government') => {
+  const getOrganizationsByRole = useCallback((roleType: 'extending' | 'implementing' | 'government' | 'funding') => {
     return participatingOrganizations.filter(org => org.role_type === roleType);
   }, [participatingOrganizations]);
 
   // Check if organization is already participating in a role
-  const isOrganizationParticipating = useCallback((organizationId: string, roleType: 'extending' | 'implementing' | 'government') => {
+  const isOrganizationParticipating = useCallback((organizationId: string, roleType: 'extending' | 'implementing' | 'government' | 'funding') => {
     return participatingOrganizations.some(org => 
       org.organization_id === organizationId && org.role_type === roleType
     );
   }, [participatingOrganizations]);
+  
+  // Refetch organizations (alias for fetchParticipatingOrganizations with force refresh)
+  const refetch = useCallback(() => {
+    return fetchParticipatingOrganizations(true);
+  }, [fetchParticipatingOrganizations]);
 
   // Fetch on mount and when activityId changes (only on initial load)
   useEffect(() => {
@@ -181,5 +212,6 @@ export function useParticipatingOrganizations({
     removeParticipatingOrganization,
     getOrganizationsByRole,
     isOrganizationParticipating,
+    refetch, // Add refetch as a convenient alias
   };
 } 

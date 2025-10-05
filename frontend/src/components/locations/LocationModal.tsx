@@ -57,9 +57,11 @@ import {
   extractAdministrativeInfo,
   formatAddress,
   isValidCoordinate,
+} from '@/lib/geo/nominatim';
+import {
   type LocationSearchResult,
   type GeocodingResult,
-} from '@/lib/geo/nominatim';
+} from '@/lib/schemas/location';
 
 import { SelectIATI, type SelectIATIGroup } from '@/components/ui/SelectIATI';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
@@ -165,16 +167,16 @@ const DEFAULT_SPATIAL_REFERENCE_SYSTEM = 'http://www.opengis.net/def/crs/EPSG/0/
 type GeocodeAddress = Record<string, string | undefined>;
 
 const ISO_LEVEL_MAPPINGS: Array<{ key: string; level: typeof ADMIN_LEVELS[number] }> = [
-  { key: 'ISO3166-2-lvl6', level: 'admin3' },
-  { key: 'ISO3166-2-lvl5', level: 'admin2' },
-  { key: 'ISO3166-2-lvl4', level: 'admin1' },
+  { key: 'ISO3166-2-lvl6', level: '3' },
+  { key: 'ISO3166-2-lvl5', level: '2' },
+  { key: 'ISO3166-2-lvl4', level: '1' },
 ];
 
 const FALLBACK_ADMIN_ORDER: Array<{ level: typeof ADMIN_LEVELS[number]; keys: string[] }> = [
-  { level: 'admin1', keys: ['state', 'province', 'region', 'state_district'] },
-  { level: 'admin2', keys: ['county', 'district', 'municipality'] },
-  { level: 'admin3', keys: ['city', 'town', 'city_district'] },
-  { level: 'admin4', keys: ['village', 'hamlet', 'suburb', 'township'] },
+  { level: '1', keys: ['state', 'province', 'region', 'state_district'] },
+  { level: '2', keys: ['county', 'district', 'municipality'] },
+  { level: '3', keys: ['city', 'town', 'city_district'] },
+  { level: '4', keys: ['village', 'hamlet', 'suburb', 'township'] },
 ];
 
 function formatOsmIdentifier(osmType?: string, osmId?: string | number): string | undefined {
@@ -366,10 +368,12 @@ const ADMINISTRATIVE_LEVEL_GROUPS: SelectIATIGroup[] = [
   {
     label: 'Administrative Levels',
     options: [
-      { code: 'admin1', name: 'Administrative Level 1', description: 'First-level administrative division (e.g., state, province)' },
-      { code: 'admin2', name: 'Administrative Level 2', description: 'Second-level administrative division (e.g., district, county)' },
-      { code: 'admin3', name: 'Administrative Level 3', description: 'Third-level administrative division (e.g., township, municipality)' },
-      { code: 'admin4', name: 'Administrative Level 4', description: 'Fourth-level administrative division (e.g., ward, neighborhood)' }
+      { code: '0', name: 'Country', description: 'Country level' },
+      { code: '1', name: 'First Order', description: 'First-order administrative division (e.g., state, province)' },
+      { code: '2', name: 'Second Order', description: 'Second-order administrative division (e.g., district, county)' },
+      { code: '3', name: 'Third Order', description: 'Third-order administrative division (e.g., township, municipality)' },
+      { code: '4', name: 'Fourth Order', description: 'Fourth-order administrative division (e.g., village, ward)' },
+      { code: '5', name: 'Fifth Order', description: 'Fifth-order administrative division' }
     ]
   }
 ];
@@ -527,11 +531,11 @@ const MAP_LAYERS = {
       // Mapbox (if token available)
       process.env.NEXT_PUBLIC_MAPBOX_TOKEN
         ? `https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
-        : null,
+        : '',
       // Google (if token available)
       process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
         ? 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
-        : null,
+        : '',
       // Back to OSM if all else fails
       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
     ].filter(Boolean)
@@ -600,7 +604,7 @@ export default function LocationModal({
     const layer = MAP_LAYERS[currentLayer];
 
     if (currentLayer === 'satellite') {
-      const fallbacks = layer.fallbacks ?? [];
+      const fallbacks = (layer as any).fallbacks ?? [];
       const urls = [layer.url, ...fallbacks];
       const index = Math.min(satelliteFallbackIndex, urls.length - 1);
       return urls[index] ?? layer.url;
@@ -691,14 +695,14 @@ export default function LocationModal({
     if (location) {
       console.log('Loading location data:', location);
       console.log('Country code from location:', location.country_code);
-      console.log('Location ref from location:', location.location_ref);
+      console.log('Location ref from location:', (location as any).location_ref);
       
       // Convert numeric IATI codes to strings for the form (database stores as integers)
       // Also convert all null values to undefined for Zod validation
       const formData = {
         ...location,
-        latitude: location.latitude || undefined,
-        longitude: location.longitude || undefined,
+        latitude: (location as any).latitude || undefined,
+        longitude: (location as any).longitude || undefined,
         country_display: location.country_code
           ? COUNTRY_GROUPS[0]?.options.find(option => option.code === location.country_code)?.name
           : undefined,
@@ -708,16 +712,16 @@ export default function LocationModal({
         location_class: location.location_class ? String(location.location_class) as '1' | '2' | '3' | '4' | '5' : undefined,
         admin_level: location.admin_level ? String(location.admin_level) as '0' | '1' | '2' | '3' | '4' | '5' : undefined,
         // Convert all null values to undefined
-        address_line1: location.address_line1 || undefined,
-        address_line2: location.address_line2 || undefined,
-        state_region_code: location.state_region_code || undefined,
-        township_code: location.township_code || undefined,
-        district_name: location.district_name || undefined,
-        district_code: location.district_code || undefined,
-        village_name: location.village_name || undefined,
-        postal_code: location.postal_code || undefined,
-        city: location.city || undefined,
-        address: location.address || undefined,
+        address_line1: (location as any).address_line1 || undefined,
+        address_line2: (location as any).address_line2 || undefined,
+        state_region_code: (location as any).state_region_code || undefined,
+        township_code: (location as any).township_code || undefined,
+        district_name: (location as any).district_name || undefined,
+        district_code: (location as any).district_code || undefined,
+        village_name: (location as any).village_name || undefined,
+        postal_code: (location as any).postal_code || undefined,
+        city: (location as any).city || undefined,
+        address: (location as any).address || undefined,
         description: location.description || undefined,
         location_description: location.location_description || undefined,
         activity_location_description: location.activity_location_description || undefined,
@@ -725,9 +729,9 @@ export default function LocationModal({
         location_id_code: location.location_id_code || undefined,
         admin_code: location.admin_code || undefined,
         spatial_reference_system: location.spatial_reference_system || undefined,
-        admin_unit: location.admin_unit || undefined,
-        state_region_name: location.state_region_name || undefined,
-        township_name: location.township_name || undefined,
+        admin_unit: (location as any).admin_unit || undefined,
+        state_region_name: (location as any).state_region_name || undefined,
+        township_name: (location as any).township_name || undefined,
       };
       
       reset(formData as LocationFormSchema);
@@ -739,9 +743,9 @@ export default function LocationModal({
         console.log('All form values after reset:', watch());
       }, 100);
 
-      if (location.latitude && location.longitude) {
-        setMarkerPosition([location.latitude, location.longitude]);
-        setMapCenter([location.latitude, location.longitude]);
+      if ((location as any).latitude && (location as any).longitude) {
+        setMarkerPosition([(location as any).latitude, (location as any).longitude]);
+        setMapCenter([(location as any).latitude, (location as any).longitude]);
         setMapZoom(15);
       }
 
@@ -816,10 +820,10 @@ const autoPopulateIatiFields = useCallback((params: {
 
     // Location reach & exactness defaults
     if (!watch('location_reach')) {
-      setValue('location_reach', DEFAULT_LOCATION_REACH);
+        setValue('location_reach', DEFAULT_LOCATION_REACH as any);
     }
     if (!watch('exactness')) {
-      setValue('exactness', DEFAULT_EXACTNESS);
+      setValue('exactness', DEFAULT_EXACTNESS as any);
     }
 
     // Spatial reference system default
@@ -836,21 +840,21 @@ const autoPopulateIatiFields = useCallback((params: {
     // Location class
     const inferredLocationClass = inferLocationClass(type, category, address);
     if (inferredLocationClass) {
-      setValue('location_class', inferredLocationClass);
+      setValue('location_class', inferredLocationClass as any);
     }
 
     // Location ID vocabulary & code (OSM)
     const formattedOsmId = formatOsmIdentifier(osmType, osmId);
     if (formattedOsmId) {
-      setValue('location_id_vocabulary', 'G2');
+        setValue('location_id_vocabulary', 'G2' as any);
       setValue('location_id_code', formattedOsmId);
     }
 
     // Administrative data
     const adminData = deriveAdminData(address);
     if (adminData) {
-      setValue('admin_vocabulary', adminData.vocabulary);
-      setValue('admin_level', adminData.level);
+        setValue('admin_vocabulary', adminData.vocabulary as any);
+      setValue('admin_level', adminData.level as any);
       setValue('admin_code', adminData.code);
     }
   }, [setValue, watch]);
@@ -986,7 +990,7 @@ const autoPopulateIatiFields = useCallback((params: {
           type: result.type,
           category: (result as any).category,
           osmType: result.osm_type,
-          osmId: result.osm_id,
+          osmId: String(result.osm_id),
           address: result.address as GeocodeAddress,
           displayName: result.display_name,
           name: result.name,
@@ -1044,7 +1048,7 @@ const autoPopulateIatiFields = useCallback((params: {
           type: result.type,
           category: (result as any).category,
           osmType: result.osm_type,
-          osmId: result.osm_id,
+          osmId: String(result.osm_id),
           address: result.address as GeocodeAddress,
           displayName: result.display_name,
           name: result.name,
@@ -1086,7 +1090,7 @@ const autoPopulateIatiFields = useCallback((params: {
 
       // Prepare data for submission
       const allFormValues = watch();
-      const locationData: LocationSchema = {
+      const locationData: any = {
         ...data,
         ...allFormValues, // Include all form values, including country_code
         id: location?.id,
@@ -1097,7 +1101,9 @@ const autoPopulateIatiFields = useCallback((params: {
 
       console.log('[LocationModal] ✅ Submitting location data:', locationData);
 
+      console.log('[LocationModal] 🚀 Calling onSave function...');
       await onSave(locationData);
+      console.log('[LocationModal] ✅ onSave completed successfully');
 
       toast.success(location?.id ? 'Location updated successfully' : 'Location added successfully');
       onClose();
@@ -1579,7 +1585,7 @@ const autoPopulateIatiFields = useCallback((params: {
                   <SelectIATI
                     groups={LOCATION_REACH_GROUPS}
                     value={watch('location_reach')}
-                    onValueChange={(value) => setValue('location_reach', value)}
+                    onValueChange={(value) => setValue('location_reach', value as any)}
                     dropdownId="location-reach-select"
                   />
                   </div>
@@ -1593,7 +1599,7 @@ const autoPopulateIatiFields = useCallback((params: {
                   <SelectIATI
                     groups={LOCATION_EXACTNESS_GROUPS}
                     value={watch('exactness')}
-                    onValueChange={(value) => setValue('exactness', value)}
+                    onValueChange={(value) => setValue('exactness', value as any)}
                     dropdownId="location-exactness-select"
                   />
                   </div>
@@ -1607,7 +1613,7 @@ const autoPopulateIatiFields = useCallback((params: {
                   <SelectIATI
                     groups={LOCATION_CLASS_GROUPS}
                     value={watch('location_class')}
-                    onValueChange={(value) => setValue('location_class', value)}
+                    onValueChange={(value) => setValue('location_class', value as any)}
                     dropdownId="location-class-select"
                   />
                   </div>
@@ -1622,7 +1628,7 @@ const autoPopulateIatiFields = useCallback((params: {
                       <SelectIATI
                         groups={LOCATION_ID_VOCABULARY_GROUPS}
                         value={watch('location_id_vocabulary')}
-                        onValueChange={(value) => setValue('location_id_vocabulary', value)}
+                        onValueChange={(value) => setValue('location_id_vocabulary', value as any)}
                         dropdownId="location-id-vocabulary-select"
                       />
                     </div>
@@ -1637,9 +1643,7 @@ const autoPopulateIatiFields = useCallback((params: {
                         <Input
                           id="location_id_code"
                           type="text"
-                          {...register('location_id_code', { 
-                            setValueAs: (value) => value === '' ? undefined : Number(value)
-                          })}
+                          {...register('location_id_code')}
                           placeholder="e.g., 1821306"
                           className="flex-1"
                         />
@@ -1671,7 +1675,7 @@ const autoPopulateIatiFields = useCallback((params: {
                       <SelectIATI
                         groups={ADMINISTRATIVE_VOCABULARY_GROUPS}
                         value={watch('admin_vocabulary')}
-                        onValueChange={(value) => setValue('admin_vocabulary', value)}
+                        onValueChange={(value) => setValue('admin_vocabulary', value as any)}
                         dropdownId="admin-vocabulary-select"
                       />
                     </div>
@@ -1684,7 +1688,7 @@ const autoPopulateIatiFields = useCallback((params: {
                       <SelectIATI
                         groups={ADMINISTRATIVE_LEVEL_GROUPS}
                         value={watch('admin_level')}
-                        onValueChange={(value) => setValue('admin_level', value)}
+                        onValueChange={(value) => setValue('admin_level', value as any)}
                         dropdownId="admin-level-select"
                       />
                     </div>

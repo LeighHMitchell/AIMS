@@ -31,9 +31,14 @@ import {
   Clock,
   ChevronRight,
   Database,
-  AlertTriangle
+  AlertTriangle,
+  ClipboardPaste,
+  Globe
 } from 'lucide-react'
 import { IATIImportSkeleton } from '@/components/skeletons'
+import { Progress } from '@/components/ui/progress'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 
 interface ImportSummary {
   activities: number
@@ -97,6 +102,7 @@ export default function IATIImportPage() {
   const [step, setStep] = useState<ImportStep>('upload')
   const [file, setFile] = useState<File | null>(null)
   const [parsing, setParsing] = useState(false)
+  const [parsingProgress, setParsingProgress] = useState(0)
   const [parsedData, setParsedData] = useState<ParsedData | null>(null)
   const [summary, setSummary] = useState<ImportSummary | null>(null)
   const [importState, setImportState] = useState<ImportState>({
@@ -108,6 +114,11 @@ export default function IATIImportPage() {
   const [importHistory, setImportHistory] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState('import')
   const [loadingHistory, setLoadingHistory] = useState(false)
+  
+  // Snippet import state
+  const [importMethod, setImportMethod] = useState<'file' | 'url' | 'snippet'>('file')
+  const [snippetContent, setSnippetContent] = useState('')
+  const [urlContent, setUrlContent] = useState('')
 
   // File upload handler
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -122,12 +133,15 @@ export default function IATIImportPage() {
     setFile(xmlFile)
     setStep('parse')
     setParsing(true)
+    setParsingProgress(10)
 
     try {
       // Parse the XML file
+      setParsingProgress(30)
       const formData = new FormData()
       formData.append('file', xmlFile)
       
+      setParsingProgress(50)
       const response = await fetch('/api/iati/parse', {
         method: 'POST',
         body: formData
@@ -137,7 +151,9 @@ export default function IATIImportPage() {
         throw new Error('Failed to parse IATI file')
       }
 
+      setParsingProgress(70)
       const data = await response.json()
+      setParsingProgress(90)
       setParsedData(data)
       setSummary({
         activities: data.activities.length,
@@ -145,6 +161,7 @@ export default function IATIImportPage() {
         transactions: data.transactions.length,
         errors: data.errors?.length || 0
       })
+      setParsingProgress(100)
       
       // Initialize import state with parsed data
       setImportState({
@@ -176,8 +193,98 @@ export default function IATIImportPage() {
       setStep('upload')
     } finally {
       setParsing(false)
+      setParsingProgress(0)
     }
   }, [])
+
+  // Snippet parsing handler
+  const parseSnippet = useCallback(async () => {
+    if (!snippetContent.trim()) {
+      toast.error('Please paste some XML content')
+      return
+    }
+
+    setStep('parse')
+    setParsing(true)
+    setParsingProgress(10)
+
+    try {
+      setParsingProgress(30)
+      
+      const response = await fetch('/api/iati/parse-snippet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ xmlContent: snippetContent })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.details || 'Failed to parse snippet')
+      }
+
+      setParsingProgress(70)
+      const data = await response.json()
+      setParsingProgress(90)
+      
+      // Transform snippet data to match expected format
+      const transformedData = {
+        activities: data.activities || [],
+        organizations: data.organizations || [],
+        transactions: data.transactions || [],
+        locations: data.locations || [],
+        sectors: data.sectors || [],
+        recipientCountries: data.recipientCountries || [],
+        recipientRegions: data.recipientRegions || [],
+        snippetType: data.snippetType,
+        unmapped: {
+          activities: [],
+          organizations: [],
+          transactions: []
+        }
+      }
+      
+      setParsedData(transformedData)
+      setSummary({
+        activities: transformedData.activities.length,
+        organizations: transformedData.organizations.length,
+        transactions: transformedData.transactions.length,
+        errors: 0
+      })
+      setParsingProgress(100)
+      
+      // Initialize import state
+      setImportState({
+        organizations: {
+          phase: 'review',
+          selected: new Set(transformedData.organizations.map((o: any, i: number) => `${i}`)),
+          imported: [],
+          errors: []
+        },
+        activities: {
+          phase: 'review',
+          selected: new Set(transformedData.activities.map((a: any, i: number) => `${i}`)),
+          imported: [],
+          errors: []
+        },
+        transactions: {
+          phase: 'review',
+          selected: new Set(transformedData.transactions.map((t: any, i: number) => `${i}`)),
+          imported: [],
+          errors: []
+        }
+      })
+      
+      toast.success(data.message || `Parsed ${data.snippetType} snippet successfully!`)
+      setStep('summary')
+    } catch (error) {
+      console.error('Snippet parse error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to parse snippet')
+      setStep('upload')
+    } finally {
+      setParsing(false)
+      setParsingProgress(0)
+    }
+  }, [snippetContent])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -462,11 +569,39 @@ export default function IATIImportPage() {
     )
   }
 
-  // Show skeleton loader when parsing file
+  // Show progress bar when parsing file
   if (parsing && step === 'parse') {
     return (
       <MainLayout>
-        <IATIImportSkeleton />
+        <div className="container mx-auto p-6 max-w-4xl">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">IATI Import Tool</h1>
+            <p className="text-gray-600 mt-2">Sequential import process for IATI data</p>
+          </div>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="font-medium">Parsing XML file...</span>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {parsingProgress}%
+                  </span>
+                </div>
+                <Progress 
+                  value={parsingProgress} 
+                  className="h-2"
+                />
+                <p className="text-sm text-gray-600">
+                  Please wait while we process your IATI XML file. This may take a few moments for large files.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </MainLayout>
     )
   }
@@ -537,46 +672,172 @@ export default function IATIImportPage() {
             {step === 'upload' && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Upload IATI XML File</CardTitle>
+                  <CardTitle>Import IATI Data</CardTitle>
                   <CardDescription>
-                    Start by uploading your IATI XML file. The import process will guide you through each data type.
+                    Choose how you want to import your IATI data
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div
-                    {...getRootProps()}
-                    className={`
-                      border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
-                      transition-colors duration-200
-                      ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
-                    `}
-                  >
-                    <input {...getInputProps()} />
-                    <FileCode className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    {isDragActive ? (
-                      <p className="text-lg font-medium text-blue-600">Drop the file here...</p>
-                    ) : (
-                      <>
-                        <p className="text-lg font-medium text-gray-700">
-                          Drop your IATI XML file here
-                        </p>
-                        <p className="text-sm text-gray-500 mt-2">or click to select file</p>
-                        <p className="text-xs text-gray-400 mt-4">Supports IATI 2.03 format</p>
-                      </>
-                    )}
+                  {/* Import method selector */}
+                  <div className="flex gap-2 mb-6">
+                    <Button
+                      variant={importMethod === 'file' ? 'default' : 'outline'}
+                      onClick={() => setImportMethod('file')}
+                      className="flex-1"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload File
+                    </Button>
+                    <Button
+                      variant={importMethod === 'url' ? 'default' : 'outline'}
+                      onClick={() => setImportMethod('url')}
+                      className="flex-1"
+                    >
+                      <Globe className="h-4 w-4 mr-2" />
+                      From URL
+                    </Button>
+                    <Button
+                      variant={importMethod === 'snippet' ? 'default' : 'outline'}
+                      onClick={() => setImportMethod('snippet')}
+                      className="flex-1"
+                    >
+                      <ClipboardPaste className="h-4 w-4 mr-2" />
+                      Paste Snippet
+                    </Button>
                   </div>
 
-                  <Alert className="mt-6">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      The import process will check for existing data and guide you through importing:
-                      <ol className="list-decimal list-inside mt-2 space-y-1">
-                        <li>Organizations first (to establish references)</li>
-                        <li>Activities second (linked to organizations)</li>
-                        <li>Transactions last (linked to activities)</li>
-                      </ol>
-                    </AlertDescription>
-                  </Alert>
+                  {/* File Upload */}
+                  {importMethod === 'file' && (
+                    <>
+                      <div
+                        {...getRootProps()}
+                        className={`
+                          border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
+                          transition-colors duration-200
+                          ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
+                        `}
+                      >
+                        <input {...getInputProps()} />
+                        <FileCode className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        {isDragActive ? (
+                          <p className="text-lg font-medium text-blue-600">Drop the file here...</p>
+                        ) : (
+                          <>
+                            <p className="text-lg font-medium text-gray-700">
+                              Drop your IATI XML file here
+                            </p>
+                            <p className="text-sm text-gray-500 mt-2">or click to select file</p>
+                            <p className="text-xs text-gray-400 mt-4">Supports IATI 2.03 format</p>
+                          </>
+                        )}
+                      </div>
+
+                      <Alert className="mt-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          The import process will check for existing data and guide you through importing:
+                          <ol className="list-decimal list-inside mt-2 space-y-1">
+                            <li>Organizations first (to establish references)</li>
+                            <li>Activities second (linked to organizations)</li>
+                            <li>Transactions last (linked to activities)</li>
+                          </ol>
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
+
+                  {/* URL Import */}
+                  {importMethod === 'url' && (
+                    <>
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium">IATI XML URL</label>
+                        <Input
+                          type="url"
+                          placeholder="https://example.com/iati-data.xml"
+                          value={urlContent}
+                          onChange={(e) => setUrlContent(e.target.value)}
+                          className="w-full"
+                        />
+                        <Button
+                          onClick={() => toast.info('URL import coming soon!')}
+                          disabled={!urlContent.trim()}
+                          className="w-full"
+                        >
+                          Fetch and Parse
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <Alert className="mt-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          <p className="font-medium mb-2">URL Import allows you to:</p>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            <li>Import directly from IATI Registry URLs</li>
+                            <li>Fetch data from public IATI XML endpoints</li>
+                            <li>Automatically update from scheduled URLs</li>
+                          </ul>
+                          <p className="mt-2 text-sm text-amber-600">
+                            Note: This feature is coming soon!
+                          </p>
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
+
+                  {/* Snippet Import */}
+                  {importMethod === 'snippet' && (
+                    <>
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium">Paste IATI XML Snippet</label>
+                        <Textarea
+                          placeholder="Paste any IATI XML snippet here (transactions, organizations, locations, sectors, etc.)..."
+                          value={snippetContent}
+                          onChange={(e) => setSnippetContent(e.target.value)}
+                          className="font-mono text-sm min-h-[300px]"
+                        />
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{snippetContent.length} characters</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSnippetContent('')}
+                            disabled={!snippetContent}
+                          >
+                            Clear
+                          </Button>
+                        </div>
+                        <Button
+                          onClick={parseSnippet}
+                          disabled={!snippetContent.trim()}
+                          className="w-full"
+                        >
+                          Parse Snippet
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <Alert className="mt-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          <p className="font-medium mb-2">Snippet Import supports:</p>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;transaction&gt;</code> - Individual or multiple transactions</li>
+                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-xs bg-gray-100 px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
+                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;location&gt;</code> - Location data</li>
+                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
+                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-xs bg-gray-100 px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
+                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;policy-marker&gt;</code> - Policy markers</li>
+                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;budget&gt;</code> - Budget information</li>
+                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;iati-activity&gt;</code> - Full activities</li>
+                          </ul>
+                          <p className="mt-2 text-sm">
+                            The system will automatically detect the type of snippet and parse it accordingly.
+                          </p>
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}

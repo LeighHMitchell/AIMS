@@ -1,72 +1,54 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Plus, ChevronDown, UserPlus, Info, CheckCircle, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { ActivityContributor } from "@/lib/activity-permissions";
-import { useUser } from '@/hooks/useUser';
-import { OrganizationSearchableSelect, Organization } from "@/components/ui/organization-searchable-select";
-import { useParticipatingOrganizations } from "@/hooks/use-participating-organizations";
-import { useOrganizations } from "@/hooks/use-organizations";
-import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
-import Image from "next/image";
-import { v4 as uuidv4 } from 'uuid';
+"use client";
+
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Edit, Trash2, Users, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { ParticipatingOrgModal, ParticipatingOrgData } from '@/components/modals/ParticipatingOrgModal';
+import { useParticipatingOrganizations } from '@/hooks/use-participating-organizations';
+import { toast } from 'sonner';
+import { getOrganizationRoleName } from '@/data/iati-organization-roles';
+import { getOrganizationTypeName } from '@/data/iati-organization-types';
+import Image from 'next/image';
 
 interface OrganisationsSectionProps {
-  extendingPartners: any[];
-  implementingPartners: any[];
-  governmentPartners: any[];
-  fundingPartners: any[];
-  onChange: (field: string, value: any[]) => void;
-  contributors: ActivityContributor[];
-  onContributorAdd: (contributor: ActivityContributor) => void;
-  canNominateContributors?: boolean;
   activityId?: string;
   onParticipatingOrganizationsChange?: (count: number) => void;
+  // Legacy props for backward compatibility (not used in new design)
+  extendingPartners?: any[];
+  implementingPartners?: any[];
+  governmentPartners?: any[];
+  fundingPartners?: any[];
+  onChange?: (field: string, value: any[]) => void;
+  contributors?: any[];
+  onContributorAdd?: (contributor: any) => void;
+  canNominateContributors?: boolean;
 }
 
 export default function OrganisationsSection({
-  extendingPartners,
-  implementingPartners,
-  governmentPartners,
-  fundingPartners,
-  onChange,
-  contributors,
-  onContributorAdd,
-  canNominateContributors = false,
   activityId,
   onParticipatingOrganizationsChange,
 }: OrganisationsSectionProps) {
-  const { user } = useUser();
-  const [nominationModal, setNominationModal] = useState<{open: boolean, organization: Organization | null}>({open: false, organization: null});
-  const [openDropdown, setOpenDropdown] = useState<'extending' | 'implementing' | 'government' | 'funding' | null>(null);
-  const [savingState, setSavingState] = useState<{extending: boolean, implementing: boolean, government: boolean, funding: boolean}>({
-    extending: false,
-    implementing: false, 
-    government: false,
-    funding: false
-  });
-
-  // Use the new hooks - always call these hooks
-  const { organizations, loading: organizationsLoading } = useOrganizations({
-    onError: (error) => toast.error(`Failed to load organizations: ${error}`)
-  });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingOrg, setEditingOrg] = useState<any | null>(null);
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const {
     participatingOrganizations,
-    loading: participatingLoading,
+    loading,
     addParticipatingOrganization,
     removeParticipatingOrganization,
-    getOrganizationsByRole,
-    isOrganizationParticipating,
+    refetch
   } = useParticipatingOrganizations({
     activityId,
-    onError: (error) => toast.error(`Failed to manage participating organizations: ${error}`)
+    onError: (error) => toast.error(error)
   });
 
-  // All hooks must be called before any early returns
+  // Track organization count changes
   const stableOrgsCount = useRef(participatingOrganizations.length);
   const notifyTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -98,434 +80,374 @@ export default function OrganisationsSection({
     };
   }, [participatingOrganizations.length, onParticipatingOrganizationsChange, activityId]);
 
-  // Early return after all hooks are called
-  if (!activityId) {
-    return (
-      <div className="max-w-4xl space-y-8 bg-white border border-gray-200 rounded-lg p-6">
-        <div className="text-center text-gray-500">
-          Loading activity data...
-        </div>
-      </div>
-    );
-  }
-
-  console.log('[OrganisationsSection] organizationsLoading:', organizationsLoading, 'organizations:', organizations.length);
-  console.log('[OrganisationsSection] activityId:', activityId);
-  console.log('[OrganisationsSection] participatingOrganizations:', participatingOrganizations.length);
-
-  // Get organizations by role type
-  const extendingOrgs = getOrganizationsByRole('extending');
-  const implementingOrgs = getOrganizationsByRole('implementing');
-  const governmentOrgs = getOrganizationsByRole('government');
-  const fundingOrgs = getOrganizationsByRole('funding');
-
-  // Helper function to determine if an organization is classified as Partner Government
-  const isPartnerGovernment = (org: Organization): boolean => {
-    const typeCode = parseInt(org.organisation_type || '') || 0;
-    const orgTypeText = (org.organisation_type || '').toLowerCase();
-    const isMyanmar = org.country?.toLowerCase() === "myanmar";
-    
-    // Partner Government: Organizations in Myanmar with government-related types
-    if (!isMyanmar) return false;
-    
-    // Check IATI codes: Government (10), Local Government (11), Other Public Sector (15)
-    if ([10, 11, 15].includes(typeCode)) return true;
-    
-    // Check text-based organization types
-    if (orgTypeText.includes('government') || 
-        orgTypeText.includes('local government') ||
-        orgTypeText.includes('other public sector') ||
-        orgTypeText.includes('public sector')) {
-      return true;
-    }
-    
-    return false;
+  const handleAdd = () => {
+    setEditingOrg(null);
+    setModalOpen(true);
   };
 
-  // Filter organizations that are not already participating in each role
-  const getAvailableOrganizations = (roleType: 'extending' | 'implementing' | 'government' | 'funding') => {
-    let filteredOrgs = organizations;
-    
-    // For government partners, only show organizations classified as Partner Government
-    if (roleType === 'government') {
-      filteredOrgs = organizations.filter(org => isPartnerGovernment(org));
-    }
-    
-    return filteredOrgs.filter(org => !isOrganizationParticipating(org.id, roleType));
+  const handleEdit = (org: any) => {
+    console.log('[OrganisationsSection] Editing org data:', org);
+    setEditingOrg({
+      id: org.id,
+      organization_id: org.organization_id,
+      role_type: org.role_type,
+      iati_role_code: org.iati_role_code,
+      iati_org_ref: org.iati_org_ref,
+      org_type: org.org_type,
+      activity_id_ref: org.activity_id_ref,
+      crs_channel_code: org.crs_channel_code,
+      narrative: org.narrative,
+      narrative_lang: org.narrative_lang,
+      narratives: org.narratives || [],
+      org_activity_id: org.org_activity_id,
+      reporting_org_ref: org.reporting_org_ref,
+      secondary_reporter: org.secondary_reporter || false
+    });
+    setModalOpen(true);
   };
 
-  const handleAddOrganization = async (organizationId: string, roleType: 'extending' | 'implementing' | 'government' | 'funding') => {
+  const handleSave = async (data: ParticipatingOrgData) => {
     try {
-      console.log('[OrganisationsSection] Adding organization:', organizationId, 'role:', roleType);
-      console.log('[OrganisationsSection] Activity ID for add:', activityId);
+      if (editingOrg) {
+        // Update existing organization
+        const response = await fetch(`/api/activities/${activityId}/participating-organizations`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participating_org_id: editingOrg.id,
+            ...data
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to update organization');
+        }
+
+        toast.success('Organization updated successfully');
+      } else {
+        // Add new organization
+        await addParticipatingOrganization(data.organization_id, data.role_type, data);
+        toast.success('Organization added successfully');
+      }
       
-      // Set saving state for this role type
-      setSavingState(prev => ({ ...prev, [roleType]: true }));
-      
-      const result = await addParticipatingOrganization(organizationId, roleType);
-      console.log('[OrganisationsSection] Add result:', result);
-      toast.success('Organization added successfully');
+      // Refresh the list
+      await refetch();
+      setModalOpen(false);
+      setEditingOrg(null);
     } catch (error) {
-      console.error('[OrganisationsSection] Error adding organization:', error);
-      toast.error('Failed to add organization');
-    } finally {
-      // Clear saving state for this role type
-      setSavingState(prev => ({ ...prev, [roleType]: false }));
+      console.error('Error saving organization:', error);
+      throw error; // Re-throw to let modal handle it
     }
   };
 
-  const handleRemoveOrganization = async (organizationId: string, roleType: 'extending' | 'implementing' | 'government' | 'funding') => {
-    try {
-      await removeParticipatingOrganization(organizationId, roleType);
-      toast.success('Organization removed successfully');
-    } catch (error) {
-      toast.error('Failed to remove organization');
-    }
-  };
-
-  const nominateAsContributor = (organization: Organization) => {
-    setNominationModal({open: true, organization});
-  };
-
-  const confirmNomination = () => {
-    if (!nominationModal.organization) return;
-    
-    const organization = nominationModal.organization;
-    
-    // Check if already a contributor
-    if (contributors.some(c => c.organizationId === organization.id)) {
-      toast.error("This organization is already a contributor");
-      setNominationModal({open: false, organization: null});
+  const handleDelete = async (org: any) => {
+    if (!confirm(`Are you sure you want to remove ${org.organization?.name || org.narrative || 'this organization'}?`)) {
       return;
     }
 
-    // Build the user's display name with fallbacks
-    let nominatedByName = 'Unknown User';
-    if (user) {
-      if (user.name && user.name.trim() !== '') {
-        nominatedByName = user.name.trim();
-      } else if (user.firstName || user.lastName) {
-        const nameParts = [user.firstName, user.lastName].filter(Boolean);
-        nominatedByName = nameParts.join(' ').trim();
-      } else if (user.email) {
-        nominatedByName = user.email.split('@')[0]; // Use part before @
-      }
+    // Validate required data
+    if (!activityId) {
+      toast.error('Activity ID is missing. Cannot delete organization.');
+      console.error('[Delete] Missing activityId');
+      return;
     }
 
-    const newContributor: ActivityContributor = {
-      id: uuidv4(),
-      organizationId: organization.id,
-      organizationName: organization.name,
-      status: 'nominated',
-      role: 'partner', // Default role for nominated contributors
-      nominatedBy: user?.id || 'unknown-user',
-      nominatedByName: nominatedByName,
-      nominatedAt: new Date().toISOString(),
-      canEditOwnData: true,
-      canViewOtherDrafts: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+    if (!org.id) {
+      toast.error('Organization ID is missing. Cannot delete organization.');
+      console.error('[Delete] Missing org.id. Org data:', org);
+      return;
+    }
+
+    console.log('[Delete] Deleting participating organization:', {
+      activityId,
+      participatingOrgId: org.id,
+      organizationName: org.organization?.name || org.narrative
+    });
+
+    try {
+      // Delete using the participating org ID
+      const response = await fetch(
+        `/api/activities/${activityId}/participating-organizations?id=${org.id}`,
+        { method: 'DELETE' }
+      );
+
+      console.log('[Delete] Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[Delete] Error response:', errorData);
+        throw new Error(errorData.error || `Failed to remove organization (${response.status})`);
+      }
+
+      toast.success('Organization removed successfully');
+      
+      // Refresh the list
+      await refetch();
+    } catch (error) {
+      console.error('[Delete] Error removing organization:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to remove organization');
+    }
+  };
+
+  const getRoleBadgeColor = (roleCode: number) => {
+    const colors: Record<number, string> = {
+      1: 'bg-yellow-100 text-yellow-800 border-yellow-300',     // Funding
+      2: 'bg-purple-100 text-purple-800 border-purple-300',     // Accountable/Government
+      3: 'bg-blue-100 text-blue-800 border-blue-300',           // Extending
+      4: 'bg-green-100 text-green-800 border-green-300'         // Implementing
     };
-
-    onContributorAdd(newContributor);
-    setNominationModal({open: false, organization: null});
-    toast.success(`${organization.name} has been nominated as a contributor`);
+    return colors[roleCode] || 'bg-gray-100 text-gray-800 border-gray-300';
   };
 
-  const isAlreadyContributor = (orgId: string) => {
-    return contributors.some(c => c.organizationId === orgId);
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
   };
 
-  const renderOrganizationCard = (participatingOrg: any, roleType: 'extending' | 'implementing' | 'government' | 'funding') => {
-    const org = participatingOrg.organization;
-    if (!org) return null;
+  const sortedOrganizations = useMemo(() => {
+    if (!sortField) return participatingOrganizations;
 
+    return [...participatingOrganizations].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      switch (sortField) {
+        case 'organization':
+          aValue = (a.narrative || a.organization?.name || '').toLowerCase();
+          bValue = (b.narrative || b.organization?.name || '').toLowerCase();
+          break;
+        case 'role':
+          aValue = getOrganizationRoleName(a.iati_role_code || 0);
+          bValue = getOrganizationRoleName(b.iati_role_code || 0);
+          break;
+        case 'iati_identifier':
+          aValue = (a.iati_org_ref || a.organization?.iati_org_id || '').toLowerCase();
+          bValue = (b.iati_org_ref || b.organization?.iati_org_id || '').toLowerCase();
+          break;
+        case 'type':
+          aValue = getOrganizationTypeName(a.org_type || '');
+          bValue = getOrganizationTypeName(b.org_type || '');
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [participatingOrganizations, sortField, sortDirection]);
+
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="h-4 w-4 ml-1" /> : 
+      <ChevronDown className="h-4 w-4 ml-1" />;
+  };
+
+  if (loading) {
     return (
-      <div key={participatingOrg.id} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
-        {org.logo && (
-          <div className="flex-shrink-0">
-            <Image
-              src={org.logo}
-              alt={`${org.name} logo`}
-              width={32}
-              height={32}
-              className="rounded-sm object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Participating Organisations
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
           </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-foreground truncate">
-              {org.name}
-            </span>
-            {org.acronym && (
-              <span className="font-medium text-foreground">
-                ({org.acronym})
-              </span>
-            )}
-            <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-          </div>
-          {(org.iati_org_id || org.country) && (
-            <div className="flex items-center gap-1 mt-0.5">
-              {org.iati_org_id && (
-                <span className="text-xs text-muted-foreground">
-                  {org.iati_org_id}
-                </span>
-              )}
-              {org.iati_org_id && org.country && (
-                <span className="text-xs text-muted-foreground">•</span>
-              )}
-              {org.country && (
-                <span className="text-xs text-muted-foreground">
-                  {org.country}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        {roleType === 'implementing' && canNominateContributors && !isAlreadyContributor(org.id) && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => nominateAsContributor(org)}
-            className="text-xs"
-          >
-            <UserPlus className="h-3 w-3 mr-1" />
-            Nominate as Data Contributor
-          </Button>
-        )}
-        {roleType === 'implementing' && isAlreadyContributor(org.id) && (
-          <span className="text-xs text-green-600 font-medium">✓ Data Contributor</span>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleRemoveOrganization(org.id, roleType)}
-          className="h-8 w-8"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+        </CardContent>
+      </Card>
     );
-  };
+  }
 
   return (
-    <div className="max-w-4xl space-y-8 bg-white border border-gray-200 rounded-lg p-6">
-
-
-
-
-      {/* Funding Partners */}
+    <>
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            Funding Partners
-            <HelpTextTooltip content="Organizations providing financial resources for the activity. They are the primary source of funding and may not be directly involved in implementation." />
-            {savingState.funding && (
-              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            {fundingOrgs.map((participatingOrg) => 
-              renderOrganizationCard(participatingOrg, 'funding')
-            )}
-
-            {fundingOrgs.length === 0 && (
-              <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
-                <p className="text-gray-500 text-center">No funding partners added</p>
-              </div>
-            )}
-          </div>
-
-          <OrganizationSearchableSelect
-            organizations={getAvailableOrganizations('funding')}
-            value=""
-            onValueChange={(organizationId) => {
-              console.log('[OrganisationsSection] Funding partner selected:', organizationId);
-              if (organizationId) {
-                handleAddOrganization(organizationId, 'funding');
-              }
-            }}
-            placeholder="Select a funding partner"
-            searchPlaceholder="Search funding partners..."
-            disabled={organizationsLoading}
-            className="w-full"
-            open={openDropdown === 'funding'}
-            onOpenChange={(open) => setOpenDropdown(open ? 'funding' : null)}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Extending Partners */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            Extending Partners
-            <HelpTextTooltip content="The organisation that receives funds from the financing partner and passes them on to the implementing partner. It acts as a channel for resources rather than the direct implementer. This role ensures funding flows are properly managed and recorded." />
-            {savingState.extending && (
-              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-
-          <div className="space-y-3">
-            {extendingOrgs.map((participatingOrg) => 
-              renderOrganizationCard(participatingOrg, 'extending')
-            )}
-
-            {extendingOrgs.length === 0 && (
-              <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
-                <p className="text-gray-500 text-center">No extending partners added</p>
-              </div>
-            )}
-          </div>
-
-          <OrganizationSearchableSelect
-            organizations={getAvailableOrganizations('extending')}
-            value=""
-            onValueChange={(organizationId) => {
-              console.log('[OrganisationsSection] Extending partner selected:', organizationId);
-              if (organizationId) {
-                handleAddOrganization(organizationId, 'extending');
-              }
-            }}
-            placeholder="Select an extending partner"
-            searchPlaceholder="Search extending partners..."
-            disabled={organizationsLoading}
-            className="w-full"
-            open={openDropdown === 'extending'}
-            onOpenChange={(open) => setOpenDropdown(open ? 'extending' : null)}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Implementing Partners */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            Implementing Partners
-            <HelpTextTooltip content="The organisation responsible for carrying out the activity on the ground. It holds the primary responsibility for delivering outputs and results. Implementing partners are accountable for the execution of the activity." />
-            {savingState.implementing && (
-              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-
-          <div className="space-y-3">
-            {implementingOrgs.map((participatingOrg) => 
-              renderOrganizationCard(participatingOrg, 'implementing')
-            )}
-
-            {implementingOrgs.length === 0 && (
-              <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
-                <p className="text-gray-500 text-center">No implementing partners added</p>
-              </div>
-            )}
-          </div>
-
-          <OrganizationSearchableSelect
-            organizations={getAvailableOrganizations('implementing')}
-            value=""
-            onValueChange={(organizationId) => {
-              console.log('[OrganisationsSection] Implementing partner selected:', organizationId);
-              if (organizationId) {
-                handleAddOrganization(organizationId, 'implementing');
-              }
-            }}
-            placeholder="Select an implementing partner"
-            searchPlaceholder="Search implementing partners..."
-            disabled={organizationsLoading}
-            className="w-full"
-            open={openDropdown === 'implementing'}
-            onOpenChange={(open) => setOpenDropdown(open ? 'implementing' : null)}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Government Partners */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            Government Partners
-            <HelpTextTooltip content="The government entity responsible for overseeing or stewarding the activity. This is often the ministry or agency that signs a formal agreement, such as an MoU. The partner provides official recognition and ensures alignment with national systems." />
-            {savingState.government && (
-              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-
-          <div className="space-y-3">
-            {governmentOrgs.map((participatingOrg) => 
-              renderOrganizationCard(participatingOrg, 'government')
-            )}
-
-            {governmentOrgs.length === 0 && (
-              <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
-                <p className="text-gray-500 text-center">No government partners added</p>
-              </div>
-            )}
-          </div>
-
-          <OrganizationSearchableSelect
-            organizations={getAvailableOrganizations('government')}
-            value=""
-            onValueChange={(organizationId) => {
-              console.log('[OrganisationsSection] Government partner selected:', organizationId);
-              if (organizationId) {
-                handleAddOrganization(organizationId, 'government');
-              }
-            }}
-            placeholder="Select a government partner"
-            searchPlaceholder="Search government partners..."
-            disabled={organizationsLoading}
-            className="w-full"
-            open={openDropdown === 'government'}
-            onOpenChange={(open) => setOpenDropdown(open ? 'government' : null)}
-            forceDirection="up"
-          />
-        </CardContent>
-      </Card>
-
-      {/* Nomination Confirmation Modal */}
-      <Dialog open={nominationModal.open} onOpenChange={(open) => setNominationModal({open, organization: nominationModal.organization})}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nominate as Data Contributor</DialogTitle>
-            <DialogDescription>
-              Do you want to allow <strong>{nominationModal.organization?.name}</strong> to contribute transactions, results, or implementation data?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                This will allow them to add and edit their own financial data, results, and implementation records in the system. 
-                It does not change their official role as an implementing partner.
-              </AlertDescription>
-            </Alert>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setNominationModal({open: false, organization: null})}
-            >
-              Cancel
+          <div className="flex items-center justify-end">
+            <Button onClick={handleAdd} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Organization
             </Button>
-            <Button onClick={confirmNomination}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Nominate as Contributor
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {participatingOrganizations.length === 0 ? (
+            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+              <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-600 font-medium mb-2">No participating organizations added yet</p>
+              <p className="text-sm text-gray-500 mb-4">
+                Add organizations to define who is funding, implementing, or managing this activity
+              </p>
+              <Button onClick={handleAdd} variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Add First Organization
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead 
+                        className="w-[28%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
+                        onClick={() => handleSort('organization')}
+                      >
+                        <div className="flex items-center">
+                          Organization
+                          {getSortIcon('organization')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="w-[18%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
+                        onClick={() => handleSort('role')}
+                      >
+                        <div className="flex items-center">
+                          Role
+                          {getSortIcon('role')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="w-[22%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
+                        onClick={() => handleSort('iati_identifier')}
+                      >
+                        <div className="flex items-center">
+                          IATI Identifier
+                          {getSortIcon('iati_identifier')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="w-[18%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
+                        onClick={() => handleSort('type')}
+                      >
+                        <div className="flex items-center">
+                          Type
+                          {getSortIcon('type')}
+                        </div>
+                      </TableHead>
+                      <TableHead className="w-[14%] text-right font-semibold">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedOrganizations.map((participatingOrg: any) => (
+                      <TableRow key={participatingOrg.id} className="hover:bg-gray-50">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {participatingOrg.organization?.logo && (
+                              <div className="flex-shrink-0">
+                                <Image
+                                  src={participatingOrg.organization.logo}
+                                  alt={participatingOrg.organization.name}
+                                  width={32}
+                                  height={32}
+                                  className="rounded object-contain"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium text-gray-900 truncate">
+                                {participatingOrg.narrative || 
+                                 participatingOrg.organization?.name || 
+                                 'Unknown Organization'}
+                              </div>
+                              {participatingOrg.narrative && participatingOrg.organization?.name && 
+                               participatingOrg.narrative !== participatingOrg.organization.name && (
+                                <div className="text-xs text-gray-500">
+                                  From: {participatingOrg.organization.name}
+                                  {participatingOrg.organization.acronym && ` (${participatingOrg.organization.acronym})`}
+              </div>
+            )}
+                              {!participatingOrg.narrative && participatingOrg.organization?.acronym && (
+                                <div className="text-xs text-gray-500">
+                                  ({participatingOrg.organization.acronym})
+          </div>
+                              )}
+                              {participatingOrg.organization?.country && (
+                                <div className="text-xs text-gray-500">
+                                  {participatingOrg.organization.country}
+              </div>
+            )}
+          </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline"
+                            className={`${getRoleBadgeColor(participatingOrg.iati_role_code)} border`}
+                          >
+                            {getOrganizationRoleName(participatingOrg.iati_role_code)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded">
+                            {participatingOrg.iati_org_ref || 
+                             participatingOrg.organization?.iati_org_id || 
+                             <span className="text-gray-400">Not set</span>}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-gray-600">
+                            {participatingOrg.org_type ? (
+                              <span title={getOrganizationTypeName(participatingOrg.org_type)}>
+                                <span className="font-mono bg-gray-100 px-2 py-1 rounded">{participatingOrg.org_type}</span> {getOrganizationTypeName(participatingOrg.org_type)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">Not set</span>
+                            )}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(participatingOrg)}
+                              className="hover:bg-blue-50 hover:text-blue-600"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(participatingOrg)}
+                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <ParticipatingOrgModal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingOrg(null);
+        }}
+        onSave={handleSave}
+        editingOrg={editingOrg}
+        activityId={activityId || ''}
+      />
+    </>
   );
 } 

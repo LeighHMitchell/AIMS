@@ -87,12 +87,12 @@ export function ExternalPublisherModal({
   currentActivityIatiId,
   existingActivity
 }: ExternalPublisherModalProps) {
-  const [selectedOption, setSelectedOption] = useState<ImportOption | null>(null);
+  const [selectedOption, setSelectedOption] = useState<ImportOption | null>('merge');
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
-      setSelectedOption(null);
+      setSelectedOption('merge');
     }
   }, [isOpen]);
 

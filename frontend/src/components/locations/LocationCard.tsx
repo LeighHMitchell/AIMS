@@ -143,11 +143,14 @@ export default function LocationCard({
   // Format address for display
   const formatAddress = () => {
     const parts = [];
-    if (location.city) parts.push(location.city);
-    if (location.state_region_name) parts.push(location.state_region_name);
+    
+    // Add components in order: township, district, city, state/region, postal code, country
     if (location.township_name) parts.push(location.township_name);
     if (location.district_name) parts.push(location.district_name);
-    if (location.village_name) parts.push(location.village_name);
+    if (location.city) parts.push(location.city);
+    if (location.state_region_name) parts.push(location.state_region_name);
+    if (location.postal_code) parts.push(location.postal_code);
+    if (location.country_code) parts.push(location.country_code);
     
     const formattedAddress = parts.join(', ');
     if (formattedAddress) return formattedAddress;
@@ -201,12 +204,12 @@ export default function LocationCard({
               </div>
 
               {/* 2. Location Description */}
-              <div className="text-sm text-gray-600">
-                {(location.description || location.location_description) ? (
-                  (() => {
+              {(location.description || location.location_description) && (
+                <div className="text-sm text-gray-600">
+                  {(() => {
                     const desc = location.description || location.location_description || '';
                     return showFullDescription || desc.length <= 100 ? (
-                      <div>
+                      <span>
                         {desc}
                         {desc.length > 100 && (
                           <button
@@ -216,9 +219,9 @@ export default function LocationCard({
                             Show less
                           </button>
                         )}
-                      </div>
+                      </span>
                     ) : (
-                      <div>
+                      <span>
                         {desc.substring(0, 100)}...
                         <button
                           onClick={() => setShowFullDescription(true)}
@@ -226,15 +229,20 @@ export default function LocationCard({
                         >
                           Show more
                         </button>
-                      </div>
+                      </span>
                     );
-                  })()
-                ) : (
-                  <span className="text-gray-400 italic">No description</span>
-                )}
-              </div>
+                  })()}
+                </div>
+              )}
 
-              {/* 3. Coordinates */}
+              {/* 3. Activity Description */}
+              {location.activity_location_description && (
+                <div className="text-sm text-gray-600">
+                  {location.activity_location_description}
+                </div>
+              )}
+
+              {/* 4. Coordinates */}
               {location.latitude && location.longitude && (
                 <div className="text-sm text-gray-600 flex items-center gap-1">
                   <MapPin className="h-3 w-3 flex-shrink-0" />
@@ -242,7 +250,7 @@ export default function LocationCard({
                 </div>
               )}
 
-              {/* 4. Address */}
+              {/* 5. Address */}
               <div className="text-sm text-gray-600">
                 {formatAddress() === 'No address' ? (
                   <span className="text-gray-400 italic">No address</span>

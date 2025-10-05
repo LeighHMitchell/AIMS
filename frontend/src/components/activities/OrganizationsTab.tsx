@@ -155,7 +155,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Participating Organizations
+              Participating Organisations
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -177,7 +177,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Participating Organizations
+            Participating Organisations
           </CardTitle>
         </CardHeader>
         <CardContent>

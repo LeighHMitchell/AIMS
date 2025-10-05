@@ -108,6 +108,9 @@ export async function PATCH(
     const locationId = params.id;
     const body = await request.json();
 
+    console.log('[Location API] 🔄 PATCH request received for location:', locationId);
+    console.log('[Location API] 📦 Request body:', body);
+
     if (!locationId) {
       return NextResponse.json(
         { error: 'Location ID is required' },
@@ -118,6 +121,7 @@ export async function PATCH(
     // Validate request body
     const validationResult = locationFormSchema.safeParse(body);
     if (!validationResult.success) {
+      console.error('[Location API] ❌ Validation failed:', validationResult.error.issues);
       return NextResponse.json(
         {
           error: 'Invalid location data',
@@ -131,6 +135,7 @@ export async function PATCH(
     }
 
     const locationData = validationResult.data;
+    console.log('[Location API] ✅ Validation passed, location data:', locationData);
 
     // Check if location exists
     const { data: existingLocation } = await getSupabaseAdmin()
@@ -206,6 +211,7 @@ export async function PATCH(
 
 
     // Update location
+    console.log('[Location API] 🔄 Updating location with data:', updateData);
     const { data: updatedLocation, error } = await getSupabaseAdmin()
       .from('activity_locations')
       .update(updateData)
@@ -214,13 +220,14 @@ export async function PATCH(
       .single();
 
     if (error) {
-      console.error('[Location API] Error updating location:', error);
+      console.error('[Location API] ❌ Error updating location:', error);
       return NextResponse.json(
         { error: `Failed to update location: ${error.message}` },
         { status: 500 }
       );
     }
 
+    console.log('[Location API] ✅ Location updated successfully:', updatedLocation);
     return NextResponse.json({
       success: true,
       location: updatedLocation

@@ -1,0 +1,44 @@
+--- Original code (lines 1806-1807):
+          // Get current location at this index for comparison
+          const currentLocation = currentActivityData.locations && currentActivityData.locations[locIndex];
+
+--- Replace with this code:
+
+          // Helper function to normalize coordinates for comparison (defined early so we can use it in find)
+          const normalizeCoordinates = (coords: string) => {
+            if (!coords) return '';
+            // Normalize to single space between lat/long, trim whitespace
+            return coords.trim().replace(/\s+/g, ' ');
+          };
+
+          // Find matching current location by unique identifiers (not by index!)
+          // Priority: 1) location_ref, 2) coordinates, 3) location_name
+          const currentLocation = currentActivityData.locations?.find((existingLoc: any) => {
+            // First try to match by location_ref (most reliable)
+            if (location.ref && existingLoc.location_ref) {
+              return location.ref === existingLoc.location_ref;
+            }
+            
+            // Then try to match by coordinates
+            const existingCoords = existingLoc.latitude && existingLoc.longitude 
+              ? `${existingLoc.latitude} ${existingLoc.longitude}` 
+              : '';
+            const importCoords = location.point?.pos || '';
+            
+            if (existingCoords && importCoords) {
+              return normalizeCoordinates(existingCoords) === normalizeCoordinates(importCoords);
+            }
+            
+            // Finally try to match by name (least reliable)
+            return location.name && existingLoc.location_name && 
+                   location.name.toLowerCase().trim() === existingLoc.location_name.toLowerCase().trim();
+          });
+
+--- ALSO DELETE the duplicate normalizeCoordinates definition (lines 1870-1875):
+          // Helper function to normalize coordinates for comparison
+          const normalizeCoordinates = (coords: string) => {
+            if (!coords) return '';
+            // Normalize to single space between lat/long, trim whitespace
+            return coords.trim().replace(/\s+/g, ' ');
+          };
+

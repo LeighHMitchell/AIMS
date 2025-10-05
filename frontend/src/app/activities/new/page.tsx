@@ -2380,7 +2380,9 @@ function NewActivityPageContent() {
         });
         
         if (!response.ok) {
-          throw new Error(`Failed to save government inputs: ${response.status}`);
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          console.error('[GovernmentInputsAutosave] API error response:', errorData);
+          throw new Error(`Failed to save government inputs: ${errorData.message || errorData.error || response.status}`);
         }
         
         const result = await response.json();
@@ -2388,6 +2390,7 @@ function NewActivityPageContent() {
         return result;
       } catch (error) {
         console.error('[GovernmentInputsAutosave] Failed to save government inputs:', error);
+        console.error('[GovernmentInputsAutosave] Error details:', error instanceof Error ? error.message : error);
         throw error;
       }
     }
@@ -2701,7 +2704,7 @@ function NewActivityPageContent() {
       sectors: "Sectors",
       locations: "Activity Locations",
       subnational_breakdown: "Subnational Breakdown",
-      organisations: "Organisations",
+      organisations: "Participating Organisations",
       contributors: "Activity Contributors",
       contacts: "Activity Contacts",
       focal_points: "Focal Points",
@@ -3245,7 +3248,7 @@ function NewActivityPageContent() {
     {
       title: "Stakeholders",
       sections: [
-        { id: "organisations", label: "Organisations" },
+        { id: "organisations", label: "Participating Organisations" },
         { id: "contributors", label: "Contributors" },
         { id: "contacts", label: "Contacts" },
         { id: "focal_points", label: "Focal Points" },

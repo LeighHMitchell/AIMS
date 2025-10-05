@@ -120,7 +120,7 @@ export async function POST(
     }
 
     // Transform frontend format to database format
-    const databaseFormat = {
+    const databaseFormat: any = {
       activity_id: activityId,
       on_budget_classification: body.onBudgetClassification || {},
       rgc_contribution: body.rgcContribution || {},
@@ -129,10 +129,25 @@ export async function POST(
       oversight_agreement: body.oversightAgreement || {},
       geographic_context: body.geographicContext || {},
       strategic_considerations: body.strategicConsiderations || {},
-      evaluation_results: body.evaluationResults || {},
-      created_by: body.userId,
-      updated_by: body.userId
+      evaluation_results: body.evaluationResults || {}
     };
+
+    // Handle user tracking fields
+    // Check if this is an update (record already exists)
+    const { data: existing } = await supabase
+      .from('government_inputs')
+      .select('id, created_by')
+      .eq('activity_id', activityId)
+      .maybeSingle();
+
+    if (existing) {
+      // Update only updated_by for existing records, set to null if no userId
+      databaseFormat.updated_by = body.userId || null;
+    } else {
+      // For new records, set both fields (or null if no userId)
+      databaseFormat.created_by = body.userId || null;
+      databaseFormat.updated_by = body.userId || null;
+    }
 
     // Use upsert to create or update
     const { data: governmentInput, error } = await supabase
@@ -146,7 +161,19 @@ export async function POST(
 
     if (error) {
       console.error('Error saving government inputs:', error);
-      return NextResponse.json({ error: 'Failed to save government inputs' }, { status: 500 });
+      console.error('Supabase error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      return NextResponse.json({ 
+        error: 'Failed to save government inputs',
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      }, { status: 500 });
     }
 
     // Transform back to frontend format for response

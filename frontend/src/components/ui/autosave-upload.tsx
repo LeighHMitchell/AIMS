@@ -237,10 +237,10 @@ export function AutosaveUpload({
           >
             <input {...getInputProps()} id={id} />
             <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
-            <p className="text-sm font-medium text-gray-700 mb-1">
+            <p className="text-sm font-medium text-gray-700 mb-1 text-center">
               {isDragActive ? 'Drop image here' : 'Click or drag image to upload'}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 text-center">
               {`Max size: ${maxSize / (1024 * 1024)}MB`}
             </p>
             {isProcessing && (

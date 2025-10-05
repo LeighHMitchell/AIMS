@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem, CommandList, CommandInput, CommandEmpty } from '@/components/ui/command';
@@ -287,6 +288,41 @@ const getTiedStatusLabel = (code: string): { code: string, name: string } | null
   return { code, name: tiedMap[code] || 'Unknown tied status' };
 };
 
+const getOrganizationTypeLabel = (code: string): { code: string, name: string } | null => {
+  if (!code) return null;
+  const typeMap: Record<string, string> = {
+    '10': 'Government',
+    '11': 'Local Government',
+    '12': 'Other Public Sector',
+    '15': 'Other Public Sector',
+    '21': 'International NGO',
+    '22': 'National NGO',
+    '23': 'Partner Country based NGO',
+    '24': 'Partner Country based NGO',
+    '30': 'Public Private Partnership',
+    '40': 'Multilateral',
+    '60': 'Foundation',
+    '70': 'Private Sector',
+    '71': 'Private Sector in Provider Country',
+    '72': 'Private Sector in Aid Recipient Country',
+    '73': 'Private Sector in Third Country',
+    '80': 'Academic, Training and Research',
+    '90': 'Other'
+  };
+  return { code, name: typeMap[code] || 'Unknown organization type' };
+};
+
+const getOrganizationRoleLabel = (code: string): { code: string, name: string } | null => {
+  if (!code) return null;
+  const roleMap: Record<string, string> = {
+    '1': 'Funding',
+    '2': 'Accountable',
+    '3': 'Extending',
+    '4': 'Implementing'
+  };
+  return { code, name: roleMap[code] || 'Other' };
+};
+
 const getActivityScopeLabel = (code: string): { code: string, name: string } | null => {
   if (!code) return null;
   const scopeMap: Record<string, string> = {
@@ -343,7 +379,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [activeImportTab, setActiveImportTab] = useState('basic');
   const [parsedActivity, setParsedActivity] = useState<any>(null);
   const [xmlUrl, setXmlUrl] = useState<string>('');
-  const [importMethod, setImportMethod] = useState<'file' | 'url'>('file');
+  const [importMethod, setImportMethod] = useState<'file' | 'url' | 'snippet'>('file');
+  const [snippetContent, setSnippetContent] = useState<string>('');
   const urlInputRef = useRef<HTMLInputElement>(null);
   const [isUsingPasteButton, setIsUsingPasteButton] = useState(false);
   const [showSectorRefinement, setShowSectorRefinement] = useState(false);
@@ -394,6 +431,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     data: any;
     fields: ParsedField[];
   } | null>(null);
+  
+  // Partners tab state
+  const [activePartnerTab, setActivePartnerTab] = useState('reporting_org');
   
   // Helper function to generate detailed fields for a specific financial item
   const generateDetailedFields = (itemType: 'budget' | 'transaction' | 'plannedDisbursement', itemData: any, itemIndex: number): ParsedField[] => {
@@ -849,9 +889,19 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         
         const locationsResponse = await fetch(`/api/activities/${activityId}/locations`);
         
-        const currentLocations = locationsResponse.ok ? await locationsResponse.json() : [];
+        const locationsData = locationsResponse.ok ? await locationsResponse.json() : { locations: [] };
+        const currentLocations = locationsData.locations || [];
         
         console.log('[XmlImportTab] Current locations:', currentLocations);
+
+        // Fetch current participating organizations
+        console.log('[XmlImportTab] Fetching current participating organizations...');
+        
+        const participatingOrgsResponse = await fetch(`/api/activities/${activityId}/participating-organizations`);
+        
+        const currentParticipatingOrgs = participatingOrgsResponse.ok ? await participatingOrgsResponse.json() : [];
+        
+        console.log('[XmlImportTab] Current participating organizations:', currentParticipatingOrgs);
         
         
         // Map the data correctly - the API returns both camelCase and snake_case versions
@@ -881,6 +931,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           recipient_regions: data.recipient_regions || [],
           custom_geographies: data.custom_geographies || [],
           locations: currentLocations || [],
+          participatingOrgs: currentParticipatingOrgs || [],
         });
         console.log('[XmlImportTab] Set current activity data with title:', data.title_narrative || data.title);
       } catch (error) {
@@ -891,6 +942,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           const response = await fetch(`/api/activities/${activityId}`);
           if (response.ok) {
             const data = await response.json();
+            
+            // Also try to fetch participating orgs in fallback
+            const participatingOrgsResponse = await fetch(`/api/activities/${activityId}/participating-organizations`);
+            const currentParticipatingOrgs = participatingOrgsResponse.ok ? await participatingOrgsResponse.json() : [];
+            
             setCurrentActivityData({
               id: data.id,
               title_narrative: data.title_narrative || data.title,
@@ -916,6 +972,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               recipient_countries: data.recipient_countries || [],
               recipient_regions: data.recipient_regions || [],
               custom_geographies: data.custom_geographies || [],
+              participatingOrgs: currentParticipatingOrgs || [],
             });
             console.log('[XmlImportTab] Fallback successful, got title:', data.title_narrative || data.title);
           }
@@ -1067,7 +1124,50 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     }
   };
 
-  // Parse XML file or URL
+  // Helper function to detect snippet type
+  const detectSnippetType = (content: string): string => {
+    const trimmed = content.trim();
+    if (trimmed.includes('<location')) return 'location';
+    if (trimmed.includes('<transaction')) return 'transaction';
+    if (trimmed.includes('<sector')) return 'sector';
+    if (trimmed.includes('<recipient-country')) return 'recipient-country';
+    if (trimmed.includes('<recipient-region')) return 'recipient-region';
+    if (trimmed.includes('<participating-org') || trimmed.includes('<reporting-org')) return 'organization';
+    if (trimmed.includes('<policy-marker')) return 'policy-marker';
+    if (trimmed.includes('<budget')) return 'budget';
+    if (trimmed.includes('<iati-activity')) return 'full-activity';
+    return 'unknown';
+  };
+
+  // Helper function to wrap snippet in proper IATI structure if needed
+  const wrapSnippetIfNeeded = (content: string): string => {
+    // If it already looks like a complete IATI XML, return as-is
+    if (content.includes('<iati-activities') || content.includes('<iati-activity')) {
+      // If it's just an activity without the root, wrap it
+      if (!content.includes('<iati-activities')) {
+        return `<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  ${content}
+</iati-activities>`;
+      }
+      return content;
+    }
+    
+    // Otherwise, wrap the snippet in a minimal activity structure
+    // Use minimal required fields to avoid polluting the import
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>SNIPPET-TEMP</iati-identifier>
+    <title>
+      <narrative>Snippet</narrative>
+    </title>
+    ${content}
+  </iati-activity>
+</iati-activities>`;
+  };
+
+  // Parse XML file or URL or Snippet
   const parseXmlFile = async () => {
     console.log('[XML Import Debug] parseXmlFile called, method:', importMethod);
     
@@ -1079,6 +1179,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     if (importMethod === 'url' && !xmlUrl.trim()) {
       console.log('[XML Import Debug] No URL provided, returning');
       toast.error('Please enter a valid XML URL');
+      return;
+    }
+    
+    if (importMethod === 'snippet' && !snippetContent.trim()) {
+      console.log('[XML Import Debug] No snippet content, returning');
+      toast.error('Please paste some XML content');
       return;
     }
 
@@ -1121,7 +1227,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
     console.log('[XML Import Debug] Current activity data:', currentActivityData);
     console.log('[XML Import Debug] Setting status to uploading');
-    setImportStatus({ stage: 'uploading', progress: 20 });
+    setImportStatus({ stage: 'uploading', progress: 10 });
 
     setIsParsing(true);
     try {
@@ -1137,20 +1243,46 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         
         // Read file content
         console.log('[XML Import Debug] Reading file content, size:', selectedFile.size);
+        setImportStatus({ stage: 'uploading', progress: 30 });
         content = await selectedFile.text();
         fileToCheck = selectedFile;
-      } else {
+      } else if (importMethod === 'url') {
         // Fetch from URL
         console.log('[XML Import Debug] Fetching from URL');
+        setImportStatus({ stage: 'uploading', progress: 30 });
         content = await fetchXmlFromUrl(xmlUrl.trim());
         // Create a File object from the fetched content for metadata extraction
         fileToCheck = new File([content], 'fetched.xml', { type: 'text/xml' });
+      } else {
+        // Use snippet content
+        console.log('[XML Import Debug] Using snippet content');
+        setImportStatus({ stage: 'uploading', progress: 30 });
+        
+        // Detect snippet type BEFORE wrapping
+        const snippetType = detectSnippetType(snippetContent.trim());
+        console.log('[XML Import Debug] Detected snippet type:', snippetType);
+        
+        // Store snippet type in state for filtering later
+        (window as any).__snippetType = snippetType;
+        
+        // Show toast with detected snippet type
+        if (snippetType !== 'unknown') {
+          toast.info(`Detected ${snippetType} snippet - showing only ${snippetType} fields`, {
+            duration: 3000
+          });
+        }
+        
+        // Wrap snippet if needed to make it a valid IATI XML
+        const wrappedContent = wrapSnippetIfNeeded(snippetContent.trim());
+        content = wrappedContent;
+        // Create a File object from the snippet for metadata extraction
+        fileToCheck = new File([content], 'snippet.xml', { type: 'text/xml' });
       }
       
       setXmlContent(content);
       
       console.log('[XML Import Debug] Setting status to parsing');
-      setImportStatus({ stage: 'parsing', progress: 50 });
+      setImportStatus({ stage: 'parsing', progress: 40 });
       
       // Check if content is HTML instead of XML (common error response)
       if (content.trim().startsWith('<!DOCTYPE html') || content.trim().startsWith('<html')) {
@@ -1165,6 +1297,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       }
       
       // Validate XML structure first
+      setImportStatus({ stage: 'parsing', progress: 50 });
       const validation = validateIATIXML(content);
       if (!validation.isValid) {
         throw new Error(`Invalid IATI XML: ${validation.errors.join(', ')}`);
@@ -1172,6 +1305,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       // Parse the IATI XML
       console.log('[XML Import Debug] Parsing IATI XML with real parser');
+      setImportStatus({ stage: 'parsing', progress: 60 });
       const parser = new IATIXMLParser(content);
       const parsedActivity = parser.parseActivity();
       
@@ -1179,6 +1313,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       setParsedActivity(parsedActivity);
       
       console.log('[XML Import Debug] Parsed activity data:', parsedActivity);
+      
+      // Update progress for field processing
+      setImportStatus({ stage: 'parsing', progress: 80 });
 
       // Helper function to determine if a field should be selected by default
       const shouldSelectField = (currentValue: any, importValue: any): boolean => {
@@ -1225,10 +1362,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       // Create fields from parsed data organized by tabs
       const fields: ParsedField[] = [];
+      
+      // Check if this is a snippet import and what type
+      const snippetType = (window as any).__snippetType;
+      const isSnippetImport = importMethod === 'snippet' && snippetType;
+      console.log('[XML Import Debug] Is snippet import:', isSnippetImport, 'Type:', snippetType);
 
       // === BASIC INFO TAB ===
       
-      if (parsedActivity.iatiIdentifier) {
+      // Skip wrapper fields if this is a snippet import (these come from the wrapper, not the user's snippet)
+      if (parsedActivity.iatiIdentifier && (!isSnippetImport || parsedActivity.iatiIdentifier !== 'SNIPPET-TEMP')) {
         const currentValue = currentActivityData.iati_identifier || null;
         
         fields.push({
@@ -1258,7 +1401,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
-      if (parsedActivity.title) {
+      // Skip wrapper title if this is a snippet import
+      if (parsedActivity.title && (!isSnippetImport || parsedActivity.title !== 'Snippet')) {
         const currentValue = currentActivityData.title_narrative || null;
         console.log('[XmlImportTab] Comparing titles:', {
           current: currentValue,
@@ -1277,7 +1421,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
-      if (parsedActivity.description) {
+      // Skip description fields for snippet imports unless it's a full activity
+      if (parsedActivity.description && (!isSnippetImport || snippetType === 'full-activity')) {
         const currentValue = currentActivityData.description_narrative || null;
         console.log('[Import Preview] Adding general description field:', {
           current: currentValue?.substring(0, 50),
@@ -1295,7 +1440,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
-      if (parsedActivity.descriptionObjectives) {
+      if (parsedActivity.descriptionObjectives && (!isSnippetImport || snippetType === 'full-activity')) {
         const currentValue = currentActivityData.description_objectives || null;
         console.log('[Import Preview] Adding objectives description field:', {
           current: currentValue?.substring(0, 50),
@@ -1313,7 +1458,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
-      if (parsedActivity.descriptionTargetGroups) {
+      if (parsedActivity.descriptionTargetGroups && (!isSnippetImport || snippetType === 'full-activity')) {
         const currentValue = currentActivityData.description_target_groups || null;
         console.log('[Import Preview] Adding target groups description field:', {
           current: currentValue?.substring(0, 50),
@@ -1331,7 +1476,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
-      if (parsedActivity.descriptionOther) {
+      if (parsedActivity.descriptionOther && (!isSnippetImport || snippetType === 'full-activity')) {
         const currentValue = currentActivityData.description_other || null;
         fields.push({
           fieldName: 'Activity Description - Other',
@@ -1660,8 +1805,31 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       // === LOCATIONS TAB ===
       
-      // Always show recipient countries field if there's current data or import data
-      const countryInfo = parsedActivity.recipientCountries && parsedActivity.recipientCountries.length > 0
+      // For snippet imports, only show fields related to the snippet type
+      const shouldShowField = (fieldType: string): boolean => {
+        if (!isSnippetImport) return true; // Show all fields for non-snippet imports
+        
+        // Map snippet types to their relevant fields
+        const snippetFieldMap: Record<string, string[]> = {
+          'location': ['location'],
+          'transaction': ['transaction'],
+          'sector': ['sector'],
+          'recipient-country': ['recipient-country', 'country'],
+          'recipient-region': ['recipient-region', 'region'],
+          'organization': ['organization', 'partner'],
+          'policy-marker': ['policy-marker'],
+          'budget': ['budget'],
+          'full-activity': [] // Show all for full activities
+        };
+        
+        const allowedFields = snippetFieldMap[snippetType] || [];
+        if (snippetType === 'full-activity') return true; // Show all for full activities
+        
+        return allowedFields.some(allowed => fieldType.toLowerCase().includes(allowed));
+      };
+      
+      // Always show recipient countries field if there's current data or import data (but only if not filtered out)
+      const countryInfo = shouldShowField('recipient-country') && parsedActivity.recipientCountries && parsedActivity.recipientCountries.length > 0
         ? parsedActivity.recipientCountries.map(c => ({
             code: c.code,
             name: `${(() => {
@@ -1690,25 +1858,31 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       console.log('[XML Import Debug] Current activity data recipient_countries:', currentActivityData.recipient_countries);
       
       // Only add the field if there's either current data or import data
+      // For snippet imports, ONLY show if the import has this data (not just current data)
       if (currentCountryInfo || countryInfo) {
-        fields.push({
-          fieldName: 'Recipient Countries',
-          iatiPath: 'iati-activity/recipient-country',
-          currentValue: currentCountryInfo,
-          importValue: countryInfo,
-          selected: shouldSelectField(currentCountryInfo, countryInfo),
-          hasConflict: hasConflict(currentCountryInfo, countryInfo),
-          tab: 'locations',
-          description: 'Countries where activity takes place with percentage allocations (vocabulary: A4)'
-        });
+        // For snippet imports, skip this field if there's no import value
+        if (isSnippetImport && !countryInfo) {
+          // Skip - this field wasn't in the snippet
+        } else {
+          fields.push({
+            fieldName: 'Recipient Countries',
+            iatiPath: 'iati-activity/recipient-country',
+            currentValue: currentCountryInfo,
+            importValue: countryInfo,
+            selected: shouldSelectField(currentCountryInfo, countryInfo),
+            hasConflict: hasConflict(currentCountryInfo, countryInfo),
+            tab: 'locations',
+            description: 'Countries where activity takes place with percentage allocations (vocabulary: A4)'
+          });
+        }
       }
 
-      // Always show recipient regions field if there's current data or import data
-      const standardRegions = parsedActivity.recipientRegions ? parsedActivity.recipientRegions.filter(r => r.vocabulary !== '99') : [];
-      const customRegions = parsedActivity.recipientRegions ? parsedActivity.recipientRegions.filter(r => r.vocabulary === '99') : [];
+      // Always show recipient regions field if there's current data or import data (but only if not filtered out)
+      const standardRegions = shouldShowField('recipient-region') && parsedActivity.recipientRegions ? parsedActivity.recipientRegions.filter(r => r.vocabulary !== '99') : [];
+      const customRegions = shouldShowField('custom-geography') && parsedActivity.recipientRegions ? parsedActivity.recipientRegions.filter(r => r.vocabulary === '99') : [];
       
       // Standard regions
-      const regionInfo = standardRegions.length > 0
+      const regionInfo = shouldShowField('recipient-region') && standardRegions.length > 0
         ? standardRegions.map(r => {
             // Look up the region name from our regions data
             const regionData = IATI_REGIONS.find(region => region.code === r.code);
@@ -1739,20 +1913,25 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         : null;
       
       if (currentRegionInfo || regionInfo) {
-        fields.push({
-          fieldName: 'Recipient Regions',
-          iatiPath: 'iati-activity/recipient-region',
-          currentValue: currentRegionInfo,
-          importValue: regionInfo,
-          selected: shouldSelectField(currentRegionInfo, regionInfo),
-          hasConflict: hasConflict(currentRegionInfo, regionInfo),
-          tab: 'locations',
-          description: 'Standard regions where activity takes place with percentage allocations'
-        });
+        // For snippet imports, skip this field if there's no import value
+        if (isSnippetImport && !regionInfo) {
+          // Skip - this field wasn't in the snippet
+        } else {
+          fields.push({
+            fieldName: 'Recipient Regions',
+            iatiPath: 'iati-activity/recipient-region',
+            currentValue: currentRegionInfo,
+            importValue: regionInfo,
+            selected: shouldSelectField(currentRegionInfo, regionInfo),
+            hasConflict: hasConflict(currentRegionInfo, regionInfo),
+            tab: 'locations',
+            description: 'Standard regions where activity takes place with percentage allocations'
+          });
+        }
       }
       
       // Custom geographies
-      const customInfo = customRegions.length > 0
+      const customInfo = shouldShowField('custom-geography') && customRegions.length > 0
         ? customRegions.map(r => ({
             code: r.code,
             name: `${r.narrative || r.code}${r.percentage ? ` (${r.percentage}%)` : ''}`,
@@ -1771,20 +1950,25 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         : null;
       
       if (currentCustomInfo || customInfo) {
-        fields.push({
-          fieldName: 'Custom Geographies',
-          iatiPath: 'iati-activity/recipient-region[@vocabulary="99"]',
-          currentValue: currentCustomInfo,
-          importValue: customInfo,
-          selected: shouldSelectField(currentCustomInfo, customInfo),
-          hasConflict: hasConflict(currentCustomInfo, customInfo),
-          tab: 'locations',
-          description: 'Custom geographies where activity takes place with percentage allocations'
-        });
+        // For snippet imports, skip this field if there's no import value
+        if (isSnippetImport && !customInfo) {
+          // Skip - this field wasn't in the snippet
+        } else {
+          fields.push({
+            fieldName: 'Custom Geographies',
+            iatiPath: 'iati-activity/recipient-region[@vocabulary="99"]',
+            currentValue: currentCustomInfo,
+            importValue: customInfo,
+            selected: shouldSelectField(currentCustomInfo, customInfo),
+            hasConflict: hasConflict(currentCustomInfo, customInfo),
+            tab: 'locations',
+            description: 'Custom geographies where activity takes place with percentage allocations'
+          });
+        }
       }
 
-      // Detailed Location Elements (Activity Sites)
-      if (parsedActivity.locations && parsedActivity.locations.length > 0) {
+      // Detailed Location Elements (Activity Sites) - Always show for location snippets
+      if (shouldShowField('location') && parsedActivity.locations && parsedActivity.locations.length > 0) {
         parsedActivity.locations.forEach((location: any, locIndex: number) => {
           const locationReachMap: Record<string, string> = {
             '1': 'Activity',
@@ -1842,7 +2026,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             
             // Format current location to match the import value format
             const currentLocationName = currentLocation.location_name || 'Unnamed Location';
-            const currentLocationCode = currentLocation.id || `LOC${locIndex + 1}`;
+            const currentLocationCode = currentLocation.location_ref || currentLocation.country_code || `LOC${locIndex + 1}`;
             const currentCoordinates = currentLocation.latitude && currentLocation.longitude 
               ? `${currentLocation.latitude} ${currentLocation.longitude}` 
               : '';
@@ -1876,7 +2060,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       // === SECTORS TAB ===
       
-      if (parsedActivity.sectors && parsedActivity.sectors.length > 0) {
+      if (shouldShowField('sector') && parsedActivity.sectors && parsedActivity.sectors.length > 0) {
         const currentSectorsInfo = currentActivityData.sectors && currentActivityData.sectors.length > 0 
           ? currentActivityData.sectors.map(s => ({
               code: s.code,
@@ -2045,19 +2229,60 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           const orgName = org.narrative || org.ref || 'Unknown Organization';
           const role = org.role || 'Unknown Role';
           
+          // Try to find matching current participating organization
+          const currentParticipatingOrgs = currentActivityData?.participatingOrgs || [];
+          let currentValue = null;
+          let hasConflict = false;
+
+          // Match by IATI ref first, then by narrative/name and role
+          const matchedOrg = currentParticipatingOrgs.find((current: any) => {
+            const refMatch = org.ref && (
+              current.iati_org_ref === org.ref || 
+              current.organization?.iati_org_id === org.ref
+            );
+            const nameMatch = org.narrative && (
+              current.narrative === org.narrative ||
+              current.organization?.name === org.narrative
+            );
+            const roleMatch = org.role && String(current.iati_role_code) === String(org.role);
+            
+            return (refMatch || nameMatch) && roleMatch;
+          });
+
+          if (matchedOrg) {
+            currentValue = {
+              name: matchedOrg.narrative || matchedOrg.organization?.name || 'Unknown',
+              ref: matchedOrg.iati_org_ref || matchedOrg.organization?.iati_org_id || null,
+              role: matchedOrg.iati_role_code,
+              narrative: matchedOrg.narrative,
+              type: matchedOrg.org_type
+            };
+
+            // Check for conflicts in the data
+            hasConflict = (
+              (org.ref && matchedOrg.iati_org_ref && org.ref !== matchedOrg.iati_org_ref) ||
+              (org.type && matchedOrg.org_type && org.type !== matchedOrg.org_type) ||
+              (org.activityId && matchedOrg.activity_id_ref && org.activityId !== matchedOrg.activity_id_ref)
+            );
+          }
+          
         fields.push({
             fieldName: `Participating Organization: ${orgName}`,
             iatiPath: `iati-activity/participating-org[${index}]`,
-          currentValue: null,
+          currentValue: currentValue,
             importValue: {
               name: orgName,
               ref: org.ref || null,
               role: role,
               narrative: org.narrative || null,
-              type: org.type || null
+              type: org.type || null,
+              activityId: org.activityId || null,
+              crsChannelCode: org.crsChannelCode || null,
+              narrativeLang: org.narrativeLang || 'en',
+              narratives: org.narratives || []
             },
           selected: false,
-          hasConflict: false,
+          hasConflict: hasConflict,
             tab: 'participating_orgs',
             description: `Participating organization: ${orgName} (Role: ${role})`
           });
@@ -2443,7 +2668,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               updateData._importPolicyMarkers = true;
             break;
           default:
-            if (field.fieldName.startsWith('Participating Organization:')) {
+            if (field.fieldName === 'Participating Organization' || field.fieldName.startsWith('Participating Organization:')) {
               // Collect participating organization data for import
               if (!updateData.importedParticipatingOrgs) updateData.importedParticipatingOrgs = [];
               updateData.importedParticipatingOrgs.push(field.importValue);
@@ -3002,6 +3227,274 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         }
       }
 
+      // Handle participating organizations import if any
+      if (updateData.importedParticipatingOrgs && updateData.importedParticipatingOrgs.length > 0) {
+        console.log('[XML Import] Processing participating organizations import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 92,
+          message: 'Importing participating organizations...'
+        });
+
+        try {
+          const { IATI_ORGANIZATION_ROLES } = await import('@/data/iati-organization-roles');
+          const roleMap: Record<string, 'funding' | 'extending' | 'implementing' | 'government'> = {
+            '1': 'funding',
+            '2': 'government', // Accountable maps to government
+            '3': 'extending',
+            '4': 'implementing'
+          };
+
+          // Clear existing participating organizations to avoid duplicates
+          console.log('[XML Import] Clearing existing participating organizations...');
+          const clearResponse = await fetch(`/api/activities/${activityId}/participating-organizations`, {
+            method: 'DELETE'
+          });
+          
+          if (clearResponse.ok) {
+            console.log('[XML Import] ✅ Cleared existing participating organizations');
+          } else {
+            console.log('[XML Import] ⚠️ Could not clear existing participating organizations (this is okay if none exist)');
+          }
+
+          let successCount = 0;
+          let errorCount = 0;
+
+          for (const orgData of updateData.importedParticipatingOrgs) {
+            try {
+              console.log('[XML Import] Processing org data:', {
+                name: orgData.narrative,
+                role: orgData.role,
+                roleType: typeof orgData.role,
+                ref: orgData.ref,
+                type: orgData.type,
+                crsChannelCode: orgData.crsChannelCode
+              });
+              
+              // Determine role_type from IATI role code
+              const roleType = roleMap[orgData.role] || 'implementing';
+              console.log('[XML Import] Mapped role', orgData.role, 'to role_type:', roleType);
+              
+              // Try to find organization in database by IATI ref
+              let organizationId = null;
+              
+              if (orgData.ref) {
+                console.log(`[XML Import] Searching for organization with IATI ref: "${orgData.ref}"`);
+                
+                // Fetch ALL organizations and filter client-side for exact match
+                // This is a workaround until the API properly supports iati_org_id filtering
+                const searchResponse = await fetch(`/api/organizations`);
+                console.log(`[XML Import] Organizations API response status:`, searchResponse.status);
+                
+                if (searchResponse.ok) {
+                  const allOrgs = await searchResponse.json();
+                  console.log(`[XML Import] Fetched ${allOrgs.length} total organizations`);
+                  
+                  // Filter client-side for EXACT IATI ID match
+                  const matchedOrg = allOrgs.find((o: any) => 
+                    o.iati_org_id && o.iati_org_id.trim() === orgData.ref.trim()
+                  );
+                  
+                  if (matchedOrg) {
+                    organizationId = matchedOrg.id;
+                    console.log(`[XML Import] ⚠️ Found exact IATI ref match:`, {
+                      ref: orgData.ref,
+                      matched: matchedOrg.name,
+                      matchedIatiId: matchedOrg.iati_org_id,
+                      id: matchedOrg.id,
+                      logo: matchedOrg.logo ? 'HAS LOGO' : 'NO LOGO'
+                    });
+                  } else {
+                    console.log(`[XML Import] ✓ No organization found with exact IATI ref "${orgData.ref}"`);
+                    console.log(`[XML Import] Checked ${allOrgs.length} organizations for match`);
+                  }
+                } else {
+                  console.error(`[XML Import] Organizations API failed:`, searchResponse.status);
+                }
+              }
+
+              // If not found by ref, try by name (EXACT match only)
+              if (!organizationId && orgData.narrative) {
+                console.log(`[XML Import] No IATI ref match. Searching by name: "${orgData.narrative}"`);
+                
+                // Fetch ALL organizations (we already have them from the previous call if ref was checked)
+                // Use cached result if available
+                const searchResponse = await fetch(`/api/organizations`);
+                
+                if (searchResponse.ok) {
+                  const allOrgs = await searchResponse.json();
+                  
+                  // Find EXACT match (case-insensitive)
+                  const exactMatch = allOrgs.find((org: any) => 
+                    (org.name?.toLowerCase().trim() === orgData.narrative?.toLowerCase().trim()) ||
+                    (org.acronym?.toLowerCase().trim() === orgData.narrative?.toLowerCase().trim())
+                  );
+                  
+                  if (exactMatch) {
+                    organizationId = exactMatch.id;
+                    console.log(`[XML Import] ⚠️ Matched organization by exact name "${orgData.narrative}":`, {
+                      matched: exactMatch.name,
+                      id: exactMatch.id,
+                      logo: exactMatch.logo ? 'HAS LOGO' : 'NO LOGO'
+                    });
+                  } else {
+                    console.log(`[XML Import] ✓ No exact name match found for "${orgData.narrative}". Checked ${allOrgs.length} organizations.`);
+                  }
+                }
+              }
+
+              // If still not found, create a new organization
+              if (!organizationId) {
+                console.log(`[XML Import] Creating new organization: ${orgData.narrative || orgData.ref}`);
+                console.log(`[XML Import] New org data:`, {
+                  name: orgData.narrative || orgData.ref || 'Imported Organization',
+                  iati_org_id: orgData.ref || null,
+                  organisation_type: orgData.type || null
+                });
+                
+                const createResponse = await fetch('/api/organizations', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    name: orgData.narrative || orgData.ref || 'Imported Organization',
+                    iati_org_id: orgData.ref || null,
+                    organisation_type: orgData.type || null
+                  })
+                });
+
+                if (createResponse.ok) {
+                  const newOrg = await createResponse.json();
+                  organizationId = newOrg.id;
+                  console.log(`[XML Import] Created new organization successfully:`, {
+                    id: newOrg.id,
+                    name: newOrg.name,
+                    iati_org_id: newOrg.iati_org_id,
+                    logo: newOrg.logo || 'NO LOGO'
+                  });
+                } else if (createResponse.status === 400) {
+                  // Organization might already exist (created by previous import)
+                  const errorData = await createResponse.json().catch(() => ({}));
+                  console.log(`[XML Import] Organization already exists, searching again:`, errorData);
+                  
+                  // Try searching one more time (it might have been created moments ago)
+                  const retryResponse = await fetch(`/api/organizations?search=${encodeURIComponent(orgData.narrative)}`);
+                  if (retryResponse.ok) {
+                    const orgs = await retryResponse.json();
+                    const exactMatch = orgs.find((org: any) => 
+                      org.name?.toLowerCase() === orgData.narrative?.toLowerCase()
+                    );
+                    
+                    if (exactMatch) {
+                      organizationId = exactMatch.id;
+                      console.log(`[XML Import] Found organization on retry:`, exactMatch.name);
+                    } else {
+                      console.error(`[XML Import] Organization exists but couldn't find it:`, errorData);
+                      errorCount++;
+                      continue;
+                    }
+                  } else {
+                    console.error(`[XML Import] Failed to create and retry failed:`, errorData);
+                    errorCount++;
+                    continue;
+                  }
+                } else {
+                  const errorData = await createResponse.json().catch(() => ({}));
+                  console.error(`[XML Import] Failed to create organization:`, errorData);
+                  errorCount++;
+                  continue;
+                }
+              }
+
+              // Now create the participating organization record
+              const requestBody = {
+                organization_id: organizationId,
+                role_type: roleType,
+                iati_role_code: parseInt(orgData.role) || 4,
+                iati_org_ref: orgData.ref || null,
+                org_type: orgData.type || null,
+                activity_id_ref: null, // Related activity (not used in basic import)
+                crs_channel_code: orgData.crsChannelCode || null,
+                narrative: orgData.narrative || null,
+                narrative_lang: orgData.narrativeLang || 'en',
+                narratives: orgData.narratives || [],
+                org_activity_id: orgData.activityId || null, // Organization's own activity ID from @activity-id
+                reporting_org_ref: null,
+                secondary_reporter: false
+              };
+              
+              console.log('[XML Import] Creating participating org with data:', requestBody);
+              
+              const participatingOrgResponse = await fetch(
+                `/api/activities/${activityId}/participating-organizations`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(requestBody)
+                }
+              );
+
+              console.log('[XML Import] API response status:', participatingOrgResponse.status);
+              
+              if (participatingOrgResponse.ok) {
+                successCount++;
+                const createdOrg = await participatingOrgResponse.json();
+                console.log(`[XML Import] ✅ Successfully imported participating organization:`, {
+                  name: orgData.narrative || orgData.ref,
+                  role: roleType,
+                  iati_role_code: createdOrg.iati_role_code,
+                  crs_channel_code: createdOrg.crs_channel_code,
+                  org_type: createdOrg.org_type,
+                  id: createdOrg.id
+                });
+              } else {
+                const errorData = await participatingOrgResponse.json().catch(e => ({ message: 'Could not parse error response' }));
+                console.error(`[XML Import] ❌ Failed to import participating organization:`, {
+                  name: orgData.narrative || orgData.ref,
+                  role: orgData.role,
+                  roleType: roleType,
+                  status: participatingOrgResponse.status,
+                  statusText: participatingOrgResponse.statusText,
+                  error: errorData,
+                  requestData: {
+                    organization_id: organizationId,
+                    role_type: roleType,
+                    iati_role_code: parseInt(orgData.role) || 4,
+                    org_type: orgData.type
+                  }
+                });
+                
+                // If it's a duplicate (409), it might be okay
+                if (participatingOrgResponse.status === 409) {
+                  console.warn('[XML Import] Organization already exists in this role - skipping');
+                } else {
+                  errorCount++;
+                }
+              }
+            } catch (orgError) {
+              console.error(`[XML Import] Error importing participating organization:`, orgError);
+              errorCount++;
+            }
+          }
+
+          if (successCount > 0) {
+            toast.success(`Participating organizations imported successfully`, {
+              description: `${successCount} organization(s) added to the activity${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
+            });
+          }
+
+          if (errorCount > 0 && successCount === 0) {
+            toast.error('Failed to import participating organizations', {
+              description: `${errorCount} organization(s) could not be imported`
+            });
+          }
+        } catch (participatingOrgsError: any) {
+          console.error('[XML Import] Participating organizations import error:', participatingOrgsError);
+          toast.error('Failed to import participating organizations', {
+            description: `An error occurred: ${participatingOrgsError.message}`
+          });
+        }
+      }
+
       // Update local activity data to reflect changes
       setCurrentActivityData(prev => ({
         ...prev,
@@ -3441,29 +3934,32 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           ) : field.tab === 'participating_orgs' && typeof field.importValue === 'object' ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.role}</span>
                 <span className="text-sm font-medium text-gray-900">Participating Org</span>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500">Name:</span>
-                <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.name}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500">Role:</span>
-                <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.role}</span>
-              </div>
+              <div className="text-xs text-gray-900 truncate max-w-32">{field.importValue.name}</div>
+              {field.importValue.role && (() => {
+                const roleInfo = getOrganizationRoleLabel(field.importValue.role);
+                return roleInfo ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{roleInfo.code}</span>
+                    <span className="text-xs text-gray-600">{roleInfo.name}</span>
+                  </div>
+                ) : null;
+              })()}
               {field.importValue.ref && (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Ref:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.ref}</span>
+                <div className="flex items-center">
+                  <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-48">{field.importValue.ref}</span>
                 </div>
               )}
-              {field.importValue.type && (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Type:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.type}</span>
-                </div>
-              )}
+              {field.importValue.type && (() => {
+                const typeInfo = getOrganizationTypeLabel(field.importValue.type);
+                return typeInfo ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{typeInfo.code}</span>
+                    <span className="text-xs text-gray-600">{typeInfo.name}</span>
+                  </div>
+                ) : null;
+              })()}
             </div>
           ) : field.tab === 'reporting_org' && typeof field.importValue === 'object' ? (
             <div className="flex flex-col gap-1">
@@ -3608,27 +4104,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
   // Partners sub-tabs component
   const PartnersTabContent = ({ tabSection }: { tabSection: TabSection }) => {
-    const [activePartnerTab, setActivePartnerTab] = useState('reporting_org');
-    
     // Group partner fields by their original tab
     const partnerSubTabs = {
       'reporting_org': { name: 'Reporting Organisation', fields: tabSection.fields.filter(f => f.tab === 'reporting_org') },
       'participating_orgs': { name: 'Participating Organisations', fields: tabSection.fields.filter(f => f.tab === 'participating_orgs') }
     };
     
-    // Set default active tab to the first one that has fields
-    const availableTabs = Object.entries(partnerSubTabs).filter(([, subTab]) => subTab.fields.length > 0);
-    const defaultTab = availableTabs.length > 0 ? availableTabs[0][0] : 'reporting_org';
-    
-    // Use the default tab if current active tab has no fields
-    const currentActiveTab = partnerSubTabs[activePartnerTab as keyof typeof partnerSubTabs]?.fields.length > 0 
-      ? activePartnerTab 
-      : defaultTab;
-    
     return (
       <div className="space-y-4">
         {/* Partners Sub-tabs */}
-        <Tabs value={currentActiveTab} onValueChange={setActivePartnerTab}>
+        <Tabs value={activePartnerTab} onValueChange={setActivePartnerTab}>
           <TabsList className="grid w-full grid-cols-2">
             {Object.entries(partnerSubTabs).map(([key, subTab]) => (
               <TabsTrigger key={key} value={key} className="text-sm">
@@ -3842,18 +4327,46 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Progress Bar - Show during parsing */}
+      {(importStatus.stage === 'uploading' || importStatus.stage === 'parsing' || importStatus.stage === 'importing') && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="font-medium">
+                    {importStatus.stage === 'uploading' && 'Uploading XML file...'}
+                    {importStatus.stage === 'parsing' && 'Parsing XML content...'}
+                    {importStatus.stage === 'importing' && (importStatus.message || 'Importing data...')}
+                  </span>
+                </div>
+                <span className="text-sm text-gray-500">
+                  {importStatus.progress || 0}%
+                </span>
+              </div>
+              <Progress 
+                value={importStatus.progress || 0} 
+                className="h-2"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Import Method Selection and Input */}
       {importStatus.stage === 'idle' && !selectedFile && !xmlContent && (
         <div>
             {/* Method Selection */}
             <div className="mb-6">
               <Label className="text-base font-medium">Import Method</Label>
-              <div className="flex gap-4 mt-2">
+              <div className="flex gap-2 mt-2">
                 <Button
                   variant={importMethod === 'file' ? 'default' : 'outline'}
                   onClick={() => {
                     setImportMethod('file');
-                    setXmlUrl(''); // Clear URL when switching to file mode
+                    setXmlUrl('');
+                    setSnippetContent('');
                   }}
                   className="flex-1"
                 >
@@ -3864,12 +4377,24 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   variant={importMethod === 'url' ? 'default' : 'outline'}
                   onClick={() => {
                     setImportMethod('url');
-                    setXmlUrl(''); // Clear URL when switching to URL mode to prevent duplication
+                    setXmlUrl('');
+                    setSnippetContent('');
                   }}
                   className="flex-1"
                 >
                   <Globe className="h-4 w-4 mr-2" />
                   From URL
+                </Button>
+                <Button
+                  variant={importMethod === 'snippet' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setImportMethod('snippet');
+                    setXmlUrl('');
+                  }}
+                  className="flex-1"
+                >
+                  <ClipboardPaste className="h-4 w-4 mr-2" />
+                  Paste Snippet
                 </Button>
               </div>
             </div>
@@ -3973,14 +4498,81 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               </div>
             )}
 
+            {/* Snippet Input Section */}
+            {importMethod === 'snippet' && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="xml-snippet" className="text-sm font-medium">Paste IATI XML Snippet</Label>
+                  <Textarea
+                    id="xml-snippet"
+                    placeholder="Paste any IATI XML snippet here (transactions, organizations, locations, sectors, etc.)..."
+                    value={snippetContent}
+                    onChange={(e) => setSnippetContent(e.target.value)}
+                    className="font-mono text-sm min-h-[300px] mt-2"
+                  />
+                  <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                    <span>{snippetContent.length} characters</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSnippetContent('')}
+                      disabled={!snippetContent}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+                <Button 
+                  onClick={parseXmlFile}
+                  disabled={!snippetContent.trim() || isParsing}
+                  className="w-full"
+                >
+                  {isParsing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Parsing Snippet...
+                    </>
+                  ) : (
+                    <>
+                      <FileCode className="h-4 w-4 mr-2" />
+                      Parse Snippet
+                    </>
+                  )}
+                </Button>
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    <p className="font-medium mb-2">Snippet Import supports:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;transaction&gt;</code> - Financial transactions</li>
+                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-xs bg-gray-100 px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
+                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;location&gt;</code> - Location data</li>
+                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
+                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-xs bg-gray-100 px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
+                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;policy-marker&gt;</code> - Policy markers</li>
+                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;budget&gt;</code> - Budget information</li>
+                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;iati-activity&gt;</code> - Full or partial activities</li>
+                    </ul>
+                    <p className="mt-2 text-sm">
+                      The system will automatically wrap your snippet in proper IATI XML structure.
+                    </p>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
             <div className="mt-4">
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 mt-0.5 text-muted-foreground" />
                 <div>
                   <div className="font-medium text-sm mb-2">Import Guidelines</div>
                   <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                    <li>{importMethod === 'file' ? 'File' : 'URL'} must be a valid IATI Activity XML document</li>
-                    {importMethod === 'url' && <li>URL must be publicly accessible (no authentication required)</li>}
+                    <li>
+                      {importMethod === 'file' && 'File must be a valid IATI Activity XML document'}
+                      {importMethod === 'url' && 'URL must be publicly accessible (no authentication required)'}
+                      {importMethod === 'snippet' && 'Snippet can be any valid IATI XML element'}
+                    </li>
                     <li>You can review all fields before importing</li>
                     <li>Existing data will be highlighted if there are conflicts</li>
                     <li>You can choose which fields to import or skip</li>
