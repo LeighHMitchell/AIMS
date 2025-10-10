@@ -31,6 +31,9 @@ import {
   Copy,
   MoreVertical,
   Check,
+  Globe,
+  MapPin,
+  Target,
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
 import { TIED_STATUS_LABELS } from "@/types/transaction";
@@ -180,6 +183,7 @@ interface TransactionData {
   uuid?: string;
   activity_id?: string;
   transaction_reference?: string;
+  description?: string;
   activity?: {
     id: string;
     title: string;
@@ -189,9 +193,11 @@ interface TransactionData {
   provider_org_name?: string;
   provider_org_ref?: string;
   provider_org_acronym?: string;
+  provider_org_activity_id?: string;
   receiver_org_name?: string;
   receiver_org_ref?: string;
   receiver_org_acronym?: string;
+  receiver_org_activity_id?: string;
   from_org?: string;
   to_org?: string;
   transaction_type: string;
@@ -212,6 +218,17 @@ interface TransactionData {
   usd_convertible?: boolean;
   usd_conversion_date?: string | null;
   exchange_rate_used?: number | null;
+  // IATI Geographic & Sector fields
+  sector_code?: string;
+  sector_vocabulary?: string;
+  recipient_country_code?: string;
+  recipient_region_code?: string;
+  recipient_region_vocab?: string;
+  // IATI Multiple elements
+  sectors?: Array<{code: string; vocabulary?: string; percentage?: number; narrative?: string}>;
+  aid_types?: Array<{code: string; vocabulary?: string}>;
+  recipient_countries?: Array<{code: string; percentage?: number}>;
+  recipient_regions?: Array<{code: string; vocabulary?: string; percentage?: number; narrative?: string}>;
 }
 
 interface TransactionTableProps {
@@ -243,6 +260,19 @@ export function TransactionTable({
 }: TransactionTableProps) {
   const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleRowExpansion = (transactionId: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(transactionId)) {
+        newSet.delete(transactionId);
+      } else {
+        newSet.add(transactionId);
+      }
+      return newSet;
+    });
+  };
 
   const copyToClipboard = async (text: string, type: string, transactionId: string) => {
     try {
@@ -358,6 +388,9 @@ export function TransactionTable({
       <Table>
         <TableHeader className="bg-muted/50 border-b border-border">
           <TableRow>
+            <TableHead className="h-12 w-10 px-2 py-3 text-center align-middle text-sm font-medium text-muted-foreground">
+              
+            </TableHead>
             {variant === "full" && (
               <TableHead 
                 className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
@@ -442,21 +475,50 @@ export function TransactionTable({
             const providerDisplay = transaction.provider_org_acronym || providerName;
             const receiverDisplay = transaction.receiver_org_acronym || receiverName;
             const orgFlow = `${providerName} → ${receiverName}`;
+            const transactionId = transaction.uuid || transaction.id;
+            const isExpanded = expandedRows.has(transactionId);
+            
+            // Check if transaction has IATI advanced fields
+            const hasAdvancedFields = !!(
+              transaction.sector_code || 
+              transaction.sectors?.length ||
+              transaction.recipient_country_code ||
+              transaction.recipient_countries?.length ||
+              transaction.recipient_region_code ||
+              transaction.recipient_regions?.length ||
+              transaction.aid_types?.length ||
+              transaction.provider_org_activity_id ||
+              transaction.receiver_org_activity_id ||
+              transaction.description
+            );
             
             return (
+            <React.Fragment key={transaction.id}>
             <TableRow
-              key={transaction.id}
               className={cn(
                 "hover:bg-muted/10 transition-colors",
-                onRowClick && "cursor-pointer",
                 index % 2 === 1 && "bg-muted/5"
               )}
-              onClick={(e) => {
-                // Don't trigger row click if clicking on action buttons
-                if ((e.target as HTMLElement).closest('.actions-cell')) return;
-                onRowClick?.(transaction.uuid || transaction.id);
-              }}
             >
+                {/* Expand/Collapse Button */}
+                <td className="px-2 py-3 text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleRowExpansion(transactionId);
+                    }}
+                  >
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </td>
+            
                 {variant === "full" && (
                   <td className="px-4 py-3">
                     <div 
@@ -541,31 +603,66 @@ export function TransactionTable({
                   {formatTransactionDate(transaction.transaction_date)}
                 </td>
                 <td className="px-4 py-3">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            {getTransactionIcon(transaction.transaction_type)}
+                  <div className="space-y-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              {getTransactionIcon(transaction.transaction_type)}
+                            </div>
+                            <span className="text-sm font-normal text-foreground break-words">
+                              {TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}
+                            </span>
+                            {transaction.is_humanitarian && (
+                              <Heart className="h-3 w-3 text-red-500 fill-red-500" />
+                            )}
                           </div>
-                          <span className="text-sm font-normal text-foreground break-words">
-                            {TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}
-                          </span>
-                          {transaction.is_humanitarian && (
-                            <Heart className="h-3 w-3 text-red-500 fill-red-500" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p>
+                          {transaction.is_humanitarian ? (
+                            <p className="text-xs text-red-500 mt-1">❤️ Humanitarian Transaction</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p>
                           )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p>
-                        {transaction.is_humanitarian ? (
-                          <p className="text-xs text-red-500 mt-1">❤️ Humanitarian Transaction</p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    {/* IATI Indicator Badges */}
+                    <div className="flex flex-wrap gap-1">
+                      {transaction.is_humanitarian && (
+                        <Badge variant="destructive" className="text-xs">
+                          Humanitarian
+                        </Badge>
+                      )}
+                      {(transaction.sectors?.length || 0) > 0 && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                          <Target className="h-3 w-3 mr-1" />
+                          {transaction.sectors?.length} Sector{(transaction.sectors?.length || 0) > 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                      {(transaction.sector_code) && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                          <Target className="h-3 w-3 mr-1" />
+                          Sector
+                        </Badge>
+                      )}
+                      {((transaction.recipient_countries?.length || 0) + (transaction.recipient_regions?.length || 0) + (transaction.recipient_country_code ? 1 : 0) + (transaction.recipient_region_code ? 1 : 0)) > 0 && (
+                        <Badge variant="outline" className="text-xs bg-green-50 border-green-200 text-green-700">
+                          <Globe className="h-3 w-3 mr-1" />
+                          {((transaction.recipient_countries?.length || 0) + (transaction.recipient_regions?.length || 0) + (transaction.recipient_country_code ? 1 : 0) + (transaction.recipient_region_code ? 1 : 0))} Location{((transaction.recipient_countries?.length || 0) + (transaction.recipient_regions?.length || 0) + (transaction.recipient_country_code ? 1 : 0) + (transaction.recipient_region_code ? 1 : 0)) > 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                      {(transaction.provider_org_activity_id || transaction.receiver_org_activity_id) && (
+                        <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200 text-purple-700">
+                          <Link2 className="h-3 w-3 mr-1" />
+                          Activity Links
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                 </td>
 
                 <td className="px-4 py-3">
@@ -752,6 +849,154 @@ export function TransactionTable({
                 </DropdownMenu>
               </td>
             </TableRow>
+            
+            {/* Expanded Row Content - Shows IATI Details */}
+            {isExpanded && (
+              <TableRow className="bg-blue-50/30">
+                <td colSpan={variant === "full" ? 10 : 9} className="px-4 py-4">
+                  <div className="space-y-4">
+                    {/* Description */}
+                    {transaction.description && (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                          <FileText className="h-4 w-4" />
+                          Description
+                        </div>
+                        <p className="text-sm text-gray-700 pl-6">{transaction.description}</p>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Geographic Targeting */}
+                      {(transaction.sector_code || transaction.sectors?.length || transaction.recipient_country_code || transaction.recipient_countries?.length || transaction.recipient_region_code || transaction.recipient_regions?.length) && (
+                        <div className="space-y-2 p-3 bg-white rounded-lg border">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                            <MapPin className="h-4 w-4" />
+                            Geographic & Sector Targeting
+                          </div>
+                          
+                          {/* Single Sector */}
+                          {transaction.sector_code && (
+                            <div className="pl-6 text-sm">
+                              <span className="font-medium">Sector:</span> {transaction.sector_code}
+                              {transaction.sector_vocabulary && ` (Vocab: ${transaction.sector_vocabulary})`}
+                            </div>
+                          )}
+                          
+                          {/* Multiple Sectors */}
+                          {transaction.sectors && transaction.sectors.length > 0 && (
+                            <div className="pl-6 space-y-1">
+                              <span className="text-sm font-medium">Sectors:</span>
+                              {transaction.sectors.map((sector, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-sm">
+                                  <Badge variant="outline">{sector.code}</Badge>
+                                  {sector.percentage && <span className="text-xs text-gray-600">{sector.percentage}%</span>}
+                                  {sector.narrative && <span className="text-xs text-gray-600">{sector.narrative}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Single Country */}
+                          {transaction.recipient_country_code && (
+                            <div className="pl-6 text-sm">
+                              <span className="font-medium">Country:</span> {transaction.recipient_country_code}
+                            </div>
+                          )}
+                          
+                          {/* Multiple Countries */}
+                          {transaction.recipient_countries && transaction.recipient_countries.length > 0 && (
+                            <div className="pl-6 space-y-1">
+                              <span className="text-sm font-medium">Countries:</span>
+                              {transaction.recipient_countries.map((country, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-sm">
+                                  <Badge variant="outline">{country.code}</Badge>
+                                  {country.percentage && <span className="text-xs text-gray-600">{country.percentage}%</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Single Region */}
+                          {transaction.recipient_region_code && (
+                            <div className="pl-6 text-sm">
+                              <span className="font-medium">Region:</span> {transaction.recipient_region_code}
+                              {transaction.recipient_region_vocab && ` (Vocab: ${transaction.recipient_region_vocab})`}
+                            </div>
+                          )}
+                          
+                          {/* Multiple Regions */}
+                          {transaction.recipient_regions && transaction.recipient_regions.length > 0 && (
+                            <div className="pl-6 space-y-1">
+                              <span className="text-sm font-medium">Regions:</span>
+                              {transaction.recipient_regions.map((region, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-sm">
+                                  <Badge variant="outline">{region.code}</Badge>
+                                  {region.percentage && <span className="text-xs text-gray-600">{region.percentage}%</span>}
+                                  {region.narrative && <span className="text-xs text-gray-600">{region.narrative}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Activity IDs & Classifications */}
+                      <div className="space-y-2 p-3 bg-white rounded-lg border">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                          <Target className="h-4 w-4" />
+                          IATI Links & Classifications
+                        </div>
+                        
+                        {/* Provider Activity ID */}
+                        {transaction.provider_org_activity_id && (
+                          <div className="pl-6 text-sm">
+                            <span className="font-medium">Provider Activity:</span> {transaction.provider_org_activity_id}
+                          </div>
+                        )}
+                        
+                        {/* Receiver Activity ID */}
+                        {transaction.receiver_org_activity_id && (
+                          <div className="pl-6 text-sm">
+                            <span className="font-medium">Receiver Activity:</span> {transaction.receiver_org_activity_id}
+                          </div>
+                        )}
+                        
+                        {/* Multiple Aid Types */}
+                        {transaction.aid_types && transaction.aid_types.length > 0 && (
+                          <div className="pl-6 space-y-1">
+                            <span className="text-sm font-medium">Aid Types:</span>
+                            {transaction.aid_types.map((aidType, idx) => (
+                              <div key={idx} className="flex items-center gap-2 text-sm">
+                                <Badge variant="outline">{aidType.code}</Badge>
+                                {aidType.vocabulary && <span className="text-xs text-gray-600">Vocab: {aidType.vocabulary}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Show all classifications that are in the tooltip */}
+                        <div className="pl-6 space-y-1 text-sm">
+                          {transaction.flow_type && (
+                            <div><span className="font-medium">Flow Type:</span> {FLOW_TYPE_LABELS[transaction.flow_type] || transaction.flow_type}</div>
+                          )}
+                          {transaction.finance_type && (
+                            <div><span className="font-medium">Finance Type:</span> {FINANCE_TYPE_LABELS[transaction.finance_type]?.full || transaction.finance_type}</div>
+                          )}
+                          {transaction.tied_status && (
+                            <div><span className="font-medium">Tied Status:</span> {TIED_STATUS_LABELS[transaction.tied_status as keyof typeof TIED_STATUS_LABELS] || transaction.tied_status}</div>
+                          )}
+                          {transaction.disbursement_channel && (
+                            <div><span className="font-medium">Disbursement Channel:</span> {DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.full || transaction.disbursement_channel}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </TableRow>
+            )}
+            </React.Fragment>
             );
           })}
         </TableBody>

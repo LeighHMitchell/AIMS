@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren } from "lucide-react";
+import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { 
   showTransactionSuccess, 
@@ -32,13 +32,22 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { OrganizationSearchableSelect } from "@/components/ui/organization-searchable-select";
+import { ActivityCombobox } from "@/components/ui/activity-combobox";
 import { type Organization } from "@/components/ui/organization-combobox";
 import { usePartners } from "@/hooks/usePartners";
 import { useIATIReferenceValues } from "@/hooks/useIATIReferenceValues";
 import { useUser } from "@/hooks/useUser";
 import { getUserPermissions } from "@/types/user";
+import { 
+  TransactionSectorManager,
+  TransactionAidTypeManager,
+  TransactionRecipientCountryManager,
+  TransactionRecipientRegionManager 
+} from '@/components/transaction/TransactionMultiElementManager';
 
 import { cn } from "@/lib/utils";
 import {
@@ -380,6 +389,7 @@ export default function TransactionModal({
   const [computedClassification, setComputedClassification] = useState("");
   const [manualClassification, setManualClassification] = useState("");
   const [showValueDate, setShowValueDate] = useState(false);
+  const [showAdvancedIATI, setShowAdvancedIATI] = useState(false);
   
   // Document upload state
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
@@ -450,12 +460,14 @@ export default function TransactionModal({
       provider_org_type: transaction?.provider_org_type || undefined,
       provider_org_ref: transaction?.provider_org_ref || '',
       provider_org_name: transaction?.provider_org_name || '',
+      provider_org_activity_id: transaction?.provider_org_activity_id || '',
       
       // Receiver organization
       receiver_org_id: transaction?.receiver_org_id || undefined,
       receiver_org_type: transaction?.receiver_org_type || undefined,
       receiver_org_ref: transaction?.receiver_org_ref || '',
       receiver_org_name: transaction?.receiver_org_name || '',
+      receiver_org_activity_id: transaction?.receiver_org_activity_id || '',
       
       // Classifications - Use activity defaults when creating new transactions
       disbursement_channel: transaction?.disbursement_channel || undefined,
@@ -464,12 +476,18 @@ export default function TransactionModal({
       aid_type: transaction?.aid_type || safeDefaultAidType || undefined,
       tied_status: transaction?.tied_status || (safeDefaultTiedStatus as TiedStatus) || undefined,
       
-      // Sector & Geography
+      // Sector & Geography (single values)
       sector_code: transaction?.sector_code || '',
       sector_vocabulary: transaction?.sector_vocabulary || undefined,
       recipient_country_code: transaction?.recipient_country_code || '',
       recipient_region_code: transaction?.recipient_region_code || '',
       recipient_region_vocab: transaction?.recipient_region_vocab || undefined,
+      
+      // Multiple element arrays (IATI compliant)
+      sectors: transaction?.sectors || [],
+      aid_types: transaction?.aid_types || [],
+      recipient_countries: transaction?.recipient_countries || [],
+      recipient_regions: transaction?.recipient_regions || [],
       
       // Other
       is_humanitarian: transaction?.is_humanitarian || false,
@@ -482,6 +500,43 @@ export default function TransactionModal({
       setShowValueDate(true);
     }
   }, [transaction]);
+
+  // Auto-open Advanced IATI Fields if transaction has any advanced fields populated
+  useEffect(() => {
+    if (transaction && open) {
+      const hasAdvancedFields = !!(
+        transaction.sector_code ||
+        transaction.sectors?.length ||
+        transaction.recipient_country_code ||
+        transaction.recipient_countries?.length ||
+        transaction.recipient_region_code ||
+        transaction.recipient_regions?.length ||
+        transaction.aid_types?.length ||
+        transaction.provider_org_activity_id ||
+        transaction.receiver_org_activity_id
+      );
+      if (hasAdvancedFields) {
+        setShowAdvancedIATI(true);
+      }
+    }
+  }, [transaction, open]);
+
+  // Count populated advanced IATI fields
+  const countAdvancedFields = () => {
+    let count = 0;
+    if (formData.sector_code) count++;
+    if (formData.sectors && formData.sectors.length > 0) count++;
+    if (formData.recipient_country_code) count++;
+    if (formData.recipient_countries && formData.recipient_countries.length > 0) count++;
+    if (formData.recipient_region_code) count++;
+    if (formData.recipient_regions && formData.recipient_regions.length > 0) count++;
+    if (formData.aid_types && formData.aid_types.length > 0) count++;
+    if (formData.provider_org_activity_id) count++;
+    if (formData.receiver_org_activity_id) count++;
+    return count;
+  };
+
+  const advancedFieldsCount = countAdvancedFields();
 
   // Autosave hooks for field-level saving
   const transactionId = transaction?.uuid || transaction?.id || '';
@@ -502,6 +557,13 @@ export default function TransactionModal({
   const providerOrgAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'provider_org_id', userId: user?.id });
   const receiverOrgAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'receiver_org_id', userId: user?.id });
   const humanitarianAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'is_humanitarian', userId: user?.id });
+  
+  // NEW: Autosave hooks for IATI fields
+  const providerActivityAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'provider_org_activity_id', userId: user?.id });
+  const receiverActivityAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'receiver_org_activity_id', userId: user?.id });
+  const sectorCodeAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'sector_code', userId: user?.id });
+  const recipientCountryAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'recipient_country_code', userId: user?.id });
+  const recipientRegionAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'recipient_region_code', userId: user?.id });
 
   // Helper function to check if field should show as "saved" due to default value
   const hasDefaultValue = (fieldName: string, currentValue: any) => {
@@ -600,12 +662,14 @@ export default function TransactionModal({
         provider_org_type: transaction.provider_org_type || undefined,
         provider_org_ref: transaction.provider_org_ref || '',
         provider_org_name: transaction.provider_org_name || '',
+        provider_org_activity_id: transaction.provider_org_activity_id || '',
         
         // Receiver organization
         receiver_org_id: transaction.receiver_org_id || undefined,
         receiver_org_type: transaction.receiver_org_type || undefined,
         receiver_org_ref: transaction.receiver_org_ref || '',
         receiver_org_name: transaction.receiver_org_name || '',
+        receiver_org_activity_id: transaction.receiver_org_activity_id || '',
         
         // Classifications - keep existing values when editing
         disbursement_channel: transaction.disbursement_channel || undefined,
@@ -614,12 +678,18 @@ export default function TransactionModal({
         aid_type: transaction.aid_type || undefined,
         tied_status: transaction.tied_status || undefined,
         
-        // Sector & Geography
+        // Sector & Geography (single values)
         sector_code: transaction.sector_code || '',
         sector_vocabulary: transaction.sector_vocabulary || undefined,
         recipient_country_code: transaction.recipient_country_code || '',
         recipient_region_code: transaction.recipient_region_code || '',
         recipient_region_vocab: transaction.recipient_region_vocab || undefined,
+        
+        // Multiple element arrays (IATI compliant)
+        sectors: transaction.sectors || [],
+        aid_types: transaction.aid_types || [],
+        recipient_countries: transaction.recipient_countries || [],
+        recipient_regions: transaction.recipient_regions || [],
         
         // Other
         is_humanitarian: transaction.is_humanitarian || false,
@@ -652,10 +722,12 @@ export default function TransactionModal({
         provider_org_type: undefined,
         provider_org_ref: '',
         provider_org_name: user?.organizationId ? (organizations.find(o => o.id === user.organizationId)?.acronym || organizations.find(o => o.id === user.organizationId)?.name || '') : '',
+        provider_org_activity_id: '',
         receiver_org_id: undefined,
         receiver_org_type: undefined,
         receiver_org_ref: '',
         receiver_org_name: '',
+        receiver_org_activity_id: '',
         disbursement_channel: undefined,
         flow_type: (defaultFlowType as FlowType) || undefined,
         finance_type: (defaultFinanceType as FinanceType) || undefined,
@@ -666,6 +738,10 @@ export default function TransactionModal({
         recipient_country_code: '',
         recipient_region_code: '',
         recipient_region_vocab: undefined,
+        sectors: [],
+        aid_types: [],
+        recipient_countries: [],
+        recipient_regions: [],
         is_humanitarian: false,
       });
       setShowValueDate(false);
@@ -692,10 +768,11 @@ export default function TransactionModal({
     const allowed = [
       'id', 'uuid', 'activity_id', 'transaction_type', 'transaction_date', 'value', 'currency', 'status',
       'transaction_reference', 'value_date', 'description',
-      'provider_org_id', 'provider_org_type', 'provider_org_ref', 'provider_org_name',
-      'receiver_org_id', 'receiver_org_type', 'receiver_org_ref', 'receiver_org_name',
+      'provider_org_id', 'provider_org_type', 'provider_org_ref', 'provider_org_name', 'provider_org_activity_id',
+      'receiver_org_id', 'receiver_org_type', 'receiver_org_ref', 'receiver_org_name', 'receiver_org_activity_id',
       'disbursement_channel', 'flow_type', 'finance_type', 'aid_type', 'tied_status',
       'sector_code', 'sector_vocabulary', 'recipient_country_code', 'recipient_region_code', 'recipient_region_vocab',
+      'sectors', 'aid_types', 'recipient_countries', 'recipient_regions',
       'is_humanitarian'
     ];
     const payload: any = {};
@@ -1521,6 +1598,27 @@ export default function TransactionModal({
                 />
               </div>
 
+              {/* Provider Organization Activity ID */}
+              <div className="space-y-2">
+                <LabelWithInfoAndSave 
+                  helpText="Link to the IATI activity of the provider organization (optional)"
+                  isSaving={providerActivityAutosave.isSaving}
+                  isSaved={providerActivityAutosave.isSaved}
+                  hasValue={!!formData.provider_org_activity_id}
+                >
+                  Provider Activity
+                </LabelWithInfoAndSave>
+                <ActivityCombobox
+                  value={formData.provider_org_activity_id || ''}
+                  onValueChange={async (activityId) => {
+                    setFormData({...formData, provider_org_activity_id: activityId});
+                    providerActivityAutosave.triggerFieldSave(activityId);
+                  }}
+                  placeholder="Search for provider activity..."
+                  disabled={isSubmitting}
+                />
+              </div>
+
               {/* Receiver Organization */}
               <div className="space-y-2">
                 <LabelWithInfoAndSave 
@@ -1556,6 +1654,27 @@ export default function TransactionModal({
                   }}
                   placeholder="Select receiver organization"
                   className="w-full"
+                />
+              </div>
+
+              {/* Receiver Organization Activity ID */}
+              <div className="space-y-2">
+                <LabelWithInfoAndSave 
+                  helpText="Link to the IATI activity of the receiver organization (optional)"
+                  isSaving={receiverActivityAutosave.isSaving}
+                  isSaved={receiverActivityAutosave.isSaved}
+                  hasValue={!!formData.receiver_org_activity_id}
+                >
+                  Receiver Activity
+                </LabelWithInfoAndSave>
+                <ActivityCombobox
+                  value={formData.receiver_org_activity_id || ''}
+                  onValueChange={async (activityId) => {
+                    setFormData({...formData, receiver_org_activity_id: activityId});
+                    receiverActivityAutosave.triggerFieldSave(activityId);
+                  }}
+                  placeholder="Search for receiver activity..."
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -1848,6 +1967,246 @@ export default function TransactionModal({
                   maxFileSize={50}
                 />
               )}
+            </div>
+
+            {/* Advanced IATI Fields Section */}
+            <div className="space-y-4">
+              <Collapsible open={showAdvancedIATI} onOpenChange={setShowAdvancedIATI}>
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex items-center justify-between"
+                    type="button"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      Advanced IATI Fields
+                      {advancedFieldsCount > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          {advancedFieldsCount} field{advancedFieldsCount !== 1 ? 's' : ''} completed
+                        </Badge>
+                      )}
+                    </span>
+                    <ChevronDown 
+                      className={`h-4 w-4 transition-transform ${
+                        showAdvancedIATI ? 'rotate-180' : ''
+                      }`} 
+                    />
+                  </Button>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent className="space-y-6 pt-4">
+                  {/* Single-Value Geographic & Sector Fields */}
+                  <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                    <h4 className="text-sm font-semibold text-gray-900">
+                      Geographic & Sector Targeting (Single Values)
+                    </h4>
+                    <p className="text-xs text-gray-600">
+                      Use these fields for single-value targeting, or use the multi-element sections below for IATI-compliant percentage allocations.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Sector Code */}
+                      <div className="space-y-2">
+                        <LabelWithInfoAndSave 
+                          helpText="OECD DAC 5-digit sector code (e.g., 11220 for Primary education)"
+                          isSaving={sectorCodeAutosave.isSaving}
+                          isSaved={sectorCodeAutosave.isSaved}
+                          hasValue={!!formData.sector_code}
+                        >
+                          Sector Code
+                        </LabelWithInfoAndSave>
+                        <Input
+                          value={formData.sector_code || ''}
+                          onChange={e => {
+                            setFormData({...formData, sector_code: e.target.value});
+                            sectorCodeAutosave.triggerFieldSave(e.target.value);
+                          }}
+                          placeholder="e.g., 11220"
+                          maxLength={5}
+                        />
+                      </div>
+                      
+                      {/* Sector Vocabulary */}
+                      <div className="space-y-2">
+                        <Label>Sector Vocabulary</Label>
+                        <Select 
+                          value={formData.sector_vocabulary || '1'}
+                          onValueChange={(v) => {
+                            setFormData({...formData, sector_vocabulary: v});
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 - DAC 5-digit</SelectItem>
+                            <SelectItem value="2">2 - DAC 3-digit</SelectItem>
+                            <SelectItem value="3">3 - COFOG</SelectItem>
+                            <SelectItem value="7">7 - SDMX</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Recipient Country Code */}
+                      <div className="space-y-2">
+                        <LabelWithInfoAndSave 
+                          helpText="ISO 3166-1 alpha-2 country code (e.g., TZ for Tanzania)"
+                          isSaving={recipientCountryAutosave.isSaving}
+                          isSaved={recipientCountryAutosave.isSaved}
+                          hasValue={!!formData.recipient_country_code}
+                        >
+                          Recipient Country
+                        </LabelWithInfoAndSave>
+                        <Input
+                          value={formData.recipient_country_code || ''}
+                          onChange={e => {
+                            const val = e.target.value.toUpperCase();
+                            setFormData({...formData, recipient_country_code: val});
+                            recipientCountryAutosave.triggerFieldSave(val);
+                          }}
+                          placeholder="e.g., TZ"
+                          maxLength={2}
+                          className="uppercase"
+                        />
+                      </div>
+                      
+                      {/* Recipient Region Code & Vocabulary */}
+                      <div className="space-y-2">
+                        <LabelWithInfoAndSave 
+                          helpText="IATI region code (e.g., 298 for Africa, regional)"
+                          isSaving={recipientRegionAutosave.isSaving}
+                          isSaved={recipientRegionAutosave.isSaved}
+                          hasValue={!!formData.recipient_region_code}
+                        >
+                          Recipient Region
+                        </LabelWithInfoAndSave>
+                        <div className="flex gap-2">
+                          <Input
+                            value={formData.recipient_region_code || ''}
+                            onChange={e => {
+                              setFormData({...formData, recipient_region_code: e.target.value});
+                              recipientRegionAutosave.triggerFieldSave(e.target.value);
+                            }}
+                            placeholder="e.g., 298"
+                            className="flex-1"
+                          />
+                          <Select 
+                            value={formData.recipient_region_vocab || '1'}
+                            onValueChange={(v) => {
+                              setFormData({...formData, recipient_region_vocab: v});
+                            }}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">UN M49</SelectItem>
+                              <SelectItem value="2">OECD DAC</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="my-6" />
+
+                  {/* Multiple Sectors */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      Multiple Sectors 
+                      <Badge variant="outline" className="text-xs">IATI Compliant</Badge>
+                    </h4>
+                    <p className="text-xs text-gray-600">
+                      Add multiple sectors with percentage allocations. Percentages must sum to 100%.
+                    </p>
+                    <TransactionSectorManager
+                      sectors={formData.sectors || []}
+                      onSectorsChange={(sectors) => {
+                        setFormData({ ...formData, sectors });
+                      }}
+                      allowPercentages={true}
+                    />
+                  </div>
+
+                  <Separator className="my-6" />
+
+                  {/* Multiple Aid Types */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      Multiple Aid Types
+                      <Badge variant="outline" className="text-xs">IATI Compliant</Badge>
+                    </h4>
+                    <p className="text-xs text-gray-600">
+                      Specify multiple aid type classifications with different vocabularies.
+                    </p>
+                    <TransactionAidTypeManager
+                      aidTypes={formData.aid_types || []}
+                      onAidTypesChange={(aid_types) => {
+                        setFormData({ ...formData, aid_types });
+                      }}
+                    />
+                  </div>
+
+                  <Separator className="my-6" />
+
+                  {/* Multiple Recipient Countries OR Regions */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      Geographic Targeting (Multiple)
+                      <Badge variant="outline" className="text-xs">IATI Compliant</Badge>
+                    </h4>
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        IATI Standard: Use either multiple countries OR multiple regions, not both.
+                      </AlertDescription>
+                    </Alert>
+                    
+                    <Tabs defaultValue="countries" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="countries">Countries</TabsTrigger>
+                        <TabsTrigger value="regions">Regions</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="countries" className="space-y-2">
+                        <p className="text-xs text-gray-600">
+                          Add multiple countries with optional percentage allocations.
+                        </p>
+                        <TransactionRecipientCountryManager
+                          countries={formData.recipient_countries || []}
+                          onCountriesChange={(countries) => {
+                            setFormData({ 
+                              ...formData, 
+                              recipient_countries: countries,
+                              recipient_regions: [] // Clear regions per IATI
+                            });
+                          }}
+                          allowPercentages={true}
+                        />
+                      </TabsContent>
+                      
+                      <TabsContent value="regions" className="space-y-2">
+                        <p className="text-xs text-gray-600">
+                          Add multiple regions with optional percentage allocations.
+                        </p>
+                        <TransactionRecipientRegionManager
+                          regions={formData.recipient_regions || []}
+                          onRegionsChange={(regions) => {
+                            setFormData({ 
+                              ...formData, 
+                              recipient_regions: regions,
+                              recipient_countries: [] // Clear countries per IATI
+                            });
+                          }}
+                          allowPercentages={true}
+                        />
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
 
             {/* System Identifiers - Always shown at bottom */}

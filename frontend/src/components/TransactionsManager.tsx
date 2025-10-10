@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransactionTypeSelect } from "@/components/forms/TransactionTypeSelect";
 import { FinanceTypeSelect } from "@/components/forms/FinanceTypeSelect";
-import { Plus, Trash2, Edit, Download, Filter, DollarSign, AlertCircle, FileText, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Edit, Download, Filter, DollarSign, AlertCircle, FileText, X, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { usePartners } from "@/hooks/usePartners";
@@ -61,6 +61,29 @@ const DISBURSEMENT_CHANNELS: Record<string, string> = {
   '4': 'Aid in kind'
 };
 
+// Hero Card Component
+interface HeroCardProps {
+  title: string;
+  value: string;
+  subtitle: string;
+  icon?: React.ReactNode;
+}
+
+function HeroCard({ title, value, subtitle, icon }: HeroCardProps) {
+  return (
+    <div className="p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-sm text-muted-foreground">{title}</div>
+          <div className="text-2xl font-bold mt-1">{value}</div>
+          <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
+        </div>
+        {icon && <div className="text-muted-foreground">{icon}</div>}
+      </div>
+    </div>
+  );
+}
+
 interface TransactionsManagerProps {
   activityId: string;
   activityPartnerId?: string; // User-assigned Activity ID from General tab
@@ -105,6 +128,7 @@ export default function TransactionsManager({
   });
   const [submitting, setSubmitting] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [quickFilter, setQuickFilter] = useState<"all" | "commitments" | "disbursements" | "expenditures">("all");
 
   // Convert legacy transaction types to new format
   const convertLegacyTransaction = (transaction: Transaction): Transaction => {
@@ -293,8 +317,33 @@ export default function TransactionsManager({
     }
   };
 
+  // Calculate summary statistics BEFORE filtering
+  const summaryStats = {
+    // Commitments (type 1 = Incoming Commitment, type 2 = Outgoing Commitment)
+    commitments: transactions.filter(t => t.transaction_type === '1' || t.transaction_type === '2').reduce((sum, t) => sum + (t.value || 0), 0),
+    commitmentsCount: transactions.filter(t => t.transaction_type === '1' || t.transaction_type === '2').length,
+    
+    // Disbursements (type 3 = Disbursement)
+    disbursements: transactions.filter(t => t.transaction_type === '3').reduce((sum, t) => sum + (t.value || 0), 0),
+    disbursementsCount: transactions.filter(t => t.transaction_type === '3').length,
+    
+    // Expenditures (type 4 = Expenditure)
+    expenditures: transactions.filter(t => t.transaction_type === '4').reduce((sum, t) => sum + (t.value || 0), 0),
+    expendituresCount: transactions.filter(t => t.transaction_type === '4').length,
+    
+    // Validation stats
+    validatedCount: transactions.filter(t => t.status === 'validated').length,
+    validatedPercent: transactions.length > 0 ? (transactions.filter(t => t.status === 'validated').length / transactions.length) * 100 : 0
+  };
+
   // Filter transactions
   const filteredTransactions = transactions.filter(t => {
+    // Quick filter
+    if (quickFilter === 'commitments' && t.transaction_type !== '1' && t.transaction_type !== '2') return false;
+    if (quickFilter === 'disbursements' && t.transaction_type !== '3') return false;
+    if (quickFilter === 'expenditures' && t.transaction_type !== '4') return false;
+    
+    // Regular filters
     if (filters.type !== "all" && t.transaction_type !== filters.type) return false;
     if (filters.status !== "all" && t.status !== filters.status) return false;
     if (filters.financeType !== "all" && t.finance_type !== filters.financeType) return false;
@@ -388,6 +437,36 @@ export default function TransactionsManager({
 
   return (
     <div className="space-y-4">
+      {/* Hero Cards Summary */}
+      {transactions.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <HeroCard
+            title="Total Commitments"
+            value={formatCurrency(summaryStats.commitments, defaultCurrency || 'USD')}
+            subtitle={`${summaryStats.commitmentsCount} transaction${summaryStats.commitmentsCount !== 1 ? 's' : ''}`}
+            icon={<TrendingUp className="h-5 w-5" />}
+          />
+          <HeroCard
+            title="Total Disbursements"
+            value={formatCurrency(summaryStats.disbursements, defaultCurrency || 'USD')}
+            subtitle={`${summaryStats.disbursementsCount} transaction${summaryStats.disbursementsCount !== 1 ? 's' : ''}`}
+            icon={<DollarSign className="h-5 w-5" />}
+          />
+          <HeroCard
+            title="Total Expenditures"
+            value={formatCurrency(summaryStats.expenditures, defaultCurrency || 'USD')}
+            subtitle={`${summaryStats.expendituresCount} transaction${summaryStats.expendituresCount !== 1 ? 's' : ''}`}
+            icon={<TrendingDown className="h-5 w-5" />}
+          />
+          <HeroCard
+            title="Validated"
+            value={`${summaryStats.validatedCount}/${transactions.length}`}
+            subtitle={`${Math.round(summaryStats.validatedPercent)}% validated`}
+            icon={<CheckCircle className="h-5 w-5" />}
+          />
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -412,6 +491,41 @@ export default function TransactionsManager({
           </div>
         </CardHeader>
         <CardContent>
+          {/* Quick Filter Buttons */}
+          {transactions.length > 0 && (
+            <div className="flex gap-2 mb-4">
+              <Button
+                variant={quickFilter === 'all' ? 'default' : 'outline'}
+                onClick={() => setQuickFilter('all')}
+                size="sm"
+              >
+                All Transactions
+              </Button>
+              <Button
+                variant={quickFilter === 'commitments' ? 'default' : 'outline'}
+                onClick={() => setQuickFilter('commitments')}
+                size="sm"
+              >
+                Commitments ({summaryStats.commitmentsCount})
+              </Button>
+              <Button
+                variant={quickFilter === 'disbursements' ? 'default' : 'outline'}
+                onClick={() => setQuickFilter('disbursements')}
+                size="sm"
+              >
+                Disbursements ({summaryStats.disbursementsCount})
+              </Button>
+              <Button
+                variant={quickFilter === 'expenditures' ? 'default' : 'outline'}
+                onClick={() => setQuickFilter('expenditures')}
+                size="sm"
+              >
+                Expenditures ({summaryStats.expendituresCount})
+              </Button>
+            </div>
+          )}
+        
+          
           {/* Filters */}
           {transactions.length > 0 && (
             <div className="mb-4 p-4 bg-muted/50 rounded-lg space-y-3">
