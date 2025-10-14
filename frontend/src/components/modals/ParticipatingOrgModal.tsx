@@ -13,6 +13,7 @@ import { useOrganizations } from '@/hooks/use-organizations';
 import { IATI_ORGANIZATION_ROLES } from '@/data/iati-organization-roles';
 import { getOrganizationRoleName } from '@/data/iati-organization-roles';
 import { IATI_CRS_CHANNEL_CODES, getCRSChannelCodeOptions } from '@/data/iati-crs-channel-codes';
+import { LANGUAGES } from '@/data/languages';
 import { Plus, Save, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -83,10 +84,8 @@ export function ParticipatingOrgModal({
         secondary_reporter: editingOrg.secondary_reporter || false
       });
       
-      // Show advanced if any advanced fields are filled
-      if (editingOrg.activity_id_ref || editingOrg.crs_channel_code || narrativesArray.length > 0 || editingOrg.org_activity_id || editingOrg.reporting_org_ref || editingOrg.secondary_reporter) {
-        setShowAdvanced(true);
-      }
+      // Keep advanced fields hidden by default, even if filled
+      setShowAdvanced(false);
     } else {
       // Reset for new entry
       setFormData({
@@ -110,7 +109,7 @@ export function ParticipatingOrgModal({
         setFormData(prev => ({
           ...prev,
           iati_org_ref: selectedOrg.iati_org_id || prev.iati_org_ref,
-          org_type: selectedOrg.organisation_type || prev.org_type,
+          org_type: selectedOrg.Organisation_Type_Code || prev.org_type,
           narrative: selectedOrg.name
         }));
       }
@@ -272,25 +271,17 @@ export function ParticipatingOrgModal({
           </div>
 
           {/* Advanced Fields Toggle */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
+          <div 
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full flex items-center justify-center gap-2"
+            className="flex items-center justify-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 transition-colors py-2"
           >
+            <span>Advanced IATI Fields</span>
             {showAdvanced ? (
-              <>
-                <ChevronUp className="h-4 w-4" />
-                Hide Advanced IATI Fields
-              </>
+              <ChevronUp className="h-4 w-4" />
             ) : (
-              <>
-                <ChevronDown className="h-4 w-4" />
-                Show Advanced IATI Fields
-              </>
+              <ChevronDown className="h-4 w-4" />
             )}
-          </Button>
+          </div>
 
           {showAdvanced && (
             <div className="space-y-6 pt-4 border-t border-gray-200">
@@ -348,7 +339,7 @@ export function ParticipatingOrgModal({
                         .filter(code => code.category === "Public Sector" || code.category === "10000")
                         .map(code => ({
                           code: code.code,
-                          name: `${code.code} ${code.name}`,
+                          name: code.name,
                           description: code.description || ''
                         }))
                     },
@@ -358,7 +349,7 @@ export function ParticipatingOrgModal({
                         .filter(code => code.category === "Civil Society" || code.category === "20000" || code.category === "21000" || code.category === "22000" || code.category === "23000")
                         .map(code => ({
                           code: code.code,
-                          name: `${code.code} ${code.name}`,
+                          name: code.name,
                           description: code.description || ''
                         }))
                     },
@@ -368,7 +359,7 @@ export function ParticipatingOrgModal({
                         .filter(code => code.category === "Partnerships" || code.category === "30000" || code.category === "31000" || code.category === "32000")
                         .map(code => ({
                           code: code.code,
-                          name: `${code.code} ${code.name}`,
+                          name: code.name,
                           description: code.description || ''
                         }))
                     },
@@ -378,7 +369,7 @@ export function ParticipatingOrgModal({
                         .filter(code => code.category === "Multilateral" || code.category === "40000" || code.category === "41000" || code.category === "42000" || code.category === "43000" || code.category === "44000" || code.category === "45000" || code.category === "46000" || code.category === "47000")
                         .map(code => ({
                           code: code.code,
-                          name: `${code.code} ${code.name}`,
+                          name: code.name,
                           description: code.description || ''
                         }))
                     },
@@ -388,7 +379,7 @@ export function ParticipatingOrgModal({
                         .filter(code => code.category === "Academic" || code.category === "51000")
                         .map(code => ({
                           code: code.code,
-                          name: `${code.code} ${code.name}`,
+                          name: code.name,
                           description: code.description || ''
                         }))
                     },
@@ -398,7 +389,7 @@ export function ParticipatingOrgModal({
                         .filter(code => code.category === "Private Sector" || code.category === "60000" || code.category === "61000" || code.category === "62000" || code.category === "63000")
                         .map(code => ({
                           code: code.code,
-                          name: `${code.code} ${code.name}`,
+                          name: code.name,
                           description: code.description || ''
                         }))
                     },
@@ -408,7 +399,7 @@ export function ParticipatingOrgModal({
                         .filter(code => code.category === "Other" || code.category === "90000")
                         .map(code => ({
                           code: code.code,
-                          name: `${code.code} ${code.name}`,
+                          name: code.name,
                           description: code.description || ''
                         }))
                     }
@@ -431,41 +422,56 @@ export function ParticipatingOrgModal({
                 </p>
                 
                 {formData.narratives?.map((narrative, index) => (
-                  <div key={index} className="flex gap-2 items-end">
-                    <div className="w-24">
-                      <Label htmlFor={`narrative-lang-${index}`} className="text-xs text-gray-500">
-                        Language Code
-                      </Label>
-                      <Input
-                        id={`narrative-lang-${index}`}
-                        value={narrative.lang}
-                        onChange={(e) => updateNarrative(index, 'lang', e.target.value.toLowerCase())}
-                        placeholder="fr"
-                        className="text-sm"
-                        maxLength={2}
-                      />
+                  <div key={index} className="space-y-2">
+                    <div className="flex gap-2 items-start">
+                      <div className="w-32">
+                        <Label htmlFor={`narrative-lang-${index}`} className="text-xs text-gray-500">
+                          Language Code
+                        </Label>
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor={`narrative-text-${index}`} className="text-xs text-gray-500">
+                          Name
+                        </Label>
+                      </div>
+                      <div className="w-8"></div>
                     </div>
-                    <div className="flex-1">
-                      <Label htmlFor={`narrative-text-${index}`} className="text-xs text-gray-500">
-                        Name
-                      </Label>
-                      <Input
-                        id={`narrative-text-${index}`}
-                        value={narrative.text}
-                        onChange={(e) => updateNarrative(index, 'text', e.target.value)}
-                        placeholder="Nom de l'agence"
-                        className="text-sm"
-                      />
+                    <div className="flex gap-2 items-center">
+                      <div className="w-32">
+                        <EnhancedSearchableSelect
+                          groups={[{
+                            label: "Languages",
+                            options: LANGUAGES[0].types.map(lang => ({
+                              code: lang.code,
+                              name: lang.name
+                            }))
+                          }]}
+                          value={narrative.lang}
+                          onValueChange={(value) => updateNarrative(index, 'lang', value)}
+                          placeholder="Select language..."
+                          searchPlaceholder="Search languages..."
+                          className="h-10"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Input
+                          id={`narrative-text-${index}`}
+                          value={narrative.text}
+                          onChange={(e) => updateNarrative(index, 'text', e.target.value)}
+                          placeholder="Nom de l'agence"
+                          className="text-sm h-10"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeNarrative(index)}
+                        className="px-2 py-1 h-10"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeNarrative(index)}
-                      className="px-2 py-1 h-8"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
                   </div>
                 ))}
                 

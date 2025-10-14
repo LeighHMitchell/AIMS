@@ -41,9 +41,21 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Helper function to validate URL format
+function isValidUrl(urlString: string): boolean {
+  try {
+    new URL(urlString);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { name, created_by } = await request.json();
+    const { name, created_by, vocabulary, code: providedCode, vocabulary_uri } = await request.json();
+    
+    // === INPUT VALIDATION ===
     
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -54,36 +66,130 @@ export async function POST(request: NextRequest) {
     
     const normalizedName = name.toLowerCase().trim();
     
-    // Generate a code from the name (alphanumeric, replace spaces/special chars with hyphens)
-    const code = normalizedName
+    // Validate name length
+    if (normalizedName.length > 255) {
+      return NextResponse.json(
+        { error: 'Tag name too long (max 255 characters)' },
+        { status: 400 }
+      );
+    }
+    
+    // Use provided code or generate one from the name
+    const code = providedCode || normalizedName
       .replace(/[^a-z0-9]+/g, '-')  // Replace non-alphanumeric with hyphens
       .replace(/^-+|-+$/g, '')      // Remove leading/trailing hyphens
       .substring(0, 50);            // Limit length
     
-    // Check if tag already exists by name or code
-    const { data: existingTag, error: fetchError } = await getSupabaseAdmin()
+    // Validate code format (allow uppercase and lowercase)
+    if (code && !/^[a-zA-Z0-9-]+$/.test(code)) {
+      return NextResponse.json(
+        { error: 'Tag code must be alphanumeric with hyphens only' },
+        { status: 400 }
+      );
+    }
+    
+    // Normalize vocabulary to string
+    const normalizedVocabulary = vocabulary ? String(vocabulary) : '99';
+    
+    // Validate vocabulary code
+    const validVocabularies = ['1', '2', '3', '98', '99'];
+    if (!validVocabularies.includes(normalizedVocabulary)) {
+      return NextResponse.json(
+        { error: `Invalid vocabulary code: ${normalizedVocabulary}. Must be one of: ${validVocabularies.join(', ')}` },
+        { status: 400 }
+      );
+    }
+    
+    // Validate vocabulary_uri format if provided
+    if (vocabulary_uri && !isValidUrl(vocabulary_uri)) {
+      return NextResponse.json(
+        { error: 'Invalid vocabulary URI format' },
+        { status: 400 }
+      );
+    }
+    
+    // === CHECK FOR EXISTING TAG ===
+    // Use separate queries to avoid SQL injection
+    
+    // First, check for exact match on name + vocabulary
+    const { data: exactMatch, error: exactError } = await getSupabaseAdmin()
       .from('tags')
       .select('*')
-      .or(`name.eq.${normalizedName},code.eq.${code}`)
+      .eq('name', normalizedName)
+      .eq('vocabulary', normalizedVocabulary)
       .maybeSingle();
     
-    if (fetchError) {
-      console.error('Error checking existing tag:', fetchError);
+    if (exactError && exactError.code !== 'PGRST116') {
+      console.error('Error checking exact tag match:', exactError);
       return NextResponse.json(
         { error: 'Database query failed' },
         { status: 500 }
       );
     }
     
-    if (existingTag) {
-      return NextResponse.json(existingTag);
+    // If exact match exists, update metadata if different and return it
+    if (exactMatch) {
+      const needsUpdate = exactMatch.code !== code || 
+                         exactMatch.vocabulary_uri !== vocabulary_uri;
+      
+      if (needsUpdate) {
+        const { data: updatedTag, error: updateError } = await getSupabaseAdmin()
+          .from('tags')
+          .update({ 
+            code, 
+            vocabulary_uri: vocabulary_uri || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', exactMatch.id)
+          .select()
+          .single();
+        
+        if (updateError) {
+          console.error('Error updating tag metadata:', updateError);
+          // Return existing tag even if update fails
+          return NextResponse.json(exactMatch);
+        }
+        
+        return NextResponse.json(updatedTag);
+      }
+      
+      return NextResponse.json(exactMatch);
     }
     
-    // Create new tag - try with created_by first, fallback to basic structure
-    const baseTagData = {
+    // Check if code exists with different name (potential conflict)
+    if (code) {
+      const { data: codeConflict } = await getSupabaseAdmin()
+        .from('tags')
+        .select('*')
+        .eq('code', code)
+        .eq('vocabulary', normalizedVocabulary)
+        .neq('name', normalizedName)
+        .maybeSingle();
+      
+      if (codeConflict) {
+        return NextResponse.json(
+          { 
+            error: 'Tag code already exists with different name', 
+            existingTag: codeConflict 
+          },
+          { status: 409 }
+        );
+      }
+    }
+    
+    // === CREATE NEW TAG ===
+    
+    // Create new tag with IATI fields
+    const baseTagData: any = {
       name: normalizedName,
-      code: code
+      code: code,
+      vocabulary: normalizedVocabulary
     };
+    
+    // Add vocabulary_uri if provided
+    if (vocabulary_uri) {
+      baseTagData.vocabulary_uri = vocabulary_uri;
+    }
     
     // First attempt: try with created_by if provided
     if (created_by) {
@@ -102,6 +208,19 @@ export async function POST(request: NextRequest) {
         if (createError.message.includes('created_by') || createError.message.includes('schema cache')) {
           console.log('created_by column not found, trying without it...');
         } else {
+          // If it's a race condition (duplicate), try fetching again
+          if (createError.code === '23505') {
+            const { data: raceTag } = await getSupabaseAdmin()
+              .from('tags')
+              .select('*')
+              .eq('name', normalizedName)
+              .eq('vocabulary', normalizedVocabulary)
+              .single();
+            
+            if (raceTag) {
+              return NextResponse.json(raceTag);
+            }
+          }
           throw createError;
         }
       } catch (error) {
@@ -109,7 +228,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Fallback: create tag without created_by field but with code
+    // Fallback: create tag without created_by field
     const { data: newTag, error: createError } = await getSupabaseAdmin()
       .from('tags')
       .insert([baseTagData])
@@ -117,6 +236,20 @@ export async function POST(request: NextRequest) {
       .single();
     
     if (createError) {
+      // Handle race condition - tag was created between our check and insert
+      if (createError.code === '23505') {
+        const { data: raceTag } = await getSupabaseAdmin()
+          .from('tags')
+          .select('*')
+          .eq('name', normalizedName)
+          .eq('vocabulary', normalizedVocabulary)
+          .single();
+        
+        if (raceTag) {
+          return NextResponse.json(raceTag);
+        }
+      }
+      
       console.error('Error creating tag (fallback):', createError);
       console.error('Tag data attempted:', baseTagData);
       return NextResponse.json(

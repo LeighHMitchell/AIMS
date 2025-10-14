@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Hash, Edit2, Check, AlertCircle, Info } from 'lucide-react';
+import { X, Hash, AlertCircle, Info, FileCode } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,9 @@ import { useUser } from '@/hooks/useUser';
 interface Tag {
   id: string;
   name: string;
+  vocabulary?: string;
+  code?: string;
+  vocabulary_uri?: string;
   created_by?: string;
   created_at?: string;
   addedBy?: {
@@ -45,6 +48,12 @@ const getTagColorVariant = (tag: Tag, index: number) => {
   return TAG_COLOR_VARIANTS[hash % TAG_COLOR_VARIANTS.length];
 };
 
+// Function to check if tag was imported from IATI XML
+const isIatiImportedTag = (tag: Tag) => {
+  // IATI tags have vocabulary and code fields
+  return !!(tag.vocabulary && tag.code);
+};
+
 // Format date for tooltip display
 const formatTooltipDate = (dateString?: string) => {
   if (!dateString) return 'Unknown date';
@@ -69,11 +78,6 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [apiAvailable, setApiAvailable] = useState(true);
-  
-  // Inline editing state
-  const [editingTagId, setEditingTagId] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState('');
-  const [editingOpen, setEditingOpen] = useState(false);
 
   // Fetch available tags with debounce
   const fetchTags = useCallback(async (query: string) => {
@@ -208,51 +212,6 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
     setOpen(false);
   };
 
-  // Start editing a tag
-  const startEditing = (tag: Tag) => {
-    setEditingTagId(tag.id);
-    setEditingValue(tag.name);
-    setEditingOpen(true);
-  };
-
-  // Save edited tag
-  const saveEdit = async () => {
-    if (!editingTagId || !editingValue.trim()) {
-      toast.error('Tag name cannot be empty');
-      return;
-    }
-
-    const normalizedName = editingValue.toLowerCase().trim();
-    
-    // Check for duplicates
-    if (tags.some(t => t.id !== editingTagId && t.name.toLowerCase() === normalizedName)) {
-      toast.warning('Tag with this name already exists');
-      return;
-    }
-
-    const updatedTags = tags.map(tag => 
-      tag.id === editingTagId 
-        ? { 
-            ...tag, 
-            name: normalizedName
-          }
-        : tag
-    );
-    
-    onChange(updatedTags);
-    toast.success('Tag updated successfully');
-    
-    setEditingTagId(null);
-    setEditingValue('');
-    setEditingOpen(false);
-  };
-
-  // Cancel editing
-  const cancelEdit = () => {
-    setEditingTagId(null);
-    setEditingValue('');
-    setEditingOpen(false);
-  };
 
   // Remove a tag
   const removeTag = async (tagId: string) => {
@@ -290,15 +249,6 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
     }
   };
 
-  // Handle Enter key in edit input
-  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      saveEdit();
-    } else if (e.key === 'Escape') {
-      cancelEdit();
-    }
-  };
 
   return (
     <TooltipProvider>
@@ -387,87 +337,64 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
         <div className="space-y-4">
           {tags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag, index) => {
-                const isEditing = editingTagId === tag.id;
-                
-                return (
-                  <div key={tag.id} className="relative">
-                    {isEditing ? (
-                      // Inline editing mode
-                      <div className="inline-flex items-center gap-1 bg-white border border-blue-300 rounded-md px-2 py-1">
-                        <Hash className="w-3 h-3 text-blue-600" />
-                        <Input
-                          value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
-                          onKeyDown={handleEditKeyDown}
-                          className="h-6 w-20 text-xs border-none p-0 focus:ring-0"
-                          autoFocus
-                        />
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={saveEdit}
-                            className="h-5 w-5 p-0 hover:bg-green-100"
-                          >
-                            <Check className="w-3 h-3 text-green-600" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={cancelEdit}
-                            className="h-5 w-5 p-0 hover:bg-red-100"
-                          >
-                            <X className="w-3 h-3 text-red-600" />
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      // Normal display mode with tooltip
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            variant={getTagColorVariant(tag, index)}
-                            className="pl-2 pr-1 py-1 flex items-center gap-1 hover:shadow-md transition-all cursor-pointer group"
-                            onClick={() => startEditing(tag)}
-                          >
-                            <Hash className="w-3 h-3" />
-                            {tag.name}
-                            <div className="flex items-center gap-1 ml-1">
-                              <Edit2 className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-slate-700" />
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeTag(tag.id);
-                                }}
-                                className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
-                                aria-label={`Remove ${tag.name} tag`}
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
+              {tags.map((tag, index) => (
+                <div key={tag.id} className="relative">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        variant={getTagColorVariant(tag, index)}
+                        className="pl-2 pr-1 py-1 flex items-center gap-1 hover:shadow-md transition-all group"
+                      >
+                        {isIatiImportedTag(tag) ? (
+                          <FileCode className="w-3 h-3" />
+                        ) : (
+                          <Hash className="w-3 h-3" />
+                        )}
+                        {tag.name}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeTag(tag.id);
+                          }}
+                          className="hover:bg-black/10 rounded-full p-0.5 transition-colors ml-1"
+                          aria-label={`Remove ${tag.name} tag`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="text-xs">
+                        {isIatiImportedTag(tag) && (
+                          <div className="mb-2 pb-2 border-b border-gray-200">
+                            <p className="font-semibold text-blue-600 flex items-center gap-1">
+                              <FileCode className="w-3 h-3" />
+                              Imported from IATI XML
+                            </p>
+                            <div className="mt-1 space-y-0.5 text-gray-600">
+                              <p>Vocabulary: {tag.vocabulary === '1' ? 'IATI Standard' : tag.vocabulary === '99' ? 'Custom' : tag.vocabulary}</p>
+                              <p>Code: {tag.code}</p>
+                              {tag.vocabulary_uri && (
+                                <p className="truncate max-w-48" title={tag.vocabulary_uri}>
+                                  URI: {tag.vocabulary_uri}
+                                </p>
+                              )}
                             </div>
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="text-xs">
-                            {tag.addedBy ? (
-                              <p>Added by {tag.addedBy.name}</p>
-                            ) : (
-                              <p>Added by Unknown User</p>
-                            )}
-                            <p className="text-gray-500">
-                              {formatTooltipDate(tag.addedAt)}
-                            </p>
-                            <p className="text-gray-400 mt-1 italic">
-                              Click to edit
-                            </p>
                           </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </div>
-                );
-              })}
+                        )}
+                        {tag.addedBy ? (
+                          <p>Added by {tag.addedBy.name}</p>
+                        ) : (
+                          <p>Added by Unknown User</p>
+                        )}
+                        <p className="text-gray-500">
+                          {formatTooltipDate(tag.addedAt)}
+                        </p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              ))}
             </div>
           ) : (
             <p className="text-sm text-gray-500 italic">No tags added yet</p>

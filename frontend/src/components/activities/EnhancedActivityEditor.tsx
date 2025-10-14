@@ -17,6 +17,7 @@ import IatiLinkTab from './IatiLinkTab';
 import XmlImportTab from './XmlImportTab';
 import OrganizationsTab from './OrganizationsTab';
 import { ActivityScopeSearchableSelect } from '@/components/forms/ActivityScopeSearchableSelect';
+import { OtherIdentifierTypeSelect } from '@/components/forms/OtherIdentifierTypeSelect';
 import {
   Save,
   Calendar,
@@ -79,6 +80,8 @@ interface EnhancedActivityEditorProps {
     actual_end_date?: string;
     effective_date?: string;
     iati_identifier?: string;
+    other_identifier_type?: string;
+    other_identifier_code?: string;
     mou_documents?: Array<{
       name: string;
       url: string;
@@ -133,6 +136,8 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     actual_end_date: initialData.actual_end_date || '',
     effective_date: initialData.effective_date || '',
     iati_identifier: initialData.iati_identifier || '',
+    other_identifier_type: initialData.other_identifier_type || '',
+    other_identifier_code: initialData.other_identifier_code || '',
   });
 
   // File upload state
@@ -239,6 +244,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     await updateField('effective_date', effectiveDate, 'Activity Effective Date');
   };
 
+  const updateOtherIdentifierType = async (identifierType: string) => {
+    await updateField('other_identifier_type', identifierType, 'Other Identifier Type');
+  };
+
+  const updateOtherIdentifierCode = async (identifierCode: string) => {
+    await updateField('other_identifier_code', identifierCode, 'Identifier Code');
+  };
+
   // File upload handler
   const handleFileUpload = async (files: FileList) => {
     if (!files.length) return;
@@ -329,6 +342,12 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         break;
       case 'effective_date':
         await updateEffectiveDate(value);
+        break;
+      case 'other_identifier_type':
+        await updateOtherIdentifierType(value);
+        break;
+      case 'other_identifier_code':
+        await updateOtherIdentifierCode(value);
         break;
     }
   };
@@ -770,6 +789,45 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       <SaveIndicator fieldName="actual_end_date" />
                     </div>
                   </FieldWrapper>
+                </div>
+
+                {/* Other Identifier Types Section */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-4">Other Identifier Types</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Other Identifier Type */}
+                    <FieldWrapper section="dates" field="other_identifier_type" label="Other Identifier Type">
+                      <div className="space-y-1">
+                        <OtherIdentifierTypeSelect
+                          value={formData.other_identifier_type || ''}
+                          onValueChange={(value) => {
+                            handleFieldChange('other_identifier_type', value || '');
+                            handleFieldBlur('other_identifier_type', value || '');
+                          }}
+                          placeholder="Select identifier type..."
+                          disabled={saving.other_identifier_type}
+                        />
+                        <SaveIndicator fieldName="other_identifier_type" />
+                      </div>
+                    </FieldWrapper>
+
+                    {/* Other Identifier Code */}
+                    <FieldWrapper section="dates" field="other_identifier_code" label="Identifier Code">
+                      <div className="space-y-1">
+                        <Input
+                          type="text"
+                          value={formData.other_identifier_code || ''}
+                          onChange={(e) => {
+                            handleFieldChange('other_identifier_code', e.target.value);
+                            handleFieldBlur('other_identifier_code', e.target.value);
+                          }}
+                          placeholder="Enter identifier code..."
+                          disabled={saving.other_identifier_code}
+                        />
+                        <SaveIndicator fieldName="other_identifier_code" />
+                      </div>
+                    </FieldWrapper>
+                  </div>
                 </div>
               </CardContent>
             </Card>

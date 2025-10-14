@@ -60,12 +60,12 @@ export async function GET(request: NextRequest) {
     // Parse query parameters for pagination
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 200); // Cap at 200 for safety
+    const limit = Math.min(parseInt(searchParams.get('limit') || '1000', 10), 2000); // Increased default to 1000, cap at 2000
     const offset = (page - 1) * limit;
     
     // Add caching headers to reduce repeated requests
     const headers = {
-      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600', // 5 minute cache
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120', // 1 minute cache (reduced from 5 min)
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       // Get organizations with pagination
       getSupabaseAdmin()
         .from('organizations')
-        .select('id, name, acronym, type, organisation_type, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at')
+        .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at')
         .order('name')
         .range(offset, offset + limit - 1),
       
@@ -183,13 +183,13 @@ export async function GET(request: NextRequest) {
 
       return {
         ...org,
-        // Ensure we use the correct organisation_type field
-        organisation_type: org.organisation_type || org.type,
+        // Ensure we use the correct Organisation_Type_Code field
+        Organisation_Type_Code: org.Organisation_Type_Code || org.type,
         activeProjects: totalActiveProjects,
         totalBudgeted: 0, // TODO: Implement financial calculations efficiently
         totalDisbursed: 0, // TODO: Implement financial calculations efficiently
         displayName: org.name && org.acronym ? `${org.name} (${org.acronym})` : org.name,
-        derived_category: deriveCategory(org.organisation_type || org.type, org.country_represented || org.country || ''),
+        derived_category: deriveCategory(org.Organisation_Type_Code || org.type, org.country_represented || org.country || ''),
         // Initialize project status breakdown with active count
         projectsByStatus: { 
           active: totalActiveProjects, 

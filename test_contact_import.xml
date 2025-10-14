@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>GB-TEST-CONTACT-001</iati-identifier>
+    <title>
+      <narrative>Test Activity for Contact Import</narrative>
+    </title>
+    <description>
+      <narrative>This is a test activity to verify IATI contact-info import functionality</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date iso-date="2025-01-01" type="1"/>
+    <activity-date iso-date="2025-12-31" type="3"/>
+    
+    <!-- Contact 1: General Enquiries with all fields -->
+    <contact-info type="1">
+      <organisation>
+        <narrative>Test Agency International</narrative>
+      </organisation>
+      <department>
+        <narrative>Communications Department</narrative>
+      </department>
+      <person-name>
+        <narrative>John M. Smith</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Communications Director</narrative>
+      </job-title>
+      <telephone>+441234567890</telephone>
+      <email>john.smith@testagency.org</email>
+      <website>https://www.testagency.org</website>
+      <mailing-address>
+        <narrative>123 Test Street, London, UK, SW1A 1AA</narrative>
+      </mailing-address>
+    </contact-info>
+    
+    <!-- Contact 2: Project Management -->
+    <contact-info type="2">
+      <organisation>
+        <narrative>Implementing Partner NGO</narrative>
+      </organisation>
+      <department>
+        <narrative>Project Management Office</narrative>
+      </department>
+      <person-name>
+        <narrative>Sarah Johnson</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Project Manager</narrative>
+      </job-title>
+      <telephone>+95912345678</telephone>
+      <email>sarah.j@implementingpartner.org</email>
+      <website>https://implementingpartner.org</website>
+      <mailing-address>
+        <narrative>456 Yangon Road, Yangon, Myanmar</narrative>
+      </mailing-address>
+    </contact-info>
+    
+    <!-- Contact 3: Financial Management with minimal fields -->
+    <contact-info type="3">
+      <person-name>
+        <narrative>David Lee</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Finance Officer</narrative>
+      </job-title>
+      <email>finance@testagency.org</email>
+    </contact-info>
+    
+    <!-- Contact 4: Communications -->
+    <contact-info type="4">
+      <organisation>
+        <narrative>Test Agency International</narrative>
+      </organisation>
+      <person-name>
+        <narrative>A. Example</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Transparency Lead</narrative>
+      </job-title>
+      <telephone>0044111222333444</telephone>
+      <email>transparency@example.org</email>
+      <website>http://www.example.org</website>
+      <mailing-address>
+        <narrative>Transparency House, The Street, Town, City, Postcode</narrative>
+      </mailing-address>
+    </contact-info>
+    
+  </iati-activity>
+</iati-activities>
+

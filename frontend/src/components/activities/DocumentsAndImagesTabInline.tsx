@@ -337,8 +337,8 @@ export function DocumentsAndImagesTabInline({
       format: '',
       title: [{ text: '', lang: locale }],
       description: [],
-      languageCodes: ['en'],
-      recipientCountries: [],
+      languageCodes: ['en'], // Default to English
+      recipientCountries: ['MM'], // Default to Myanmar
     };
     setNewDocument(newDoc);
   };
@@ -518,8 +518,8 @@ export function DocumentsAndImagesTabInline({
         title: [{ text: file.name.replace(/\.[^/.]+$/, ''), lang: locale }],
         description: [{ text: '', lang: locale }],
         categoryCode: 'A01',
-        languageCodes: ['en'],
-        recipientCountries: [],
+        languageCodes: ['en'], // Default to English
+        recipientCountries: ['MM'], // Default to Myanmar
         documentDate: new Date().toISOString().split('T')[0],
         thumbnailUrl: data.thumbnailUrl,
         // Add the document ID from the API response
@@ -771,7 +771,7 @@ export function DocumentsAndImagesTabInline({
           {documents.length > 0 && (
             <div className="bg-white border rounded-lg p-4 mb-6">
               <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
+                <div className="w-80">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
@@ -783,8 +783,8 @@ export function DocumentsAndImagesTabInline({
                   </div>
                 </div>
                 
-                <div className="flex gap-3">
-                  <div className="w-64">
+                <div className="flex gap-3 flex-1">
+                  <div className="flex-1">
                     <DocumentCategoryFilter
                       value={filterCategory}
                       onValueChange={setFilterCategory}
@@ -859,16 +859,25 @@ export function DocumentsAndImagesTabInline({
                                       </TableCell>
                                       <TableCell>
                                         {doc.categoryCode && (
-                                          <Badge variant="outline" className="text-xs">
-                                            {DOCUMENT_CATEGORIES.find(cat => cat.code === doc.categoryCode)?.name || doc.categoryCode}
-                                          </Badge>
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                              {doc.categoryCode}
+                                            </span>
+                                            <span className="text-sm">
+                                              {DOCUMENT_CATEGORIES.find(cat => cat.code === doc.categoryCode)?.name || doc.categoryCode}
+                                            </span>
+                                          </div>
                                         )}
                                       </TableCell>
                                       <TableCell>
                                         {doc.languageCodes && doc.languageCodes.length > 0 && (
-                                          <Badge variant="outline" className="text-xs">
-                                            {doc.languageCodes.join(', ')}
-                                          </Badge>
+                                          <div className="flex flex-wrap gap-1">
+                                            {doc.languageCodes.map(code => (
+                                              <span key={code} className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                                {code.toUpperCase()}
+                                              </span>
+                                            ))}
+                                          </div>
                                         )}
                                       </TableCell>
                                       <TableCell>
@@ -1045,10 +1054,10 @@ function DocumentMetadataModal({
 }: DocumentMetadataModalProps) {
   const [formData, setFormData] = React.useState<IatiDocumentLink>(document);
   const [selectedLanguages, setSelectedLanguages] = React.useState<string[]>(
-    document.languageCodes || ['en']
+    document.languageCodes || ['en'] // Default to English
   );
   const [selectedCountries, setSelectedCountries] = React.useState<string[]>(
-    document.recipientCountries || []
+    document.recipientCountries || ['MM'] // Default to Myanmar
   );
 
   const handleSave = () => {

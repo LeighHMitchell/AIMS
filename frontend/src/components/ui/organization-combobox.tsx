@@ -27,8 +27,12 @@ export interface Organization {
   name: string
   acronym?: string
   type?: string
+  org_type?: string  // Database field name (legacy)
+  Organisation_Type_Code?: string  // New database field name
+  Organisation_Type_Name?: string  // New database field name
   country?: string
   iati_org_id?: string
+  iati_identifier?: string  // Database field name
   logo?: string
 }
 
@@ -54,20 +58,6 @@ export function OrganizationCombobox({
   const [search, setSearch] = React.useState("")
   const triggerRef = React.useRef<HTMLButtonElement>(null);
 
-  // Debug: Log organization data to see logo availability
-  React.useEffect(() => {
-    if (organizations.length > 0) {
-      const orgsWithLogos = organizations.filter(org => org.logo);
-      const orgsWithoutLogos = organizations.filter(org => !org.logo);
-      console.log(`[OrganizationCombobox] Total organizations: ${organizations.length}`);
-      console.log(`[OrganizationCombobox] Organizations with logos: ${orgsWithLogos.length}`);
-      console.log(`[OrganizationCombobox] Organizations without logos: ${orgsWithoutLogos.length}`);
-      if (orgsWithLogos.length > 0) {
-        console.log(`[OrganizationCombobox] Sample org with logo:`, orgsWithLogos[0]);
-      }
-    }
-  }, [organizations]);
-
   // Find selected organization
   const selectedOrg = organizations.find(org => org.id === value)
 
@@ -79,18 +69,67 @@ export function OrganizationCombobox({
     return org.name || org.acronym || 'Unknown'
   }
 
-  // Helper to render IATI and country on one line
-  const getIatiCountryLine = (org: Organization) => {
-    const iati = org.iati_org_id
-    const country = org.country
-    if (iati && country) {
-      return `${iati} · ${country}`
-    } else if (iati) {
-      return iati
-    } else if (country) {
-      return country
+  // Helper to render org details line (IATI ref, type code, country)
+  const getOrgDetailsLine = (org: Organization) => {
+    const parts: string[] = []
+    const iatiRef = org.iati_org_id || org.iati_identifier
+    const orgType = org.Organisation_Type_Code || org.org_type || org.type
+    
+    // Show IATI ref if available, otherwise show org ID
+    if (iatiRef) {
+      parts.push(iatiRef)
+    } else {
+      parts.push(`ID: ${org.id}`)
     }
-    return null
+    
+    if (orgType) {
+      // Format type as "40 Multilateral" instead of "Type: 40"
+      parts.push(orgType)
+    }
+    if (org.country) parts.push(org.country)
+    
+    return parts.length > 0 ? parts.join(' · ') : null
+  }
+
+  // Helper to render org details line with styled badges
+  const getOrgDetailsLineStyled = (org: Organization) => {
+    const iatiRef = org.iati_org_id || org.iati_identifier
+    const orgTypeCode = org.Organisation_Type_Code  // This contains the code like "40"
+    const orgTypeText = org.Organisation_Type_Name || org.type  // This contains the text like "Multilateral"
+    
+    return (
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* IATI Org ID Badge */}
+        {iatiRef ? (
+          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
+            {iatiRef}
+          </span>
+        ) : (
+          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
+            ID: {org.id}
+          </span>
+        )}
+        
+        {/* Organization Type Code Badge */}
+        {orgTypeCode && (
+          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
+            {orgTypeCode}
+          </span>
+        )}
+        
+        {/* Dot separator */}
+        {orgTypeCode && orgTypeText && (
+          <span className="text-xs text-gray-400">·</span>
+        )}
+        
+        {/* Organization Type Text */}
+        {orgTypeText && (
+          <span className="text-xs text-gray-500 hover:text-gray-500">
+            {orgTypeText}
+          </span>
+        )}
+      </div>
+    )
   }
 
   // Filter organizations based on search
@@ -101,6 +140,11 @@ export function OrganizationCombobox({
       org.name.toLowerCase().includes(term) ||
       (org.acronym && org.acronym.toLowerCase().includes(term)) ||
       (org.iati_org_id && org.iati_org_id.toLowerCase().includes(term)) ||
+      (org.iati_identifier && org.iati_identifier.toLowerCase().includes(term)) ||
+      (org.type && org.type.toLowerCase().includes(term)) ||
+      (org.org_type && org.org_type.toLowerCase().includes(term)) ||
+      (org.Organisation_Type_Code && org.Organisation_Type_Code.toLowerCase().includes(term)) ||
+      (org.Organisation_Type_Name && org.Organisation_Type_Name.toLowerCase().includes(term)) ||
       (org.country && org.country.toLowerCase().includes(term))
     );
   }, [organizations, search]);
@@ -119,7 +163,7 @@ export function OrganizationCombobox({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between font-normal min-w-[320px] px-4 py-2 text-base h-auto border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400",
+            "w-full justify-between font-normal min-w-[320px] px-4 py-2 text-base h-auto border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
             className
           )}
         >
@@ -150,14 +194,12 @@ export function OrganizationCombobox({
                   )}
                   
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="truncate font-medium text-base leading-relaxed">
+                    <span className="truncate font-medium text-base leading-relaxed text-gray-900 hover:text-gray-900">
                       {getOrganizationDisplay(selected)}
                     </span>
-                    {getIatiCountryLine(selected) && (
-                      <span className="text-sm text-gray-500 truncate mt-1 leading-relaxed">
-                        {getIatiCountryLine(selected)}
-                      </span>
-                    )}
+                    <div className="hover:text-gray-900">
+                      {getOrgDetailsLineStyled(selected)}
+                    </div>
                   </div>
                 </div>
               );
@@ -236,13 +278,9 @@ export function OrganizationCombobox({
                         
                         <div className="flex flex-col flex-1 min-w-0">
                           <span className="font-medium text-gray-900 text-base truncate hover:text-gray-900">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
-                          {(org.iati_org_id || org.country) && (
-                            <span className="text-xs text-gray-500 truncate hover:text-gray-500">
-                              {org.iati_org_id}
-                              {org.iati_org_id && org.country ? ' · ' : ''}
-                              {org.country}
-                            </span>
-                          )}
+                          <div className="mt-1">
+                            {getOrgDetailsLineStyled(org)}
+                          </div>
                         </div>
                       </div>
                     </CommandItem>

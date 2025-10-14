@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <!-- Minimal required IATI fields -->
+    <iati-identifier>TEST-CONTACT-DIAGNOSTIC-001</iati-identifier>
+    
+    <title>
+      <narrative>Contact Import Diagnostic Test Activity</narrative>
+    </title>
+    
+    <description>
+      <narrative>Test activity to verify contact-info import functionality with the specific XML structure provided by the user.</narrative>
+    </description>
+    
+    <activity-status code="2"/>
+    
+    <activity-date iso-date="2025-01-01" type="1"/>
+    <activity-date iso-date="2025-12-31" type="3"/>
+    
+    <!-- USER'S CONTACT STRUCTURE - Test Case 1 -->
+    <contact-info type="1">
+      <organisation>
+        <narrative>Agency A</narrative>
+      </organisation>
+      <department>
+        <narrative>Department B</narrative>
+      </department>
+      <person-name>
+        <narrative>A. Example</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Transparency Lead</narrative>
+      </job-title>
+      <telephone>0044111222333444</telephone>
+      <email>transparency@example.org</email>
+      <website>http://www.example.org</website>
+      <mailing-address>
+        <narrative>Transparency House, The Street, Town, City, Postcode</narrative>
+      </mailing-address>
+    </contact-info>
+    
+    <!-- Additional test contact to verify multiple contacts work -->
+    <contact-info type="2">
+      <organisation>
+        <narrative>Implementing Partner Org</narrative>
+      </organisation>
+      <department>
+        <narrative>Project Management</narrative>
+      </department>
+      <person-name>
+        <narrative>Jane Smith</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Project Manager</narrative>
+      </job-title>
+      <telephone>+44123456789</telephone>
+      <email>jane.smith@partner.org</email>
+      <website>https://www.partner.org</website>
+      <mailing-address>
+        <narrative>123 Main Street, London, UK</narrative>
+      </mailing-address>
+    </contact-info>
+    
+  </iati-activity>
+</iati-activities>
+

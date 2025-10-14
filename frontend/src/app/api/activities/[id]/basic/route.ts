@@ -53,7 +53,8 @@ export async function GET(
     }
     
     // Fetch only essential activity fields for editor performance
-    const { data: activity, error } = await supabase
+    let activity;
+    const { data: activityData, error } = await supabase
       .from('activities')
       .select(`
         id,
@@ -72,6 +73,7 @@ export async function GET(
         actual_end_date,
         iati_identifier,
         other_identifier,
+        other_identifiers,
         default_aid_type,
         default_finance_type,
         default_currency,
@@ -79,6 +81,7 @@ export async function GET(
         default_tied_status,
         default_disbursement_channel,
         default_aid_modality,
+        capital_spend_percentage,
         publication_status,
         submission_status,
         created_by_org_name,
@@ -99,6 +102,11 @@ export async function GET(
             id, code, iati_code, name, vocabulary, is_iati_standard, created_at, updated_at
           )
         ),
+        activity_tags (
+          tag_id,
+          tags (id, name, vocabulary, code, vocabulary_uri, created_by, created_at, updated_at)
+        ),
+        activity_sdg_mappings (*),
         recipient_countries,
         recipient_regions,
         custom_geographies
@@ -106,12 +114,91 @@ export async function GET(
       .eq('id', id)
       .single();
     
+    activity = activityData;
+    
     if (error || !activity) {
       console.error('[AIMS API] Activity not found:', error);
-      return NextResponse.json(
-        { error: 'Activity not found' },
-        { status: 404 }
-      );
+      
+      // Check if error is due to missing column (migration not applied yet)
+      if (error && error.message && error.message.includes('other_identifiers')) {
+        console.warn('[AIMS API] other_identifiers column not found - migration may not be applied yet. Retrying without it...');
+        
+        // Retry query without other_identifiers column
+        const { data: activityRetry, error: retryError } = await supabase
+          .from('activities')
+          .select(`
+            id,
+            title_narrative,
+            description_narrative,
+            description_objectives,
+            description_target_groups,
+            description_other,
+            acronym,
+            collaboration_type,
+            activity_scope,
+            activity_status,
+            planned_start_date,
+            planned_end_date,
+            actual_start_date,
+            actual_end_date,
+            iati_identifier,
+            other_identifier,
+            default_aid_type,
+            default_finance_type,
+            default_currency,
+            default_flow_type,
+            default_tied_status,
+            default_disbursement_channel,
+            default_aid_modality,
+            capital_spend_percentage,
+            publication_status,
+            submission_status,
+            created_by_org_name,
+            created_by_org_acronym,
+            reporting_org_id,
+            language,
+            banner,
+            icon,
+            created_at,
+            updated_at,
+            activity_sectors (
+              id, activity_id, sector_code, sector_name, percentage, level, 
+              category_code, category_name, type, created_at, updated_at
+            ),
+            activity_policy_markers (
+              id, activity_id, policy_marker_id, significance, rationale, created_at, updated_at,
+              policy_markers (
+                id, code, iati_code, name, vocabulary, is_iati_standard, created_at, updated_at
+              )
+            ),
+            activity_tags (
+              tag_id,
+              tags (id, name, vocabulary, code, vocabulary_uri, created_by, created_at, updated_at)
+            ),
+            activity_sdg_mappings (*),
+            recipient_countries,
+            recipient_regions,
+            custom_geographies
+          `)
+          .eq('id', id)
+          .single();
+        
+        if (retryError || !activityRetry) {
+          console.error('[AIMS API] Activity not found (retry):', retryError);
+          return NextResponse.json(
+            { error: 'Activity not found' },
+            { status: 404 }
+          );
+        }
+        
+        // Use the retry result
+        activity = activityRetry;
+      } else {
+        return NextResponse.json(
+          { error: 'Activity not found' },
+          { status: 404 }
+        );
+      }
     }
 
     console.log('[AIMS API] Basic activity data fetched successfully');
@@ -145,6 +232,9 @@ export async function GET(
       descriptionOther: activity.description_other,
       acronym: activity.acronym,
       partnerId: activity.other_identifier,
+      otherIdentifier: activity.other_identifier,
+      otherIdentifiers: activity.other_identifiers || [],
+      other_identifiers: activity.other_identifiers || [],
       iatiId: activity.iati_identifier,
       iatiIdentifier: activity.iati_identifier,
       iati_identifier: activity.iati_identifier,
@@ -176,6 +266,7 @@ export async function GET(
       defaultDisbursementChannel: activity.default_disbursement_channel,
       defaultAidModality: activity.default_aid_modality,
       default_aid_modality: activity.default_aid_modality,
+      capital_spend_percentage: activity.capital_spend_percentage,
       language: activity.language,
       banner: activity.banner,
       icon: activity.icon,
@@ -205,6 +296,23 @@ export async function GET(
           is_iati_standard: pm.policy_markers.is_iati_standard
         } : null
       })) || [],
+      tags: activity.activity_tags?.map((at: any) => ({
+        id: at.tags.id,
+        name: at.tags.name,
+        vocabulary: at.tags.vocabulary,
+        code: at.tags.code,
+        vocabulary_uri: at.tags.vocabulary_uri,
+        created_by: at.tags.created_by,
+        created_at: at.tags.created_at,
+        updated_at: at.tags.updated_at
+      })) || [],
+      sdgMappings: activity.activity_sdg_mappings?.map((mapping: any) => ({
+        id: mapping.id,
+        sdgGoal: mapping.sdg_goal,
+        sdgTarget: mapping.sdg_target,
+        contributionPercent: mapping.contribution_percent,
+        notes: mapping.notes
+      })) || [],
       recipient_countries: activity.recipient_countries || [],
       recipient_regions: activity.recipient_regions || [],
       custom_geographies: activity.custom_geographies || []
@@ -212,6 +320,7 @@ export async function GET(
     
     console.log('[AIMS API] Basic activity transformed:', transformedActivity.title);
     console.log('[AIMS API] Final response acronym:', transformedActivity.acronym);
+    console.log('[AIMS API] Capital spend percentage:', transformedActivity.capital_spend_percentage);
     console.log('[AIMS API] Full transformed activity object:', JSON.stringify(transformedActivity, null, 2));
     
     return NextResponse.json(transformedActivity, {

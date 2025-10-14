@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2025-01-14T12:00:00Z">
+  
+  <!-- Test Case 1: Valid percentage with decimal -->
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    <iati-identifier>TEST-CAPITAL-001</iati-identifier>
+    <title><narrative>Valid Capital Spend - Decimal</narrative></title>
+    <activity-status code="2" />
+    <capital-spend percentage="25.75" />
+  </iati-activity>
+  
+  <!-- Test Case 2: Valid percentage at boundary (0) -->
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    <iati-identifier>TEST-CAPITAL-002</iati-identifier>
+    <title><narrative>Valid Capital Spend - Zero</narrative></title>
+    <activity-status code="2" />
+    <capital-spend percentage="0" />
+  </iati-activity>
+  
+  <!-- Test Case 3: Valid percentage at boundary (100) -->
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    <iati-identifier>TEST-CAPITAL-003</iati-identifier>
+    <title><narrative>Valid Capital Spend - Maximum</narrative></title>
+    <activity-status code="2" />
+    <capital-spend percentage="100" />
+  </iati-activity>
+  
+  <!-- Test Case 4: High precision (should round to 2 decimals) -->
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    <iati-identifier>TEST-CAPITAL-004</iati-identifier>
+    <title><narrative>High Precision - Should Round</narrative></title>
+    <activity-status code="2" />
+    <capital-spend percentage="33.3333333" />
+    <!-- Expected: 33.33 after rounding -->
+  </iati-activity>
+  
+  <!-- Test Case 5: Invalid - Negative percentage (should be ignored) -->
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    <iati-identifier>TEST-CAPITAL-005</iati-identifier>
+    <title><narrative>Invalid - Negative Value</narrative></title>
+    <activity-status code="2" />
+    <capital-spend percentage="-10" />
+    <!-- This should be rejected and not imported -->
+  </iati-activity>
+  
+  <!-- Test Case 6: Invalid - Over 100 (should be ignored) -->
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    <iati-identifier>TEST-CAPITAL-006</iati-identifier>
+    <title><narrative>Invalid - Over 100</narrative></title>
+    <activity-status code="2" />
+    <capital-spend percentage="150" />
+    <!-- This should be rejected and not imported -->
+  </iati-activity>
+  
+  <!-- Test Case 7: Invalid - Non-numeric (should be ignored) -->
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    <iati-identifier>TEST-CAPITAL-007</iati-identifier>
+    <title><narrative>Invalid - Non-numeric</narrative></title>
+    <activity-status code="2" />
+    <capital-spend percentage="abc" />
+    <!-- This should be rejected and not imported -->
+  </iati-activity>
+  
+  <!-- Test Case 8: Missing percentage attribute (should be ignored) -->
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    <iati-identifier>TEST-CAPITAL-008</iati-identifier>
+    <title><narrative>Missing Percentage Attribute</narrative></title>
+    <activity-status code="2" />
+    <capital-spend />
+    <!-- This should be ignored -->
+  </iati-activity>
+  
+  <!-- Test Case 9: Empty percentage attribute (should be ignored) -->
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    <iati-identifier>TEST-CAPITAL-009</iati-identifier>
+    <title><narrative>Empty Percentage Attribute</narrative></title>
+    <activity-status code="2" />
+    <capital-spend percentage="" />
+    <!-- This should be ignored -->
+  </iati-activity>
+  
+  <!-- Test Case 10: No capital-spend element (should default to NULL) -->
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    <iati-identifier>TEST-CAPITAL-010</iati-identifier>
+    <title><narrative>No Capital Spend Element</narrative></title>
+    <activity-status code="2" />
+    <!-- No capital-spend element -->
+  </iati-activity>
+  
+</iati-activities>
+

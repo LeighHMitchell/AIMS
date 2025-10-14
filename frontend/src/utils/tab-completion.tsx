@@ -625,62 +625,6 @@ export function checkGovernmentInputsTabCompletion(governmentInputs: any): TabCo
     missingFields
   }
 }
-
-/**
- * Check if the Focal Points tab is complete based on assigned focal points
- */
-export function checkFocalPointsTabCompletion(focalPointsData: any): TabCompletionStatus {
-  const completedFields: string[] = []
-  const missingFields: string[] = []
-  
-  // Check if there's any focal points data
-  if (!focalPointsData) {
-    missingFields.push('Focal Points')
-    return {
-      isComplete: false,
-      isInProgress: false,
-      completedFields,
-      missingFields
-    }
-  }
-  
-  let hasAnyFocalPoints = false
-  
-  // Check government focal points
-  if (focalPointsData.government_focal_points && focalPointsData.government_focal_points.length > 0) {
-    const validGovernmentFocalPoints = focalPointsData.government_focal_points.filter((fp: any) => 
-      fp && fp.name?.trim() && fp.email?.trim()
-    )
-    if (validGovernmentFocalPoints.length > 0) {
-      completedFields.push('government_focal_points')
-      hasAnyFocalPoints = true
-    }
-  }
-  
-  // Check development partner focal points
-  if (focalPointsData.development_partner_focal_points && focalPointsData.development_partner_focal_points.length > 0) {
-    const validDevelopmentFocalPoints = focalPointsData.development_partner_focal_points.filter((fp: any) => 
-      fp && fp.name?.trim() && fp.email?.trim()
-    )
-    if (validDevelopmentFocalPoints.length > 0) {
-      completedFields.push('development_partner_focal_points')
-      hasAnyFocalPoints = true
-    }
-  }
-  
-  // If no focal points are assigned, mark as missing
-  if (!hasAnyFocalPoints) {
-    missingFields.push('Focal Points')
-  }
-
-  return {
-    isComplete: hasAnyFocalPoints && missingFields.length === 0,
-    isInProgress: false,
-    completedFields,
-    missingFields
-  }
-}
-
 /**
  * Check if the Aid Effectiveness tab is complete based on required fields
  */
@@ -847,8 +791,6 @@ export function getTabCompletionStatus(
       return checkDocumentsTabCompletion(data);
     case 'government':
       return checkGovernmentInputsTabCompletion(data);
-    case 'focal_points':
-      return checkFocalPointsTabCompletion(data);
     case 'aid_effectiveness':
       return checkAidEffectivenessTabCompletion(data);
     // Add other tabs here as needed

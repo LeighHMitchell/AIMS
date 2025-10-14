@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Comprehensive IATI Results Test File
+  Based on IATI Standard v2.03
+  
+  This file contains a complete example of all IATI result elements:
+  - Result (with references and document-links)
+  - Indicators (with references, document-links, ascending, aggregation-status)
+  - Baseline (with year, ISO date, value, comment, locations, dimensions, document-links)
+  - Periods (with target and actual, locations, dimensions, document-links)
+  
+  Use this file to test the complete import functionality.
+-->
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>TEST-RESULTS-001</iati-identifier>
+    <title>
+      <narrative>Comprehensive Results Test Activity</narrative>
+    </title>
+    
+    <!-- Result 1: Output with comprehensive data -->
+    <result type="1" aggregation-status="1">
+      <title>
+        <narrative>Improved access to clean water in rural communities</narrative>
+      </title>
+      <description>
+        <narrative>This output focuses on providing sustainable water infrastructure to underserved rural populations through community-led development programs.</narrative>
+      </description>
+      
+      <!-- Result-level reference to SDG indicator -->
+      <reference vocabulary="7" code="6.1.1" vocabulary-uri="https://unstats.un.org/sdgs/" />
+      
+      <!-- Result-level document link -->
+      <document-link format="application/pdf" url="http://example.org/docs/results-framework-2024.pdf">
+        <title>
+          <narrative>Results Framework 2024</narrative>
+        </title>
+        <description>
+          <narrative>Comprehensive results framework document outlining theory of change and indicator selection rationale</narrative>
+        </description>
+        <category code="A01" />
+        <language code="en" />
+        <document-date iso-date="2024-01-15" />
+      </document-link>
+      
+      <!-- Indicator 1: Percentage measure -->
+      <indicator measure="2" ascending="1" aggregation-status="1">
+        <title>
+          <narrative>Percentage of households with access to improved water sources</narrative>
+        </title>
+        <description>
+          <narrative>Proportion of population using safely managed drinking water services within 30 minutes round-trip collection time</narrative>
+        </description>
+        
+        <!-- Indicator references -->
+        <reference vocabulary="7" code="6.1.1" indicator-uri="https://unstats.un.org/sdgs/metadata?Text=&Goal=6&Target=6.1" />
+        <reference vocabulary="2" code="EN.ATM.PM25.MC.ZS" />
+        
+        <!-- Indicator document link -->
+        <document-link format="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" url="http://example.org/docs/indicator-methodology.xlsx">
+          <title>
+            <narrative>Indicator Measurement Methodology</narrative>
+          </title>
+          <description>
+            <narrative>Detailed methodology for data collection and calculation</narrative>
+          </description>
+          <category code="A02" />
+          <language code="en" />
+          <document-date iso-date="2024-01-10" />
+        </document-link>
+        
+        <!-- Baseline with comprehensive data -->
+        <baseline year="2023" iso-date="2023-01-01" value="42">
+          <!-- Baseline locations -->
+          <location ref="AF-KAN" />
+          <location ref="AF-HER" />
+          
+          <!-- Baseline dimensions (disaggregation) -->
+          <dimension name="sex" value="female" />
+          <dimension name="age" value="adult" />
+          <dimension name="geographic" value="rural" />
+          
+          <!-- Baseline comment -->
+          <comment>
+            <narrative>Baseline established through household survey conducted in January 2023 covering 2,500 households across 15 villages. Data disaggregated by sex, age, and geographic location.</narrative>
+          </comment>
+          
+          <!-- Baseline document link -->
+          <document-link format="application/pdf" url="http://example.org/docs/baseline-survey-2023.pdf">
+            <title>
+              <narrative>Baseline Survey Report 2023</narrative>
+            </title>
+            <description>
+              <narrative>Complete baseline assessment findings and methodology</narrative>
+            </description>
+            <category code="A08" />
+            <language code="en" />
+            <document-date iso-date="2023-02-15" />
+          </document-link>
+        </baseline>
+        
+        <!-- Period 1: Q1 2024 -->
+        <period>
+          <period-start iso-date="2024-01-01" />
+          <period-end iso-date="2024-03-31" />
+          
+          <!-- Target for Q1 -->
+          <target value="48">
+            <location ref="AF-KAN" />
+            <location ref="AF-HER" />
+            
+            <dimension name="sex" value="female" />
+            <dimension name="age" value="adult" />
+            
+            <comment>
+              <narrative>Q1 target represents 6 percentage point increase through completion of 3 water infrastructure projects</narrative>
+            </comment>
+            
+            <document-link format="application/vnd.openxmlformats-officedocument.wordprocessingml.document" url="http://example.org/docs/q1-targets.docx">
+              <title>
+                <narrative>Q1 2024 Targets and Work Plan</narrative>
+              </title>
+              <description>
+                <narrative>Detailed quarterly targets and implementation plan</narrative>
+              </description>
+              <category code="A05" />
+              <language code="en" />
+              <document-date iso-date="2023-12-15" />
+            </document-link>
+          </target>
+          
+          <!-- Actual for Q1 -->
+          <actual value="47.5">
+            <location ref="AF-KAN" />
+            <location ref="AF-HER" />
+            
+            <dimension name="sex" value="female" />
+            <dimension name="age" value="adult" />
+            
+            <comment>
+              <narrative>Q1 actual achieved 47.5%, slightly below target due to delayed completion of one infrastructure project. Results validated through mid-term survey of 1,200 households.</narrative>
+            </comment>
+            
+            <document-link format="application/pdf" url="http://example.org/docs/q1-monitoring-report.pdf">
+              <title>
+                <narrative>Q1 2024 Monitoring Report</narrative>
+              </title>
+              <description>
+                <narrative>Quarterly monitoring findings and analysis of progress against targets</narrative>
+              </description>
+              <category code="A07" />
+              <language code="en" />
+              <document-date iso-date="2024-04-10" />
+            </document-link>
+          </actual>
+        </period>
+        
+        <!-- Period 2: Q2 2024 -->
+        <period>
+          <period-start iso-date="2024-04-01" />
+          <period-end iso-date="2024-06-30" />
+          
+          <target value="54">
+            <location ref="AF-KAN" />
+            <location ref="AF-HER" />
+            
+            <dimension name="sex" value="female" />
+            <dimension name="age" value="adult" />
+            
+            <comment>
+              <narrative>Q2 target includes completion of remaining delayed project plus 4 new infrastructure installations</narrative>
+            </comment>
+          </target>
+          
+          <actual value="55.2">
+            <location ref="AF-KAN" />
+            <location ref="AF-HER" />
+            
+            <dimension name="sex" value="female" />
+            <dimension name="age" value="adult" />
+            
+            <comment>
+              <narrative>Q2 actual exceeded target through accelerated implementation and strong community engagement</narrative>
+            </comment>
+          </actual>
+        </period>
+      </indicator>
+      
+      <!-- Indicator 2: Unit measure (absolute numbers) -->
+      <indicator measure="1" ascending="1" aggregation-status="1">
+        <title>
+          <narrative>Number of functional water points constructed</narrative>
+        </title>
+        <description>
+          <narrative>Total count of newly constructed water points (wells, boreholes, and protected springs) that are operational and accessible to communities</narrative>
+        </description>
+        
+        <baseline year="2023" iso-date="2023-01-01" value="12">
+          <comment>
+            <narrative>Existing functional water points at project start</narrative>
+          </comment>
+        </baseline>
+        
+        <period>
+          <period-start iso-date="2024-01-01" />
+          <period-end iso-date="2024-06-30" />
+          
+          <target value="8">
+            <comment>
+              <narrative>8 new water points planned for first half of 2024</narrative>
+            </comment>
+          </target>
+          
+          <actual value="7">
+            <comment>
+              <narrative>7 water points completed, 1 delayed to Q3 due to site preparation challenges</narrative>
+            </comment>
+          </actual>
+        </period>
+      </indicator>
+    </result>
+    
+    <!-- Result 2: Outcome with multiple indicators -->
+    <result type="2" aggregation-status="1">
+      <title>
+        <narrative>Improved water governance and community management capacity</narrative>
+      </title>
+      <description>
+        <narrative>Communities demonstrate enhanced capacity to manage water resources sustainably through trained water committees and local governance structures</narrative>
+      </description>
+      
+      <reference vocabulary="99" code="CUSTOM-GOV-01" vocabulary-uri="http://example.org/indicators/" />
+      
+      <indicator measure="2" ascending="1" aggregation-status="1">
+        <title>
+          <narrative>Percentage of communities with active water management committees</narrative>
+        </title>
+        
+        <baseline year="2023" iso-date="2023-01-01" value="25">
+          <comment>
+            <narrative>Only 25% of target communities had functional water committees at baseline</narrative>
+          </comment>
+        </baseline>
+        
+        <period>
+          <period-start iso-date="2024-01-01" />
+          <period-end iso-date="2024-12-31" />
+          
+          <target value="75">
+            <comment>
+              <narrative>Target 75% of communities with trained and active committees by end of year</narrative>
+            </comment>
+          </target>
+          
+          <!-- Actual not yet available (reporting period ongoing) -->
+        </period>
+      </indicator>
+    </result>
+    
+    <!-- Result 3: Impact level -->
+    <result type="3" aggregation-status="0">
+      <title>
+        <narrative>Reduced water-borne disease incidence in target areas</narrative>
+      </title>
+      <description>
+        <narrative>Long-term health impact measured through reduction in diarrheal diseases and improved overall community health outcomes</narrative>
+      </description>
+      
+      <reference vocabulary="6" code="WATER-HEALTH-01" />
+      
+      <indicator measure="2" ascending="0">
+        <title>
+          <narrative>Incidence rate of diarrheal diseases per 1,000 population</narrative>
+        </title>
+        <description>
+          <narrative>Lower values indicate improvement (ascending=false)</narrative>
+        </description>
+        
+        <baseline year="2023" iso-date="2023-01-01" value="45.2">
+          <comment>
+            <narrative>Baseline disease incidence from health facility data</narrative>
+          </comment>
+        </baseline>
+        
+        <period>
+          <period-start iso-date="2024-01-01" />
+          <period-end iso-date="2024-12-31" />
+          
+          <target value="35.0">
+            <comment>
+              <narrative>Target 22% reduction in disease incidence</narrative>
+            </comment>
+          </target>
+        </period>
+      </indicator>
+    </result>
+  </iati-activity>
+</iati-activities>
+

@@ -242,6 +242,15 @@ export function generateActivityXML(
     xml.push(`  <default-flow-type code="${activity.flow_type}" />`);
   }
   
+  // Capital spend
+  if (activity.capital_spend_percentage !== null && activity.capital_spend_percentage !== undefined) {
+    // Validate and round to 2 decimal places
+    const capitalSpend = Math.round(activity.capital_spend_percentage * 100) / 100;
+    if (capitalSpend >= 0 && capitalSpend <= 100) {
+      xml.push(`  <capital-spend percentage="${capitalSpend}" />`);
+    }
+  }
+  
   // Transactions
   if (transactions.length > 0) {
     xml.push('');

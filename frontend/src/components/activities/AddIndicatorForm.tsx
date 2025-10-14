@@ -10,7 +10,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Save, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { MEASURE_TYPE_LABELS, MeasureType } from '@/types/results';
+import { MEASURE_TYPE_LABELS, MeasureType, REFERENCE_VOCABULARIES } from '@/types/results';
+import { MeasureTypeSearchableSelect } from '@/components/forms/MeasureTypeSearchableSelect';
+import { ResultVocabularySearchableSelect } from '@/components/forms/ResultVocabularySearchableSelect';
 
 interface AddIndicatorFormProps {
   resultId: string;
@@ -31,12 +33,17 @@ export function AddIndicatorForm({
   const [formData, setFormData] = useState({
     title: { [defaultLanguage]: '' },
     description: { [defaultLanguage]: '' },
-    measure: 'unit' as MeasureType,
+    measure: '1' as string, // Default to Unit (code 1)
     ascending: true,
     aggregation_status: false,
-    reference_vocab: '',
+    reference_vocab: '99', // Default to Reporting Organisation
     reference_code: '',
-    reference_uri: ''
+    reference_uri: '',
+    // Baseline fields
+    baseline: '',
+    baseline_year: '',
+    baseline_iso_date: '',
+    baseline_comment: ''
   });
 
   const handleSubmit = async () => {
@@ -72,6 +79,46 @@ export function AddIndicatorForm({
       }
 
       toast.success('Indicator created successfully');
+
+      // Create baseline if provided
+      if (formData.baseline && parseFloat(formData.baseline)) {
+        const baselineData: any = {
+          indicator_id: responseData.id,
+          value: parseFloat(formData.baseline)
+        };
+        
+        // Add baseline year if provided
+        if (formData.baseline_year) {
+          baselineData.baseline_year = parseInt(formData.baseline_year);
+        }
+        
+        // Add baseline ISO date if provided
+        if (formData.baseline_iso_date) {
+          baselineData.iso_date = formData.baseline_iso_date;
+        }
+        
+        // Add baseline comment if provided
+        if (formData.baseline_comment) {
+          baselineData.comment = { [defaultLanguage]: formData.baseline_comment };
+        }
+
+        try {
+          const baselineResponse = await fetch(`/api/activities/${activityId}/results/${resultId}/indicators/${responseData.id}/baseline`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(baselineData),
+          });
+
+          if (!baselineResponse.ok) {
+            console.warn('Baseline creation failed, but indicator was created successfully');
+          }
+        } catch (error) {
+          console.warn('Baseline creation failed, but indicator was created successfully:', error);
+        }
+      }
+
       onSuccess();
     } catch (error) {
       console.error('[AddIndicatorForm] Error:', error);
@@ -127,23 +174,13 @@ export function AddIndicatorForm({
           {/* Measure Type */}
           <div className="space-y-2">
             <Label htmlFor="measure-type">Measure Type</Label>
-            <Select 
-              value={formData.measure} 
-              onValueChange={(value: MeasureType) => 
+            <MeasureTypeSearchableSelect
+              value={formData.measure}
+              onValueChange={(value) => 
                 setFormData(prev => ({ ...prev, measure: value }))
               }
-            >
-              <SelectTrigger id="measure-type">
-                <SelectValue placeholder="Select measure type" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(MEASURE_TYPE_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select measure type..."
+            />
           </div>
 
           {/* Switches */}
@@ -179,15 +216,13 @@ export function AddIndicatorForm({
         {/* Reference Fields */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="reference-vocab">Reference Vocabulary</Label>
-            <Input
-              id="reference-vocab"
+            <Label htmlFor="reference-vocab">Result Vocabulary</Label>
+            <ResultVocabularySearchableSelect
               value={formData.reference_vocab}
-              onChange={(e) => 
-                setFormData(prev => ({ ...prev, reference_vocab: e.target.value }))
+              onValueChange={(value) => 
+                setFormData(prev => ({ ...prev, reference_vocab: value }))
               }
-              placeholder="e.g., 1, 99"
-              className="w-full"
+              placeholder="Select result vocabulary..."
             />
           </div>
 
@@ -218,6 +253,73 @@ export function AddIndicatorForm({
           </div>
         </div>
 
+        {/* Baseline Section */}
+        <div className="space-y-4 pt-4 border-t">
+          <h4 className="text-sm font-medium text-gray-900">Baseline (Optional)</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="baseline">Baseline Value</Label>
+              <Input
+                id="baseline"
+                type="number"
+                step="any"
+                value={formData.baseline}
+                onChange={(e) => 
+                  setFormData(prev => ({ ...prev, baseline: e.target.value }))
+                }
+                placeholder="e.g., 10"
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="baseline-year">Baseline Year</Label>
+              <Input
+                id="baseline-year"
+                type="number"
+                min="1900"
+                max="2100"
+                value={formData.baseline_year}
+                onChange={(e) => 
+                  setFormData(prev => ({ ...prev, baseline_year: e.target.value }))
+                }
+                placeholder="e.g., 2023"
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="baseline-date">Baseline Date</Label>
+              <Input
+                id="baseline-date"
+                type="date"
+                value={formData.baseline_iso_date}
+                onChange={(e) => 
+                  setFormData(prev => ({ ...prev, baseline_iso_date: e.target.value }))
+                }
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="baseline-comment">Baseline Comment</Label>
+              <Textarea
+                id="baseline-comment"
+                value={formData.baseline_comment}
+                onChange={(e) => 
+                  setFormData(prev => ({ ...prev, baseline_comment: e.target.value }))
+                }
+                placeholder="Additional context about the baseline..."
+                rows={2}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex items-center gap-2 pt-4">
           <Button 
@@ -241,7 +343,7 @@ export function AddIndicatorForm({
 
         {/* Help Text */}
         <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded">
-          <p><strong>Tip:</strong> After creating the indicator, you can add a baseline and define periods with targets and actual values to track progress over time.</p>
+          <p><strong>Tip:</strong> You can set a baseline now or add it later. After creating the indicator, you can define periods with targets and actual values to track progress over time.</p>
         </div>
       </CardContent>
     </Card>

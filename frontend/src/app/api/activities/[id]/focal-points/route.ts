@@ -219,7 +219,7 @@ export async function POST(
         title: user.title, // Include title field
         first_name: user.first_name || user.email.split('@')[0], // Use email username as fallback
         last_name: user.last_name || 'User', // Required field - use generic fallback
-        position: user.role || 'Focal Point', // Required field - use descriptive fallback
+        position: user.role || null, // Position is no longer required
         email: user.email,
         organisation: user.organisation,
         profile_photo: user.avatar_url

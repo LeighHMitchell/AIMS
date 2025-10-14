@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2024-01-15T12:00:00Z">
+  <iati-activity>
+    <iati-identifier>TEST-ORG-IMPORT-001</iati-identifier>
+    <title>
+      <narrative>Test Activity for Planned Disbursement Organization Import</narrative>
+    </title>
+    <description>
+      <narrative>This activity tests the organization lookup and creation logic for planned disbursements.</narrative>
+    </description>
+    
+    <!-- Activity dates -->
+    <activity-date iso-date="2024-01-01" type="1">
+      <narrative>Planned start</narrative>
+    </activity-date>
+    <activity-date iso-date="2024-12-31" type="3">
+      <narrative>Planned end</narrative>
+    </activity-date>
+    
+    <!-- Test Case 1: New organizations (should auto-create) -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-03-01" />
+      <period-end iso-date="2024-06-30" />
+      <value currency="USD" value-date="2024-03-01">50000</value>
+      <provider-org ref="XM-DAC-41114" type="40">
+        <narrative>United Nations Development Programme</narrative>
+      </provider-org>
+      <receiver-org ref="GB-CHC-202918" type="21">
+        <narrative>Oxfam GB</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- Test Case 2: Existing organization by IATI ref (should match if AFD exists) -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-07-01" />
+      <period-end iso-date="2024-12-31" />
+      <value currency="EUR" value-date="2024-07-01">75000</value>
+      <provider-org ref="FR-3" type="10">
+        <narrative>Agence Française de Développement</narrative>
+      </provider-org>
+      <receiver-org ref="ML-1" type="10">
+        <narrative>Government of Mali</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- Test Case 3: Organizations without IATI refs (match by name if exists, create if not) -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-04-01" />
+      <period-end iso-date="2024-09-30" />
+      <value currency="USD" value-date="2024-04-01">100000</value>
+      <provider-org type="40">
+        <narrative>World Bank</narrative>
+      </provider-org>
+      <receiver-org type="21">
+        <narrative>UNICEF</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- Test Case 4: New organizations with detailed information -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-05-01" />
+      <period-end iso-date="2024-08-31" />
+      <value currency="GBP" value-date="2024-05-01">30000</value>
+      <provider-org ref="GB-GOV-1" type="10" provider-activity-id="GB-GOV-1-PROJECT-123">
+        <narrative>UK Foreign, Commonwealth and Development Office</narrative>
+      </provider-org>
+      <receiver-org ref="KE-NGO-001" type="22" receiver-activity-id="KE-NGO-001-HEALTH-01">
+        <narrative>Kenya Health Foundation</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- Test Case 5: Disbursement without provider org (only receiver) -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-06-01" />
+      <period-end iso-date="2024-11-30" />
+      <value currency="USD" value-date="2024-06-01">25000</value>
+      <receiver-org ref="TZ-NGO-005" type="22">
+        <narrative>Tanzania Education Network</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- Test Case 6: Disbursement without organizations (should still import) -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-02-01" />
+      <period-end iso-date="2024-05-31" />
+      <value currency="USD" value-date="2024-02-01">15000</value>
+    </planned-disbursement>
+    
+    <!-- Test Case 7: Revised disbursement with organizations -->
+    <planned-disbursement type="2">
+      <period-start iso-date="2024-03-01" />
+      <period-end iso-date="2024-06-30" />
+      <value currency="USD" value-date="2024-03-01">60000</value>
+      <provider-org ref="XM-DAC-41114" type="40">
+        <narrative>United Nations Development Programme</narrative>
+      </provider-org>
+      <receiver-org ref="GB-CHC-202918" type="21">
+        <narrative>Oxfam GB</narrative>
+      </receiver-org>
+    </planned-disbursement>
+  </iati-activity>
+</iati-activities>
+

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Simple IATI Results Test File
+  Based on IATI Standard v2.03
+  
+  This file contains a minimal but valid IATI result structure
+  for basic import testing.
+-->
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>TEST-RESULTS-SIMPLE-001</iati-identifier>
+    <title>
+      <narrative>Simple Results Test Activity</narrative>
+    </title>
+    
+    <!-- Simple Output Result -->
+    <result type="1" aggregation-status="0">
+      <title>
+        <narrative>Number of people trained</narrative>
+      </title>
+      
+      <indicator measure="1" ascending="1" aggregation-status="0">
+        <title>
+          <narrative>Total participants completing training program</narrative>
+        </title>
+        
+        <baseline year="2024" value="0">
+          <comment>
+            <narrative>Project start - no previous training delivered</narrative>
+          </comment>
+        </baseline>
+        
+        <period>
+          <period-start iso-date="2024-01-01" />
+          <period-end iso-date="2024-06-30" />
+          
+          <target value="500">
+            <comment>
+              <narrative>Target 500 people trained in first half of year</narrative>
+            </comment>
+          </target>
+          
+          <actual value="523">
+            <comment>
+              <narrative>Exceeded target with 523 participants trained</narrative>
+            </comment>
+          </actual>
+        </period>
+        
+        <period>
+          <period-start iso-date="2024-07-01" />
+          <period-end iso-date="2024-12-31" />
+          
+          <target value="500">
+            <comment>
+              <narrative>Target additional 500 people in second half of year</narrative>
+            </comment>
+          </target>
+        </period>
+      </indicator>
+    </result>
+    
+    <!-- Simple Outcome Result -->
+    <result type="2" aggregation-status="0">
+      <title>
+        <narrative>Improved knowledge retention</narrative>
+      </title>
+      
+      <indicator measure="2" ascending="1" aggregation-status="0">
+        <title>
+          <narrative>Percentage of participants passing post-training assessment</narrative>
+        </title>
+        
+        <baseline year="2024" value="65">
+          <comment>
+            <narrative>Pre-training assessment average score</narrative>
+          </comment>
+        </baseline>
+        
+        <period>
+          <period-start iso-date="2024-01-01" />
+          <period-end iso-date="2024-12-31" />
+          
+          <target value="85">
+            <comment>
+              <narrative>Target 85% pass rate on post-training assessments</narrative>
+            </comment>
+          </target>
+          
+          <actual value="87">
+            <comment>
+              <narrative>Achieved 87% pass rate, exceeding target</narrative>
+            </comment>
+          </actual>
+        </period>
+      </indicator>
+    </result>
+  </iati-activity>
+</iati-activities>
+

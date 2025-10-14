@@ -29,6 +29,7 @@ interface ParsedActivity {
   defaultFlowType?: string;
   defaultAidType?: string;
   defaultTiedStatus?: string;
+  capitalSpendPercentage?: number;
   
   // Locations
   recipientCountries?: Array<{
@@ -90,6 +91,16 @@ interface ParsedActivity {
     activityId?: string;
     crsChannelCode?: string;
     narrativeLang?: string;
+  }>;
+  
+  // Other Identifiers
+  otherIdentifiers?: Array<{
+    ref?: string;
+    type?: string;
+    ownerOrg?: {
+      ref?: string;
+      narrative?: string;
+    };
   }>;
   
   // Results
@@ -170,9 +181,20 @@ interface ParsedActivity {
   // Other Classifications
   tagClassifications?: Array<{
     vocabulary?: string;
+    vocabularyUri?: string;
     code?: string;
     narrative?: string;
   }>;
+  
+  // Conditions
+  conditions?: {
+    attached: boolean;
+    conditions: Array<{
+      type?: string;
+      narrative?: string;
+      narrativeLang?: string;
+    }>;
+  };
   
   // Contact Info
   contactInfo?: Array<{
@@ -488,6 +510,22 @@ export class IATIXMLParser {
       result.defaultTiedStatus = defaultTiedStatus.getAttribute('code') || undefined;
     }
 
+    // Capital Spend Percentage
+    const capitalSpend = activity.querySelector('capital-spend');
+    if (capitalSpend) {
+      const percentage = capitalSpend.getAttribute('percentage');
+      if (percentage) {
+        const numValue = parseFloat(percentage);
+        // Validate that it's a number and within range 0-100
+        if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+          // Round to 2 decimal places for consistency with DECIMAL(5,2)
+          result.capitalSpendPercentage = Math.round(numValue * 100) / 100;
+        } else if (!isNaN(numValue)) {
+          console.warn(`[XML Parser] Capital spend percentage ${numValue} is out of valid range (0-100), ignoring value`);
+        }
+      }
+    }
+
     // CRS Channel Code
     const crsChannelCode = activity.querySelector('crs-add');
     if (crsChannelCode) {
@@ -675,7 +713,42 @@ export class IATIXMLParser {
       }
     }
 
-    // === RESULTS ===
+    // === OTHER IDENTIFIERS ===
+    
+    // Parse other-identifier elements with their owner-org data
+    const otherIdentifiers = activity.querySelectorAll('other-identifier');
+    if (otherIdentifiers.length > 0) {
+      result.otherIdentifiers = [];
+      
+      for (let i = 0; i < otherIdentifiers.length; i++) {
+        const otherIdElement = otherIdentifiers[i];
+        const ownerOrg = otherIdElement.querySelector('owner-org');
+        
+        const otherIdentifierData: any = {
+          ref: otherIdElement.getAttribute('ref') || undefined,
+          type: otherIdElement.getAttribute('type') || undefined,
+        };
+        
+        // Parse owner-org if present
+        if (ownerOrg) {
+          otherIdentifierData.ownerOrg = {
+            ref: ownerOrg.getAttribute('ref') || undefined,
+            narrative: this.extractNarrative(ownerOrg) || undefined,
+          };
+          
+          console.log('[XML Parser] Other-identifier with owner-org:', {
+            identifierRef: otherIdentifierData.ref,
+            identifierType: otherIdentifierData.type,
+            ownerOrgRef: otherIdentifierData.ownerOrg.ref,
+            ownerOrgNarrative: otherIdentifierData.ownerOrg.narrative
+          });
+        }
+        
+        result.otherIdentifiers.push(otherIdentifierData);
+      }
+    }
+
+    // === RESULTS (IATI v2.03 Compliant) ===
     
     const results = activity.querySelectorAll('result');
     if (results.length > 0) {
@@ -685,11 +758,75 @@ export class IATIXMLParser {
         const resultTitle = resultElement.querySelector('title');
         const resultDescription = resultElement.querySelector('description');
         
+        // Map IATI result type codes to our internal types
+        const resultTypeCode = resultElement.getAttribute('type') || '1';
+        const resultTypeMap: Record<string, string> = {
+          '1': 'output',
+          '2': 'outcome',
+          '3': 'impact',
+          '9': 'other'
+        };
+        
         const resultData: any = {
-          type: resultElement.getAttribute('type') || undefined,
+          type: resultTypeMap[resultTypeCode] || 'output',
+          aggregation_status: resultElement.getAttribute('aggregation-status') === '1',
           title: this.extractNarrative(resultTitle),
           description: this.extractNarrative(resultDescription),
+          references: [],
+          document_links: []
         };
+
+        // Parse result-level references
+        const resultReferences = resultElement.querySelectorAll(':scope > reference');
+        for (let j = 0; j < resultReferences.length; j++) {
+          const ref = resultReferences[j];
+          const vocabulary = ref.getAttribute('vocabulary');
+          const code = ref.getAttribute('code');
+          
+          // Only include references with valid vocabulary and code
+          if (vocabulary && code) {
+            resultData.references.push({
+              vocabulary: vocabulary,
+              code: code,
+              vocabulary_uri: ref.getAttribute('vocabulary-uri') || undefined
+            });
+          }
+        }
+
+        // Parse result-level document-links
+        const resultDocLinks = resultElement.querySelectorAll(':scope > document-link');
+        for (let j = 0; j < resultDocLinks.length; j++) {
+          const docLink = resultDocLinks[j];
+          const docTitle = docLink.querySelector('title');
+          const docDescription = docLink.querySelector('description');
+          const docCategory = docLink.querySelector('category');
+          const docLanguage = docLink.querySelector('language');
+          const docDate = docLink.querySelector('document-date');
+          
+          const url = docLink.getAttribute('url');
+          
+          // Only include document links with valid URLs
+          if (url && url.trim()) {
+            // Fix common URL issues (like missing // after http:)
+            let fixedUrl = url.trim();
+            if (fixedUrl.startsWith('http:') && !fixedUrl.startsWith('http://')) {
+              fixedUrl = fixedUrl.replace('http:', 'http://');
+            }
+            if (fixedUrl.startsWith('https:') && !fixedUrl.startsWith('https://')) {
+              fixedUrl = fixedUrl.replace('https:', 'https://');
+            }
+            
+            resultData.document_links.push({
+              format: docLink.getAttribute('format') || undefined,
+              url: fixedUrl,
+              title: this.extractNarrative(docTitle),
+              description: this.extractNarrative(docDescription),
+              category_code: docCategory?.getAttribute('code') || undefined,
+              language_code: docLanguage?.getAttribute('code') || 'en',
+              document_date: docDate?.getAttribute('iso-date') || undefined
+            });
+          }
+        }
 
         // Parse indicators
         const indicators = resultElement.querySelectorAll('indicator');
@@ -699,48 +836,239 @@ export class IATIXMLParser {
             const indicator = indicators[j];
             const indicatorTitle = indicator.querySelector('title');
             const indicatorDescription = indicator.querySelector('description');
-            const baseline = indicator.querySelector('baseline');
-
-            const indicatorData: any = {
-              measure: indicator.getAttribute('measure') || undefined,
-              title: this.extractNarrative(indicatorTitle),
-              description: this.extractNarrative(indicatorDescription),
+            
+            // Map IATI measure codes to our internal types
+            const measureCode = indicator.getAttribute('measure') || '1';
+            const measureMap: Record<string, string> = {
+              '1': 'unit',
+              '2': 'percentage',
+              '3': 'qualitative',
+              '4': 'qualitative',
+              '5': 'qualitative'
             };
 
+            const indicatorData: any = {
+              measure: measureMap[measureCode] || 'unit',
+              ascending: indicator.getAttribute('ascending') === '1' || indicator.getAttribute('ascending') === 'true',
+              aggregation_status: indicator.getAttribute('aggregation-status') === '1',
+              title: this.extractNarrative(indicatorTitle),
+              description: this.extractNarrative(indicatorDescription),
+              references: [],
+              document_links: []
+            };
+
+            // Parse indicator-level references
+            const indicatorReferences = indicator.querySelectorAll(':scope > reference');
+            for (let k = 0; k < indicatorReferences.length; k++) {
+              const ref = indicatorReferences[k];
+              indicatorData.references.push({
+                vocabulary: ref.getAttribute('vocabulary') || '',
+                code: ref.getAttribute('code') || '',
+                vocabulary_uri: ref.getAttribute('vocabulary-uri') || undefined,
+                indicator_uri: ref.getAttribute('indicator-uri') || undefined
+              });
+            }
+
+            // Parse indicator-level document-links
+            const indicatorDocLinks = indicator.querySelectorAll(':scope > document-link');
+            for (let k = 0; k < indicatorDocLinks.length; k++) {
+              const docLink = indicatorDocLinks[k];
+              const docTitle = docLink.querySelector('title');
+              const docDescription = docLink.querySelector('description');
+              const docCategory = docLink.querySelector('category');
+              const docLanguage = docLink.querySelector('language');
+              const docDate = docLink.querySelector('document-date');
+              
+              indicatorData.document_links.push({
+                format: docLink.getAttribute('format') || undefined,
+                url: docLink.getAttribute('url') || '',
+                title: this.extractNarrative(docTitle),
+                description: this.extractNarrative(docDescription),
+                category_code: docCategory?.getAttribute('code') || undefined,
+                language_code: docLanguage?.getAttribute('code') || 'en',
+                document_date: docDate?.getAttribute('iso-date') || undefined
+              });
+            }
+
             // Parse baseline
+            const baseline = indicator.querySelector('baseline');
             if (baseline) {
               const baselineComment = baseline.querySelector('comment');
               indicatorData.baseline = {
-                year: baseline.getAttribute('year') || undefined,
-                value: baseline.getAttribute('value') || undefined,
+                baseline_year: baseline.getAttribute('year') ? parseInt(baseline.getAttribute('year')!) : undefined,
+                iso_date: baseline.getAttribute('iso-date') || undefined,
+                value: baseline.getAttribute('value') ? parseFloat(baseline.getAttribute('value')!) : undefined,
                 comment: this.extractNarrative(baselineComment),
+                locations: [],
+                dimensions: [],
+                document_links: []
               };
+
+              // Parse baseline locations
+              const baselineLocations = baseline.querySelectorAll('location');
+              for (let k = 0; k < baselineLocations.length; k++) {
+                const loc = baselineLocations[k];
+                indicatorData.baseline.locations.push({
+                  location_ref: loc.getAttribute('ref') || ''
+                });
+              }
+
+              // Parse baseline dimensions
+              const baselineDimensions = baseline.querySelectorAll('dimension');
+              for (let k = 0; k < baselineDimensions.length; k++) {
+                const dim = baselineDimensions[k];
+                indicatorData.baseline.dimensions.push({
+                  name: dim.getAttribute('name') || '',
+                  value: dim.getAttribute('value') || '',
+                  dimension_type: 'baseline'
+                });
+              }
+
+              // Parse baseline document-links
+              const baselineDocLinks = baseline.querySelectorAll('document-link');
+              for (let k = 0; k < baselineDocLinks.length; k++) {
+                const docLink = baselineDocLinks[k];
+                const docTitle = docLink.querySelector('title');
+                const docDescription = docLink.querySelector('description');
+                const docCategory = docLink.querySelector('category');
+                const docLanguage = docLink.querySelector('language');
+                const docDate = docLink.querySelector('document-date');
+                
+                indicatorData.baseline.document_links.push({
+                  format: docLink.getAttribute('format') || undefined,
+                  url: docLink.getAttribute('url') || '',
+                  title: this.extractNarrative(docTitle),
+                  description: this.extractNarrative(docDescription),
+                  category_code: docCategory?.getAttribute('code') || undefined,
+                  language_code: docLanguage?.getAttribute('code') || 'en',
+                  document_date: docDate?.getAttribute('iso-date') || undefined
+                });
+              }
             }
 
-            // Parse targets
-            const targets = indicator.querySelectorAll('target');
-            if (targets.length > 0) {
-              indicatorData.targets = [];
-              for (let k = 0; k < targets.length; k++) {
-                const target = targets[k];
-                const period = target.querySelector('period');
-                const targetComment = target.querySelector('comment');
+            // Parse periods (CRITICAL: IATI has <period> elements, not <target> at top level)
+            const periods = indicator.querySelectorAll('period');
+            if (periods.length > 0) {
+              indicatorData.periods = [];
+              for (let k = 0; k < periods.length; k++) {
+                const period = periods[k];
+                const periodStart = period.querySelector('period-start');
+                const periodEnd = period.querySelector('period-end');
+                const target = period.querySelector('target');
+                const actual = period.querySelector('actual');
 
-                const targetData: any = {
-                  value: target.getAttribute('value') || undefined,
-                  comment: this.extractNarrative(targetComment),
+                const periodData: any = {
+                  period_start: periodStart?.getAttribute('iso-date') || '',
+                  period_end: periodEnd?.getAttribute('iso-date') || '',
+                  target_locations: [],
+                  actual_locations: [],
+                  target_dimensions: [],
+                  actual_dimensions: [],
+                  target_document_links: [],
+                  actual_document_links: []
                 };
 
-                if (period) {
-                  const periodStart = period.querySelector('period-start');
-                  const periodEnd = period.querySelector('period-end');
-                  targetData.period = {
-                    start: periodStart?.getAttribute('iso-date') || undefined,
-                    end: periodEnd?.getAttribute('iso-date') || undefined,
-                  };
+                // Parse target data
+                if (target) {
+                  periodData.target_value = target.getAttribute('value') ? parseFloat(target.getAttribute('value')!) : undefined;
+                  const targetComment = target.querySelector('comment');
+                  periodData.target_comment = this.extractNarrative(targetComment);
+
+                  // Parse target locations
+                  const targetLocations = target.querySelectorAll('location');
+                  for (let l = 0; l < targetLocations.length; l++) {
+                    const loc = targetLocations[l];
+                    periodData.target_locations.push({
+                      location_ref: loc.getAttribute('ref') || '',
+                      location_type: 'target'
+                    });
+                  }
+
+                  // Parse target dimensions
+                  const targetDimensions = target.querySelectorAll('dimension');
+                  for (let l = 0; l < targetDimensions.length; l++) {
+                    const dim = targetDimensions[l];
+                    periodData.target_dimensions.push({
+                      name: dim.getAttribute('name') || '',
+                      value: dim.getAttribute('value') || '',
+                      dimension_type: 'target'
+                    });
+                  }
+
+                  // Parse target document-links
+                  const targetDocLinks = target.querySelectorAll('document-link');
+                  for (let l = 0; l < targetDocLinks.length; l++) {
+                    const docLink = targetDocLinks[l];
+                    const docTitle = docLink.querySelector('title');
+                    const docDescription = docLink.querySelector('description');
+                    const docCategory = docLink.querySelector('category');
+                    const docLanguage = docLink.querySelector('language');
+                    const docDate = docLink.querySelector('document-date');
+                    
+                    periodData.target_document_links.push({
+                      format: docLink.getAttribute('format') || undefined,
+                      url: docLink.getAttribute('url') || '',
+                      title: this.extractNarrative(docTitle),
+                      description: this.extractNarrative(docDescription),
+                      category_code: docCategory?.getAttribute('code') || undefined,
+                      language_code: docLanguage?.getAttribute('code') || 'en',
+                      document_date: docDate?.getAttribute('iso-date') || undefined,
+                      link_type: 'target'
+                    });
+                  }
                 }
 
-                indicatorData.targets.push(targetData);
+                // Parse actual data
+                if (actual) {
+                  periodData.actual_value = actual.getAttribute('value') ? parseFloat(actual.getAttribute('value')!) : undefined;
+                  const actualComment = actual.querySelector('comment');
+                  periodData.actual_comment = this.extractNarrative(actualComment);
+
+                  // Parse actual locations
+                  const actualLocations = actual.querySelectorAll('location');
+                  for (let l = 0; l < actualLocations.length; l++) {
+                    const loc = actualLocations[l];
+                    periodData.actual_locations.push({
+                      location_ref: loc.getAttribute('ref') || '',
+                      location_type: 'actual'
+                    });
+                  }
+
+                  // Parse actual dimensions
+                  const actualDimensions = actual.querySelectorAll('dimension');
+                  for (let l = 0; l < actualDimensions.length; l++) {
+                    const dim = actualDimensions[l];
+                    periodData.actual_dimensions.push({
+                      name: dim.getAttribute('name') || '',
+                      value: dim.getAttribute('value') || '',
+                      dimension_type: 'actual'
+                    });
+                  }
+
+                  // Parse actual document-links
+                  const actualDocLinks = actual.querySelectorAll('document-link');
+                  for (let l = 0; l < actualDocLinks.length; l++) {
+                    const docLink = actualDocLinks[l];
+                    const docTitle = docLink.querySelector('title');
+                    const docDescription = docLink.querySelector('description');
+                    const docCategory = docLink.querySelector('category');
+                    const docLanguage = docLink.querySelector('language');
+                    const docDate = docLink.querySelector('document-date');
+                    
+                    periodData.actual_document_links.push({
+                      format: docLink.getAttribute('format') || undefined,
+                      url: docLink.getAttribute('url') || '',
+                      title: this.extractNarrative(docTitle),
+                      description: this.extractNarrative(docDescription),
+                      category_code: docCategory?.getAttribute('code') || undefined,
+                      language_code: docLanguage?.getAttribute('code') || 'en',
+                      document_date: docDate?.getAttribute('iso-date') || undefined,
+                      link_type: 'actual'
+                    });
+                  }
+                }
+
+                indicatorData.periods.push(periodData);
               }
             }
 
@@ -797,6 +1125,8 @@ export class IATIXMLParser {
             providerActivityId: providerOrg.getAttribute('provider-activity-id') || undefined,
             name: this.extractNarrative(providerOrg),
           };
+          // NEW: Add activity ID link to transaction data
+          transactionData.provider_org_activity_id = providerOrg.getAttribute('provider-activity-id') || undefined;
         }
 
         if (receiverOrg) {
@@ -806,8 +1136,21 @@ export class IATIXMLParser {
             receiverActivityId: receiverOrg.getAttribute('receiver-activity-id') || undefined,
             name: this.extractNarrative(receiverOrg),
           };
+          // NEW: Add activity ID link to transaction data
+          transactionData.receiver_org_activity_id = receiverOrg.getAttribute('receiver-activity-id') || undefined;
         }
 
+        // NEW: Parse multiple sectors (IATI compliant)
+        const sectorElements = Array.from(transaction.querySelectorAll('sector'));
+        if (sectorElements.length > 0) {
+          transactionData.sectors = sectorElements.map(s => ({
+            code: s.getAttribute('code') || '',
+            vocabulary: s.getAttribute('vocabulary') || '1',
+            percentage: s.getAttribute('percentage') ? parseFloat(s.getAttribute('percentage')!) : undefined,
+            narrative: this.extractNarrative(s),
+          }));
+        }
+        // Keep backward compatibility with single sector
         if (sector) {
           transactionData.sector = {
             vocabulary: sector.getAttribute('vocabulary') || undefined,
@@ -815,6 +1158,17 @@ export class IATIXMLParser {
           };
         }
 
+        // NEW: Parse multiple recipient regions
+        const recipientRegionElements = Array.from(transaction.querySelectorAll('recipient-region'));
+        if (recipientRegionElements.length > 0) {
+          transactionData.recipient_regions = recipientRegionElements.map(r => ({
+            code: r.getAttribute('code') || '',
+            vocabulary: r.getAttribute('vocabulary') || '1',
+            percentage: r.getAttribute('percentage') ? parseFloat(r.getAttribute('percentage')!) : undefined,
+            narrative: this.extractNarrative(r),
+          }));
+        }
+        // Keep backward compatibility with single region
         if (recipientRegion) {
           transactionData.recipientRegion = {
             code: recipientRegion.getAttribute('code') || undefined,
@@ -822,12 +1176,36 @@ export class IATIXMLParser {
           };
         }
 
+        // NEW: Parse multiple aid types
+        const aidTypeElements = Array.from(transaction.querySelectorAll('aid-type'));
+        if (aidTypeElements.length > 0) {
+          transactionData.aid_types = aidTypeElements.map(a => ({
+            code: a.getAttribute('code') || '',
+            vocabulary: a.getAttribute('vocabulary') || '1',
+          }));
+        }
+        // Keep backward compatibility with single aid type
         if (aidType) {
           transactionData.aidType = {
             code: aidType.getAttribute('code') || undefined,
             vocabulary: aidType.getAttribute('vocabulary') || undefined,
           };
         }
+
+        // NEW: Parse multiple recipient countries
+        const recipientCountryElements = Array.from(transaction.querySelectorAll('recipient-country'));
+        if (recipientCountryElements.length > 0) {
+          transactionData.recipient_countries = recipientCountryElements.map(c => ({
+            code: c.getAttribute('code') || '',
+            percentage: c.getAttribute('percentage') ? parseFloat(c.getAttribute('percentage')!) : undefined,
+          }));
+        }
+
+        // NEW: Capture vocabulary attributes for classifications
+        transactionData.flow_type_vocabulary = flowType?.getAttribute('vocabulary') || '1';
+        transactionData.finance_type_vocabulary = financeType?.getAttribute('vocabulary') || '1';
+        transactionData.tied_status_vocabulary = tiedStatus?.getAttribute('vocabulary') || '1';
+        transactionData.disbursement_channel_vocabulary = disbursementChannel?.getAttribute('vocabulary') || '1';
 
         result.transactions.push(transactionData);
       }
@@ -859,8 +1237,34 @@ export class IATIXMLParser {
         const tag = tags[i];
         result.tagClassifications.push({
           vocabulary: tag.getAttribute('vocabulary') || undefined,
+          vocabularyUri: tag.getAttribute('vocabulary-uri') || undefined,
           code: tag.getAttribute('code') || undefined,
           narrative: this.extractNarrative(tag),
+        });
+      }
+    }
+
+    // === CONDITIONS ===
+    
+    const conditionsElement = activity.querySelector('conditions');
+    if (conditionsElement) {
+      result.conditions = {
+        attached: conditionsElement.getAttribute('attached') === '1',
+        conditions: []
+      };
+      
+      const conditionElements = conditionsElement.querySelectorAll('condition');
+      for (let i = 0; i < conditionElements.length; i++) {
+        const condition = conditionElements[i];
+        const narratives = condition.querySelectorAll('narrative');
+        
+        // Extract primary narrative
+        const narrative = this.extractNarrative(condition);
+        
+        result.conditions.conditions.push({
+          type: condition.getAttribute('type') || undefined,
+          narrative: narrative,
+          narrativeLang: narratives[0]?.getAttribute('xml:lang') || 'en'
         });
       }
     }
@@ -878,16 +1282,18 @@ export class IATIXMLParser {
         const jobTitle = contact.querySelector('job-title');
         const telephone = contact.querySelector('telephone');
         const email = contact.querySelector('email');
+        const website = contact.querySelector('website');
         const mailingAddress = contact.querySelector('mailing-address');
 
         result.contactInfo.push({
           type: contact.getAttribute('type') || undefined,
           organization: this.extractNarrative(organization),
           department: this.extractNarrative(department),
-          person: this.extractNarrative(person),
+          personName: this.extractNarrative(person),
           jobTitle: this.extractNarrative(jobTitle),
           telephone: telephone?.textContent?.trim() || undefined,
           email: email?.textContent?.trim() || undefined,
+          website: website?.textContent?.trim() || undefined,
           mailingAddress: this.extractNarrative(mailingAddress),
         });
       }
@@ -901,24 +1307,23 @@ export class IATIXMLParser {
       for (let i = 0; i < budgets.length; i++) {
         const budget = budgets[i];
         const value = budget.querySelector('value');
-        const period = budget.querySelector('period');
+        // Query period-start and period-end directly (no wrapper element in IATI standard)
+        const periodStart = budget.querySelector('period-start');
+        const periodEnd = budget.querySelector('period-end');
 
         const budgetData: any = {
-          type: budget.getAttribute('type') || undefined,
-          status: budget.getAttribute('status') || undefined,
+          type: budget.getAttribute('type') || '1', // Default to Original
+          status: budget.getAttribute('status') || '1', // Default to Indicative
           value: value?.textContent ? parseFloat(value.textContent) : undefined,
-          currency: value?.getAttribute('currency') || undefined,
+          currency: value?.getAttribute('currency') || activity.getAttribute('default-currency') || undefined,
           valueDate: value?.getAttribute('value-date') || undefined,
         };
 
-        if (period) {
-          const periodStart = period.querySelector('period-start');
-          const periodEnd = period.querySelector('period-end');
-          budgetData.period = {
-            start: periodStart?.getAttribute('iso-date') || undefined,
-            end: periodEnd?.getAttribute('iso-date') || undefined,
-          };
-        }
+        // Always extract period dates
+        budgetData.period = {
+          start: periodStart?.getAttribute('iso-date') || undefined,
+          end: periodEnd?.getAttribute('iso-date') || undefined,
+        };
 
         result.budgets.push(budgetData);
       }
@@ -932,7 +1337,8 @@ export class IATIXMLParser {
       for (let i = 0; i < plannedDisbursements.length; i++) {
         const disbursement = plannedDisbursements[i];
         const value = disbursement.querySelector('value');
-        const period = disbursement.querySelector('period');
+        const periodStart = disbursement.querySelector('period-start');
+        const periodEnd = disbursement.querySelector('period-end');
         const providerOrg = disbursement.querySelector('provider-org');
         const receiverOrg = disbursement.querySelector('receiver-org');
 
@@ -943,9 +1349,8 @@ export class IATIXMLParser {
           valueDate: value?.getAttribute('value-date') || undefined,
         };
 
-        if (period) {
-          const periodStart = period.querySelector('period-start');
-          const periodEnd = period.querySelector('period-end');
+        // IATI standard: period-start and period-end are direct children, not wrapped in <period>
+        if (periodStart || periodEnd) {
           disbursementData.period = {
             start: periodStart?.getAttribute('iso-date') || undefined,
             end: periodEnd?.getAttribute('iso-date') || undefined,

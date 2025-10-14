@@ -2,27 +2,57 @@
 export interface PlannedDisbursement {
   id?: string;
   activity_id: string;
+  
+  // Financial fields
   amount: number;
   currency: string;
+  value_date?: string;
+  usd_amount?: number;  // USD-converted amount stored in database
+  
+  // Period fields
   period_start: string;
   period_end: string;
+  
+  // IATI type attribute (NEW - IATI BudgetType codelist)
+  type?: '1' | '2';  // 1=Original, 2=Revised
+  
+  // Provider organization fields
   provider_org_id?: string;
   provider_org_name?: string;
+  provider_org_ref?: string;          // IATI org identifier
+  provider_org_type?: string;         // IATI org type code
+  provider_activity_id?: string;      // IATI activity identifier (text)
+  provider_activity_uuid?: string;    // NEW - Foreign key to activities table
+  
+  // Receiver organization fields
   receiver_org_id?: string;
   receiver_org_name?: string;
+  receiver_org_ref?: string;          // IATI org identifier
+  receiver_org_type?: string;         // IATI org type code
+  receiver_activity_id?: string;      // IATI activity identifier (text)
+  receiver_activity_uuid?: string;    // NEW - Foreign key to activities table
+  
+  // Internal status field
   status?: 'original' | 'revised';
-  value_date?: string;
+  
+  // Additional fields
   notes?: string;
+  
+  // Audit fields
   created_at?: string;
   updated_at?: string;
   created_by?: string;
   updated_by?: string;
-}
-
-// Form state extension
-export interface PlannedDisbursementFormState extends PlannedDisbursement {
+  
+  // Computed fields (not in database)
+  usdAmount?: number;
   isSaving?: boolean;
   hasError?: boolean;
+  errorMessage?: string;
+}
+
+// Form state extension (no additional fields needed now, included in base interface)
+export interface PlannedDisbursementFormState extends PlannedDisbursement {
 }
 
 // IATI XML export format

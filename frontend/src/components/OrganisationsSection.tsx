@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Users, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Loader2, ChevronUp, ChevronDown, Building2 } from 'lucide-react';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { ParticipatingOrgModal, ParticipatingOrgData } from '@/components/modals/ParticipatingOrgModal';
 import { useParticipatingOrganizations } from '@/hooks/use-participating-organizations';
@@ -34,7 +34,7 @@ export default function OrganisationsSection({
 }: OrganisationsSectionProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<any | null>(null);
-  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<string | null>('organization');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const {
@@ -342,8 +342,8 @@ export default function OrganisationsSection({
                       <TableRow key={participatingOrg.id} className="hover:bg-gray-50">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            {participatingOrg.organization?.logo && (
-                              <div className="flex-shrink-0">
+                            <div className="flex-shrink-0">
+                              {participatingOrg.organization?.logo ? (
                                 <Image
                                   src={participatingOrg.organization.logo}
                                   alt={participatingOrg.organization.name}
@@ -354,8 +354,12 @@ export default function OrganisationsSection({
                                     (e.target as HTMLImageElement).style.display = 'none';
                                   }}
                                 />
-                              </div>
-                            )}
+                              ) : (
+                                <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                                  <Building2 className="h-4 w-4 text-gray-500" />
+                                </div>
+                              )}
+                            </div>
                             <div className="min-w-0 flex-1">
                               <div className="font-medium text-gray-900 truncate">
                                 {participatingOrg.narrative || 

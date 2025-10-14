@@ -144,6 +144,17 @@ export class IATIXMLGenerator {
       activity.appendChild(activityDate);
     }
     
+    // Add capital spend percentage
+    if (activityData.capital_spend_percentage !== null && activityData.capital_spend_percentage !== undefined) {
+      // Validate and round to 2 decimal places
+      const capitalSpendValue = Math.round(activityData.capital_spend_percentage * 100) / 100;
+      if (capitalSpendValue >= 0 && capitalSpendValue <= 100) {
+        const capitalSpend = this.doc.createElement('capital-spend');
+        capitalSpend.setAttribute('percentage', String(capitalSpendValue));
+        activity.appendChild(capitalSpend);
+      }
+    }
+    
     // Add related activities
     await this.addRelatedActivities(activity, activityData.id);
     

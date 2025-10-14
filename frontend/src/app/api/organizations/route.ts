@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // Build query with filters
     let query = getSupabaseAdmin()
       .from('organizations')
-      .select('id, name, acronym, type, organisation_type, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at');
+      .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at');
     
     // Filter by IATI org ID (exact match)
     if (iatiOrgId) {
@@ -277,10 +277,31 @@ export async function PUT(request: NextRequest) {
       delete updates.country_represented;
     }
     
-    if ('organisation_type' in updates) {
-      // Save to both type and organisation_type columns for compatibility
-      updates.type = updates.organisation_type;
-      updates.organisation_type = updates.organisation_type;
+    if ('Organisation_Type_Code' in updates) {
+      // Save to both type and Organisation_Type_Code columns for compatibility
+      updates.type = updates.Organisation_Type_Code;
+      updates.Organisation_Type_Code = updates.Organisation_Type_Code;
+      
+      // Auto-populate Organisation_Type_Name based on code
+      const typeNameMap: Record<string, string> = {
+        '10': 'Government',
+        '11': 'Local Government',
+        '15': 'Other Public Sector',
+        '21': 'International NGO',
+        '22': 'National NGO',
+        '23': 'Regional NGO',
+        '24': 'Partner Country based NGO',
+        '30': 'Public Private Partnership',
+        '40': 'Multilateral',
+        '60': 'Foundation',
+        '70': 'Private Sector',
+        '71': 'Private Sector in Provider Country',
+        '72': 'Private Sector in Aid Recipient Country',
+        '73': 'Private Sector in Third Country',
+        '80': 'Academic, Training and Research',
+        '90': 'Other'
+      };
+      updates.Organisation_Type_Name = typeNameMap[updates.Organisation_Type_Code] || null;
     }
     
     // Handle logo field - check if logo_url column exists, otherwise map to logo

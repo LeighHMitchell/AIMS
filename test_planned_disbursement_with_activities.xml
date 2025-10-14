@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2024-01-15T12:00:00Z">
+  <iati-activity>
+    <iati-identifier>TEST-ACTIVITY-LINKING-001</iati-identifier>
+    <title>
+      <narrative>Test Activity for Disbursement Activity Linking</narrative>
+    </title>
+    <description>
+      <narrative>This activity tests the new activity linking feature for planned disbursements.</narrative>
+    </description>
+    
+    <!-- Activity dates -->
+    <activity-date iso-date="2024-01-01" type="1">
+      <narrative>Planned start</narrative>
+    </activity-date>
+    <activity-date iso-date="2024-12-31" type="3">
+      <narrative>Planned end</narrative>
+    </activity-date>
+    
+    <!-- 
+      Test Case 1: Planned disbursement with provider and receiver activity IDs
+      
+      IMPORTANT: Replace these IATI identifiers with actual activity identifiers
+      from your database for testing. You can find them with:
+      SELECT id, iati_identifier, title_narrative FROM activities LIMIT 10;
+    -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-03-01" />
+      <period-end iso-date="2024-06-30" />
+      <value currency="USD" value-date="2024-03-01">50000</value>
+      <provider-org ref="GB-GOV-1" type="10" provider-activity-id="GB-GOV-1-PROJECT-123">
+        <narrative>UK Foreign, Commonwealth and Development Office</narrative>
+      </provider-org>
+      <receiver-org ref="KE-NGO-001" type="22" receiver-activity-id="KE-NGO-001-WATER-01">
+        <narrative>Kenya Water Access Initiative</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- 
+      Test Case 2: Disbursement with provider activity only
+    -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-07-01" />
+      <period-end iso-date="2024-12-31" />
+      <value currency="EUR" value-date="2024-07-01">75000</value>
+      <provider-org ref="FR-3" type="10" provider-activity-id="FR-AFD-HEALTH-456">
+        <narrative>Agence Française de Développement</narrative>
+      </provider-org>
+      <!-- No receiver activity ID -->
+      <receiver-org ref="ML-1" type="10">
+        <narrative>Government of Mali</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- 
+      Test Case 3: Disbursement without activity IDs (should still import)
+    -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-04-01" />
+      <period-end iso-date="2024-09-30" />
+      <value currency="USD" value-date="2024-04-01">25000</value>
+      <provider-org ref="XM-DAC-41114" type="40">
+        <narrative>United Nations Development Programme</narrative>
+      </provider-org>
+      <receiver-org ref="TZ-NGO-005" type="22">
+        <narrative>Tanzania Education Foundation</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- 
+      Test Case 4: Disbursement with non-existent activity IDs
+      (Should store text IDs but not link to activities)
+    -->
+    <planned-disbursement type="2">
+      <period-start iso-date="2024-05-01" />
+      <period-end iso-date="2024-10-31" />
+      <value currency="GBP" value-date="2024-05-01">40000</value>
+      <provider-org ref="GB-CHC-111111" type="21" provider-activity-id="NONEXISTENT-ACTIVITY-999">
+        <narrative>Example UK Charity</narrative>
+      </provider-org>
+      <receiver-org ref="UG-NGO-999" type="22" receiver-activity-id="ALSO-NONEXISTENT-888">
+        <narrative>Uganda Community Development</narrative>
+      </receiver-org>
+    </planned-disbursement>
+  </iati-activity>
+</iati-activities>
+

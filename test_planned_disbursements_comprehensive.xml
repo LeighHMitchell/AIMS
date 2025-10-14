@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-PLANNED-DISB-COMPREHENSIVE-001</iati-identifier>
+    
+    <reporting-org ref="GB-GOV-1" type="10">
+      <narrative>UK Government</narrative>
+    </reporting-org>
+    
+    <title>
+      <narrative>Comprehensive Planned Disbursements Test Activity</narrative>
+    </title>
+    
+    <description type="1">
+      <narrative>Test activity with various planned disbursement scenarios to validate IATI compliance and system functionality</narrative>
+    </description>
+    
+    <activity-status code="2" />
+    <activity-date iso-date="2024-01-01" type="1" />
+    <activity-date iso-date="2025-12-31" type="3" />
+    
+    <!-- Test Case 1: Full IATI-compliant planned disbursement with ALL fields -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-01-01" />
+      <period-end iso-date="2024-12-31" />
+      <value currency="EUR" value-date="2024-01-01">50000</value>
+      <provider-org provider-activity-id="BB-BBB-123456789-1234AA" type="10" ref="BB-BBB-123456789">
+        <narrative>Agency B - Provider Government</narrative>
+      </provider-org>
+      <receiver-org receiver-activity-id="AA-AAA-123456789-1234" type="23" ref="AA-AAA-123456789">
+        <narrative>Agency A - Receiver NGO</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- Test Case 2: Minimal planned disbursement (only required fields) -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2025-01-01" />
+      <period-end iso-date="2025-12-31" />
+      <value currency="USD" value-date="2025-01-01">25000</value>
+    </planned-disbursement>
+    
+    <!-- Test Case 3: Revised budget (type="2") -->
+    <planned-disbursement type="2">
+      <period-start iso-date="2024-01-01" />
+      <period-end iso-date="2024-12-31" />
+      <value currency="EUR" value-date="2024-06-01">55000</value>
+      <provider-org ref="BB-BBB-123456789" type="10">
+        <narrative>Agency B - Revised Amount</narrative>
+      </provider-org>
+      <receiver-org ref="AA-AAA-123456789" type="23">
+        <narrative>Agency A</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- Test Case 4: Quarterly disbursements with multilateral provider -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-01-01" />
+      <period-end iso-date="2024-03-31" />
+      <value currency="GBP" value-date="2024-01-01">15000</value>
+      <provider-org type="40" ref="XM-DAC-12345">
+        <narrative>Multilateral Development Bank</narrative>
+      </provider-org>
+      <receiver-org type="11" ref="UG-GOV-LOC-001">
+        <narrative>Local Government Authority</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-04-01" />
+      <period-end iso-date="2024-06-30" />
+      <value currency="GBP" value-date="2024-04-01">18000</value>
+      <provider-org type="40" ref="XM-DAC-12345">
+        <narrative>Multilateral Development Bank</narrative>
+      </provider-org>
+      <receiver-org type="11" ref="UG-GOV-LOC-001">
+        <narrative>Local Government Authority</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- Test Case 5: Different organization types -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-07-01" />
+      <period-end iso-date="2024-09-30" />
+      <value currency="USD" value-date="2024-07-01">20000</value>
+      <provider-org type="21" ref="INT-NGO-001" provider-activity-id="INT-NGO-001-PROJ-A">
+        <narrative>International NGO Provider</narrative>
+      </provider-org>
+      <receiver-org type="70" ref="PRIVATE-SECTOR-001" receiver-activity-id="PS-001-IMPL-B">
+        <narrative>Private Sector Implementer</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- Test Case 6: Foundation to Academic institution -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2024-10-01" />
+      <period-end iso-date="2024-12-31" />
+      <value currency="USD" value-date="2024-10-01">12000</value>
+      <provider-org type="60" ref="FOUNDATION-001">
+        <narrative>Research Foundation</narrative>
+      </provider-org>
+      <receiver-org type="80" ref="UNIVERSITY-001">
+        <narrative>National University</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <!-- Test Case 7: Public-Private Partnership -->
+    <planned-disbursement type="1">
+      <period-start iso-date="2025-01-01" />
+      <period-end iso-date="2025-06-30" />
+      <value currency="EUR" value-date="2025-01-01">35000</value>
+      <provider-org type="30" ref="PPP-INFRA-001">
+        <narrative>Infrastructure PPP</narrative>
+      </provider-org>
+      <receiver-org type="24" ref="NATIONAL-NGO-001">
+        <narrative>Partner Country NGO</narrative>
+      </receiver-org>
+    </planned-disbursement>
+    
+    <sector vocabulary="1" code="12240" percentage="100">
+      <narrative>Basic nutrition</narrative>
+    </sector>
+    
+    <recipient-country code="UG" percentage="100">
+      <narrative>Uganda</narrative>
+    </recipient-country>
+  </iati-activity>
+</iati-activities>

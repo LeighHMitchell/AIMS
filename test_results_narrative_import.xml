@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2024-01-16T10:00:00Z">
+  <iati-activity>
+    <iati-identifier>TEST-ACTIVITY-001</iati-identifier>
+    <reporting-org ref="GB-GOV-1" type="10">
+      <narrative>UK Department for International Development</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Test Activity for Narrative Import</narrative>
+    </title>
+    <description type="1">
+      <narrative>This is a test activity to verify that all narrative fields are imported correctly from IATI XML.</narrative>
+    </description>
+    
+    <!-- Result with all narrative fields -->
+    <result type="1" aggregation-status="1">
+      <title>
+        <narrative>Result title - Test Narrative Import</narrative>
+      </title>
+      <description>
+        <narrative>Result description text - This should be imported as JSONB with language key</narrative>
+      </description>
+      
+      <!-- Result-level document link -->
+      <document-link format="application/pdf" url="http://www.example.org/docs/result_en.pdf">
+        <title>
+          <narrative>Results Report 2024 - Narrative Test</narrative>
+        </title>
+        <description>
+          <narrative>Report of results - Testing narrative import functionality</narrative>
+        </description>
+        <category code="A01" />
+        <language code="en" />
+        <document-date iso-date="2024-01-16" />
+      </document-link>
+      
+      <!-- Result-level reference -->
+      <reference vocabulary="99" code="TEST-REF-001" vocabulary-uri="http://example.com/test-vocabulary.html" />
+      
+      <!-- Indicator with all narrative fields -->
+      <indicator measure="1" ascending="1" aggregation-status="1">
+        <title>
+          <narrative>Indicator title - Narrative Import Test</narrative>
+        </title>
+        <description>
+          <narrative>Indicator description text - Testing comprehensive narrative import</narrative>
+        </description>
+        
+        <!-- Indicator-level document link -->
+        <document-link format="application/pdf" url="http://www.example.org/docs/indicator_en.pdf">
+          <title>
+            <narrative>Indicator Report 2024 - Narrative Test</narrative>
+          </title>
+          <description>
+            <narrative>Report of indicator results - Testing narrative import</narrative>
+          </description>
+          <category code="A01" />
+          <language code="en" />
+          <document-date iso-date="2024-01-16" />
+        </document-link>
+        
+        <!-- Indicator-level references -->
+        <reference vocabulary="1" code="3429" />
+        <reference vocabulary="7" code="861" />
+        <reference vocabulary="99" code="TEST-IND-001" indicator-uri="http://example.com/test-indicator.html" />
+        
+        <!-- Baseline with all narrative fields -->
+        <baseline year="2023" iso-date="2023-01-01" value="100">
+          <location ref="AF-KAN" />
+          <location ref="KH-PNH" />
+          <dimension name="sex" value="female" />
+          <dimension name="age" value="adult" />
+          
+          <!-- Baseline document link -->
+          <document-link format="application/pdf" url="http://www.example.org/docs/baseline_en.pdf">
+            <title>
+              <narrative>Baseline Report 2024 - Narrative Test</narrative>
+            </title>
+            <description>
+              <narrative>Report of baseline data - Testing narrative import</narrative>
+            </description>
+            <category code="A01" />
+            <language code="en" />
+            <document-date iso-date="2024-01-16" />
+          </document-link>
+          
+          <!-- Baseline comment -->
+          <comment>
+            <narrative>Baseline comment text - Testing narrative import functionality</narrative>
+          </comment>
+        </baseline>
+        
+        <!-- Period with all narrative fields -->
+        <period>
+          <period-start iso-date="2024-01-01" />
+          <period-end iso-date="2024-03-31" />
+          
+          <!-- Target with narrative fields -->
+          <target value="150">
+            <location ref="AF-KAN" />
+            <location ref="KH-PNH" />
+            <dimension name="sex" value="female" />
+            <dimension name="age" value="adult" />
+            
+            <!-- Target comment -->
+            <comment>
+              <narrative>Target comment text - Testing narrative import functionality</narrative>
+            </comment>
+            
+            <!-- Target document link -->
+            <document-link format="application/pdf" url="http://www.example.org/docs/target_en.pdf">
+              <title>
+                <narrative>Target Report 2024 - Narrative Test</narrative>
+              </title>
+              <description>
+                <narrative>Report of target data - Testing narrative import</narrative>
+              </description>
+              <category code="A01" />
+              <language code="en" />
+              <document-date iso-date="2024-01-16" />
+            </document-link>
+          </target>
+          
+          <!-- Actual with narrative fields -->
+          <actual value="145">
+            <location ref="AF-KAN" />
+            <location ref="KH-PNH" />
+            <dimension name="sex" value="female" />
+            <dimension name="age" value="adult" />
+            
+            <!-- Actual comment -->
+            <comment>
+              <narrative>Actual comment text - Testing narrative import functionality</narrative>
+            </comment>
+            
+            <!-- Actual document link -->
+            <document-link format="application/pdf" url="http://www.example.org/docs/actual_en.pdf">
+              <title>
+                <narrative>Actual Report 2024 - Narrative Test</narrative>
+              </title>
+              <description>
+                <narrative>Report of actual results - Testing narrative import</narrative>
+              </description>
+              <category code="A01" />
+              <language code="en" />
+              <document-date iso-date="2024-01-16" />
+            </document-link>
+          </actual>
+        </period>
+      </indicator>
+    </result>
+  </iati-activity>
+</iati-activities>

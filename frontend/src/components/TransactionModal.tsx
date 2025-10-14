@@ -895,16 +895,17 @@ export default function TransactionModal({
   // Add missing states for isInternallySubmitting and validation toasts
   const [isInternallySubmitting, setIsInternallySubmitting] = useState(false);
 
+  // Dropdown coordination - track which dropdown is currently open
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
   // Helper functions for number formatting
   const formatNumberWithCommas = (num: number | string): string => {
     if (num === 0 || num === '' || num === null || num === undefined) return '';
-    const numStr = String(num);
-    // Handle decimal numbers
-    if (numStr.includes('.')) {
-      const [whole, decimal] = numStr.split('.');
-      return Number(whole).toLocaleString() + '.' + decimal;
-    }
-    return Number(numStr).toLocaleString();
+    const numValue = typeof num === 'string' ? parseFloat(num) : num;
+    return numValue.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   };
 
   const parseNumberFromFormatted = (formattedStr: string): number => {
@@ -1367,11 +1368,11 @@ export default function TransactionModal({
                       <div className="flex items-center space-x-3">
                         <Checkbox
                           id="validated"
-                          checked={formData.status === 'validated'}
+                          checked={formData.status === 'actual'}
                           onCheckedChange={(checked) => {
                             setFormData({
                               ...formData,
-                              status: checked ? 'validated' : 'submitted'
+                              status: checked ? 'actual' : 'draft'
                             });
                           }}
                           className="h-5 w-5"
@@ -1384,11 +1385,11 @@ export default function TransactionModal({
                         </div>
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-full ${
-                        formData.status === 'validated' 
+                        formData.status === 'actual' 
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-gray-100 text-gray-600'
                       }`}>
-                        {formData.status === 'validated' ? 'Validated' : 'Unvalidated'}
+                        {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
                       </div>
                     </div>
                   ) : (
@@ -1396,18 +1397,18 @@ export default function TransactionModal({
                     <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-gray-50 px-4 py-3">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-gray-500">
-                          {formData.status === 'validated' ? 'Validated Transaction' : 'Pending Validation'}
+                          {formData.status === 'actual' ? 'Validated Transaction' : 'Pending Validation'}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           Transaction is pending validation by relevant government focal points
                         </span>
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-full ${
-                        formData.status === 'validated' 
+                        formData.status === 'actual' 
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-gray-100 text-gray-600'
                       }`}>
-                        {formData.status === 'validated' ? 'Validated' : 'Pending'}
+                        {formData.status === 'actual' ? 'Validated' : 'Pending'}
                       </div>
                     </div>
                   )}
@@ -1594,6 +1595,8 @@ export default function TransactionModal({
                   }}
                   placeholder="Select provider organization"
                   className="w-full"
+                  open={openDropdown === 'provider-org'}
+                  onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'provider-org' : null)}
                 />
               </div>
 
@@ -1615,6 +1618,8 @@ export default function TransactionModal({
                   }}
                   placeholder="Search for provider activity..."
                   disabled={isSubmitting}
+                  open={openDropdown === 'provider-activity'}
+                  onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'provider-activity' : null)}
                 />
               </div>
 
@@ -1653,6 +1658,8 @@ export default function TransactionModal({
                   }}
                   placeholder="Select receiver organization"
                   className="w-full"
+                  open={openDropdown === 'receiver-org'}
+                  onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'receiver-org' : null)}
                 />
               </div>
 
@@ -1674,6 +1681,8 @@ export default function TransactionModal({
                   }}
                   placeholder="Search for receiver activity..."
                   disabled={isSubmitting}
+                  open={openDropdown === 'receiver-activity'}
+                  onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'receiver-activity' : null)}
                 />
               </div>
             </div>

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { fetchBasicActivityWithCache } from '@/lib/activity-cache';
+import { fetchBasicActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache';
 import { getSectorInfo, getCleanSectorName, getSectorInfoFlexible } from '@/lib/dac-sector-utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -17,11 +17,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem, CommandList, CommandInput, CommandEmpty } from '@/components/ui/command';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 import { IATIXMLParser, validateIATIXML } from '@/lib/xml-parser';
 import { IATI_REGIONS } from '@/data/iati-regions';
 import { IATI_COUNTRIES } from '@/data/iati-countries';
 import { LANGUAGES } from '@/data/languages';
 import { ExternalPublisherModal } from '@/components/import/ExternalPublisherModal';
+import { ImportValidationReport } from './results/ImportValidationReport';
 import { extractIatiMeta } from '@/lib/iati/parseMeta';
 import { useUser } from '@/hooks/useUser';
 import { setFieldSaved } from '@/utils/persistentSave';
@@ -157,6 +159,24 @@ interface ParsedField {
   policyMarkerData?: any; // The actual policy marker data object
   hasNonDacSectors?: boolean; // True if sector field has non-DAC sectors
   nonDacSectors?: any[]; // Array of non-DAC sectors
+  isTagField?: boolean; // True for tag import field
+  tagData?: Array<{
+    vocabulary?: string;
+    vocabularyUri?: string;
+    code?: string;
+    narrative?: string;
+  }>; // Array of tag data from XML
+  existingTags?: any[]; // Existing tags on the activity
+  isConditionsField?: boolean; // True for conditions import field
+  conditionsData?: {
+    attached: boolean;
+    conditions: Array<{
+      type?: string;
+      narrative?: string;
+      narrativeLang?: string;
+    }>;
+  }; // Conditions data from XML
+  isLocationItem?: boolean; // True for location items
 }
 
 interface TabSection {
@@ -374,6 +394,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [importStatus, setImportStatus] = useState<ImportStatus>(cachedData?.importStatus || { stage: 'idle' });
   const [xmlContent, setXmlContent] = useState<string>(cachedData?.xmlContent || '');
   const [isParsing, setIsParsing] = useState(false);
+  const [resultsImportSummary, setResultsImportSummary] = useState<any>(null);
   const [showXmlPreview, setShowXmlPreview] = useState(false);
   const [currentActivityData, setCurrentActivityData] = useState<ActivityData>({});
   const [activeImportTab, setActiveImportTab] = useState('basic');
@@ -434,6 +455,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   
   // Partners tab state
   const [activePartnerTab, setActivePartnerTab] = useState('reporting_org');
+  
+  // Basic tab state
+  const [activeBasicTab, setActiveBasicTab] = useState('identifiers_ids');
   
   // Helper function to generate detailed fields for a specific financial item
   const generateDetailedFields = (itemType: 'budget' | 'transaction' | 'plannedDisbursement', itemData: any, itemIndex: number): ParsedField[] => {
@@ -1133,6 +1157,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     if (trimmed.includes('<recipient-country')) return 'recipient-country';
     if (trimmed.includes('<recipient-region')) return 'recipient-region';
     if (trimmed.includes('<participating-org') || trimmed.includes('<reporting-org')) return 'organization';
+    if (trimmed.includes('<contact-info')) return 'contact';
     if (trimmed.includes('<policy-marker')) return 'policy-marker';
     if (trimmed.includes('<budget')) return 'budget';
     if (trimmed.includes('<iati-activity')) return 'full-activity';
@@ -1261,6 +1286,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         // Detect snippet type BEFORE wrapping
         const snippetType = detectSnippetType(snippetContent.trim());
         console.log('[XML Import Debug] Detected snippet type:', snippetType);
+        console.log('[XML Import Debug] Original snippet content:', snippetContent.trim().substring(0, 200));
         
         // Store snippet type in state for filtering later
         (window as any).__snippetType = snippetType;
@@ -1274,6 +1300,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         
         // Wrap snippet if needed to make it a valid IATI XML
         const wrappedContent = wrapSnippetIfNeeded(snippetContent.trim());
+        console.log('[XML Import Debug] Wrapped content:', wrappedContent.substring(0, 500));
         content = wrappedContent;
         // Create a File object from the snippet for metadata extraction
         fileToCheck = new File([content], 'snippet.xml', { type: 'text/xml' });
@@ -1381,7 +1408,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.iatiIdentifier,
           selected: shouldSelectField(currentValue, parsedActivity.iatiIdentifier),
           hasConflict: hasConflict(currentValue, parsedActivity.iatiIdentifier),
-          tab: 'basic',
+          tab: 'identifiers_ids',
           description: 'Unique identifier for this activity'
         });
       }
@@ -1396,7 +1423,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.otherIdentifier,
           selected: shouldSelectField(currentValue, parsedActivity.otherIdentifier),
           hasConflict: hasConflict(currentValue, parsedActivity.otherIdentifier),
-          tab: 'basic',
+          tab: 'identifiers_ids',
           description: 'Other identifier for this activity (e.g., internal project ID)'
         });
       }
@@ -1416,7 +1443,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.title,
           selected: shouldSelectField(currentValue, parsedActivity.title),
           hasConflict: hasConflict(currentValue, parsedActivity.title),
-          tab: 'basic',
+          tab: 'other',
           description: 'Main title/name of the activity'
         });
       }
@@ -1435,7 +1462,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.description,
           selected: shouldSelectField(currentValue, parsedActivity.description),
           hasConflict: hasConflict(currentValue, parsedActivity.description),
-          tab: 'basic',
+          tab: 'descriptions',
           description: 'General activity description (IATI type="1")'
         });
       }
@@ -1453,7 +1480,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.descriptionObjectives,
           selected: shouldSelectField(currentValue, parsedActivity.descriptionObjectives),
           hasConflict: hasConflict(currentValue, parsedActivity.descriptionObjectives),
-          tab: 'basic',
+          tab: 'descriptions',
           description: 'Objectives of the activity (IATI type="2")'
         });
       }
@@ -1471,7 +1498,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.descriptionTargetGroups,
           selected: shouldSelectField(currentValue, parsedActivity.descriptionTargetGroups),
           hasConflict: hasConflict(currentValue, parsedActivity.descriptionTargetGroups),
-          tab: 'basic',
+          tab: 'descriptions',
           description: 'Target groups and beneficiaries (IATI type="3")'
         });
       }
@@ -1485,7 +1512,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.descriptionOther,
           selected: shouldSelectField(currentValue, parsedActivity.descriptionOther),
           hasConflict: hasConflict(currentValue, parsedActivity.descriptionOther),
-          tab: 'basic',
+          tab: 'descriptions',
           description: 'Other relevant information'
         });
       }
@@ -1500,7 +1527,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: importCollabLabel,
           selected: shouldSelectField(currentCollabLabel, importCollabLabel),
           hasConflict: hasConflict(currentCollabLabel, importCollabLabel),
-          tab: 'basic',
+          tab: 'other',
           description: 'Type of collaboration arrangement'
         });
       }
@@ -1515,7 +1542,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: importStatusLabel,
           selected: shouldSelectField(currentStatusLabel, importStatusLabel),
           hasConflict: hasConflict(currentStatusLabel, importStatusLabel),
-          tab: 'basic',
+          tab: 'other',
           description: 'Current implementation status'
         });
       }
@@ -1530,7 +1557,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: importScopeLabel,
           selected: shouldSelectField(currentScopeLabel, importScopeLabel),
           hasConflict: hasConflict(currentScopeLabel, importScopeLabel),
-          tab: 'basic',
+          tab: 'other',
           description: 'Geographical scope of the activity'
         });
       }
@@ -1561,7 +1588,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.plannedStartDate,
           selected: shouldSelectField(currentValue, parsedActivity.plannedStartDate),
           hasConflict: hasConflict(currentValue, parsedActivity.plannedStartDate),
-          tab: 'basic',
+          tab: 'dates',
           description: 'When the activity is planned to begin'
         });
       }
@@ -1574,7 +1601,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.plannedEndDate,
           selected: shouldSelectField(currentActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
           hasConflict: hasConflict(currentActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
-          tab: 'basic',
+          tab: 'dates',
           description: 'When the activity is planned to end'
         });
       }
@@ -1587,7 +1614,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.actualStartDate,
           selected: shouldSelectField(currentActivityData.actual_start_date || null, parsedActivity.actualStartDate),
           hasConflict: hasConflict(currentActivityData.actual_start_date || null, parsedActivity.actualStartDate),
-          tab: 'basic',
+          tab: 'dates',
           description: 'When the activity actually started'
         });
       }
@@ -1600,8 +1627,45 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           importValue: parsedActivity.actualEndDate,
           selected: shouldSelectField(currentActivityData.actual_end_date || null, parsedActivity.actualEndDate),
           hasConflict: hasConflict(currentActivityData.actual_end_date || null, parsedActivity.actualEndDate),
-          tab: 'basic',
+          tab: 'dates',
           description: 'When the activity actually ended'
+        });
+      }
+
+      // === OTHER IDENTIFIERS (in BASIC TAB) ===
+      
+      if (parsedActivity.otherIdentifiers && parsedActivity.otherIdentifiers.length > 0) {
+        parsedActivity.otherIdentifiers.forEach((identifier: any, index: number) => {
+          const identifierRef = identifier.ref || 'No identifier';
+          
+          // Get identifier type name for display
+          const identifierTypeNames: { [key: string]: string } = {
+            'A1': 'Reporting Organisation\'s internal activity identifier',
+            'A2': 'CRS Activity identifier',
+            'A3': 'Previous Activity Identifier',
+            'A9': 'Other Activity Identifier',
+            'B1': 'Previous Reporting Organisation Identifier',
+            'B9': 'Other Organisation Identifier'
+          };
+          const typeName = identifier.type ? identifierTypeNames[identifier.type] || identifier.type : 'Unknown type';
+          const typeCode = identifier.type || 'N/A';
+          
+          fields.push({
+            fieldName: `Other Identifier ${index + 1}`,
+            iatiPath: `iati-activity/other-identifier[${index}]`,
+            currentValue: null,
+            importValue: {
+              code: identifierRef,
+              type: typeCode,
+              name: typeName,
+              ownerOrg: identifier.ownerOrg,
+              _rawData: identifier // Keep raw data for import processing
+            },
+            selected: false,
+            hasConflict: false,
+            tab: 'identifiers_ids',
+            description: `${typeCode} - ${typeName}`
+          });
         });
       }
 
@@ -1693,28 +1757,146 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      if (parsedActivity.capitalSpendPercentage !== undefined && parsedActivity.capitalSpendPercentage !== null) {
+        const currentCapitalSpend = currentActivityData.capital_spend_percentage;
+        const importCapitalSpend = parsedActivity.capitalSpendPercentage;
+        fields.push({
+          fieldName: 'Capital Spend Percentage',
+          iatiPath: 'iati-activity/capital-spend',
+          currentValue: currentCapitalSpend !== null && currentCapitalSpend !== undefined ? `${currentCapitalSpend}%` : null,
+          importValue: `${importCapitalSpend}%`,
+          selected: shouldSelectField(currentCapitalSpend, importCapitalSpend),
+          hasConflict: hasConflict(currentCapitalSpend, importCapitalSpend),
+          tab: 'finances',
+          description: 'Percentage of budget used for capital expenditure'
+        });
+      }
+
+      // === FINANCING TERMS (CRS-ADD) ===
+      
+      if (parsedActivity.financingTerms) {
+        const ft = parsedActivity.financingTerms;
+        
+        // Display loan terms if present
+        if (ft.loanTerms) {
+          const loanTermsSummary = [];
+          if (ft.loanTerms.rate_1) loanTermsSummary.push(`Rate 1: ${ft.loanTerms.rate_1}%`);
+          if (ft.loanTerms.rate_2) loanTermsSummary.push(`Rate 2: ${ft.loanTerms.rate_2}%`);
+          if (ft.loanTerms.repayment_type_code) loanTermsSummary.push(`Repayment Type: ${ft.loanTerms.repayment_type_code}`);
+          if (ft.loanTerms.commitment_date) loanTermsSummary.push(`Commitment: ${ft.loanTerms.commitment_date}`);
+          
+          if (loanTermsSummary.length > 0) {
+            fields.push({
+              fieldName: 'Loan Terms',
+              iatiPath: 'iati-activity/crs-add/loan-terms',
+              currentValue: null,
+              importValue: loanTermsSummary.join(', '),
+              selected: true,
+              hasConflict: false,
+              tab: 'finances',
+              description: 'OECD CRS loan terms including interest rates and repayment schedule'
+            });
+          }
+        }
+        
+        // Display loan statuses if present
+        if (ft.loanStatuses && ft.loanStatuses.length > 0) {
+          fields.push({
+            fieldName: 'Loan Status (Yearly)',
+            iatiPath: 'iati-activity/crs-add/loan-status',
+            currentValue: null,
+            importValue: `${ft.loanStatuses.length} year(s) of loan status data`,
+            selected: true,
+            hasConflict: false,
+            tab: 'finances',
+            description: 'Annual loan status including principal outstanding and arrears'
+          });
+        }
+        
+        // Display CRS flags if present
+        if (ft.other_flags && ft.other_flags.length > 0) {
+          fields.push({
+            fieldName: 'OECD CRS Flags',
+            iatiPath: 'iati-activity/crs-add/other-flags',
+            currentValue: null,
+            importValue: ft.other_flags.map(f => `Code ${f.code}`).join(', '),
+            selected: true,
+            hasConflict: false,
+            tab: 'finances',
+            description: 'OECD CRS reporting flags'
+          });
+        }
+      }
+
       // === BUDGETS TAB ===
       
       if (parsedActivity.budgets && parsedActivity.budgets.length > 0) {
         parsedActivity.budgets.forEach((budget, budgetIndex) => {
-          // Create budget summary
+          // Validation checks
+          const warnings = [];
+          
+          if (!budget.period?.start) warnings.push('Missing period-start');
+          if (!budget.period?.end) warnings.push('Missing period-end');
+          if (!budget.value && budget.value !== 0) warnings.push('Missing value');
+          if (!budget.valueDate) warnings.push('Missing value-date');
+          
+          // Check period length
+          if (budget.period?.start && budget.period?.end) {
+            const start = new Date(budget.period.start);
+            const end = new Date(budget.period.end);
+            const daysDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+            
+            if (start >= end) {
+              warnings.push('⚠️ Period start must be before end');
+            }
+            if (daysDiff > 366) {
+              warnings.push('⚠️ Period exceeds 1 year (not IATI compliant)');
+            }
+          }
+          
+          // Check type and status codes
+          const type = parseInt(budget.type || '1');
+          if (![1, 2].includes(type)) {
+            warnings.push(`⚠️ Invalid type: ${type} (must be 1 or 2)`);
+          }
+          
+          const status = parseInt(budget.status || '1');
+          if (![1, 2].includes(status)) {
+            warnings.push(`⚠️ Invalid status: ${status} (must be 1 or 2)`);
+          }
+          
+          // Check value is non-negative
+          if (budget.value !== undefined && budget.value < 0) {
+            warnings.push('⚠️ Value must be >= 0');
+          }
+          
+          // Type and status labels
+          const typeLabel = type === 1 ? 'Original' : type === 2 ? 'Revised' : `Unknown (${type})`;
+          const statusLabel = status === 1 ? 'Indicative' : status === 2 ? 'Committed' : `Unknown (${status})`;
+          
+          // Create budget summary with validation warnings
           const budgetSummary = [
-            budget.type && `Type: ${budget.type}`,
-            budget.status && `Status: ${budget.status}`,
+            `Type: ${typeLabel}`,
+            `Status: ${statusLabel}`,
             budget.period?.start && `Start: ${budget.period.start}`,
             budget.period?.end && `End: ${budget.period.end}`,
-            budget.value && `Amount: ${budget.value.toLocaleString()} ${budget.currency || ''}`
+            budget.value !== undefined && `Amount: ${budget.value.toLocaleString()} ${budget.currency || parsedActivity.defaultCurrency || ''}`,
+            budget.valueDate && `Value Date: ${budget.valueDate}`
           ].filter(Boolean).join(' | ');
+          
+          const description = warnings.length > 0
+            ? `Budget ${budgetIndex + 1} - ${warnings.join(', ')}`
+            : `Budget ${budgetIndex + 1} - IATI compliant ✓`;
           
           fields.push({
             fieldName: `Budget ${budgetIndex + 1}`,
             iatiPath: `iati-activity/budget[${budgetIndex + 1}]`,
             currentValue: null,
             importValue: budgetSummary,
-            selected: false,
-            hasConflict: false,
+            selected: warnings.length === 0, // Auto-select if valid
+            hasConflict: warnings.length > 0,
             tab: 'budgets',
-            description: `Budget ${budgetIndex + 1} - Click to configure individual fields`,
+            description,
             isFinancialItem: true,
             itemType: 'budget',
             itemIndex: budgetIndex,
@@ -1727,25 +1909,63 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       
       if (parsedActivity.plannedDisbursements && parsedActivity.plannedDisbursements.length > 0) {
         parsedActivity.plannedDisbursements.forEach((disbursement, disbIndex) => {
-          // Create disbursement summary
+          // Validation checks
+          const warnings = [];
+          
+          // Required field validation
+          if (!disbursement.period?.start) warnings.push('Missing period-start');
+          if (!disbursement.period?.end) warnings.push('Missing period-end');
+          if (!disbursement.value && disbursement.value !== 0) warnings.push('Missing value');
+          if (!disbursement.valueDate) warnings.push('Missing value-date');
+          
+          // Period validation
+          if (disbursement.period?.start && disbursement.period?.end) {
+            const start = new Date(disbursement.period.start);
+            const end = new Date(disbursement.period.end);
+            
+            if (start >= end) {
+              warnings.push('⚠️ Period start must be before end');
+            }
+          }
+          
+          // Type validation
+          if (disbursement.type && !['1', '2'].includes(disbursement.type)) {
+            warnings.push(`⚠️ Invalid type: ${disbursement.type} (must be 1 or 2)`);
+          }
+          
+          // Value validation
+          if (disbursement.value !== undefined && disbursement.value < 0) {
+            warnings.push('⚠️ Value must be >= 0');
+          }
+          
+          // Type label
+          const typeLabel = disbursement.type === '1' ? 'Original' : 
+                            disbursement.type === '2' ? 'Revised' : 
+                            disbursement.type ? `Type ${disbursement.type}` : '';
+          
+          // Enhanced summary
           const disbursementSummary = [
-            disbursement.type && `Type: ${disbursement.type}`,
+            typeLabel && `Type: ${typeLabel}`,
             disbursement.period?.start && `Start: ${disbursement.period.start}`,
             disbursement.period?.end && `End: ${disbursement.period.end}`,
-            disbursement.value && `Amount: ${disbursement.value.toLocaleString()} ${disbursement.currency || ''}`,
+            disbursement.value !== undefined && `Amount: ${disbursement.value.toLocaleString()} ${disbursement.currency || parsedActivity.defaultCurrency || ''}`,
             disbursement.providerOrg?.name && `Provider: ${disbursement.providerOrg.name}`,
             disbursement.receiverOrg?.name && `Receiver: ${disbursement.receiverOrg.name}`
           ].filter(Boolean).join(' | ');
+          
+          const description = warnings.length > 0
+            ? `Planned Disbursement ${disbIndex + 1} - ${warnings.join(', ')}`
+            : `Planned Disbursement ${disbIndex + 1} - IATI compliant ✓`;
           
           fields.push({
             fieldName: `Planned Disbursement ${disbIndex + 1}`,
             iatiPath: `iati-activity/planned-disbursement[${disbIndex + 1}]`,
             currentValue: null,
             importValue: disbursementSummary,
-            selected: false,
-            hasConflict: false,
+            selected: warnings.length === 0, // Auto-select if valid
+            hasConflict: warnings.length > 0,
             tab: 'planned_disbursements',
-            description: `Planned Disbursement ${disbIndex + 1} - Click to configure individual fields`,
+            description,
             isFinancialItem: true,
             itemType: 'plannedDisbursement',
             itemIndex: disbIndex,
@@ -2198,6 +2418,52 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      // === TAGS ===
+      
+      if (parsedActivity.tagClassifications && parsedActivity.tagClassifications.length > 0) {
+        // Fetch existing tags on this activity
+        let existingTags: any[] = [];
+        try {
+          const tagsResponse = await fetch(`/api/activities/${activityId}/tags`);
+          if (tagsResponse.ok) {
+            existingTags = await tagsResponse.json();
+            console.log('[XML Import] Fetched existing tags:', existingTags);
+          } else if (tagsResponse.status === 405) {
+            console.warn('[XML Import] Tags GET endpoint not available (405), skipping conflict detection');
+          } else {
+            console.error('[XML Import] Failed to fetch tags:', tagsResponse.status, tagsResponse.statusText);
+          }
+        } catch (error) {
+          console.warn('[XML Import] Error fetching existing tags:', error);
+        }
+
+        const currentTagsValue = existingTags.length > 0 
+          ? existingTags.map(t => t.name).join(', ')
+          : 'None';
+
+        const importTagsValue = parsedActivity.tagClassifications.map((tag: any) => {
+          const vocabLabel = tag.vocabulary === '1' ? '[Standard]' : 
+                            tag.vocabulary === '99' ? '[Custom]' : 
+                            tag.vocabulary ? `[Vocab ${tag.vocabulary}]` : '';
+          const codeLabel = tag.code ? ` (${tag.code})` : '';
+          return `${vocabLabel}${codeLabel} ${tag.narrative || 'Unnamed tag'}`;
+        }).join(', ');
+
+        fields.push({
+          fieldName: 'Tags',
+          iatiPath: 'iati-activity/tag',
+          currentValue: currentTagsValue,
+          importValue: importTagsValue,
+          selected: false,
+          hasConflict: existingTags.length > 0,
+          tab: 'tags',
+          description: `${parsedActivity.tagClassifications.length} tag(s) found in XML`,
+          isTagField: true,
+          tagData: parsedActivity.tagClassifications,
+          existingTags: existingTags
+        });
+      }
+
       // === PARTNERS TAB ===
       
       if (parsedActivity.reportingOrg) {
@@ -2289,32 +2555,87 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      // === CONDITIONS ===
+      
+      if (parsedActivity.conditions && parsedActivity.conditions.conditions.length > 0) {
+        // Fetch existing conditions
+        let existingConditions: any[] = [];
+        try {
+          const { data, error } = await supabase
+            .from('activity_conditions')
+            .select('*')
+            .eq('activity_id', activityId);
+          
+          if (!error && data) {
+            existingConditions = data;
+            console.log('[XML Import] Fetched existing conditions:', existingConditions);
+          }
+        } catch (error) {
+          console.warn('[XML Import] Error fetching existing conditions:', error);
+        }
+
+        const currentConditionsValue = existingConditions.length > 0 
+          ? `${existingConditions.length} condition(s) (Attached: ${existingConditions[0]?.attached ? 'Yes' : 'No'})`
+          : 'None';
+
+        const importConditionsValue = parsedActivity.conditions.conditions.map((cond: any) => {
+          const typeLabel = cond.type === '1' ? 'Policy' : 
+                           cond.type === '2' ? 'Performance' : 
+                           cond.type === '3' ? 'Fiduciary' : 'Unknown';
+          return `[${typeLabel}] ${cond.narrative || 'No description'}`;
+        }).join('; ');
+
+        fields.push({
+          fieldName: 'Conditions',
+          iatiPath: 'iati-activity/conditions',
+          currentValue: currentConditionsValue,
+          importValue: `${parsedActivity.conditions.conditions.length} condition(s) (Attached: ${parsedActivity.conditions.attached ? 'Yes' : 'No'})`,
+          selected: false,
+          hasConflict: existingConditions.length > 0,
+          tab: 'conditions',
+          description: importConditionsValue,
+          isConditionsField: true,
+          conditionsData: parsedActivity.conditions,
+        });
+      }
+
       // === CONTACTS TAB ===
 
       if (parsedActivity.contactInfo && parsedActivity.contactInfo.length > 0) {
+        // Contact type labels for display
+        const contactTypeLabels: Record<string, string> = {
+          '1': 'General Enquiries',
+          '2': 'Project Management',
+          '3': 'Financial Management',
+          '4': 'Communications'
+        };
+
         parsedActivity.contactInfo.forEach((contact: any, index: number) => {
-          const contactType = contact.type || 'Contact';
-          const contactName = contact.organization?.narrative || contact.personName?.narrative || 'N/A';
+          const contactTypeCode = contact.type || '1';
+          const contactTypeLabel = contactTypeLabels[contactTypeCode] || 'Contact';
+          const contactName = contact.personName || contact.organization || 'Contact';
+          
+          console.log('[XML Import Debug] Processing contact:', contact);
           
         fields.push({
-            fieldName: `${contactType}: ${contactName}`,
-            iatiPath: `iati-activity/contact-info[${index}]`,
+            fieldName: `Contact ${index + 1}: ${contactName}`,
+            iatiPath: `iati-activity/contact-info[${index + 1}]`,
           currentValue: null,
             importValue: {
-              type: contactType,
-              organization: contact.organization?.narrative || null,
-              personName: contact.personName?.narrative || null,
-              jobTitle: contact.jobTitle?.narrative || null,
-              department: contact.department?.narrative || null,
+              type: contactTypeCode,
+              organization: contact.organization || null,
+              personName: contact.personName || null,
+              jobTitle: contact.jobTitle || null,
+              department: contact.department || null,
               email: contact.email || null,
               telephone: contact.telephone || null,
               website: contact.website || null,
-              mailingAddress: contact.mailingAddress?.narrative || null
+              mailingAddress: contact.mailingAddress || null
             },
           selected: false,
           hasConflict: false,
             tab: 'contacts',
-            description: `${contactType} contact information`
+            description: `${contactTypeLabel} contact: ${contactName}`
           });
         });
       }
@@ -2571,6 +2892,22 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           case 'Default Tied Status':
             updateData.default_tied_status = typeof field.importValue === 'object' ? field.importValue.code : field.importValue;
             break;
+          case 'Capital Spend Percentage':
+            // Extract numeric value from string like "88.8%"
+            const percentageStr = typeof field.importValue === 'string' ? field.importValue : String(field.importValue);
+            const numericValue = parseFloat(percentageStr.replace('%', ''));
+            console.log(`[XML Import] Processing Capital Spend Percentage: ${percentageStr} -> ${numericValue}`);
+            // Validate range 0-100 and round to 2 decimal places
+            if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 100) {
+              updateData.capital_spend_percentage = Math.round(numericValue * 100) / 100;
+              console.log(`[XML Import] ✅ Capital spend percentage set to: ${updateData.capital_spend_percentage}`);
+            } else if (!isNaN(numericValue)) {
+              console.warn(`[XML Import] Capital spend percentage ${numericValue} is out of range (0-100), skipping`);
+            } else {
+              updateData.capital_spend_percentage = null;
+              console.warn(`[XML Import] Invalid capital spend percentage value: ${percentageStr}`);
+            }
+            break;
           case 'Sectors':
             // Handle sector imports - this will be processed separately after main activity update
             updateData._importSectors = true;
@@ -2667,8 +3004,22 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             // Handle policy markers import - this will be processed separately after main activity update
               updateData._importPolicyMarkers = true;
             break;
+          case 'Tags':
+            // Handle tags import - will be processed separately after main activity update
+            updateData._importTags = true;
+            break;
+          case 'Results Framework':
+            // Handle results import - will be processed separately after main activity update
+            updateData._importResults = true;
+            break;
           default:
-            if (field.fieldName === 'Participating Organization' || field.fieldName.startsWith('Participating Organization:')) {
+            if (field.fieldName.startsWith('Other Identifier ')) {
+              // Collect other identifier data for import (use raw data if available)
+              if (!updateData.importedOtherIdentifiers) updateData.importedOtherIdentifiers = [];
+              const rawData = (field.importValue as any)?._rawData || field.importValue;
+              updateData.importedOtherIdentifiers.push(rawData);
+              console.log(`[XML Import] Adding other identifier for import:`, rawData);
+            } else if (field.fieldName === 'Participating Organization' || field.fieldName.startsWith('Participating Organization:')) {
               // Collect participating organization data for import
               if (!updateData.importedParticipatingOrgs) updateData.importedParticipatingOrgs = [];
               updateData.importedParticipatingOrgs.push(field.importValue);
@@ -2710,6 +3061,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 updateData.importedLocations.push(parsedActivity.locations[locationIndex]);
               }
               console.log(`[XML Import] Adding location ${locationIndex + 1} for import`);
+            } else if (field.tab === 'contacts' || field.fieldName.includes('Contact')) {
+              // Collect contact data for import
+              if (!updateData.importedContacts) updateData.importedContacts = [];
+              updateData.importedContacts.push(field.importValue);
+              console.log(`[XML Import] Adding contact for import:`, field.importValue);
             }
             break;
         }
@@ -2740,6 +3096,59 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         const errorText = await response.text();
         console.error('[XML Import] API Error response:', errorText);
         throw new Error(`Failed to update activity: ${response.statusText}`);
+      }
+
+      // Handle other identifiers import if any
+      if (updateData.importedOtherIdentifiers && updateData.importedOtherIdentifiers.length > 0) {
+        console.log('[XML Import] Processing other identifiers import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 80,
+          message: 'Importing other identifiers...'
+        });
+
+        try {
+          // Transform the imported other identifiers to the format expected by the database
+          const otherIdentifiersData = updateData.importedOtherIdentifiers.map((identifier: any) => ({
+            type: identifier.type || identifier._rawData?.type,
+            code: identifier.ref || identifier.code || identifier._rawData?.ref,
+            ownerOrg: identifier.ownerOrg || identifier._rawData?.ownerOrg
+          }));
+
+          console.log('[XML Import] Saving other identifiers:', otherIdentifiersData);
+
+          // Save using the field API
+          const otherIdentifiersResponse = await fetch(`/api/activities/field`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              activityId: activityId,
+              field: 'otherIdentifiers',
+              value: otherIdentifiersData
+            }),
+          });
+
+          if (!otherIdentifiersResponse.ok) {
+            const errorData = await otherIdentifiersResponse.json();
+            console.error('[XML Import] Other identifiers import API error:', errorData);
+            toast.error('Failed to import other identifiers', {
+              description: errorData.error || 'Could not import other identifier data. Main activity data was imported successfully.'
+            });
+          } else {
+            const successData = await otherIdentifiersResponse.json();
+            console.log('[XML Import] Other identifiers imported successfully:', successData);
+            toast.success(`Other identifiers imported successfully`, {
+              description: `${otherIdentifiersData.length} identifier(s) added to the activity`
+            });
+          }
+        } catch (otherIdentifiersError) {
+          console.error('[XML Import] Other identifiers import network error:', otherIdentifiersError);
+          toast.error('Failed to import other identifiers', {
+            description: 'Network error occurred while importing other identifiers. Please check your connection and try again.'
+          });
+        }
       }
 
       // Handle sector imports if any
@@ -2978,6 +3387,81 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           console.error('[XML Import] Locations import network error:', locationError);
           toast.error('Failed to import locations', {
             description: 'Network error occurred while importing locations. Please check your connection and try again.'
+          });
+        }
+      }
+
+      // Handle contacts import if any
+      if (updateData.importedContacts && updateData.importedContacts.length > 0) {
+        console.log('[XML Import] Processing contacts import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 88,
+          message: 'Importing contacts...'
+        });
+
+        try {
+          // Import contact-utils for mapping IATI contacts and deduplication
+          const { mapIatiContactToDb, deduplicateContacts, mergeContact } = await import('@/lib/contact-utils');
+          
+          // Transform IATI contact data to database format
+          const newContacts = updateData.importedContacts.map((contact: any) => {
+            return mapIatiContactToDb(contact);
+          });
+
+          console.log('[XML Import] Transformed contacts data:', newContacts);
+
+          // Fetch existing contacts for deduplication
+          let existingContacts: any[] = [];
+          try {
+            const existingResponse = await fetch(`/api/activities/${activityId}/contacts`);
+            if (existingResponse.ok) {
+              existingContacts = await existingResponse.json();
+            }
+          } catch (error) {
+            console.warn('[XML Import] Could not fetch existing contacts for deduplication:', error);
+          }
+
+          // Merge new contacts with existing, using deduplication
+          const allContacts = [...existingContacts, ...newContacts];
+          const contactsData = deduplicateContacts(allContacts);
+
+          console.log('[XML Import] After deduplication:', {
+            existing: existingContacts.length,
+            new: newContacts.length,
+            deduplicated: contactsData.length
+          });
+
+          // Save using field API
+          const contactsResponse = await fetch(`/api/activities/field`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              activityId: activityId,
+              field: 'contacts',
+              value: contactsData
+            }),
+          });
+
+          if (!contactsResponse.ok) {
+            const errorData = await contactsResponse.json();
+            console.error('[XML Import] Contacts import API error:', errorData);
+            toast.error('Failed to import contacts', {
+              description: errorData.error || 'Could not import contact data. Main activity data was imported successfully.'
+            });
+          } else {
+            const successData = await contactsResponse.json();
+            console.log('[XML Import] Contacts imported successfully:', successData);
+            toast.success(`Contacts imported successfully`, {
+              description: `${contactsData.length} contact(s) added to the activity`
+            });
+          }
+        } catch (contactError) {
+          console.error('[XML Import] Contacts import network error:', contactError);
+          toast.error('Failed to import contacts', {
+            description: 'Network error occurred while importing contacts. Please check your connection and try again.'
           });
         }
       }
@@ -3227,6 +3711,312 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         }
       }
 
+      // Handle tags import if any
+      if (updateData._importTags) {
+        console.log('[XML Import] Processing tags import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 91,
+          message: 'Importing tags...'
+        });
+
+        try {
+          // Get the tag field data
+          const tagField = parsedFields.find(f => f.fieldName === 'Tags' && f.selected);
+          
+          if (tagField && tagField.tagData) {
+            const tagsToImport = tagField.tagData;
+            const existingTags = tagField.existingTags || [];
+            
+            console.log('[XML Import] Tags to import:', tagsToImport);
+            console.log('[XML Import] Existing tags:', existingTags);
+            
+            // Track import results
+            const importResults = {
+              successful: [] as string[],
+              failed: [] as { tag: string; error: string }[],
+              skipped: [] as string[]
+            };
+            
+            // Process each tag from XML
+            for (const xmlTag of tagsToImport) {
+              const tagName = xmlTag.narrative || xmlTag.code || 'Unnamed tag';
+              
+              try {
+                // Create tag with IATI vocabulary info
+                const tagResponse = await fetch('/api/tags', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    name: tagName,
+                    vocabulary: xmlTag.vocabulary || '99',
+                    code: xmlTag.code,
+                    vocabulary_uri: xmlTag.vocabularyUri,
+                    created_by: user?.id
+                  })
+                });
+
+                if (!tagResponse.ok) {
+                  const errorData = await tagResponse.json();
+                  console.error('[XML Import] Tag creation error:', errorData);
+                  importResults.failed.push({
+                    tag: tagName,
+                    error: errorData.error || 'Creation failed'
+                  });
+                  continue;
+                }
+
+                const tag = await tagResponse.json();
+                console.log('[XML Import] Tag created/found:', tag);
+                
+                // Link tag to activity
+                const linkResponse = await fetch(`/api/activities/${activityId}/tags`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ tag_id: tag.id })
+                });
+
+                if (linkResponse.ok) {
+                  importResults.successful.push(tag.name);
+                  console.log('[XML Import] Tag linked to activity:', tag.name);
+                } else {
+                  const linkError = await linkResponse.json();
+                  if (linkError.message === 'Tag already linked to activity') {
+                    importResults.skipped.push(tag.name);
+                  } else {
+                    console.error('[XML Import] Tag linking error:', linkError);
+                    importResults.failed.push({
+                      tag: tag.name,
+                      error: 'Failed to link to activity'
+                    });
+                  }
+                }
+              } catch (tagError: any) {
+                console.error('[XML Import] Error processing tag:', xmlTag, tagError);
+                importResults.failed.push({
+                  tag: tagName,
+                  error: tagError.message || 'Unknown error'
+                });
+              }
+            }
+            
+            // Provide comprehensive feedback
+            if (importResults.successful.length > 0) {
+              console.log('[XML Import] Successfully imported tags:', importResults.successful);
+              toast.success(`${importResults.successful.length} tag(s) imported successfully`);
+              
+              // Invalidate cache and trigger page reload to show tags
+              invalidateActivityCache(activityId);
+              
+              // Trigger page reload after a short delay to show tags in UI
+              setTimeout(() => {
+                console.log('[XML Import] Reloading page to display imported tags...');
+                window.location.reload();
+              }, 1500);
+            }
+            
+            if (importResults.skipped.length > 0) {
+              console.log('[XML Import] Skipped tags:', importResults.skipped);
+              toast.info(`${importResults.skipped.length} tag(s) already linked to activity`);
+            }
+            
+            if (importResults.failed.length > 0) {
+              console.error('[XML Import] Failed tags:', importResults.failed);
+              const failedSummary = importResults.failed.slice(0, 3)
+                .map(f => `${f.tag}: ${f.error}`)
+                .join('; ');
+              
+              toast.error(`${importResults.failed.length} tag(s) failed to import`, {
+                description: failedSummary + (importResults.failed.length > 3 ? '...' : '')
+              });
+            }
+            
+            if (importResults.successful.length === 0 && importResults.skipped.length === 0) {
+              toast.warning('No tags could be imported', {
+                description: 'All tags failed. Please check the console for details.'
+              });
+            }
+          }
+        } catch (tagsError: any) {
+          console.error('[XML Import] Tags import error:', tagsError);
+          toast.error('Failed to import tags', {
+            description: `An error occurred while processing tags: ${tagsError.message}`
+          });
+        }
+      }
+
+      // Handle results import
+      if (updateData._importResults) {
+        console.log('[XML Import] Processing results import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 89,
+          message: 'Importing results framework...'
+        });
+
+        try {
+          if (parsedActivity.results && parsedActivity.results.length > 0) {
+            console.log(`[XML Import] Importing ${parsedActivity.results.length} result(s)...`);
+            
+            const importResponse = await fetch(`/api/activities/${activityId}/results/import`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ 
+                results: parsedActivity.results,
+                mode: 'create'
+              }),
+            });
+
+            if (!importResponse.ok) {
+              const errorText = await importResponse.text();
+              console.error('[XML Import] Results import failed:', {
+                status: importResponse.status,
+                statusText: importResponse.statusText,
+                error: errorText
+              });
+              
+              let errorMessage = 'Results could not be imported. Main activity data was imported successfully.';
+              try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.error || errorData.details || errorMessage;
+              } catch (e) {
+                errorMessage = errorText || errorMessage;
+              }
+              
+              toast.error('Failed to import results', {
+                description: errorMessage
+              });
+            } else {
+              const successData = await importResponse.json();
+              const summary = successData.summary;
+              console.log('[XML Import] Results imported successfully:', summary);
+              
+              // Store summary for detailed validation report
+              setResultsImportSummary(summary);
+              
+              const successMessage = [
+                `${summary.results_created} result(s)`,
+                `${summary.indicators_created} indicator(s)`,
+                `${summary.periods_created} period(s)`
+              ].join(', ');
+              
+              toast.success('Results imported successfully', {
+                description: successMessage
+              });
+              
+              // Show warnings if there were any errors
+              if (summary.errors && summary.errors.length > 0) {
+                console.warn('[XML Import] Results import had some errors:', summary.errors);
+                toast.warning(`${summary.errors.length} item(s) had issues`, {
+                  description: summary.errors.slice(0, 2).map((e: any) => e.message).join('; ')
+                });
+              }
+            }
+          } else {
+            console.log('[XML Import] No results found in parsed activity');
+            toast.info('No results found in XML');
+          }
+        } catch (resultsError: any) {
+          console.error('[XML Import] Results import error:', resultsError);
+          toast.error('Failed to import results', {
+            description: `An error occurred while processing results: ${resultsError.message}`
+          });
+        }
+      }
+
+      // Handle conditions import
+      const conditionsField = parsedFields.find(f => f.fieldName === 'Conditions' && f.selected);
+      if (conditionsField && (conditionsField as any).isConditionsField && (conditionsField as any).conditionsData) {
+        console.log('[XML Import] Processing conditions import...');
+        console.log('[XML Import] Conditions data:', (conditionsField as any).conditionsData);
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 87,
+          message: 'Importing conditions...'
+        });
+
+        try {
+          const conditionsData = (conditionsField as any).conditionsData;
+          const totalConditions = conditionsData.conditions.length;
+          console.log('[XML Import] Total conditions to process:', totalConditions);
+          
+          // Delete existing conditions for this activity
+          const { error: deleteError } = await supabase
+            .from('activity_conditions')
+            .delete()
+            .eq('activity_id', activityId);
+          
+          if (deleteError) {
+            console.error('[XML Import] Error deleting existing conditions:', deleteError);
+            throw deleteError;
+          }
+          
+          // Insert new conditions with validation
+          const conditionsToInsert = conditionsData.conditions
+            .filter((cond: any) => {
+              // Validate condition type (must be '1', '2', or '3')
+              const validTypes = ['1', '2', '3'];
+              if (!validTypes.includes(cond.type)) {
+                console.warn(`[XML Import] Invalid condition type: ${cond.type}, skipping...`);
+                return false;
+              }
+              // Validate narrative is not empty
+              if (!cond.narrative || !cond.narrative.trim()) {
+                console.warn('[XML Import] Empty condition narrative, skipping...');
+                return false;
+              }
+              return true;
+            })
+            .map((cond: any) => ({
+              activity_id: activityId,
+              type: cond.type,
+              narrative: { [cond.narrativeLang || 'en']: cond.narrative },
+              attached: conditionsData.attached
+              // Note: created_by is nullable since app uses custom auth, not Supabase Auth
+            }));
+          
+          console.log('[XML Import] Conditions to insert:', JSON.stringify(conditionsToInsert, null, 2));
+          
+          if (conditionsToInsert.length > 0) {
+            const { data: insertedConditions, error: insertError } = await supabase
+              .from('activity_conditions')
+              .insert(conditionsToInsert)
+              .select();
+            
+            if (insertError) {
+              console.error('[XML Import] Error inserting conditions:', insertError);
+              console.error('[XML Import] Insert error details:', JSON.stringify(insertError, null, 2));
+              throw insertError;
+            }
+            
+            console.log('[XML Import] Successfully imported conditions:', insertedConditions);
+            
+            const skippedCount = totalConditions - conditionsToInsert.length;
+            if (skippedCount > 0) {
+              toast.success(`${conditionsToInsert.length} condition(s) imported successfully`, {
+                description: `${skippedCount} invalid condition(s) were skipped`
+              });
+            } else {
+              toast.success(`${conditionsToInsert.length} condition(s) imported successfully`);
+            }
+            
+            // Invalidate cache and trigger page reload to show conditions
+            invalidateActivityCache(activityId);
+          } else if (totalConditions > 0) {
+            toast.warning('No valid conditions to import', {
+              description: 'All conditions were invalid or had empty descriptions'
+            });
+          }
+        } catch (conditionsError: any) {
+          console.error('[XML Import] Conditions import error:', conditionsError);
+          toast.error('Failed to import conditions', {
+            description: `An error occurred while processing conditions: ${conditionsError.message}`
+          });
+        }
+      }
+
       // Handle participating organizations import if any
       if (updateData.importedParticipatingOrgs && updateData.importedParticipatingOrgs.length > 0) {
         console.log('[XML Import] Processing participating organizations import...');
@@ -3349,7 +4139,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 console.log(`[XML Import] New org data:`, {
                   name: orgData.narrative || orgData.ref || 'Imported Organization',
                   iati_org_id: orgData.ref || null,
-                  organisation_type: orgData.type || null
+                  Organisation_Type_Code: orgData.type || null
                 });
                 
                 const createResponse = await fetch('/api/organizations', {
@@ -3358,7 +4148,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   body: JSON.stringify({
                     name: orgData.narrative || orgData.ref || 'Imported Organization',
                     iati_org_id: orgData.ref || null,
-                    organisation_type: orgData.type || null
+                    Organisation_Type_Code: orgData.type || null
                   })
                 });
 
@@ -3528,6 +4318,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             case 'Collaboration Type':
               saveKey = 'collaborationType';
               break;
+            case 'IATI Identifier':
+              saveKey = 'iatiIdentifier';
+              break;
             case 'Activity Scope':
               saveKey = 'activityScope';
               break;
@@ -3548,6 +4341,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               break;
             case 'Default Tied Status':
               saveKey = 'defaultTiedStatus';
+              break;
+            case 'Capital Spend Percentage':
+              saveKey = 'capitalSpendPercentage';
               break;
             case 'Planned Start Date':
               saveKey = 'plannedStartDate';
@@ -3626,6 +4422,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     setXmlUrl('');
     setImportMethod('file');
     setXmlMetadata(null);
+    setResultsImportSummary(null);
     // Clear cache for this activity
     if (activityId) {
       parsedXmlCache.delete(activityId);
@@ -3648,6 +4445,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       'results': 'Results'
     };
 
+    // Basic tabs that should be grouped under main General tab
+    const basicTabs = ['identifiers_ids', 'dates', 'descriptions', 'other'];
+    
     // Financial tabs that should be grouped under main Finances tab
     const financialTabs = ['finances', 'budgets', 'planned_disbursements', 'transactions'];
     
@@ -3656,6 +4456,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
     fields.forEach(field => {
       let tabKey = field.tab;
+      
+      // Group basic tabs under main 'basic' tab
+      if (basicTabs.includes(field.tab)) {
+        tabKey = 'basic';
+      }
       
       // Group financial tabs under main 'finances' tab
       if (financialTabs.includes(field.tab)) {
@@ -3721,6 +4526,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               </Button>
             </div>
           )}
+          {field.isTagField && (
+            <div className="mt-1">
+              <p className="text-xs text-gray-500">{(field as any).tagData?.length || 0} tag(s) from XML</p>
+            </div>
+          )}
         </div>
       </td>
       <td className="px-4 py-3 w-40">
@@ -3773,21 +4583,21 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.type}</span>
                   <span className="text-sm font-medium text-gray-900">Contact</span>
                 </div>
+                {field.currentValue.personName && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Name:</span>
+                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.personName}</span>
+                  </div>
+                )}
                 {field.currentValue.organization && (
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">Organization:</span>
                     <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.organization}</span>
                   </div>
                 )}
-                {field.currentValue.personName && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Person:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.personName}</span>
-                  </div>
-                )}
                 {field.currentValue.jobTitle && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Title:</span>
+                    <span className="text-xs text-gray-500">Position:</span>
                     <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.jobTitle}</span>
                   </div>
                 )}
@@ -3861,6 +4671,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   </>
                 )}
             </div>
+          ) : field.fieldName === 'IATI Identifier' ? (
+            <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue}</span>
           ) : (
             <span className="text-sm font-medium text-gray-900">{field.currentValue}</span>
           )
@@ -3871,7 +4683,17 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       </td>
       <td className="px-4 py-3 w-40">
         <div className="space-y-1">
-          {field.isPolicyMarker ? (
+          {field.tab === 'identifiers_ids' && field.fieldName.startsWith('Other Identifier') && typeof field.importValue === 'object' ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
+              </div>
+              <div className="flex items-center gap-1 flex-nowrap">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
+                <span className="text-sm text-gray-900 whitespace-nowrap">{field.importValue.name}</span>
+              </div>
+            </div>
+          ) : field.isPolicyMarker ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
@@ -3894,28 +4716,58 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 </div>
               )}
             </div>
+          ) : field.isTagField && (field as any).tagData ? (
+            <div className="flex flex-col gap-2">
+              {((field as any).tagData || []).slice(0, 3).map((tag: any, index: number) => (
+                <div key={index} className="flex items-center gap-1 flex-wrap">
+                  {tag.vocabulary && (
+                    <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                      tag.vocabulary === '1' ? 'bg-blue-100 text-blue-700' : 
+                      tag.vocabulary === '99' ? 'bg-purple-100 text-purple-700' : 
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {tag.vocabulary === '1' ? 'Standard' : tag.vocabulary === '99' ? 'Custom' : `Vocab ${tag.vocabulary}`}
+                    </span>
+                  )}
+                  {tag.code && (
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{tag.code}</span>
+                  )}
+                  <span className="text-sm font-medium text-gray-900">{tag.narrative || 'Unnamed tag'}</span>
+                  {tag.vocabularyUri && (
+                    <span className="text-xs text-gray-500 italic truncate max-w-32" title={tag.vocabularyUri}>
+                      {tag.vocabularyUri.substring(0, 30)}...
+                    </span>
+                  )}
+                </div>
+              ))}
+              {((field as any).tagData || []).length > 3 && (
+                <span className="text-xs text-gray-500 italic">
+                  +{((field as any).tagData || []).length - 3} more tag(s)
+                </span>
+              )}
+            </div>
           ) : field.tab === 'contacts' && typeof field.importValue === 'object' ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
                 <span className="text-sm font-medium text-gray-900">Contact</span>
               </div>
-              {field.importValue.organization && (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Organization:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.organization}</span>
-                </div>
-              )}
               {field.importValue.personName && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Person:</span>
+                  <span className="text-xs text-gray-500">Name:</span>
                   <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.personName}</span>
                 </div>
               )}
               {field.importValue.jobTitle && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Title:</span>
+                  <span className="text-xs text-gray-500">Position:</span>
                   <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.jobTitle}</span>
+                </div>
+              )}
+              {field.importValue.organization && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">Organization:</span>
+                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.organization}</span>
                 </div>
               )}
               {field.importValue.email && (
@@ -4005,6 +4857,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 </div>
               </div>
             ))
+          ) : field.tab === 'identifiers_ids' && field.fieldName.startsWith('Other Identifier') && typeof field.importValue === 'object' ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
+              </div>
+              <div className="flex items-center gap-1 flex-nowrap">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
+                <span className="text-sm text-gray-900 whitespace-nowrap">{field.importValue.name}</span>
+              </div>
+            </div>
           ) : typeof field.importValue === 'object' && field.importValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
@@ -4016,6 +4878,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 </>
               )}
             </div>
+          ) : typeof field.importValue === 'object' ? (
+            <span className="text-sm text-gray-600 italic">Complex data</span>
+          ) : field.fieldName === 'IATI Identifier' ? (
+            <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue}</span>
           ) : (
             <span className="text-sm font-medium text-gray-900">{field.importValue}</span>
           )}
@@ -4093,6 +4959,43 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           </TabsList>
           
           {Object.entries(financialSubTabs).map(([key, subTab]) => (
+            <TabsContent key={key} value={key} className="mt-4">
+              <RegularTabContent fields={subTab.fields} tabName={subTab.name} />
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
+    );
+  };
+
+  // Basic sub-tabs component
+  const BasicTabContent = ({ tabSection }: { tabSection: TabSection }) => {
+    // Group basic fields by their original tab
+    const basicSubTabs = {
+      'identifiers_ids': { name: 'Identifiers & IDs', fields: tabSection.fields.filter(f => f.tab === 'identifiers_ids') },
+      'dates': { name: 'Dates', fields: tabSection.fields.filter(f => f.tab === 'dates') },
+      'descriptions': { name: 'Descriptions', fields: tabSection.fields.filter(f => f.tab === 'descriptions') },
+      'other': { name: 'Other', fields: tabSection.fields.filter(f => f.tab === 'other') }
+    };
+    
+    return (
+      <div className="space-y-4">
+        {/* Basic Sub-tabs */}
+        <Tabs value={activeBasicTab} onValueChange={setActiveBasicTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            {Object.entries(basicSubTabs).map(([key, subTab]) => (
+              <TabsTrigger key={key} value={key} className="text-sm">
+                {subTab.name}
+                {subTab.fields.length > 0 && (
+                  <span className="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full">
+                    {subTab.fields.filter(f => f.selected).length}/{subTab.fields.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          
+          {Object.entries(basicSubTabs).map(([key, subTab]) => (
             <TabsContent key={key} value={key} className="mt-4">
               <RegularTabContent fields={subTab.fields} tabName={subTab.name} />
             </TabsContent>
@@ -4311,8 +5214,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     );
   };
   
-  // Main tab content component that chooses between financial, partners, and regular
+  // Main tab content component that chooses between basic, financial, partners, and regular
   const TabFieldContent = ({ tabSection }: { tabSection: TabSection }) => {
+    if (tabSection.tabId === 'basic') {
+      return <BasicTabContent tabSection={tabSection} />;
+    }
     if (tabSection.tabId === 'finances') {
       return <FinancialTabContent tabSection={tabSection} />;
     }
@@ -4703,35 +5609,44 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       {/* Import Complete */}
       {importStatus.stage === 'complete' && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
-              <CheckCircle className="h-16 w-16 text-gray-700 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Import Successful!</h3>
-              <p className="text-gray-600 mb-6">
-                {parsedFields.filter(f => f.selected).length} fields have been imported from the XML file.
-              </p>
-              <div className="flex gap-2 justify-center">
-                <Button variant="outline" onClick={resetImport}>
-                  <FileCode className="h-4 w-4 mr-2" />
-                  Import Another File
-                </Button>
-                <Button onClick={() => {
-                  // Navigate to Basic Info tab to review imported changes
-                  const basicTab = document.querySelector('[data-value="basic"]') as HTMLButtonElement;
-                  if (basicTab) {
-                    basicTab.click();
-                  }
-                  // Also scroll to top to show the imported data
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}>
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                  Review Changes
-                </Button>
+        <>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <CheckCircle className="h-16 w-16 text-gray-700 mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">Import Successful!</h3>
+                <p className="text-gray-600 mb-6">
+                  {parsedFields.filter(f => f.selected).length} fields have been imported from the XML file.
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button variant="outline" onClick={resetImport}>
+                    <FileCode className="h-4 w-4 mr-2" />
+                    Import Another File
+                  </Button>
+                  <Button onClick={() => {
+                    // Navigate to Basic Info tab to review imported changes
+                    const basicTab = document.querySelector('[data-value="basic"]') as HTMLButtonElement;
+                    if (basicTab) {
+                      basicTab.click();
+                    }
+                    // Also scroll to top to show the imported data
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}>
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    Review Changes
+                  </Button>
+                </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Results Import Validation Report */}
+          {resultsImportSummary && (
+            <div className="mt-6">
+              <ImportValidationReport summary={resultsImportSummary} />
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </>
       )}
 
       {/* Error State */}
@@ -5014,11 +5929,25 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                         </td>
                         <td className="px-4 py-3">
                           <div className="space-y-1">
-                            {typeof field.importValue === 'object' && field.importValue?.code ? (
+                            {field.tab === 'identifiers_ids' && field.fieldName.startsWith('Other Identifier') && typeof field.importValue === 'object' ? (
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
+                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
+                                </div>
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
+                                  <span className="text-sm text-gray-900">{field.importValue.name}</span>
+                                </div>
+                              </div>
+                            ) : typeof field.importValue === 'object' && field.importValue?.code ? (
                               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
                                 <span className="text-sm font-medium text-gray-900">{field.importValue.name}</span>
                               </div>
+                            ) : typeof field.importValue === 'object' ? (
+                              <span className="text-sm text-gray-600 italic">Complex data</span>
+                            ) : field.fieldName === 'IATI Identifier' ? (
+                              <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue || 'N/A'}</span>
                             ) : (
                               <span className="text-sm font-medium text-gray-900">{field.importValue || 'N/A'}</span>
                             )}

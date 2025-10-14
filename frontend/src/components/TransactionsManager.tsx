@@ -5,9 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TransactionTypeSelect } from "@/components/forms/TransactionTypeSelect";
-import { FinanceTypeSelect } from "@/components/forms/FinanceTypeSelect";
-import { Plus, Trash2, Edit, Download, Filter, DollarSign, AlertCircle, FileText, X, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CheckCircle } from "lucide-react";
+import { Plus, Trash2, Edit, Download, DollarSign, AlertCircle, FileText, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { usePartners } from "@/hooks/usePartners";
@@ -22,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -129,6 +128,11 @@ export default function TransactionsManager({
   const [submitting, setSubmitting] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [quickFilter, setQuickFilter] = useState<"all" | "commitments" | "disbursements" | "expenditures">("all");
+  const [hasFetchedTransactions, setHasFetchedTransactions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Track last notified transaction count to prevent infinite loops
+  const lastNotifiedCountRef = React.useRef<number>(-1);
 
   // Convert legacy transaction types to new format
   const convertLegacyTransaction = (transaction: Transaction): Transaction => {
@@ -144,8 +148,93 @@ export default function TransactionsManager({
 
   // Update local state when transactions prop changes
   useEffect(() => {
-    setTransactions(initialTransactions.map(convertLegacyTransaction));
+    console.log('[TransactionsManager] initialTransactions prop changed:', {
+      propsLength: initialTransactions.length,
+      currentLocalLength: transactions.length,
+      hasFetchedTransactions
+    });
+    
+    // Only update from props if:
+    // 1. Props actually have data (initialTransactions.length > 0), OR
+    // 2. We haven't fetched transactions ourselves yet (!hasFetchedTransactions)
+    // This prevents empty props from clearing fetched data
+    if (initialTransactions.length > 0 || !hasFetchedTransactions) {
+      const converted = initialTransactions.map(convertLegacyTransaction);
+      console.log('[TransactionsManager] Updating local state from props, converted length:', converted.length);
+      setTransactions(converted);
+      // If we receive transactions from props, mark as fetched
+      if (initialTransactions.length > 0) {
+        setHasFetchedTransactions(true);
+      }
+    } else {
+      console.log('[TransactionsManager] Skipping props update - already have fetched transactions');
+    }
   }, [initialTransactions]);
+
+  // Fetch transactions if not provided and activityId is valid
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      // Only fetch if:
+      // 1. We have a valid activityId (not 'new')
+      // 2. We haven't already fetched transactions
+      // 3. No transactions were provided via props
+      if (activityId && activityId !== 'new' && !hasFetchedTransactions && initialTransactions.length === 0) {
+        try {
+          setIsLoading(true);
+          console.log('[TransactionsManager] No transactions provided, fetching for activity:', activityId);
+          const response = await fetch(`/api/activities/${activityId}/transactions`);
+          if (response.ok) {
+            const responseData = await response.json();
+            
+            // Handle both response formats: { data: [...] } or direct array [...]
+            const transactionsData = Array.isArray(responseData) ? responseData : (responseData.data || []);
+            
+            console.log('[TransactionsManager] Successfully loaded', transactionsData.length, 'transactions from API');
+            const convertedTransactions = transactionsData.map(convertLegacyTransaction);
+            setTransactions(convertedTransactions);
+            setHasFetchedTransactions(true);
+            onTransactionsChange?.(convertedTransactions);
+          }
+        } catch (error) {
+          console.error('[TransactionsManager] Error fetching transactions:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchTransactions();
+  }, [activityId, hasFetchedTransactions, initialTransactions.length]); // Only depend on activityId and fetch flag
+
+  // Reset fetch flag and notification tracking when activityId changes
+  useEffect(() => {
+    setHasFetchedTransactions(false);
+    lastNotifiedCountRef.current = -1; // Reset notification tracking for new activity
+  }, [activityId]);
+
+  // Notify parent component when transactions change (only after initial load)
+  // This ensures the green tick indicator is updated when transactions are loaded
+  useEffect(() => {
+    console.log('[TransactionsManager] useEffect - Checking notification conditions:', {
+      hasCallback: !!onTransactionsChange,
+      isLoading,
+      transactionsCount: transactions.length,
+      lastNotifiedCount: lastNotifiedCountRef.current
+    });
+    
+    // Only notify if:
+    // 1. We have a callback
+    // 2. We're not loading
+    // 3. The transaction count has actually changed since last notification
+    if (onTransactionsChange && !isLoading && lastNotifiedCountRef.current !== transactions.length) {
+      console.log('[TransactionsManager] Notifying parent with transactions:', transactions.length);
+      lastNotifiedCountRef.current = transactions.length;
+      onTransactionsChange(transactions);
+    } else {
+      console.log('[TransactionsManager] NOT notifying parent - isLoading:', isLoading, 'or count unchanged');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, isLoading]); // Intentionally exclude onTransactionsChange to prevent infinite loops
 
   // Fetch activity data to get partner_id if not provided as prop
   useEffect(() => {
@@ -332,8 +421,8 @@ export default function TransactionsManager({
     expendituresCount: transactions.filter(t => t.transaction_type === '4').length,
     
     // Validation stats
-    validatedCount: transactions.filter(t => t.status === 'validated').length,
-    validatedPercent: transactions.length > 0 ? (transactions.filter(t => t.status === 'validated').length / transactions.length) * 100 : 0
+    validatedCount: transactions.filter(t => t.status === 'actual').length,
+    validatedPercent: transactions.length > 0 ? (transactions.filter(t => t.status === 'actual').length / transactions.length) * 100 : 0
   };
 
   // Filter transactions
@@ -524,125 +613,46 @@ export default function TransactionsManager({
               </Button>
             </div>
           )}
-        
-          
-          {/* Filters */}
-          {transactions.length > 0 && (
-            <div className="mb-4 p-4 bg-muted/50 rounded-lg space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Filter className="h-4 w-4" />
-                Filters
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                <div className="relative">
-                  <TransactionTypeSelect
-                    value={filters.type}
-                    onValueChange={(value) => setFilters({...filters, type: value || "all"})}
-                    placeholder="All Types"
-                    className="w-full"
-                  />
-                </div>
-                <div className="relative">
-                  <Select value={filters.status} onValueChange={v => setFilters({...filters, status: v})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-[9999]">
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="actual">Actual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {filters.status !== "all" && (
-                    <button
-                      type="button"
-                      onClick={() => setFilters({...filters, status: "all"})}
-                      className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors z-10"
-                      aria-label="Clear status filter"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <FinanceTypeSelect
-                    value={filters.financeType === "all" ? undefined : filters.financeType}
-                    onChange={(value) => setFilters({...filters, financeType: value || "all"})}
-                    placeholder="All Finance Types"
-                    className="w-full h-10"
-                  />
-                  {filters.financeType !== "all" && (
-                    <button
-                      type="button"
-                      onClick={() => setFilters({...filters, financeType: "all"})}
-                      className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors z-10"
-                      aria-label="Clear finance type filter"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <Input
-                    type="date"
-                    placeholder="From date"
-                    value={filters.dateFrom}
-                    onChange={e => setFilters({...filters, dateFrom: e.target.value})}
-                    className="pl-12 pr-8"
-                  />
-                  <label className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">From</label>
-                  {filters.dateFrom && (
-                    <button
-                      type="button"
-                      onClick={() => setFilters({...filters, dateFrom: ""})}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                      aria-label="Clear from date filter"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <Input
-                    type="date"
-                    placeholder="To date"
-                    value={filters.dateTo}
-                    onChange={e => setFilters({...filters, dateTo: e.target.value})}
-                    className="pl-10 pr-8"
-                  />
-                  <label className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">To</label>
-                  {filters.dateTo && (
-                    <button
-                      type="button"
-                      onClick={() => setFilters({...filters, dateTo: ""})}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                      aria-label="Clear to date filter"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-              </div>
-              {(filters.type !== "all" || filters.status !== "all" || filters.financeType !== "all" || filters.dateFrom || filters.dateTo) && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setFilters({ type: "all", status: "all", financeType: "all", dateFrom: "", dateTo: "" })}
-                    className="text-xs"
-                  >
-                    Clear all filters
-                  </Button>
-                  <span className="text-xs text-muted-foreground">
-                    Showing {filteredTransactions.length} of {transactions.length} transactions
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Transactions Table */}
-          {filteredTransactions.length === 0 ? (
+          {isLoading ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-medium"><Skeleton className="h-4 w-16" /></TableHead>
+                    <TableHead className="font-medium"><Skeleton className="h-4 w-20" /></TableHead>
+                    <TableHead className="font-medium"><Skeleton className="h-4 w-20" /></TableHead>
+                    <TableHead className="font-medium"><Skeleton className="h-4 w-24" /></TableHead>
+                    <TableHead className="font-medium"><Skeleton className="h-4 w-20" /></TableHead>
+                    <TableHead className="font-medium"><Skeleton className="h-4 w-20" /></TableHead>
+                    <TableHead className="font-medium text-right"><Skeleton className="h-4 w-28 ml-auto" /></TableHead>
+                    <TableHead className="font-medium text-right"><Skeleton className="h-4 w-24 ml-auto" /></TableHead>
+                    <TableHead className="font-medium text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableHead>
+                    <TableHead className="font-medium text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableHead>
+                    <TableHead className="font-medium"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-24 ml-auto" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-24 ml-auto" /></TableCell>
+                      <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                      <TableCell className="text-center"><Skeleton className="h-6 w-6 rounded-full mx-auto" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-8 rounded" /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : filteredTransactions.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               {transactions.length === 0 
                 ? "No transactions have been added yet." 

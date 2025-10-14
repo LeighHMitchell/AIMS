@@ -35,7 +35,8 @@ interface ParticipatingOrganization {
     iati_org_id?: string;
     logo?: string;
     country?: string;
-    organisation_type?: string;
+    Organisation_Type_Code?: string;
+    Organisation_Type_Name?: string;
   };
 }
 

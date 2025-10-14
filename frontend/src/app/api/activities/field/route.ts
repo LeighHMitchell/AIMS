@@ -35,6 +35,10 @@ function cleanUUIDValue(value: any): string | null {
 }
 
 export async function POST(request: Request) {
+  console.log('[Field API] ============ POST REQUEST RECEIVED ============');
+  console.log('[Field API] Request URL:', request.url);
+  console.log('[Field API] Request method:', request.method);
+  
   const startTime = Date.now();
   
   // Set a timeout for the entire request
@@ -400,24 +404,64 @@ export async function POST(request: Request) {
         updateData.government_partners = Array.isArray(body.value) ? body.value : [];
         break;
         
+      case 'otherIdentifiers':
+        oldValue = existingActivity.other_identifiers;
+        newValue = body.value;
+        // Store as JSONB array
+        updateData.other_identifiers = Array.isArray(body.value) ? body.value : [];
+        console.log('[Field API] Saving other identifiers:', JSON.stringify(updateData.other_identifiers));
+        break;
+        
       case 'contacts':
         // Handle contacts using the activity_contacts table instead of a direct column
+        console.log('[Field API] 📧 Processing contacts update for activity:', body.activityId);
+        console.log('[Field API] Number of contacts received:', body.value?.length || 0);
+        if (body.value && body.value.length > 0) {
+          console.log('[Field API] First contact data:', JSON.stringify(body.value[0], null, 2));
+        }
+        
         oldValue = existingActivity.contacts; // Keep for logging purposes
         newValue = body.value;
         
         try {
-          console.log('[Field API] Processing contacts update for activity:', body.activityId);
-          console.log('[Field API] Contacts data:', JSON.stringify(body.value, null, 2));
+          // FIRST: Check what contacts exist BEFORE delete
+          console.log('[Field API] 🔍 BEFORE DELETE: Checking existing contacts...');
+          const { data: beforeData, error: beforeError } = await getSupabaseAdmin()
+            .from('activity_contacts')
+            .select('id, first_name, last_name')
+            .eq('activity_id', body.activityId);
+          
+          if (!beforeError) {
+            console.log('[Field API] 🔍 BEFORE DELETE: Found', beforeData?.length || 0, 'contact(s)');
+            if (beforeData && beforeData.length > 0) {
+              console.log('[Field API] 🔍 BEFORE DELETE IDs:', beforeData.map((c: any) => c.id));
+            }
+          }
           
           // Delete existing contacts for this activity
-          const { error: deleteError } = await getSupabaseAdmin()
+          console.log('[Field API] 🗑️ DELETING all contacts for activity:', body.activityId);
+          const { data: deletedData, error: deleteError, count: deleteCount } = await getSupabaseAdmin()
             .from('activity_contacts')
-            .delete()
-            .eq('activity_id', body.activityId);
+            .delete({ count: 'exact' })
+            .eq('activity_id', body.activityId)
+            .select();
 
           if (deleteError) {
-            console.error('[Field API] Error deleting existing contacts:', deleteError);
+            console.error('[Field API] ❌ Error deleting existing contacts:', deleteError);
+            console.error('[Field API] Delete error details:', {
+              message: deleteError.message,
+              details: deleteError.details,
+              hint: deleteError.hint,
+              code: deleteError.code
+            });
             throw deleteError;
+          }
+          
+          console.log('[Field API] ✅ DELETE COMPLETED: Deleted', deletedData?.length || 0, 'contact(s)');
+          console.log('[Field API] Delete count:', deleteCount);
+          if (deletedData && deletedData.length > 0) {
+            console.log('[Field API] Deleted contact IDs:', deletedData.map((c: any) => c.id));
+            console.log('[Field API] Deleted contact names:', deletedData.map((c: any) => `${c.first_name} ${c.last_name}`));
           }
 
           // Insert new contacts if any
@@ -427,7 +471,23 @@ export async function POST(request: Request) {
               const type = contact.type || '1'; // Default to "General Enquiries"
               const firstName = contact.firstName?.trim() || 'Unknown';
               const lastName = contact.lastName?.trim() || 'Unknown';
-              const position = contact.position?.trim() || 'Unknown';
+              // Position is required by DB schema (NOT NULL) - handle empty strings
+              const position = (contact.position && contact.position.trim() !== '') 
+                ? contact.position.trim() 
+                : 'Not specified';
+              
+              // Helper function to convert empty strings to null
+              const toNullIfEmpty = (value: any) => {
+                if (value === '' || value === undefined || value === null || value === '__none__') return null;
+                return value;
+              };
+
+              // Helper function to validate UUID format
+              const isValidUUID = (value: any) => {
+                if (!value || value === '') return false;
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+                return uuidRegex.test(value);
+              };
               
               console.log('[Field API] Processing contact:', {
                 originalType: contact.type,
@@ -437,38 +497,57 @@ export async function POST(request: Request) {
                 originalLastName: contact.lastName,
                 mappedLastName: lastName,
                 originalPosition: contact.position,
-                mappedPosition: position
+                mappedPosition: position,
+                hasTemporaryId: contact.id?.startsWith('contact-')
               });
               
               // Create contact data using the actual database schema columns
+              // NOTE: Explicitly NOT including 'id' field - let database generate UUID
+              const orgValue = toNullIfEmpty(contact.organisation);
               const contactData: any = {
                 activity_id: body.activityId,
                 type: type,
-                title: contact.title || null,
+                title: toNullIfEmpty(contact.title),
                 first_name: firstName,
-                middle_name: contact.middleName || null,
+                middle_name: toNullIfEmpty(contact.middleName),
                 last_name: lastName,
                 position: position,
-                organisation: contact.organisation || null, // DEPRECATED but kept for compatibility
-                phone: contact.phone || null, // DEPRECATED but kept for compatibility
-                fax: contact.fax || null,
-                email: contact.email || null, // DEPRECATED but kept for compatibility
-                profile_photo: contact.profilePhoto || null,
-                notes: contact.notes || null,
-                organisation_id: contact.organisationId || null,
-                organisation_name: contact.organisation || null, // Use organisation as fallback
-                primary_email: contact.email || null,
-                secondary_email: contact.secondaryEmail || null,
-                display_on_web: contact.displayOnWeb || false,
-                user_id: contact.userId || null,
-                role: contact.role || null,
-                name: contact.name || null
+                job_title: toNullIfEmpty(contact.jobTitle), // IATI job-title field
+                organisation: orgValue, // Legacy field - kept for compatibility
+                organisation_id: isValidUUID(contact.organisationId) ? contact.organisationId : null,
+                organisation_name: orgValue, // New field - same as organisation for simplified interface
+                department: toNullIfEmpty(contact.department), // IATI department field
+                phone: toNullIfEmpty(contact.phone), // Legacy field
+                country_code: toNullIfEmpty(contact.countryCode),
+                phone_number: toNullIfEmpty(contact.phoneNumber || contact.phone), // Prefer phoneNumber, fallback to phone
+                fax: toNullIfEmpty(contact.fax), // Legacy field
+                fax_country_code: toNullIfEmpty(contact.faxCountryCode),
+                fax_number: toNullIfEmpty(contact.faxNumber),
+                email: toNullIfEmpty(contact.email),
+                primary_email: toNullIfEmpty(contact.email), // Also save to primary_email field
+                secondary_email: toNullIfEmpty(contact.secondaryEmail),
+                website: toNullIfEmpty(contact.website), // IATI website field
+                mailing_address: toNullIfEmpty(contact.mailingAddress), // IATI mailing-address field
+                profile_photo: toNullIfEmpty(contact.profilePhoto),
+                notes: toNullIfEmpty(contact.notes),
+                display_on_web: contact.displayOnWeb !== undefined ? contact.displayOnWeb : true, // Default to true for visibility
+                user_id: toNullIfEmpty(contact.userId),
+                role: toNullIfEmpty(contact.role),
+                name: toNullIfEmpty(contact.name),
+                is_focal_point: contact.isFocalPoint || false,
+                imported_from_iati: contact.importedFromIati || false,
+                // Contact roles and linking
+                has_editing_rights: contact.hasEditingRights || false,
+                linked_user_id: isValidUUID(contact.linkedUserId) ? contact.linkedUserId : null
               };
               
               return contactData;
             });
 
-            console.log('[Field API] About to insert contacts data:', JSON.stringify(contactsData, null, 2));
+            console.log('[Field API] 📝 About to insert contacts data:', JSON.stringify(contactsData, null, 2));
+            console.log('[Field API] Number of contacts to insert:', contactsData.length);
+            console.log('[Field API] Activity ID:', body.activityId);
+            console.log('[Field API] First contact sample:', contactsData[0]);
             
             const { data: insertedData, error: insertError } = await getSupabaseAdmin()
               .from('activity_contacts')
@@ -476,6 +555,7 @@ export async function POST(request: Request) {
               .select();
               
             if (insertError) {
+              console.error('[Field API] ❌ FAILED TO INSERT CONTACTS!');
               console.error('[Field API] Error inserting contacts:', insertError);
               console.error('[Field API] Error details:', {
                 message: insertError.message,
@@ -483,12 +563,35 @@ export async function POST(request: Request) {
                 hint: insertError.hint,
                 code: insertError.code
               });
+              console.error('[Field API] Failed contact data:', JSON.stringify(contactsData, null, 2));
               throw new Error(`Database error: ${insertError.message}${insertError.details ? ` - ${insertError.details}` : ''}`);
             }
             
-            console.log('[Field API] Successfully inserted contacts:', insertedData);
+            if (!insertedData || insertedData.length === 0) {
+              console.error('[Field API] ⚠️ WARNING: Insert succeeded but no data returned!');
+              console.error('[Field API] This might indicate a database constraint issue or RLS policy blocking the insert');
+            } else {
+              console.log('[Field API] ✅ Successfully inserted', insertedData.length, 'contact(s)');
+              console.log('[Field API] Inserted contact IDs:', insertedData.map((c: any) => c.id));
+              console.log('[Field API] Inserted contact names:', insertedData.map((c: any) => `${c.first_name} ${c.last_name}`));
+            }
             
-            console.log('[Field API] Successfully updated', contactsData.length, 'contacts');
+            console.log('[Field API] Successfully processed', contactsData.length, 'contact(s)');
+            
+            // Verify the database state immediately after insert
+            const { data: verifyData, error: verifyError } = await getSupabaseAdmin()
+              .from('activity_contacts')
+              .select('id, first_name, last_name')
+              .eq('activity_id', body.activityId);
+            
+            if (!verifyError) {
+              console.log('[Field API] 🔍 VERIFICATION: Database now contains', verifyData?.length || 0, 'contact(s) for this activity');
+              if (verifyData && verifyData.length > 0) {
+                console.log('[Field API] 🔍 Contact IDs in DB:', verifyData.map((c: any) => c.id));
+              }
+            } else {
+              console.error('[Field API] ⚠️ Failed to verify database state:', verifyError);
+            }
           }
           
           // Don't add contacts to updateData since we're handling it separately
@@ -972,8 +1075,10 @@ export async function POST(request: Request) {
             middleName: contact.middle_name,
             lastName: contact.last_name,
             position: contact.position,
+            jobTitle: contact.job_title, // IATI job-title field
             organisation: contact.organisation,
             organisationId: contact.organisation_id,
+            department: contact.department, // IATI department field
             phone: contact.phone, // Legacy field
             countryCode: contact.country_code,
             phoneNumber: contact.phone_number,
@@ -982,9 +1087,15 @@ export async function POST(request: Request) {
             faxNumber: contact.fax_number,
             email: contact.email,
             secondaryEmail: contact.secondary_email,
+            website: contact.website, // IATI website field
+            mailingAddress: contact.mailing_address, // IATI mailing-address field
             profilePhoto: contact.profile_photo,
             notes: contact.notes,
-            displayOnWeb: contact.display_on_web
+            displayOnWeb: contact.display_on_web,
+            // Contact roles and user linking
+            isFocalPoint: contact.is_focal_point || false,
+            hasEditingRights: contact.has_editing_rights || false,
+            linkedUserId: contact.linked_user_id
           })) || [];
         }
       } catch (contactsFetchError) {

@@ -47,6 +47,7 @@ interface EnhancedFinancesSectionProps {
   onDefaultsChange?: (field: string, value: string | null | boolean) => void;
   transactions?: any[];
   onTransactionsChange?: (transactions: any[]) => void;
+  onRefreshNeeded?: () => Promise<void>;
   disabled?: boolean;
 }
 
@@ -56,6 +57,7 @@ export function EnhancedFinancesSection({
   onDefaultsChange,
   transactions = [],
   onTransactionsChange,
+  onRefreshNeeded,
   disabled = false
 }: EnhancedFinancesSectionProps) {
   const [updateStats, setUpdateStats] = useState({
@@ -234,7 +236,6 @@ export function EnhancedFinancesSection({
               <CheckCircle className="h-4 w-4 text-green-500" />
             )}
           </TabsTrigger>
-
         </TabsList>
 
         {/* Default Values Tab */}
@@ -418,6 +419,7 @@ export function EnhancedFinancesSection({
             activityPartnerId={general.otherIdentifier || undefined}
             transactions={transactions}
             onTransactionsChange={onTransactionsChange!}
+            onRefreshNeeded={onRefreshNeeded}
             defaultFinanceType={general.defaultFinanceType || undefined}
             defaultAidType={general.defaultAidType || undefined}
             defaultCurrency={general.defaultCurrency || undefined}

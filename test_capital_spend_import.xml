@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2025-01-14T12:00:00Z">
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-14T12:00:00Z">
+    
+    <!--Basic Info-->
+    <iati-identifier>TEST-CAPITAL-SPEND-001</iati-identifier>
+    
+    <title>
+      <narrative>Infrastructure Development Project with Capital Expenditure</narrative>
+    </title>
+    
+    <description type="1">
+      <narrative>This project focuses on building infrastructure with significant capital investment in roads, bridges, and buildings.</narrative>
+    </description>
+    
+    <activity-status code="2" />
+    
+    <!--Dates-->
+    <activity-date iso-date="2024-01-01" type="1" />
+    <activity-date iso-date="2024-01-15" type="2" />
+    <activity-date iso-date="2026-12-31" type="3" />
+    
+    <!--Financial Defaults-->
+    <default-finance-type code="110" />
+    <default-flow-type code="10" />
+    <default-aid-type code="C01" vocabulary="1" />
+    <default-tied-status code="5" />
+    
+    <!--capital-spend starts-->
+    <capital-spend percentage="88.8" />
+    <!--capital-spend ends-->
+    
+    <!--Participating Organizations-->
+    <participating-org role="1" type="10" ref="MM-GOV">
+      <narrative>Government of Myanmar</narrative>
+    </participating-org>
+    
+    <participating-org role="4" type="40" ref="WB-001">
+      <narrative>World Bank</narrative>
+    </participating-org>
+    
+    <!--Recipient Country-->
+    <recipient-country code="MM" percentage="100">
+      <narrative>Myanmar</narrative>
+    </recipient-country>
+    
+    <!--Sector-->
+    <sector vocabulary="1" code="21030" percentage="100">
+      <narrative>Rail transport</narrative>
+    </sector>
+    
+    <!--Budget-->
+    <budget type="1" status="1">
+      <period-start iso-date="2024-01-01" />
+      <period-end iso-date="2024-12-31" />
+      <value currency="USD" value-date="2024-01-01">5000000</value>
+    </budget>
+    
+    <!--Transaction - Commitment-->
+    <transaction>
+      <transaction-type code="2" />
+      <transaction-date iso-date="2024-01-15" />
+      <value currency="USD" value-date="2024-01-15">5000000</value>
+      <description>
+        <narrative>Initial commitment for infrastructure project</narrative>
+      </description>
+    </transaction>
+    
+    <!--Transaction - Disbursement-->
+    <transaction>
+      <transaction-type code="3" />
+      <transaction-date iso-date="2024-06-01" />
+      <value currency="USD" value-date="2024-06-01">1500000</value>
+      <description>
+        <narrative>First disbursement for equipment procurement</narrative>
+      </description>
+    </transaction>
+    
+  </iati-activity>
+</iati-activities>
+

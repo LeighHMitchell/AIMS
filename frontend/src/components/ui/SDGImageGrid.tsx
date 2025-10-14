@@ -128,6 +128,10 @@ export function SDGImageGrid({
           width={width}
           height={height}
           className="object-cover w-full h-full hover:scale-105 transition-transform duration-200"
+          loading="lazy"
+          priority={false}
+          quality={85}
+          sizes="(max-width: 768px) 32px, 128px"
         />
       </div>
     );

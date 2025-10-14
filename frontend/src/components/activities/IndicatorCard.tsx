@@ -40,9 +40,11 @@ import {
   CreateIndicatorData,
   CreateBaselineData,
   CreatePeriodData,
-  MEASURE_TYPE_LABELS 
+  MEASURE_TYPE_LABELS,
+  REFERENCE_VOCABULARIES
 } from '@/types/results';
 import { PeriodRow } from './PeriodRow';
+import { ResultVocabularySearchableSelect } from '@/components/forms/ResultVocabularySearchableSelect';
 
 interface IndicatorCardProps {
   indicator: ResultIndicator;
@@ -353,13 +355,13 @@ export function IndicatorCard({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Reference Vocabulary</Label>
-                    <Input
-                      value={editForm.reference_vocab}
-                      onChange={(e) => 
-                        setEditForm(prev => ({ ...prev, reference_vocab: e.target.value }))
+                    <Label>Result Vocabulary</Label>
+                    <ResultVocabularySearchableSelect
+                      value={editForm.reference_vocab || '99'}
+                      onValueChange={(value) => 
+                        setEditForm(prev => ({ ...prev, reference_vocab: value }))
                       }
-                      placeholder="e.g., 1 (WB), 99 (Reporting Org)"
+                      placeholder="Select result vocabulary..."
                     />
                   </div>
 

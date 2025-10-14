@@ -19,6 +19,97 @@ export interface StatusIndicator {
   label: string;
 }
 
+// ============================================================================
+// IATI STANDARD INTERFACES
+// ============================================================================
+
+// Document Link (used at result, indicator, baseline, and period levels)
+export interface DocumentLink {
+  id: string;
+  format?: string;
+  url: string;
+  title: Narrative;
+  description?: Narrative;
+  category_code?: string;
+  language_code?: string;
+  document_date?: string;
+  link_type?: 'target' | 'actual' | 'general'; // Only for period document links
+  created_at: string;
+  updated_at: string;
+}
+
+// Reference (used at result and indicator levels)
+export interface ResultReference {
+  id: string;
+  vocabulary: string;
+  code: string;
+  vocabulary_uri?: string;
+  indicator_uri?: string; // Only for indicator references
+  created_at: string;
+}
+
+// Dimension (used for disaggregation at baseline and period levels)
+export interface Dimension {
+  id: string;
+  name: string;
+  value: string;
+  dimension_type: 'baseline' | 'target' | 'actual';
+  created_at: string;
+}
+
+// Location reference
+export interface LocationReference {
+  id: string;
+  location_ref: string;
+  location_type?: 'target' | 'actual'; // Only for period locations
+  created_at: string;
+}
+
+// ============================================================================
+// IATI CODE MAPPINGS
+// ============================================================================
+
+// Result Type Code to String Mapping (IATI Standard codes)
+export const RESULT_TYPE_CODE_MAP: Record<string, ResultType> = {
+  '1': 'output',
+  '2': 'outcome',
+  '3': 'impact',
+  '9': 'other'
+};
+
+// Reverse mapping for export
+export const RESULT_TYPE_TO_CODE: Record<ResultType, string> = {
+  'output': '1',
+  'outcome': '2',
+  'impact': '3',
+  'other': '9'
+};
+
+// Measure Type Code to String Mapping (IATI Standard codes)
+export const MEASURE_TYPE_CODE_MAP: Record<string, MeasureType> = {
+  '1': 'unit',
+  '2': 'percentage',
+  '5': 'qualitative'
+};
+
+// Reverse mapping for export
+export const MEASURE_TYPE_TO_CODE: Record<MeasureType, string> = {
+  'unit': '1',
+  'percentage': '2',
+  'currency': '1', // Currency uses unit measure in IATI
+  'qualitative': '5'
+};
+
+// Aggregation Status Mapping (IATI uses 1 for true, 0 for false)
+export const parseAggregationStatus = (value: string | undefined): boolean => {
+  if (!value) return false;
+  return value === '1' || value === 'true';
+};
+
+export const formatAggregationStatus = (value: boolean): string => {
+  return value ? '1' : '0';
+};
+
 // Main Result entity
 export interface ActivityResult {
   id: string;
@@ -34,6 +125,8 @@ export interface ActivityResult {
   
   // Related data (populated by joins)
   indicators?: ResultIndicator[];
+  references?: ResultReference[];
+  document_links?: DocumentLink[];
 }
 
 // Indicator entity
@@ -45,9 +138,6 @@ export interface ResultIndicator {
   aggregation_status: boolean;
   title: Narrative;
   description?: Narrative;
-  reference_vocab?: string;
-  reference_code?: string;
-  reference_uri?: string;
   created_at: string;
   updated_at: string;
   created_by?: string;
@@ -56,6 +146,8 @@ export interface ResultIndicator {
   // Related data (populated by joins)
   baseline?: IndicatorBaseline;
   periods?: IndicatorPeriod[];
+  references?: ResultReference[];
+  document_links?: DocumentLink[];
   
   // Computed fields for UI
   status?: StatusIndicator;
@@ -70,11 +162,15 @@ export interface IndicatorBaseline {
   baseline_year?: number;
   iso_date?: string;
   value?: number;
-  comment?: string;
-  location_ref?: string;
+  comment?: Narrative;
   created_at: string;
   updated_at: string;
   created_by?: string;
+  
+  // Related data (populated by joins)
+  locations?: LocationReference[];
+  dimensions?: Dimension[];
+  document_links?: DocumentLink[];
 }
 
 // Period entity
@@ -84,16 +180,22 @@ export interface IndicatorPeriod {
   period_start: string;
   period_end: string;
   target_value?: number;
-  target_comment?: string;
-  target_location_ref?: string;
+  target_comment?: Narrative;
   actual_value?: number;
-  actual_comment?: string;
-  actual_location_ref?: string;
+  actual_comment?: Narrative;
   facet: string;
   created_at: string;
   updated_at: string;
   created_by?: string;
   updated_by?: string;
+  
+  // Related data (populated by joins)
+  target_locations?: LocationReference[];
+  actual_locations?: LocationReference[];
+  target_dimensions?: Dimension[];
+  actual_dimensions?: Dimension[];
+  target_document_links?: DocumentLink[];
+  actual_document_links?: DocumentLink[];
   
   // Computed fields for UI
   status?: StatusIndicator;
@@ -107,6 +209,8 @@ export interface CreateResultData {
   aggregation_status?: boolean;
   title: Narrative;
   description?: Narrative;
+  references?: Omit<ResultReference, 'id' | 'created_at'>[];
+  document_links?: Omit<DocumentLink, 'id' | 'created_at' | 'updated_at'>[];
 }
 
 export interface CreateIndicatorData {
@@ -116,9 +220,8 @@ export interface CreateIndicatorData {
   aggregation_status?: boolean;
   title: Narrative;
   description?: Narrative;
-  reference_vocab?: string;
-  reference_code?: string;
-  reference_uri?: string;
+  references?: Omit<ResultReference, 'id' | 'created_at'>[];
+  document_links?: Omit<DocumentLink, 'id' | 'created_at' | 'updated_at'>[];
 }
 
 export interface CreateBaselineData {
@@ -126,8 +229,10 @@ export interface CreateBaselineData {
   baseline_year?: number;
   iso_date?: string;
   value?: number;
-  comment?: string;
-  location_ref?: string;
+  comment?: Narrative;
+  locations?: Omit<LocationReference, 'id' | 'created_at'>[];
+  dimensions?: Omit<Dimension, 'id' | 'created_at'>[];
+  document_links?: Omit<DocumentLink, 'id' | 'created_at' | 'updated_at'>[];
 }
 
 export interface CreatePeriodData {
@@ -135,12 +240,41 @@ export interface CreatePeriodData {
   period_start: string;
   period_end: string;
   target_value?: number;
-  target_comment?: string;
-  target_location_ref?: string;
+  target_comment?: Narrative;
   actual_value?: number;
-  actual_comment?: string;
-  actual_location_ref?: string;
+  actual_comment?: Narrative;
   facet?: string;
+  target_locations?: Omit<LocationReference, 'id' | 'created_at'>[];
+  actual_locations?: Omit<LocationReference, 'id' | 'created_at'>[];
+  target_dimensions?: Omit<Dimension, 'id' | 'created_at'>[];
+  actual_dimensions?: Omit<Dimension, 'id' | 'created_at'>[];
+  target_document_links?: Omit<DocumentLink, 'id' | 'created_at' | 'updated_at'>[];
+  actual_document_links?: Omit<DocumentLink, 'id' | 'created_at' | 'updated_at'>[];
+}
+
+// Simplified form data for document links
+export interface CreateDocumentLinkData {
+  format?: string;
+  url: string;
+  title: Narrative;
+  description?: Narrative;
+  category_code?: string;
+  language_code?: string;
+  document_date?: string;
+}
+
+// Simplified form data for dimensions
+export interface CreateDimensionData {
+  name: string;
+  value: string;
+}
+
+// Simplified form data for references
+export interface CreateReferenceData {
+  vocabulary: string;
+  code: string;
+  vocabulary_uri?: string;
+  indicator_uri?: string;
 }
 
 // Update data types (partial for optimistic updates)
@@ -201,12 +335,25 @@ export interface ResultsTabProps {
 
 // IATI Reference vocabulary options (commonly used)
 export const REFERENCE_VOCABULARIES = {
-  '1': 'WB - World Bank',
-  '2': 'UN - United Nations',
-  '3': 'OECD-DAC',
-  '4': 'Sphere Handbook',
-  '5': 'IASC',
+  '1': 'IATI - Global Indicator Framework',
+  '2': 'WB - World Bank',
+  '3': 'UN - United Nations',
+  '4': 'IMF - International Monetary Fund',
+  '5': 'UNICEF',
+  '6': 'WHO - World Health Organization',
+  '7': 'SDG - Sustainable Development Goals',
+  '8': 'OECD-DAC',
+  '9': 'Sphere Standards',
   '99': 'Reporting Organisation'
+} as const;
+
+// Common dimension templates
+export const DIMENSION_TEMPLATES = {
+  sex: ['male', 'female', 'other', 'not specified'],
+  age: ['0-5', '6-12', '13-17', '18-24', '25-49', '50-64', '65+'],
+  disability: ['yes', 'no', 'not specified'],
+  geographic: ['urban', 'rural'],
+  status: ['refugee', 'idp', 'returnee', 'host community']
 } as const;
 
 // Result type display names

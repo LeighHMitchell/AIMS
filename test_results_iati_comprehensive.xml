@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activity>
+  <iati-identifier>TEST-COMPREHENSIVE-RESULTS-001</iati-identifier>
+  <title>
+    <narrative>Test Activity for Comprehensive Results Import</narrative>
+  </title>
+  
+  <!--result starts-->
+  <result type="1" aggregation-status="1">
+    <title>
+      <narrative>Improved literacy rates among primary school children</narrative>
+    </title>
+    <description>
+      <narrative>This result measures the improvement in literacy rates for children in grades 1-3 across target regions, with specific focus on gender and geographic disparities.</narrative>
+    </description>
+    
+    <!--result-document-link example starts-->
+    <document-link format="application/pdf" url="http://www.example.org/docs/results_framework_2023.pdf">
+      <title>
+        <narrative>Results Framework Report 2023</narrative>
+      </title>
+      <description>
+        <narrative>Comprehensive report on results framework and methodology</narrative>
+      </description>
+      <category code="A01" />
+      <language code="en" />
+      <document-date iso-date="2023-06-15" />
+    </document-link>
+    <!--result-document-link example ends-->
+    
+    <!--result-reference starts-->
+    <reference vocabulary="99" code="OUTPUT-EDU-01" vocabulary-uri="http://example.com/results-framework.html" />
+    <reference vocabulary="7" code="4.1" vocabulary-uri="http://sdgs.un.org/" />
+    <!--result-reference ends-->
+    
+    <!--result-indicator starts-->
+    <indicator measure="2" ascending="1" aggregation-status="1">
+      <title>
+        <narrative>Percentage of children reading at grade level</narrative>
+      </title>
+      <description>
+        <narrative>Percentage of children in grades 1-3 who can read and comprehend grade-appropriate texts, measured using standardized literacy assessment tools.</narrative>
+      </description>
+      
+      <document-link format="application/pdf" url="http://www.example.org/docs/literacy_methodology_2023.pdf">
+        <title>
+          <narrative>Literacy Assessment Methodology 2023</narrative>
+        </title>
+        <description>
+          <narrative>Detailed methodology for literacy assessment and data collection</narrative>
+        </description>
+        <category code="A02" />
+        <language code="en" />
+        <document-date iso-date="2023-01-10" />
+      </document-link>
+      
+      <reference vocabulary="1" code="3429" />
+      <reference vocabulary="7" code="4.1.1" />
+      <reference vocabulary="99" code="IND-LIT-001" indicator-uri="http://example.com/indicators/literacy.html" />
+      
+      <!--result-baseline starts-->
+      <baseline year="2020" iso-date="2020-03-01" value="35.5">
+        <location ref="AF-KAN" />
+        <location ref="AF-HER" />
+        <dimension name="sex" value="female" />
+        <dimension name="sex" value="male" />
+        <dimension name="age" value="6-12" />
+        <dimension name="geographic" value="rural" />
+        
+        <document-link format="application/pdf" url="http://www.example.org/docs/baseline_assessment_2020.pdf">
+          <title>
+            <narrative>Baseline Literacy Assessment 2020</narrative>
+          </title>
+          <description>
+            <narrative>Comprehensive baseline assessment conducted across target regions</narrative>
+          </description>
+          <category code="A01" />
+          <language code="en" />
+          <document-date iso-date="2020-03-15" />
+        </document-link>
+        
+        <comment>
+          <narrative>Baseline established through standardized assessment of 2,500 children across 50 schools in Kandahar and Herat provinces. Rural areas showed significantly lower rates than urban.</narrative>
+        </comment>
+      </baseline>
+      <!--result-baseline ends-->
+      
+      <!--result-period starts-->
+      <period>
+        <period-start iso-date="2021-01-01" />
+        <period-end iso-date="2021-12-31" />
+        
+        <target value="45.0">
+          <location ref="AF-KAN" />
+          <location ref="AF-HER" />
+          <dimension name="sex" value="female" />
+          <dimension name="sex" value="male" />
+          <dimension name="age" value="6-12" />
+          <dimension name="geographic" value="rural" />
+          
+          <comment>
+            <narrative>Target aims for 10 percentage point improvement in Year 1, with focus on closing gender gap in rural areas.</narrative>
+          </comment>
+          
+          <document-link format="application/pdf" url="http://www.example.org/docs/target_plan_2021.pdf">
+            <title>
+              <narrative>Year 1 Target Plan 2021</narrative>
+            </title>
+            <description>
+              <narrative>Detailed plan for achieving literacy targets in Year 1</narrative>
+            </description>
+            <category code="A02" />
+            <language code="en" />
+            <document-date iso-date="2020-12-01" />
+          </document-link>
+        </target>
+        
+        <actual value="47.2">
+          <location ref="AF-KAN" />
+          <location ref="AF-HER" />
+          <dimension name="sex" value="female" />
+          <dimension name="sex" value="male" />
+          <dimension name="age" value="6-12" />
+          <dimension name="geographic" value="rural" />
+          
+          <comment>
+            <narrative>Actual achievement exceeded target by 2.2 percentage points. Female literacy improved by 12 percentage points while male improved by 10 percentage points. Rural areas showed 11% improvement.</narrative>
+          </comment>
+          
+          <document-link format="application/pdf" url="http://www.example.org/docs/actual_results_2021.pdf">
+            <title>
+              <narrative>Year 1 Results Report 2021</narrative>
+            </title>
+            <description>
+              <narrative>Comprehensive report of actual achievements in Year 1</narrative>
+            </description>
+            <category code="A01" />
+            <language code="en" />
+            <document-date iso-date="2022-02-28" />
+          </document-link>
+        </actual>
+      </period>
+      <!--result-period ends-->
+      
+      <!--Additional period for multi-year tracking-->
+      <period>
+        <period-start iso-date="2022-01-01" />
+        <period-end iso-date="2022-12-31" />
+        
+        <target value="55.0">
+          <location ref="AF-KAN" />
+          <dimension name="sex" value="female" />
+          <dimension name="geographic" value="rural" />
+          
+          <comment>
+            <narrative>Year 2 target focuses on sustaining improvements and reaching 55% literacy rate with continued focus on rural females.</narrative>
+          </comment>
+        </target>
+        
+        <actual value="53.8">
+          <location ref="AF-KAN" />
+          <dimension name="sex" value="female" />
+          <dimension name="geographic" value="rural" />
+          
+          <comment>
+            <narrative>Year 2 achieved 53.8%, slightly below target but still showing strong progress. Security challenges in some rural areas affected data collection.</narrative>
+          </comment>
+        </actual>
+      </period>
+    </indicator>
+    <!--result-indicator ends-->
+    
+    <!--Second indicator for comprehensive testing-->
+    <indicator measure="1" ascending="1" aggregation-status="0">
+      <title>
+        <narrative>Number of students completing literacy program</narrative>
+      </title>
+      <description>
+        <narrative>Total number of students who complete the full literacy improvement program, tracked by cohort.</narrative>
+      </description>
+      
+      <reference vocabulary="99" code="IND-COUNT-001" />
+      
+      <baseline year="2020" iso-date="2020-03-01" value="850">
+        <location ref="AF-KAN" />
+        <comment>
+          <narrative>Initial cohort size based on school enrollment data from target schools.</narrative>
+        </comment>
+      </baseline>
+      
+      <period>
+        <period-start iso-date="2021-01-01" />
+        <period-end iso-date="2021-12-31" />
+        <target value="1200">
+          <comment>
+            <narrative>Target to expand program to 1,200 students</narrative>
+          </comment>
+        </target>
+        <actual value="1185">
+          <comment>
+            <narrative>Reached 1,185 students, 98.75% of target</narrative>
+          </comment>
+        </actual>
+      </period>
+    </indicator>
+    
+  </result>
+  <!--result ends-->
+  
+  <!--Second result for outcome-level testing-->
+  <result type="2" aggregation-status="1">
+    <title>
+      <narrative>Improved educational outcomes for marginalized communities</narrative>
+    </title>
+    <description>
+      <narrative>Medium-term outcome measuring sustained educational improvements and community engagement in education.</narrative>
+    </description>
+    
+    <reference vocabulary="7" code="4.5" />
+    
+    <indicator measure="5" ascending="1" aggregation-status="1">
+      <title>
+        <narrative>Community satisfaction with education quality</narrative>
+      </title>
+      <description>
+        <narrative>Qualitative assessment of community perception of education quality improvements, measured through surveys and focus groups.</narrative>
+      </description>
+      
+      <baseline year="2020" value="2">
+        <comment>
+          <narrative>Baseline: Poor (2 out of 5 on satisfaction scale)</narrative>
+        </comment>
+      </baseline>
+      
+      <period>
+        <period-start iso-date="2021-01-01" />
+        <period-end iso-date="2021-12-31" />
+        <target value="3">
+          <comment>
+            <narrative>Target: Moderate (3 out of 5)</narrative>
+          </comment>
+        </target>
+        <actual value="4">
+          <comment>
+            <narrative>Achieved: Good (4 out of 5) - exceeded expectations</narrative>
+          </comment>
+        </actual>
+      </period>
+    </indicator>
+  </result>
+  
+</iati-activity>
+

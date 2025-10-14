@@ -84,20 +84,21 @@ export function TransactionValueDisplay({
       : "USD";
     
     try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: safeCurrency,
+      // Format number with commas
+      const formattedValue = new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
+      
+      // Return format: "EUR 3,000"
+      return `${safeCurrency} ${formattedValue}`;
     } catch (error) {
       console.warn(`[TransactionValueDisplay] Invalid currency "${currency}", using USD:`, error);
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
+      const formattedValue = new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
+      return `USD ${formattedValue}`;
     }
   };
 

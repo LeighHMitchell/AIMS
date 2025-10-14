@@ -30,10 +30,12 @@ interface IATITransaction {
   providerOrg?: {
     ref?: string;
     name?: string;
+    providerActivityId?: string;
   };
   receiverOrg?: {
     ref?: string;
     name?: string;
+    receiverActivityId?: string;
   };
   aidType?: string;
   financeType?: string;
@@ -108,7 +110,8 @@ export async function POST(
       default_aid_type: 'default_aid_type',
       flow_type: 'flow_type',
       collaboration_type: 'collaboration_type',
-      default_finance_type: 'default_finance_type'
+      default_finance_type: 'default_finance_type',
+      capital_spend_percentage: 'capital_spend_percentage'
     };
     
     // Process simple fields
@@ -499,37 +502,68 @@ export async function POST(
           if (org.iati_org_id) orgNameMap.set(org.iati_org_id, org.id);
         });
         
-        // Prepare transaction data
-        const transactionData = newTransactions.map((t: IATITransaction) => ({
-          activity_id: activityId,
-          transaction_type: t.type,
-          transaction_date: t.date,
-          value: t.value,
-          currency: t.currency || 'USD',
-          status: 'actual', // IATI transactions are actual
-          description: t.description,
+        // Helper function to find activities by IATI identifier
+        const findActivityByIatiId = async (iatiId: string | null | undefined): Promise<string | null> => {
+          if (!iatiId) return null;
           
-          // Provider organization
-          provider_org_id: t.providerOrg?.ref ? 
-            (orgNameMap.get(t.providerOrg.ref) || orgNameMap.get(t.providerOrg.name || '')) : null,
-          provider_org_ref: t.providerOrg?.ref,
-          provider_org_name: t.providerOrg?.name,
+          console.log(`[Transaction] Searching for activity by IATI ID: "${iatiId}"`);
           
-          // Receiver organization
-          receiver_org_id: t.receiverOrg?.ref ? 
-            (orgNameMap.get(t.receiverOrg.ref) || orgNameMap.get(t.receiverOrg.name || '')) : null,
-          receiver_org_ref: t.receiverOrg?.ref,
-          receiver_org_name: t.receiverOrg?.name,
+          const { data: activities } = await supabase
+            .from('activities')
+            .select('id, title_narrative')
+            .eq('iati_identifier', iatiId)
+            .limit(1);
           
-          // IATI fields
-          aid_type: t.aidType,
-          finance_type: t.financeType,
-          tied_status: t.tiedStatus,
-          flow_type: t.flowType,
-          disbursement_channel: t.disbursementChannel,
+          if (activities && activities.length > 0) {
+            console.log(`[Transaction] ✓ Found activity: ${activities[0].title_narrative || 'Untitled'}`);
+            return activities[0].id;
+          }
           
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          console.log(`[Transaction] No activity found with IATI ID "${iatiId}"`);
+          return null;
+        };
+        
+        // Prepare transaction data with activity linking
+        const transactionData = await Promise.all(newTransactions.map(async (t: IATITransaction) => {
+          // Find activities by IATI identifier
+          const providerActivityUuid = await findActivityByIatiId(t.providerOrg?.providerActivityId);
+          const receiverActivityUuid = await findActivityByIatiId(t.receiverOrg?.receiverActivityId);
+          
+          return {
+            activity_id: activityId,
+            transaction_type: t.type,
+            transaction_date: t.date,
+            value: t.value,
+            currency: t.currency || 'USD',
+            status: 'actual', // IATI transactions are actual
+            description: t.description,
+            
+            // Provider organization
+            provider_org_id: t.providerOrg?.ref ? 
+              (orgNameMap.get(t.providerOrg.ref) || orgNameMap.get(t.providerOrg.name || '')) : null,
+            provider_org_ref: t.providerOrg?.ref,
+            provider_org_name: t.providerOrg?.name,
+            provider_org_activity_id: t.providerOrg?.providerActivityId || null,
+            provider_activity_uuid: providerActivityUuid,  // NEW - Activity link
+            
+            // Receiver organization
+            receiver_org_id: t.receiverOrg?.ref ? 
+              (orgNameMap.get(t.receiverOrg.ref) || orgNameMap.get(t.receiverOrg.name || '')) : null,
+            receiver_org_ref: t.receiverOrg?.ref,
+            receiver_org_name: t.receiverOrg?.name,
+            receiver_org_activity_id: t.receiverOrg?.receiverActivityId || null,
+            receiver_activity_uuid: receiverActivityUuid,  // NEW - Activity link
+            
+            // IATI fields
+            aid_type: t.aidType,
+            finance_type: t.financeType,
+            tied_status: t.tiedStatus,
+            flow_type: t.flowType,
+            disbursement_channel: t.disbursementChannel,
+            
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
         }));
         
         const { error: transactionError } = await supabase

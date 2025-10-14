@@ -150,7 +150,7 @@ export function HeroCard<T = any>({
         maximumFractionDigits: 2 
       });
       if (!prefix) {
-        formatted = "$" + formatted;
+        formatted = "US$" + formatted;
       }
     } else if (currency === "" || currency === null || currency === undefined) {
       // No currency - always format as whole number for counts (no decimals during animation)

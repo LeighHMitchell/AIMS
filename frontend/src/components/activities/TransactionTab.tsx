@@ -13,6 +13,7 @@ interface TransactionTabProps {
   defaultCurrency?: string;
   defaultTiedStatus?: string;
   defaultFlowType?: string;
+  onTransactionsChange?: (transactions: Transaction[]) => void;
 }
 
 export default function TransactionTab({ 
@@ -22,14 +23,19 @@ export default function TransactionTab({
   defaultAidType,
   defaultCurrency = 'USD',
   defaultTiedStatus,
-  defaultFlowType
+  defaultFlowType,
+  onTransactionsChange
 }: TransactionTabProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Track last notified transaction count to prevent infinite loops
+  const lastNotifiedCountRef = React.useRef<number>(-1);
 
-  // Fetch transactions
+  // Fetch transactions and reset notification tracking
   useEffect(() => {
+    lastNotifiedCountRef.current = -1; // Reset notification tracking for new activity
     fetchTransactions();
     fetchOrganizations();
   }, [activityId]);
@@ -69,6 +75,31 @@ export default function TransactionTab({
       console.error('Error fetching organizations:', error);
     }
   };
+
+  // Notify parent component when transactions change (only after initial load)
+  useEffect(() => {
+    // Only notify parent after initial data load is complete
+    // This prevents the green tick from disappearing when switching tabs
+    console.log('[TransactionTab] useEffect - Checking notification conditions:', {
+      hasCallback: !!onTransactionsChange,
+      isLoading,
+      transactionsCount: transactions.length,
+      lastNotifiedCount: lastNotifiedCountRef.current
+    });
+    
+    // Only notify if:
+    // 1. We have a callback
+    // 2. We're not loading
+    // 3. The transaction count has actually changed since last notification
+    if (onTransactionsChange && !isLoading && lastNotifiedCountRef.current !== transactions.length) {
+      console.log('[TransactionTab] Notifying parent with transactions:', transactions.length);
+      lastNotifiedCountRef.current = transactions.length;
+      onTransactionsChange(transactions);
+    } else {
+      console.log('[TransactionTab] NOT notifying parent - isLoading:', isLoading, 'or count unchanged');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, isLoading]); // Intentionally exclude onTransactionsChange to prevent infinite loops
 
   const handleAddTransaction = async (data: TransactionFormData) => {
     try {

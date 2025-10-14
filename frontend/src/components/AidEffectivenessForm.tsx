@@ -760,10 +760,10 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                             </div>
                             <div className="space-y-1">
                               <div className="font-medium text-sm">
-                                {contact.title} {contact.firstName} {contact.middleName} {contact.lastName}
+                                {contact.firstName} {contact.lastName}
                               </div>
                               <div className="text-xs text-gray-600">
-                                {contact.position} • {contact.organisationName || 'No organization'}
+                                {contact.organisationName || 'No organization'}
                               </div>
                               {contact.email && (
                                 <div className="text-xs text-gray-600">
@@ -802,13 +802,13 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                       updateField('contacts', newContacts);
                       
                       // Update the legacy fields for backward compatibility
-                      updateField('contactName', `${contact.title || ''} ${contact.firstName} ${contact.middleName || ''} ${contact.lastName}`.trim());
+                      updateField('contactName', `${contact.firstName} ${contact.lastName}`.trim());
                       updateField('contactOrg', contact.organisationId);
                       updateField('contactEmail', contact.email);
                       updateField('contactPhone', contact.phone || `${contact.countryCode || ''} ${contact.phoneNumber || ''}`.trim());
                     }}
                     onCreateNew={() => updateField('editingContact', {
-                      title: "Mr.",
+                      title: "",
                       firstName: "",
                       middleName: "",
                       lastName: "",
@@ -833,25 +833,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                   <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
                     <div className="font-medium text-sm mb-4">Add New Contact</div>
                     
-                    <div className="grid grid-cols-4 gap-4">
-                      {/* Title */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">Title</Label>
-                        <Select
-                          value={formData.editingContact.title}
-                          onValueChange={(value) => updateField('editingContact', {...formData.editingContact, title: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Title" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {["Mr.", "Ms.", "Mrs.", "Dr.", "Prof.", "Eng.", "Daw", "U"].map(title => (
-                              <SelectItem key={title} value={title}>{title}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
+                    <div className="grid grid-cols-2 gap-4">
                       {/* First Name */}
                       <div className="space-y-2">
                         <Label className="text-sm">First Name</Label>
@@ -859,16 +841,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                           value={formData.editingContact.firstName || ""}
                           onChange={(e) => updateField('editingContact', {...formData.editingContact, firstName: e.target.value})}
                           placeholder="First name"
-                        />
-                      </div>
-
-                      {/* Middle Name */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">Middle Name</Label>
-                        <Input
-                          value={formData.editingContact.middleName || ""}
-                          onChange={(e) => updateField('editingContact', {...formData.editingContact, middleName: e.target.value})}
-                          placeholder="Middle name"
                         />
                       </div>
 
@@ -883,17 +855,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Position/Role */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">Position/Role</Label>
-                        <Input
-                          value={formData.editingContact.position || ""}
-                          onChange={(e) => updateField('editingContact', {...formData.editingContact, position: e.target.value})}
-                          placeholder="Position or role"
-                        />
-                      </div>
-
+                    <div className="grid grid-cols-1 gap-4">
                       {/* Contact Type */}
                       <div className="space-y-2">
                         <Label className="text-sm">Contact Type</Label>
@@ -1042,7 +1004,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                             updateField('editingContact', null);
                             
                             // Update the legacy fields for backward compatibility
-                            updateField('contactName', `${contact.title} ${contact.firstName} ${contact.middleName} ${contact.lastName}`.trim());
+                            updateField('contactName', `${contact.firstName} ${contact.lastName}`.trim());
                             updateField('contactOrg', contact.organisationId);
                             updateField('contactEmail', contact.email);
                             updateField('contactPhone', `${contact.countryCode} ${contact.phoneNumber}`.trim());
@@ -1065,13 +1027,13 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                       updateField('contacts', newContacts);
                       
                       // Update the legacy fields for backward compatibility
-                      updateField('contactName', `${contact.title || ''} ${contact.firstName} ${contact.middleName || ''} ${contact.lastName}`.trim());
+                      updateField('contactName', `${contact.firstName} ${contact.lastName}`.trim());
                       updateField('contactOrg', contact.organisationId);
                       updateField('contactEmail', contact.email);
                       updateField('contactPhone', contact.phone || `${contact.countryCode || ''} ${contact.phoneNumber || ''}`.trim());
                     }}
                     onCreateNew={() => updateField('editingContact', {
-                      title: "Mr.",
+                      title: "",
                       firstName: "",
                       middleName: "",
                       lastName: "",

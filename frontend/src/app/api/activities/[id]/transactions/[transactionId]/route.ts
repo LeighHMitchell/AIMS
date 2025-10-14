@@ -73,6 +73,11 @@ export async function PUT(
       receiver_org_language: body.receiver_org_language || 'en',
       // Add financing classification if provided
       financing_classification: body.financing_classification || null,
+      // Activity linking fields
+      provider_org_activity_id: body.provider_org_activity_id || null,
+      provider_activity_uuid: body.provider_activity_uuid || null,
+      receiver_org_activity_id: body.receiver_org_activity_id || null,
+      receiver_activity_uuid: body.receiver_activity_uuid || null,
       updated_at: new Date().toISOString()
     };
 

@@ -92,11 +92,15 @@ export function getSupabaseAdmin() {
     return null
   }
   
-  if (!_supabaseAdmin) {
-    _supabaseAdmin = createAdminClient()
-  }
+  // TEMPORARY FIX: Create fresh client on each request to avoid stale cache
+  // TODO: Investigate why singleton was caching queries
+  return createAdminClient()
   
-  return _supabaseAdmin
+  // Original singleton code (disabled for now):
+  // if (!_supabaseAdmin) {
+  //   _supabaseAdmin = createAdminClient()
+  // }
+  // return _supabaseAdmin
 }
 
 // Get database client (Supabase or local fallback)
@@ -164,6 +168,8 @@ export type Database = {
           default_flow_type: string | null
           default_modality: number | null
           default_modality_override: boolean | null
+          otherIdentifiers: any[] | null
+          capital_spend_percentage: number | null
         }
         Insert: Omit<Database['public']['Tables']['activities']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['activities']['Insert']>
@@ -241,7 +247,8 @@ export type Database = {
           name: string
           acronym: string | null
           type: string | null
-          organisation_type: string | null
+          Organisation_Type_Code: string | null
+          Organisation_Type_Name: string | null
           country: string | null
           country_represented: string | null
           cooperation_modality: string | null

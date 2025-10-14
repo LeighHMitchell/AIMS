@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { EnhancedFinancesSection } from "@/components/activities/EnhancedFinancesSection";
 import ImprovedSectorAllocationForm from "@/components/activities/ImprovedSectorAllocationForm";
 import OrganisationsSection from "@/components/OrganisationsSection";
-import ContactsSection from "@/components/ContactsSection";
+import ContactsTab from "@/components/contacts/ContactsTab";
 import { GovernmentInputsSectionEnhanced } from "@/components/GovernmentInputsSectionEnhanced";
 import ContributorsSection from "@/components/ContributorsSection";
 import { AutosaveBannerUpload, AutosaveIconUpload } from "@/components/ui/autosave-upload";
@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ActivityStatusSelect } from "@/components/forms/ActivityStatusSelect";
 import { CollaborationTypeSelect } from "@/components/forms/CollaborationTypeSelect";
 import { ActivityScopeSearchableSelect } from "@/components/forms/ActivityScopeSearchableSelect";
+import { OtherIdentifierTypeSelect } from "@/components/forms/OtherIdentifierTypeSelect";
 import { DropdownProvider } from "@/contexts/DropdownContext";
 import { LinkedActivityTitle } from "@/components/ui/linked-activity-title";
 import { CreateActivityModal } from "@/components/modals/CreateActivityModal";
@@ -32,7 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2 } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus } from "lucide-react";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator } from "@/components/ActivityFieldHelpers";
@@ -93,8 +94,10 @@ import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab";
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab";
 import { AidTypeSelect } from "@/components/forms/AidTypeSelect";
 import { ResultsTab } from "@/components/activities/ResultsTab";
+import { CapitalSpendTab } from "@/components/activities/CapitalSpendTab";
+import { FinancingTermsTab } from "@/components/activities/FinancingTermsTab";
+import { ConditionsTab } from "@/components/activities/ConditionsTab";
 import MetadataTab from "@/components/activities/MetadataTab";
-import FocalPointsTab from "@/components/activities/FocalPointsTab";
 import { DocumentsAndImagesTabInline } from "@/components/activities/DocumentsAndImagesTabInline";
 import { IatiDocumentLink } from "@/lib/iatiDocumentLink";
 
@@ -196,6 +199,20 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
+    }
+  });
+
+  const otherIdentifiersAutosave = useFieldAutosave('otherIdentifiers', { 
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    immediate: false,
+    debounceMs: 1000,
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data, isUserInitiated = false) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
     }
   });
 
@@ -1471,11 +1488,101 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </div>
         </div>
       </div>
+
+      {/* Row 9: Other Identifier Types */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-gray-900">Other Identifier Types</h3>
+          <HelpTextTooltip>
+            Additional identifiers for this activity, such as internal organization identifiers or previous activity identifiers.
+          </HelpTextTooltip>
+        </div>
+        
+        {/* Existing Identifiers */}
+        {(general.otherIdentifiers || []).map((identifier: any, index: number) => (
+          <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+            {/* Other Identifier Type */}
+            <div className="space-y-2">
+              <LabelSaveIndicator
+                isSaving={otherIdentifiersAutosave.state.isSaving}
+                isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
+                className="text-gray-700"
+              >
+                Other Identifier Type
+              </LabelSaveIndicator>
+              <OtherIdentifierTypeSelect
+                value={identifier.type || ''}
+                onValueChange={(value) => {
+                  const updatedIdentifiers = [...(general.otherIdentifiers || [])];
+                  updatedIdentifiers[index] = { ...updatedIdentifiers[index], type: value };
+                  setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
+                  otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
+                }}
+                placeholder="Select identifier type..."
+              />
+            </div>
+
+            {/* Other Identifier Code */}
+            <div className="space-y-2">
+              <LabelSaveIndicator
+                isSaving={otherIdentifiersAutosave.state.isSaving}
+                isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
+                className="text-gray-700"
+              >
+                Identifier Code
+              </LabelSaveIndicator>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={identifier.code || ''}
+                  onChange={(e) => {
+                    const updatedIdentifiers = [...(general.otherIdentifiers || [])];
+                    updatedIdentifiers[index] = { ...updatedIdentifiers[index], code: e.target.value };
+                    setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
+                    otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
+                  }}
+                  placeholder="Enter identifier code..."
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const updatedIdentifiers = (general.otherIdentifiers || []).filter((_: any, i: number) => i !== index);
+                    setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
+                    otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
+                  }}
+                  className="px-3"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Add Identifier Button */}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const newIdentifiers = [...(general.otherIdentifiers || []), { type: '', code: '' }];
+            setGeneral((g: any) => ({ ...g, otherIdentifiers: newIdentifiers }));
+            otherIdentifiersAutosave.triggerFieldSave(newIdentifiers);
+          }}
+          className="gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Add Other Identifier
+        </Button>
+      </div>
     </div>
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, documents, setDocuments, documentsAutosave, focalPoints, setFocalPoints, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, clearSavedFormData, loadedTabs }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, clearSavedFormData, loadedTabs }: any) {
   
   // OPTIMIZATION: Lazy loading - only render heavy components after tab has been visited
   // Removed the duplicate skeleton rendering logic here since the parent component
@@ -1599,6 +1706,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         general={general}
         transactions={transactions}
         onTransactionsChange={setTransactions}
+        onRefreshNeeded={refreshTransactions}
         onDefaultsChange={(field, value) => {
           console.log('[AIMS DEBUG] Default field changed:', field, '=', value);
           console.log('[AIMS DEBUG] Current general.id:', general.id);
@@ -1634,41 +1742,45 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         endDate={general.plannedEndDate || general.actualEndDate || ""}
         defaultCurrency={general.defaultCurrency || "USD"}
         readOnly={!permissions?.canEditActivity}
-        onDisbursementsChange={setPlannedDisbursements}
+        onDisbursementsChange={handlePlannedDisbursementsChange}
       />;
     case "results":
       return <ResultsTab 
         activityId={general.id} 
         readOnly={!permissions?.canEditActivity}
-        onResultsChange={(results) => {
-          setResultsCount(Array.isArray(results) ? results.length : 0);
-        }}
+        onResultsChange={handleResultsChange}
         defaultLanguage="en"
       />;
-    case "contacts":
-      // Debug logging for partner data
-      console.log('[ACTIVITY EDITOR DEBUG] Passing partner data to ContactsSection:', {
-        extendingPartners,
-        implementingPartners,
-        governmentPartners,
-        contributors
-      });
-      
-      return <ContactsSection 
-        contacts={contacts} 
-        onChange={updateContacts} 
+    case "capital-spend":
+      return <CapitalSpendTab 
         activityId={general.id} 
-        reportingOrgId={general.createdByOrg || general.reportingOrgId}
-        reportingOrgName={general.created_by_org_name || general.created_by_org_acronym}
-        extendingPartners={extendingPartners}
-        implementingPartners={implementingPartners}
-        governmentPartners={governmentPartners}
-        contributors={contributors}
+        readOnly={!permissions?.canEditActivity}
+        onCapitalSpendChange={(percentage) => {
+          setCapitalSpendPercentage(percentage);
+        }}
       />;
-    case "focal_points":
-      return <FocalPointsTab 
+    case "financing-terms":
+      return <FinancingTermsTab 
         activityId={general.id} 
-        onFocalPointsChange={setFocalPoints}
+        readOnly={!permissions?.canEditActivity}
+        onFinancingTermsChange={(hasData) => {
+          setFinancingTermsCount(hasData ? 1 : 0);
+        }}
+      />;
+    case "conditions":
+      return <ConditionsTab 
+        activityId={general.id} 
+        readOnly={!permissions?.canEditActivity}
+        defaultLanguage="en"
+        onConditionsChange={(conditions) => {
+          setConditionsCount(conditions.length);
+        }}
+      />;
+    case "contacts":
+      return <ContactsTab 
+        activityId={general.id}
+        readOnly={!permissions?.canEditActivity}
+        onContactsChange={setContacts}
       />;
     case "government":
       return <GovernmentInputsSectionEnhanced 
@@ -1853,6 +1965,7 @@ function NewActivityPageContent() {
       updatedAt: "",
       iatiIdentifier: "",
       otherIdentifier: "",
+      otherIdentifiers: [] as Array<{ type: string; code: string; ownerOrg?: { ref?: string; narrative?: string } }>,
       uuid: "",
       autoSync: false,
       lastSyncTime: "",
@@ -1926,8 +2039,6 @@ function NewActivityPageContent() {
   
   const [documents, setDocuments] = useState<any[]>([]);
   
-  const [focalPoints, setFocalPoints] = useState<any[]>([]);
-  
   const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>({});
 
   // Add missing state variables
@@ -1939,7 +2050,20 @@ function NewActivityPageContent() {
   const [contributorsCount, setContributorsCount] = useState<number>(0);
   const [linkedActivitiesCount, setLinkedActivitiesCount] = useState<number>(0);
   const [resultsCount, setResultsCount] = useState<number>(0);
+  const [capitalSpendPercentage, setCapitalSpendPercentage] = useState<number | null>(null);
+  const [conditionsCount, setConditionsCount] = useState<number>(0);
+  const [financingTermsCount, setFinancingTermsCount] = useState<number>(0);
 
+  // Memoized callbacks to prevent infinite re-render loop
+  const handlePlannedDisbursementsChange = useCallback((disb: any[]) => {
+    console.log('[ActivityEditor] setPlannedDisbursements called with:', disb?.length || 0, 'disbursements');
+    // Always update - the tab component already filters to only send data with IDs
+    setPlannedDisbursements(disb);
+  }, []);
+
+  const handleResultsChange = useCallback((results: any[]) => {
+    setResultsCount(Array.isArray(results) ? results.length : 0);
+  }, []);
 
   // Debug the participatingOrgsCount changes
   React.useEffect(() => {
@@ -2072,7 +2196,6 @@ function NewActivityPageContent() {
       budgets,
       plannedDisbursements,
       documents,
-      focalPoints,
       subnationalBreakdowns
     };
     
@@ -2081,7 +2204,7 @@ function NewActivityPageContent() {
     general, sectors, transactions, extendingPartners, implementingPartners,
     governmentPartners, contacts, governmentInputs, contributors, sdgMappings,
     tags, workingGroups, policyMarkers, specificLocations, coverageAreas,
-    activityScope, budgets, plannedDisbursements, documents, focalPoints,
+    activityScope, budgets, plannedDisbursements, documents,
     subnationalBreakdowns, saveFormData
   ]);
 
@@ -2132,22 +2255,42 @@ function NewActivityPageContent() {
     }
   }, [searchParams]);
 
-  // Clear form data when navigating to new activity (no ID in URL)
+  // Track previous activity ID to detect actual activity switches vs tab navigation
+  const [previousActivityId, setPreviousActivityId] = useState<string | null>(null);
+
+  // Clear form data only when actually switching to new activity creation
   useEffect(() => {
-    const activityId = searchParams?.get("id");
-    if (!activityId) {
-      // We're creating a new activity - clear any saved form data
-      console.log('[AIMS] Creating new activity - clearing form data');
+    const currentActivityId = searchParams?.get("id");
+    
+    // Only clear form data if:
+    // 1. We're switching from an existing activity (previousActivityId exists) to new activity creation (no currentActivityId)
+    // 2. OR this is the initial load with no activity ID
+    const shouldClearFormData = !currentActivityId && (previousActivityId !== null || previousActivityId === null);
+    
+    if (shouldClearFormData && previousActivityId !== currentActivityId) {
+      console.log('[AIMS] Switching to new activity creation - clearing form data');
       clearSavedFormData();
     }
-  }, [searchParams, clearSavedFormData]);
+    
+    // Update tracked activity ID
+    setPreviousActivityId(currentActivityId || null);
+  }, [searchParams?.get("id"), clearSavedFormData]);
 
-  // Reset form state when navigating to new activity (no ID in URL)
+  // Reset form state only when legitimately creating a new activity
   useEffect(() => {
-    const activityId = searchParams?.get("id");
-    if (!activityId) {
-      // Reset all form state to blank defaults
-      console.log('[AIMS] Resetting form state for new activity');
+    const currentActivityId = searchParams?.get("id");
+    
+    // Only reset form state if:
+    // 1. No current activity ID (creating new activity)
+    // 2. AND we're actually switching activities (not just tab navigation)
+    // 3. OR user has changed (login/logout scenario)
+    const shouldResetForm = !currentActivityId && (
+      previousActivityId !== currentActivityId || // Activity switch
+      previousActivityId === null // Initial load for new activity
+    );
+    
+    if (shouldResetForm) {
+      console.log('[AIMS] Resetting form state for new activity creation');
       console.log('[AIMS DEBUG] User organization data for reset:', {
         user_organisation: user?.organisation,
         user_organization_name: user?.organization?.name,
@@ -2200,6 +2343,7 @@ function NewActivityPageContent() {
         updatedAt: "",
         iatiIdentifier: "",
         otherIdentifier: "",
+        otherIdentifiers: [],
         uuid: "",
         autoSync: false,
         lastSyncTime: "",
@@ -2226,10 +2370,24 @@ function NewActivityPageContent() {
       setBudgets([]);
       setPlannedDisbursements([]);
       setDocuments([]);
-      setFocalPoints([]);
       setSubnationalBreakdowns({});
     }
-  }, [searchParams, user]);
+  }, [searchParams?.get("id"), previousActivityId, user?.organizationId]);
+
+  // Handle user changes (login/logout) - reset form for new activity creation only
+  useEffect(() => {
+    const currentActivityId = searchParams?.get("id");
+    
+    // Only reset when user changes AND we're in new activity mode (no ID)
+    if (!currentActivityId && user) {
+      console.log('[AIMS] User changed during new activity creation - updating org info');
+      setGeneral(prev => ({
+        ...prev,
+        created_by_org_name: user?.organisation || user?.organization?.name || "",
+        createdByOrg: user?.organizationId || ""
+      }));
+    }
+  }, [user?.organizationId, user?.organisation, user?.organization?.name]);
 
   const [similarActivities, setSimilarActivities] = useState<ActivityMatch[]>([]);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
@@ -2524,6 +2682,7 @@ function NewActivityPageContent() {
             updatedAt: data.updatedAt || "",
             iatiIdentifier: data.iatiIdentifier || "",
             otherIdentifier: data.partnerId || data.otherIdentifier || "",
+            otherIdentifiers: data.otherIdentifiers || data.other_identifiers || [],
             uuid: data.id || "",
             autoSync: data.autoSync || false,
             lastSyncTime: data.lastSyncTime || "",
@@ -2532,6 +2691,11 @@ function NewActivityPageContent() {
             activityScope: data.activityScope || "4",
             language: data.language || "en"
           });
+          
+          // Set capital spend percentage for tab completion
+          console.log('[AIMS] Capital spend percentage from API:', data.capital_spend_percentage);
+          setCapitalSpendPercentage(data.capital_spend_percentage ?? null);
+          console.log('[AIMS] Capital spend state set to:', data.capital_spend_percentage ?? null);
           
           // Convert database sectors to ImprovedSectorAllocationForm format
           const convertedSectors = (data.sectors || []).map((sector: any) => ({
@@ -2549,14 +2713,21 @@ function NewActivityPageContent() {
           console.log('🔧 [AIMS] Converted sectors for form:', JSON.stringify(convertedSectors, null, 2));
           console.log('📈 [AIMS] Sector count - Raw:', data.sectors?.length || 0, 'Converted:', convertedSectors.length);
           setSectors(convertedSectors);
-          setTransactions(data.transactions || []);
-          setTransactionsLoaded(true);
+          // Only update transactions if explicitly provided (don't reset to empty during reload)
+          if (data.transactions !== undefined) {
+            setTransactions(data.transactions);
+            setTransactionsLoaded(true);
+          }
           setExtendingPartners(data.extendingPartners || []);
           setImplementingPartners(data.implementingPartners || []);
           setGovernmentPartners(data.governmentPartners || []);
-          setContacts(data.contacts || []);
+          // Only update contacts if explicitly provided (don't reset to empty during reload)
+          if (data.contacts !== undefined) {
+            setContacts(data.contacts);
+          }
           setGovernmentInputs(data.governmentInputs || {});
           setContributors(data.contributors || []);
+          console.log('[AIMS] Loaded SDG mappings:', data.sdgMappings?.length || 0, data.sdgMappings);
           setSdgMappings(data.sdgMappings || []);
           setTags(data.tags || []);
           setWorkingGroups(data.workingGroups || []);
@@ -2616,16 +2787,41 @@ function NewActivityPageContent() {
             setBudgetNotProvided(false);
           }
 
-          // Fetch planned disbursements for tab completion status  
+          // Fetch planned disbursements for tab completion status
+          // NOTE: Using direct Supabase query instead of API endpoint because API endpoint has a bug
+          // where it returns empty array even when data exists (likely getSupabaseAdmin() issue)
           try {
-            const disbursementsResponse = await fetch(`/api/activities/${activityId}/planned-disbursements`);
-            if (disbursementsResponse.ok) {
-              const disbursementsData = await disbursementsResponse.json();
+            console.log('[AIMS] Fetching planned disbursements for activityId:', activityId);
+            const { data: disbursementsData, error: disbursementsError } = await supabase
+              .from('planned_disbursements')
+              .select('*')
+              .eq('activity_id', activityId)
+              .order('period_start', { ascending: true });
+            
+            if (disbursementsError) {
+              console.error('[AIMS] Error fetching planned disbursements:', disbursementsError);
+            } else {
               setPlannedDisbursements(disbursementsData || []);
               console.log('[AIMS] Loaded planned disbursements for tab completion:', disbursementsData?.length || 0);
             }
           } catch (error) {
             console.warn('[AIMS] Failed to load planned disbursements for tab completion:', error);
+          }
+
+          // Fetch transactions for tab completion status
+          try {
+            console.log('[AIMS] Fetching transactions for activityId:', activityId);
+            const transactionsResponse = await fetch(`/api/activities/${activityId}/transactions`);
+            if (transactionsResponse.ok) {
+              const transactionsData = await transactionsResponse.json();
+              // Handle both response formats: { data: [...] } or direct array [...]
+              const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData.data || []);
+              setTransactions(transactions);
+              setTransactionsLoaded(true);
+              console.log('[AIMS] Loaded transactions for tab completion:', transactions.length);
+            }
+          } catch (error) {
+            console.warn('[AIMS] Failed to load transactions for tab completion:', error);
           }
 
           // Fetch subnational breakdown for tab completion status
@@ -2644,16 +2840,57 @@ function NewActivityPageContent() {
             console.warn('[AIMS] Failed to load subnational breakdown for tab completion:', error);
           }
 
-          // Fetch focal points for tab completion status
+          // Fetch contacts for tab completion status
           try {
-            const focalPointsResponse = await fetch(`/api/activities/${activityId}/focal-points`);
-            if (focalPointsResponse.ok) {
-              const focalPointsData = await focalPointsResponse.json();
-              setFocalPoints(focalPointsData);
-              console.log('[AIMS] Loaded focal points for tab completion:', focalPointsData);
+            const contactsResponse = await fetch(`/api/activities/${activityId}/contacts`);
+            if (contactsResponse.ok) {
+              const contactsData = await contactsResponse.json();
+              setContacts(contactsData);
+              console.log('[AIMS] Loaded contacts for tab completion:', contactsData?.length || 0);
             }
           } catch (error) {
-            console.warn('[AIMS] Failed to load focal points for tab completion:', error);
+            console.warn('[AIMS] Failed to load contacts for tab completion:', error);
+          }
+
+          // Fetch conditions for tab completion status
+          try {
+            const { data: conditionsData, error: conditionsError } = await supabase
+              .from('activity_conditions')
+              .select('id')
+              .eq('activity_id', activityId);
+            
+            if (!conditionsError && conditionsData) {
+              console.log('[AIMS] Loaded conditions for tab completion:', conditionsData.length);
+              setConditionsCount(conditionsData.length);
+            }
+          } catch (error) {
+            console.warn('[AIMS] Failed to load conditions for tab completion:', error);
+          }
+
+          // Fetch financing terms for tab completion status
+          try {
+            const { data: financingTermsData, error: financingTermsError } = await supabase
+              .from('activity_financing_terms')
+              .select('id, rate_1, commitment_date')
+              .eq('activity_id', activityId)
+              .maybeSingle();
+            
+            const { data: loanStatusData, error: loanStatusError } = await supabase
+              .from('activity_loan_status')
+              .select('id')
+              .eq('activity_id', activityId);
+            
+            // Has completed data if loan terms exist with key fields OR if any loan status exists
+            const hasFinancingData = 
+              (financingTermsData && financingTermsData.rate_1 !== null && financingTermsData.commitment_date !== null) ||
+              (loanStatusData && loanStatusData.length > 0);
+            
+            if (!financingTermsError && !loanStatusError) {
+              console.log('[AIMS] Loaded financing terms for tab completion:', hasFinancingData);
+              setFinancingTermsCount(hasFinancingData ? 1 : 0);
+            }
+          } catch (error) {
+            console.warn('[AIMS] Failed to load financing terms for tab completion:', error);
           }
         } else {
           // New activity - just set some defaults
@@ -2707,10 +2944,10 @@ function NewActivityPageContent() {
       organisations: "Participating Organisations",
       contributors: "Activity Contributors",
       contacts: "Activity Contacts",
-      focal_points: "Focal Points",
       linked_activities: "Linked Activities",
-      finances: "Finances",
+      finances: "Transactions",
       results: "Results",
+      "capital-spend": "Capital Spend",
       sdg: "SDG Alignment",
       tags: "Tags",
       working_groups: "Working Groups",
@@ -2721,6 +2958,7 @@ function NewActivityPageContent() {
       aid_effectiveness: "Aid Effectiveness",
       budgets: "Budgets",
       "planned-disbursements": "Planned Disbursements",
+      "conditions": "Conditions",
       "xml-import": "XML Import"
     };
     return sectionLabels[sectionId] || sectionId;
@@ -2735,13 +2973,14 @@ function NewActivityPageContent() {
       organisations: "This tab records the official roles of organisations involved in the activity. Participating organisations may be listed as extending partners, implementing partners, or government partners. Extending partners are entities that channel funds onward, implementing partners are responsible for delivering the activity, and government partners provide oversight or maintain responsibility under agreements such as MoUs. These roles define the structure of participation for reporting, while data entry permissions are managed separately in the Contributors tab.",
       contributors: "The Contributors tab identifies organisations that are permitted to add or update information within the activity record. Contributors can enter their own financial transactions, results, and implementation details, but this does not alter their formal role in the activity, which is defined in the Organisations tab. Each contributor sees and manages only their own entries, while the activity creator and designated government validators retain visibility across all contributions.",
       contacts: "The Contacts tab records key individuals associated with the activity, including their name, role, organisation, and contact details. It can also include a short narrative description of their responsibilities or function within the project. Adding contacts helps identify focal points for communication and coordination, while multiple entries allow both general enquiries and specific role-based contacts to be captured.",
-      "focal_points": "The Focal Points tab designates the individuals accountable for maintaining and validating the activity record. Recipient government focal points are officials who review or endorse the activity, while development partner focal points are the main contacts responsible for updating and managing the information on behalf of their organisations. Assigning focal points ensures clarity on who is responsible for the accuracy and upkeep of the record.",
       "linked_activities": "The Linked Activities tab shows connections between this activity and others, defined through recognised relationship types such as parent, child, or related projects. Each linked activity is displayed with its title, identifier, and reporting organisation, along with its relationship to the current activity. A relationship visualisation provides a clear overview of how activities are structured and connected across partners.",
       tags: "Add custom tags to categorise this activity and make it easier to find through search and reporting. You can click on any tag to edit it inline. When creating tags, use clear and specific terms, such as \"water-infrastructure\" instead of simply \"water,\" to ensure accuracy. Tags ignore letter cases and will always be saved in lowercase. For consistency, try to reuse existing tags whenever possible. Careful tagging not only improves searchability but also strengthens the quality of filtering and reporting across activities.",
       working_groups: "In this section you can map the activity to the relevant technical or sector working groups. Doing so ensures that the activity is visible within the appropriate coordination structures, helps align it with other initiatives in the same area, and supports joint planning, monitoring and reporting. By linking your activity to the correct working group, you contribute to better coordination across partners and provide government and sector leads with a clearer picture of collective efforts.",
       policy_markers: "Assign OECD DAC and IATI-compliant policy markers to show how this activity addresses cross-cutting development issues. Policy markers are a standard way of signalling whether and to what extent an activity contributes to objectives such as gender equality, climate change, biodiversity, or disaster risk reduction. Each marker is scored to reflect the importance of the objective within the activity—for example, whether it is a principal objective, a significant objective, or not targeted at all. The Rio Markers are a specific subset that track environmental objectives in line with OECD DAC guidelines. Providing a short rationale alongside your chosen scores helps explain and justify the assessment, making the data more transparent and easier to interpret across organisations and reports.",
       documents: "You can drag and drop files into the upload area or click \"Choose Files\" to browse your computer. Supported formats include images (PNG, JPG, GIF), PDFs, Word documents, Excel sheets, and CSV files. Add a clear title and category so your uploads are easy to find later in the library.",
-      "xml-import": "Import activity data from an IATI-compliant XML file. You can review and select which fields to import."
+      "xml-import": "Import activity data from an IATI-compliant XML file. You can review and select which fields to import.",
+      "capital-spend": "Capital expenditure represents the percentage of the total activity cost used for fixed assets or infrastructure (e.g., buildings, equipment, vehicles). This helps distinguish between capital investment and operational/recurrent costs.",
+      "conditions": "Conditions are requirements that must be met for the activity to proceed. They can be policy-related (requiring implementation of particular policies), performance-based (requiring achievement of specific outputs or outcomes), or fiduciary (requiring use of specific financial management measures)."
     };
     return sectionHelpTexts[sectionId] || "Complete this section to provide additional details about your activity.";
   };
@@ -2855,12 +3094,15 @@ function NewActivityPageContent() {
 
     // Finances tab: green check if at least one transaction
     const financesComplete = transactions && transactions.length > 0;
+    console.log('[TabCompletion] Transactions:', { count: transactions?.length || 0, complete: financesComplete });
 
     // Budgets tab: green check if at least one budget or budget not provided
     const budgetsComplete = (budgets && budgets.length > 0) || budgetNotProvided;
+    console.log('[TabCompletion] Budgets:', { count: budgets?.length || 0, complete: budgetsComplete, budgetNotProvided });
 
     // Planned Disbursements tab: green check if at least one planned disbursement
     const plannedDisbursementsComplete = plannedDisbursements && plannedDisbursements.length > 0;
+    console.log('[TabCompletion] Planned Disbursements:', { count: plannedDisbursements?.length || 0, complete: plannedDisbursementsComplete });
 
     // SDG tab: green check if at least one SDG goal is mapped
     const sdgComplete = sdgMappings && sdgMappings.length > 0;
@@ -2921,14 +3163,21 @@ function NewActivityPageContent() {
     // Results tab: green check if at least one result exists
     const resultsCompletion = getTabCompletionStatus('results', Array(resultsCount).fill({}));
     
+    // Capital Spend tab: green check if percentage is provided and greater than 0
+    const capitalSpendComplete = capitalSpendPercentage !== null && 
+                                  capitalSpendPercentage !== undefined &&
+                                  capitalSpendPercentage > 0 && 
+                                  capitalSpendPercentage <= 100;
+    console.log('[TabCompletion] Capital Spend:', { 
+      percentage: capitalSpendPercentage, 
+      complete: capitalSpendComplete 
+    });
+    
     // Documents & Images tab: green check if at least one document exists
     const documentsCompletion = getTabCompletionStatus('documents', documents);
     
     // Government Inputs tab: green check if at least one field is completed
     const governmentInputsCompletion = getTabCompletionStatus('government', governmentInputs);
-    
-    // Focal Points tab: green check if at least one focal point is assigned
-    const focalPointsCompletion = getTabCompletionStatus('focal_points', focalPoints);
     
     // Aid Effectiveness tab: check if all required fields are completed
     const aidEffectivenessCompletion = getTabCompletionStatus('aid_effectiveness', general);
@@ -2999,6 +3248,18 @@ function NewActivityPageContent() {
         isComplete: resultsCompletion.isComplete,
         isInProgress: resultsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
+      "capital-spend": { 
+        isComplete: capitalSpendComplete, 
+        isInProgress: false 
+      },
+      "financing-terms": {
+        isComplete: financingTermsCount > 0,
+        isInProgress: false
+      },
+      conditions: {
+        isComplete: conditionsCount > 0,
+        isInProgress: false
+      },
       documents: documentsCompletion ? { 
         isComplete: documentsCompletion.isComplete,
         isInProgress: documentsCompletion.isInProgress 
@@ -3007,9 +3268,9 @@ function NewActivityPageContent() {
         isComplete: governmentInputsCompletion.isComplete,
         isInProgress: governmentInputsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
-      focal_points: focalPointsCompletion ? { 
-        isComplete: focalPointsCompletion.isComplete,
-        isInProgress: focalPointsCompletion.isInProgress 
+      contacts: contactsCompletion ? { 
+        isComplete: contactsCompletion.isComplete,
+        isInProgress: contactsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
       sdg: { isComplete: sdgComplete, isInProgress: false },
       aid_effectiveness: aidEffectivenessCompletion ? {
@@ -3017,13 +3278,13 @@ function NewActivityPageContent() {
         isInProgress: aidEffectivenessCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, sectors, getDateFieldStatus, sectorValidation, sectorsCompletionStatus, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, contributorsCount, linkedActivitiesCount, resultsCount, documents, governmentInputs, focalPoints]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, sectorsCompletionStatus, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, contributorsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, governmentInputs, contacts]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
     const sections = [
       "general", "iati", "xml-import", "sectors", "locations", "organisations", "contributors", "contacts", 
-      "focal_points", "linked_activities",
+      "linked_activities",
       "finances", "budgets", "planned-disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
     ].filter(id => id !== "government" || showGovernmentInputs);
     
@@ -3035,7 +3296,7 @@ function NewActivityPageContent() {
   const getPreviousSection = useCallback((currentId: string) => {
     const sections = [
       "general", "iati", "xml-import", "sectors", "locations", "organisations", "contributors", "contacts", 
-      "focal_points", "linked_activities",
+      "linked_activities",
       "finances", "budgets", "planned-disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
     ].filter(id => id !== "government" || showGovernmentInputs);
     
@@ -3219,8 +3480,6 @@ function NewActivityPageContent() {
         return <GenericTabSkeleton />;
       case 'locations':
         return <LocationsSkeleton />;
-      case 'focal_points':
-        return <GenericTabSkeleton />;
       case 'linked_activities':
         return <LinkedActivitiesSkeleton />;
       default:
@@ -3251,7 +3510,6 @@ function NewActivityPageContent() {
         { id: "organisations", label: "Participating Organisations" },
         { id: "contributors", label: "Contributors" },
         { id: "contacts", label: "Contacts" },
-        { id: "focal_points", label: "Focal Points" },
         { id: "linked_activities", label: "Linked Activities" }
       ]
     },
@@ -3261,7 +3519,10 @@ function NewActivityPageContent() {
         { id: "finances", label: "Financial Information" },
         { id: "budgets", label: "Budgets" },
         { id: "planned-disbursements", label: "Planned Disbursements" },
-        { id: "results", label: "Results" }
+        { id: "results", label: "Results" },
+        { id: "capital-spend", label: "Capital Spend" },
+        { id: "financing-terms", label: "Financing Terms" },
+        { id: "conditions", label: "Conditions" }
       ]
     },
     {
@@ -3605,12 +3866,12 @@ function NewActivityPageContent() {
                     setBudgetNotProvided={setBudgetNotProvided}
                     plannedDisbursements={plannedDisbursements}
                     setPlannedDisbursements={setPlannedDisbursements}
+                    handlePlannedDisbursementsChange={handlePlannedDisbursementsChange}
+                    handleResultsChange={handleResultsChange}
                     documents={documents}
                     setDocuments={setDocuments}
                     documentsAutosave={documentsAutosave}
                     governmentInputsAutosave={governmentInputsAutosave}
-                    focalPoints={focalPoints}
-                    setFocalPoints={setFocalPoints}
                     setIatiSyncState={setIatiSyncState}
                     subnationalBreakdowns={subnationalBreakdowns}
                     setSubnationalBreakdowns={setSubnationalBreakdowns}
@@ -3618,6 +3879,9 @@ function NewActivityPageContent() {
                     setContributorsCount={setContributorsCount}
                     setLinkedActivitiesCount={setLinkedActivitiesCount}
                     setResultsCount={setResultsCount}
+                    setCapitalSpendPercentage={setCapitalSpendPercentage}
+                    setConditionsCount={setConditionsCount}
+                    setFinancingTermsCount={setFinancingTermsCount}
                     clearSavedFormData={clearSavedFormData}
                     loadedTabs={loadedTabs}
                   />

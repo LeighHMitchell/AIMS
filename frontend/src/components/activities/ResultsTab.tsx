@@ -34,7 +34,9 @@ import {
   Settings,
   Eye,
   Table as TableIcon,
-  Info
+  Info,
+  Link2,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useResults, useBaselines, useIndicators } from '@/hooks/use-results';
@@ -68,6 +70,11 @@ import {
   YAxis 
 } from 'recharts';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { DocumentLinksManager } from './results/DocumentLinksManager';
+import { ReferencesManager } from './results/ReferencesManager';
+import { DimensionsManager } from './results/DimensionsManager';
+import { LocationsManager } from './results/LocationsManager';
+import { MeasureTypeSearchableSelect } from '@/components/forms/MeasureTypeSearchableSelect';
 
 // Monochrome chart colors
 const CHART_COLORS = {
@@ -351,12 +358,14 @@ export function ResultsTab({
     actual?: number;
   }>({});
   const [showAddPeriod, setShowAddPeriod] = useState<string | null>(null);
+  const [expandedPeriods, setExpandedPeriods] = useState<string[]>([]);
   const [newPeriod, setNewPeriod] = useState({
     period_start: '',
     period_end: '',
     target_value: '',
     actual_value: '',
-    comment: ''
+    target_comment: '',
+    actual_comment: ''
   });
   const [showAddIndicator, setShowAddIndicator] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<string>('overview');
@@ -846,6 +855,46 @@ export function ResultsTab({
                     rows={2}
                                   className="w-full"
                                 />
+                                
+                                {/* Aggregation Status Toggle */}
+                                <div className="flex items-center gap-3 py-2">
+                                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                    Aggregation Status
+                                    <HelpTextTooltip>
+                                      Enable if this result can be aggregated across multiple activities
+                                    </HelpTextTooltip>
+                                  </Label>
+                                  <Switch
+                                    checked={editingResultData[result.id]?.aggregation_status ?? result.aggregation_status}
+                                    onCheckedChange={(checked) =>
+                                      handleUpdateResultField(result.id, 'aggregation_status', checked)
+                                    }
+                                  />
+                                </div>
+
+                                <Separator />
+
+                                {/* Result References */}
+                                <ReferencesManager
+                                  entityType="result"
+                                  entityId={result.id}
+                                  references={result.references || []}
+                                  onUpdate={fetchResults}
+                                  readOnly={readOnly}
+                                />
+
+                                <Separator />
+
+                                {/* Result Documents */}
+                                <DocumentLinksManager
+                                  entityType="result"
+                                  entityId={result.id}
+                                  documents={result.document_links || []}
+                                  onUpdate={fetchResults}
+                                  readOnly={readOnly}
+                                  defaultLanguage={defaultLanguage}
+                                />
+                                
                               <div className="flex items-center gap-2">
                                 <Button 
                                   onClick={() => handleSaveResultEdit(result.id)}
@@ -905,110 +954,17 @@ export function ResultsTab({
                   <div className="space-y-3">
                     {result.indicators.map((indicator, idx) => (
                       <div key={indicator.id} className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
+                        {/* Show edit form in full width when editing */}
+                        {editingIndicator === indicator.id && !readOnly ? (
+                          <div className="space-y-4">
                             <h5 className="font-medium text-gray-900 mb-2">
-                              {idx + 1}. {(indicator.title as any)[defaultLanguage] || Object.values(indicator.title)[0]}
+                              Edit Indicator {idx + 1}
                             </h5>
-                            
-                            {/* Simple progress display */}
-                            <div className="grid grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <span className="text-gray-600 flex items-center gap-1">
-                                  Start:
-                                  <HelpTextTooltip>
-                                    Baseline value - the starting point before the activity began
-                                  </HelpTextTooltip>
-                                </span>
-                                <p className="font-medium">{indicator.baseline?.value || 'Not set'}</p>
-                              </div>
-                              <div>
-                                <span className="text-gray-600 flex items-center gap-1">
-                                  Target:
-                                  <HelpTextTooltip>
-                                    Target value to achieve by the end of the period
-                                  </HelpTextTooltip>
-                                </span>
-                                <p className="font-medium">
-                                  {indicator.periods?.[indicator.periods.length - 1]?.target_value || 'Not set'}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-gray-600 flex items-center gap-1">
-                                  Current:
-                                  <HelpTextTooltip>
-                                    Current/actual value achieved so far
-                                  </HelpTextTooltip>
-                                </span>
-                                <p className="font-medium">
-                                  {indicator.periods?.[indicator.periods.length - 1]?.actual_value || 'Not set'}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {/* Simple Progress Chart */}
-                            {(indicator.baseline?.value || (indicator.periods && indicator.periods.length > 0)) && (
-                              <div className="mt-3">
-                                <div className="h-24 bg-gray-50 rounded p-2">
-                                  <svg viewBox="0 0 300 80" className="w-full h-full">
-                                    {/* Grid lines */}
-                                    <line x1="0" y1="60" x2="300" y2="60" stroke="#e5e7eb" strokeWidth="1" />
-                                    <line x1="0" y1="40" x2="300" y2="40" stroke="#e5e7eb" strokeWidth="1" />
-                                    <line x1="0" y1="20" x2="300" y2="20" stroke="#e5e7eb" strokeWidth="1" />
-                                    
-                                    {/* Progress line */}
-                                    {(() => {
-                                      const baseline = indicator.baseline?.value || 0;
-                                      const target = indicator.periods && indicator.periods.length > 0 
-                                        ? indicator.periods[indicator.periods.length - 1]?.target_value || baseline
-                                        : baseline;
-                                      const actual = indicator.periods && indicator.periods.length > 0
-                                        ? indicator.periods[indicator.periods.length - 1]?.actual_value || baseline
-                                        : baseline;
-                                      const max = Math.max(baseline, target, actual) * 1.1;
-                                      const min = 0;
-                                      
-                                      const scaleY = (value: number) => 60 - ((value - min) / (max - min)) * 50;
-                                      
-                                      const points = [
-                                        { x: 50, y: scaleY(baseline), label: 'Start' },
-                                        { x: 150, y: scaleY(target), label: 'Target' },
-                                        { x: 250, y: scaleY(actual), label: 'Current' }
-                                      ];
-                                      
-                                      return (
-                                        <>
-                                          {/* Line path */}
-                                          <polyline
-                                            points={points.map(p => `${p.x},${p.y}`).join(' ')}
-                                            fill="none"
-                                            stroke="#6b7280"
-                                            strokeWidth="2"
-                                          />
-                                          
-                                          {/* Points and labels */}
-                                          {points.map((point, i) => (
-                                            <g key={i}>
-                                              <circle cx={point.x} cy={point.y} r="4" fill="#374151" />
-                                              <text x={point.x} y="75" textAnchor="middle" className="text-xs fill-gray-600">
-                                                {point.label}
-                                              </text>
-                                            </g>
-                                          ))}
-                                        </>
-                                      );
-                                    })()}
-                                  </svg>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Inline Indicator Editing */}
-                          {editingIndicator === indicator.id && !readOnly && (
-                            <div className="mt-3 space-y-4">
-                              {/* Inline Title Editing */}
-                              <div className="flex items-center gap-2">
+                            {/* Full Width Indicator Editing */}
+                            <div className="space-y-4">
+                              {/* Title Editing */}
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium text-gray-700">Indicator Name</Label>
                               <Input
                                 value={editingIndicatorValues.title || ''}
                                 onChange={(e) => {
@@ -1019,169 +975,225 @@ export function ResultsTab({
                                 }}
                                   placeholder="Indicator name"
                                   className="font-medium"
-                                />
-                                <Button 
-                                  size="sm"
-                                  onClick={async () => {
-                                    if (!editingIndicatorValues.title?.trim()) {
-                                      toast.error('Please provide an indicator name');
-                                      return;
-                                    }
-
-                                    try {
-                                      // Save indicator title if changed
-                                      if (editingIndicatorValues.title !== (indicator.title as any)[defaultLanguage]) {
-                                        const { error: titleError } = await supabase
-                                          .from('result_indicators')
-                                          .update({
-                                            title: { [defaultLanguage]: editingIndicatorValues.title },
-                                            updated_at: new Date().toISOString()
-                                          })
-                                          .eq('id', indicator.id);
-
-                                        if (titleError) {
-                                          toast.error('Failed to update indicator title');
-                                          return;
-                                        }
-                                      }
-
-                                      // Save baseline if provided
-                                      if (editingIndicatorValues.baseline !== undefined) {
-                                        const baselineData = {
-                                          indicator_id: indicator.id,
-                                          baseline_year: new Date().getFullYear(),
-                                          value: editingIndicatorValues.baseline
-                                        };
-                                        
-                                        await upsertBaseline(baselineData);
-                                      }
-                                      
-                                      toast.success('Indicator updated');
-                                      setEditingIndicator(null);
-                                      setEditingIndicatorValues({});
-                                      await fetchResults();
-                                    } catch (err) {
-                                      console.error('Error saving indicator:', err);
-                                      toast.error('Failed to save indicator');
-                                    }
-                                  }}
-                                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
-                                >
-                                  Save
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingIndicator(null);
-                                    setEditingIndicatorValues({});
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
+                              />
                               </div>
 
-                              {/* Baseline Input */}
-                              <div className="flex items-center gap-2">
-                                <Label className="text-sm font-medium text-gray-700 w-20">Baseline:</Label>
+                              {/* Indicator Description */}
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium text-gray-700">Description (optional)</Label>
+                                <Textarea
+                                  value={editingIndicatorValues.description || ''}
+                                  onChange={(e) => {
+                                    setEditingIndicatorValues(prev => ({
+                                      ...prev,
+                                      description: e.target.value
+                                    }));
+                                  }}
+                                  placeholder="Detailed description of this indicator"
+                                  rows={2}
+                                  className="text-sm"
+                                />
+                              </div>
+
+                              {/* Measure Type */}
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                  Measure Type
+                                  <HelpTextTooltip>
+                                    How this indicator is measured (unit, percentage, nominal, ordinal, or qualitative)
+                                  </HelpTextTooltip>
+                                </Label>
+                                <MeasureTypeSearchableSelect
+                                  value={editingIndicatorValues.measure || indicator.measure || '1'}
+                                  onValueChange={(value) => {
+                                    setEditingIndicatorValues(prev => ({
+                                      ...prev,
+                                      measure: value as MeasureType
+                                    }));
+                                  }}
+                                  placeholder="Select measure type..."
+                                  className="max-w-lg"
+                                />
+                              </div>
+
+                              {/* Ascending Toggle */}
+                              <div className="flex items-center justify-between py-2">
+                                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                  Ascending Values
+                                  <HelpTextTooltip>
+                                    Enable if higher values indicate better performance (e.g., literacy rate). Disable for negative indicators (e.g., mortality rate).
+                                  </HelpTextTooltip>
+                                </Label>
+                                <Switch
+                                  checked={editingIndicatorValues.ascending ?? indicator.ascending ?? true}
+                                  onCheckedChange={(checked) => {
+                                    setEditingIndicatorValues(prev => ({
+                                      ...prev,
+                                      ascending: checked
+                                    }));
+                                  }}
+                                />
+                              </div>
+
+                              {/* Aggregation Status Toggle */}
+                              <div className="flex items-center gap-3 py-2">
+                                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                  Aggregation Status
+                                  <HelpTextTooltip>
+                                    Enable if this indicator can be aggregated or compared across activities
+                                  </HelpTextTooltip>
+                                </Label>
+                                <Switch
+                                  checked={editingIndicatorValues.aggregation_status ?? indicator.aggregation_status ?? false}
+                                  onCheckedChange={(checked) => {
+                                    setEditingIndicatorValues(prev => ({
+                                      ...prev,
+                                      aggregation_status: checked
+                                    }));
+                                  }}
+                                />
+                            </div>
+                            
+                              <Separator />
+
+                              {/* Indicator References */}
+                              <ReferencesManager
+                                entityType="indicator"
+                                entityId={indicator.id}
+                                references={indicator.references || []}
+                                onUpdate={fetchResults}
+                                readOnly={readOnly}
+                              />
+
+                              <Separator />
+
+                              {/* Indicator Documents */}
+                              <DocumentLinksManager
+                                entityType="indicator"
+                                entityId={indicator.id}
+                                documents={indicator.document_links || []}
+                                onUpdate={fetchResults}
+                                readOnly={readOnly}
+                                defaultLanguage={defaultLanguage}
+                              />
+
+                              <Separator />
+
+                              {/* Baseline Section */}
+                              <div className="space-y-4 p-4 bg-gray-100 rounded-lg">
+                                <h6 className="text-sm font-semibold text-gray-900">Baseline Information</h6>
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                      Baseline Value
+                                      <HelpTextTooltip>
+                                        The starting value before your activity began
+                                      </HelpTextTooltip>
+                                    </Label>
+                              <Input
+                                      type="number"
+                                      step="any"
+                                      value={editingIndicatorValues.baseline || ''}
+                                onChange={(e) => {
+                                  setEditingIndicatorValues(prev => ({
+                                    ...prev,
+                                          baseline: parseFloat(e.target.value) || undefined
+                                  }));
+                                }}
+                                      placeholder="Starting value"
+                                      className="text-sm"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-gray-700">Baseline Year</Label>
+                                    <Input
+                                      type="number"
+                                      min="1900"
+                                      max="2100"
+                                      value={editingIndicatorValues.baseline_year || ''}
+                                      onChange={(e) => {
+                                        setEditingIndicatorValues(prev => ({
+                                          ...prev,
+                                          baseline_year: parseInt(e.target.value) || undefined
+                                        }));
+                                      }}
+                                      placeholder="e.g., 2020"
+                                      className="text-sm"
+                                    />
+                                  </div>
+                              </div>
+
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium text-gray-700">Baseline Date</Label>
                                   <Input
-                                    type="number"
-                                    step="any"
-                                    value={editingIndicatorValues.baseline || ''}
+                                    type="date"
+                                    value={editingIndicatorValues.baseline_iso_date || ''}
                                     onChange={(e) => {
                                       setEditingIndicatorValues(prev => ({
                                         ...prev,
-                                      baseline: parseFloat(e.target.value) || undefined
+                                        baseline_iso_date: e.target.value
                                       }));
                                     }}
-                                  placeholder="Starting value"
-                                  className="flex-1 max-w-xs"
+                                    className="text-sm max-w-xs"
                                   />
-                                <HelpTextTooltip>
-                                  The starting value before your activity began
-                                </HelpTextTooltip>
                                 </div>
 
-                              {/* Progress Chart */}
-                              {(editingIndicatorValues.baseline !== undefined || indicator.baseline?.value) && 
-                               indicator.periods && indicator.periods.length > 0 && (
-                                <div className="bg-white p-3 rounded border space-y-2">
-                                  <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                                    <TrendingUp className="h-4 w-4" />
-                                    Progress Over Time
-                                  </Label>
-                                  
-                                  {(() => {
-                                    const baseline = editingIndicatorValues.baseline || indicator.baseline?.value || 0;
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium text-gray-700">Baseline Comment</Label>
+                                  <Textarea
+                                    value={editingIndicatorValues.baseline_comment || ''}
+                                    onChange={(e) => {
+                                      setEditingIndicatorValues(prev => ({
+                                        ...prev,
+                                        baseline_comment: e.target.value
+                                      }));
+                                    }}
+                                    placeholder="Explanation of baseline measurement"
+                                    rows={2}
+                                    className="text-sm"
+                                  />
+                                </div>
+
+                                {indicator.baseline?.id && (
+                                  <>
+                                    <Separator />
                                     
-                                    // Create timeline data including baseline
-                                    const timelineData = [];
-                                    
-                                    // Add baseline point
-                                    if (baseline > 0) {
-                                      timelineData.push({
-                                        date: 'Baseline',
-                                        value: baseline,
-                                        type: 'baseline'
-                                      });
-                                    }
-                                    
-                                    // Add period data
-                                    indicator.periods?.forEach((period: any) => {
-                                      const date = new Date(period.period_end).toLocaleDateString('en-US', { 
-                                        month: 'short', 
-                                        year: 'numeric' 
-                                      });
-                                      
-                                      timelineData.push({
-                                        date,
-                                        target: period.target_value,
-                                        actual: period.actual_value,
-                                        type: 'period'
-                                      });
-                                    });
-                                    
-                                    return (
-                                      <ResponsiveContainer width="100%" height={200}>
-                                        <RechartsLineChart data={timelineData}>
-                                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                          <XAxis dataKey="date" stroke="#6B7280" fontSize={11} />
-                                          <YAxis stroke="#6B7280" fontSize={11} />
-                                          <RechartsTooltip />
-                                          <Line 
-                                            type="monotone" 
-                                            dataKey="value" 
-                                            stroke={CHART_COLORS.tertiary}
-                                            strokeWidth={2}
-                                            name="Baseline"
-                                            connectNulls={false}
-                                            dot={{ fill: CHART_COLORS.tertiary, strokeWidth: 2, r: 4 }}
-                                          />
-                                          <Line 
-                                            type="monotone" 
-                                            dataKey="target" 
-                                            stroke={CHART_COLORS.secondary}
-                                            strokeWidth={2}
-                                            strokeDasharray="5 5"
-                                            name="Target"
-                                            connectNulls={false}
-                                            dot={{ fill: CHART_COLORS.secondary, strokeWidth: 2, r: 3 }}
-                                          />
-                                          <Line 
-                                            type="monotone" 
-                                            dataKey="actual" 
-                                            stroke={CHART_COLORS.primary}
-                                            strokeWidth={3}
-                                            name="Actual"
-                                            connectNulls={false}
-                                            dot={{ fill: CHART_COLORS.primary, strokeWidth: 2, r: 5 }}
-                                          />
-                                        </RechartsLineChart>
-                                      </ResponsiveContainer>
-                                    );
-                                                                     })()}
-                                 </div>
-                               )}
+                                    {/* Baseline Locations */}
+                                    <LocationsManager
+                                      entityType="baseline"
+                                      entityId={indicator.baseline.id}
+                                      locations={indicator.baseline.locations || []}
+                                      onUpdate={fetchResults}
+                                      readOnly={readOnly}
+                                    />
+
+                                    <Separator />
+
+                                    {/* Baseline Dimensions */}
+                                    <DimensionsManager
+                                      entityType="baseline"
+                                      entityId={indicator.baseline.id}
+                                      dimensions={indicator.baseline.dimensions || []}
+                                      onUpdate={fetchResults}
+                                      readOnly={readOnly}
+                                    />
+
+                                    <Separator />
+
+                                    {/* Baseline Documents */}
+                                    <DocumentLinksManager
+                                      entityType="baseline"
+                                      entityId={indicator.baseline.id}
+                                      documents={indicator.baseline.document_links || []}
+                                      onUpdate={fetchResults}
+                                      readOnly={readOnly}
+                                      defaultLanguage={defaultLanguage}
+                                    />
+                                  </>
+                                )}
+                              </div>
 
                                {/* Period Management */}
                                <div className="space-y-3">
@@ -1253,14 +1265,28 @@ export function ResultsTab({
                                 </div>
                               </div>
 
+                                    <div className="space-y-3">
                                      <div>
-                                       <Label className="text-xs text-gray-600">Notes (optional)</Label>
-                                       <Input
-                                         value={newPeriod.comment}
-                                         onChange={(e) => setNewPeriod(prev => ({ ...prev, comment: e.target.value }))}
-                                         placeholder="Notes about this period"
+                                        <Label className="text-xs text-gray-600">Target Comment (optional)</Label>
+                                        <Textarea
+                                          value={newPeriod.target_comment}
+                                          onChange={(e) => setNewPeriod(prev => ({ ...prev, target_comment: e.target.value }))}
+                                          placeholder="Notes about the target"
+                                          rows={2}
                                          className="text-xs"
                                        />
+                                      </div>
+                                      
+                                      <div>
+                                        <Label className="text-xs text-gray-600">Actual Comment (optional)</Label>
+                                        <Textarea
+                                          value={newPeriod.actual_comment}
+                                          onChange={(e) => setNewPeriod(prev => ({ ...prev, actual_comment: e.target.value }))}
+                                          placeholder="Notes about the actual achievement"
+                                          rows={2}
+                                          className="text-xs"
+                                        />
+                                      </div>
                                      </div>
                               
                               <div className="flex items-center gap-2">
@@ -1281,7 +1307,8 @@ export function ResultsTab({
                                                  period_end: newPeriod.period_end,
                                                  target_value: newPeriod.target_value ? parseFloat(newPeriod.target_value) : null,
                                                  actual_value: newPeriod.actual_value ? parseFloat(newPeriod.actual_value) : null,
-                                                 target_comment: newPeriod.comment || null,
+                                                target_comment: newPeriod.target_comment ? { [defaultLanguage]: newPeriod.target_comment } : null,
+                                                actual_comment: newPeriod.actual_comment ? { [defaultLanguage]: newPeriod.actual_comment } : null,
                                                  facet: 'Total'
                                                });
 
@@ -1297,7 +1324,8 @@ export function ResultsTab({
                                                period_end: '',
                                                target_value: '',
                                                actual_value: '',
-                                               comment: ''
+                                              target_comment: '',
+                                              actual_comment: ''
                                              });
                                              setShowAddPeriod(null);
                                         await fetchResults();
@@ -1320,7 +1348,8 @@ export function ResultsTab({
                                              period_end: '',
                                              target_value: '',
                                              actual_value: '',
-                                             comment: ''
+                                            target_comment: '',
+                                            actual_comment: ''
                                            });
                                          }}
                                        >
@@ -1333,22 +1362,46 @@ export function ResultsTab({
                                  {/* Existing Periods List */}
                                  {indicator.periods && indicator.periods.length > 0 && (
                                    <div className="space-y-2">
-                                     {indicator.periods.map((period: any, index: number) => (
-                                       <div key={period.id || index} className="flex items-center justify-between bg-white p-2 rounded border text-xs">
+                                    {indicator.periods.map((period: any, index: number) => {
+                                      const isExpanded = expandedPeriods.includes(period.id);
+                                      
+                                      return (
+                                        <div key={period.id || index} className="bg-white rounded border">
+                                          {/* Period Header */}
+                                          <div className="flex items-center justify-between p-3">
                                          <div className="flex-1">
-                                           <div className="font-medium">
+                                              <div className="flex items-center gap-2">
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => {
+                                                    setExpandedPeriods(prev =>
+                                                      isExpanded
+                                                        ? prev.filter(id => id !== period.id)
+                                                        : [...prev, period.id]
+                                                    );
+                                                  }}
+                                                  className="h-6 w-6 p-0"
+                                                >
+                                                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                                </Button>
+                                                <div className="text-sm">
+                                                  <div className="font-medium text-gray-900">
                                              {new Date(period.period_start).toLocaleDateString()} - {new Date(period.period_end).toLocaleDateString()}
                                            </div>
-                                           <div className="text-gray-600">
+                                                  <div className="text-xs text-gray-600">
                                              Target: {period.target_value?.toLocaleString() || 'Not set'} | 
                                              Actual: {period.actual_value?.toLocaleString() || 'Not set'}
                                              {period.target_value && period.actual_value && (
-                                               <span className="ml-2 font-medium">
+                                                      <span className="ml-2 font-medium text-gray-900">
                                                  ({Math.round((period.actual_value / period.target_value) * 100)}%)
                                                </span>
                                              )}
                                            </div>
                                          </div>
+                                              </div>
+                                            </div>
+                                            {!readOnly && (
                                          <Button
                                            size="sm"
                                            variant="ghost"
@@ -1376,8 +1429,110 @@ export function ResultsTab({
                                          >
                                            <Trash2 className="h-3 w-3" />
                                          </Button>
+                                            )}
                                        </div>
-                                     ))}
+
+                                          {/* Period Metadata - Collapsible */}
+                                          {isExpanded && (
+                                            <div className="px-3 pb-3 space-y-3 border-t pt-3">
+                                              {/* Comments Display */}
+                                              {(period.target_comment || period.actual_comment) && (
+                                                <div className="space-y-2 text-xs">
+                                                  {period.target_comment && (
+                                                    <div>
+                                                      <span className="font-medium text-gray-700">Target: </span>
+                                                      <span className="text-gray-600">
+                                                        {typeof period.target_comment === 'string' 
+                                                          ? period.target_comment 
+                                                          : period.target_comment[defaultLanguage] || Object.values(period.target_comment)[0]}
+                                                      </span>
+                                                    </div>
+                                                  )}
+                                                  {period.actual_comment && (
+                                                    <div>
+                                                      <span className="font-medium text-gray-700">Actual: </span>
+                                                      <span className="text-gray-600">
+                                                        {typeof period.actual_comment === 'string'
+                                                          ? period.actual_comment
+                                                          : period.actual_comment[defaultLanguage] || Object.values(period.actual_comment)[0]}
+                                                      </span>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              )}
+
+                                              <Separator />
+
+                                              {/* Target Locations */}
+                                              <LocationsManager
+                                                entityType="period"
+                                                entityId={period.id}
+                                                locations={period.locations || []}
+                                                locationType="target"
+                                                onUpdate={fetchResults}
+                                                readOnly={readOnly}
+                                              />
+
+                                              {/* Actual Locations */}
+                                              <LocationsManager
+                                                entityType="period"
+                                                entityId={period.id}
+                                                locations={period.locations || []}
+                                                locationType="actual"
+                                                onUpdate={fetchResults}
+                                                readOnly={readOnly}
+                                              />
+
+                                              <Separator />
+
+                                              {/* Target Dimensions */}
+                                              <DimensionsManager
+                                                entityType="period"
+                                                entityId={period.id}
+                                                dimensions={period.dimensions || []}
+                                                dimensionType="target"
+                                                onUpdate={fetchResults}
+                                                readOnly={readOnly}
+                                              />
+
+                                              {/* Actual Dimensions */}
+                                              <DimensionsManager
+                                                entityType="period"
+                                                entityId={period.id}
+                                                dimensions={period.dimensions || []}
+                                                dimensionType="actual"
+                                                onUpdate={fetchResults}
+                                                readOnly={readOnly}
+                                              />
+
+                                              <Separator />
+
+                                              {/* Target Documents */}
+                                              <DocumentLinksManager
+                                                entityType="period"
+                                                entityId={period.id}
+                                                documents={period.document_links || []}
+                                                linkType="target"
+                                                onUpdate={fetchResults}
+                                                readOnly={readOnly}
+                                                defaultLanguage={defaultLanguage}
+                                              />
+
+                                              {/* Actual Documents */}
+                                              <DocumentLinksManager
+                                                entityType="period"
+                                                entityId={period.id}
+                                                documents={period.document_links || []}
+                                                linkType="actual"
+                                                onUpdate={fetchResults}
+                                                readOnly={readOnly}
+                                                defaultLanguage={defaultLanguage}
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
                                    </div>
                                  )}
 
@@ -1396,7 +1551,8 @@ export function ResultsTab({
                                          period_end: monthEnd.toISOString().split('T')[0],
                                          target_value: '',
                                          actual_value: '',
-                                         comment: `${monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                                        target_comment: `Target for ${monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+                                        actual_comment: ''
                                        });
                                        setShowAddPeriod(indicator.id);
                                      }}
@@ -1418,7 +1574,8 @@ export function ResultsTab({
                                          period_end: quarterEnd.toISOString().split('T')[0],
                                          target_value: '',
                                          actual_value: '',
-                                         comment: `Q${quarter + 1} ${now.getFullYear()}`
+                                        target_comment: `Target for Q${quarter + 1} ${now.getFullYear()}`,
+                                        actual_comment: ''
                                        });
                                        setShowAddPeriod(indicator.id);
                                      }}
@@ -1428,8 +1585,158 @@ export function ResultsTab({
                                 </Button>
                                  </div>
                               </div>
+                                
+                                <div className="flex items-center gap-2 pt-2">
+                                <Button 
+                                  size="sm"
+                                  onClick={async () => {
+                                    if (!editingIndicatorValues.title?.trim()) {
+                                      toast.error('Please provide an indicator name');
+                                      return;
+                                    }
+
+                                    try {
+                                      // Build update object for indicator
+                                      const updateData: any = {
+                                        updated_at: new Date().toISOString()
+                                      };
+
+                                      // Update title if changed
+                                      if (editingIndicatorValues.title !== (indicator.title as any)[defaultLanguage]) {
+                                        updateData.title = { [defaultLanguage]: editingIndicatorValues.title };
+                                      }
+
+                                      // Update description if changed
+                                      if (editingIndicatorValues.description !== undefined && 
+                                          editingIndicatorValues.description !== ((indicator.description as any)?.[defaultLanguage] || '')) {
+                                        updateData.description = { [defaultLanguage]: editingIndicatorValues.description };
+                                      }
+
+                                      // Update measure type if changed
+                                      if (editingIndicatorValues.measure && editingIndicatorValues.measure !== indicator.measure) {
+                                        updateData.measure = editingIndicatorValues.measure;
+                                      }
+
+                                      // Update ascending if changed
+                                      if (editingIndicatorValues.ascending !== undefined && editingIndicatorValues.ascending !== indicator.ascending) {
+                                        updateData.ascending = editingIndicatorValues.ascending;
+                                      }
+
+                                      // Update aggregation status if changed
+                                      if (editingIndicatorValues.aggregation_status !== undefined && 
+                                          editingIndicatorValues.aggregation_status !== indicator.aggregation_status) {
+                                        updateData.aggregation_status = editingIndicatorValues.aggregation_status;
+                                      }
+
+                                      // Save indicator updates if there are any changes
+                                      if (Object.keys(updateData).length > 1) { // More than just updated_at
+                                        const { error: indicatorError } = await supabase
+                                          .from('result_indicators')
+                                          .update(updateData)
+                                          .eq('id', indicator.id);
+
+                                        if (indicatorError) {
+                                          toast.error('Failed to update indicator');
+                                          return;
+                                        }
+                                      }
+
+                                      // Save baseline if provided
+                                      if (editingIndicatorValues.baseline !== undefined) {
+                                        const baselineData: any = {
+                                          indicator_id: indicator.id,
+                                          value: editingIndicatorValues.baseline
+                                        };
+                                        
+                                        // Add baseline year if provided
+                                        if (editingIndicatorValues.baseline_year) {
+                                          baselineData.baseline_year = editingIndicatorValues.baseline_year;
+                                        }
+                                        
+                                        // Add baseline ISO date if provided
+                                        if (editingIndicatorValues.baseline_iso_date) {
+                                          baselineData.iso_date = editingIndicatorValues.baseline_iso_date;
+                                        }
+                                        
+                                        // Add baseline comment if provided
+                                        if (editingIndicatorValues.baseline_comment) {
+                                          baselineData.comment = { [defaultLanguage]: editingIndicatorValues.baseline_comment };
+                                        }
+                                        
+                                        await upsertBaseline(baselineData);
+                                      }
+                                      
+                                      toast.success('Indicator updated');
+                                      setEditingIndicator(null);
+                                      setEditingIndicatorValues({});
+                                      await fetchResults();
+                                    } catch (err) {
+                                      console.error('Error saving indicator:', err);
+                                      toast.error('Failed to save indicator');
+                                    }
+                                  }}
+                                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
+                                >
+                                  Save
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingIndicator(null);
+                                    setEditingIndicatorValues({});
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
                             </div>
-                          )}
+                                </div>
+                                 </div>
+                        ) : (
+                          <>
+                            {/* Normal View - Not Editing */}
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h5 className="font-medium text-gray-900">
+                                    {idx + 1}. {(indicator.title as any)[defaultLanguage] || Object.values(indicator.title)[0]}
+                                  </h5>
+                                  
+                                  {/* Measure Type Badge */}
+                                  <Badge variant="outline" className="text-xs">
+                                    {MEASURE_TYPE_LABELS[indicator.measure as MeasureType] || indicator.measure}
+                                  </Badge>
+                                  
+                                  {/* Ascending Indicator */}
+                                  {indicator.ascending === false && (
+                                    <Badge variant="outline" className="text-xs bg-yellow-50">
+                                      Descending
+                                    </Badge>
+                                  )}
+                                  
+                                  {/* Metadata Badges */}
+                                  {indicator.references && indicator.references.length > 0 && (
+                                    <Badge variant="outline" className="text-xs flex items-center gap-1">
+                                      <Link2 className="h-3 w-3" />
+                                      {indicator.references.length}
+                                    </Badge>
+                                  )}
+                                  
+                                  {indicator.document_links && indicator.document_links.length > 0 && (
+                                    <Badge variant="outline" className="text-xs flex items-center gap-1">
+                                      <FileText className="h-3 w-3" />
+                                      {indicator.document_links.length}
+                                    </Badge>
+                                  )}
+                                </div>
+                                
+                                {/* Indicator Description */}
+                                {indicator.description && (
+                                  <p className="text-sm text-gray-600 mb-2">
+                                    {(indicator.description as any)[defaultLanguage] || Object.values(indicator.description)[0]}
+                                  </p>
+                                )}
+                              </div>
                           
                           {!readOnly && (
                             <div className="flex items-center gap-1">
@@ -1444,7 +1751,14 @@ export function ResultsTab({
                                     setEditingIndicator(indicator.id);
                                     setEditingIndicatorValues({
                                       title: (indicator.title as any)[defaultLanguage] || '',
+                                      description: (indicator.description as any)?.[defaultLanguage] || '',
+                                      measure: indicator.measure || 'unit',
+                                      ascending: indicator.ascending ?? true,
+                                      aggregation_status: indicator.aggregation_status ?? false,
                                       baseline: indicator.baseline?.value,
+                                      baseline_year: indicator.baseline?.baseline_year,
+                                      baseline_iso_date: indicator.baseline?.iso_date,
+                                      baseline_comment: (indicator.baseline?.comment as any)?.[defaultLanguage] || '',
                                       target: indicator.periods?.[indicator.periods.length - 1]?.target_value,
                                       actual: indicator.periods?.[indicator.periods.length - 1]?.actual_value
                                     });
@@ -1463,6 +1777,103 @@ export function ResultsTab({
                             </div>
                           )}
                         </div>
+                        
+                        {/* Progress Chart - Separate Sub-Card */}
+                        {(indicator.baseline?.value || (indicator.periods && indicator.periods.length > 0)) && (
+                          <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4">
+                            <h6 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                              <BarChart3 className="h-4 w-4" />
+                              Progress Visualization
+                            </h6>
+                            <div className="flex gap-6">
+                              {/* Left side - Progress values stacked */}
+                              <div className="flex flex-col gap-4 justify-center min-w-[120px]">
+                                <div>
+                                  <span className="text-gray-600 text-sm flex items-center gap-1">
+                                    Start:
+                                    <HelpTextTooltip>
+                                      Baseline value - the starting point before the activity began
+                                    </HelpTextTooltip>
+                                  </span>
+                                  <p className="font-semibold text-lg text-gray-900">{indicator.baseline?.value || 'Not set'}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600 text-sm flex items-center gap-1">
+                                    Target:
+                                    <HelpTextTooltip>
+                                      Target value to achieve by the end of the period
+                                    </HelpTextTooltip>
+                                  </span>
+                                  <p className="font-semibold text-lg text-gray-900">
+                                    {indicator.periods?.[indicator.periods.length - 1]?.target_value || 'Not set'}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600 text-sm flex items-center gap-1">
+                                    Current:
+                                    <HelpTextTooltip>
+                                      Current/actual value achieved so far
+                                    </HelpTextTooltip>
+                                  </span>
+                                  <p className="font-semibold text-lg text-gray-900">
+                                    {indicator.periods?.[indicator.periods.length - 1]?.actual_value || 'Not set'}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {/* Right side - Chart */}
+                              <div className="flex-1">
+                                <ResponsiveContainer width="100%" height={240}>
+                                  <BarChart 
+                                    data={[
+                                      {
+                                        name: 'Baseline',
+                                        value: indicator.baseline?.value || 0
+                                      },
+                                      {
+                                        name: 'Target',
+                                        value: indicator.periods && indicator.periods.length > 0 
+                                          ? indicator.periods[indicator.periods.length - 1]?.target_value || 0
+                                          : 0
+                                      },
+                                      {
+                                        name: 'Actual',
+                                        value: indicator.periods && indicator.periods.length > 0
+                                          ? indicator.periods[indicator.periods.length - 1]?.actual_value || 0
+                                          : 0
+                                      }
+                                    ]}
+                                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                  >
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                    <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#64748b" />
+                                    <YAxis 
+                                      stroke="#64748b" 
+                                      fontSize={12}
+                                    />
+                                    <RechartsTooltip 
+                                      content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                          const data = payload[0].payload;
+                                          return (
+                                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                                              <p className="font-semibold text-gray-900 mb-1">{data.name}</p>
+                                              <p className="text-lg font-bold text-gray-900">{Number(data.value || 0).toLocaleString()}</p>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      }}
+                                    />
+                                    <Bar dataKey="value" fill="#64748b" barSize={32} />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>

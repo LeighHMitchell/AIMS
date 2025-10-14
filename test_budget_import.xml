@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2024-01-01T00:00:00Z">
+  <iati-activity xml:lang="en" default-currency="USD" last-updated-datetime="2024-01-01T00:00:00Z">
+    
+    <iati-identifier>TEST-BUDGET-001</iati-identifier>
+    
+    <title>
+      <narrative>Test Budget Import Activity</narrative>
+    </title>
+    
+    <description type="1">
+      <narrative>Activity to test budget import functionality with multiple test cases covering IATI compliance scenarios</narrative>
+    </description>
+    
+    <activity-status code="2" />
+    
+    <activity-date iso-date="2024-01-01" type="1">
+      <narrative>Planned start date</narrative>
+    </activity-date>
+    
+    <activity-date iso-date="2026-12-31" type="3">
+      <narrative>Planned end date</narrative>
+    </activity-date>
+    
+    <!-- Test Case 1: Original, Indicative Budget (defaults) - Should auto-select -->
+    <budget>
+      <period-start iso-date="2024-01-01" />
+      <period-end iso-date="2024-12-31" />
+      <value currency="USD" value-date="2024-01-01">100000</value>
+    </budget>
+    
+    <!-- Test Case 2: Revised, Committed Budget (explicit attributes) - Should auto-select -->
+    <budget type="2" status="2">
+      <period-start iso-date="2024-01-01" />
+      <period-end iso-date="2024-12-31" />
+      <value currency="USD" value-date="2024-06-01">95000</value>
+    </budget>
+    
+    <!-- Test Case 3: Multi-currency budget (EUR) - Should auto-select -->
+    <budget type="1" status="1">
+      <period-start iso-date="2025-01-01" />
+      <period-end iso-date="2025-12-31" />
+      <value currency="EUR" value-date="2025-01-01">80000</value>
+    </budget>
+    
+    <!-- Test Case 4: Quarterly budgets - Q1 2024 - Should auto-select -->
+    <budget type="1" status="1">
+      <period-start iso-date="2024-01-01" />
+      <period-end iso-date="2024-03-31" />
+      <value currency="USD" value-date="2024-01-01">25000</value>
+    </budget>
+    
+    <!-- Test Case 5: Quarterly budgets - Q2 2024 - Should auto-select -->
+    <budget type="1" status="1">
+      <period-start iso-date="2024-04-01" />
+      <period-end iso-date="2024-06-30" />
+      <value currency="USD" value-date="2024-04-01">25000</value>
+    </budget>
+    
+    <!-- Test Case 6: Quarterly budgets - Q3 2024 - Should auto-select -->
+    <budget type="1" status="1">
+      <period-start iso-date="2024-07-01" />
+      <period-end iso-date="2024-09-30" />
+      <value currency="USD" value-date="2024-07-01">25000</value>
+    </budget>
+    
+    <!-- Test Case 7: Quarterly budgets - Q4 2024 - Should auto-select -->
+    <budget type="1" status="1">
+      <period-start iso-date="2024-10-01" />
+      <period-end iso-date="2024-12-31" />
+      <value currency="USD" value-date="2024-10-01">25000</value>
+    </budget>
+    
+    <!-- Test Case 8: Different currency (GBP) - Should auto-select -->
+    <budget type="1" status="2">
+      <period-start iso-date="2026-01-01" />
+      <period-end iso-date="2026-12-31" />
+      <value currency="GBP" value-date="2026-01-01">75000</value>
+    </budget>
+    
+    <!-- Test Case 9: Invalid budget (period > 1 year) - Should show warning and NOT auto-select -->
+    <budget type="1" status="1">
+      <period-start iso-date="2027-01-01" />
+      <period-end iso-date="2028-06-30" />
+      <value currency="USD" value-date="2027-01-01">150000</value>
+    </budget>
+    
+    <!-- Test Case 10: Invalid budget (period start = period end) - Should show warning -->
+    <budget type="1" status="1">
+      <period-start iso-date="2028-01-01" />
+      <period-end iso-date="2028-01-01" />
+      <value currency="USD" value-date="2028-01-01">50000</value>
+    </budget>
+    
+    <!-- Test Case 11: Budget with missing period-start - Should show warning -->
+    <budget type="1" status="1">
+      <period-end iso-date="2029-12-31" />
+      <value currency="USD" value-date="2029-01-01">40000</value>
+    </budget>
+    
+    <!-- Test Case 12: Budget with missing value-date - Should show warning -->
+    <budget type="1" status="1">
+      <period-start iso-date="2030-01-01" />
+      <period-end iso-date="2030-12-31" />
+      <value currency="USD">60000</value>
+    </budget>
+    
+    <!-- Test Case 13: Monthly budget - Should auto-select -->
+    <budget type="1" status="1">
+      <period-start iso-date="2025-01-01" />
+      <period-end iso-date="2025-01-31" />
+      <value currency="USD" value-date="2025-01-01">8000</value>
+    </budget>
+    
+    <!-- Test Case 14: 6-month budget - Should auto-select -->
+    <budget type="1" status="1">
+      <period-start iso-date="2025-02-01" />
+      <period-end iso-date="2025-07-31" />
+      <value currency="USD" value-date="2025-02-01">50000</value>
+    </budget>
+    
+    <!-- Reporting Organisation -->
+    <reporting-org ref="GB-GOV-1" type="10">
+      <narrative>UK Department for International Development</narrative>
+    </reporting-org>
+    
+    <!-- Recipient Country -->
+    <recipient-country code="MM" percentage="100">
+      <narrative>Myanmar</narrative>
+    </recipient-country>
+    
+  </iati-activity>
+</iati-activities>

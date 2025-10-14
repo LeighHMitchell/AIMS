@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths } from 'date-fns';
-import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, Filter, DollarSign, Users, Edit, Save, X, Check, MoreVertical } from 'lucide-react';
+import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths, getQuarter, getYear } from 'date-fns';
+import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Edit, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,8 +13,6 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { Badge } from '@/components/ui/badge';
@@ -39,19 +37,16 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser } from '@/hooks/useUser';
-import { generateBudgetPeriods } from './ActivityBudgetsTab';
+import { BUDGET_TYPES } from '@/data/budget-type';
+import { OrganizationTypeSelect } from '@/components/forms/OrganizationTypeSelect';
 
-// Add custom granularity support
-type Granularity = 'quarterly' | 'monthly' | 'annual' | 'custom';
-
-interface CustomGranularity {
-  type: 'custom';
-  months: number;
-  label: string;
-}
+// Granularity removed - users can now create any period length they want
 import {
   Dialog,
   DialogTrigger,
@@ -63,6 +58,9 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { OrganizationCombobox } from '@/components/ui/organization-combobox';
+import { ActivityCombobox } from '@/components/ui/activity-combobox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ChevronsUpDown } from 'lucide-react';
 
 // Types
 interface PlannedDisbursement {
@@ -141,15 +139,11 @@ export default function PlannedDisbursementsTab({
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState({
-    status: 'all',
-    dateFrom: '',
-    dateTo: ''
-  });
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const { user, isLoading: userLoading } = useUser();
   const isReadOnly = readOnly;
+  const [aggregationMode, setAggregationMode] = useState<'monthly' | 'quarterly' | 'semi-annual' | 'annual'>('quarterly');
 
   // Add state for modal
   const [showModal, setShowModal] = useState(false);
@@ -157,6 +151,36 @@ export default function PlannedDisbursementsTab({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [isCalculatingUSD, setIsCalculatingUSD] = useState(false);
+  const [typePopoverOpen, setTypePopoverOpen] = useState(false);
+  const [currencyPopoverOpen, setCurrencyPopoverOpen] = useState(false);
+  
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Save status tracking
+  const [saveStatus, setSaveStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
+
+  // USD conversion tracking
+  const [usdValues, setUsdValues] = useState<Record<string, { 
+    usd: number | null, 
+    rate: number | null, 
+    date: string, 
+    loading: boolean, 
+    error?: string 
+  }>>({});
+
+  // Sort handler
+  const handleSort = useCallback((column: string) => {
+    if (sortColumn === column) {
+      // Toggle direction if same column
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New column, default to ascending
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  }, [sortColumn]);
 
   // Handler to open modal for add/edit
   const openModal = (disbursement?: PlannedDisbursement) => {
@@ -166,9 +190,18 @@ export default function PlannedDisbursementsTab({
       currency: defaultCurrency,
       period_start: startDate || format(new Date(), 'yyyy-MM-dd'),
       period_end: endDate || format(addMonths(new Date(), 3), 'yyyy-MM-dd'),
+      type: '1' as const,           // NEW - Default to Original
       status: 'original' as const,
       provider_org_name: '',
+      provider_org_ref: '',
+      provider_org_type: '',
+      provider_activity_id: '',
+      provider_activity_uuid: '',
       receiver_org_name: '',
+      receiver_org_ref: '',
+      receiver_org_type: '',
+      receiver_activity_id: '',
+      receiver_activity_uuid: '',
       value_date: format(new Date(), 'yyyy-MM-dd'),
       notes: '',
       usdAmount: 0
@@ -346,67 +379,99 @@ export default function PlannedDisbursementsTab({
   const currencies = useMemo(() => getAllCurrenciesWithPinned(), []);
 
   // Add granularity state and handler
-  const [granularity, setGranularity] = useState<Granularity>('quarterly');
-  const [customGranularity, setCustomGranularity] = useState<CustomGranularity>({ type: 'custom', months: 6, label: '6 months' });
-  const [showCustomGranularityDialog, setShowCustomGranularityDialog] = useState(false);
-  const granularityOrder: Granularity[] = ['monthly', 'quarterly', 'annual', 'custom'];
+  // Granularity removed - users can now create any period length they want
 
-  // Generate periods based on granularity
-  const generatedPeriods = useMemo(() => {
-    if (!startDate || !endDate) return [];
-    if (granularity === 'custom') {
-      return generateBudgetPeriods(startDate, endDate, customGranularity);
-    }
-    return generateBudgetPeriods(startDate, endDate, granularity);
-  }, [startDate, endDate, granularity, customGranularity]);
-
-  // Add handler for granularity change
-  const handleGranularityChange = (newGranularity: Granularity) => {
-    if (newGranularity === 'custom') {
-      setShowCustomGranularityDialog(true);
-      return;
-    }
-    
-    if (!confirm('Changing granularity will regenerate the planned disbursement table. Any unsaved changes may be lost. Continue?')) return;
-    setGranularity(newGranularity);
-    // Regenerate disbursements based on new granularity
-    const newPeriods = generateBudgetPeriods(startDate, endDate, newGranularity);
-    const newDisbursements = newPeriods.map(period => ({
-      activity_id: activityId,
-      amount: 0,
-      currency: defaultCurrency,
-      period_start: period.start,
-      period_end: period.end,
-      status: 'original' as const,
-      provider_org_name: '',
-      receiver_org_name: '',
-      value_date: period.start,
-      notes: '',
-      usdAmount: 0
-    }));
-    setDisbursements(newDisbursements);
-  };
-
-  // Add custom period handler
-  const addCustomPeriod = () => {
+  // Add planned disbursement period with smart period detection - opens modal with pre-populated dates
+  const addPeriod = useCallback((periodType: 'month' | 'quarter' | 'half-year' | 'year') => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const lastDisbursement = disbursements[disbursements.length - 1];
-    const start = lastDisbursement ? format(addMonths(parseISO(lastDisbursement.period_end), 1), 'yyyy-MM-dd') : today;
+    
+    let periodStart: string;
+    let periodEnd: string;
+    
+    if (lastDisbursement) {
+      // Start from day AFTER last disbursement ends
+      const lastEnd = parseISO(lastDisbursement.period_end);
+      const nextStart = addMonths(lastEnd, 0); // This is the last end date
+      const dayAfterLastEnd = new Date(nextStart);
+      dayAfterLastEnd.setDate(dayAfterLastEnd.getDate() + 1); // Add 1 day
+      
+      periodStart = format(dayAfterLastEnd, 'yyyy-MM-dd');
+      const start = parseISO(periodStart);
+      
+      // Calculate end date based on period type
+      switch (periodType) {
+        case 'month':
+          // Add 1 month from start, then get end of that month
+          periodEnd = format(endOfMonth(start), 'yyyy-MM-dd');
+          break;
+        case 'quarter':
+          // Add 3 months from start, then get end of that month
+          periodEnd = format(endOfMonth(addMonths(start, 2)), 'yyyy-MM-dd');
+          break;
+        case 'half-year':
+          // Add 6 months from start, then get end of that month
+          periodEnd = format(endOfMonth(addMonths(start, 5)), 'yyyy-MM-dd');
+          break;
+        case 'year':
+          // Add 12 months from start, then get end of that month
+          periodEnd = format(endOfMonth(addMonths(start, 11)), 'yyyy-MM-dd');
+          break;
+      }
+    } else {
+      // First disbursement - use activity start date or today
+      periodStart = startDate || today;
+      const start = parseISO(periodStart);
+      
+      switch (periodType) {
+        case 'month':
+          periodEnd = format(endOfMonth(start), 'yyyy-MM-dd');
+          break;
+        case 'quarter':
+          periodEnd = format(endOfQuarter(start), 'yyyy-MM-dd');
+          break;
+        case 'half-year':
+          periodEnd = format(endOfMonth(addMonths(start, 5)), 'yyyy-MM-dd');
+          break;
+        case 'year':
+          periodEnd = format(endOfMonth(addMonths(start, 11)), 'yyyy-MM-dd');
+          break;
+      }
+    }
+    
+    // Ensure end date doesn't exceed project end date
+    const projectEnd = parseISO(endDate);
+    if (isValid(projectEnd) && parseISO(periodEnd) > projectEnd) {
+      periodEnd = endDate;
+    }
+    
+    // Open modal with pre-populated dates
     const newDisbursement: PlannedDisbursement = {
       activity_id: activityId,
       amount: 0,
       currency: defaultCurrency,
-      period_start: start,
-      period_end: format(addMonths(parseISO(start), 3), 'yyyy-MM-dd'),
+      period_start: periodStart,
+      period_end: periodEnd,
+      type: '1' as const,
       status: 'original' as const,
       provider_org_name: '',
+      provider_org_ref: '',
+      provider_org_type: '',
+      provider_activity_id: '',
       receiver_org_name: '',
+      receiver_org_ref: '',
+      receiver_org_type: '',
+      receiver_activity_id: '',
       value_date: today,
       notes: '',
       usdAmount: 0
     };
-    setDisbursements(prev => [...prev, newDisbursement]);
-  };
+    
+    setModalDisbursement(newDisbursement);
+    setFieldErrors({});
+    setIsFormDirty(false);
+    setShowModal(true);
+  }, [disbursements, activityId, defaultCurrency, startDate, endDate]);
 
   // Fetch organizations for autocomplete
   useEffect(() => {
@@ -414,7 +479,7 @@ export default function PlannedDisbursementsTab({
       try {
         const { data, error } = await supabase
           .from('organizations')
-          .select('id, name, code, acronym, type')
+          .select('id, name, code, acronym, type, Organisation_Type_Code, Organisation_Type_Name, iati_org_id, logo, country')
           .order('name');
 
         if (error) throw error;
@@ -464,25 +529,31 @@ export default function PlannedDisbursementsTab({
           }));
           setDisbursements(generatedDisbursements);
         } else {
-          // Convert to USD and add to disbursements
+          // Use real-time USD conversion (same logic as FinancialSummaryCards)
           const disbursementsWithUSD = await Promise.all(
             data.map(async (disbursement: any) => {
               let usdAmount = 0;
-              if (disbursement.amount && disbursement.currency && disbursement.currency !== 'USD') {
-                try {
-                  const conversionDate = disbursement.value_date ? new Date(disbursement.value_date) : new Date();
-                  const result = await fixedCurrencyConverter.convertToUSD(
-                    disbursement.amount,
-                    disbursement.currency,
-                    conversionDate
-                  );
-                  usdAmount = result.usd_amount || 0;
-                } catch (err) {
-                  console.error('Currency conversion error:', err);
+              
+              if (disbursement.amount && disbursement.currency) {
+                if (disbursement.currency === 'USD') {
+                  usdAmount = disbursement.amount;
+                } else {
+                  try {
+                    const conversionDate = disbursement.value_date ? new Date(disbursement.value_date) : new Date();
+                    const result = await fixedCurrencyConverter.convertToUSD(
+                      disbursement.amount,
+                      disbursement.currency,
+                      conversionDate
+                    );
+                    usdAmount = result.usd_amount || 0;
+                    console.log(`[PlannedDisbursementsTab] ✅ Real-time conversion: ${disbursement.amount} ${disbursement.currency} → $${usdAmount} USD`);
+                  } catch (err) {
+                    console.error('Currency conversion error:', err);
+                    usdAmount = 0;
+                  }
                 }
-              } else if (disbursement.currency === 'USD') {
-                usdAmount = disbursement.amount;
               }
+              
               return { ...disbursement, usdAmount };
             })
           );
@@ -499,22 +570,135 @@ export default function PlannedDisbursementsTab({
     fetchDisbursements();
   }, [activityId]);
 
-  // Notify parent component when disbursements change
+  // Notify parent component when disbursements change (only after initial load)
   useEffect(() => {
-    if (onDisbursementsChange) {
-      onDisbursementsChange(disbursements);
-    }
-  }, [disbursements, onDisbursementsChange]);
-
-  // Filter disbursements
-  const filteredDisbursements = useMemo(() => {
-    return disbursements.filter(d => {
-      if (filters.status !== 'all' && d.status !== filters.status) return false;
-      if (filters.dateFrom && d.period_start < filters.dateFrom) return false;
-      if (filters.dateTo && d.period_end > filters.dateTo) return false;
-      return true;
+    // Only notify parent after initial data load is complete
+    // This prevents the green tick from disappearing when switching tabs
+    console.log('[PlannedDisbursementsTab] useEffect - Checking notification conditions:', {
+      hasCallback: !!onDisbursementsChange,
+      loading,
+      disbursementsCount: disbursements.length,
+      disbursementsWithIds: disbursements.filter(d => d.id).length
     });
-  }, [disbursements, filters]);
+    
+    if (onDisbursementsChange && !loading) {
+      // Filter out generated empty disbursements - only count actual saved disbursements with IDs
+      const actualDisbursements = disbursements.filter(d => d.id);
+      console.log('[PlannedDisbursementsTab] Notifying parent with disbursements:', actualDisbursements.length);
+      onDisbursementsChange(actualDisbursements);
+    } else {
+      console.log('[PlannedDisbursementsTab] NOT notifying parent - loading:', loading);
+    }
+  }, [disbursements, onDisbursementsChange, loading]);
+
+  // Convert all disbursements to USD when they change
+  useEffect(() => {
+    let cancelled = false;
+    async function convertAll() {
+      const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
+      for (const disbursement of disbursements) {
+        if (!disbursement.amount || !disbursement.currency || !disbursement.value_date) {
+          newUsdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`] = { 
+            usd: null, 
+            rate: null, 
+            date: disbursement.value_date, 
+            loading: false, 
+            error: 'Missing data' 
+          };
+          continue;
+        }
+        newUsdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`] = { 
+          usd: null, 
+          rate: null, 
+          date: disbursement.value_date, 
+          loading: true 
+        };
+        try {
+          const result = await fixedCurrencyConverter.convertToUSD(
+            disbursement.amount, 
+            disbursement.currency, 
+            new Date(disbursement.value_date)
+          );
+          if (!cancelled) {
+            newUsdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`] = {
+              usd: result.usd_amount,
+              rate: result.exchange_rate,
+              date: result.conversion_date || disbursement.value_date,
+              loading: false,
+              error: result.success ? undefined : result.error || 'Conversion failed'
+            };
+          }
+        } catch (err) {
+          if (!cancelled) {
+            newUsdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`] = { 
+              usd: null, 
+              rate: null, 
+              date: disbursement.value_date, 
+              loading: false, 
+              error: 'Conversion error' 
+            };
+          }
+        }
+      }
+      if (!cancelled) setUsdValues(newUsdValues);
+    }
+    if (disbursements.length > 0) convertAll();
+    return () => { cancelled = true; };
+  }, [disbursements]);
+
+  // No filtering - show all disbursements
+  const filteredDisbursements = useMemo(() => {
+    return disbursements;
+  }, [disbursements]);
+
+  // Sorted disbursements for table display
+  const sortedFilteredDisbursements = useMemo(() => {
+    if (!sortColumn) return filteredDisbursements;
+
+    const sorted = [...filteredDisbursements].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case 'period':
+          aValue = new Date(a.period_start).getTime();
+          bValue = new Date(b.period_start).getTime();
+          break;
+        case 'status':
+          aValue = (a.status || 'original').toLowerCase();
+          bValue = (b.status || 'original').toLowerCase();
+          break;
+        case 'provider':
+          aValue = (a.provider_org_name || '').toLowerCase();
+          bValue = (b.provider_org_name || '').toLowerCase();
+          break;
+        case 'receiver':
+          aValue = (a.receiver_org_name || '').toLowerCase();
+          bValue = (b.receiver_org_name || '').toLowerCase();
+          break;
+        case 'amount':
+          aValue = a.amount || 0;
+          bValue = b.amount || 0;
+          break;
+        case 'usd_value':
+          aValue = a.usdAmount || 0;
+          bValue = b.usdAmount || 0;
+          break;
+        case 'value_date':
+          aValue = new Date(a.value_date || '').getTime();
+          bValue = new Date(b.value_date || '').getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [filteredDisbursements, sortColumn, sortDirection]);
 
   // Calculate total planned disbursements
   const totalPlanned = useMemo(() => {
@@ -561,23 +745,61 @@ export default function PlannedDisbursementsTab({
     };
   }, [filteredDisbursements, totalPlanned, totalUSD, defaultCurrency]);
 
-  // Calculate chart data
+  // Calculate chart data with real-time USD conversion
   const chartData = useMemo(() => {
     const sortedDisbursements = [...filteredDisbursements].sort((a, b) => 
       parseISO(a.period_start).getTime() - parseISO(b.period_start).getTime()
     );
 
-    // Group by quarter
-    const quarterlyData = sortedDisbursements.map(d => ({
-      period: format(parseISO(d.period_start), 'MMM yyyy'),
-      amount: Number(d.amount),
-      usdAmount: d.usdAmount || 0
+    // Group by period based on aggregation mode
+    const periodMap = new Map<string, { amount: number, usdAmount: number }>();
+    
+    sortedDisbursements.forEach(disbursement => {
+      const startDate = parseISO(disbursement.period_start);
+      let periodLabel: string;
+      
+      switch (aggregationMode) {
+        case 'monthly':
+          periodLabel = format(startDate, 'MMM yyyy');
+          break;
+        case 'quarterly':
+          periodLabel = `Q${getQuarter(startDate)} ${getYear(startDate)}`;
+          break;
+        case 'semi-annual':
+          const half = getQuarter(startDate) <= 2 ? 'H1' : 'H2';
+          periodLabel = `${half} ${getYear(startDate)}`;
+          break;
+        case 'annual':
+          periodLabel = format(startDate, 'yyyy');
+          break;
+        default:
+          periodLabel = `Q${getQuarter(startDate)} ${getYear(startDate)}`;
+          break;
+      }
+      
+      // Use real-time USD conversion (same as FinancialSummaryCards)
+      // The disbursement.usdAmount is already calculated with real-time conversion
+      // in the fetchDisbursements function above
+      let realTimeUSD = disbursement.usdAmount || 0;
+      
+      const existing = periodMap.get(periodLabel) || { amount: 0, usdAmount: 0 };
+      periodMap.set(periodLabel, {
+        amount: existing.amount + Number(disbursement.amount),
+        usdAmount: existing.usdAmount + realTimeUSD
+      });
+    });
+
+    // Convert to array
+    const aggregatedData = Array.from(periodMap.entries()).map(([period, values]) => ({
+      period,
+      amount: values.amount,
+      usdAmount: values.usdAmount
     }));
 
     // Calculate cumulative
     let cumulative = 0;
     let cumulativeUSD = 0;
-    const cumulativeData = quarterlyData.map(item => {
+    const cumulativeData = aggregatedData.map(item => {
       cumulative += item.amount;
       cumulativeUSD += item.usdAmount;
       return {
@@ -590,7 +812,7 @@ export default function PlannedDisbursementsTab({
     });
 
     return cumulativeData;
-  }, [filteredDisbursements]);
+  }, [filteredDisbursements, aggregationMode]);
 
   // Save disbursement
   const saveDisbursement = async (disbursement: PlannedDisbursement) => {
@@ -598,7 +820,9 @@ export default function PlannedDisbursementsTab({
       throw new Error('Cannot save in read-only mode.');
     }
 
-    setSavingId(disbursement.id || 'new');
+    const statusKey = disbursement.id || 'new';
+    setSavingId(statusKey);
+    setSaveStatus(prev => ({ ...prev, [statusKey]: 'saving' }));
     try {
       // Validation
       if (!disbursement.amount || disbursement.amount <= 0) {
@@ -644,6 +868,7 @@ export default function PlannedDisbursementsTab({
         activity_id: activityId,
         amount: disbursement.amount,
         currency: disbursement.currency,
+        usd_amount: usdAmount, // Save the USD conversion
         period_start: periodStart,
         period_end: periodEnd,
         provider_org_id: disbursement.provider_org_id || null,
@@ -655,6 +880,8 @@ export default function PlannedDisbursementsTab({
         notes: disbursement.notes || null,
         ...(user?.id && { created_by: user.id, updated_by: user.id }),
       };
+
+      let savedId = statusKey;
 
       if (disbursement.id && disbursement.id !== 'new') {
         // Update existing
@@ -681,6 +908,7 @@ export default function PlannedDisbursementsTab({
         setDisbursements(prev => prev.map(d => 
           d.id === disbursement.id ? { ...data, usdAmount } : d
         ));
+        savedId = disbursement.id;
       } else {
         // Insert new
         const response = await fetch('/api/planned-disbursements', {
@@ -698,7 +926,20 @@ export default function PlannedDisbursementsTab({
 
         const { data } = await response.json();
         setDisbursements(prev => [...prev.filter(d => d.id !== undefined), { ...data, usdAmount }]);
+        savedId = data.id;
       }
+
+      // Set saved status
+      setSaveStatus(prev => ({ ...prev, [savedId]: 'saved' }));
+      
+      // Clear saved status after 3 seconds
+      setTimeout(() => {
+        setSaveStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[savedId];
+          return newStatus;
+        });
+      }, 3000);
 
       setSavingId(null);
     } catch (err: any) {
@@ -708,6 +949,19 @@ export default function PlannedDisbursementsTab({
           ? { ...d, hasError: true, errorMessage: err.message }
           : d
       ));
+      
+      // Set error status
+      setSaveStatus(prev => ({ ...prev, [statusKey]: 'error' }));
+      
+      // Clear error status after 5 seconds
+      setTimeout(() => {
+        setSaveStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[statusKey];
+          return newStatus;
+        });
+      }, 5000);
+      
       throw err;
     } finally {
       setSavingId(null);
@@ -741,19 +995,85 @@ export default function PlannedDisbursementsTab({
   };
 
   // Duplicate disbursement
-  const handleDuplicate = (disbursement: PlannedDisbursement) => {
+  const handleDuplicate = async (disbursement: PlannedDisbursement) => {
     if (isReadOnly) return;
+
+    // Detect period length
+    const currentStart = parseISO(disbursement.period_start);
+    const currentEnd = parseISO(disbursement.period_end);
+    const periodLengthMonths = differenceInMonths(currentEnd, currentStart);
+
+    // Start day after current period ends
+    const dayAfterEnd = new Date(currentEnd);
+    dayAfterEnd.setDate(dayAfterEnd.getDate() + 1);
+    const nextStart = parseISO(format(dayAfterEnd, 'yyyy-MM-dd'));
+
+    // Calculate end date preserving period length
+    const nextEnd = endOfMonth(addMonths(nextStart, Math.max(periodLengthMonths, 1) - 1));
 
     const newDisbursement: PlannedDisbursement = {
       ...disbursement,
       id: undefined,
-      period_start: format(addMonths(parseISO(disbursement.period_start), 3), 'yyyy-MM-dd'),
-      period_end: format(addMonths(parseISO(disbursement.period_end), 3), 'yyyy-MM-dd'),
+      period_start: format(nextStart, 'yyyy-MM-dd'),
+      period_end: format(nextEnd, 'yyyy-MM-dd'),
       usdAmount: 0
     };
 
-    setDisbursements(prev => [newDisbursement, ...prev]);
+    // Save to database
+    try {
+      // Prepare data for API - exclude frontend-only fields and use snake_case
+      const { usdAmount, ...disbursementData } = newDisbursement;
+      
+      const response = await fetch('/api/planned-disbursements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...disbursementData,
+          activity_id: activityId,
+          usd_amount: 0 // Use snake_case for database
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to duplicate planned disbursement');
+      }
+
+      const result = await response.json();
+      const createdDisbursement = result.data;
+      
+      // Add the USD amount to the created disbursement for display
+      const disbursementWithUSD = {
+        ...createdDisbursement,
+        usdAmount: 0
+      };
+      
+      setDisbursements(prev => [disbursementWithUSD, ...prev]);
+      toast.success('Planned disbursement duplicated successfully');
+    } catch (error) {
+      console.error('Error duplicating planned disbursement:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate planned disbursement');
+    }
   };
+
+  // Check for overlapping periods
+  const checkDisbursementOverlap = useCallback((disbursement: PlannedDisbursement, allDisbursements: PlannedDisbursement[]) => {
+    const currentStart = parseISO(disbursement.period_start);
+    const currentEnd = parseISO(disbursement.period_end);
+    
+    return allDisbursements.filter((other) => {
+      if (other.id === disbursement.id) return false;
+      
+      const otherStart = parseISO(other.period_start);
+      const otherEnd = parseISO(other.period_end);
+      
+      return (
+        (currentStart >= otherStart && currentStart <= otherEnd) ||
+        (currentEnd >= otherStart && currentEnd <= otherEnd) ||
+        (currentStart <= otherStart && currentEnd >= otherEnd)
+      );
+    });
+  }, []);
 
   // Export to CSV
   const handleExport = () => {
@@ -846,20 +1166,47 @@ export default function PlannedDisbursementsTab({
       const periodStart = new Date(modalDisbursement.period_start).toISOString().slice(0, 10);
       const periodEnd = new Date(modalDisbursement.period_end).toISOString().slice(0, 10);
 
+      // Convert to USD before saving
+      let usdAmount = 0;
+      if (modalDisbursement.amount && modalDisbursement.currency && modalDisbursement.currency !== 'USD') {
+        try {
+          const conversionDate = modalDisbursement.value_date ? new Date(modalDisbursement.value_date) : new Date();
+          const result = await fixedCurrencyConverter.convertToUSD(
+            modalDisbursement.amount,
+            modalDisbursement.currency,
+            conversionDate
+          );
+          usdAmount = result.usd_amount || 0;
+        } catch (err) {
+          console.error('Currency conversion error:', err);
+        }
+      } else if (modalDisbursement.currency === 'USD') {
+        usdAmount = modalDisbursement.amount;
+      }
+
       const disbursementData = {
         activity_id: activityId,
         amount: modalDisbursement.amount,
         currency: modalDisbursement.currency,
+        usd_amount: usdAmount, // Save the USD conversion
         period_start: periodStart,
         period_end: periodEnd,
+        type: modalDisbursement.type || '1',
         provider_org_id: modalDisbursement.provider_org_id || null,
         provider_org_name: modalDisbursement.provider_org_name || null,
+        provider_org_ref: modalDisbursement.provider_org_ref || null,
+        provider_org_type: modalDisbursement.provider_org_type || null,
+        provider_activity_id: modalDisbursement.provider_activity_id || null,
+        provider_activity_uuid: modalDisbursement.provider_activity_uuid || null,  // NEW - Activity link
         receiver_org_id: modalDisbursement.receiver_org_id || null,
         receiver_org_name: modalDisbursement.receiver_org_name || null,
+        receiver_org_ref: modalDisbursement.receiver_org_ref || null,
+        receiver_org_type: modalDisbursement.receiver_org_type || null,
+        receiver_activity_id: modalDisbursement.receiver_activity_id || null,
+        receiver_activity_uuid: modalDisbursement.receiver_activity_uuid || null,  // NEW - Activity link
         status: modalDisbursement.status || 'original',
         value_date: modalDisbursement.value_date && modalDisbursement.value_date.trim() !== '' ? modalDisbursement.value_date : null,
         notes: modalDisbursement.notes || null,
-        usd_amount: modalDisbursement.usdAmount || 0,
         ...(user?.id && { created_by: user.id, updated_by: user.id }),
       };
 
@@ -886,7 +1233,7 @@ export default function PlannedDisbursementsTab({
 
         const { data } = await response.json();
         setDisbursements(prev => prev.map((disbursement: PlannedDisbursement) => 
-          disbursement.id === modalDisbursement.id ? { ...data, usdAmount: modalDisbursement.usdAmount || 0 } : disbursement
+          disbursement.id === modalDisbursement.id ? { ...data, usdAmount } : disbursement
         ));
         toast.success('Planned disbursement updated successfully');
       } else {
@@ -905,7 +1252,7 @@ export default function PlannedDisbursementsTab({
         }
 
         const { data } = await response.json();
-        setDisbursements(prev => [...prev.filter(d => d.id !== undefined), { ...data, usdAmount: modalDisbursement.usdAmount || 0 }]);
+        setDisbursements(prev => [...prev.filter(d => d.id !== undefined), { ...data, usdAmount }]);
         toast.success('Planned disbursement added successfully');
       }
 
@@ -1006,16 +1353,41 @@ export default function PlannedDisbursementsTab({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Planned Disbursements</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => addPeriod('month')}
+                disabled={isReadOnly}
+              >
+                + Monthly
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => addPeriod('quarter')}
+                disabled={isReadOnly}
+              >
+                + Quarterly
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => addPeriod('half-year')}
+                disabled={isReadOnly}
+              >
+                + Semi-Annual
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => addPeriod('year')}
+                disabled={isReadOnly}
+              >
+                + Annual
+              </Button>
             </div>
             <div className="flex gap-2">
-              {!isReadOnly && (
-                <Button onClick={() => openModal()}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Planned Disbursement
-                </Button>
-              )}
               {disbursements.length > 0 && !loading && (
                 <Button variant="outline" onClick={handleExport}>
                   <Download className="h-4 w-4 mr-1" />
@@ -1026,99 +1398,6 @@ export default function PlannedDisbursementsTab({
           </div>
         </CardHeader>
         <CardContent>
-          {/* Granularity Controls */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium">Time Periods</h3>
-            </div>
-            <div className="flex space-x-1">
-              <Button
-                variant={granularity === 'monthly' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleGranularityChange('monthly')}
-                disabled={isReadOnly}
-              >
-                Monthly
-              </Button>
-              <Button
-                variant={granularity === 'quarterly' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleGranularityChange('quarterly')}
-                disabled={isReadOnly}
-              >
-                Quarterly
-              </Button>
-              <Button
-                variant={granularity === 'annual' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleGranularityChange('annual')}
-                disabled={isReadOnly}
-              >
-                Annual
-              </Button>
-              <Button
-                variant={granularity === 'custom' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleGranularityChange('custom')}
-                disabled={isReadOnly}
-              >
-                Custom
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={addCustomPeriod}
-                disabled={isReadOnly}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add Period
-              </Button>
-            </div>
-          </div>
-
-          {/* Filters */}
-          {disbursements.length > 0 && (
-            <div className="mb-4 p-4 bg-muted/50 rounded-lg space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Filter className="h-4 w-4" />
-                Filters
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Select value={filters.status} onValueChange={v => setFilters({...filters, status: v})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="original">Original</SelectItem>
-                    <SelectItem value="revised">Revised</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="relative">
-                  <Input
-                    type="date"
-                    placeholder="From date"
-                    value={filters.dateFrom}
-                    onChange={e => setFilters({...filters, dateFrom: e.target.value})}
-                    className="pl-8"
-                    aria-label="Filter from date"
-                  />
-                  <label className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">From</label>
-                </div>
-                <div className="relative">
-                  <Input
-                    type="date"
-                    placeholder="To date"
-                    value={filters.dateTo}
-                    onChange={e => setFilters({...filters, dateTo: e.target.value})}
-                    className="pl-8"
-                    aria-label="Filter to date"
-                  />
-                  <label className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">To</label>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Table */}
           {disbursements.length === 0 ? (
@@ -1126,88 +1405,204 @@ export default function PlannedDisbursementsTab({
               <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No planned disbursements</h3>
               <p className="text-muted-foreground mb-4">
-                Get started by adding your first planned disbursement.
+                Use the buttons above to add your first planned disbursement.
               </p>
-              {!isReadOnly && (
-                <Button onClick={() => openModal()}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add First Planned Disbursement
-                </Button>
-              )}
             </div>
           ) : (
             <>
               <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
+                <Table aria-label="Planned disbursements table">
+                  <TableHeader className="bg-muted/50 border-b border-border/70">
                     <TableRow>
-                      <TableHead className="font-medium">Period</TableHead>
-                      <TableHead className="font-medium">Status</TableHead>
-                      <TableHead className="font-medium">Provider → Receiver</TableHead>
-                      <TableHead className="font-medium">Amount</TableHead>
-                      <TableHead className="font-medium">USD Value</TableHead>
-                      <TableHead className="font-medium">Value Date</TableHead>
-                      <TableHead className="text-right font-medium">Actions</TableHead>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                        <div 
+                          className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
+                          onClick={() => handleSort('period')}
+                        >
+                          Period
+                          {sortColumn === 'period' && (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                        <div 
+                          className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
+                          onClick={() => handleSort('status')}
+                        >
+                          Status
+                          {sortColumn === 'status' && (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                        <div 
+                          className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
+                          onClick={() => handleSort('provider')}
+                        >
+                          Provider → Receiver
+                          {sortColumn === 'provider' && (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+                        <div 
+                          className="flex items-center gap-1 justify-end cursor-pointer hover:bg-muted/30 transition-colors"
+                          onClick={() => handleSort('amount')}
+                        >
+                          Amount
+                          {sortColumn === 'amount' && (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                        <div 
+                          className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
+                          onClick={() => handleSort('value_date')}
+                        >
+                          Value Date
+                          {sortColumn === 'value_date' && (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+                        <div 
+                          className="flex items-center gap-1 justify-end cursor-pointer hover:bg-muted/30 transition-colors"
+                          onClick={() => handleSort('usd_value')}
+                        >
+                          USD Value
+                          {sortColumn === 'usd_value' && (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredDisbursements.map((disbursement: PlannedDisbursement) => {
+                    {sortedFilteredDisbursements.map((disbursement: PlannedDisbursement) => {
+                      const overlappingDisbursements = checkDisbursementOverlap(disbursement, sortedFilteredDisbursements);
+                      const hasOverlapWarning = overlappingDisbursements && overlappingDisbursements.length > 0;
                       
                       return (
                         <TableRow 
                           key={disbursement.id || 'new'}
                           className={cn(
-                            "cursor-pointer hover:bg-muted/50",
-                            disbursement.hasError && "border-red-200 bg-red-50"
+                            "border-b border-border/40 hover:bg-muted/30 transition-colors",
+                            disbursement.hasError ? 'bg-red-50' : hasOverlapWarning ? 'bg-orange-50/30' : ''
                           )}
                         >
                           {/* Period */}
-                          <TableCell>
-                            <div className="font-medium">
+                          <TableCell className="py-3 px-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">
                                 {format(parseISO(disbursement.period_start), 'MMM yyyy')} - {format(parseISO(disbursement.period_end), 'MMM yyyy')}
-                              </div>
+                              </span>
+                              {hasOverlapWarning && (
+                                <TooltipProvider>
+                                  <UITooltip>
+                                    <TooltipTrigger asChild>
+                                      <AlertCircle className="h-3 w-3 text-orange-500 flex-shrink-0" />
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs">
+                                      <div className="text-xs">
+                                        <div className="font-semibold mb-1">⚠️ Period Overlap Warning</div>
+                                        <div className="mb-1">This disbursement period overlaps with:</div>
+                                        {overlappingDisbursements.map((od, i) => (
+                                          <div key={i} className="text-muted-foreground">
+                                            • {format(parseISO(od.period_start), 'MMM d, yyyy')} - {format(parseISO(od.period_end), 'MMM d, yyyy')}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </TooltipContent>
+                                  </UITooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
                           </TableCell>
 
                           {/* Status */}
-                          <TableCell>
-                            <Badge variant={disbursement.status === 'revised' ? 'default' : 'secondary'}>
+                          <TableCell className="py-3 px-4">
+                            <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
                                 {disbursement.status || 'Original'}
-                              </Badge>
+                              </span>
                           </TableCell>
 
                           {/* Provider → Receiver */}
-                          <TableCell>
-                            <div className="text-sm">
+                          <TableCell className="py-3 px-4">
+                            <div className="font-medium">
                               {getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name)} → {getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name)}
                             </div>
                           </TableCell>
 
                           {/* Amount (merged with currency) */}
-                          <TableCell>
+                          <TableCell className="py-3 px-4 text-right">
                             <div className="font-medium">
                               {disbursement.amount > 0 
-                                ? `${disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${disbursement.currency}`
+                                ? <><span className="text-muted-foreground">{disbursement.currency}</span> {disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                                 : '-'
                               }
                             </div>
                           </TableCell>
 
-                          {/* USD Value */}
-                          <TableCell>
-                            <div className="font-medium">
-                              {disbursement.usdAmount ? `$${disbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                            </div>
-                          </TableCell>
-
                           {/* Value Date */}
-                          <TableCell>
-                            <div className="text-sm">
+                          <TableCell className="py-3 px-4">
+                            <div>
                               {disbursement.value_date ? format(parseISO(disbursement.value_date), 'MMM dd, yyyy') : '-'}
                             </div>
                           </TableCell>
 
+                          {/* USD Value */}
+                          <TableCell className="py-3 px-4 text-right">
+                            <div className="flex items-center gap-1">
+                              {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`]?.loading ? (
+                                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                              ) : usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`]?.usd != null ? (
+                                <TooltipProvider>
+                                  <UITooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="font-medium cursor-help">
+                                        ${usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <div>
+                                        <div>Original: {disbursement.amount} {disbursement.currency}</div>
+                                        <div>Rate: {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].rate}</div>
+                                        <div>Date: {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].date}</div>
+                                      </div>
+                                    </TooltipContent>
+                                  </UITooltip>
+                                </TooltipProvider>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  {disbursement.amount === 0 ? (
+                                    <AlertCircle className="h-3 w-3 text-orange-500" />
+                                  ) : (
+                                    <span className="text-sm text-red-500">
+                                      {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`]?.error || '-'}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {saveStatus[disbursement.id || ''] === 'saving' && (
+                                <Loader2 className="h-3 w-3 animate-spin text-orange-500" aria-label="Saving..." />
+                              )}
+                              {saveStatus[disbursement.id || ''] === 'saved' && (
+                                <CheckCircle className="h-3 w-3 text-green-600" aria-label="Saved" />
+                              )}
+                              {saveStatus[disbursement.id || ''] === 'error' && (
+                                <span className="text-xs text-red-500">Failed</span>
+                              )}
+                            </div>
+                          </TableCell>
+
                           {/* Actions */}
-                          <TableCell className="text-right">
+                          <TableCell className="py-3 px-4 text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-8 w-8 p-0" disabled={isReadOnly}>
@@ -1276,188 +1671,382 @@ export default function PlannedDisbursementsTab({
           </DialogHeader>
           
           <div className="space-y-6">
-            {/* Period Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-900 border-b pb-2">Period</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="period-start">Start Date *</Label>
-                  <Input
-                    id="period-start"
-                    type="date"
-                    value={modalDisbursement?.period_start || ''}
-                    onChange={(e) => updateFormField('period_start', e.target.value)}
-                    className={cn("h-10", fieldErrors.period_start && "border-red-500")}
-                    disabled={savingId === modalDisbursement?.id}
-                  />
-                  {fieldErrors.period_start && (
-                    <p className="text-xs text-red-500">{fieldErrors.period_start}</p>
+            {/* Type */}
+            <div className="space-y-2">
+              <Label htmlFor="type">Type</Label>
+              <Popover open={typePopoverOpen} onOpenChange={setTypePopoverOpen}>
+                <PopoverTrigger
+                  className={cn(
+                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                    fieldErrors.type && "border-red-500",
+                    !modalDisbursement?.type && "text-muted-foreground"
                   )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="period-end">End Date *</Label>
-                  <Input
-                    id="period-end"
-                    type="date"
-                    value={modalDisbursement?.period_end || ''}
-                    onChange={(e) => updateFormField('period_end', e.target.value)}
-                    className={cn("h-10", fieldErrors.period_end && "border-red-500")}
-                    disabled={savingId === modalDisbursement?.id}
-                  />
-                  {fieldErrors.period_end && (
-                    <p className="text-xs text-red-500">{fieldErrors.period_end}</p>
-                  )}
-                </div>
-              </div>
-              {fieldErrors.period && (
-                <p className="text-xs text-red-500">{fieldErrors.period}</p>
+                  disabled={savingId === modalDisbursement?.id}
+                >
+                  <span className="truncate">
+                    {modalDisbursement?.type ? (() => {
+                      const selectedType = BUDGET_TYPES.find(type => type.code === modalDisbursement.type);
+                      return selectedType ? (
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedType.code}</span>
+                          <span className="font-medium">{selectedType.name}</span>
+                        </span>
+                      ) : (
+                        "Select type"
+                      );
+                    })() : (
+                      "Select type"
+                    )}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {modalDisbursement?.type && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateFormField('type', '1');
+                          setTypePopoverOpen(false);
+                        }}
+                        className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                        aria-label="Clear selection"
+                      >
+                        <span className="text-xs">×</span>
+                      </button>
+                    )}
+                    <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-0" align="start">
+                  <div className="max-h-[200px] overflow-y-auto">
+                    {BUDGET_TYPES.map(type => (
+                      <button
+                        key={type.code}
+                        type="button"
+                        className={cn(
+                          "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                          modalDisbursement?.type === type.code && "bg-accent text-accent-foreground"
+                        )}
+                        onClick={() => {
+                          updateFormField('type', type.code as '1' | '2');
+                          setTypePopoverOpen(false);
+                        }}
+                      >
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type.code}</span>
+                        <span className="font-medium">{type.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {fieldErrors.type && (
+                <p className="text-xs text-red-500">{fieldErrors.type}</p>
               )}
             </div>
 
-            {/* Status Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-900 border-b pb-2">Status</h3>
+            {/* Period */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="status">Status *</Label>
-                <Select
-                  value={modalDisbursement?.status || 'original'}
-                  onValueChange={(value) => updateFormField('status', value)}
-                  disabled={savingId === modalDisbursement?.id}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="original">Original</SelectItem>
-                    <SelectItem value="revised">Revised</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Organizations Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-900 border-b pb-2">Organizations</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="provider-org">Provider Organization</Label>
-                  <OrganizationCombobox
-                    value={modalDisbursement?.provider_org_id || ''}
-                    onValueChange={(orgId) => {
-                      const org = organizations.find(o => o.id === orgId);
-                      updateFormField('provider_org_id', orgId);
-                      updateFormField('provider_org_name', org ? getOrganizationDisplayName(org) : '');
-                    }}
-                    placeholder="Search for provider organization..."
-                    organizations={organizations}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="receiver-org">Receiver Organization</Label>
-                  <OrganizationCombobox
-                    value={modalDisbursement?.receiver_org_id || ''}
-                    onValueChange={(orgId) => {
-                      const org = organizations.find(o => o.id === orgId);
-                      updateFormField('receiver_org_id', orgId);
-                      updateFormField('receiver_org_name', org ? getOrganizationDisplayName(org) : '');
-                    }}
-                    placeholder="Search for receiver organization..."
-                    organizations={organizations}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Financial Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-900 border-b pb-2">Financial Details</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount *</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={modalDisbursement?.amount || ''}
-                    onChange={(e) => updateFormField('amount', parseFloat(e.target.value) || 0)}
-                    className={cn("h-10", fieldErrors.amount && "border-red-500")}
-                    step="0.01"
-                    min="0"
-                    disabled={savingId === modalDisbursement?.id}
-                  />
-                  {fieldErrors.amount && (
-                    <p className="text-xs text-red-500">{fieldErrors.amount}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Currency *</Label>
-                  <Select
-                    value={modalDisbursement?.currency}
-                    onValueChange={(value) => updateFormField('currency', value)}
-                    disabled={savingId === modalDisbursement?.id}
-                  >
-                    <SelectTrigger className={cn("h-10", fieldErrors.currency && "border-red-500")}>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map(currency => (
-                        <SelectItem key={currency.code} value={currency.code}>
-                          {currency.code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {fieldErrors.currency && (
-                    <p className="text-xs text-red-500">{fieldErrors.currency}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="value-date">Value Date *</Label>
-                  <Input
-                    id="value-date"
-                    type="date"
-                    value={modalDisbursement?.value_date || ''}
-                    onChange={(e) => updateFormField('value_date', e.target.value)}
-                    className={cn("h-10", fieldErrors.value_date && "border-red-500")}
-                    disabled={savingId === modalDisbursement?.id}
-                  />
-                  {fieldErrors.value_date && (
-                    <p className="text-xs text-red-500">{fieldErrors.value_date}</p>
-                  )}
-                </div>
-              </div>
-              
-              {/* USD Value Display */}
-              <div className="space-y-2">
-                <Label htmlFor="usd-value">USD Value (Auto-calculated)</Label>
-                <div className="relative">
-                  <Input
-                    id="usd-value"
-                    type="text"
-                    value={modalDisbursement?.usdAmount ? `$${modalDisbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}
-                    className="h-10 pr-8 bg-gray-50"
-                    disabled
-                  />
-                  {isCalculatingUSD && (
-                    <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Notes Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-900 border-b pb-2">Additional Information</h3>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={modalDisbursement?.notes || ''}
-                  onChange={(e) => updateFormField('notes', e.target.value)}
-                  className="min-h-[80px]"
-                  placeholder="Add any additional notes about this planned disbursement..."
+                <Label htmlFor="period-start">Period Start Date</Label>
+                <Input
+                  id="period-start"
+                  type="date"
+                  value={modalDisbursement?.period_start || ''}
+                  onChange={(e) => updateFormField('period_start', e.target.value)}
+                  className={cn("h-10", fieldErrors.period_start && "border-red-500")}
                   disabled={savingId === modalDisbursement?.id}
                 />
+                {fieldErrors.period_start && (
+                  <p className="text-xs text-red-500">{fieldErrors.period_start}</p>
+                )}
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="period-end">Period End Date</Label>
+                <Input
+                  id="period-end"
+                  type="date"
+                  value={modalDisbursement?.period_end || ''}
+                  onChange={(e) => updateFormField('period_end', e.target.value)}
+                  className={cn("h-10", fieldErrors.period_end && "border-red-500")}
+                  disabled={savingId === modalDisbursement?.id}
+                />
+                {fieldErrors.period_end && (
+                  <p className="text-xs text-red-500">{fieldErrors.period_end}</p>
+                )}
+              </div>
+            </div>
+            {fieldErrors.period && (
+              <p className="text-xs text-red-500">{fieldErrors.period}</p>
+            )}
+
+            {/* Currency, Amount, Value Date */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Popover open={currencyPopoverOpen} onOpenChange={setCurrencyPopoverOpen}>
+                  <PopoverTrigger
+                    className={cn(
+                      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                      fieldErrors.currency && "border-red-500",
+                      !modalDisbursement?.currency && "text-muted-foreground"
+                    )}
+                    disabled={savingId === modalDisbursement?.id}
+                  >
+                    <span className="truncate">
+                      {modalDisbursement?.currency ? (() => {
+                        const selectedCurrency = currencies.find(c => c.code === modalDisbursement.currency);
+                        return selectedCurrency ? (
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedCurrency.code}</span>
+                            <span className="font-medium">{selectedCurrency.name}</span>
+                          </span>
+                        ) : (
+                          "Select currency"
+                        );
+                      })() : (
+                        "Select currency"
+                      )}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {modalDisbursement?.currency && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateFormField('currency', 'USD');
+                            setCurrencyPopoverOpen(false);
+                          }}
+                          className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                          aria-label="Clear selection"
+                        >
+                          <span className="text-xs">×</span>
+                        </button>
+                      )}
+                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <div className="max-h-[300px] overflow-y-auto">
+                      {currencies.map(currency => (
+                        <button
+                          key={currency.code}
+                          type="button"
+                          className={cn(
+                            "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                            modalDisbursement?.currency === currency.code && "bg-accent text-accent-foreground"
+                          )}
+                          onClick={() => {
+                            updateFormField('currency', currency.code);
+                            setCurrencyPopoverOpen(false);
+                          }}
+                        >
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currency.code}</span>
+                          <span className="font-medium">{currency.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                {fieldErrors.currency && (
+                  <p className="text-xs text-red-500">{fieldErrors.currency}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount</Label>
+                <Input
+                  id="amount"
+                  type="text"
+                  value={modalDisbursement?.amount ? modalDisbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
+                  onChange={(e) => {
+                    // Remove formatting and parse the number
+                    const rawValue = e.target.value.replace(/[^\d.-]/g, '');
+                    const numericValue = parseFloat(rawValue) || 0;
+                    updateFormField('amount', numericValue);
+                  }}
+                  onBlur={(e) => {
+                    // Format on blur
+                    if (modalDisbursement?.amount) {
+                      const formatted = modalDisbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      e.target.value = formatted;
+                    }
+                  }}
+                  className={cn("h-10", fieldErrors.amount && "border-red-500")}
+                  placeholder="0.00"
+                  disabled={savingId === modalDisbursement?.id}
+                />
+                {fieldErrors.amount && (
+                  <p className="text-xs text-red-500">{fieldErrors.amount}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="value-date">Value Date</Label>
+                <Input
+                  id="value-date"
+                  type="date"
+                  value={modalDisbursement?.value_date || ''}
+                  onChange={(e) => updateFormField('value_date', e.target.value)}
+                  className={cn("h-10", fieldErrors.value_date && "border-red-500")}
+                  disabled={savingId === modalDisbursement?.id}
+                />
+                {fieldErrors.value_date && (
+                  <p className="text-xs text-red-500">{fieldErrors.value_date}</p>
+                )}
+              </div>
+            </div>
+
+            {/* USD Value */}
+            <div className="space-y-2">
+              <Label htmlFor="usd-value">USD Value</Label>
+              <div className="relative">
+                <Input
+                  id="usd-value"
+                  type="text"
+                  value={modalDisbursement?.usdAmount ? `$${modalDisbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}
+                  className="h-10 pr-8 bg-gray-50 font-medium"
+                  disabled
+                />
+                {isCalculatingUSD && (
+                  <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+                )}
+              </div>
+              <p className="text-xs text-gray-500">Auto-calculated based on currency, amount, and value date</p>
+            </div>
+
+            <div className="border-t pt-4" />
+
+            {/* Provider Organisation */}
+            <div className="space-y-2">
+              <Label htmlFor="provider-org">Provider Organisation</Label>
+              <OrganizationCombobox
+                value={modalDisbursement?.provider_org_id || ''}
+                onValueChange={(orgId) => {
+                  const org = organizations.find(o => o.id === orgId);
+                  if (org) {
+                    updateFormField('provider_org_id', orgId);
+                    updateFormField('provider_org_name', getOrganizationDisplayName(org));
+                    // Auto-fill ref and type if available
+                    if (org.iati_identifier) {
+                      updateFormField('provider_org_ref', org.iati_identifier);
+                    }
+                    if (org.org_type) {
+                      updateFormField('provider_org_type', org.org_type);
+                    }
+                  }
+                }}
+                placeholder="Search for provider organisation..."
+                organizations={organizations}
+              />
+            </div>
+
+            {/* Provider Activity */}
+            <div className="space-y-2">
+              <Label htmlFor="provider-activity">Provider Activity</Label>
+              <ActivityCombobox
+                value={modalDisbursement?.provider_activity_uuid || ''}
+                onValueChange={async (activityId) => {
+                  console.log('[PlannedDisbursement] Provider activity selected:', activityId);
+                  // Update UUID immediately
+                  updateFormField('provider_activity_uuid', activityId);
+                  console.log('[PlannedDisbursement] Updated provider_activity_uuid to:', activityId);
+                  
+                  if (activityId) {
+                    // Fetch activity details to get IATI identifier
+                    try {
+                      const response = await fetch(`/api/activities/${activityId}`);
+                      if (response.ok) {
+                        const activity = await response.json();
+                        console.log('[PlannedDisbursement] Fetched activity IATI ID:', activity.iati_identifier);
+                        updateFormField('provider_activity_id', activity.iati_identifier || '');
+                      }
+                    } catch (error) {
+                      console.error('Error fetching activity:', error);
+                    }
+                  } else {
+                    updateFormField('provider_activity_id', '');
+                  }
+                }}
+                placeholder="Search for provider activity..."
+                fallbackIatiId={modalDisbursement?.provider_activity_id}
+                disabled={savingId === modalDisbursement?.id}
+              />
+              {modalDisbursement?.provider_activity_id && (
+                <p className="text-xs text-gray-500">
+                  IATI ID: {modalDisbursement.provider_activity_id}
+                </p>
+              )}
+            </div>
+
+            {/* Receiver Organisation */}
+            <div className="space-y-2">
+              <Label htmlFor="receiver-org">Receiver Organisation</Label>
+              <OrganizationCombobox
+                value={modalDisbursement?.receiver_org_id || ''}
+                onValueChange={(orgId) => {
+                  const org = organizations.find(o => o.id === orgId);
+                  if (org) {
+                    updateFormField('receiver_org_id', orgId);
+                    updateFormField('receiver_org_name', getOrganizationDisplayName(org));
+                    // Auto-fill ref and type if available
+                    if (org.iati_identifier) {
+                      updateFormField('receiver_org_ref', org.iati_identifier);
+                    }
+                    if (org.org_type) {
+                      updateFormField('receiver_org_type', org.org_type);
+                    }
+                  }
+                }}
+                placeholder="Search for receiver organisation..."
+                organizations={organizations}
+              />
+            </div>
+
+            {/* Receiver Activity */}
+            <div className="space-y-2">
+              <Label htmlFor="receiver-activity">Receiver Activity</Label>
+              <ActivityCombobox
+                value={modalDisbursement?.receiver_activity_uuid || ''}
+                onValueChange={async (activityId) => {
+                  // Update UUID immediately
+                  updateFormField('receiver_activity_uuid', activityId);
+                  
+                  if (activityId) {
+                    // Fetch activity details to get IATI identifier
+                    try {
+                      const response = await fetch(`/api/activities/${activityId}`);
+                      if (response.ok) {
+                        const activity = await response.json();
+                        updateFormField('receiver_activity_id', activity.iati_identifier || '');
+                      }
+                    } catch (error) {
+                      console.error('Error fetching activity:', error);
+                    }
+                  } else {
+                    updateFormField('receiver_activity_id', '');
+                  }
+                }}
+                placeholder="Search for receiver activity..."
+                fallbackIatiId={modalDisbursement?.receiver_activity_id}
+                disabled={savingId === modalDisbursement?.id}
+              />
+              {modalDisbursement?.receiver_activity_id && (
+                <p className="text-xs text-gray-500">
+                  IATI ID: {modalDisbursement.receiver_activity_id}
+                </p>
+              )}
+            </div>
+
+            <div className="border-t pt-4" />
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={modalDisbursement?.notes || ''}
+                onChange={(e) => updateFormField('notes', e.target.value)}
+                className="min-h-[100px]"
+                placeholder="Add any additional notes about this planned disbursement..."
+                disabled={savingId === modalDisbursement?.id}
+              />
             </div>
           </div>
 
@@ -1482,40 +2071,124 @@ export default function PlannedDisbursementsTab({
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Planned Disbursements by Period</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="period" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="usdAmount" fill="#222" barSize={32} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Cumulative Planned Disbursements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="period" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="cumulativeUSD" stroke="#222" strokeWidth={3} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Chart Aggregation Filters */}
+      {disbursements.length > 0 && (
+        <>
+          <div className="flex flex-wrap gap-2 items-center mb-4 mt-8">
+            <Button
+              variant={aggregationMode === 'monthly' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setAggregationMode('monthly')}
+            >
+              Monthly
+            </Button>
+            <Button
+              variant={aggregationMode === 'quarterly' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setAggregationMode('quarterly')}
+            >
+              Quarterly
+            </Button>
+            <Button
+              variant={aggregationMode === 'semi-annual' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setAggregationMode('semi-annual')}
+            >
+              Semi-Annual
+            </Button>
+            <Button
+              variant={aggregationMode === 'annual' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setAggregationMode('annual')}
+            >
+              Annual
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Planned Disbursements by Period</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="period" tick={{ fontSize: 12 }} stroke="#64748b" />
+                    <YAxis 
+                      stroke="#64748b" 
+                      fontSize={12}
+                      label={{
+                        value: 'USD',
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: -10,
+                        style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13, fontWeight: 600 }
+                      }}
+                    />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                              <p className="font-semibold text-gray-900 mb-1">{data.period}</p>
+                              <p className="text-sm text-gray-600">Total Planned Disbursement</p>
+                              <p className="text-lg font-bold text-gray-900">USD {Number(data.usdAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="usdAmount" fill="#64748b" barSize={32} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Cumulative Planned Disbursements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="period" tick={{ fontSize: 12 }} stroke="#64748b" />
+                    <YAxis 
+                      stroke="#64748b" 
+                      fontSize={12}
+                      label={{
+                        value: 'USD',
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: -10,
+                        style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13, fontWeight: 600 }
+                      }}
+                    />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                              <p className="font-semibold text-gray-900 mb-1">{data.period}</p>
+                              <p className="text-sm text-gray-600">Cumulative Planned Disbursement</p>
+                              <p className="text-lg font-bold text-gray-900">USD {Number(data.cumulativeUSD || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line type="monotone" dataKey="cumulativeUSD" stroke="#64748b" strokeWidth={3} dot={{ fill: "#64748b", r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  IATI Transaction Comprehensive Test File
+  Purpose: Test full IATI 2.03 transaction compliance including:
+  - Multiple sectors with percentages
+  - Multiple aid types with vocabularies
+  - Provider/receiver activity IDs
+  - Multiple recipient countries
+  - Multiple recipient regions
+  - All vocabulary attributes
+-->
+<iati-activities version="2.03" generated-datetime="2025-01-07T10:00:00Z">
+  
+  <!-- Test Activity 1: Multi-sector disbursement with percentages -->
+  <iati-activity>
+    <iati-identifier>TEST-TRANS-MULTI-SECTOR-001</iati-identifier>
+    
+    <title>
+      <narrative>Multi-Sector Education and Health Project</narrative>
+    </title>
+    
+    <reporting-org ref="US-EIN-12-3456789" type="21">
+      <narrative>Test Development Agency</narrative>
+    </reporting-org>
+    
+    <activity-status code="2" />
+    <activity-date iso-date="2024-01-01" type="1" />
+    <activity-date iso-date="2026-12-31" type="3" />
+    
+    <!-- Transaction with multiple sectors and percentages -->
+    <transaction ref="TX-001-MULTI-SECTOR" humanitarian="0">
+      <transaction-type code="3" />
+      <transaction-date iso-date="2024-01-15" />
+      <value currency="USD" value-date="2024-01-15">100000</value>
+      
+      <description>
+        <narrative>Disbursement for education and health infrastructure</narrative>
+      </description>
+      
+      <provider-org 
+        ref="US-EIN-12-3456789" 
+        provider-activity-id="US-EIN-12-3456789-PROJ-MAIN-001" 
+        type="21">
+        <narrative>Test Development Agency</narrative>
+      </provider-org>
+      
+      <receiver-org 
+        ref="TZ-REG-987654321" 
+        receiver-activity-id="TZ-REG-987654321-IMPL-EDU-HEALTH-2024" 
+        type="22">
+        <narrative>Tanzania Local Implementation Partner</narrative>
+      </receiver-org>
+      
+      <disbursement-channel code="2" vocabulary="1" />
+      
+      <!-- Multiple sectors with percentages (must sum to 100%) -->
+      <sector vocabulary="1" code="11220" percentage="60">
+        <narrative>Primary education</narrative>
+      </sector>
+      <sector vocabulary="1" code="12220" percentage="40">
+        <narrative>Basic health care</narrative>
+      </sector>
+      
+      <!-- Multiple aid types with different vocabularies -->
+      <aid-type code="C01" vocabulary="1" /> <!-- Project-type interventions (OECD DAC) -->
+      <aid-type code="1" vocabulary="2" />   <!-- Budget support (Earmarking Category) -->
+      
+      <recipient-country code="TZ" />
+      
+      <flow-type code="10" vocabulary="1" /> <!-- ODA -->
+      <finance-type code="110" vocabulary="1" /> <!-- Standard grant -->
+      <tied-status code="5" vocabulary="1" /> <!-- Untied -->
+    </transaction>
+    
+    <!-- Transaction with multiple countries (cross-border project) -->
+    <transaction ref="TX-002-MULTI-COUNTRY" humanitarian="0">
+      <transaction-type code="3" />
+      <transaction-date iso-date="2024-02-01" />
+      <value currency="EUR" value-date="2024-02-01">75000</value>
+      
+      <description>
+        <narrative>Cross-border regional infrastructure disbursement</narrative>
+      </description>
+      
+      <provider-org 
+        ref="EU-DONOR-123" 
+        provider-activity-id="EU-DONOR-123-REGIONAL-INFRA-2024" 
+        type="40">
+        <narrative>European Development Fund</narrative>
+      </provider-org>
+      
+      <receiver-org 
+        ref="EA-REGIONAL-456" 
+        type="15">
+        <narrative>East African Regional Authority</narrative>
+      </receiver-org>
+      
+      <disbursement-channel code="1" vocabulary="1" />
+      
+      <sector vocabulary="1" code="21010">
+        <narrative>Transport policy and administrative management</narrative>
+      </sector>
+      
+      <aid-type code="B03" vocabulary="1" />
+      
+      <!-- Multiple recipient countries with percentages -->
+      <recipient-country code="TZ" percentage="40" />
+      <recipient-country code="KE" percentage="35" />
+      <recipient-country code="UG" percentage="25" />
+      
+      <flow-type code="10" vocabulary="1" />
+      <finance-type code="110" vocabulary="1" />
+      <tied-status code="5" vocabulary="1" />
+    </transaction>
+    
+    <!-- Humanitarian transaction with region -->
+    <transaction ref="TX-003-HUMANITARIAN" humanitarian="1">
+      <transaction-type code="3" />
+      <transaction-date iso-date="2024-03-15" />
+      <value currency="GBP" value-date="2024-03-15">50000</value>
+      
+      <description>
+        <narrative>Emergency humanitarian assistance for drought response</narrative>
+      </description>
+      
+      <provider-org 
+        ref="GB-CHC-123456" 
+        provider-activity-id="GB-CHC-123456-EMERGENCY-RESPONSE-2024" 
+        type="21">
+        <narrative>UK Humanitarian NGO</narrative>
+      </provider-org>
+      
+      <receiver-org 
+        ref="LOCAL-NGO-789" 
+        receiver-activity-id="LOCAL-NGO-789-DROUGHT-RELIEF-2024" 
+        type="22">
+        <narrative>Local Humanitarian Partner</narrative>
+      </receiver-org>
+      
+      <disbursement-channel code="3" vocabulary="1" />
+      
+      <!-- Humanitarian sector -->
+      <sector vocabulary="1" code="72010">
+        <narrative>Material relief assistance and services</narrative>
+      </sector>
+      
+      <aid-type code="C01" vocabulary="1" />
+      
+      <!-- Region instead of country for humanitarian -->
+      <recipient-region code="298" vocabulary="1">
+        <narrative>Africa, regional</narrative>
+      </recipient-region>
+      
+      <flow-type code="10" vocabulary="1" />
+      <finance-type code="110" vocabulary="1" />
+      <tied-status code="5" vocabulary="1" />
+    </transaction>
+  </iati-activity>
+  
+  <!-- Test Activity 2: Multiple aid types and sectors without percentages -->
+  <iati-activity>
+    <iati-identifier>TEST-TRANS-MULTI-AIDTYPE-002</iati-identifier>
+    
+    <title>
+      <narrative>Capacity Building and Technical Assistance</narrative>
+    </title>
+    
+    <reporting-org ref="SE-ORG-555" type="21">
+      <narrative>Swedish Development Cooperation Agency</narrative>
+    </reporting-org>
+    
+    <activity-status code="2" />
+    <activity-date iso-date="2024-06-01" type="1" />
+    <activity-date iso-date="2025-12-31" type="3" />
+    
+    <!-- Transaction with multiple sectors (no percentages) -->
+    <transaction ref="TX-004-CAPACITY-BUILD" humanitarian="0">
+      <transaction-type code="3" />
+      <transaction-date iso-date="2024-06-15" />
+      <value currency="SEK" value-date="2024-06-15">500000</value>
+      
+      <description>
+        <narrative>Technical assistance for governance and civil society</narrative>
+      </description>
+      
+      <provider-org 
+        ref="SE-ORG-555" 
+        provider-activity-id="SE-ORG-555-CAPACITY-2024" 
+        type="21">
+        <narrative>Swedish Development Cooperation Agency</narrative>
+      </provider-org>
+      
+      <receiver-org 
+        ref="MW-GOV-123" 
+        receiver-activity-id="MW-GOV-123-REFORM-PROGRAM" 
+        type="10">
+        <narrative>Malawi Ministry of Finance</narrative>
+      </receiver-org>
+      
+      <disbursement-channel code="1" vocabulary="1" />
+      
+      <!-- Multiple sectors without percentages (equal weight assumed) -->
+      <sector vocabulary="1" code="15110">
+        <narrative>Public sector policy and administrative management</narrative>
+      </sector>
+      <sector vocabulary="1" code="15150">
+        <narrative>Democratic participation and civil society</narrative>
+      </sector>
+      <sector vocabulary="1" code="15112">
+        <narrative>Decentralisation and support to subnational government</narrative>
+      </sector>
+      
+      <!-- Multiple aid types -->
+      <aid-type code="D02" vocabulary="1" /> <!-- Other technical assistance -->
+      <aid-type code="2" vocabulary="2" />   <!-- Core support (Earmarking) -->
+      
+      <recipient-country code="MW" />
+      
+      <flow-type code="10" vocabulary="1" />
+      <finance-type code="110" vocabulary="1" />
+      <tied-status code="3" vocabulary="1" /> <!-- Partially tied -->
+    </transaction>
+  </iati-activity>
+  
+  <!-- Test Activity 3: Loan transaction with finance type -->
+  <iati-activity>
+    <iati-identifier>TEST-TRANS-LOAN-003</iati-identifier>
+    
+    <title>
+      <narrative>Infrastructure Development Loan</narrative>
+    </title>
+    
+    <reporting-org ref="WORLDBANK" type="40">
+      <narrative>World Bank</narrative>
+    </reporting-org>
+    
+    <activity-status code="2" />
+    <activity-date iso-date="2024-01-01" type="1" />
+    
+    <!-- Loan disbursement -->
+    <transaction ref="TX-005-LOAN-DISB" humanitarian="0">
+      <transaction-type code="3" />
+      <transaction-date iso-date="2024-07-01" />
+      <value currency="USD" value-date="2024-07-01">5000000</value>
+      
+      <description>
+        <narrative>First tranche of infrastructure development loan</narrative>
+      </description>
+      
+      <provider-org 
+        ref="44000" 
+        provider-activity-id="WB-IDA-INFRA-2024-001" 
+        type="40">
+        <narrative>International Development Association</narrative>
+      </provider-org>
+      
+      <receiver-org 
+        ref="ET-MOF" 
+        receiver-activity-id="ET-MOF-INFRA-DEV-2024" 
+        type="10">
+        <narrative>Ethiopia Ministry of Finance</narrative>
+      </receiver-org>
+      
+      <disbursement-channel code="1" vocabulary="1" />
+      
+      <sector vocabulary="1" code="21010" percentage="100">
+        <narrative>Transport policy and administrative management</narrative>
+      </sector>
+      
+      <aid-type code="C01" vocabulary="1" />
+      
+      <recipient-country code="ET" />
+      
+      <flow-type code="10" vocabulary="1" />
+      <finance-type code="410" vocabulary="1" /> <!-- Aid loan -->
+      <tied-status code="5" vocabulary="1" />
+    </transaction>
+    
+    <!-- Interest payment on loan -->
+    <transaction ref="TX-006-INTEREST" humanitarian="0">
+      <transaction-type code="5" />
+      <transaction-date iso-date="2024-12-31" />
+      <value currency="USD" value-date="2024-12-31">50000</value>
+      
+      <description>
+        <narrative>Annual interest payment on infrastructure loan</narrative>
+      </description>
+      
+      <provider-org 
+        ref="ET-MOF" 
+        type="10">
+        <narrative>Ethiopia Ministry of Finance</narrative>
+      </provider-org>
+      
+      <receiver-org 
+        ref="44000" 
+        type="40">
+        <narrative>International Development Association</narrative>
+      </receiver-org>
+      
+      <flow-type code="10" vocabulary="1" />
+      <finance-type code="410" vocabulary="1" />
+    </transaction>
+  </iati-activity>
+  
+</iati-activities>

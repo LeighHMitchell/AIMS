@@ -41,6 +41,28 @@ interface ParsedActivity {
   actual_end_date?: string;
   transactions: ParsedTransaction[];
   locations?: ParsedLocation[];
+  financingTerms?: {
+    loanTerms?: {
+      rate_1?: number;
+      rate_2?: number;
+      repayment_type_code?: string;
+      repayment_plan_code?: string;
+      commitment_date?: string;
+      repayment_first_date?: string;
+      repayment_final_date?: string;
+    };
+    other_flags?: Array<{ code: string; significance: string }>;
+    loanStatuses?: Array<{
+      year: number;
+      currency: string;
+      value_date?: string;
+      interest_received?: number;
+      principal_outstanding?: number;
+      principal_arrears?: number;
+      interest_arrears?: number;
+    }>;
+    channel_code?: string;
+  };
 }
 
 interface ParsedTransaction {
@@ -348,6 +370,54 @@ export async function POST(request: NextRequest) {
           
           return location;
         });
+      }
+
+      // Parse CRS-add financing terms
+      if (xmlActivity['crs-add']) {
+        const crsAdd = xmlActivity['crs-add'];
+        activity.financingTerms = {};
+
+        // Parse loan terms
+        if (crsAdd['loan-terms']) {
+          const loanTerms = crsAdd['loan-terms'];
+          activity.financingTerms.loanTerms = {
+            rate_1: loanTerms['@_rate-1'] ? parseFloat(loanTerms['@_rate-1']) : undefined,
+            rate_2: loanTerms['@_rate-2'] ? parseFloat(loanTerms['@_rate-2']) : undefined,
+            repayment_type_code: loanTerms['repayment-type']?.['@_code'],
+            repayment_plan_code: loanTerms['repayment-plan']?.['@_code'],
+            commitment_date: loanTerms['commitment-date']?.['@_iso-date'],
+            repayment_first_date: loanTerms['repayment-first-date']?.['@_iso-date'],
+            repayment_final_date: loanTerms['repayment-final-date']?.['@_iso-date']
+          };
+        }
+
+        // Parse other-flags (OECD CRS flags)
+        if (crsAdd['other-flags']) {
+          const flags = ensureArray(crsAdd['other-flags']);
+          activity.financingTerms.other_flags = flags.map((flag: any) => ({
+            code: flag['@_code'] || '',
+            significance: flag['@_significance'] || '1'
+          }));
+        }
+
+        // Parse loan-status (yearly entries)
+        if (crsAdd['loan-status']) {
+          const statuses = ensureArray(crsAdd['loan-status']);
+          activity.financingTerms.loanStatuses = statuses.map((status: any) => ({
+            year: parseInt(status['@_year']),
+            currency: status['@_currency'] || 'USD',
+            value_date: status['@_value-date'],
+            interest_received: status['interest-received'] ? parseFloat(status['interest-received']) : undefined,
+            principal_outstanding: status['principal-outstanding'] ? parseFloat(status['principal-outstanding']) : undefined,
+            principal_arrears: status['principal-arrears'] ? parseFloat(status['principal-arrears']) : undefined,
+            interest_arrears: status['interest-arrears'] ? parseFloat(status['interest-arrears']) : undefined
+          })).filter((s: any) => !isNaN(s.year));
+        }
+
+        // Parse channel-code (for reference)
+        if (crsAdd['channel-code']) {
+          activity.financingTerms.channel_code = crsAdd['channel-code']['#text'] || crsAdd['channel-code'];
+        }
       }
       
       xmlActivityMap.set(iatiIdentifier, activity);

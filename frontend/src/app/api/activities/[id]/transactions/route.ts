@@ -269,6 +269,25 @@ export async function POST(
       receiver_org_language: body.receiver_org_language || 'en',
       // Add financing classification if provided
       financing_classification: body.financing_classification || null,
+      
+      // NEW: IATI Compliance Fields - Activity ID links
+      provider_org_activity_id: body.provider_org_activity_id || null,
+      provider_activity_uuid: body.provider_activity_uuid || null,
+      receiver_org_activity_id: body.receiver_org_activity_id || null,
+      receiver_activity_uuid: body.receiver_activity_uuid || null,
+      
+      // NEW: Vocabulary fields with defaults
+      flow_type_vocabulary: body.flow_type_vocabulary || '1',
+      finance_type_vocabulary: body.finance_type_vocabulary || '1',
+      tied_status_vocabulary: body.tied_status_vocabulary || '1',
+      disbursement_channel_vocabulary: body.disbursement_channel_vocabulary || '1',
+      
+      // NEW: Multiple element support (JSONB arrays)
+      // Supabase handles JSON serialization automatically
+      sectors: body.sectors || null,
+      aid_types: body.aid_types || null,
+      recipient_countries: body.recipient_countries || null,
+      recipient_regions: body.recipient_regions || null,
     };
 
     console.log('[TransactionAPI] Creating transaction with organization_id:', transactionData.organization_id);

@@ -671,7 +671,7 @@ export async function POST(request: Request) {
             const type = contact.type || '1'; // Default to "General Enquiries"
             const firstName = contact.firstName?.trim() || 'Unknown';
             const lastName = contact.lastName?.trim() || 'Unknown';
-            const position = contact.position?.trim() || 'Unknown';
+            const position = contact.position?.trim() || null; // Position is no longer required
             
             // Create contact data using the actual database schema columns
             const contactData: any = {
@@ -682,36 +682,57 @@ export async function POST(request: Request) {
               middle_name: contact.middleName || null,
               last_name: lastName,
               position: position,
+              job_title: contact.jobTitle || null, // IATI job-title field
               organisation: contact.organisation || null, // DEPRECATED but kept for compatibility
+              organisation_id: contact.organisationId || null,
+              department: contact.department || null, // IATI department field
               phone: contact.phone || null, // DEPRECATED but kept for compatibility
+              country_code: contact.countryCode || null,
+              phone_number: contact.phoneNumber || null,
               fax: contact.fax || null,
+              fax_country_code: contact.faxCountryCode || null,
+              fax_number: contact.faxNumber || null,
               email: contact.email || null, // DEPRECATED but kept for compatibility
+              secondary_email: contact.secondaryEmail || null,
+              website: contact.website || null, // IATI website field
+              mailing_address: contact.mailingAddress || null, // IATI mailing-address field
               profile_photo: contact.profilePhoto || null,
               notes: contact.notes || null,
-              organisation_id: contact.organisationId || null,
-              organisation_name: contact.organisation || null, // Use organisation as fallback
-              primary_email: contact.email || null,
-              secondary_email: contact.secondaryEmail || null,
               display_on_web: contact.displayOnWeb || false,
               user_id: contact.userId || null,
               role: contact.role || null,
-              name: contact.name || null
+              name: contact.name || null,
+              // Contact roles and user linking
+              is_focal_point: contact.isFocalPoint || false,
+              has_editing_rights: contact.hasEditingRights || false,
+              linked_user_id: contact.linkedUserId || null
             };
             
             return contactData;
           });
 
-          const { error: contactsError } = await getSupabaseAdmin()
+          console.log('[AIMS API] Attempting to insert', contactsData.length, 'contacts');
+          console.log('[AIMS API] Contact data sample:', JSON.stringify(contactsData[0], null, 2));
+          
+          const { data: insertedContacts, error: contactsError } = await getSupabaseAdmin()
             .from('activity_contacts')
-            .insert(contactsData);
+            .insert(contactsData)
+            .select();
             
           if (contactsError) {
-            console.error('[AIMS API] Error updating contacts:', contactsError);
+            console.error('[AIMS API] ❌ Error updating contacts:', contactsError);
+            console.error('[AIMS API] Error details:', {
+              message: contactsError.message,
+              details: contactsError.details,
+              hint: contactsError.hint,
+              code: contactsError.code
+            });
             if (contactsError.message.includes('does not exist')) {
               console.error('[AIMS API] activity_contacts table does not exist. Please create it first.');
             }
           } else {
-            console.log('[AIMS API] Successfully updated', contactsData.length, 'contacts');
+            console.log('[AIMS API] ✅ Successfully updated', contactsData.length, 'contacts');
+            console.log('[AIMS API] Inserted contact IDs:', insertedContacts?.map(c => c.id));
           }
         }
       }
@@ -1557,7 +1578,7 @@ export async function POST(request: Request) {
       .from('activity_tags')
       .select(`
         tag_id,
-        tags (id, name, created_by, created_at)
+        tags (id, name, vocabulary, code, vocabulary_uri, created_by, created_at, updated_at)
       `)
       .eq('activity_id', newActivity.id);
 
@@ -1952,7 +1973,7 @@ export async function GET(request: NextRequest) {
       .select(`
         activity_id,
         tag_id,
-        tags (id, name, created_by, created_at)
+        tags (id, name, vocabulary, code, vocabulary_uri, created_by, created_at, updated_at)
       `)
       .in('activity_id', activityIds);
     

@@ -21,6 +21,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate type if provided (IATI BudgetType: 1=Original, 2=Revised)
+    if (disbursementData.type && !['1', '2'].includes(disbursementData.type)) {
+      return NextResponse.json(
+        { error: 'Invalid type. Must be 1 (Original) or 2 (Revised)' },
+        { status: 400 }
+      );
+    }
+
     // Insert the planned disbursement using admin client (bypasses RLS)
     const { data, error } = await supabaseAdmin
       .from('planned_disbursements')
@@ -61,6 +69,14 @@ export async function PUT(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: 'Missing disbursement ID' },
+        { status: 400 }
+      );
+    }
+
+    // Validate type if provided (IATI BudgetType: 1=Original, 2=Revised)
+    if (updateData.type && !['1', '2'].includes(updateData.type)) {
+      return NextResponse.json(
+        { error: 'Invalid type. Must be 1 (Original) or 2 (Revised)' },
         { status: 400 }
       );
     }

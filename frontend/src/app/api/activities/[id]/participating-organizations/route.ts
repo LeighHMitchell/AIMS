@@ -31,7 +31,8 @@ export interface ParticipatingOrganization {
     iati_org_id?: string;
     logo?: string;
     country?: string;
-    organisation_type?: string;
+    Organisation_Type_Code?: string;
+    Organisation_Type_Name?: string;
   };
 }
 
@@ -69,7 +70,8 @@ export async function GET(
           iati_org_id,
           logo,
           country,
-          organisation_type
+          Organisation_Type_Code,
+          Organisation_Type_Name
         )
       `)
       .eq('activity_id', activityId)
@@ -206,7 +208,8 @@ export async function POST(
           iati_org_id,
           logo,
           country,
-          organisation_type
+          Organisation_Type_Code,
+          Organisation_Type_Name
         )
       `)
       .single();
@@ -306,7 +309,8 @@ export async function PUT(
           iati_org_id,
           logo,
           country,
-          organisation_type
+          Organisation_Type_Code,
+          Organisation_Type_Name
         )
       `)
       .single();

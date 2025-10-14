@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>TEST-SIMPLIFIED-CONTACT-001</iati-identifier>
+    <title>
+      <narrative>Test Activity for Simplified Contact Import</narrative>
+    </title>
+    <description>
+      <narrative>Testing IATI contact-info import with simplified schema</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date iso-date="2025-01-01" type="1"/>
+    <activity-date iso-date="2025-12-31" type="3"/>
+    
+    <!--contact-info starts-->
+    <contact-info type="1">
+      <organisation>
+        <narrative>Agency A</narrative>
+      </organisation>
+      <department>
+        <narrative>Department B</narrative>
+      </department>
+      <person-name>
+        <narrative>A. Example</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Transparency Lead</narrative>
+      </job-title>
+      <telephone>0044111222333444</telephone>
+      <email>transparency@example.org</email>
+      <website>http://www.example.org</website>
+      <mailing-address>
+        <narrative>Transparency House, The Street, Town, City, Postcode</narrative>
+      </mailing-address>
+    </contact-info>
+    <!--contact-info ends-->
+    
+    <!-- Additional test contacts -->
+    <contact-info type="2">
+      <organisation>
+        <narrative>Partner Organization</narrative>
+      </organisation>
+      <person-name>
+        <narrative>John Smith</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Project Manager</narrative>
+      </job-title>
+      <telephone>+1234567890</telephone>
+      <email>john.smith@partner.org</email>
+    </contact-info>
+    
+    <contact-info type="3">
+      <organisation>
+        <narrative>Finance Department</narrative>
+      </organisation>
+      <person-name>
+        <narrative>Sarah Johnson</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Finance Officer</narrative>
+      </job-title>
+      <email>sarah.j@finance.org</email>
+    </contact-info>
+    
+  </iati-activity>
+</iati-activities>
+

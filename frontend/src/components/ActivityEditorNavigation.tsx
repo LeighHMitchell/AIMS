@@ -83,17 +83,19 @@ export default function ActivityEditorNavigation({
         { id: "organisations", label: "Organisations" },
         { id: "contributors", label: "Contributors" },
         { id: "contacts", label: "Contacts" },
-        { id: "focal_points", label: "Focal Points" },
         { id: "linked_activities", label: "Linked Activities" }
       ]
     },
     {
       title: "Funding & Delivery",
       sections: [
-        { id: "finances", label: "Finances" },
+        { id: "finances", label: "Transactions" },
         { id: "budgets", label: "Budgets" },
         { id: "planned-disbursements", label: "Planned Disbursements" },
-        { id: "results", label: "Results" }
+        { id: "results", label: "Results" },
+        { id: "capital-spend", label: "Capital Spend" },
+        { id: "financing-terms", label: "Financing Terms" },
+        { id: "conditions", label: "Conditions" }
       ]
     },
     {
@@ -181,7 +183,7 @@ export default function ActivityEditorNavigation({
                         <span>{section.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {(section.id === 'contributors' || section.id === 'organisations') ? (
+                        {(section.id === 'contributors' || section.id === 'organisations' || section.id === 'contacts' || section.id === 'finances' || section.id === 'capital-spend') ? (
                           <StableTabCompletionIndicator 
                             tabId={section.id}
                             currentStatus={tabCompletionStatus[section.id] ? {

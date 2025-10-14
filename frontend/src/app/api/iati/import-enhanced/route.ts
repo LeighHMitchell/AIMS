@@ -127,6 +127,71 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Step 1b: Import financing terms (CRS-add data)
+    for (const activity of activities) {
+      try {
+        const iatiId = activity.iati_id || activity.iatiIdentifier;
+        const activityDbId = results.activityIdMap[iatiId];
+        
+        if (!activityDbId || !activity.financingTerms) {
+          continue;
+        }
+
+        const financingTerms = activity.financingTerms;
+
+        // Insert or update loan terms
+        if (financingTerms.loanTerms) {
+          const { error: loanTermsError } = await getSupabaseAdmin()
+            .from('activity_financing_terms')
+            .upsert({
+              activity_id: activityDbId,
+              rate_1: financingTerms.loanTerms.rate_1,
+              rate_2: financingTerms.loanTerms.rate_2,
+              repayment_type_code: financingTerms.loanTerms.repayment_type_code,
+              repayment_plan_code: financingTerms.loanTerms.repayment_plan_code,
+              commitment_date: financingTerms.loanTerms.commitment_date,
+              repayment_first_date: financingTerms.loanTerms.repayment_first_date,
+              repayment_final_date: financingTerms.loanTerms.repayment_final_date,
+              other_flags: financingTerms.other_flags || [],
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'activity_id'
+            });
+
+          if (loanTermsError) {
+            console.error('[IATI Import Enhanced] Loan terms error:', loanTermsError);
+          }
+        }
+
+        // Insert loan status entries
+        if (financingTerms.loanStatuses && financingTerms.loanStatuses.length > 0) {
+          for (const loanStatus of financingTerms.loanStatuses) {
+            const { error: loanStatusError } = await getSupabaseAdmin()
+              .from('activity_loan_status')
+              .upsert({
+                activity_id: activityDbId,
+                year: loanStatus.year,
+                currency: loanStatus.currency,
+                value_date: loanStatus.value_date,
+                interest_received: loanStatus.interest_received,
+                principal_outstanding: loanStatus.principal_outstanding,
+                principal_arrears: loanStatus.principal_arrears,
+                interest_arrears: loanStatus.interest_arrears,
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'activity_id,year'
+              });
+
+            if (loanStatusError) {
+              console.error('[IATI Import Enhanced] Loan status error:', loanStatusError);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[IATI Import Enhanced] Financing terms error:', error);
+      }
+    }
+
     // Step 2: Handle activity mappings from fixes
     if (fixes?.activityMappings) {
       for (const [iatiId, action] of Object.entries(fixes.activityMappings)) {

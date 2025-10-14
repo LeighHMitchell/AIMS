@@ -20,15 +20,29 @@ export async function GET(
     const activityId = params.id;
     console.log(`[Results API] Fetching results for activity: ${activityId}`);
 
-    // First check if the activity_results table exists by doing a simple query
+    // Fetch results with all IATI-compliant relations
     const { data: results, error } = await supabase
       .from('activity_results')
       .select(`
         *,
+        references:result_references(*),
+        document_links:result_document_links(*),
         indicators:result_indicators(
           *,
-          baseline:indicator_baselines(*),
-          periods:indicator_periods(*)
+          references:indicator_references(*),
+          document_links:indicator_document_links(*),
+          baseline:indicator_baselines(
+            *,
+            locations:baseline_locations(*),
+            dimensions:baseline_dimensions(*),
+            document_links:baseline_document_links(*)
+          ),
+          periods:indicator_periods(
+            *,
+            locations:period_locations(*),
+            dimensions:period_dimensions(*),
+            document_links:period_document_links(*)
+          )
         )
       `)
       .eq('activity_id', activityId)
@@ -53,8 +67,43 @@ export async function GET(
       }, { status: 500 });
     }
 
+    // Process results to structure period data by type (target/actual)
+    const processedResults = results?.map(result => ({
+      ...result,
+      indicators: result.indicators?.map((indicator: any) => ({
+        ...indicator,
+        periods: indicator.periods?.map((period: any) => {
+          // Separate locations by type
+          const target_locations = period.locations?.filter((loc: any) => loc.location_type === 'target') || [];
+          const actual_locations = period.locations?.filter((loc: any) => loc.location_type === 'actual') || [];
+          
+          // Separate dimensions by type
+          const target_dimensions = period.dimensions?.filter((dim: any) => dim.dimension_type === 'target') || [];
+          const actual_dimensions = period.dimensions?.filter((dim: any) => dim.dimension_type === 'actual') || [];
+          
+          // Separate document links by type
+          const target_document_links = period.document_links?.filter((doc: any) => doc.link_type === 'target') || [];
+          const actual_document_links = period.document_links?.filter((doc: any) => doc.link_type === 'actual') || [];
+          
+          return {
+            ...period,
+            target_locations,
+            actual_locations,
+            target_dimensions,
+            actual_dimensions,
+            target_document_links,
+            actual_document_links,
+            // Remove the combined arrays
+            locations: undefined,
+            dimensions: undefined,
+            document_links: undefined
+          };
+        })
+      }))
+    }));
+
     console.log(`[Results API] Found ${results?.length || 0} results`);
-    return NextResponse.json({ results: results || [] });
+    return NextResponse.json({ results: processedResults || [] });
 
   } catch (error) {
     console.error('[Results API] Unexpected error:', error);

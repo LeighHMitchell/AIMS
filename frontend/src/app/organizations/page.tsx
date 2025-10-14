@@ -330,7 +330,8 @@ interface Organization {
   id: string
   name: string
   acronym?: string
-  organisation_type: string
+  Organisation_Type_Code: string
+  Organisation_Type_Name?: string
   description?: string
   website?: string
   email?: string
@@ -590,7 +591,7 @@ const validateOrganizationForm = (data: Partial<Organization>) => {
     errors.push('Acronym / Short Name is required')
   }
   
-  if (!data.organisation_type?.trim()) {
+  if (!data.Organisation_Type_Code?.trim()) {
     errors.push('Organisation Type is required')
   }
   
@@ -845,7 +846,7 @@ const EditOrganizationModal: React.FC<{
         acronym: organization.acronym || '',
         // Use country_represented first, only fallback to country if not set
         country_represented: organization.country_represented || organization.country || '',
-        organisation_type: organization.organisation_type || '',
+        Organisation_Type_Code: organization.Organisation_Type_Code || '',
         cooperation_modality: organization.cooperation_modality || '',
         description: organization.description || '',
         logo: organization.logo || '',
@@ -864,7 +865,7 @@ const EditOrganizationModal: React.FC<{
         name: '',
         acronym: '',
         country_represented: '',
-        organisation_type: '',
+        Organisation_Type_Code: '',
         cooperation_modality: '',
         description: '',
         logo: '',
@@ -902,7 +903,7 @@ const EditOrganizationModal: React.FC<{
     
     // Derive cooperation modality based on organization type and country
     const derivedModality = deriveCooperationModality(
-      formData.organisation_type || '', 
+      formData.Organisation_Type_Code || '', 
       formData.country_represented || ''
     )
     
@@ -955,14 +956,14 @@ const EditOrganizationModal: React.FC<{
 
   // Auto-calculate cooperation modality based on Myanmar logic
   useEffect(() => {
-    if (formData.organisation_type && formData.country_represented) {
+    if (formData.Organisation_Type_Code && formData.country_represented) {
       console.log('🚀 [Modal useEffect] Triggering cooperation modality calculation...')
       const calculatedModality = deriveCooperationModality(
-        formData.organisation_type,
+        formData.Organisation_Type_Code,
         formData.country_represented
       )
       console.log('📊 [Modal useEffect] Comparison:', {
-        organisationType: formData.organisation_type,
+        organisationType: formData.Organisation_Type_Code,
         countryRepresented: formData.country_represented,
         calculatedModality,
         currentModality: formData.cooperation_modality,
@@ -973,7 +974,7 @@ const EditOrganizationModal: React.FC<{
         setFormData(prev => ({ ...prev, cooperation_modality: calculatedModality }))
       }
     }
-  }, [formData.organisation_type, formData.country_represented])
+  }, [formData.Organisation_Type_Code, formData.country_represented])
 
   const isCreating = !organization
 
@@ -1159,18 +1160,24 @@ const EditOrganizationModal: React.FC<{
 
               {/* Organisation Type (Required) */}
               <div className="space-y-2">
-                <Label htmlFor="organisation_type" className="text-sm font-medium">
+                <Label htmlFor="Organisation_Type_Code" className="text-sm font-medium">
                   Organisation Type
                 </Label>
                 <Select 
-                  value={formData.organisation_type || ''} 
-                  onValueChange={(value) => handleInputChange('organisation_type', value)}
+                  value={formData.Organisation_Type_Code || ''} 
+                  onValueChange={(value) => handleInputChange('Organisation_Type_Code', value)}
                   disabled={loadingTypes}
                 >
                   <SelectTrigger 
                     className={`${validationErrors.some(e => e.includes('Organisation Type')) ? 'border-red-500' : ''} [&>span]:line-clamp-none [&>span]:whitespace-nowrap`}
                   >
-                    <SelectValue placeholder={loadingTypes ? "Loading types..." : "Select organisation type"} />
+                    <SelectValue placeholder={loadingTypes ? "Loading types..." : "Select organisation type"}>
+                      {formData.Organisation_Type_Code && (
+                        <span>
+                          {formData.Organisation_Type_Code} - {organizationTypes.find(t => t.code === formData.Organisation_Type_Code)?.label || 'Unknown'}
+                        </span>
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {organizationTypes
@@ -1230,8 +1237,8 @@ const EditOrganizationModal: React.FC<{
                 </Label>
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
                   <div className="text-sm font-normal text-gray-700">
-                    {formData.organisation_type && formData.country_represented 
-                      ? getPartnerClassification(formData.organisation_type, formData.country_represented)
+                    {formData.Organisation_Type_Code && formData.country_represented 
+                      ? getPartnerClassification(formData.Organisation_Type_Code, formData.country_represented)
                       : 'Awaiting calculation...'}
                   </div>
                 </div>
@@ -1770,9 +1777,9 @@ const OrganizationCard: React.FC<{
                 )}
                 
                 {/* Partner Classification Pill */}
-                {organization.organisation_type && (
+                {organization.Organisation_Type_Code && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    {getPartnerClassification(organization.organisation_type, organization.country_represented || organization.country || '')}
+                    {getPartnerClassification(organization.Organisation_Type_Code, organization.country_represented || organization.country || '')}
                   </span>
                 )}
               </div>
@@ -1804,12 +1811,12 @@ const OrganizationCard: React.FC<{
             <div className="p-4 space-y-3">
             <div className="space-y-2">
               {/* Check if this is a government partner (types 10, 11, 15) */}
-              {(['10', '11', '15'].includes(organization.organisation_type)) ? (
+              {(['10', '11', '15'].includes(organization.Organisation_Type_Code)) ? (
                 // Government Partner Statistics
                 <>
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-medium text-gray-500 tracking-wide">Organisation Type</span>
-                    <span className="text-sm text-gray-700 font-medium">{getOrganizationTypeLabel(organization.organisation_type, availableTypes)}</span>
+                    <span className="text-sm text-gray-700 font-medium">{getOrganizationTypeLabel(organization.Organisation_Type_Code, availableTypes)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-medium text-gray-500 tracking-wide"># of Activities</span>
@@ -2120,7 +2127,7 @@ function OrganizationsPageContent() {
 
   // Fetch organizations data and types
   useEffect(() => {
-    fetchOrganizations()
+    fetchOrganizations(true) // FIXED: Use cache-busting on initial load to ensure fresh data on browser refresh
     fetchAvailableTypes()
     
     // Cleanup function to abort requests on unmount
@@ -2219,7 +2226,7 @@ function OrganizationsPageContent() {
     if (activeFilter !== 'all') {
       filtered = filtered.filter(org => {
         const tabCategory = getTabCategory(
-          org.organisation_type, 
+          org.Organisation_Type_Code, 
           org.country_represented || org.country || ''
         )
         return tabCategory === activeFilter
@@ -2230,8 +2237,8 @@ function OrganizationsPageContent() {
     if (activeTagFilters.size > 0) {
       filtered = filtered.filter(org => {
         const orgTags = new Set([
-          getTypeLabel(org.organisation_type, availableTypes),
-          deriveCooperationModality(org.organisation_type, org.country_represented || org.country || ''),
+          getTypeLabel(org.Organisation_Type_Code, availableTypes),
+          deriveCooperationModality(org.Organisation_Type_Code, org.country_represented || org.country || ''),
           org.derived_category
         ].filter(Boolean))
         
@@ -2252,7 +2259,7 @@ function OrganizationsPageContent() {
     setFilteredOrganizations(filtered)
   }, [organizations, searchTerm, activeFilter, activeTagFilters, availableTypes])
 
-  const fetchOrganizations = async () => {
+  const fetchOrganizations = async (bustCache: boolean = false) => {
     // Cancel any previous main request
     if (mainFetchControllerRef.current) {
       mainFetchControllerRef.current.abort()
@@ -2266,17 +2273,19 @@ function OrganizationsPageContent() {
     
     try {
       // Use bulk statistics endpoint for much better performance
+      // Add timestamp for cache busting when needed (after create/update)
+      const cacheBuster = bustCache ? `&_=${Date.now()}` : '';
       const [orgsResponse, summaryResponse] = await Promise.all([
-        fetch('/api/organizations/bulk-stats', {
+        fetch(`/api/organizations/bulk-stats?limit=1000${cacheBuster}`, {
           signal: mainFetchControllerRef.current.signal,
           headers: {
-            'Cache-Control': 'max-age=300', // 5 minute client cache
+            'Cache-Control': bustCache ? 'no-cache' : 'max-age=60', // 1 minute client cache (reduced from 5 min), no-cache when busting
           }
         }),
-        fetch('/api/organizations/summary', {
+        fetch(`/api/organizations/summary${bustCache ? `?_=${Date.now()}` : ''}`, {
           signal: mainFetchControllerRef.current.signal,
           headers: {
-            'Cache-Control': 'max-age=300', // 5 minute client cache
+            'Cache-Control': bustCache ? 'no-cache' : 'max-age=60', // 1 minute client cache (reduced from 5 min)
           }
         })
       ])
@@ -2383,8 +2392,8 @@ function OrganizationsPageContent() {
       
       console.log('[OrganizationsPage] Save successful:', responseData);
       
-      // Refresh organizations list
-      await fetchOrganizations()
+      // Refresh organizations list with cache busting to ensure new org appears immediately
+      await fetchOrganizations(true)
     } catch (error) {
       console.error('[OrganizationsPage] Error in handleSaveOrganization:', error);
       throw error; // Re-throw to be handled by the modal
@@ -2405,8 +2414,8 @@ function OrganizationsPageContent() {
       throw new Error(errorMessage)
     }
     
-    // Refresh organizations list
-    await fetchOrganizations()
+    // Refresh organizations list with cache busting
+    await fetchOrganizations(true)
   }
 
   // Handle tag click for filtering

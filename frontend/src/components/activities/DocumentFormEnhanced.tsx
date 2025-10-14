@@ -76,8 +76,8 @@ export function DocumentFormEnhanced({
       format: '',
       title: [{ text: '', lang: locale }],
       description: [{ text: '', lang: locale }], // Always include description
-      languageCodes: [],
-      recipientCountries: [],
+      languageCodes: ['en'], // Default to English
+      recipientCountries: ['MM'], // Default to Myanmar
     }
   );
   

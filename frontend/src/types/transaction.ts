@@ -29,7 +29,7 @@ export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
   '13': 'Commitment Cancellation'
 };
 
-export type TransactionStatus = 'draft' | 'submitted' | 'validated' | 'rejected' | 'published' | 'actual';
+export type TransactionStatus = 'draft' | 'actual';
 
 export type OrganizationType = 
   | '10'  // Government
@@ -108,6 +108,32 @@ export type TiedStatus =
   | '4'  // Tied
   | '5'; // Untied
 
+// NEW: Interfaces for multiple IATI elements support
+
+export interface TransactionSector {
+  code: string; // IATI sector code (e.g., '11220')
+  vocabulary?: string; // Default: '1' (OECD DAC 5-digit)
+  percentage?: number; // 0-100, must sum to 100 if any percentage provided
+  narrative?: string; // Optional sector description
+}
+
+export interface TransactionAidType {
+  code: string; // IATI aid type code (e.g., 'A01', 'C01')
+  vocabulary?: string; // Default: '1' (OECD DAC)
+}
+
+export interface TransactionRecipientCountry {
+  code: string; // ISO 3166-1 alpha-2 (e.g., 'TZ', 'KE')
+  percentage?: number; // 0-100, must sum to 100 if any percentage provided
+}
+
+export interface TransactionRecipientRegion {
+  code: string; // Region code (e.g., '298' for Africa)
+  vocabulary?: string; // Default: '1' (OECD DAC)
+  percentage?: number; // 0-100, must sum to 100 if any percentage provided
+  narrative?: string; // Optional region description
+}
+
 // Main Transaction interface
 export interface Transaction {
   // Core fields
@@ -130,21 +156,25 @@ export interface Transaction {
   provider_org_type?: OrganizationType;
   provider_org_ref?: string; // IATI identifier
   provider_org_name?: string;
+  provider_org_activity_id?: string; // IATI activity ID link (text)
+  provider_activity_uuid?: string;    // Foreign key to activities table
   
   // Receiver organization
   receiver_org_id?: string;
   receiver_org_type?: OrganizationType;
   receiver_org_ref?: string;
   receiver_org_name?: string;
+  receiver_org_activity_id?: string; // IATI activity ID link (text)
+  receiver_activity_uuid?: string;    // Foreign key to activities table
   
   // Transaction details
   disbursement_channel?: DisbursementChannel;
   
-  // Sector information
+  // Sector information (DEPRECATED - use sectors array for IATI compliance)
   sector_code?: string;
   sector_vocabulary?: string;
   
-  // Geographic information
+  // Geographic information (DEPRECATED - use arrays for IATI compliance)
   recipient_country_code?: string; // ISO 3166-1 alpha-2
   recipient_region_code?: string;
   recipient_region_vocab?: string;
@@ -152,9 +182,21 @@ export interface Transaction {
   // Flow types and classifications
   flow_type?: FlowType;
   finance_type?: FinanceType;
-  aid_type?: string;
+  aid_type?: string; // DEPRECATED - use aid_types array for IATI compliance
   aid_type_vocabulary?: string;
   tied_status?: TiedStatus;
+  
+  // NEW: Vocabulary fields for IATI compliance
+  flow_type_vocabulary?: string; // Default: '1' (OECD DAC)
+  finance_type_vocabulary?: string; // Default: '1' (OECD DAC)
+  tied_status_vocabulary?: string; // Default: '1' (OECD DAC)
+  disbursement_channel_vocabulary?: string; // Default: '1' (OECD DAC)
+  
+  // NEW: Multiple element support (IATI compliant)
+  sectors?: TransactionSector[];
+  aid_types?: TransactionAidType[];
+  recipient_countries?: TransactionRecipientCountry[];
+  recipient_regions?: TransactionRecipientRegion[];
   
   // Other
   is_humanitarian?: boolean;
@@ -246,19 +288,11 @@ export const TIED_STATUS_LABELS: Record<TiedStatus, string> = {
 
 export const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
   'draft': 'Draft',
-  'submitted': 'Submitted',
-  'validated': 'Validated',
-  'rejected': 'Rejected',
-  'published': 'Published',
   'actual': 'Actual'
 };
 
 export const TRANSACTION_STATUS_COLORS: Record<TransactionStatus, string> = {
   'draft': 'gray',
-  'submitted': 'blue',
-  'validated': 'green',
-  'rejected': 'red',
-  'published': 'purple',
   'actual': 'emerald'
 };
 
@@ -276,11 +310,15 @@ export interface TransactionFormData {
   provider_org_name?: string;
   provider_org_ref?: string;
   provider_org_type?: OrganizationType;
+  provider_org_activity_id?: string;
+  provider_activity_uuid?: string;
   
   receiver_org_id?: string;
   receiver_org_name?: string;
   receiver_org_ref?: string;
   receiver_org_type?: OrganizationType;
+  receiver_org_activity_id?: string;
+  receiver_activity_uuid?: string;
   
   // Optional fields shown in "Advanced" section
   value_date?: string;

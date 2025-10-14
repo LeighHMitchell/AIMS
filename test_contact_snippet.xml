@@ -1,0 +1,23 @@
+<iati-activity>
+  <contact-info type="1">
+    <organisation>
+      <narrative>Agency A</narrative>
+    </organisation>
+    <department>
+      <narrative>Department B</narrative>
+    </department>
+    <person-name>
+      <narrative>A. Example</narrative>
+    </person-name>
+    <job-title>
+      <narrative>Transparency Lead</narrative>
+    </job-title>
+    <telephone>0044111222333444</telephone>
+    <email>transparency@example.org</email>
+    <website>http://www.example.org</website>
+    <mailing-address>
+      <narrative>Transparency House, The Street, Town, City, Postcode</narrative>
+    </mailing-address>
+  </contact-info>
+</iati-activity>
+

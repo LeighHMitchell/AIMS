@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronDown, Calendar, DollarSign, Building2, Globe, Tag, Info, X, CheckCircle, Loader2, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { OrganizationCombobox } from "@/components/ui/organization-combobox";
+import { ActivityCombobox } from "@/components/ui/activity-combobox";
 import { 
   Transaction, 
   TransactionType, 
@@ -151,12 +152,16 @@ export default function TransactionForm({
     provider_org_name: transaction?.provider_org_name || '',
     provider_org_ref: transaction?.provider_org_ref || '',
     provider_org_type: transaction?.provider_org_type || undefined,
+    provider_org_activity_id: transaction?.provider_org_activity_id || '',
+    provider_activity_uuid: transaction?.provider_activity_uuid || '',
     
     // Receiver - map from ref to org id if needed
     receiver_org_id: transaction?.receiver_org_id || findOrgIdByRef(transaction?.receiver_org_ref || ''),
     receiver_org_name: transaction?.receiver_org_name || '',
     receiver_org_ref: transaction?.receiver_org_ref || '',
     receiver_org_type: transaction?.receiver_org_type || undefined,
+    receiver_org_activity_id: transaction?.receiver_org_activity_id || '',
+    receiver_activity_uuid: transaction?.receiver_activity_uuid || '',
     
     // Advanced fields
     value_date: transaction?.value_date ? formatDateForInput(transaction.value_date) : '',
@@ -199,12 +204,16 @@ export default function TransactionForm({
         provider_org_name: transaction.provider_org_name || '',
         provider_org_ref: transaction.provider_org_ref || '',
         provider_org_type: transaction.provider_org_type || undefined,
+        provider_org_activity_id: transaction.provider_org_activity_id || '',
+        provider_activity_uuid: transaction.provider_activity_uuid || '',
         
         // Receiver - map from ref to org id if needed
         receiver_org_id: transaction.receiver_org_id || findOrgIdByRef(transaction.receiver_org_ref || ''),
         receiver_org_name: transaction.receiver_org_name || '',
         receiver_org_ref: transaction.receiver_org_ref || '',
         receiver_org_type: transaction.receiver_org_type || undefined,
+        receiver_org_activity_id: transaction.receiver_org_activity_id || '',
+        receiver_activity_uuid: transaction.receiver_activity_uuid || '',
         
         // Advanced fields
         value_date: transaction.value_date ? formatDateForInput(transaction.value_date) : '',
@@ -648,10 +657,10 @@ export default function TransactionForm({
               <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-gray-100">
                 <span className="flex items-center gap-2">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                    {formData.status === 'validated' ? '1' : '2'}
+                    {formData.status === 'actual' ? '1' : '2'}
                   </span>
                   <span className="font-medium">
-                    {formData.status === 'validated' ? 'Validated' : 'Unvalidated'}
+                    {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
                   </span>
                 </span>
               </div>
@@ -732,6 +741,103 @@ export default function TransactionForm({
                   className="px-4 py-4 text-base leading-relaxed h-auto min-h-[3.5rem]"
                 />
                 {renderFieldIcon("receiver_org_id")}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Activity Links Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Provider Activity */}
+            <Card className="border-dashed bg-blue-50">
+              <CardHeader className="pb-3 border-b border-blue-200">
+                <CardTitle className="text-sm">Provider Activity</CardTitle>
+                <CardDescription className="text-xs">Link to the activity providing these funds</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <ActivityCombobox
+                  value={formData.provider_activity_uuid || ''}
+                  onValueChange={async (activityId) => {
+                    console.log('[TransactionForm] Provider activity selected:', activityId);
+                    setFormData(prev => ({ ...prev, provider_activity_uuid: activityId }));
+                    
+                    if (activityId) {
+                      try {
+                        const response = await fetch(`/api/activities/${activityId}`);
+                        if (response.ok) {
+                          const activity = await response.json();
+                          console.log('[TransactionForm] Fetched activity IATI ID:', activity.iati_identifier);
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            provider_org_activity_id: activity.iati_identifier || '' 
+                          }));
+                        }
+                      } catch (error) {
+                        console.error('Error fetching activity:', error);
+                      }
+                    } else {
+                      setFormData(prev => ({ ...prev, provider_org_activity_id: '' }));
+                    }
+
+                    if (transaction && activityId !== transaction.provider_activity_uuid) {
+                      await saveField("provider_activity_uuid", activityId);
+                    }
+                  }}
+                  placeholder="Search for provider activity..."
+                  fallbackIatiId={formData.provider_org_activity_id}
+                />
+                {formData.provider_org_activity_id && (
+                  <p className="text-xs text-gray-500">
+                    IATI ID: {formData.provider_org_activity_id}
+                  </p>
+                )}
+                {renderFieldIcon("provider_activity_uuid")}
+              </CardContent>
+            </Card>
+
+            {/* Receiver Activity */}
+            <Card className="border-dashed bg-blue-50">
+              <CardHeader className="pb-3 border-b border-blue-200">
+                <CardTitle className="text-sm">Receiver Activity</CardTitle>
+                <CardDescription className="text-xs">Link to the activity receiving these funds</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <ActivityCombobox
+                  value={formData.receiver_activity_uuid || ''}
+                  onValueChange={async (activityId) => {
+                    console.log('[TransactionForm] Receiver activity selected:', activityId);
+                    setFormData(prev => ({ ...prev, receiver_activity_uuid: activityId }));
+                    
+                    if (activityId) {
+                      try {
+                        const response = await fetch(`/api/activities/${activityId}`);
+                        if (response.ok) {
+                          const activity = await response.json();
+                          console.log('[TransactionForm] Fetched activity IATI ID:', activity.iati_identifier);
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            receiver_org_activity_id: activity.iati_identifier || '' 
+                          }));
+                        }
+                      } catch (error) {
+                        console.error('Error fetching activity:', error);
+                      }
+                    } else {
+                      setFormData(prev => ({ ...prev, receiver_org_activity_id: '' }));
+                    }
+
+                    if (transaction && activityId !== transaction.receiver_activity_uuid) {
+                      await saveField("receiver_activity_uuid", activityId);
+                    }
+                  }}
+                  placeholder="Search for receiver activity..."
+                  fallbackIatiId={formData.receiver_org_activity_id}
+                />
+                {formData.receiver_org_activity_id && (
+                  <p className="text-xs text-gray-500">
+                    IATI ID: {formData.receiver_org_activity_id}
+                  </p>
+                )}
+                {renderFieldIcon("receiver_activity_uuid")}
               </CardContent>
             </Card>
           </div>

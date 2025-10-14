@@ -1218,11 +1218,11 @@ export default function TransactionModal({
                       <div className="flex items-center space-x-3">
                         <Checkbox
                           id="validated"
-                          checked={formData.status === 'validated'}
+                          checked={formData.status === 'actual'}
                           onCheckedChange={(checked) => {
                             setFormData({
                               ...formData,
-                              status: checked ? 'validated' : 'submitted'
+                              status: checked ? 'actual' : 'draft'
                             });
                           }}
                           className="h-5 w-5"
@@ -1237,11 +1237,11 @@ export default function TransactionModal({
                         </div>
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-full ${
-                        formData.status === 'validated' 
+                        formData.status === 'actual' 
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-gray-100 text-gray-600'
                       }`}>
-                        {formData.status === 'validated' ? 'Validated' : 'Unvalidated'}
+                        {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
                       </div>
                     </div>
                   ) : (
@@ -1249,18 +1249,18 @@ export default function TransactionModal({
                     <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-gray-50 px-4 py-3">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium">
-                          {formData.status === 'validated' ? 'Validated Transaction' : 'Unvalidated Transaction'}
+                          {formData.status === 'actual' ? 'Validated Transaction' : 'Unvalidated Transaction'}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           Current status: {formData.status || 'draft'}
                         </span>
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-full ${
-                        formData.status === 'validated' 
+                        formData.status === 'actual' 
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-gray-100 text-gray-600'
                       }`}>
-                        {formData.status === 'validated' ? 'Validated' : 'Unvalidated'}
+                        {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
                       </div>
                     </div>
                   )}

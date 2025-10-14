@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, differenceInMonths, parseISO, isValid, isBefore, isAfter, getQuarter, getYear } from 'date-fns';
 import { format as formatDateFns } from 'date-fns';
-import { Trash2, Copy, Loader2, Wallet, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical } from 'lucide-react';
+import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Edit } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,9 +14,11 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies';
 import { BudgetCurrencySelect } from '@/components/ui/budget-currency-select';
+import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BarChart, Bar } from 'recharts';
@@ -28,9 +30,33 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BUDGET_TYPES } from '@/data/budget-type';
+import { BUDGET_STATUSES } from '@/data/budget-status';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ChevronsUpDown, ChevronDown, ChevronUp, Trash2 as TrashIcon, ArrowUp, ArrowDown } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Types
+interface BudgetLine {
+  ref: string;
+  value: number;
+  currency: string;
+  value_date: string;
+  narrative: string;
+}
+
 interface ActivityBudget {
   id?: string;
   activity_id: string;
@@ -42,6 +68,7 @@ interface ActivityBudget {
   currency: string;
   value_date: string;
   usd_value?: number | null;
+  budget_lines?: BudgetLine[];
   isSaving?: boolean;
   hasError?: boolean;
 }
@@ -55,14 +82,7 @@ interface ActivityBudgetsTabProps {
   onBudgetsChange?: (budgets: ActivityBudget[]) => void;
 }
 
-type Granularity = 'quarterly' | 'monthly' | 'annual' | 'custom';
-
-// Interface for custom granularity
-interface CustomGranularity {
-  type: 'custom';
-  months: number;
-  label: string;
-}
+// Granularity types removed - users can now create any period length they want
 
 
 
@@ -110,45 +130,42 @@ function BudgetLineChart({ title, data, dataKey, color = "#64748b", currencyMode
       <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <LineChart data={data} margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis dataKey="period" tick={{ fontSize: 12 }} stroke="#64748b" />
-            <YAxis {...getYAxisProps(data, [dataKey], currencyMode === 'usd' ? 'USD' : (budgets[0]?.currency || defaultCurrency))} stroke="#64748b" fontSize={12}
+            <YAxis 
+              {...getYAxisProps(data, [dataKey], 'USD')} 
+              stroke="#64748b" 
+              fontSize={12}
               label={{
-                value: `Amount (${currencyMode === 'usd' ? 'USD' : (budgets[0]?.currency || defaultCurrency)})`,
+                value: 'USD',
                 angle: -90,
                 position: 'insideLeft',
-                offset: 10,
-                style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13 }
+                offset: -10,
+                style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13, fontWeight: 600 }
               }}
             />
             <Tooltip 
-              formatter={(value, name, props) => {
-                // Enhanced tooltip: show original, USD, rate, date
-                const period = props?.payload?.period;
-                const orig = `${props?.payload?.originalValue} ${props?.payload?.originalCurrency}`;
-                const usd = props?.payload?.usdValue ? `$${Number(props?.payload?.usdValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
-                const rate = props?.payload?.rate ? `@ ${props?.payload?.rate}` : '';
-                const date = props?.payload?.date || '';
-                if (currencyMode === 'usd') {
-                  return [`${usd} (${orig} ${rate}, ${date})`];
-                } else {
-                  return [`${orig} (${usd} ${rate}, ${date})`];
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                      <p className="font-semibold text-gray-900 mb-1">{data.period}</p>
+                      <p className="text-sm text-gray-600">Cumulative Budget</p>
+                      <p className="text-lg font-bold text-gray-900">USD {Number(data.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  );
                 }
-              }}
-              contentStyle={{ 
-                backgroundColor: 'white', 
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px'
+                return null;
               }}
             />
-            <Legend />
             <Line 
               type="monotone" 
               dataKey={dataKey} 
-              stroke="#64748b" 
+              stroke={color} 
               strokeWidth={3}
-              dot={{ fill: "#64748b", r: 4 }} 
+              dot={{ fill: color, r: 4 }} 
             />
           </LineChart>
         </ResponsiveContainer>
@@ -163,39 +180,37 @@ function BudgetBarChart({ title, data, dataKey, color = "#64748b", currencyMode,
       <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <BarChart data={data} margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis dataKey="period" tick={{ fontSize: 12 }} stroke="#64748b" />
-            <YAxis {...getYAxisProps(data, [dataKey], currencyMode === 'usd' ? 'USD' : (budgets[0]?.currency || defaultCurrency))} stroke="#64748b" fontSize={12}
+            <YAxis 
+              {...getYAxisProps(data, [dataKey], 'USD')} 
+              stroke="#64748b" 
+              fontSize={12}
               label={{
-                value: `Amount (${currencyMode === 'usd' ? 'USD' : (budgets[0]?.currency || defaultCurrency)})`,
+                value: 'USD',
                 angle: -90,
                 position: 'insideLeft',
-                offset: 10,
-                style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13 }
+                offset: -10,
+                style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13, fontWeight: 600 }
               }}
             />
             <Tooltip 
-              formatter={(value, name, props) => {
-                const period = props?.payload?.period;
-                const orig = `${props?.payload?.originalValue} ${props?.payload?.originalCurrency}`;
-                const usd = props?.payload?.usdValue ? `$${Number(props?.payload?.usdValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
-                const rate = props?.payload?.rate ? `@ ${props?.payload?.rate}` : '';
-                const date = props?.payload?.date || '';
-                if (currencyMode === 'usd') {
-                  return [`${usd} (${orig} ${rate}, ${date})`];
-                } else {
-                  return [`${orig} (${usd} ${rate}, ${date})`];
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                      <p className="font-semibold text-gray-900 mb-1">{data.period}</p>
+                      <p className="text-sm text-gray-600">Total Budget</p>
+                      <p className="text-lg font-bold text-gray-900">USD {Number(data.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  );
                 }
-              }}
-              contentStyle={{ 
-                backgroundColor: 'white', 
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px'
+                return null;
               }}
             />
-            <Legend />
-            <Bar dataKey={dataKey} fill={color} name={title} />
+            <Bar dataKey={dataKey} fill={color} barSize={32} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -203,88 +218,7 @@ function BudgetBarChart({ title, data, dataKey, color = "#64748b", currencyMode,
   );
 }
 
-// Helper functions to generate budget periods
-export const generateBudgetPeriods = (startDate: string, endDate: string, granularity: Granularity | CustomGranularity): Array<{ start: string; end: string }> => {
-  const periods: Array<{ start: string; end: string }> = [];
-  const start = parseISO(startDate);
-  const end = parseISO(endDate);
-
-  if (!isValid(start) || !isValid(end) || !isBefore(start, end)) {
-    return periods;
-  }
-
-  // Handle custom granularity
-  if (typeof granularity === 'object' && granularity.type === 'custom') {
-    let currentStart = start;
-    while (isBefore(currentStart, end)) {
-      const periodEnd = addMonths(currentStart, granularity.months);
-      const actualEnd = isAfter(periodEnd, end) ? end : periodEnd;
-      
-      periods.push({
-        start: format(currentStart, 'yyyy-MM-dd'),
-        end: format(actualEnd, 'yyyy-MM-dd')
-      });
-      
-      currentStart = addMonths(currentStart, granularity.months);
-    }
-    return periods;
-  }
-
-  let current = start;
-
-  while (isBefore(current, end)) {
-    let periodStart: Date;
-    let periodEnd: Date;
-
-    switch (granularity) {
-      case 'monthly':
-        periodStart = startOfMonth(current);
-        periodEnd = endOfMonth(current);
-        current = addMonths(current, 1);
-        break;
-      case 'quarterly':
-        periodStart = startOfQuarter(current);
-        periodEnd = endOfQuarter(current);
-        current = addQuarters(current, 1);
-        break;
-      case 'annual':
-        periodStart = startOfYear(current);
-        periodEnd = endOfYear(current);
-        current = addYears(current, 1);
-        break;
-      default:
-        // Default case to ensure variables are always initialized
-        periodStart = startOfMonth(current);
-        periodEnd = endOfMonth(current);
-        current = addMonths(current, 1);
-        break;
-    }
-
-    // Ensure period doesn't exceed 12 months
-    const monthDiff = differenceInMonths(periodEnd, periodStart);
-    if (monthDiff > 12) {
-      periodEnd = addMonths(periodStart, 11);
-      periodEnd = endOfMonth(periodEnd);
-    }
-
-    // Ensure period doesn't exceed project end date
-    if (isAfter(periodEnd, end)) {
-      periodEnd = end;
-    }
-
-    periods.push({
-      start: format(periodStart, 'yyyy-MM-dd'),
-      end: format(periodEnd, 'yyyy-MM-dd')
-    });
-
-    // Break if we've reached the end
-    if (!isBefore(periodEnd, end)) {
-      break;
-    }
-  }
-
-  return periods;
-};
+// generateBudgetPeriods function removed - users can now create custom periods freely
 
 export default function ActivityBudgetsTab({ 
   activityId, 
@@ -297,40 +231,94 @@ export default function ActivityBudgetsTab({
 
   const [budgets, setBudgets] = useState<ActivityBudget[]>([]);
   const [loading, setLoading] = useState(true);
-  const [granularity, setGranularity] = useState<Granularity>('quarterly');
   const [error, setError] = useState<string | null>(null);
   const [usdValues, setUsdValues] = useState<Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }>>({});
   // Add saveStatus state to track per-row save status
   const [saveStatus, setSaveStatus] = useState<Record<string, 'saving' | 'saved' | 'error' | 'idle'>>({});
   // Add state for currency and aggregation toggles
   const [currencyMode, setCurrencyMode] = useState<'original' | 'usd'>('original');
-  const [aggregationMode, setAggregationMode] = useState<'quarterly' | 'annual'>('quarterly');
-  const [isLocked, setIsLocked] = useState(true);
-  const [pendingGranularity, setPendingGranularity] = useState<Granularity | null>(null);
-  const [showWarning, setShowWarning] = useState(false);
-  const [isWiping, setIsWiping] = useState(false);
+  const [aggregationMode, setAggregationMode] = useState<'monthly' | 'quarterly' | 'semi-annual' | 'annual'>('quarterly');
   // Copy dialog state
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [copySourceBudget, setCopySourceBudget] = useState<ActivityBudget | null>(null);
   const [copyPeriodStart, setCopyPeriodStart] = useState('');
   const [copyPeriodEnd, setCopyPeriodEnd] = useState('');
   const [copyOverlapWarning, setCopyOverlapWarning] = useState<string | null>(null);
+
+  // Modal state for budget creation/editing
+  const [showModal, setShowModal] = useState(false);
+  const [modalBudget, setModalBudget] = useState<ActivityBudget | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const [isCalculatingUSD, setIsCalculatingUSD] = useState(false);
+  const [typePopoverOpen, setTypePopoverOpen] = useState(false);
+  const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
+  const [currencyPopoverOpen, setCurrencyPopoverOpen] = useState(false);
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
+  const [isEditingValue, setIsEditingValue] = useState(false);
   
-  // Custom granularity state
-  const [showCustomGranularityDialog, setShowCustomGranularityDialog] = useState(false);
-  const [customGranularity, setCustomGranularity] = useState<CustomGranularity>({ type: 'custom', months: 6, label: '6 months' });
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const currencies = useMemo(() => getAllCurrenciesWithPinned(), []);
   const { user, isLoading: userLoading } = useUser();
 
-  // Generate periods based on granularity
-  const generatedPeriods = useMemo(() => {
-    if (!startDate || !endDate) return [];
-    if (granularity === 'custom') {
-      return generateBudgetPeriods(startDate, endDate, customGranularity);
+  // Sort handler
+  const handleSort = useCallback((column: string) => {
+    if (sortColumn === column) {
+      // Toggle direction if same column
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New column, default to ascending
+      setSortColumn(column);
+      setSortDirection('asc');
     }
-    return generateBudgetPeriods(startDate, endDate, granularity);
-  }, [startDate, endDate, granularity, customGranularity]);
+  }, [sortColumn]);
+
+  // Sorted budgets
+  const sortedBudgets = useMemo(() => {
+    if (!sortColumn) return budgets;
+
+    const sorted = [...budgets].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case 'period_start':
+        case 'period_end':
+          aValue = new Date(a[sortColumn as keyof ActivityBudget] as string).getTime();
+          bValue = new Date(b[sortColumn as keyof ActivityBudget] as string).getTime();
+          break;
+        case 'type':
+        case 'status':
+        case 'value':
+          aValue = a[sortColumn as keyof ActivityBudget];
+          bValue = b[sortColumn as keyof ActivityBudget];
+          break;
+        case 'currency':
+          aValue = (a.currency || '').toLowerCase();
+          bValue = (b.currency || '').toLowerCase();
+          break;
+        case 'value_date':
+          aValue = new Date(a.value_date).getTime();
+          bValue = new Date(b.value_date).getTime();
+          break;
+        case 'usd_value':
+          aValue = a.usd_value || 0;
+          bValue = b.usd_value || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [budgets, sortColumn, sortDirection]);
 
   // Fetch existing budgets
   useEffect(() => {
@@ -354,23 +342,8 @@ export default function ActivityBudgetsTab({
           console.error('[ActivityBudgetsTab] Budgets fetch error:', budgetsError);
           setError(budgetsError.message || 'Failed to load budget data');
         }
-        // Always generate default budgets if no budgets exist
-        if ((!budgetsData || budgetsData.length === 0) && generatedPeriods.length > 0) {
-          const todayStr = formatDateFns(new Date(), 'yyyy-MM-dd');
-          const defaultBudgets = generatedPeriods.map(period => ({
-            activity_id: activityId,
-            type: 1 as const,
-            status: 1 as const,
-            period_start: period.start,
-            period_end: period.end,
-            value: 0,
-            currency: defaultCurrency,
-            value_date: todayStr,
-          }));
-          setBudgets(defaultBudgets);
-        } else {
+        // Just load existing budgets - no auto-generation
           setBudgets(budgetsData || []);
-        }
       } catch (err: any) {
         console.error('[ActivityBudgetsTab] Error fetching budget data:', err);
         setError(err.message || 'Failed to load budget data');
@@ -379,14 +352,18 @@ export default function ActivityBudgetsTab({
       }
     };
     fetchData();
-  }, [activityId, defaultCurrency, generatedPeriods]);
+  }, [activityId, defaultCurrency]);
 
-  // Notify parent component when budgets change
+  // Notify parent component when budgets change (only after initial load)
   useEffect(() => {
-    if (onBudgetsChange) {
-      onBudgetsChange(budgets);
+    // Only notify parent after initial data load is complete
+    // This prevents the green tick from disappearing when switching tabs
+    if (onBudgetsChange && !loading) {
+      // Filter out generated empty budgets - only count actual saved budgets with IDs
+      const actualBudgets = budgets.filter(b => b.id);
+      onBudgetsChange(actualBudgets);
     }
-  }, [budgets, onBudgetsChange]);
+  }, [budgets, onBudgetsChange, loading]);
 
   // Convert all budgets to USD when budgets change
   useEffect(() => {
@@ -468,8 +445,15 @@ export default function ActivityBudgetsTab({
       let periodLabel: string;
       
       switch (aggregationMode) {
+        case 'monthly':
+          periodLabel = format(startDate, 'MMM yyyy');
+          break;
         case 'quarterly':
           periodLabel = `Q${getQuarter(startDate)} ${getYear(startDate)}`;
+          break;
+        case 'semi-annual':
+          const half = getQuarter(startDate) <= 2 ? 'H1' : 'H2';
+          periodLabel = `${half} ${getYear(startDate)}`;
           break;
         case 'annual':
           periodLabel = format(startDate, 'yyyy');
@@ -507,20 +491,26 @@ export default function ActivityBudgetsTab({
     return { aggregatedData, cumulativeData };
   }, [budgets, aggregationMode]);
 
-  // Validation helper
+  // Validation helper - now only blocks critical errors, allows overlaps
   function validateBudget(budget: ActivityBudget, allBudgets: ActivityBudget[]) {
     if (!budget.activity_id || !budget.type || !budget.status || !budget.period_start || !budget.period_end || !budget.value_date || !budget.currency) {
       return 'Missing required fields';
     }
-    // Check for overlapping periods (excluding self)
-    const hasOverlap = allBudgets.some(b => {
+    // Overlaps are now allowed - we just show warnings instead
+    return null;
+  }
+
+  // Check for overlaps and return warning info
+  function checkBudgetOverlap(budget: ActivityBudget, allBudgets: ActivityBudget[]): ActivityBudget[] | null {
+    const budgetStart = parseISO(budget.period_start);
+    const budgetEnd = parseISO(budget.period_end);
+    
+    const overlappingBudgets = allBudgets.filter(b => {
       // Skip if it's the same budget (comparing by ID or by reference)
       if (b === budget || (budget.id && b.id === budget.id)) return false;
       
       const bStart = parseISO(b.period_start);
       const bEnd = parseISO(b.period_end);
-      const budgetStart = parseISO(budget.period_start);
-      const budgetEnd = parseISO(budget.period_end);
       
       // Check if periods overlap
       return (
@@ -530,169 +520,10 @@ export default function ActivityBudgetsTab({
       );
     });
     
-    if (hasOverlap) {
-      return 'Budget periods cannot overlap for the same activity';
-    }
-    return null;
+    return overlappingBudgets.length > 0 ? overlappingBudgets : null;
   }
 
-  // Improved saveBudgetField with error handling and validation
-  const saveBudgetField = useCallback(async (budget: ActivityBudget, field: keyof ActivityBudget) => {
-    const rowKey = budget.id || `${budget.period_start}-${budget.period_end}`;
-    setSaveStatus(prev => ({ ...prev, [rowKey]: 'saving' }));
-    setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: true, hasError: false } : b));
-    
-    // Validation
-    const validationError = validateBudget(budget, budgets);
-    if (validationError) {
-      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false, hasError: true } : b));
-      setSaveStatus(prev => ({ ...prev, [rowKey]: 'error' }));
-      setError(validationError);
-      return;
-    }
-    
-    // Auth check
-    if (userLoading) {
-      // Still loading user data, stop saving and clear spinner
-      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false } : b));
-      setSaveStatus(prev => ({ ...prev, [rowKey]: 'idle' }));
-      return;
-    }
-    
-    if (!user) {
-      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false, hasError: true } : b));
-      setSaveStatus(prev => ({ ...prev, [rowKey]: 'error' }));
-      setError('You must be logged in to save budgets.');
-      return;
-    }
-    
-    try {
-      // Always recalculate USD value before saving
-      const result = await fixedCurrencyConverter.convertToUSD(budget.value, budget.currency, new Date(budget.value_date));
-      const usd_value = result.usd_amount;
-      const budgetData = {
-        activity_id: budget.activity_id,
-        type: budget.type,
-        status: budget.status,
-        period_start: budget.period_start,
-        period_end: budget.period_end,
-        value: budget.value,
-        currency: budget.currency,
-        value_date: budget.value_date,
-        usd_value,
-      };
-      
-      let updatedBudget = { ...budget, usd_value };
-      if (budget.id) {
-        // Update existing
-        const { error } = await supabase
-          .from('activity_budgets')
-          .update(budgetData)
-          .eq('id', budget.id);
-        if (error) throw error;
-      } else {
-        // Insert new
-        const { data, error } = await supabase
-          .from('activity_budgets')
-          .insert(budgetData)
-          .select()
-          .single();
-        if (error) throw error;
-        updatedBudget = { ...data, isSaving: false };
-        setBudgets(prev => prev.map(b => b === budget ? updatedBudget : b));
-      }
-      
-      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false, usd_value } : b));
-      setSaveStatus(prev => ({ ...prev, [rowKey]: 'saved' }));
-      
-      // Update USD values for display
-      setUsdValues(prev => ({
-        ...prev,
-        [rowKey]: {
-          usd: usd_value,
-          rate: result.exchange_rate,
-          date: result.conversion_date || budget.value_date,
-          loading: false,
-          error: result.success ? undefined : result.error || 'Conversion failed'
-        }
-      }));
-      
-      // Refresh summary cards if present
-      if (typeof window !== 'undefined') {
-        const event = new CustomEvent('refreshFinancialSummaryCards');
-        window.dispatchEvent(event);
-      }
-    } catch (err: any) {
-      setBudgets(prev => prev.map(b => b === budget ? { ...b, isSaving: false, hasError: true } : b));
-      setSaveStatus(prev => ({ ...prev, [rowKey]: 'error' }));
-      setError(err?.message || err?.error_description || 'Save failed');
-    }
-  }, [budgets, user, userLoading]);
 
-  // Helper function to format dates based on granularity
-  const formatDateBasedOnGranularity = useCallback((date: string, isEndDate: boolean = false) => {
-    if (!date) return date;
-    
-    const parsedDate = parseISO(date);
-    if (!isValid(parsedDate)) return date;
-    
-    let formattedDate: Date;
-    
-    switch (granularity) {
-      case 'monthly':
-        formattedDate = isEndDate ? endOfMonth(parsedDate) : startOfMonth(parsedDate);
-        break;
-      case 'quarterly':
-        formattedDate = isEndDate ? endOfQuarter(parsedDate) : startOfQuarter(parsedDate);
-        break;
-      case 'annual':
-        formattedDate = isEndDate ? endOfYear(parsedDate) : startOfYear(parsedDate);
-        break;
-      case 'custom':
-        // For custom granularity, don't force specific formatting
-        return date;
-      default:
-        return date;
-    }
-    
-    return format(formattedDate, 'yyyy-MM-dd');
-  }, [granularity]);
-
-  // Update budget field without auto-save
-  const updateBudgetField = useCallback((index: number, field: keyof ActivityBudget, value: any) => {
-    setBudgets(prev => {
-      const updated = [...prev];
-      let finalValue = value;
-      
-      // Format dates based on granularity
-      if (field === 'period_start') {
-        finalValue = formatDateBasedOnGranularity(value, false);
-      } else if (field === 'period_end') {
-        finalValue = formatDateBasedOnGranularity(value, true);
-      }
-      
-      updated[index] = { ...updated[index], [field]: finalValue };
-      return updated;
-    });
-  }, [formatDateBasedOnGranularity]);
-
-  // Handle field blur to save
-  const handleFieldBlur = useCallback((index: number, field: keyof ActivityBudget) => {
-    const budget = budgets[index];
-    saveBudgetField(budget, field);
-  }, [budgets, saveBudgetField]);
-
-  // Handle select field change (save immediately)
-  const handleSelectChange = useCallback((index: number, field: keyof ActivityBudget, value: any) => {
-    const updatedBudget = { ...budgets[index], [field]: value };
-    setBudgets(prev => {
-      const updated = [...prev];
-      updated[index] = updatedBudget;
-      return updated;
-    });
-    // Save immediately for select fields
-    saveBudgetField(updatedBudget, field);
-  }, [budgets, saveBudgetField]);
 
   // Delete budget
   const deleteBudget = useCallback(async (index: number) => {
@@ -775,37 +606,74 @@ export default function ActivityBudgetsTab({
     const today = formatDateFns(new Date(), 'yyyy-MM-dd');
     const budget = budgets[index];
     
-    // Find next available period that doesn't overlap
+    // Try to find next available period that doesn't overlap (preferred)
     const nextPeriod = findNextAvailablePeriod(
       budget.period_start, 
       budget.period_end, 
       budgets.filter((_, i) => i !== index) // Exclude current budget from comparison
     );
     
-    if (!nextPeriod) {
-      // Use alert for now since toast is not available
-      alert('Cannot create duplicate budget: Unable to find a non-overlapping period. Please create the budget manually with custom dates.');
+    // If no non-overlapping period found, just duplicate with same dates (overlap is allowed)
+    const finalPeriod = nextPeriod || {
+      period_start: budget.period_start,
+      period_end: budget.period_end
+    };
+
+    // Ensure all required fields are present with valid defaults
+    const newBudget: ActivityBudget = {
+      activity_id: activityId,
+      type: budget.type || 1, // Default to Original if missing
+      status: budget.status || 1, // Default to Indicative if missing
+      period_start: finalPeriod.period_start,
+      period_end: finalPeriod.period_end,
+      value: budget.value !== undefined ? budget.value : 0,
+      currency: budget.currency || defaultCurrency || 'USD',
+      value_date: today,
+      budget_lines: budget.budget_lines || []
+    };
+
+    // Validate required fields before sending
+    if (!newBudget.type || !newBudget.status || !newBudget.period_start || 
+        !newBudget.period_end || newBudget.value === undefined || 
+        !newBudget.currency || !newBudget.value_date) {
+      toast.error('Cannot duplicate budget: missing required fields');
+      console.error('Missing required fields in budget:', newBudget);
       return;
     }
 
-    const newBudget: ActivityBudget = {
-      ...budget,
-      id: undefined,
-      period_start: nextPeriod.period_start,
-      period_end: nextPeriod.period_end,
-      value_date: today, // Default to today
-    };
+    // Save the new budget via API
+    (async () => {
+      try {
+        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newBudget)
+        });
 
-    setBudgets(prev => [...prev, newBudget]);
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('Budget creation error:', error);
+          throw new Error(error.error || error.details || 'Failed to duplicate budget');
+        }
+
+        const createdBudget = await response.json();
+        setBudgets(prev => [...prev, createdBudget].sort((a, b) => 
+          new Date(a.period_start).getTime() - new Date(b.period_start).getTime()
+        ));
+        toast.success('Budget duplicated successfully');
     
-    // Save the new budget
-    setTimeout(() => {
-      saveBudgetField(newBudget, 'value');
-    }, 100);
-    
-    // Show success feedback
-    console.log(`Budget duplicated with period ${nextPeriod.period_start} to ${nextPeriod.period_end}`);
-  }, [budgets, saveBudgetField, findNextAvailablePeriod]);
+        // Show success feedback
+        if (!nextPeriod) {
+          console.log(`Budget duplicated with same period (overlapping) ${finalPeriod.period_start} to ${finalPeriod.period_end}`);
+        } else {
+          console.log(`Budget duplicated with period ${finalPeriod.period_start} to ${finalPeriod.period_end}`);
+        }
+      } catch (error) {
+        console.error('Error duplicating budget:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to duplicate budget');
+      }
+    })();
+  }, [budgets, findNextAvailablePeriod, activityId, defaultCurrency]);
 
   // Enhanced copy functionality with dialog
   const openCopyDialog = useCallback((index: number) => {
@@ -865,23 +733,42 @@ export default function ActivityBudgetsTab({
 
   // Execute the copy with the adjusted period
   const executeCopy = useCallback(() => {
-    if (!copySourceBudget || copyOverlapWarning) return;
+    if (!copySourceBudget) return;
+    // Note: copyOverlapWarning no longer blocks the copy, it's just informational
 
     const today = formatDateFns(new Date(), 'yyyy-MM-dd');
+    // Explicitly set fields to avoid copying unwanted metadata
     const newBudget: ActivityBudget = {
-      ...copySourceBudget,
-      id: undefined,
+      activity_id: activityId,
+      type: copySourceBudget.type || 1,
+      status: copySourceBudget.status || 1,
       period_start: copyPeriodStart,
       period_end: copyPeriodEnd,
+      value: copySourceBudget.value !== undefined ? copySourceBudget.value : 0,
+      currency: copySourceBudget.currency || defaultCurrency || 'USD',
       value_date: today,
+      budget_lines: copySourceBudget.budget_lines || []
     };
 
-    setBudgets(prev => [...prev, newBudget]);
-    
-    // Save the new budget
-    setTimeout(() => {
-      saveBudgetField(newBudget, 'value');
-    }, 100);
+    // Save the new budget via API
+    (async () => {
+      try {
+        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newBudget)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to copy budget');
+        }
+
+        const createdBudget = await response.json();
+        setBudgets(prev => [...prev, createdBudget].sort((a, b) => 
+          new Date(a.period_start).getTime() - new Date(b.period_start).getTime()
+        ));
+        toast.success('Budget copied successfully');
     
     // Show success feedback
     console.log(`Budget duplicated with period ${copyPeriodStart} to ${copyPeriodEnd}`);
@@ -892,7 +779,12 @@ export default function ActivityBudgetsTab({
     setCopyPeriodStart('');
     setCopyPeriodEnd('');
     setCopyOverlapWarning(null);
-  }, [copySourceBudget, copyPeriodStart, copyPeriodEnd, copyOverlapWarning, saveBudgetField]);
+      } catch (error) {
+        console.error('Error copying budget:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to copy budget');
+      }
+    })();
+  }, [copySourceBudget, copyPeriodStart, copyPeriodEnd, copyOverlapWarning, activityId, defaultCurrency]);
 
   // Update overlap check when dates change
   useEffect(() => {
@@ -901,7 +793,34 @@ export default function ActivityBudgetsTab({
     }
   }, [copyPeriodStart, copyPeriodEnd, showCopyDialog, checkCopyOverlap]);
 
-  // Duplicate Forward - creates next period based on granularity
+  // Export budgets to CSV
+  const handleExport = useCallback(() => {
+    const dataToExport = budgets.map(b => ({
+      period_start: b.period_start,
+      period_end: b.period_end,
+      type: b.type === 1 ? 'Original' : 'Revised',
+      status: b.status === 1 ? 'Indicative' : 'Committed',
+      value: b.value,
+      currency: b.currency,
+      value_date: b.value_date,
+      usd_value: b.usd_value || 0
+    }));
+
+    const csv = [
+      Object.keys(dataToExport[0] || {}).join(","),
+      ...dataToExport.map(row => Object.values(row).map(v => `"${v}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `budgets-${activityId}-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [budgets, activityId]);
+
+  // Duplicate Forward - creates next period based on current period length
   const duplicateForward = useCallback((index: number) => {
     console.log('[DuplicateForward] Starting duplicate forward for index:', index);
     
@@ -925,74 +844,49 @@ export default function ActivityBudgetsTab({
       return;
     }
     
-    let nextPeriodStart: Date | undefined;
-    let nextPeriodEnd: Date | undefined;
+    // Calculate period length in months from the current budget
+    const periodLengthMonths = differenceInMonths(currentEnd, currentStart);
+    console.log('[DuplicateForward] Detected period length:', periodLengthMonths, 'months');
     
-    // Calculate next period based on granularity
-    switch (granularity) {
-      case 'monthly':
-        nextPeriodStart = addMonths(currentStart, 1);
-        nextPeriodEnd = endOfMonth(nextPeriodStart);
-        break;
-      case 'quarterly':
-        nextPeriodStart = addQuarters(currentStart, 1);
-        nextPeriodEnd = endOfQuarter(nextPeriodStart);
-        break;
-      case 'annual':
-        nextPeriodStart = addYears(currentStart, 1);
-        nextPeriodEnd = endOfYear(nextPeriodStart);
-        break;
-      default:
-        console.log('[DuplicateForward] ERROR: Unknown granularity:', granularity);
-        alert(`Unknown granularity: ${granularity}`);
-        return;
-    }
+    // Calculate next period start (day after current period end)
+    const dayAfterEnd = new Date(currentEnd);
+    dayAfterEnd.setDate(dayAfterEnd.getDate() + 1);
+    const nextPeriodStart = parseISO(format(dayAfterEnd, 'yyyy-MM-dd'));
     
-    if (!nextPeriodStart || !nextPeriodEnd) {
-      console.log('[DuplicateForward] ERROR: Failed to calculate next period');
-      alert('Failed to calculate next period');
-      return;
-    }
+    // Calculate period end based on detected length (use endOfMonth for proper month boundaries)
+    const nextPeriodEnd = endOfMonth(addMonths(nextPeriodStart, Math.max(periodLengthMonths, 1) - 1));
     
     console.log('[DuplicateForward] Calculated next period:', {
-      granularity,
       nextStart: format(nextPeriodStart, 'yyyy-MM-dd'),
-      nextEnd: format(nextPeriodEnd, 'yyyy-MM-dd')
+      nextEnd: format(nextPeriodEnd, 'yyyy-MM-dd'),
+      periodLength: periodLengthMonths
     });
-    
-    // Ensure period doesn't exceed 12 months
-    const monthDiff = differenceInMonths(nextPeriodEnd, nextPeriodStart);
-    if (monthDiff > 12) {
-      console.log('[DuplicateForward] Period exceeds 12 months, adjusting...');
-      nextPeriodEnd = addMonths(nextPeriodStart, 11);
-      nextPeriodEnd = endOfMonth(nextPeriodEnd);
-    }
     
     // Ensure period doesn't exceed project end date
     const projectEnd = parseISO(endDate);
-    console.log('[DuplicateForward] Project end date:', endDate, projectEnd);
+    let adjustedEnd = nextPeriodEnd;
     
-    if (isAfter(nextPeriodEnd, projectEnd)) {
+    if (isAfter(adjustedEnd, projectEnd)) {
       console.log('[DuplicateForward] Period end exceeds project end, adjusting...');
-      nextPeriodEnd = projectEnd;
+      adjustedEnd = projectEnd;
     }
     
     // Check if period is still valid
     if (!isBefore(nextPeriodStart, projectEnd)) {
       console.log('[DuplicateForward] ERROR: Next period start is after project end, cannot create');
       showValidationError('Cannot create budget period beyond project end date');
-      return; // Can't create period beyond project end
+      return;
     }
     
     const nextPeriodStartStr = format(nextPeriodStart, 'yyyy-MM-dd');
-    const nextPeriodEndStr = format(nextPeriodEnd, 'yyyy-MM-dd');
+    const nextPeriodEndStr = format(adjustedEnd, 'yyyy-MM-dd');
     
     console.log('[DuplicateForward] Formatted next period:', {
       start: nextPeriodStartStr,
       end: nextPeriodEndStr
     });
     
-    // Check for overlaps with existing budgets
+    // Check for overlaps with existing budgets (just for logging, not blocking)
     const hasOverlap = budgets.some((b, i) => {
       if (i === index) return false; // Skip current budget
       const existingStart = parseISO(b.period_start);
@@ -1000,12 +894,12 @@ export default function ActivityBudgetsTab({
       
       const overlaps = (
         (nextPeriodStart >= existingStart && nextPeriodStart <= existingEnd) ||
-        (nextPeriodEnd >= existingStart && nextPeriodEnd <= existingEnd) ||
-        (nextPeriodStart <= existingStart && nextPeriodEnd >= existingEnd)
+        (adjustedEnd >= existingStart && adjustedEnd <= existingEnd) ||
+        (nextPeriodStart <= existingStart && adjustedEnd >= existingEnd)
       );
       
       if (overlaps) {
-        console.log('[DuplicateForward] Overlap detected with budget:', {
+        console.log('[DuplicateForward] Overlap detected with budget (allowed):', {
           index: i,
           existingPeriod: `${b.period_start} to ${b.period_end}`,
           newPeriod: `${nextPeriodStartStr} to ${nextPeriodEndStr}`
@@ -1016,216 +910,317 @@ export default function ActivityBudgetsTab({
     });
     
     if (hasOverlap) {
-      console.log('[DuplicateForward] ERROR: Period would overlap with existing budget');
-      showValidationError('Cannot create budget period - it would overlap with an existing budget period');
-      return; // Period would overlap, don't create
+      console.log('[DuplicateForward] Note: Period overlaps with existing budget - this is allowed and a warning will be shown');
     }
     
-    // Create new budget with next period
+    // Create new budget with next period - explicitly set fields to avoid copying unwanted metadata
     const newBudget: ActivityBudget = {
-      ...budget,
-      id: undefined,
+      activity_id: activityId,
+      type: budget.type || 1,
+      status: budget.status || 1,
       period_start: nextPeriodStartStr,
       period_end: nextPeriodEndStr,
-      value_date: nextPeriodStartStr, // Set value_date to start of new period
+      value: budget.value !== undefined ? budget.value : 0,
+      currency: budget.currency || defaultCurrency || 'USD',
+      value_date: nextPeriodStartStr,
+      budget_lines: budget.budget_lines || []
     };
     
     console.log('[DuplicateForward] Creating new budget:', newBudget);
     
     // Insert after current row
-    setBudgets(prev => {
-      const updated = [...prev];
-      updated.splice(index + 1, 0, newBudget);
-      console.log('[DuplicateForward] Updated budgets array:', updated);
-      return updated;
-    });
-    
-    console.log('[DuplicateForward] SUCCESS: Budget duplicated forward');
-    
-    // Auto-save the new budget
-    setTimeout(() => {
-      console.log('[DuplicateForward] Auto-saving new budget...');
-      saveBudgetField(newBudget, 'value');
-    }, 100);
-  }, [budgets, granularity, endDate, saveBudgetField]);
+    // Save the new budget via API
+    (async () => {
+      try {
+        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newBudget)
+        });
 
-  // Add custom budget period
-  const addCustomPeriod = useCallback(() => {
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('[DuplicateForward] API Error Response:', error);
+          const errorMsg = error.details ? `${error.error}: ${error.details}` : (error.error || 'Failed to duplicate budget');
+          throw new Error(errorMsg);
+        }
+
+        const createdBudget = await response.json();
+        setBudgets(prev => [...prev, createdBudget].sort((a, b) => 
+          new Date(a.period_start).getTime() - new Date(b.period_start).getTime()
+        ));
+        toast.success('Budget duplicated successfully');
+    console.log('[DuplicateForward] SUCCESS: Budget duplicated forward');
+      } catch (error) {
+        console.error('[DuplicateForward] Full Error:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to duplicate budget');
+      }
+    })();
+  }, [budgets, endDate, activityId, defaultCurrency]);
+
+  // Open modal for creating a new budget
+  const openModalForNewBudget = useCallback((periodType: 'month' | 'quarter' | 'half-year' | 'year') => {
     const today = formatDateFns(new Date(), 'yyyy-MM-dd');
     const lastBudget = budgets[budgets.length - 1];
-    const startDate = lastBudget 
-      ? format(addMonths(parseISO(lastBudget.period_end), 1), 'yyyy-MM-dd')
-      : today;
+    
+    let periodStartDate: string;
+    let periodEndDate: string;
+    
+    if (lastBudget) {
+      // Start from day AFTER last budget ends
+      const lastEnd = parseISO(lastBudget.period_end);
+      const dayAfterLastEnd = new Date(lastEnd);
+      dayAfterLastEnd.setDate(dayAfterLastEnd.getDate() + 1);
+      
+      periodStartDate = format(dayAfterLastEnd, 'yyyy-MM-dd');
+      const start = parseISO(periodStartDate);
+      
+      // Calculate end date based on period type
+      switch (periodType) {
+        case 'month':
+          periodEndDate = format(endOfMonth(start), 'yyyy-MM-dd');
+          break;
+        case 'quarter':
+          periodEndDate = format(endOfMonth(addMonths(start, 2)), 'yyyy-MM-dd');
+          break;
+        case 'half-year':
+          periodEndDate = format(endOfMonth(addMonths(start, 5)), 'yyyy-MM-dd');
+          break;
+        case 'year':
+          periodEndDate = format(endOfMonth(addMonths(start, 11)), 'yyyy-MM-dd');
+          break;
+      }
+    } else {
+      // First budget - use activity start date or today
+      periodStartDate = startDate || today;
+      const start = parseISO(periodStartDate);
+      
+      switch (periodType) {
+        case 'month':
+          periodEndDate = format(endOfMonth(start), 'yyyy-MM-dd');
+          break;
+        case 'quarter':
+          periodEndDate = format(endOfQuarter(start), 'yyyy-MM-dd');
+          break;
+        case 'half-year':
+          periodEndDate = format(endOfMonth(addMonths(start, 5)), 'yyyy-MM-dd');
+          break;
+        case 'year':
+          periodEndDate = format(endOfMonth(addMonths(start, 11)), 'yyyy-MM-dd');
+          break;
+      }
+    }
+    
+    // Ensure end date doesn't exceed project end date
+    const projectEnd = parseISO(endDate);
+    if (isAfter(parseISO(periodEndDate), projectEnd)) {
+      periodEndDate = endDate;
+    }
     
     const newBudget: ActivityBudget = {
-      activity_id: activityId,
+        activity_id: activityId,
       type: 1,
       status: 1,
-      period_start: startDate,
-      period_end: format(addMonths(parseISO(startDate), 3), 'yyyy-MM-dd'),
-      value: 0,
-      currency: defaultCurrency,
-      value_date: today, // Default to today
-    };
-
-    setBudgets(prev => [...prev, newBudget]);
-  }, [budgets, activityId, defaultCurrency]);
-
-
-  // Handle granularity change
-  const handleGranularityChange = useCallback((newGranularity: Granularity) => {
-    if (!confirm('Changing granularity will regenerate the budget table. Any unsaved changes may be lost. Continue?')) {
-      return;
-    }
-
-    setGranularity(newGranularity);
-    
-    // Regenerate budgets based on new granularity
-    const newPeriods = generateBudgetPeriods(startDate, endDate, newGranularity);
-    const todayStr = formatDateFns(new Date(), 'yyyy-MM-dd');
-    const newBudgets = newPeriods.map(period => ({
-      activity_id: activityId,
-      type: 1 as const,
-      status: 1 as const,
-      period_start: period.start,
-      period_end: period.end,
-      value: 0,
-      currency: defaultCurrency,
-      value_date: todayStr,
-    }));
-    
-    setBudgets(newBudgets);
-  }, [startDate, endDate, activityId, defaultCurrency]);
-
-  const handleGranularityTabClick = (g: Granularity) => {
-    if (g === granularity) return; // Don't change to same granularity
-    
-    if (g === 'custom') {
-      setShowCustomGranularityDialog(true);
-      return;
-    }
-    
-    setPendingGranularity(g);
-    setShowWarning(true);
-  };
-
-  const confirmGranularityChange = async () => {
-    if (!pendingGranularity) return;
-    setIsWiping(true);
-    
-    try {
-      // Clear any existing error first
-      setError(null);
-      
-      console.log('Starting granularity change to:', pendingGranularity);
-      
-      // Step 1: Delete existing budgets
-      const deleteRes = await fetch(`/api/activities/${activityId}/budgets`, { method: 'DELETE' });
-      if (!deleteRes.ok) {
-        const errorText = await deleteRes.text();
-        console.error('DELETE budgets failed:', deleteRes.status, errorText);
-        throw new Error(`Failed to delete budgets: ${deleteRes.status} ${errorText}`);
-      }
-      
-      const deleteResult = await deleteRes.json();
-      console.log('Delete result:', deleteResult);
-      
-      // Step 2: Clear local budgets state immediately
-      setBudgets([]);
-      
-      // Step 3: Wait a moment for database consistency
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Step 4: Verify deletion (optional - the deletion was successful if we got here)
-      try {
-        const verifyRes = await fetch(`/api/activities/${activityId}/budgets`);
-        if (verifyRes.ok) {
-          const remainingBudgets = await verifyRes.json();
-          if (Array.isArray(remainingBudgets) && remainingBudgets.length > 0) {
-            console.warn('Some budgets may still exist after deletion:', remainingBudgets);
-            // Don't fail here - proceed anyway as the DELETE endpoint succeeded
-          }
-        }
-      } catch (verifyError) {
-        console.warn('Verification step failed but proceeding:', verifyError);
-        // Don't fail here - the main deletion succeeded
-      }
-      
-      console.log('Deletion successful, proceeding with granularity change');
-      
-    } catch (e) {
-      console.error('Granularity change failed:', e);
-      setError(`Failed to change granularity: ${e instanceof Error ? e.message : 'Unknown error'}`);
-      setIsWiping(false);
-      setShowWarning(false);
-      setPendingGranularity(null);
-      return;
-    }
-    // Step 5: Generate and save new budgets
-    try {
-      console.log('[GranularityChange] Step 5: Starting budget generation and save');
-      setGranularity(pendingGranularity);
-      
-      // Regenerate budgets based on new granularity
-      console.log('[GranularityChange] Generating periods with:', { startDate, endDate, pendingGranularity });
-      const granularityToUse = pendingGranularity === 'custom' ? customGranularity : pendingGranularity;
-      const newPeriods = generateBudgetPeriods(startDate, endDate, granularityToUse);
-      console.log('[GranularityChange] Generated periods:', newPeriods);
-      
-      const todayStr = formatDateFns(new Date(), 'yyyy-MM-dd');
-      const newBudgets = newPeriods.map(period => ({
-        activity_id: activityId,
-        type: 1 as const,
-        status: 1 as const,
-        period_start: period.start,
-        period_end: period.end,
+      period_start: periodStartDate,
+      period_end: periodEndDate,
         value: 0,
         currency: defaultCurrency,
-        value_date: todayStr,
-      }));
-      
-      console.log('[GranularityChange] Generated', newBudgets.length, 'new budgets for', pendingGranularity, 'granularity:', newBudgets);
-      
-      if (newBudgets.length === 0) {
-        console.warn('[GranularityChange] No budgets generated - this is likely the problem!');
-        setError('No budget periods could be generated for the selected granularity');
-        return;
+      value_date: today,
+      budget_lines: []
+    };
+
+    setModalBudget(newBudget);
+    setFieldErrors({});
+    setIsFormDirty(false);
+    setShowModal(true);
+  }, [budgets, activityId, defaultCurrency, startDate, endDate]);
+
+  // Open modal for editing existing budget
+  const openModalForEditBudget = useCallback((budget: ActivityBudget) => {
+    setModalBudget({ ...budget });
+    setFieldErrors({});
+    setIsFormDirty(false);
+    // Auto-expand advanced fields if budget has budget lines
+    setShowAdvancedFields((budget.budget_lines?.length || 0) > 0);
+    setShowModal(true);
+  }, []);
+
+  // Close modal with unsaved changes confirmation
+  const closeModal = useCallback(() => {
+    if (isFormDirty) {
+      if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+        setShowModal(false);
+        setModalBudget(null);
+        setFieldErrors({});
+        setIsFormDirty(false);
+        setShowAdvancedFields(false);
       }
-      
-      // Set budgets locally first
-      console.log('[GranularityChange] Setting budgets in local state');
-      setBudgets(newBudgets);
-      
-      // Then save to database
-      console.log('[GranularityChange] About to save', newBudgets.length, 'new budgets to database');
-      await bulkInsertBudgets(newBudgets);
-      
-      console.log('[GranularityChange] Granularity change completed successfully');
-      
-    } catch (saveError) {
-      console.error('[GranularityChange] Failed to save new budgets during granularity change:', saveError);
-      setError(`Failed to save new budgets: ${saveError instanceof Error ? saveError.message : 'Unknown error'}`);
-      // Keep the UI in the loading state and show the error
-      // Don't reset the dialog yet
+    } else {
+      setShowModal(false);
+      setModalBudget(null);
+      setFieldErrors({});
+      setIsFormDirty(false);
+      setShowAdvancedFields(false);
+    }
+  }, [isFormDirty]);
+
+  // Budget line management
+  const addBudgetLine = useCallback(() => {
+    if (!modalBudget) return;
+    
+    const newLine: BudgetLine = {
+      ref: String((modalBudget.budget_lines?.length || 0) + 1),
+      value: 0,
+      currency: modalBudget.currency,
+      value_date: modalBudget.value_date,
+      narrative: ''
+    };
+    
+    setModalBudget(prev => prev ? {
+      ...prev,
+      budget_lines: [...(prev.budget_lines || []), newLine]
+    } : null);
+    setIsFormDirty(true);
+  }, [modalBudget]);
+
+  const updateBudgetLine = useCallback((index: number, field: keyof BudgetLine, value: any) => {
+    setModalBudget(prev => {
+      if (!prev) return null;
+      const lines = [...(prev.budget_lines || [])];
+      lines[index] = { ...lines[index], [field]: value };
+      return { ...prev, budget_lines: lines };
+    });
+    setIsFormDirty(true);
+  }, []);
+
+  const removeBudgetLine = useCallback((index: number) => {
+    setModalBudget(prev => {
+      if (!prev) return null;
+      const lines = [...(prev.budget_lines || [])];
+      lines.splice(index, 1);
+      return { ...prev, budget_lines: lines };
+    });
+    setIsFormDirty(true);
+  }, []);
+
+  // Update form field with validation
+  const updateFormField = useCallback((field: keyof ActivityBudget, value: any) => {
+    setModalBudget(prev => prev ? { ...prev, [field]: value } : null);
+    setIsFormDirty(true);
+    
+    // Clear field error when user starts typing
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
+  }, []);
+
+  // Real-time USD conversion
+  useEffect(() => {
+    if (!modalBudget || !modalBudget.value || !modalBudget.currency || !modalBudget.value_date) {
       return;
     }
+
+    const calculateUSD = async () => {
+      setIsCalculatingUSD(true);
+      try {
+        if (modalBudget.currency === 'USD') {
+          setModalBudget(prev => prev ? { ...prev, usd_value: modalBudget.value } : null);
+        } else {
+          const result = await fixedCurrencyConverter.convertToUSD(
+            modalBudget.value,
+            modalBudget.currency,
+            new Date(modalBudget.value_date)
+          );
+          setModalBudget(prev => prev ? { ...prev, usd_value: result.usd_amount } : null);
+        }
+      } catch (error) {
+        console.error('USD conversion error:', error);
+      } finally {
+        setIsCalculatingUSD(false);
+      }
+    };
+
+    calculateUSD();
+  }, [modalBudget?.value, modalBudget?.currency, modalBudget?.value_date]);
+
+  // Validate and save budget
+  const saveBudget = useCallback(async () => {
+    if (!modalBudget) return;
+
+    // Validation
+    const errors: Record<string, string> = {};
     
-    // Success - reset the UI
-    setIsWiping(false);
-    setShowWarning(false);
-    setPendingGranularity(null);
-  };
+    if (!modalBudget.type) errors.type = 'Type is required';
+    if (!modalBudget.status) errors.status = 'Status is required';
+    if (!modalBudget.period_start) errors.period_start = 'Start date is required';
+    if (!modalBudget.period_end) errors.period_end = 'End date is required';
+    if (!modalBudget.value || modalBudget.value <= 0) errors.value = 'Value must be greater than 0';
+    if (!modalBudget.currency) errors.currency = 'Currency is required';
+    if (!modalBudget.value_date) errors.value_date = 'Value date is required';
 
-  const cancelGranularityChange = () => {
-    setShowWarning(false);
-    setPendingGranularity(null);
-  };
+    // Date validation
+    if (modalBudget.period_start && modalBudget.period_end) {
+      if (new Date(modalBudget.period_start) >= new Date(modalBudget.period_end)) {
+        errors.period_end = 'End date must be after start date';
+      }
+    }
 
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
 
-  // Call onBudgetsChange whenever budgets changes
-  useEffect(() => {
-    if (onBudgetsChange) onBudgetsChange(budgets);
-  }, [budgets, onBudgetsChange]);
+    try {
+      if (modalBudget.id) {
+        // Update existing budget
+        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(modalBudget)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to update budget');
+        }
+
+        const updatedBudget = await response.json();
+        setBudgets(prev => prev.map(b => b.id === updatedBudget.id ? updatedBudget : b));
+        toast.success('Budget updated successfully');
+      } else {
+        // Create new budget
+        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(modalBudget)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to create budget');
+        }
+
+        const newBudget = await response.json();
+        setBudgets(prev => [...prev, newBudget].sort((a, b) => 
+          new Date(a.period_start).getTime() - new Date(b.period_start).getTime()
+        ));
+        toast.success('Budget created successfully');
+      }
+
+      setShowModal(false);
+      setModalBudget(null);
+      setFieldErrors({});
+      setIsFormDirty(false);
+    } catch (error) {
+      console.error('Error saving budget:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save budget');
+    }
+  }, [modalBudget, activityId]);
+
+  // Granularity change handlers removed - users can now create any period length they want
+
 
   // Add helper for bulk insert
   const bulkInsertBudgets = async (budgets: ActivityBudget[]) => {
@@ -1347,36 +1342,37 @@ export default function ActivityBudgetsTab({
         </div>
 
         {/* Budget Table Skeleton */}
-        <div className="bg-white border rounded-xl overflow-hidden">
-          <div className="p-6 border-b bg-gray-50">
-            <Skeleton className="h-6 w-32" />
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full divide-y divide-gray-200">
-              <thead className="bg-muted">
-                <tr>
-                  {['Period', 'Type', 'Status', 'Value', 'Currency', 'Value Date', 'Actions'].map((header, i) => (
-                    <th key={i} className="px-4 py-2 text-left text-sm font-medium text-muted-foreground">
-                      <Skeleton className="h-4 w-16" />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-background divide-y divide-muted">
-                {[...Array(4)].map((_, rowIndex) => (
-                  <tr key={rowIndex} className={`hover:bg-muted/10 transition-colors ${rowIndex % 2 === 1 ? 'bg-muted/5' : ''}`}>
-                    {[...Array(7)].map((_, colIndex) => (
-                      <td key={colIndex} className="px-4 py-3">
-                        <Skeleton className="h-5 w-24" />
-                      </td>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-10 w-full" />
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {['Period', 'Type', 'Status', 'Amount', 'Value Date', 'USD Value', 'Actions'].map((header, i) => (
+                      <TableHead key={i} className="font-medium">
+                        <Skeleton className="h-4 w-16" />
+                      </TableHead>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                {[...Array(4)].map((_, rowIndex) => (
+                    <TableRow key={rowIndex}>
+                      {[...Array(7)].map((_, colIndex) => (
+                        <TableCell key={colIndex}>
+                          <Skeleton className="h-8 w-full" />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Charts Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1402,8 +1398,7 @@ export default function ActivityBudgetsTab({
     );
   }
 
-  // Granularity tab order: Monthly, Quarterly, Annual, Custom
-  const granularityOrder: Granularity[] = ['monthly', 'quarterly', 'annual', 'custom'];
+  // Granularity removed - users can now create any period length
 
   return (
     <div className="space-y-6">
@@ -1416,59 +1411,57 @@ export default function ActivityBudgetsTab({
         />
       )}
 
-      {/* Budgets Heading */}
-      <div className="flex items-center gap-2 mt-6 mb-2">
-        <Wallet className="w-5 h-5 text-muted-foreground" />
-        <span className="text-lg font-semibold text-muted-foreground">Budgets</span>
-      </div>
-
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      {/* Granularity switcher in correct order */}
-        <div className="bg-white rounded-lg border">
-          <div className="p-4 border-b">
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium">Budget Frequency:</span>
-              <div className="flex gap-2">
-                {granularityOrder.map((g) => (
-                  <Button
-                    key={g}
-                    variant={granularity === g ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleGranularityTabClick(g)}
-                    disabled={isWiping}
-                  >
-                    {g.charAt(0).toUpperCase() + g.slice(1)}
-                    {isWiping && pendingGranularity === g && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
-                  </Button>
-                ))}
+      {/* Budgets Table */}
+      <Card>
+        <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                onClick={() => openModalForNewBudget('month')}
+                >
+                + Monthly
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                onClick={() => openModalForNewBudget('quarter')}
+                >
+                + Quarterly
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                onClick={() => openModalForNewBudget('half-year')}
+                >
+                + Semi-Annual
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                onClick={() => openModalForNewBudget('year')}
+                >
+                + Annual
+                </Button>
               </div>
-              {isWiping && (
-                <span className="text-sm text-orange-600 font-medium">
-                  Changing frequency...
-                </span>
+            <div className="flex gap-2">
+              {budgets.length > 0 && !loading && (
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-1" />
+                  Export
+                </Button>
               )}
             </div>
           </div>
-          <Dialog open={showWarning} onOpenChange={cancelGranularityChange}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Warning: Change Budget Frequency?</DialogTitle>
-                <DialogDescription>
-                  Switching the budget frequency (monthly, quarterly, annual) will wipe all previously reported budgets for this activity. This action cannot be undone.<br />
-                  Are you sure you want to continue?
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={cancelGranularityChange} disabled={isWiping}>Cancel</Button>
-                <Button variant="destructive" onClick={confirmGranularityChange} disabled={isWiping}>Yes, Wipe Budgets</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+        </CardHeader>
+        <CardContent>
 
           {/* Copy Budget Dialog */}
           <Dialog open={showCopyDialog} onOpenChange={(open) => {
@@ -1508,7 +1501,7 @@ export default function ActivityBudgetsTab({
                           <AlertCircle className="h-3 w-3 text-gray-400" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>⚠ Budget periods must not overlap</p>
+                          <p>⚠ Budget periods overlap (allowed, but not recommended)</p>
                         </TooltipContent>
                       </UITooltip>
                     </Label>
@@ -1529,7 +1522,7 @@ export default function ActivityBudgetsTab({
                           <AlertCircle className="h-3 w-3 text-gray-400" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>⚠ Budget periods must not overlap</p>
+                          <p>⚠ Budget periods overlap (allowed, but not recommended)</p>
                         </TooltipContent>
                       </UITooltip>
                     </Label>
@@ -1570,221 +1563,135 @@ export default function ActivityBudgetsTab({
             </DialogContent>
           </Dialog>
 
-          {/* Custom Granularity Dialog */}
-          <Dialog open={showCustomGranularityDialog} onOpenChange={setShowCustomGranularityDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Custom Budget Frequency</DialogTitle>
-                <DialogDescription>
-                  Set a custom reporting period for your budgets. This will create budget periods based on your specified number of months.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="custom-months">Period Length (months)</Label>
-                  <Input
-                    id="custom-months"
-                    type="number"
-                    value={customGranularity.months}
-                    onChange={(e) => {
-                      const months = parseInt(e.target.value) || 6;
-                      setCustomGranularity({
-                        type: 'custom',
-                        months,
-                        label: `${months} month${months !== 1 ? 's' : ''}`
-                      });
-                    }}
-                    min="1"
-                    max="60"
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Enter the number of months for each budget period (1-60 months)
-                  </p>
-                </div>
-                
-                <div>
-                  <Label htmlFor="custom-label">Display Label</Label>
-                  <Input
-                    id="custom-label"
-                    type="text"
-                    value={customGranularity.label}
-                    onChange={(e) => setCustomGranularity(prev => ({ ...prev, label: e.target.value }))}
-                    placeholder="e.g., 6 months, Bi-annual, etc."
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <strong>Preview:</strong> This will create budget periods of {customGranularity.months} month{customGranularity.months !== 1 ? 's' : ''} each, 
-                    labeled as "{customGranularity.label}".
-                  </p>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowCustomGranularityDialog(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={() => {
-                    setPendingGranularity('custom');
-                    setShowCustomGranularityDialog(false);
-                    setShowWarning(true);
-                  }}
-                  disabled={customGranularity.months < 1 || customGranularity.months > 60}
-                >
-                  Apply Custom Frequency
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
 
           {/* Budget table */}
-          <div className="overflow-x-auto">
-            <table className="w-full divide-y divide-gray-200">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="px-2 py-1 text-left text-xs font-medium text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      Period Start
+          <div className="rounded-md border">
+            <Table aria-label="Budgets table">
+              <TableHeader className="bg-muted/50 border-b border-border/70">
+                <TableRow>
+                  <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-[180px]">
+                    <div 
+                      className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
+                      onClick={() => handleSort('period_start')}
+                    >
+                      Period
+                      {sortColumn === 'period_start' && (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      )}
                       <TooltipProvider>
                         <UITooltip>
                           <TooltipTrigger>
                             <AlertCircle className="h-3 w-3 text-gray-400" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>⚠ Budget periods must not overlap</p>
+                            <p>⚠ Budget periods overlap (allowed, but not recommended)</p>
                           </TooltipContent>
                         </UITooltip>
                       </TooltipProvider>
                     </div>
-                  </th>
-                  <th className="px-2 py-1 text-left text-xs font-medium text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      Period End
-                      <TooltipProvider>
-                        <UITooltip>
-                          <TooltipTrigger>
-                            <AlertCircle className="h-3 w-3 text-gray-400" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>⚠ Budget periods must not overlap</p>
-                          </TooltipContent>
-                        </UITooltip>
-                      </TooltipProvider>
-                    </div>
-                  </th>
-                  {["Type", "Status", "Value", "Currency", "Value Date", "USD VALUE", "Actions"].map((header, i) => (
-                    <th key={i + 2} className="px-2 py-1 text-left text-xs font-medium text-muted-foreground">
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-background divide-y divide-muted">
-                {budgets.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-2 py-8 text-center text-gray-500">
-                      No budgets added yet. Click "Add Custom Period" to get started.
-                    </td>
-                  </tr>
-                ) : (
-                  budgets.map((budget, index) => (
-                    <tr key={budget.id || `budget-${index}`} className={budget.hasError ? 'bg-red-50' : `hover:bg-muted/10 transition-colors ${index % 2 === 1 ? 'bg-muted/5' : ''}`}> 
-                      <td className="px-2 py-4">
-                        <Input
-                          type="date"
-                          value={budget.period_start}
-                          onChange={(e) => updateBudgetField(index, 'period_start', e.target.value)}
-                          onBlur={() => handleFieldBlur(index, 'period_start')}
-                          className="h-10 text-xs"
-                        />
-                      </td>
-                      <td className="px-2 py-4">
-                        <Input
-                          type="date"
-                          value={budget.period_end}
-                          onChange={(e) => updateBudgetField(index, 'period_end', e.target.value)}
-                          onBlur={() => handleFieldBlur(index, 'period_end')}
-                          className="h-10 text-xs"
-                        />
-                      </td>
-                      <td className="px-2 py-4">
-                        <Select
-                          value={budget.type.toString()}
-                          onValueChange={(value) => handleSelectChange(index, 'type', parseInt(value) as 1 | 2)}
+                  </TableHead>
+                  {[
+                    { label: "Status", width: "w-[110px]", sortKey: "status", align: "left" },
+                    { label: "Type", width: "w-[100px]", sortKey: "type", align: "left" },
+                    { label: "Amount", width: "w-[140px]", sortKey: "value", align: "right" },
+                    { label: "Value Date", width: "w-[130px]", sortKey: "value_date", align: "left" },
+                    { label: "USD Value", width: "w-[120px]", sortKey: "usd_value", align: "right" },
+                    { label: "Actions", width: "w-[80px]", sortKey: null, align: "right" }
+                  ].map((header, i) => (
+                    <TableHead key={i + 2} className={`text-sm font-medium text-foreground/90 py-3 px-4 ${header.width} ${header.align === 'right' ? 'text-right' : ''}`}>
+                      {header.sortKey ? (
+                        <div 
+                          className={`flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors ${header.align === 'right' ? 'justify-end' : ''}`}
+                          onClick={() => handleSort(header.sortKey)}
                         >
-                          <SelectTrigger className="h-10 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">Original</SelectItem>
-                            <SelectItem value="2">Revised</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-2 py-4">
-                        <Select
-                          value={budget.status.toString()}
-                          onValueChange={(value) => handleSelectChange(index, 'status', parseInt(value) as 1 | 2)}
-                        >
-                          <SelectTrigger className="h-10 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">Indicative</SelectItem>
-                            <SelectItem value="2">Committed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-2 py-4">
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="number"
-                            value={budget.value === 0 ? '' : budget.value}
-                            placeholder="0.00"
-                            onChange={(e) => updateBudgetField(index, 'value', parseFloat(e.target.value) || 0)}
-                            onBlur={() => handleFieldBlur(index, 'value')}
-                            onFocus={(e) => e.target.select()}
-                            onClick={(e) => e.currentTarget.select()}
-                            className="h-10 text-xs w-28"
-                            step="0.01"
-                            min="0"
-                          />
-                          {budget.isSaving && <Loader2 className="h-3 w-3 animate-spin" />}
+                          {header.label}
+                          {sortColumn === header.sortKey && (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          )}
                         </div>
-                      </td>
-                      <td className="px-2 py-4">
-                        <BudgetCurrencySelect
-                          value={budget.currency}
-                          onValueChange={(value) => handleSelectChange(index, 'currency', value || 'USD')}
-                          placeholder="Select currency"
-                          className="w-full"
-                        />
-                      </td>
-                      <td className="px-2 py-4">
-                        <Input
-                          type="date"
-                          value={budget.value_date || formatDateFns(new Date(), 'yyyy-MM-dd')}
-                          onChange={(e) => updateBudgetField(index, 'value_date', e.target.value)}
-                          onBlur={() => handleFieldBlur(index, 'value_date')}
-                          className="h-10 text-xs"
-                        />
-                      </td>
-                      <td className="px-2 py-4">
+                      ) : (
+                        header.label
+                      )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedBudgets.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="h-24 text-center px-2 py-8">
+                      No budgets added yet. Use the "Add Period" buttons above to get started.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  sortedBudgets.map((budget, index) => {
+                    const overlappingBudgets = checkBudgetOverlap(budget, sortedBudgets);
+                    const hasOverlapWarning = overlappingBudgets && overlappingBudgets.length > 0;
+                    
+                    return (
+                    <TableRow 
+                      key={budget.id || `budget-${index}`} 
+                      className={cn(
+                        "border-b border-border/40 cursor-pointer hover:bg-muted/30 transition-colors",
+                        budget.hasError ? 'bg-red-50' : hasOverlapWarning ? 'bg-orange-50/30' : ''
+                      )}
+                    > 
+                      <TableCell className="py-3 px-4">
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">
+                            {format(parseISO(budget.period_start), 'MMM yyyy')} - {format(parseISO(budget.period_end), 'MMM yyyy')}
+                          </span>
+                          {hasOverlapWarning && (
+                            <TooltipProvider>
+                              <UITooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertCircle className="h-3 w-3 text-orange-500 flex-shrink-0" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs">
+                                  <div className="text-xs">
+                                    <div className="font-semibold mb-1">⚠️ Period Overlap Warning</div>
+                                    <div className="mb-1">This budget period overlaps with:</div>
+                                    {overlappingBudgets.map((ob, i) => (
+                                      <div key={i} className="text-muted-foreground">
+                                        • {format(parseISO(ob.period_start), 'MMM d, yyyy')} - {format(parseISO(ob.period_end), 'MMM d, yyyy')}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </TooltipContent>
+                              </UITooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
+                          {budget.status === 1 ? 'Indicative' : 'Committed'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
+                          {budget.type === 1 ? 'Original' : 'Revised'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-right">
+                        <span className="font-medium">
+                          <span className="text-muted-foreground">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <span>
+                          {budget.value_date ? format(parseISO(budget.value_date), 'MMM d, yyyy') : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-right">
+                        <div className="flex items-center gap-1">
                         {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.loading ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                         ) : usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.usd != null ? (
                           <TooltipProvider>
                             <UITooltip>
                               <TooltipTrigger asChild>
-                                <span className="font-mono cursor-help text-xs">
+                                <span className="font-medium cursor-help">
                                   ${usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                               </TooltipTrigger>
@@ -1800,116 +1707,86 @@ export default function ActivityBudgetsTab({
                         ) : (
                           <div className="flex items-center gap-1">
                             {budget.value === 0 ? (
-                              <AlertCircle className="h-4 w-4 text-orange-500" />
+                                <AlertCircle className="h-3 w-3 text-orange-500" />
                             ) : (
-                              <span className="text-xs text-red-500">
+                              <span className="text-sm text-red-500">
                                 {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.error || '-'}
                               </span>
                             )}
                           </div>
                         )}
                         {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'saving' && (
-                          <Loader2 className="h-4 w-4 animate-spin text-orange-500 inline ml-2" aria-label="Saving..." />
+                            <Loader2 className="h-3 w-3 animate-spin text-orange-500" aria-label="Saving..." />
                         )}
                         {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'saved' && (
-                          <CheckCircle className="h-4 w-4 text-green-600 inline ml-2" aria-label="Saved" />
+                            <CheckCircle className="h-3 w-3 text-green-600" aria-label="Saved" />
                         )}
                         {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'error' && (
-                          <span className="text-xs text-red-500 ml-1">Save failed</span>
+                            <span className="text-xs text-red-500">Failed</span>
                         )}
-                      </td>
-                      <td className="px-2 py-4">
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost" className="h-6 w-6 p-0">
-                              <MoreVertical className="h-4 w-4" />
+                            <Button size="icon" variant="ghost" className="h-7 w-7 p-0">
+                              <MoreVertical className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openModalForEditBudget(budget)}>
+                              <Edit className="h-4 w-4 mr-2" /> Edit
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => duplicateForward(index)}>
-                              <Copy className="h-4 w-4 mr-2" /> Duplicate Forward
+                              <Copy className="h-4 w-4 mr-2" /> Duplicate
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => deleteBudget(index)} className="text-red-600">
                               <Trash2 className="h-4 w-4 mr-2" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))
+                      </TableCell>
+                    </TableRow>
+                    );
+                  })
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
-
-          {/* Footer with add button and optional budget summary */}
-          <div className="border-t p-4">
-            <div className="flex justify-between items-center">
-              {budgets.length > 0 && (
-                <TooltipProvider>
-                  <UITooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground cursor-help">
-                        <Info className="h-3 w-3" />
-                        <span>Budget Summary</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs">
-                      <div className="space-y-1">
-                        <div className="font-medium">Original Currency Total:</div>
-                        <div>{budgetSummary.total.toLocaleString()} {budgetSummary.currency}</div>
-                        <div className="font-medium">USD Equivalent:</div>
-                        <div>${budgetSummary.usdTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="text-xs opacity-75">(Using {budgetSummary.type} values)</div>
-                      </div>
-                    </TooltipContent>
-                  </UITooltip>
-                </TooltipProvider>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={addCustomPeriod}
-              >
-                Add Custom Period
-              </Button>
-            </div>
-          </div>
-        </div>
+        </CardContent>
+      </Card>
 
       {/* Budget Charts */}
       {budgets.length > 0 && (
         <>
-          <div className="flex flex-wrap gap-4 items-center mb-4 mt-8">
-            <span className="text-sm font-medium">Show in:</span>
+          <div className="flex flex-wrap gap-2 items-center mb-4 mt-8">
             <Button
-              variant={currencyMode === 'original' ? 'default' : 'outline'}
+              variant={aggregationMode === 'monthly' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setCurrencyMode('original')}
+              onClick={() => setAggregationMode('monthly')}
             >
-              Original Currency
+              Monthly
             </Button>
-            <Button
-              variant={currencyMode === 'usd' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCurrencyMode('usd')}
-            >
-              Standardized USD
-            </Button>
-            <span className="ml-4 text-sm font-medium">Aggregate by:</span>
             <Button
               variant={aggregationMode === 'quarterly' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setAggregationMode('quarterly')}
             >
-              By Quarter
+              Quarterly
+            </Button>
+            <Button
+              variant={aggregationMode === 'semi-annual' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setAggregationMode('semi-annual')}
+            >
+              Semi-Annual
             </Button>
             <Button
               variant={aggregationMode === 'annual' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setAggregationMode('annual')}
             >
-              By Calendar Year
+              Annual
             </Button>
           </div>
           <div className="flex flex-row gap-6 w-full items-stretch">
@@ -1930,7 +1807,7 @@ export default function ActivityBudgetsTab({
                 title="Cumulative Budget"
                 data={chartData.cumulativeData}
                 dataKey="total"
-                color="#10B981"
+                color="#64748b"
                 currencyMode={currencyMode}
                 usdValues={usdValues}
                 budgets={budgets}
@@ -1946,6 +1823,485 @@ export default function ActivityBudgetsTab({
           You must be logged in to edit or save budgets.
         </div>
       )}
+
+      {/* Budget Modal */}
+      <Dialog open={showModal} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{modalBudget?.id ? 'Edit Budget' : 'Add Budget'}</DialogTitle>
+            <DialogDescription>
+              {modalBudget?.id ? 'Update budget information' : 'Create a new budget entry'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {modalBudget && (
+            <div className="space-y-4 py-4">
+              {/* Type and Status in same row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="type">Type</Label>
+                  <Popover open={typePopoverOpen} onOpenChange={setTypePopoverOpen}>
+                    <PopoverTrigger
+                      className={cn(
+                        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                        fieldErrors.type && "border-red-500",
+                        !modalBudget?.type && "text-muted-foreground"
+                      )}
+                    >
+                      <span className="truncate">
+                        {modalBudget?.type ? (() => {
+                          const selectedType = BUDGET_TYPES.find(t => t.code === String(modalBudget.type));
+                          return selectedType ? (
+                            <span className="flex items-center gap-2">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedType.code}</span>
+                              <span className="font-medium">{selectedType.name}</span>
+                            </span>
+                          ) : (
+                            "Select type"
+                          );
+                        })() : (
+                          "Select type"
+                        )}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {modalBudget?.type && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateFormField('type', 1);
+                              setTypePopoverOpen(false);
+                            }}
+                            className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                            aria-label="Clear selection"
+                          >
+                            <span className="text-xs">×</span>
+                          </button>
+                        )}
+                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-0" align="start">
+                      <div className="max-h-[200px] overflow-y-auto">
+                        {BUDGET_TYPES.map(type => (
+                          <button
+                            key={type.code}
+                            type="button"
+                            className={cn(
+                              "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                              modalBudget?.type === Number(type.code) && "bg-accent text-accent-foreground"
+                            )}
+                            onClick={() => {
+                              updateFormField('type', Number(type.code) as 1 | 2);
+                              setTypePopoverOpen(false);
+                            }}
+                          >
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type.code}</span>
+                            <span className="font-medium">{type.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  {fieldErrors.type && (
+                    <p className="text-xs text-red-500">{fieldErrors.type}</p>
+                  )}
+                </div>
+
+                {/* Status */}
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
+                    <PopoverTrigger
+                      className={cn(
+                        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                        fieldErrors.status && "border-red-500",
+                        !modalBudget?.status && "text-muted-foreground"
+                      )}
+                    >
+                      <span className="truncate">
+                        {modalBudget?.status ? (() => {
+                          const selectedStatus = BUDGET_STATUSES.find(s => s.code === String(modalBudget.status));
+                          return selectedStatus ? (
+                            <span className="flex items-center gap-2">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedStatus.code}</span>
+                              <span className="font-medium">{selectedStatus.name}</span>
+                            </span>
+                          ) : (
+                            "Select status"
+                          );
+                        })() : (
+                          "Select status"
+                        )}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {modalBudget?.status && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateFormField('status', 1);
+                              setStatusPopoverOpen(false);
+                            }}
+                            className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                            aria-label="Clear selection"
+                          >
+                            <span className="text-xs">×</span>
+                          </button>
+                        )}
+                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-0" align="start">
+                      <div className="max-h-[200px] overflow-y-auto">
+                        {BUDGET_STATUSES.map(status => (
+                        <button
+                          key={status.code}
+                          type="button"
+                          className={cn(
+                            "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                            modalBudget?.status === Number(status.code) && "bg-accent text-accent-foreground"
+                          )}
+                          onClick={() => {
+                            updateFormField('status', Number(status.code) as 1 | 2);
+                            setStatusPopoverOpen(false);
+                          }}
+                        >
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{status.code}</span>
+                          <span className="font-medium">{status.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                {fieldErrors.status && (
+                  <p className="text-xs text-red-500">{fieldErrors.status}</p>
+                )}
+              </div>
+              </div>
+
+              {/* Period Dates */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="period_start">Period Start Date</Label>
+                  <Input
+                    id="period_start"
+                    type="date"
+                    value={modalBudget.period_start}
+                    onChange={(e) => updateFormField('period_start', e.target.value)}
+                    className={fieldErrors.period_start ? 'border-red-500' : ''}
+                  />
+                  {fieldErrors.period_start && (
+                    <p className="text-xs text-red-500">{fieldErrors.period_start}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="period_end">Period End Date</Label>
+                  <Input
+                    id="period_end"
+                    type="date"
+                    value={modalBudget.period_end}
+                    onChange={(e) => updateFormField('period_end', e.target.value)}
+                    className={fieldErrors.period_end ? 'border-red-500' : ''}
+                  />
+                  {fieldErrors.period_end && (
+                    <p className="text-xs text-red-500">{fieldErrors.period_end}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Currency */}
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Popover open={currencyPopoverOpen} onOpenChange={setCurrencyPopoverOpen}>
+                  <PopoverTrigger
+                    className={cn(
+                      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                      fieldErrors.currency && "border-red-500",
+                      !modalBudget?.currency && "text-muted-foreground"
+                    )}
+                  >
+                    <span className="truncate">
+                      {modalBudget?.currency ? (() => {
+                        const selectedCurrency = currencies.find(c => c.code === modalBudget.currency);
+                        return selectedCurrency ? (
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedCurrency.code}</span>
+                            <span className="font-medium">{selectedCurrency.name}</span>
+                          </span>
+                        ) : (
+                          "Select currency"
+                        );
+                      })() : (
+                        "Select currency"
+                      )}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {modalBudget?.currency && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateFormField('currency', 'USD');
+                            setCurrencyPopoverOpen(false);
+                          }}
+                          className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                          aria-label="Clear selection"
+                        >
+                          <span className="text-xs">×</span>
+                        </button>
+                      )}
+                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <div className="max-h-[300px] overflow-y-auto">
+                      {currencies.map(currency => (
+                        <button
+                          key={currency.code}
+                          type="button"
+                          className={cn(
+                            "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                            modalBudget?.currency === currency.code && "bg-accent text-accent-foreground"
+                          )}
+                          onClick={() => {
+                            updateFormField('currency', currency.code);
+                            setCurrencyPopoverOpen(false);
+                          }}
+                        >
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currency.code}</span>
+                          <span className="font-medium">{currency.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                {fieldErrors.currency && (
+                  <p className="text-xs text-red-500">{fieldErrors.currency}</p>
+                )}
+              </div>
+
+              {/* Value and Value Date */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="value">Value</Label>
+                  <Input
+                    id="value"
+                    type="text"
+                    value={isEditingValue ? (modalBudget.value || '').toString() : (modalBudget.value ? modalBudget.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')}
+                    onChange={(e) => {
+                      // Remove all non-numeric characters except decimal point
+                      const rawValue = e.target.value.replace(/[^\d.]/g, '');
+                      const numValue = parseFloat(rawValue);
+                      if (!isNaN(numValue)) {
+                        updateFormField('value', numValue);
+                      } else if (rawValue === '' || rawValue === '.') {
+                        updateFormField('value', 0);
+                      }
+                    }}
+                    onFocus={(e) => {
+                      setIsEditingValue(true);
+                      e.target.select();
+                    }}
+                    onBlur={() => {
+                      setIsEditingValue(false);
+                    }}
+                    placeholder="0.00"
+                    className={fieldErrors.value ? 'border-red-500' : ''}
+                  />
+                  {fieldErrors.value && (
+                    <p className="text-xs text-red-500">{fieldErrors.value}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="value_date">Value Date</Label>
+                  <Input
+                    id="value_date"
+                    type="date"
+                    value={modalBudget.value_date}
+                    onChange={(e) => updateFormField('value_date', e.target.value)}
+                    className={fieldErrors.value_date ? 'border-red-500' : ''}
+                  />
+                  {fieldErrors.value_date && (
+                    <p className="text-xs text-red-500">{fieldErrors.value_date}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* USD Value (read-only) */}
+              <div className="space-y-2">
+                <Label htmlFor="usd_value">USD Value</Label>
+                <Input
+                  id="usd_value"
+                  type="text"
+                  value={isCalculatingUSD ? 'Calculating...' : (modalBudget.usd_value !== null && modalBudget.usd_value !== undefined ? `USD ${modalBudget.usd_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A')}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+
+              {/* Advanced IATI Fields - Budget Lines */}
+              <div 
+                onClick={() => setShowAdvancedFields(!showAdvancedFields)}
+                className="flex items-center justify-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 transition-colors py-2"
+              >
+                <span>Advanced IATI Fields</span>
+                {showAdvancedFields ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </div>
+
+              {showAdvancedFields && (
+                <div className="space-y-6 pt-4 border-t border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    These optional fields provide additional IATI-compliant budget breakdown for detailed financial reporting.
+                  </p>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Budget Lines</Label>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Optional breakdown of budget into line items. Sum of lines does not need to equal total budget.
+                        </p>
+                      </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={addBudgetLine}
+                          type="button"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Line
+                        </Button>
+                      </div>
+
+                      {modalBudget.budget_lines && modalBudget.budget_lines.length > 0 && (
+                        <div className="space-y-3 border rounded-lg p-3 bg-gray-50">
+                          {modalBudget.budget_lines.map((line, index) => (
+                            <div key={index} className="space-y-3 p-3 border rounded-lg bg-white">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-700">Line {index + 1}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeBudgetLine(index)}
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  type="button"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </Button>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                  <Label htmlFor={`line-ref-${index}`}>Reference</Label>
+                                  <Input
+                                    id={`line-ref-${index}`}
+                                    value={line.ref}
+                                    onChange={(e) => updateBudgetLine(index, 'ref', e.target.value)}
+                                    placeholder="e.g., 1, SALARIES"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor={`line-value-${index}`}>Value</Label>
+                                  <Input
+                                    id={`line-value-${index}`}
+                                    type="text"
+                                    value={line.value === 0 ? '' : line.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    onChange={(e) => {
+                                      const rawValue = e.target.value.replace(/[^\d.]/g, '');
+                                      const numValue = parseFloat(rawValue);
+                                      if (!isNaN(numValue)) {
+                                        updateBudgetLine(index, 'value', numValue);
+                                      } else if (rawValue === '' || rawValue === '.') {
+                                        updateBudgetLine(index, 'value', 0);
+                                      }
+                                    }}
+                                    onFocus={(e) => {
+                                      if (line.value > 0) {
+                                        e.target.value = line.value.toString();
+                                      }
+                                      e.target.select();
+                                    }}
+                                    onBlur={(e) => {
+                                      if (line.value > 0) {
+                                        e.target.value = line.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                      }
+                                    }}
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                  <Label htmlFor={`line-currency-${index}`}>Currency</Label>
+                                  <Select
+                                    value={line.currency}
+                                    onValueChange={(value) => updateBudgetLine(index, 'currency', value)}
+                                  >
+                                    <SelectTrigger id={`line-currency-${index}`}>
+                                      <SelectValue placeholder="Select currency" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {currencies.map(currency => (
+                                        <SelectItem key={currency.code} value={currency.code}>
+                                          {currency.code} - {currency.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor={`line-value-date-${index}`}>Value Date</Label>
+                                  <Input
+                                    id={`line-value-date-${index}`}
+                                    type="date"
+                                    value={line.value_date}
+                                    onChange={(e) => updateBudgetLine(index, 'value_date', e.target.value)}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor={`line-narrative-${index}`}>Description</Label>
+                                <Input
+                                  id={`line-narrative-${index}`}
+                                  value={line.narrative}
+                                  onChange={(e) => updateBudgetLine(index, 'narrative', e.target.value)}
+                                  placeholder="e.g., Salary costs, Equipment purchases"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {modalBudget.budget_lines.length > 0 && (
+                            <div className="text-xs text-gray-500 mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                              <strong>Note:</strong> Budget lines are optional. The sum of line items does not need to equal the total budget value.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeModal}>
+              Cancel
+            </Button>
+            <Button onClick={saveBudget} disabled={Object.keys(fieldErrors).length > 0}>
+              {modalBudget?.id ? 'Update Budget' : 'Create Budget'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

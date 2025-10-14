@@ -35,6 +35,8 @@ interface ActivityComboboxProps {
   className?: string;
   disabled?: boolean;
   fallbackIatiId?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function ActivityCombobox({
@@ -44,8 +46,14 @@ export function ActivityCombobox({
   className,
   disabled = false,
   fallbackIatiId,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
 }: ActivityComboboxProps) {
-  const [open, setOpen] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const [activities, setActivities] = React.useState<Activity[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -129,6 +137,11 @@ export function ActivityCombobox({
     return acronym ? `${title} (${acronym})` : title;
   };
 
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onValueChange('');
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -137,7 +150,7 @@ export function ActivityCombobox({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            'w-full justify-between font-normal h-auto min-h-[2.5rem]',
+            'w-full justify-between font-normal h-auto min-h-[60px]',
             !value && 'text-muted-foreground',
             className
           )}
@@ -183,7 +196,20 @@ export function ActivityCombobox({
               placeholder
             )}
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <div className="flex items-center gap-2">
+            {selectedActivity && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                aria-label="Clear selection"
+                tabIndex={-1}
+              >
+                <span className="text-xs">×</span>
+              </button>
+            )}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </div>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[500px] p-0" align="start">

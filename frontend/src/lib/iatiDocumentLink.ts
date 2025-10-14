@@ -101,6 +101,7 @@ export const FILE_FORMATS: Record<string, string> = {
 
 export const COMMON_LANGUAGES = [
   { code: 'en', name: 'English' },
+  { code: 'my', name: 'Myanmar (Burmese)' },
   { code: 'fr', name: 'French' },
   { code: 'es', name: 'Spanish' },
   { code: 'ar', name: 'Arabic' },

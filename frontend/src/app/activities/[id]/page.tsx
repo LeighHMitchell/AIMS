@@ -66,6 +66,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActivityProfileSkeleton } from "@/components/skeletons/ActivityProfileSkeleton"
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
 import { ResultsTab } from "@/components/activities/ResultsTab"
+import { CapitalSpendTab } from "@/components/activities/CapitalSpendTab"
+import { FinancingTermsTab } from "@/components/activities/FinancingTermsTab"
 import {
   Tooltip,
   TooltipContent,
@@ -928,7 +930,7 @@ export default function ActivityDetailPage() {
           {/* Main Content Tabs */}
           <Card className="border-slate-200">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-10' : 'grid-cols-9'} bg-slate-50 border-b border-slate-200`}>
+              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-11' : 'grid-cols-10'} bg-slate-50 border-b border-slate-200`}>
                 <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Overview
                 </TabsTrigger>
@@ -937,6 +939,9 @@ export default function ActivityDetailPage() {
                 </TabsTrigger>
                 <TabsTrigger value="results" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Results
+                </TabsTrigger>
+                <TabsTrigger value="capital-spend" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Capital Spend
                 </TabsTrigger>
                 <TabsTrigger value="sectors" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Sectors
@@ -1081,7 +1086,7 @@ export default function ActivityDetailPage() {
               </TabsContent>
 
               {/* Finances Tab */}
-              <TabsContent value="finances" className="p-6">
+              <TabsContent value="finances" className="p-6" forceMount hidden={activeTab !== "finances"}>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   <Card className="border-slate-200">
                     <CardHeader>
@@ -1167,6 +1172,25 @@ export default function ActivityDetailPage() {
                   activityId={activity.id} 
                   readOnly={!permissions.canEditActivity}
                   defaultLanguage="en"
+                />
+              </TabsContent>
+
+              {/* Capital Spend Tab */}
+              <TabsContent value="capital-spend" className="p-6">
+                <CapitalSpendTab 
+                  activityId={activity.id} 
+                  readOnly={!permissions.canEditActivity}
+                  onCapitalSpendChange={() => {
+                    // No-op callback for detail page - completion tracking not needed here
+                  }}
+                />
+              </TabsContent>
+
+              {/* Financing Terms Tab */}
+              <TabsContent value="financing-terms" className="p-6">
+                <FinancingTermsTab 
+                  activityId={activity.id} 
+                  readOnly={!permissions.canEditActivity}
                 />
               </TabsContent>
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -44,6 +44,10 @@ export function EnhancedSubnationalBreakdown({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
+  
+  // Track if initial load is complete and if user has made changes
+  const isInitialLoadRef = useRef(true)
+  const hasUserChangedDataRef = useRef(false)
 
   // Create flattened list of all administrative units (states/regions/union territories only)
   const allAdminUnits = useMemo(() => {
@@ -146,9 +150,9 @@ export function EnhancedSubnationalBreakdown({
     return result
   }, [entries])
 
-  // Show toast when total reaches 100%
+  // Show toast when total reaches 100% - but only after user makes changes
   useEffect(() => {
-    if (isValidTotal && hasAnyValues && !loading) {
+    if (isValidTotal && hasAnyValues && !loading && hasUserChangedDataRef.current) {
       toast.success('Perfect! Total allocation is 100%', { 
         duration: 3000,
         description: 'Your subnational breakdown is complete.'
@@ -245,6 +249,10 @@ export function EnhancedSubnationalBreakdown({
     } finally {
       console.log('[EnhancedSubnationalBreakdown] Setting loading to false')
       setLoading(false)
+      // Mark initial load as complete after a short delay
+      setTimeout(() => {
+        isInitialLoadRef.current = false
+      }, 500)
     }
   }, [activityId, allAdminUnits])
 
@@ -284,8 +292,8 @@ export function EnhancedSubnationalBreakdown({
       })
 
       if (response.ok) {
-        // Only show success toast for manual saves, not auto-saves
-        if (entries.some(entry => entry.percentage > 0)) {
+        // Only show success toast if user has made changes
+        if (entries.some(entry => entry.percentage > 0) && hasUserChangedDataRef.current) {
           toast.success('Breakdown saved', { duration: 2000 })
         }
       } else {
@@ -302,6 +310,11 @@ export function EnhancedSubnationalBreakdown({
   // Handle selection changes from MultiSelect
   const handleSelectionChange = (newSelectedUnits: string[]) => {
     setSelectedUnits(newSelectedUnits)
+    
+    // Mark that user has made changes (only if not initial load)
+    if (!isInitialLoadRef.current) {
+      hasUserChangedDataRef.current = true
+    }
     
     // Update entries based on selection
     const newEntries: BreakdownEntry[] = []
@@ -325,6 +338,11 @@ export function EnhancedSubnationalBreakdown({
 
   // Update percentage for a specific entry
   const updatePercentage = (entryId: string, percentage: number) => {
+    // Mark that user has made changes
+    if (!isInitialLoadRef.current) {
+      hasUserChangedDataRef.current = true
+    }
+    
     setEntries(prev => prev.map(entry => 
       entry.id === entryId ? { ...entry, percentage } : entry
     ))
@@ -332,6 +350,11 @@ export function EnhancedSubnationalBreakdown({
 
   // Remove an entry
   const removeEntry = (entryId: string) => {
+    // Mark that user has made changes
+    if (!isInitialLoadRef.current) {
+      hasUserChangedDataRef.current = true
+    }
+    
     const entry = entries.find(e => e.id === entryId)
     if (entry) {
       setSelectedUnits(prev => prev.filter(id => id !== entry.adminUnit.id))
@@ -342,6 +365,9 @@ export function EnhancedSubnationalBreakdown({
   // Distribute 100% equally across all selected units
   const distributeEqually = () => {
     if (entries.length === 0) return
+    
+    // Mark that user has made changes
+    hasUserChangedDataRef.current = true
     
     const equalPercentage = 100 / entries.length
     setEntries(prev => prev.map(entry => ({
@@ -356,6 +382,9 @@ export function EnhancedSubnationalBreakdown({
 
   // Clear all percentage allocations but keep selected units
   const clearAllocations = () => {
+    // Mark that user has made changes
+    hasUserChangedDataRef.current = true
+    
     setEntries(prev => prev.map(entry => ({
       ...entry,
       percentage: 0
@@ -376,8 +405,9 @@ export function EnhancedSubnationalBreakdown({
   }, [breakdownsForMap, onDataChange, loading])
 
   // Auto-save when entries change (including just selections without percentages)
+  // But only after initial load is complete
   useEffect(() => {
-    if (!loading && activityId) {
+    if (!loading && activityId && !isInitialLoadRef.current) {
       const timeoutId = setTimeout(autoSave, 2000)
       return () => clearTimeout(timeoutId)
     }

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>TEST-ENHANCED-CONTACT-001</iati-identifier>
+    <title>
+      <narrative>Test Activity for Enhanced Contact Features</narrative>
+    </title>
+    <description>
+      <narrative>Test activity to verify focal points, editing rights, and user linking</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date iso-date="2025-01-01" type="1"/>
+    
+    <!-- Focal Point Contact: Should be marked as focal point after import -->
+    <contact-info type="1">
+      <organisation>
+        <narrative>Lead Agency</narrative>
+      </organisation>
+      <department>
+        <narrative>Program Management</narrative>
+      </department>
+      <person-name>
+        <narrative>Sarah Johnson</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Program Director</narrative>
+      </job-title>
+      <telephone>+95912345678</telephone>
+      <email>sarah.johnson@leadagency.org</email>
+      <website>https://leadagency.org</website>
+      <mailing-address>
+        <narrative>123 Main Street, Yangon, Myanmar</narrative>
+      </mailing-address>
+    </contact-info>
+    
+    <!-- Project Manager: Candidate for editing rights -->
+    <contact-info type="2">
+      <organisation>
+        <narrative>Implementing Partner</narrative>
+      </organisation>
+      <person-name>
+        <narrative>Michael Chen</narrative>
+      </person-name>
+      <job-title>
+        <narrative>Project Manager</narrative>
+      </job-title>
+      <email>m.chen@implementer.org</email>
+      <telephone>+95987654321</telephone>
+    </contact-info>
+    
+  </iati-activity>
+</iati-activities>
+

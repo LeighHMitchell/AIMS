@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { createClient } from "@supabase/supabase-js";
 import { HeroCard } from "@/components/ui/hero-card";
 import { cn } from "@/lib/utils";
+import { fixedCurrencyConverter } from "@/lib/currency-converter-fixed";
 
 interface Budget {
   id?: string;
@@ -38,53 +39,92 @@ export function FinancialSummaryCards({ activityId, className, budgets }: Financ
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   const fetchFinancials = useCallback(async () => {
-    console.log('[FinancialSummaryCards] Starting fetchFinancials for activityId:', activityId);
+    console.log('[FinancialSummaryCards] Starting REAL-TIME fetchFinancials for activityId:', activityId);
     
-    // Total Budgeted - using correct USD column: usd_value
+    // ================================================================
+    // REAL-TIME USD CONVERSION FOR BUDGETS
+    // ================================================================
     const { data: budgets, error: budgetsError } = await supabase
       .from("activity_budgets")
       .select("*")
       .eq("activity_id", activityId);
-    console.log('[FinancialSummaryCards] Budgets query FULL RESPONSE:', { budgets, budgetsError });
-    console.log('[FinancialSummaryCards] Budget columns available:', budgets?.[0] ? Object.keys(budgets[0]) : 'No data');
-    console.log('[FinancialSummaryCards] First budget row data:', budgets?.[0]);
     
-    // VERIFIED: Use the correct USD column for budgets: usd_value (with fallbacks for schema variations)
-    const newTotalBudgeted = budgetsError ? 0 : budgets?.reduce((sum, row) => {
-      // Look for USD-converted value in various possible column names
-      const usdValue = row.usd_value || row.USD_value || row.value_usd || row.value_USD;
-      if (usdValue) {
-        return sum + usdValue;
+    console.log('[FinancialSummaryCards] Budgets fetched:', budgets?.length || 0);
+    
+    let totalBudgetedUSD = 0;
+    if (budgets && !budgetsError) {
+      // Real-time conversion for each budget (like the table does)
+      for (const budget of budgets) {
+        if (!budget.value || !budget.currency) {
+          console.log('[FinancialSummaryCards] Skipping budget - missing value or currency');
+          continue;
+        }
+        
+        try {
+          const valueDate = budget.value_date ? new Date(budget.value_date) : new Date();
+          const result = await fixedCurrencyConverter.convertToUSD(
+            budget.value,
+            budget.currency,
+            valueDate
+          );
+          
+          if (result.success && result.usd_amount) {
+            totalBudgetedUSD += result.usd_amount;
+            console.log(`[FinancialSummaryCards] ✅ Budget ${budget.value} ${budget.currency} → $${result.usd_amount} USD (rate: ${result.exchange_rate})`);
+          } else {
+            console.warn(`[FinancialSummaryCards] ⚠️ Failed to convert budget: ${result.error}`);
+          }
+        } catch (err) {
+          console.error('[FinancialSummaryCards] Real-time conversion error for budget:', err);
+        }
       }
-      // If no USD conversion available, we'll need to convert the original value
-      // For now, just use the original value (this should be converted by the backend)
-      return sum + (row.value || 0);
-    }, 0) || 0;
-    console.log('[FinancialSummaryCards] Setting totalBudgeted to:', newTotalBudgeted);
-    setTotalBudgeted(newTotalBudgeted);
-    prevTotalBudgetedRef.current = newTotalBudgeted;
+    }
+    
+    console.log('[FinancialSummaryCards] Total Budgeted (REAL-TIME):', totalBudgetedUSD);
+    setTotalBudgeted(totalBudgetedUSD);
+    prevTotalBudgetedRef.current = totalBudgetedUSD;
 
-    // Planned Disbursements - using correct USD column: usd_amount
+    // ================================================================
+    // REAL-TIME USD CONVERSION FOR PLANNED DISBURSEMENTS
+    // ================================================================
     const { data: disb, error: disbError } = await supabase
       .from("planned_disbursements")
       .select("*")
       .eq("activity_id", activityId);
-    console.log('[FinancialSummaryCards] Planned disbursements FULL RESPONSE:', { disb, disbError });
-    console.log('[FinancialSummaryCards] Planned disbursements columns:', disb?.[0] ? Object.keys(disb[0]) : 'No data');
-    console.log('[FinancialSummaryCards] First planned disbursement row data:', disb?.[0]);
     
-    // VERIFIED: Use the correct USD column for planned disbursements: usd_amount (with fallbacks for schema variations)  
-    const plannedDisbursementsTotal = disbError ? 0 : disb?.reduce((sum, row) => {
-      // Look for USD-converted amount in various possible column names  
-      const usdAmount = row.usd_amount || row.USD_amount || row.amount_usd || row.amount_USD;
-      if (usdAmount) {
-        return sum + usdAmount;
+    console.log('[FinancialSummaryCards] Planned disbursements fetched:', disb?.length || 0);
+    
+    let plannedDisbursementsUSD = 0;
+    if (disb && !disbError) {
+      // Real-time conversion for each disbursement (like the table does)
+      for (const disbursement of disb) {
+        if (!disbursement.amount || !disbursement.currency) {
+          console.log('[FinancialSummaryCards] Skipping disbursement - missing amount or currency');
+          continue;
+        }
+        
+        try {
+          const valueDate = disbursement.value_date ? new Date(disbursement.value_date) : new Date();
+          const result = await fixedCurrencyConverter.convertToUSD(
+            disbursement.amount,
+            disbursement.currency,
+            valueDate
+          );
+          
+          if (result.success && result.usd_amount) {
+            plannedDisbursementsUSD += result.usd_amount;
+            console.log(`[FinancialSummaryCards] ✅ Disbursement ${disbursement.amount} ${disbursement.currency} → $${result.usd_amount} USD (rate: ${result.exchange_rate})`);
+          } else {
+            console.warn(`[FinancialSummaryCards] ⚠️ Failed to convert disbursement: ${result.error}`);
+          }
+        } catch (err) {
+          console.error('[FinancialSummaryCards] Real-time conversion error for disbursement:', err);
+        }
       }
-      // If no USD conversion available, use the original amount (should be converted by backend)
-      return sum + (row.amount || 0);
-    }, 0) || 0;
-    console.log('[FinancialSummaryCards] Setting plannedDisbursements to:', plannedDisbursementsTotal);
-    setPlannedDisbursements(plannedDisbursementsTotal);
+    }
+    
+    console.log('[FinancialSummaryCards] Total Planned Disbursements (REAL-TIME):', plannedDisbursementsUSD);
+    setPlannedDisbursements(plannedDisbursementsUSD);
 
     // Transactions: Committed (type 2), Disbursed/Expended (type 3 or 4) - using correct USD column: value_usd
     const { data: txs, error: txsError } = await supabase
@@ -145,6 +185,7 @@ export function FinancialSummaryCards({ activityId, className, budgets }: Financ
   }, [activityId, fetchFinancials]);
 
   // Only update reactively if we're initialized and budgets actually changed
+  // Note: With real-time conversion, we trigger a full refresh instead of using cached values
   useEffect(() => {
     if (!isInitialized || !budgets) return;
 
@@ -152,30 +193,19 @@ export function FinancialSummaryCards({ activityId, className, budgets }: Financ
     const budgetsChanged = JSON.stringify(budgets) !== JSON.stringify(prevBudgetsRef.current);
     
     if (budgetsChanged) {
-      const newTotal = budgets.reduce((sum, budget) => sum + (budget.usd_value || 0), 0);
-      const currentTotal = prevTotalBudgetedRef.current;
-      
-      // Only update if there's a meaningful difference
-      if (Math.abs(newTotal - currentTotal) > 0.01) {
-        setIsUpdating(true);
-        setTotalBudgeted(newTotal);
-        prevTotalBudgetedRef.current = newTotal;
-        
-        // Show updated confirmation and clear updating state after animation
-        const timer = setTimeout(() => {
-          setIsUpdating(false);
-          setJustUpdated(true);
-          
-          // Clear just updated state after brief show
-          setTimeout(() => setJustUpdated(false), 1500);
-        }, 800);
-        return () => clearTimeout(timer);
-      }
+      console.log('[FinancialSummaryCards] Budgets prop changed - triggering real-time refresh');
+      // Trigger a full real-time refresh instead of using cached values
+      setIsUpdating(true);
+      fetchFinancials().then(() => {
+        setIsUpdating(false);
+        setJustUpdated(true);
+        setTimeout(() => setJustUpdated(false), 1500);
+      });
     }
     
     // Update the ref to track current budgets
     prevBudgetsRef.current = budgets;
-  }, [budgets, isInitialized]);
+  }, [budgets, isInitialized, fetchFinancials]);
 
   // Listen for refresh events from budget and other components
   useEffect(() => {

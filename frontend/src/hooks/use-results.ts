@@ -488,3 +488,344 @@ export function getTotalTargetValue(periods: IndicatorPeriod[]): number {
   if (!periods || periods.length === 0) return 0;
   return periods.reduce((sum, p) => sum + (p.target_value || 0), 0);
 }
+
+// ============================================================================
+// DOCUMENT LINKS MANAGEMENT
+// ============================================================================
+
+export function useDocumentLinks() {
+  const [loading, setLoading] = useState(false);
+
+  // Create document link
+  const createDocumentLink = useCallback(async (
+    entityType: 'result' | 'indicator' | 'baseline' | 'period',
+    entityId: string,
+    data: {
+      url: string;
+      title: string | object;
+      description?: string | object;
+      format?: string;
+      category_code?: string;
+      language_code?: string;
+      document_date?: string;
+      link_type?: 'target' | 'actual'; // For periods only
+    }
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const endpoint = entityType === 'result' ? `/api/results/${entityId}/documents` :
+                      entityType === 'indicator' ? `/api/indicators/${entityId}/documents` :
+                      `/api/${entityType}s/${entityId}/documents`; // baselines, periods
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create document link');
+      }
+
+      toast.success('Document link added successfully');
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create document link';
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Delete document link
+  const deleteDocumentLink = useCallback(async (
+    entityType: 'result' | 'indicator' | 'baseline' | 'period',
+    entityId: string,
+    documentId: string
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const endpoint = entityType === 'result' ? `/api/results/${entityId}/documents` :
+                      entityType === 'indicator' ? `/api/indicators/${entityId}/documents` :
+                      `/api/${entityType}s/${entityId}/documents`;
+
+      const response = await fetch(`${endpoint}?documentId=${documentId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete document link');
+      }
+
+      toast.success('Document link deleted');
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete document link';
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    loading,
+    createDocumentLink,
+    deleteDocumentLink
+  };
+}
+
+// ============================================================================
+// REFERENCES MANAGEMENT
+// ============================================================================
+
+export function useReferences() {
+  const [loading, setLoading] = useState(false);
+
+  // Create reference
+  const createReference = useCallback(async (
+    entityType: 'result' | 'indicator',
+    entityId: string,
+    data: {
+      vocabulary: string;
+      code: string;
+      vocabulary_uri?: string;
+      indicator_uri?: string; // For indicators only
+    }
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const endpoint = entityType === 'result' 
+        ? `/api/results/${entityId}/references`
+        : `/api/indicators/${entityId}/references`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create reference');
+      }
+
+      toast.success('Reference added successfully');
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create reference';
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Delete reference
+  const deleteReference = useCallback(async (
+    entityType: 'result' | 'indicator',
+    entityId: string,
+    referenceId: string
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const endpoint = entityType === 'result'
+        ? `/api/results/${entityId}/references`
+        : `/api/indicators/${entityId}/references`;
+
+      const response = await fetch(`${endpoint}?referenceId=${referenceId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete reference');
+      }
+
+      toast.success('Reference deleted');
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete reference';
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    loading,
+    createReference,
+    deleteReference
+  };
+}
+
+// ============================================================================
+// DIMENSIONS MANAGEMENT
+// ============================================================================
+
+export function useDimensions() {
+  const [loading, setLoading] = useState(false);
+
+  // Create dimension
+  const createDimension = useCallback(async (
+    entityType: 'baseline' | 'period',
+    entityId: string,
+    data: {
+      name: string;
+      value: string;
+      dimension_type?: 'target' | 'actual'; // For periods only
+    }
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const endpoint = entityType === 'baseline'
+        ? `/api/baselines/${entityId}/dimensions`
+        : `/api/periods/${entityId}/dimensions`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create dimension');
+      }
+
+      toast.success('Dimension added successfully');
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create dimension';
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Delete dimension
+  const deleteDimension = useCallback(async (
+    entityType: 'baseline' | 'period',
+    entityId: string,
+    dimensionId: string
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const endpoint = entityType === 'baseline'
+        ? `/api/baselines/${entityId}/dimensions`
+        : `/api/periods/${entityId}/dimensions`;
+
+      const response = await fetch(`${endpoint}?dimensionId=${dimensionId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete dimension');
+      }
+
+      toast.success('Dimension deleted');
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete dimension';
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    loading,
+    createDimension,
+    deleteDimension
+  };
+}
+
+// ============================================================================
+// LOCATIONS MANAGEMENT
+// ============================================================================
+
+export function useLocations() {
+  const [loading, setLoading] = useState(false);
+
+  // Create location
+  const createLocation = useCallback(async (
+    entityType: 'baseline' | 'period',
+    entityId: string,
+    data: {
+      location_ref: string;
+      location_type?: 'target' | 'actual'; // For periods only
+    }
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const endpoint = entityType === 'baseline'
+        ? `/api/baselines/${entityId}/locations`
+        : `/api/periods/${entityId}/locations`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create location');
+      }
+
+      toast.success('Location added successfully');
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create location';
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Delete location
+  const deleteLocation = useCallback(async (
+    entityType: 'baseline' | 'period',
+    entityId: string,
+    locationId: string
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const endpoint = entityType === 'baseline'
+        ? `/api/baselines/${entityId}/locations`
+        : `/api/periods/${entityId}/locations`;
+
+      const response = await fetch(`${endpoint}?locationId=${locationId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete location');
+      }
+
+      toast.success('Location deleted');
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete location';
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    loading,
+    createLocation,
+    deleteLocation
+  };
+}

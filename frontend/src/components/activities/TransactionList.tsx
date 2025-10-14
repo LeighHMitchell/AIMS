@@ -12,6 +12,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -27,8 +28,6 @@ import {
   Download, 
   Filter,
   Calendar,
-  TrendingUp,
-  TrendingDown,
   Building2,
   DollarSign,
   ArrowUpDown,
@@ -83,7 +82,7 @@ const FINANCE_TYPE_LABELS = financeTypesData.reduce((acc, item) => {
 // Validation Status Cell Component
 function ValidationStatusCell({ transaction }: { transaction: Transaction }) {
   const { user } = useUser();
-  const isValidated = transaction.status === 'validated';
+  const isValidated = transaction.status === 'actual';
   const canValidate = user && getUserPermissions(user.role).canValidateActivities;
   
   return (
@@ -346,20 +345,21 @@ export default function TransactionList({
       : "USD";
     
     try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: safeCurrency,
+      // Format number with commas
+      const formattedValue = new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       }).format(value);
+      
+      // Return format: "EUR 3,000"
+      return `${safeCurrency} ${formattedValue}`;
     } catch (error) {
       console.warn(`[TransactionList] Invalid currency "${curr}", using USD:`, error);
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: "USD",
+      const formattedValue = new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       }).format(value);
+      return `USD ${formattedValue}`;
     }
   };
 
@@ -413,62 +413,12 @@ export default function TransactionList({
           </div>
         </CardHeader>
         <CardContent>
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Incoming</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {formatCurrency(summary.totalIncoming)}
-                    </p>
-                  </div>
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Outgoing</p>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {formatCurrency(summary.totalOutgoing)}
-                    </p>
-                  </div>
-                  <TrendingDown className="h-4 w-4 text-blue-600" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Commitments</p>
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(summary.commitments)}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Disbursements</p>
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(summary.disbursements)}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Financial Summary Cards - Unified component */}
+          {activityId && (
+            <div className="mb-6">
+              <FinancialSummaryCards activityId={activityId} />
+            </div>
+          )}
 
           {/* Transactions Table */}
           {transactions.length === 0 ? (
@@ -490,57 +440,57 @@ export default function TransactionList({
           ) : (
             <div className="rounded-md border">
               <Table>
-                <TableHeader className="bg-muted/50 border-b border-border">
+                <TableHeader className="bg-muted/50 border-b border-border/70">
                   <TableRow>
-                    <TableHead 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
-                      onClick={() => handleSort('transaction_date')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span>Date</span>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                      <div 
+                        className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
+                        onClick={() => handleSort('transaction_date')}
+                      >
+                        Date
                         {getSortIcon('transaction_date')}
                       </div>
                     </TableHead>
-                    <TableHead 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
-                      onClick={() => handleSort('transaction_type')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span>Type</span>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                      <div 
+                        className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
+                        onClick={() => handleSort('transaction_type')}
+                      >
+                        Type
                         {getSortIcon('transaction_type')}
                       </div>
                     </TableHead>
-                    <TableHead className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Aid Type</TableHead>
-                    <TableHead className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Finance Type</TableHead>
-                    <TableHead 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
-                      onClick={() => handleSort('provider_org_name')}
-                    >
-                      <div className="flex items-center gap-1">
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">Aid Type</TableHead>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">Finance Type</TableHead>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                      <div 
+                        className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
+                        onClick={() => handleSort('provider_org_name')}
+                      >
                         Provider
                         {getSortIcon('provider_org_name')}
                       </div>
                     </TableHead>
-                    <TableHead 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
-                      onClick={() => handleSort('receiver_org_name')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span>Receiver</span>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                      <div 
+                        className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
+                        onClick={() => handleSort('receiver_org_name')}
+                      >
+                        Receiver
                         {getSortIcon('receiver_org_name')}
                       </div>
                     </TableHead>
-                    <TableHead 
-                      className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
-                      onClick={() => handleSort('value')}
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        <span>Reported Value</span>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+                      <div 
+                        className="flex items-center justify-end gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
+                        onClick={() => handleSort('value')}
+                      >
+                        Reported Value
                         {getSortIcon('value')}
                       </div>
                     </TableHead>
-                    <TableHead className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground">USD Value</TableHead>
-                    <TableHead className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-16 px-2">
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">USD Value</TableHead>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center w-16">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
@@ -552,8 +502,8 @@ export default function TransactionList({
                         </Tooltip>
                       </TooltipProvider>
                     </TableHead>
-                    <TableHead className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-10 px-2">Validation Status</TableHead>
-                    {!readOnly && <TableHead className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[50px]"></TableHead>}
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center w-10">Validation Status</TableHead>
+                    {!readOnly && <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center w-[50px]"></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -568,52 +518,76 @@ export default function TransactionList({
                     return (
                     <TableRow 
                       key={transaction.uuid || transaction.id} 
-                      className={`hover:bg-gray-50 ${!transaction.created_by ? 'bg-blue-50/50' : ''}`}
+                      className={`border-b border-border/40 hover:bg-muted/30 transition-colors ${!transaction.created_by ? 'bg-blue-50/50' : ''}`}
                       onClick={(e) => {
                         // Prevent any row click navigation
                         e.stopPropagation();
                         e.preventDefault();
                       }}
                     >
-                      <TableCell className="font-medium">
+                      <TableCell className="py-3 px-4 font-medium">
                         {format(new Date(transaction.transaction_date), 'MMM d, yyyy')}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-3 px-4">
                         <span className={`font-medium ${getTransactionTypeColor(transaction.transaction_type)}`}>
                           {TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}
                         </span>
                       </TableCell>
-                      <TableCell>
-                        {transaction.aid_type || <span className="text-gray-400">-</span>}
+                      <TableCell className="py-3 px-4">
+                        <span className="font-medium">{transaction.aid_type || <span className="text-gray-400 font-normal">-</span>}</span>
                       </TableCell>
-                      <TableCell>
-                        {transaction.finance_type ? (
-                          FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
+                      <TableCell className="py-3 px-4">
+                        <span className="font-medium">
+                          {transaction.finance_type ? (
+                            FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type
+                          ) : (
+                            <span className="text-gray-400 font-normal">-</span>
+                          )}
+                        </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-3 px-4">
                         <div className="max-w-[200px]">
-                          <p className="truncate text-base">
+                          <p className="truncate text-sm font-medium">
                             {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name) || <span className="text-gray-400 font-normal">Not specified</span>}
                           </p>
                           {transaction.provider_org_ref && (
                             <p className="text-xs text-gray-500 truncate">{transaction.provider_org_ref}</p>
                           )}
+                          {transaction.provider_activity_uuid && transaction.provider_org_activity_id && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                </svg>
+                                Activity
+                              </span>
+                              <span className="text-xs text-gray-500 truncate">{transaction.provider_org_activity_id}</span>
+                            </div>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-3 px-4">
                         <div className="max-w-[200px]">
-                          <p className="truncate text-base">
+                          <p className="truncate text-sm font-medium">
                             {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name) || <span className="text-gray-400 font-normal">Not specified</span>}
                           </p>
                           {transaction.receiver_org_ref && (
                             <p className="text-xs text-gray-500 truncate">{transaction.receiver_org_ref}</p>
                           )}
+                          {transaction.receiver_activity_uuid && transaction.receiver_org_activity_id && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                </svg>
+                                Activity
+                              </span>
+                              <span className="text-xs text-gray-500 truncate">{transaction.receiver_org_activity_id}</span>
+                            </div>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="py-3 px-4 text-right">
                         {transaction.value > 0 ? (
                           <TransactionValueDisplay
                             transaction={{
@@ -635,24 +609,24 @@ export default function TransactionList({
                           <span className="text-red-600">Invalid</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="py-3 px-4 text-right">
                         {(transaction as any).value_usd != null ? (
                           <span>{formatCurrency((transaction as any).value_usd, 'USD')}</span>
                         ) : (
                           <span className="text-gray-400">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-center w-16 px-2">
+                      <TableCell className="py-3 px-4 text-center w-16">
                         <TransactionDocumentIndicator 
                           transactionId={transaction.uuid || transaction.id} 
                           compactView={true}
                         />
                       </TableCell>
-                      <TableCell className="text-center w-10 px-2">
+                      <TableCell className="py-3 px-4 text-center w-10">
                         <ValidationStatusCell transaction={transaction} />
                       </TableCell>
                       {!readOnly && (
-                        <TableCell>
+                        <TableCell className="py-3 px-4 text-center">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
