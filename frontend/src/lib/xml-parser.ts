@@ -243,6 +243,18 @@ interface ParsedActivity {
       name?: string;
     };
   }>;
+  
+  // Country Budget Items
+  countryBudgetItems?: Array<{
+    vocabulary?: string;
+    budgetItems?: Array<{
+      code?: string;
+      percentage?: number;
+      description?: {
+        [lang: string]: string;
+      };
+    }>;
+  }>;
 }
 
 export class IATIXMLParser {
@@ -1376,6 +1388,64 @@ export class IATIXMLParser {
         }
 
         result.plannedDisbursements.push(disbursementData);
+      }
+    }
+
+    // === COUNTRY BUDGET ITEMS ===
+    
+    const countryBudgetItemsElements = activity.querySelectorAll('country-budget-items');
+    if (countryBudgetItemsElements.length > 0) {
+      result.countryBudgetItems = [];
+      for (let i = 0; i < countryBudgetItemsElements.length; i++) {
+        const cbiElement = countryBudgetItemsElements[i];
+        const vocabulary = cbiElement.getAttribute('vocabulary');
+        
+        if (!vocabulary) continue;
+        
+        const budgetItemElements = cbiElement.querySelectorAll('budget-item');
+        const budgetItems: any[] = [];
+        
+        for (let j = 0; j < budgetItemElements.length; j++) {
+          const budgetItem = budgetItemElements[j];
+          const code = budgetItem.getAttribute('code');
+          const percentageStr = budgetItem.getAttribute('percentage');
+          const percentage = percentageStr ? parseFloat(percentageStr) : undefined;
+          
+          // Extract multi-language descriptions
+          const descriptionElement = budgetItem.querySelector('description');
+          let description: { [lang: string]: string } = {};
+          
+          if (descriptionElement) {
+            const narratives = descriptionElement.querySelectorAll('narrative');
+            if (narratives.length > 0) {
+              for (let k = 0; k < narratives.length; k++) {
+                const narrative = narratives[k];
+                const lang = narrative.getAttribute('xml:lang') || 'en';
+                const text = narrative.textContent?.trim();
+                if (text) {
+                  description[lang] = text;
+                }
+              }
+            } else {
+              // If no narrative elements, try to get direct text content
+              const directText = descriptionElement.textContent?.trim();
+              if (directText) {
+                description['en'] = directText;
+              }
+            }
+          }
+          
+          budgetItems.push({
+            code,
+            percentage,
+            description: Object.keys(description).length > 0 ? description : undefined
+          });
+        }
+        
+        result.countryBudgetItems.push({
+          vocabulary,
+          budgetItems
+        });
       }
     }
 

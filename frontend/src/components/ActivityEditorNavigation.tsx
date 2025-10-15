@@ -102,6 +102,7 @@ export default function ActivityEditorNavigation({
       title: "Strategic Alignment",
       sections: [
         { id: "sdg", label: "SDG Alignment" },
+        { id: "country-budget", label: "Budget Mapping" },
         { id: "tags", label: "Tags" },
         { id: "working_groups", label: "Working Groups" },
         { id: "policy_markers", label: "Policy Markers" }
@@ -183,7 +184,7 @@ export default function ActivityEditorNavigation({
                         <span>{section.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {(section.id === 'contributors' || section.id === 'organisations' || section.id === 'contacts' || section.id === 'finances' || section.id === 'capital-spend') ? (
+                        {(section.id === 'contributors' || section.id === 'organisations' || section.id === 'contacts' || section.id === 'finances' || section.id === 'capital-spend' || section.id === 'country-budget') ? (
                           <StableTabCompletionIndicator 
                             tabId={section.id}
                             currentStatus={tabCompletionStatus[section.id] ? {

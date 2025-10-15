@@ -1974,6 +1974,85 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      // === COUNTRY BUDGET ITEMS TAB ===
+      
+      if (parsedActivity.countryBudgetItems && parsedActivity.countryBudgetItems.length > 0) {
+        parsedActivity.countryBudgetItems.forEach((cbi, cbiIndex) => {
+          // Validation checks
+          const warnings = [];
+          const vocabulary = cbi.vocabulary || '';
+          
+          // Vocabulary validation
+          const validVocabularies = ['1', '2', '3', '4', '5'];
+          if (!vocabulary) {
+            warnings.push('Missing vocabulary');
+          } else if (!validVocabularies.includes(vocabulary)) {
+            warnings.push(`Invalid vocabulary: ${vocabulary}`);
+          }
+          
+          // Budget items validation
+          if (!cbi.budgetItems || cbi.budgetItems.length === 0) {
+            warnings.push('No budget items');
+          } else {
+            cbi.budgetItems.forEach((item, itemIndex) => {
+              if (!item.code) {
+                warnings.push(`Item ${itemIndex + 1}: Missing code`);
+              }
+              if (item.percentage === undefined || item.percentage === null) {
+                warnings.push(`Item ${itemIndex + 1}: Missing percentage`);
+              } else {
+                if (item.percentage < 0 || item.percentage > 100) {
+                  warnings.push(`Item ${itemIndex + 1}: Invalid percentage (${item.percentage}%)`);
+                }
+              }
+            });
+          }
+          
+          // Vocabulary labels
+          const vocabularyLabels: Record<string, string> = {
+            '1': 'IATI (withdrawn)',
+            '2': 'Country Chart of Accounts',
+            '3': 'Other Country System',
+            '4': 'Reporting Organisation',
+            '5': 'Other'
+          };
+          
+          const vocabularyLabel = vocabularyLabels[vocabulary] || `Vocabulary ${vocabulary}`;
+          
+          // Create summary
+          const itemsCount = cbi.budgetItems?.length || 0;
+          const percentageSum = cbi.budgetItems?.reduce((sum, item) => sum + (item.percentage || 0), 0) || 0;
+          const itemsSummary = cbi.budgetItems?.map(item => 
+            `${item.code} (${item.percentage}%)`
+          ).join(', ') || '';
+          
+          const cbiSummary = [
+            `Vocabulary: ${vocabularyLabel}`,
+            `Items: ${itemsCount}`,
+            `Total: ${percentageSum.toFixed(2)}%`,
+            itemsSummary && `Codes: ${itemsSummary}`
+          ].filter(Boolean).join(' | ');
+          
+          const description = warnings.length > 0
+            ? `Budget Mapping ${cbiIndex + 1} - ${warnings.join(', ')}`
+            : `Budget Mapping ${cbiIndex + 1} - Valid ✓`;
+          
+          fields.push({
+            fieldName: `Budget Mapping ${cbiIndex + 1}`,
+            iatiPath: `iati-activity/country-budget-items[${cbiIndex + 1}]`,
+            currentValue: null,
+            importValue: cbiSummary,
+            selected: warnings.length === 0, // Auto-select if valid
+            hasConflict: warnings.length > 0,
+            tab: 'country-budget',
+            description,
+            itemType: 'countryBudgetItems',
+            itemIndex: cbiIndex,
+            itemData: cbi
+          });
+        });
+      }
+
       // === TRANSACTIONS TAB ===
       
       if (parsedActivity.transactions && parsedActivity.transactions.length > 0) {
@@ -3029,6 +3108,27 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               // Handle individual policy marker import
               if (!updateData._importPolicyMarkers) updateData._importPolicyMarkers = [];
               updateData._importPolicyMarkers.push(field.policyMarkerData);
+            } else if (field.fieldName.startsWith('Budget Mapping ')) {
+              // NOTE: This MUST come BEFORE 'Budget ' check since "Budget Mapping" starts with "Budget"
+              // Collect country budget items data for import
+              if (!updateData.importedCountryBudgetItems) updateData.importedCountryBudgetItems = [];
+              const cbiIndex = parseInt(field.fieldName.split(' ')[2]) - 1;
+              if (parsedActivity.countryBudgetItems && parsedActivity.countryBudgetItems[cbiIndex]) {
+                const budgetMapping = parsedActivity.countryBudgetItems[cbiIndex];
+                updateData.importedCountryBudgetItems.push(budgetMapping);
+                console.log(`[XML Import] ✅ Adding budget mapping ${cbiIndex + 1} for import:`, {
+                  vocabulary: budgetMapping.vocabulary,
+                  budgetItemsCount: budgetMapping.budgetItems?.length || 0,
+                  budgetMapping
+                });
+              } else {
+                console.error(`[XML Import] ❌ Budget mapping ${cbiIndex + 1} not found in parsed activity!`, {
+                  cbiIndex,
+                  availableCount: parsedActivity.countryBudgetItems?.length || 0,
+                  parsedActivity: parsedActivity.countryBudgetItems
+                });
+              }
+              console.log(`[XML Import] Total budget mappings queued: ${updateData.importedCountryBudgetItems?.length || 0}`);
             } else if (field.fieldName.startsWith('Budget ')) {
               // Collect budget data for import
               if (!updateData.importedBudgets) updateData.importedBudgets = [];
@@ -3080,6 +3180,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // Make API call to update the activity
       console.log('[XML Import] Making API call with data:', updateData);
       console.log('[XML Import] API URL:', `/api/activities/${activityId}`);
+      
+      // Log budget mapping data specifically if present
+      if (updateData.importedCountryBudgetItems) {
+        console.log('[XML Import] 🎯 Budget Mapping Data Being Sent:', {
+          count: updateData.importedCountryBudgetItems.length,
+          items: updateData.importedCountryBudgetItems
+        });
+      }
       
       const response = await fetch(`/api/activities/${activityId}`, {
         method: 'PATCH',
@@ -4442,7 +4550,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       'sectors': 'Sectors',
       'partners': 'Partners',
       'contacts': 'Contacts',
-      'results': 'Results'
+      'results': 'Results',
+      'country-budget': 'Budget Mapping'
     };
 
     // Basic tabs that should be grouped under main General tab
@@ -4483,7 +4592,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     });
 
     return Array.from(tabMap.values()).sort((a, b) => {
-      const order = ['basic', 'partners', 'contacts', 'sectors', 'policy-markers', 'locations', 'finances', 'results'];
+      const order = ['basic', 'partners', 'contacts', 'sectors', 'policy-markers', 'locations', 'finances', 'country-budget', 'results'];
       return order.indexOf(a.tabId) - order.indexOf(b.tabId);
     });
   };

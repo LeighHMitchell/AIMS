@@ -645,6 +645,120 @@ export async function PATCH(
       
       console.log('[AIMS API] Planned disbursements import complete:', disbursementImportResult);
     }
+
+    // Handle imported budget mappings
+    const countryBudgetImportResult: any = {};
+    if (body.importedCountryBudgetItems !== undefined && Array.isArray(body.importedCountryBudgetItems)) {
+      console.log('[AIMS API] 🎯 Processing imported budget mappings for activity:', id);
+      console.log('[AIMS API] 🎯 Imported budget mappings count:', body.importedCountryBudgetItems.length);
+      console.log('[AIMS API] 🎯 Imported budget mappings data:', JSON.stringify(body.importedCountryBudgetItems, null, 2));
+      
+      const validCountryBudgetItems = [];
+      const invalidCountryBudgetItems: Array<{ index: number; cbi: any; errors: string[] }> = [];
+      
+      body.importedCountryBudgetItems.forEach((cbi, index) => {
+        const errors = [];
+        
+        // Vocabulary validation
+        const validVocabularies = ['1', '2', '3', '4', '5'];
+        if (!cbi.vocabulary) {
+          errors.push('Missing vocabulary');
+        } else if (!validVocabularies.includes(cbi.vocabulary)) {
+          errors.push(`Invalid vocabulary: ${cbi.vocabulary}`);
+        }
+        
+        // Budget items validation
+        if (!cbi.budgetItems || cbi.budgetItems.length === 0) {
+          errors.push('No budget items provided');
+        } else {
+          cbi.budgetItems.forEach((item: any, itemIndex: number) => {
+            if (!item.code) {
+              errors.push(`Budget item ${itemIndex + 1}: Missing code`);
+            }
+            if (item.percentage === undefined || item.percentage === null) {
+              errors.push(`Budget item ${itemIndex + 1}: Missing percentage`);
+            } else {
+              if (item.percentage < 0 || item.percentage > 100) {
+                errors.push(`Budget item ${itemIndex + 1}: Invalid percentage (${item.percentage})`);
+              }
+            }
+          });
+        }
+        
+        if (errors.length > 0) {
+          invalidCountryBudgetItems.push({ index, cbi, errors });
+        } else {
+          validCountryBudgetItems.push(cbi);
+        }
+      });
+      
+      countryBudgetImportResult.total = body.importedCountryBudgetItems.length;
+      countryBudgetImportResult.imported = validCountryBudgetItems.length;
+      countryBudgetImportResult.skipped = invalidCountryBudgetItems.length;
+      countryBudgetImportResult.errors = invalidCountryBudgetItems.map(item => ({
+        index: item.index,
+        errors: item.errors
+      }));
+      
+      if (invalidCountryBudgetItems.length > 0) {
+        console.warn('[AIMS API] Some budget mappings failed validation:', invalidCountryBudgetItems);
+      }
+      
+      // Delete existing budget mappings for this activity (import replaces)
+      const { error: deleteError } = await getSupabaseAdmin()
+        .from('country_budget_items')
+        .delete()
+        .eq('activity_id', id);
+      
+      if (deleteError) {
+        console.error('[AIMS API] Error deleting existing budget mappings:', deleteError);
+        throw deleteError;
+      }
+      
+      // Insert new budget mappings
+      for (const cbi of validCountryBudgetItems) {
+        // Insert parent country_budget_items record
+        const { data: newCbi, error: cbiError } = await getSupabaseAdmin()
+          .from('country_budget_items')
+          .insert({
+            activity_id: id,
+            vocabulary: cbi.vocabulary
+          })
+          .select()
+          .single();
+        
+        if (cbiError || !newCbi) {
+          console.error('[AIMS API] ❌ Error inserting country_budget_items:', cbiError);
+          continue; // Skip to next
+        }
+        
+        console.log('[AIMS API] ✅ Successfully inserted country_budget_items:', newCbi.id);
+        
+        // Insert child budget_items records
+        if (cbi.budgetItems && cbi.budgetItems.length > 0) {
+          const budgetItemsToInsert = cbi.budgetItems.map((item: any) => ({
+            country_budget_items_id: newCbi.id,
+            code: item.code,
+            percentage: item.percentage,
+            description: item.description || null
+          }));
+          
+          console.log('[AIMS API] 📝 Inserting budget items:', budgetItemsToInsert);
+          
+          const { error: itemsError } = await getSupabaseAdmin()
+            .from('budget_items')
+            .insert(budgetItemsToInsert);
+          
+          if (itemsError) {
+            console.error('[AIMS API] ❌ Error inserting budget_items:', itemsError);
+          } else {
+            console.log('[AIMS API] ✅ Successfully inserted', budgetItemsToInsert.length, 'budget items');
+          }
+        }
+      }
+      
+      console.log('[AIMS API] 🎉 Budget mappings import complete:', countryBudgetImportResult);
+    }
     
     // Update activity updated_at timestamp only if no basic fields were updated
     if (Object.keys(activityFields).length === 0) {
@@ -665,6 +779,9 @@ export async function PATCH(
     }
     if (Object.keys(disbursementImportResult).length > 0) {
       response.plannedDisbursements = disbursementImportResult;
+    }
+    if (Object.keys(countryBudgetImportResult).length > 0) {
+      response.countryBudgetItems = countryBudgetImportResult;
     }
     
     return NextResponse.json(response);

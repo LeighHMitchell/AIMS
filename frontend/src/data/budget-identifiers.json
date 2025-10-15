@@ -1,0 +1,290 @@
+[
+  {
+    "code": "1.1.1",
+    "name": "Executive",
+    "description": "Executive level government functions",
+    "category": "1.1",
+    "categoryName": "Executive and legislative organs"
+  },
+  {
+    "code": "1.1.2",
+    "name": "Legislative",
+    "description": "Legislative level government functions",
+    "category": "1.1",
+    "categoryName": "Executive and legislative organs"
+  },
+  {
+    "code": "1.2.1",
+    "name": "Foreign affairs",
+    "description": "International relations and diplomacy",
+    "category": "1.2",
+    "categoryName": "Foreign affairs"
+  },
+  {
+    "code": "1.3.1",
+    "name": "General services",
+    "description": "General administrative services",
+    "category": "1.3",
+    "categoryName": "General services"
+  },
+  {
+    "code": "1.4.1",
+    "name": "Basic research",
+    "description": "Fundamental research activities",
+    "category": "1.4",
+    "categoryName": "Basic research"
+  },
+  {
+    "code": "2.1.1",
+    "name": "Military defence",
+    "description": "Armed forces and military operations",
+    "category": "2.1",
+    "categoryName": "Military defence"
+  },
+  {
+    "code": "2.2.1",
+    "name": "Civil defence",
+    "description": "Civil protection and emergency services",
+    "category": "2.2",
+    "categoryName": "Civil defence"
+  },
+  {
+    "code": "2.3.1",
+    "name": "Foreign military aid",
+    "description": "Military assistance to other countries",
+    "category": "2.3",
+    "categoryName": "Foreign military aid"
+  },
+  {
+    "code": "3.1.1",
+    "name": "Police services",
+    "description": "Law enforcement services",
+    "category": "3.1",
+    "categoryName": "Police services"
+  },
+  {
+    "code": "3.2.1",
+    "name": "Fire protection services",
+    "description": "Fire-fighting and prevention",
+    "category": "3.2",
+    "categoryName": "Fire protection services"
+  },
+  {
+    "code": "3.3.1",
+    "name": "Law courts",
+    "description": "Judicial system and courts",
+    "category": "3.3",
+    "categoryName": "Law courts"
+  },
+  {
+    "code": "3.4.1",
+    "name": "Prisons",
+    "description": "Correctional facilities",
+    "category": "3.4",
+    "categoryName": "Prisons"
+  },
+  {
+    "code": "4.1.1",
+    "name": "General economic, commercial and labour affairs",
+    "description": "Overall economic policy and planning",
+    "category": "4.1",
+    "categoryName": "General economic affairs"
+  },
+  {
+    "code": "4.2.1",
+    "name": "Agriculture, forestry, fishing and hunting",
+    "description": "Primary sector production activities",
+    "category": "4.2",
+    "categoryName": "Agriculture"
+  },
+  {
+    "code": "4.3.1",
+    "name": "Fuel and energy",
+    "description": "Energy production and distribution",
+    "category": "4.3",
+    "categoryName": "Fuel and energy"
+  },
+  {
+    "code": "4.4.1",
+    "name": "Mining, manufacturing and construction",
+    "description": "Industrial sector activities",
+    "category": "4.4",
+    "categoryName": "Mining and manufacturing"
+  },
+  {
+    "code": "4.5.1",
+    "name": "Transport",
+    "description": "Transportation infrastructure and services",
+    "category": "4.5",
+    "categoryName": "Transport"
+  },
+  {
+    "code": "4.6.1",
+    "name": "Communication",
+    "description": "Postal and telecommunications services",
+    "category": "4.6",
+    "categoryName": "Communication"
+  },
+  {
+    "code": "5.1.1",
+    "name": "Environmental protection",
+    "description": "Conservation and pollution control",
+    "category": "5.1",
+    "categoryName": "Environmental protection"
+  },
+  {
+    "code": "6.1.1",
+    "name": "Housing development",
+    "description": "Residential construction and planning",
+    "category": "6.1",
+    "categoryName": "Housing development"
+  },
+  {
+    "code": "6.2.1",
+    "name": "Community development",
+    "description": "Community services and facilities",
+    "category": "6.2",
+    "categoryName": "Community development"
+  },
+  {
+    "code": "6.3.1",
+    "name": "Water supply",
+    "description": "Water distribution systems",
+    "category": "6.3",
+    "categoryName": "Water supply"
+  },
+  {
+    "code": "7.1.1",
+    "name": "Medical products, appliances and equipment",
+    "description": "Healthcare supplies and equipment",
+    "category": "7.1",
+    "categoryName": "Medical products"
+  },
+  {
+    "code": "7.2.1",
+    "name": "Outpatient services",
+    "description": "Ambulatory healthcare services",
+    "category": "7.2",
+    "categoryName": "Outpatient services"
+  },
+  {
+    "code": "7.3.1",
+    "name": "Hospital services",
+    "description": "Inpatient medical care",
+    "category": "7.3",
+    "categoryName": "Hospital services"
+  },
+  {
+    "code": "7.4.1",
+    "name": "Public health services",
+    "description": "Disease prevention and health promotion",
+    "category": "7.4",
+    "categoryName": "Public health services"
+  },
+  {
+    "code": "8.1.1",
+    "name": "Recreation and sport",
+    "description": "Recreational services and sporting facilities",
+    "category": "8.1",
+    "categoryName": "Recreation and sport"
+  },
+  {
+    "code": "8.2.1",
+    "name": "Culture",
+    "description": "Cultural services and facilities",
+    "category": "8.2",
+    "categoryName": "Culture"
+  },
+  {
+    "code": "8.3.1",
+    "name": "Broadcasting and publishing services",
+    "description": "Media and information services",
+    "category": "8.3",
+    "categoryName": "Broadcasting and publishing"
+  },
+  {
+    "code": "9.1.1",
+    "name": "Pre-primary and primary education",
+    "description": "Early childhood and elementary education",
+    "category": "9.1",
+    "categoryName": "Pre-primary and primary education"
+  },
+  {
+    "code": "9.2.1",
+    "name": "Secondary education",
+    "description": "Middle and high school education",
+    "category": "9.2",
+    "categoryName": "Secondary education"
+  },
+  {
+    "code": "9.3.1",
+    "name": "Post-secondary non-tertiary education",
+    "description": "Advanced secondary level education",
+    "category": "9.3",
+    "categoryName": "Post-secondary non-tertiary education"
+  },
+  {
+    "code": "9.4.1",
+    "name": "Tertiary education",
+    "description": "Higher education and universities",
+    "category": "9.4",
+    "categoryName": "Tertiary education"
+  },
+  {
+    "code": "9.5.1",
+    "name": "Education not definable by level",
+    "description": "General or multi-level education programs",
+    "category": "9.5",
+    "categoryName": "Education not definable by level"
+  },
+  {
+    "code": "10.1.1",
+    "name": "Sickness and disability",
+    "description": "Benefits for illness and disability",
+    "category": "10.1",
+    "categoryName": "Sickness and disability"
+  },
+  {
+    "code": "10.2.1",
+    "name": "Old age",
+    "description": "Retirement and pension benefits",
+    "category": "10.2",
+    "categoryName": "Old age"
+  },
+  {
+    "code": "10.3.1",
+    "name": "Survivors",
+    "description": "Benefits for surviving dependents",
+    "category": "10.3",
+    "categoryName": "Survivors"
+  },
+  {
+    "code": "10.4.1",
+    "name": "Family and children",
+    "description": "Child and family support benefits",
+    "category": "10.4",
+    "categoryName": "Family and children"
+  },
+  {
+    "code": "10.5.1",
+    "name": "Unemployment",
+    "description": "Unemployment insurance and assistance",
+    "category": "10.5",
+    "categoryName": "Unemployment"
+  },
+  {
+    "code": "10.6.1",
+    "name": "Housing",
+    "description": "Housing assistance and subsidies",
+    "category": "10.6",
+    "categoryName": "Housing"
+  },
+  {
+    "code": "10.7.1",
+    "name": "Social exclusion not elsewhere classified",
+    "description": "General social assistance programs",
+    "category": "10.7",
+    "categoryName": "Social exclusion"
+  }
+]
+
