@@ -2795,6 +2795,22 @@ function NewActivityPageContent() {
             console.warn('[AIMS] Failed to load planned disbursements for tab completion:', error);
           }
 
+          // Fetch Forward Spend (FSS) for tab completion status
+          try {
+            const fssResponse = await fetch(`/api/activities/${activityId}/fss`);
+            if (fssResponse.ok) {
+              const fssData = await fssResponse.json();
+              const forecastCount = fssData?.forecasts?.length || 0;
+              setForwardSpendCount(forecastCount > 0 ? 1 : 0);
+              console.log('[AIMS] Loaded Forward Spend for tab completion:', forecastCount, 'forecasts');
+            } else {
+              setForwardSpendCount(0);
+            }
+          } catch (error) {
+            console.warn('[AIMS] Failed to load Forward Spend for tab completion:', error);
+            setForwardSpendCount(0);
+          }
+
           // Fetch transactions for tab completion status
           try {
             console.log('[AIMS] Fetching transactions for activityId:', activityId);

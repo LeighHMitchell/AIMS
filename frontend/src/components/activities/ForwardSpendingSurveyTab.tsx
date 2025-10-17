@@ -114,11 +114,9 @@ export default function ForwardSpendingSurveyTab({
         setFss(data);
         setForecasts(data.forecasts || []);
         console.log('[FSS Tab] Loaded FSS with', data.forecasts?.length || 0, 'forecasts');
-        onFssChange?.(data.forecasts?.length > 0 ? 1 : 0);
       } else {
         setFss(null);
         setForecasts([]);
-        onFssChange?.(0);
       }
     } catch (err) {
       console.error('[FSS Tab] Error fetching FSS:', err);
@@ -126,13 +124,23 @@ export default function ForwardSpendingSurveyTab({
     } finally {
       setLoading(false);
     }
-  }, [activityId, onFssChange]);
+  }, [activityId]);
 
   useEffect(() => {
     if (activityId) {
       fetchFssData();
     }
   }, [activityId, fetchFssData]);
+
+  // Notify parent component when forecasts change (only after initial load)
+  // This prevents the green tick from disappearing when switching tabs
+  useEffect(() => {
+    if (onFssChange && !loading) {
+      const count = forecasts.length > 0 ? 1 : 0;
+      console.log('[FSS Tab] Notifying parent with forecast count:', count);
+      onFssChange(count);
+    }
+  }, [forecasts, onFssChange, loading]);
 
   // Save FSS (extraction date, priority, phaseout year)
   const saveFss = async (updatedFss: Partial<ForwardSpendingSurvey>) => {
@@ -184,7 +192,6 @@ export default function ForwardSpendingSurveyTab({
 
       setFss(null);
       setForecasts([]);
-      onFssChange?.(0);
       toast.success('Forward Spending Survey deleted');
     } catch (err) {
       console.error('[FSS Tab] Error deleting FSS:', err);
@@ -376,7 +383,6 @@ export default function ForwardSpendingSurveyTab({
 
       toast.success(isNew ? 'Forecast added' : 'Forecast updated');
       closeForecastModal();
-      onFssChange?.(forecasts.length + (isNew ? 1 : 0));
     } catch (err: any) {
       console.error('[FSS Tab] Error saving forecast:', err);
       toast.error(err.message || 'Failed to save forecast');
@@ -402,7 +408,6 @@ export default function ForwardSpendingSurveyTab({
 
       setForecasts(prev => prev.filter(f => f.id !== forecastId));
       toast.success('Forecast deleted');
-      onFssChange?.(forecasts.length - 1);
     } catch (err) {
       console.error('[FSS Tab] Error deleting forecast:', err);
       toast.error('Failed to delete forecast');
