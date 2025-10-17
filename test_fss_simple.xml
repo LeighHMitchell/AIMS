@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>SIMPLE-FSS-001</iati-identifier>
+    <title>
+      <narrative>Simple FSS Test</narrative>
+    </title>
+    
+    <!--Simple FSS with 3 forecasts-->
+    <fss extraction-date="2025-01-15" priority="1" phaseout-year="2028">
+      <forecast year="2025" value-date="2025-01-01" currency="USD">100000</forecast>
+      <forecast year="2026" value-date="2025-01-01" currency="USD">120000</forecast>
+      <forecast year="2027" value-date="2025-01-01" currency="USD">150000</forecast>
+    </fss>
+    
+  </iati-activity>
+</iati-activities>
+

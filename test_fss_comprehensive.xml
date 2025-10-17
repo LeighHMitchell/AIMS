@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2025-01-16T12:00:00Z">
+  <iati-activity default-currency="USD" last-updated-datetime="2025-01-16T12:00:00Z">
+    
+    <!--Basic Info-->
+    <iati-identifier>TEST-FSS-001</iati-identifier>
+    
+    <title>
+      <narrative>Test Activity for Forward Spending Survey Import</narrative>
+    </title>
+    
+    <description type="1">
+      <narrative>This is a comprehensive test activity for validating IATI XML import of Forward Spending Survey (FSS) data with multiple forecast years and priority levels.</narrative>
+    </description>
+    
+    <activity-status code="2" />
+    
+    <!--Dates-->
+    <activity-date iso-date="2024-01-01" type="1" />
+    <activity-date iso-date="2024-01-15" type="2" />
+    <activity-date iso-date="2030-12-31" type="3" />
+    
+    <!--Participating Organizations-->
+    <participating-org role="1" type="10" ref="GB-GOV-1">
+      <narrative>UK Government - FCDO</narrative>
+    </participating-org>
+    
+    <!--Recipient Country-->
+    <recipient-country code="MM" percentage="100">
+      <narrative>Myanmar</narrative>
+    </recipient-country>
+    
+    <!--Sector-->
+    <sector vocabulary="1" code="15170" percentage="100">
+      <narrative>Women's equality organisations and institutions</narrative>
+    </sector>
+    
+    <!--fss starts - Valid FSS with Multiple Forecasts-->
+    <fss extraction-date="2025-01-15" priority="1" phaseout-year="2030">
+      <forecast year="2025" value-date="2025-01-01" currency="GBP">250000</forecast>
+      <forecast year="2026" value-date="2025-01-01" currency="GBP">300000</forecast>
+      <forecast year="2027" value-date="2025-01-01" currency="GBP">350000</forecast>
+      <forecast year="2028" value-date="2025-01-01" currency="USD">400000</forecast>
+      <forecast year="2029" value-date="2025-01-01" currency="EUR">200000</forecast>
+      <forecast year="2030" value-date="2025-01-01" currency="GBP">150000</forecast>
+    </fss>
+    <!--fss ends-->
+    
+  </iati-activity>
+  
+  <!-- Test Case 2: FSS with Different Priority Levels -->
+  <iati-activity default-currency="EUR">
+    <iati-identifier>TEST-FSS-002</iati-identifier>
+    <title>
+      <narrative>Medium Priority FSS Example</narrative>
+    </title>
+    
+    <fss extraction-date="2025-02-01" priority="2" phaseout-year="2028">
+      <forecast year="2025" value-date="2025-02-01" currency="EUR">100000</forecast>
+      <forecast year="2026" value-date="2025-02-01" currency="EUR">120000</forecast>
+      <forecast year="2027" value-date="2025-02-01" currency="EUR">80000</forecast>
+    </fss>
+  </iati-activity>
+  
+  <!-- Test Case 3: FSS with Low Priority -->
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-FSS-003</iati-identifier>
+    <title>
+      <narrative>Low Priority FSS Example</narrative>
+    </title>
+    
+    <fss extraction-date="2025-03-01" priority="3" phaseout-year="2027">
+      <forecast year="2025" value-date="2025-03-01" currency="USD">50000</forecast>
+      <forecast year="2026" value-date="2025-03-01" currency="USD">60000</forecast>
+    </fss>
+  </iati-activity>
+  
+  <!-- Test Case 4: FSS without Priority (optional field) -->
+  <iati-activity default-currency="GBP">
+    <iati-identifier>TEST-FSS-004</iati-identifier>
+    <title>
+      <narrative>FSS without Priority Level</narrative>
+    </title>
+    
+    <fss extraction-date="2025-04-01" phaseout-year="2029">
+      <forecast year="2025" value-date="2025-04-01" currency="GBP">180000</forecast>
+      <forecast year="2026" value-date="2025-04-01" currency="GBP">190000</forecast>
+      <forecast year="2027" value-date="2025-04-01" currency="GBP">200000</forecast>
+      <forecast year="2028" value-date="2025-04-01" currency="GBP">210000</forecast>
+    </fss>
+  </iati-activity>
+  
+  <!-- Test Case 5: FSS without Phaseout Year (optional field) -->
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-FSS-005</iati-identifier>
+    <title>
+      <narrative>FSS without Phaseout Year</narrative>
+    </title>
+    
+    <fss extraction-date="2025-05-01" priority="1">
+      <forecast year="2025" value-date="2025-05-01" currency="USD">500000</forecast>
+      <forecast year="2026" value-date="2025-05-01" currency="USD">550000</forecast>
+      <forecast year="2027" value-date="2025-05-01" currency="USD">600000</forecast>
+    </fss>
+  </iati-activity>
+  
+  <!-- Test Case 6: Single Forecast Year -->
+  <iati-activity default-currency="EUR">
+    <iati-identifier>TEST-FSS-006</iati-identifier>
+    <title>
+      <narrative>FSS with Single Forecast Year</narrative>
+    </title>
+    
+    <fss extraction-date="2025-06-01" priority="4" phaseout-year="2026">
+      <forecast year="2025" value-date="2025-06-01" currency="EUR">75000</forecast>
+    </fss>
+  </iati-activity>
+  
+  <!-- Test Case 7: Uncertain Priority Level -->
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-FSS-007</iati-identifier>
+    <title>
+      <narrative>FSS with Uncertain Priority</narrative>
+    </title>
+    
+    <fss extraction-date="2025-07-01" priority="5" phaseout-year="2027">
+      <forecast year="2025" value-date="2025-07-01" currency="USD">30000</forecast>
+      <forecast year="2026" value-date="2025-07-01" currency="USD">25000</forecast>
+    </fss>
+  </iati-activity>
+  
+  <!-- Test Case 8: Long-term FSS (10 years) -->
+  <iati-activity default-currency="GBP">
+    <iati-identifier>TEST-FSS-008</iati-identifier>
+    <title>
+      <narrative>Long-term FSS with 10-year Forecasts</narrative>
+    </title>
+    
+    <fss extraction-date="2025-08-01" priority="1" phaseout-year="2035">
+      <forecast year="2025" value-date="2025-08-01" currency="GBP">100000</forecast>
+      <forecast year="2026" value-date="2025-08-01" currency="GBP">110000</forecast>
+      <forecast year="2027" value-date="2025-08-01" currency="GBP">120000</forecast>
+      <forecast year="2028" value-date="2025-08-01" currency="GBP">130000</forecast>
+      <forecast year="2029" value-date="2025-08-01" currency="GBP">140000</forecast>
+      <forecast year="2030" value-date="2025-08-01" currency="GBP">150000</forecast>
+      <forecast year="2031" value-date="2025-08-01" currency="GBP">160000</forecast>
+      <forecast year="2032" value-date="2025-08-01" currency="GBP">170000</forecast>
+      <forecast year="2033" value-date="2025-08-01" currency="GBP">180000</forecast>
+      <forecast year="2034" value-date="2025-08-01" currency="GBP">190000</forecast>
+    </fss>
+  </iati-activity>
+  
+</iati-activities>
+

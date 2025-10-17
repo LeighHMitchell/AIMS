@@ -255,6 +255,25 @@ interface ParsedActivity {
       };
     }>;
   }>;
+  
+  // Related Activities
+  relatedActivities?: Array<{
+    ref?: string; // IATI identifier of the related activity
+    type?: string; // IATI relationship type (1=Parent, 2=Child, 3=Sibling, 4=Co-funded, 5=Third Party)
+  }>;
+  
+  // Forward Spending Survey
+  fss?: {
+    extractionDate?: string;
+    priority?: number;
+    phaseoutYear?: number;
+    forecasts?: Array<{
+      year?: string;
+      valueDate?: string;
+      currency?: string;
+      value?: number;
+    }>;
+  };
 }
 
 export class IATIXMLParser {
@@ -1446,6 +1465,59 @@ export class IATIXMLParser {
           vocabulary,
           budgetItems
         });
+      }
+    }
+
+    // === RELATED ACTIVITIES ===
+    
+    const relatedActivityElements = activity.querySelectorAll('related-activity');
+    if (relatedActivityElements.length > 0) {
+      result.relatedActivities = [];
+      console.log('[XML Parser] Found related activities:', relatedActivityElements.length);
+      
+      for (let i = 0; i < relatedActivityElements.length; i++) {
+        const relatedElement = relatedActivityElements[i];
+        const ref = relatedElement.getAttribute('ref');
+        const type = relatedElement.getAttribute('type');
+        
+        if (ref && type) {
+          result.relatedActivities.push({
+            ref: ref.trim(),
+            type: type.trim()
+          });
+          console.log(`[XML Parser] Related activity: ref="${ref}", type="${type}"`);
+        } else {
+          console.warn('[XML Parser] Skipping related-activity with missing ref or type attribute');
+        }
+      }
+    }
+
+    // === FORWARD SPENDING SURVEY ===
+    
+    const fssElement = activity.querySelector('fss');
+    if (fssElement) {
+      console.log('[XML Parser] Found FSS element');
+      result.fss = {
+        extractionDate: fssElement.getAttribute('extraction-date') || undefined,
+        priority: fssElement.getAttribute('priority') 
+          ? parseInt(fssElement.getAttribute('priority')!) : undefined,
+        phaseoutYear: fssElement.getAttribute('phaseout-year') 
+          ? parseInt(fssElement.getAttribute('phaseout-year')!) : undefined,
+        forecasts: []
+      };
+
+      const forecasts = fssElement.querySelectorAll('forecast');
+      if (forecasts.length > 0) {
+        for (let i = 0; i < forecasts.length; i++) {
+          const forecast = forecasts[i];
+          result.fss.forecasts!.push({
+            year: forecast.getAttribute('year') || undefined,
+            valueDate: forecast.getAttribute('value-date') || undefined,
+            currency: forecast.getAttribute('currency') || undefined,
+            value: forecast.textContent ? parseFloat(forecast.textContent) : undefined
+          });
+        }
+        console.log('[XML Parser] Parsed', forecasts.length, 'FSS forecasts');
       }
     }
 

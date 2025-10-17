@@ -11,7 +11,6 @@ import ImprovedSectorAllocationForm from "@/components/activities/ImprovedSector
 import OrganisationsSection from "@/components/OrganisationsSection";
 import ContactsTab from "@/components/contacts/ContactsTab";
 import { GovernmentInputsSectionEnhanced } from "@/components/GovernmentInputsSectionEnhanced";
-import ContributorsSection from "@/components/ContributorsSection";
 import { AutosaveBannerUpload, AutosaveIconUpload } from "@/components/ui/autosave-upload";
 import { toast } from "sonner";
 import { Transaction } from "@/types/transaction";
@@ -93,6 +92,7 @@ import IatiLinkTab from "@/components/activities/IatiLinkTab";
 import XmlImportTab from "@/components/activities/XmlImportTab";
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab";
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab";
+import ForwardSpendingSurveyTab from "@/components/activities/ForwardSpendingSurveyTab";
 import { AidTypeSelect } from "@/components/forms/AidTypeSelect";
 import { ResultsTab } from "@/components/activities/ResultsTab";
 import { CapitalSpendTab } from "@/components/activities/CapitalSpendTab";
@@ -1583,7 +1583,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, contributors, setContributors, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setContributorsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, clearSavedFormData, loadedTabs }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, clearSavedFormData, loadedTabs }: any) {
   
   // OPTIMIZATION: Lazy loading - only render heavy components after tab has been visited
   // Removed the duplicate skeleton rendering logic here since the parent component
@@ -1645,14 +1645,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             />
         </div>
       );
-    case "contributors":
-      return <ContributorsSection 
-        contributors={contributors} 
-        onChange={setContributors} 
-        permissions={permissions}
-        activityId={general.id}
-        onContributorsChange={setContributorsCount}
-      />;
     case "organisations":
       return <OrganisationsSection
         activityId={general.id}
@@ -1660,11 +1652,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         implementingPartners={implementingPartners}
         governmentPartners={governmentPartners}
         fundingPartners={fundingPartners}
-        contributors={contributors}
         onParticipatingOrganizationsChange={setParticipatingOrgsCount}
-        onContributorAdd={(contributor) => {
-          setContributors((prev: ActivityContributor[]) => [...prev, contributor]);
-        }}
         onChange={(field, value) => {
           switch(field) {
             case 'extendingPartners':
@@ -1744,6 +1732,15 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         defaultCurrency={general.defaultCurrency || "USD"}
         readOnly={!permissions?.canEditActivity}
         onDisbursementsChange={handlePlannedDisbursementsChange}
+      />;
+    case "forward-spending-survey":
+      return <ForwardSpendingSurveyTab 
+        activityId={general.id}
+        readOnly={!permissions?.canEditActivity}
+        onFssChange={(count: number) => {
+          // Update completion status based on FSS data
+          console.log('[Activity Editor] FSS count changed:', count);
+        }}
       />;
     case "results":
       return <ResultsTab 
@@ -2017,8 +2014,6 @@ function NewActivityPageContent() {
   
   const [governmentInputs, setGovernmentInputs] = useState<any>({});
   
-  const [contributors, setContributors] = useState<any[]>([]);
-  
   const [sdgMappings, setSdgMappings] = useState<any[]>([]);
   
   const [tags, setTags] = useState<any[]>([]);
@@ -2053,7 +2048,6 @@ function NewActivityPageContent() {
   const [showComments, setShowComments] = useState(false);
   const [isCommentsDrawerOpen, setIsCommentsDrawerOpen] = useState(false);
   const [participatingOrgsCount, setParticipatingOrgsCount] = useState<number>(0);
-  const [contributorsCount, setContributorsCount] = useState<number>(0);
   const [linkedActivitiesCount, setLinkedActivitiesCount] = useState<number>(0);
   const [resultsCount, setResultsCount] = useState<number>(0);
   const [capitalSpendPercentage, setCapitalSpendPercentage] = useState<number | null>(null);
@@ -2076,11 +2070,6 @@ function NewActivityPageContent() {
   React.useEffect(() => {
     console.log('[NewActivityPage] participatingOrgsCount changed to:', participatingOrgsCount);
   }, [participatingOrgsCount]);
-
-  // Debug the contributorsCount changes
-  React.useEffect(() => {
-    console.log('[NewActivityPage] contributorsCount changed to:', contributorsCount);
-  }, [contributorsCount]);
 
   // Fetch participating organizations count on page load for tab completion
   React.useEffect(() => {
@@ -2105,31 +2094,6 @@ function NewActivityPageContent() {
     };
 
     fetchParticipatingOrgsCount();
-  }, [general.id]);
-
-  // Fetch contributors count on page load for tab completion
-  React.useEffect(() => {
-    const fetchContributorsCount = async () => {
-      if (!general.id) return;
-      
-      try {
-        console.log('[NewActivityPage] Fetching contributors count for tab completion...');
-        const response = await fetch(`/api/activities/${general.id}/contributors`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          const count = data.length || 0;
-          console.log('[NewActivityPage] Found', count, 'contributors for tab completion');
-          setContributorsCount(count);
-        } else {
-          console.log('[NewActivityPage] Failed to fetch contributors for tab completion');
-        }
-      } catch (error) {
-        console.error('[NewActivityPage] Error fetching contributors for tab completion:', error);
-      }
-    };
-
-    fetchContributorsCount();
   }, [general.id]);
 
   // Fetch linked activities count on page load for tab completion
@@ -2213,7 +2177,6 @@ function NewActivityPageContent() {
       governmentPartners,
       contacts,
       governmentInputs,
-      contributors,
       sdgMappings,
       tags,
       workingGroups,
@@ -2230,7 +2193,7 @@ function NewActivityPageContent() {
     saveFormData(formData);
   }, [
     general, sectors, transactions, extendingPartners, implementingPartners,
-    governmentPartners, contacts, governmentInputs, contributors, sdgMappings,
+    governmentPartners, contacts, governmentInputs, sdgMappings,
     tags, workingGroups, policyMarkers, specificLocations, coverageAreas,
     activityScope, budgets, plannedDisbursements, documents,
     subnationalBreakdowns, saveFormData
@@ -2387,7 +2350,6 @@ function NewActivityPageContent() {
       setGovernmentPartners([]);
       setContacts([]);
       setGovernmentInputs({});
-      setContributors([]);
       setSdgMappings([]);
       setTags([]);
       setWorkingGroups([]);
@@ -2754,7 +2716,6 @@ function NewActivityPageContent() {
             setContacts(data.contacts);
           }
           setGovernmentInputs(data.governmentInputs || {});
-          setContributors(data.contributors || []);
           console.log('[AIMS] Loaded SDG mappings:', data.sdgMappings?.length || 0, data.sdgMappings);
           setSdgMappings(data.sdgMappings || []);
           setTags(data.tags || []);
@@ -2970,7 +2931,6 @@ function NewActivityPageContent() {
       locations: "Activity Locations",
       subnational_breakdown: "Subnational Breakdown",
       organisations: "Participating Organisations",
-      contributors: "Activity Contributors",
       contacts: "Activity Contacts",
       linked_activities: "Linked Activities",
       finances: "Transactions",
@@ -2999,8 +2959,7 @@ function NewActivityPageContent() {
       iati: "This tab controls synchronisation with the IATI Registry and Datastore. Enabling sync ensures that updates made to the activity in this system are reflected in your published IATI file, maintaining consistency between internal records and the official public dataset.",
       locations: "This tab records where the activity takes place. You can add locations using the map or by entering coordinates manually. Each location can include a name, type, address, and description, along with subnational breakdowns. These details establish the geographic footprint of the activity and allow analysis at the national, regional, or project-site level.",
       sectors: "This tab defines the focus areas of the activity. You select sub-sectors, and the system automatically links each choice to its corresponding sector and sector category. You can assign multiple sub-sectors and use percentage shares to show how the activity budget is divided. The allocations must add up to 100 percent, and a visual summary displays the distribution.",
-      organisations: "This tab records the official roles of organisations involved in the activity. Participating organisations may be listed as extending partners, implementing partners, or government partners. Extending partners are entities that channel funds onward, implementing partners are responsible for delivering the activity, and government partners provide oversight or maintain responsibility under agreements such as MoUs. These roles define the structure of participation for reporting, while data entry permissions are managed separately in the Contributors tab.",
-      contributors: "The Contributors tab identifies organisations that are permitted to add or update information within the activity record. Contributors can enter their own financial transactions, results, and implementation details, but this does not alter their formal role in the activity, which is defined in the Organisations tab. Each contributor sees and manages only their own entries, while the activity creator and designated government validators retain visibility across all contributions.",
+      organisations: "This tab records the official roles of organisations involved in the activity. Participating organisations may be listed as extending partners, implementing partners, or government partners. Extending partners are entities that channel funds onward, implementing partners are responsible for delivering the activity, and government partners provide oversight or maintain responsibility under agreements such as MoUs. These roles define the structure of participation for reporting.",
       contacts: "The Contacts tab records key individuals associated with the activity, including their name, role, organisation, and contact details. It can also include a short narrative description of their responsibilities or function within the project. Adding contacts helps identify focal points for communication and coordination, while multiple entries allow both general enquiries and specific role-based contacts to be captured.",
       "linked_activities": "The Linked Activities tab shows connections between this activity and others, defined through recognised relationship types such as parent, child, or related projects. Each linked activity is displayed with its title, identifier, and reporting organisation, along with its relationship to the current activity. A relationship visualisation provides a clear overview of how activities are structured and connected across partners.",
       tags: "Add custom tags to categorise this activity and make it easier to find through search and reporting. You can click on any tag to edit it inline. When creating tags, use clear and specific terms, such as \"water-infrastructure\" instead of simply \"water,\" to ensure accuracy. Tags ignore letter cases and will always be saved in lowercase. For consistency, try to reuse existing tags whenever possible. Careful tagging not only improves searchability but also strengthens the quality of filtering and reporting across activities.",
@@ -3009,7 +2968,8 @@ function NewActivityPageContent() {
       documents: "You can drag and drop files into the upload area or click \"Choose Files\" to browse your computer. Supported formats include images (PNG, JPG, GIF), PDFs, Word documents, Excel sheets, and CSV files. Add a clear title and category so your uploads are easy to find later in the library.",
       "xml-import": "Import activity data from an IATI-compliant XML file. You can review and select which fields to import.",
       "capital-spend": "Capital expenditure represents the percentage of the total activity cost used for fixed assets or infrastructure (e.g., buildings, equipment, vehicles). This helps distinguish between capital investment and operational/recurrent costs.",
-      "conditions": "Conditions are requirements that must be met for the activity to proceed. They can be policy-related (requiring implementation of particular policies), performance-based (requiring achievement of specific outputs or outcomes), or fiduciary (requiring use of specific financial management measures)."
+      "conditions": "Conditions are requirements that must be met for the activity to proceed. They can be policy-related (requiring implementation of particular policies), performance-based (requiring achievement of specific outputs or outcomes), or fiduciary (requiring use of specific financial management measures).",
+      "country-budget": "Map activity budget to recipient country budget classifications."
     };
     return sectionHelpTexts[sectionId] || "Complete this section to provide additional details about your activity.";
   };
@@ -3017,7 +2977,7 @@ function NewActivityPageContent() {
   // Get permissions for current activity
   const permissions = getActivityPermissions(user, general.id ? { 
     ...general, 
-    contributors,
+    contributors: [],
     createdBy: general.createdBy 
   } as any : null);
 
@@ -3178,14 +3138,6 @@ function NewActivityPageContent() {
     );
     console.log('[TabCompletion] organizationsCompletion:', organizationsCompletion);
     
-    // Contributors tab: check if we have contributors
-    console.log('[TabCompletion] contributorsCount:', contributorsCount);
-    const contributorsCompletion = getTabCompletionStatus('contributors', 
-      // Create a mock array with the actual count from the contributors
-      Array(contributorsCount).fill({})
-    );
-    console.log('[TabCompletion] contributorsCompletion:', contributorsCompletion);
-    
     // Contacts tab: check if we have contacts
     const contactsCompletion = getTabCompletionStatus('contacts', contacts);
     
@@ -3257,11 +3209,7 @@ function NewActivityPageContent() {
         isComplete: organizationsCompletion.isComplete,
         isInProgress: organizationsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
-      contributors: contributorsCompletion ? { 
-        isComplete: contributorsCompletion.isComplete,
-        isInProgress: contributorsCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
-      contacts: contactsCompletion ? { 
+      contacts: contactsCompletion ? {
         isComplete: contactsCompletion.isComplete,
         isInProgress: contactsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
@@ -3314,12 +3262,12 @@ function NewActivityPageContent() {
         isInProgress: aidEffectivenessCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, sectors, getDateFieldStatus, sectorValidation, sectorsCompletionStatus, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, contributorsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, governmentInputs, contacts, countryBudgetItemsCount]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, sectorsCompletionStatus, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, governmentInputs, contacts, countryBudgetItemsCount]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
     const sections = [
-      "general", "iati", "xml-import", "sectors", "locations", "organisations", "contributors", "contacts", 
+      "general", "iati", "xml-import", "sectors", "locations", "organisations", "contacts", 
       "linked_activities",
       "finances", "budgets", "planned-disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
     ].filter(id => id !== "government" || showGovernmentInputs);
@@ -3331,7 +3279,7 @@ function NewActivityPageContent() {
   // Helper to get previous section id
   const getPreviousSection = useCallback((currentId: string) => {
     const sections = [
-      "general", "iati", "xml-import", "sectors", "locations", "organisations", "contributors", "contacts", 
+      "general", "iati", "xml-import", "sectors", "locations", "organisations", "contacts", 
       "linked_activities",
       "finances", "budgets", "planned-disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
     ].filter(id => id !== "government" || showGovernmentInputs);
@@ -3544,7 +3492,6 @@ function NewActivityPageContent() {
       title: "Stakeholders",
       sections: [
         { id: "organisations", label: "Participating Organisations" },
-        { id: "contributors", label: "Contributors" },
         { id: "contacts", label: "Contacts" },
         { id: "linked_activities", label: "Linked Activities" }
       ]
@@ -3555,6 +3502,7 @@ function NewActivityPageContent() {
         { id: "finances", label: "Financial Information" },
         { id: "budgets", label: "Budgets" },
         { id: "planned-disbursements", label: "Planned Disbursements" },
+        { id: "forward-spending-survey", label: "Forward Spending Survey" },
         { id: "results", label: "Results" },
         { id: "capital-spend", label: "Capital Spend" },
         { id: "financing-terms", label: "Financing Terms" },
@@ -3693,14 +3641,6 @@ function NewActivityPageContent() {
                         })()} on {general.createdAt ? format(new Date(general.createdAt), "d MMMM yyyy") : "Unknown date"}
                       </p>
                     </div>
-                    {contributors.filter(c => c.status === 'accepted').length > 0 && (
-                      <div>
-                        <span className="text-gray-500">Contributors:</span>
-                        <span className="ml-2 font-medium block">
-                          {contributors.filter(c => c.status === 'accepted').length} organization(s)
-                        </span>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -3862,8 +3802,6 @@ function NewActivityPageContent() {
                     updateContacts={setContacts}
                     governmentInputs={governmentInputs}
                     setGovernmentInputs={setGovernmentInputs}
-                    contributors={contributors}
-                    setContributors={setContributors}
                     sdgMappings={sdgMappings}
                     setSdgMappings={setSdgMappings}
                     tags={tags}
@@ -3913,7 +3851,6 @@ function NewActivityPageContent() {
                     subnationalBreakdowns={subnationalBreakdowns}
                     setSubnationalBreakdowns={setSubnationalBreakdowns}
                     setParticipatingOrgsCount={setParticipatingOrgsCount}
-                    setContributorsCount={setContributorsCount}
                     setLinkedActivitiesCount={setLinkedActivitiesCount}
                     setResultsCount={setResultsCount}
                     setCapitalSpendPercentage={setCapitalSpendPercentage}

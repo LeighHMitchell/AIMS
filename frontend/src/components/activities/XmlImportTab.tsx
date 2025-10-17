@@ -177,6 +177,8 @@ interface ParsedField {
     }>;
   }; // Conditions data from XML
   isLocationItem?: boolean; // True for location items
+  isFssItem?: boolean; // True for FSS import field
+  fssData?: any; // The actual FSS data object
 }
 
 interface TabSection {
@@ -1974,6 +1976,79 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      // === FORWARD SPENDING SURVEY ===
+      
+      if (parsedActivity.fss) {
+        const warnings = [];
+        
+        // Validation checks
+        if (!parsedActivity.fss.extractionDate) {
+          warnings.push('Missing extraction-date');
+        }
+        
+        if (parsedActivity.fss.priority) {
+          const priority = parseInt(parsedActivity.fss.priority.toString());
+          if (isNaN(priority) || priority < 1 || priority > 5) {
+            warnings.push(`⚠️ Invalid priority: ${parsedActivity.fss.priority} (must be 1-5)`);
+          }
+        }
+        
+        if (parsedActivity.fss.phaseoutYear) {
+          const year = parseInt(parsedActivity.fss.phaseoutYear.toString());
+          if (isNaN(year) || year < 2000 || year > 2100) {
+            warnings.push(`⚠️ Invalid phaseout year: ${parsedActivity.fss.phaseoutYear}`);
+          }
+        }
+        
+        // Forecast validation
+        if (!parsedActivity.fss.forecasts || parsedActivity.fss.forecasts.length === 0) {
+          warnings.push('⚠️ No forecasts');
+        } else {
+          parsedActivity.fss.forecasts.forEach((forecast, idx) => {
+            if (!forecast.year) warnings.push(`Forecast ${idx + 1}: Missing year`);
+            if (!forecast.value && forecast.value !== 0) warnings.push(`Forecast ${idx + 1}: Missing value`);
+            if (!forecast.currency) warnings.push(`Forecast ${idx + 1}: Missing currency`);
+          });
+        }
+        
+        // Priority label
+        const priorityLabels: Record<number, string> = {
+          1: 'High Priority',
+          2: 'Medium Priority',
+          3: 'Low Priority',
+          4: 'Very Low Priority',
+          5: 'Uncertain'
+        };
+        const priorityLabel = parsedActivity.fss.priority 
+          ? priorityLabels[parsedActivity.fss.priority] || `Priority ${parsedActivity.fss.priority}`
+          : '';
+        
+        // Create FSS summary
+        const fssSummary = [
+          parsedActivity.fss.extractionDate && `Extraction: ${parsedActivity.fss.extractionDate}`,
+          priorityLabel && `Priority: ${priorityLabel}`,
+          parsedActivity.fss.phaseoutYear && `Phaseout: ${parsedActivity.fss.phaseoutYear}`,
+          parsedActivity.fss.forecasts?.length && `${parsedActivity.fss.forecasts.length} forecast(s)`
+        ].filter(Boolean).join(' | ');
+        
+        const description = warnings.length > 0
+          ? `Forward Spending Survey - ${warnings.join(', ')}`
+          : 'Forward Spending Survey - IATI compliant ✓';
+        
+        fields.push({
+          fieldName: 'Forward Spending Survey',
+          iatiPath: 'iati-activity/fss',
+          currentValue: null,
+          importValue: fssSummary,
+          selected: warnings.length === 0,
+          hasConflict: false,
+          tab: 'forward-spending-survey',
+          description: description,
+          isFssItem: true,
+          fssData: parsedActivity.fss
+        });
+      }
+
       // === COUNTRY BUDGET ITEMS TAB ===
       
       if (parsedActivity.countryBudgetItems && parsedActivity.countryBudgetItems.length > 0) {
@@ -2678,6 +2753,34 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      // === LINKED ACTIVITIES TAB ===
+      
+      if (parsedActivity.relatedActivities && parsedActivity.relatedActivities.length > 0) {
+        // Get relationship type labels for display
+        const { getRelationshipTypeName } = await import('@/data/iati-relationship-types');
+        
+        parsedActivity.relatedActivities.forEach((relatedActivity: any, index: number) => {
+          const relationshipTypeLabel = getRelationshipTypeName(relatedActivity.type);
+          
+          fields.push({
+            fieldName: `Related Activity: ${relatedActivity.ref}`,
+            iatiPath: `iati-activity/related-activity[${index}]`,
+            currentValue: null, // Will be checked against existing linked activities during import
+            importValue: {
+              ref: relatedActivity.ref,
+              type: relatedActivity.type,
+              relationshipTypeLabel: relationshipTypeLabel
+            },
+            selected: true, // Default to selected since these are explicit relationships
+            hasConflict: false, // Will be determined during actual matching
+            tab: 'linked_activities',
+            description: `Related activity (${relationshipTypeLabel}): ${relatedActivity.ref}`
+          });
+        });
+        
+        console.log(`[XML Import] Found ${parsedActivity.relatedActivities.length} related activities`);
+      }
+
       // === CONTACTS TAB ===
 
       if (parsedActivity.contactInfo && parsedActivity.contactInfo.length > 0) {
@@ -3103,6 +3206,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               if (!updateData.importedParticipatingOrgs) updateData.importedParticipatingOrgs = [];
               updateData.importedParticipatingOrgs.push(field.importValue);
               console.log(`[XML Import] Adding participating organization for import:`, field.importValue);
+            } else if (field.fieldName.startsWith('Related Activity:')) {
+              // Collect related activity data for import
+              if (!updateData.importedRelatedActivities) updateData.importedRelatedActivities = [];
+              updateData.importedRelatedActivities.push(field.importValue);
+              console.log(`[XML Import] Adding related activity for import:`, field.importValue);
             } else
             if (field.fieldName.startsWith('Policy Marker:')) {
               // Handle individual policy marker import
@@ -3145,6 +3253,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 updateData.importedPlannedDisbursements.push(parsedActivity.plannedDisbursements[disbursementIndex]);
               }
               console.log(`[XML Import] Adding planned disbursement ${disbursementIndex + 1} for import`);
+            } else if (field.fieldName === 'Forward Spending Survey') {
+              // Collect FSS data for import
+              if (field.fssData) {
+                updateData.importedFss = field.fssData;
+                console.log('[XML Import] Adding FSS for import');
+              }
             } else if (field.fieldName.startsWith('Transaction ')) {
               // Collect transaction data for import
               if (!updateData.importedTransactions) updateData.importedTransactions = [];
@@ -4389,6 +4503,140 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           console.error('[XML Import] Participating organizations import error:', participatingOrgsError);
           toast.error('Failed to import participating organizations', {
             description: `An error occurred: ${participatingOrgsError.message}`
+          });
+        }
+      }
+
+      // Handle related activities import if any
+      if (updateData.importedRelatedActivities && updateData.importedRelatedActivities.length > 0) {
+        console.log('[XML Import] Processing related activities import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 95,
+          message: 'Importing related activities...'
+        });
+
+        try {
+          let successCount = 0;
+          let errorCount = 0;
+          let skippedCount = 0;
+
+          for (const relatedActivityData of updateData.importedRelatedActivities) {
+            try {
+              console.log('[XML Import] Processing related activity:', {
+                ref: relatedActivityData.ref,
+                type: relatedActivityData.type,
+                relationshipTypeLabel: relatedActivityData.relationshipTypeLabel
+              });
+
+              // First, try to find the activity by IATI identifier with comprehensive logging
+              const searchUrl = `/api/activities/search?q=${encodeURIComponent(relatedActivityData.ref)}`;
+              console.log(`[XML Import] Searching for activity with IATI ID: ${relatedActivityData.ref}`);
+              console.log(`[XML Import] Search URL: ${searchUrl}`);
+              
+              const findActivityResponse = await fetch(searchUrl);
+              
+              console.log(`[XML Import] Search API response status: ${findActivityResponse.status} ${findActivityResponse.statusText}`);
+              
+              if (!findActivityResponse.ok) {
+                console.error(`[XML Import] Search API failed for ${relatedActivityData.ref}:`, {
+                  status: findActivityResponse.status,
+                  statusText: findActivityResponse.statusText
+                });
+                skippedCount++;
+                continue;
+              }
+
+              const searchData = await findActivityResponse.json();
+              console.log(`[XML Import] Search response data:`, searchData);
+              
+              // Validate response structure
+              if (!searchData || typeof searchData !== 'object') {
+                console.error(`[XML Import] Invalid search response structure for ${relatedActivityData.ref}:`, searchData);
+                errorCount++;
+                continue;
+              }
+              
+              if (!Array.isArray(searchData.activities)) {
+                console.error(`[XML Import] Search response activities is not an array for ${relatedActivityData.ref}:`, searchData.activities);
+                errorCount++;
+                continue;
+              }
+              
+              const searchResults = searchData.activities;
+              console.log(`[XML Import] Found ${searchResults.length} matching activities`);
+              
+              if (searchResults.length > 0) {
+                console.log(`[XML Import] First match:`, {
+                  id: searchResults[0].id,
+                  title: searchResults[0].title_narrative,
+                  iatiId: searchResults[0].iati_identifier
+                });
+              }
+              
+              if (searchResults.length === 0) {
+                console.warn(`[XML Import] No activities found with IATI ID: ${relatedActivityData.ref}`);
+                skippedCount++;
+                continue;
+              }
+
+              const targetActivity = searchResults[0];
+              console.log(`[XML Import] Selected target activity:`, {
+                id: targetActivity.id,
+                title: targetActivity.title_narrative || 'Untitled'
+              });
+
+              // Create the relationship
+              const relationshipData = {
+                linkedActivityId: targetActivity.id,
+                relationshipType: relatedActivityData.type,
+                narrative: `Imported from XML - ${relatedActivityData.relationshipTypeLabel}`
+              };
+
+              const createResponse = await fetch(`/api/activities/${activityId}/linked`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(relationshipData)
+              });
+
+              if (createResponse.ok) {
+                console.log(`[XML Import] ✅ Successfully linked activity: ${relatedActivityData.ref}`);
+                successCount++;
+              } else {
+                const errorData = await createResponse.json().catch(() => ({}));
+                console.error(`[XML Import] Failed to create relationship:`, errorData);
+                errorCount++;
+              }
+
+            } catch (error) {
+              console.error(`[XML Import] Exception while searching for activity ${relatedActivityData.ref}:`, error);
+              errorCount++;
+            }
+          }
+
+          // Show results
+          if (successCount > 0) {
+            toast.success(`Related activities imported successfully`, {
+              description: `${successCount} relationship(s) created${skippedCount > 0 ? ` (${skippedCount} not found in database)` : ''}${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
+            });
+          }
+
+          if (skippedCount > 0 && successCount === 0) {
+            toast.warning('Some related activities were skipped', {
+              description: `${skippedCount} related activities were not found in the database. They may need to be imported first.`
+            });
+          }
+
+          if (errorCount > 0 && successCount === 0) {
+            toast.error('Failed to import related activities', {
+              description: `${errorCount} relationship(s) could not be created`
+            });
+          }
+
+        } catch (relatedActivitiesError: any) {
+          console.error('[XML Import] Related activities import error:', relatedActivitiesError);
+          toast.error('Failed to import related activities', {
+            description: `An error occurred: ${relatedActivitiesError.message}`
           });
         }
       }
