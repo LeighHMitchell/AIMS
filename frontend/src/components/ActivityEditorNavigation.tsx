@@ -91,7 +91,7 @@ export default function ActivityEditorNavigation({
         { id: "finances", label: "Transactions" },
         { id: "budgets", label: "Budgets" },
         { id: "planned-disbursements", label: "Planned Disbursements" },
-        { id: "forward-spending-survey", label: "Forward Spending Survey" },
+        { id: "forward-spending-survey", label: "Forward Spend" },
         { id: "results", label: "Results" },
         { id: "capital-spend", label: "Capital Spend" },
         { id: "financing-terms", label: "Financing Terms" },

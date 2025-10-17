@@ -2032,11 +2032,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         ].filter(Boolean).join(' | ');
         
         const description = warnings.length > 0
-          ? `Forward Spending Survey - ${warnings.join(', ')}`
-          : 'Forward Spending Survey - IATI compliant ✓';
+          ? `Forward Spend - ${warnings.join(', ')}`
+          : 'Forward Spend - IATI compliant ✓';
         
         fields.push({
-          fieldName: 'Forward Spending Survey',
+          fieldName: 'Forward Spend',
           iatiPath: 'iati-activity/fss',
           currentValue: null,
           importValue: fssSummary,
@@ -3253,7 +3253,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 updateData.importedPlannedDisbursements.push(parsedActivity.plannedDisbursements[disbursementIndex]);
               }
               console.log(`[XML Import] Adding planned disbursement ${disbursementIndex + 1} for import`);
-            } else if (field.fieldName === 'Forward Spending Survey') {
+            } else if (field.fieldName === 'Forward Spend') {
               // Collect FSS data for import
               if (field.fssData) {
                 updateData.importedFss = field.fssData;

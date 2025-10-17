@@ -1583,7 +1583,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, clearSavedFormData, loadedTabs }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs }: any) {
   
   // OPTIMIZATION: Lazy loading - only render heavy components after tab has been visited
   // Removed the duplicate skeleton rendering logic here since the parent component
@@ -1737,10 +1737,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       return <ForwardSpendingSurveyTab 
         activityId={general.id}
         readOnly={!permissions?.canEditActivity}
-        onFssChange={(count: number) => {
-          // Update completion status based on FSS data
-          console.log('[Activity Editor] FSS count changed:', count);
-        }}
+        onFssChange={setForwardSpendCount}
       />;
     case "results":
       return <ResultsTab 
@@ -2037,6 +2034,7 @@ function NewActivityPageContent() {
   const [budgets, setBudgets] = useState<any[]>([]);
   
   const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([]);
+  const [forwardSpendCount, setForwardSpendCount] = useState(0);
   
   const [documents, setDocuments] = useState<any[]>([]);
   
@@ -3093,6 +3091,10 @@ function NewActivityPageContent() {
     const plannedDisbursementsComplete = plannedDisbursements && plannedDisbursements.length > 0;
     console.log('[TabCompletion] Planned Disbursements:', { count: plannedDisbursements?.length || 0, complete: plannedDisbursementsComplete });
 
+    // Forward Spend tab: green check if FSS exists with forecasts
+    const forwardSpendComplete = forwardSpendCount > 0;
+    console.log('[TabCompletion] Forward Spend:', { count: forwardSpendCount, complete: forwardSpendComplete });
+
     // SDG tab: green check if at least one SDG goal is mapped
     const sdgComplete = sdgMappings && sdgMappings.length > 0;
 
@@ -3224,6 +3226,7 @@ function NewActivityPageContent() {
       } : { isComplete: false, isInProgress: false },
       budgets: { isComplete: budgetsComplete, isInProgress: false },
       "planned-disbursements": { isComplete: plannedDisbursementsComplete, isInProgress: false },
+      "forward-spending-survey": { isComplete: forwardSpendComplete, isInProgress: false },
       results: resultsCompletion ? { 
         isComplete: resultsCompletion.isComplete,
         isInProgress: resultsCompletion.isInProgress 
@@ -3262,7 +3265,7 @@ function NewActivityPageContent() {
         isInProgress: aidEffectivenessCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, sectors, getDateFieldStatus, sectorValidation, sectorsCompletionStatus, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, governmentInputs, contacts, countryBudgetItemsCount]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, sectorsCompletionStatus, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, governmentInputs, contacts, countryBudgetItemsCount]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -3502,7 +3505,7 @@ function NewActivityPageContent() {
         { id: "finances", label: "Financial Information" },
         { id: "budgets", label: "Budgets" },
         { id: "planned-disbursements", label: "Planned Disbursements" },
-        { id: "forward-spending-survey", label: "Forward Spending Survey" },
+        { id: "forward-spending-survey", label: "Forward Spend" },
         { id: "results", label: "Results" },
         { id: "capital-spend", label: "Capital Spend" },
         { id: "financing-terms", label: "Financing Terms" },
@@ -3857,6 +3860,7 @@ function NewActivityPageContent() {
                     setConditionsCount={setConditionsCount}
                     setFinancingTermsCount={setFinancingTermsCount}
                     setCountryBudgetItemsCount={setCountryBudgetItemsCount}
+                    setForwardSpendCount={setForwardSpendCount}
                     clearSavedFormData={clearSavedFormData}
                     loadedTabs={loadedTabs}
                   />
