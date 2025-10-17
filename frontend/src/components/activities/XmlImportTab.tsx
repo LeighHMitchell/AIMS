@@ -3613,6 +3613,45 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         }
       }
 
+      // Handle FSS import if any
+      if (updateData.importedFss) {
+        console.log('[XML Import] Processing FSS import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 85,
+          message: 'Importing Forward Spending Survey...'
+        });
+
+        try {
+          const fssResponse = await fetch(`/api/activities/${activityId}/import-fss`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ fssData: updateData.importedFss }),
+          });
+
+          if (!fssResponse.ok) {
+            const errorData = await fssResponse.json();
+            console.error('[XML Import] FSS import API error:', errorData);
+            toast.error('Failed to import Forward Spending Survey', {
+              description: errorData.error || 'Could not import FSS data. Main activity data was imported successfully.'
+            });
+          } else {
+            const successData = await fssResponse.json();
+            console.log('[XML Import] FSS imported successfully:', successData);
+            toast.success(`Forward Spending Survey imported successfully`, {
+              description: `${successData.imported_forecasts} forecast(s) added to the activity`
+            });
+          }
+        } catch (fssError) {
+          console.error('[XML Import] FSS import network error:', fssError);
+          toast.error('Failed to import FSS', {
+            description: 'Network error occurred while importing FSS. Please check your connection and try again.'
+          });
+        }
+      }
+
       // Handle contacts import if any
       if (updateData.importedContacts && updateData.importedContacts.length > 0) {
         console.log('[XML Import] Processing contacts import...');
