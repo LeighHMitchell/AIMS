@@ -15,6 +15,8 @@ import { TRANSACTION_TYPE_LABELS, Transaction } from "@/types/transaction";
 import TransactionModal from "@/components/TransactionModal";
 import { TransactionsListSkeleton } from "@/components/skeletons";
 import { useCurrencyConverter } from "@/hooks/useCurrencyConverter";
+import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
+import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 
 type FilterState = {
   transactionType: string;
@@ -39,6 +41,11 @@ export default function TransactionsPage() {
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [activityPartnerId, setActivityPartnerId] = useState<string | null>(null);
+  
+  // Bulk selection state
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   
   const [filters, setFilters] = useState<FilterState>({
     transactionType: "all",
@@ -311,6 +318,65 @@ export default function TransactionsPage() {
     }
   };
 
+  // Bulk selection handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = sortedTransactions.map(t => t.uuid || t.id).filter(Boolean);
+      setSelectedTransactionIds(new Set(allIds));
+    } else {
+      setSelectedTransactionIds(new Set());
+    }
+  };
+
+  const handleSelectTransaction = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedTransactionIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedTransactionIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedArray = Array.from(selectedTransactionIds);
+    if (selectedArray.length === 0) return;
+    
+    setShowBulkDeleteDialog(false);
+    setIsBulkDeleting(true);
+    
+    try {
+      // Optimistic update - remove from UI immediately
+      selectedArray.forEach(id => deleteTransaction(id));
+      
+      const response = await fetch('/api/transactions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uuids: selectedArray
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete transactions');
+      }
+      
+      const result = await response.json();
+      toast.success(`${result.deletedCount} ${result.deletedCount === 1 ? 'transaction' : 'transactions'} deleted successfully`);
+      
+      // Clear selection
+      setSelectedTransactionIds(new Set());
+      
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+      toast.error('Failed to delete some transactions');
+      // Revert optimistic updates by refetching
+      refetch();
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   const handleTransactionSubmit = async (formData: any) => {
     try {
       const response = await fetch('/api/transactions', {
@@ -527,6 +593,9 @@ export default function TransactionsPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onConvertCurrency={handleConvertCurrency}
+                selectedIds={selectedTransactionIds}
+                onSelectAll={handleSelectAll}
+                onSelectTransaction={handleSelectTransaction}
               />
             </div>
           </div>
@@ -579,6 +648,25 @@ export default function TransactionsPage() {
           transaction={editingTransaction}
           activityId={editingTransaction?.activity_id || ''}
           activityPartnerId={activityPartnerId || undefined}
+        />
+
+        {/* Bulk Action Toolbar */}
+        <BulkActionToolbar
+          selectedCount={selectedTransactionIds.size}
+          itemType="transactions"
+          onDelete={() => setShowBulkDeleteDialog(true)}
+          onCancel={() => setSelectedTransactionIds(new Set())}
+          isDeleting={isBulkDeleting}
+        />
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <BulkDeleteDialog
+          isOpen={showBulkDeleteDialog}
+          itemCount={selectedTransactionIds.size}
+          itemType="transactions"
+          onConfirm={handleBulkDelete}
+          onCancel={() => setShowBulkDeleteDialog(false)}
+          isDeleting={isBulkDeleting}
         />
       </div>
     </MainLayout>

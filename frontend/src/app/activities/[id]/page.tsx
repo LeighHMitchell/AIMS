@@ -22,7 +22,6 @@ import {
   Eye,
   Trash2,
   Upload,
-  UserPlus,
   PieChart,
   Banknote,
   Globe,
@@ -60,8 +59,6 @@ import { getActivityPermissions, ActivityContributor } from "@/lib/activity-perm
 import { SDG_GOALS, SDG_TARGETS } from "@/data/sdg-targets"
 import { SDGImageGrid } from "@/components/ui/SDGImageGrid"
 import SDGAlignmentSection from "@/components/SDGAlignmentSection"
-import ContributorsSection from "@/components/ContributorsSection"
-import { useContributors } from "@/hooks/use-contributors"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActivityProfileSkeleton } from "@/components/skeletons/ActivityProfileSkeleton"
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
@@ -149,9 +146,8 @@ export default function ActivityDetailPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const router = useRouter()
   const { user } = useUser()
-  const { contributors } = useContributors(id)
   const searchParams = useSearchParams()
-  
+
   // Set initial tab from URL parameter
   useEffect(() => {
     const tabParam = searchParams?.get('tab');
@@ -171,9 +167,6 @@ export default function ActivityDetailPage() {
     // Use replace to avoid adding to browser history for each tab switch
     router.replace(`?${params.toString()}`, { scroll: false });
   };
-  
-  // Check if user is trying to join as contributor
-  const isJoinAction = searchParams?.get('action') === 'join'
   
   // Debug logging for user role
   console.log('[AIMS DEBUG Activity Detail] Current user:', user);
@@ -326,70 +319,6 @@ export default function ActivityDetailPage() {
   const handleEdit = () => {
     router.push(`/activities/new?id=${activity?.id}`)
   }
-
-  const updateContributors = async (newContributors: ActivityContributor[]) => {
-    if (!activity) return;
-    
-    // Update local state
-    setActivity({ ...activity, contributors: newContributors });
-    
-    // Save to backend
-    try {
-      const res = await fetch('/api/activities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...activity,
-          contributors: newContributors,
-          user: user ? { id: user.id, name: user.name, role: user.role } : undefined,
-        }),
-      });
-      
-      if (!res.ok) {
-        throw new Error('Failed to update contributors');
-      }
-      
-      toast.success('Contributors updated successfully');
-    } catch (error) {
-      console.error('Error updating contributors:', error);
-      toast.error('Failed to update contributors');
-    }
-  };
-  
-  const requestToJoin = async () => {
-    if (!activity || !user?.organizationId) return;
-    
-    // Build the user's display name with fallbacks
-    let nominatedByName = 'Unknown User';
-    if (user.name && user.name.trim() !== '') {
-      nominatedByName = user.name.trim();
-    } else if (user.firstName || user.lastName) {
-      const nameParts = [user.firstName, user.lastName].filter(Boolean);
-      nominatedByName = nameParts.join(' ').trim();
-    } else if (user.email) {
-      nominatedByName = user.email.split('@')[0]; // Use part before @
-    }
-    
-    const newContributor: ActivityContributor = {
-      id: uuidv4(),
-      organizationId: user.organizationId,
-      organizationName: user.organization?.name || 'Unknown Organization',
-      status: 'requested',
-      role: 'contributor',
-      nominatedBy: user.id,
-      nominatedByName: nominatedByName,
-      nominatedAt: new Date().toISOString(),
-      canEditOwnData: true,
-      canViewOtherDrafts: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    const updatedContributors = [...(activity.contributors || []), newContributor];
-    await updateContributors(updatedContributors);
-    
-    toast.success('Your request to join has been submitted');
-  };
 
   if (loading) {
     return (
@@ -843,27 +772,6 @@ export default function ActivityDetailPage() {
                       {getDisplayDates(activity)}
                     </div>
 
-                    {/* Contributors */}
-                    {activity.contributors && activity.contributors.length > 0 && (
-                      <div>
-                        <span className="text-sm text-slate-500">Contributors: </span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {activity.contributors
-                            .filter(c => c.status === 'accepted')
-                            .map((contributor, idx) => {
-                              const partner = allPartners.find(p => p.id === contributor.organizationId);
-                              const displayName = partner 
-                                ? `${partner.acronym || partner.code || partner.name}`
-                                : contributor.organizationName;
-                              return (
-                                <Badge key={contributor.id} variant="outline" className="text-xs border-slate-300 text-slate-700">
-                                  {displayName}
-                                </Badge>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -957,14 +865,6 @@ export default function ActivityDetailPage() {
                 </TabsTrigger>
                 <TabsTrigger value="sdg" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   SDG Alignment
-                </TabsTrigger>
-                <TabsTrigger value="contributors" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
-                  Contributors
-                  {contributors && contributors.length > 0 && (
-                    <Badge variant="outline" className="ml-1 text-xs border-slate-300">
-                      {contributors.length}
-                    </Badge>
-                  )}
                 </TabsTrigger>
                 <TabsTrigger value="comments" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Comments
@@ -1436,33 +1336,6 @@ export default function ActivityDetailPage() {
                   onUpdate={setSdgMappings} 
                   activityId={activity.id}
                   canEdit={permissions.canEditActivity}
-                />
-              </TabsContent>
-
-              {/* Contributors Tab */}
-              <TabsContent value="contributors" className="p-6">
-                {/* Show join request alert if user came from duplicate detection */}
-                {isJoinAction && permissions.canRequestToJoin && (
-                  <Alert className="mb-4">
-                    <UserPlus className="h-4 w-4" />
-                    <AlertDescription className="flex items-center justify-between">
-                      <span>Would you like to join this activity as a contributor?</span>
-                      <Button 
-                        size="sm" 
-                        onClick={requestToJoin}
-                        disabled={!user?.organizationId}
-                      >
-                        Request to Join
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                <ContributorsSection
-                  contributors={[]}
-                  onChange={() => {}}
-                  permissions={permissions}
-                  activityId={activity.id}
                 />
               </TabsContent>
 

@@ -518,11 +518,52 @@ export default function IATIImportPage() {
     })
   }
 
-  // Select/deselect all items
+  // Enhanced Select/deselect all items - includes sub-item selections
   const toggleAllItems = (type: 'organizations' | 'activities' | 'transactions', items: string[]) => {
+    console.log(`[IATI Import] Enhanced Toggle All: ${type} with ${items.length} items`);
+    
     setImportState(prev => {
       const allSelected = items.every(id => prev[type].selected.has(id))
       const newSelected = allSelected ? new Set<string>() : new Set(items)
+      
+      console.log(`[IATI Import] Enhanced Toggle All: ${type} - ${allSelected ? 'Deselecting' : 'Selecting'} all items`);
+      
+      // Enhanced: For transactions, also ensure all sub-items are selected
+      if (type === 'transactions' && !allSelected && parsedData?.transactions) {
+        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${parsedData.transactions.length} individual transactions`);
+        
+        // Create enhanced selection that includes all transaction indices
+        const allTransactionIndices = parsedData.transactions.map((_, i) => `${i}`);
+        const enhancedSelection = new Set([...newSelected, ...allTransactionIndices]);
+        
+        return {
+          ...prev,
+          [type]: { ...prev[type], selected: enhancedSelection }
+        }
+      }
+      
+      // Enhanced: For activities, ensure all sub-components are selected
+      if (type === 'activities' && !allSelected && parsedData?.activities) {
+        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${parsedData.activities.length} activities with full sub-component selection`);
+        
+        // For activities, we select the main activities - sub-components will be handled
+        // during the actual import process based on the activity data
+        return {
+          ...prev,
+          [type]: { ...prev[type], selected: newSelected }
+        }
+      }
+      
+      // Enhanced: For organizations, select all organization data
+      if (type === 'organizations' && !allSelected && parsedData?.organizations) {
+        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${parsedData.organizations.length} organizations`);
+        
+        return {
+          ...prev,
+          [type]: { ...prev[type], selected: newSelected }
+        }
+      }
+      
       return {
         ...prev,
         [type]: { ...prev[type], selected: newSelected }
@@ -758,11 +799,91 @@ export default function IATIImportPage() {
                           className="w-full"
                         />
                         <Button
-                          onClick={() => toast.info('URL import coming soon!')}
-                          disabled={!urlContent.trim()}
+                          onClick={async () => {
+                            try {
+                              setStep('parse')
+                              setParsing(true)
+                              setParsingProgress(10)
+                              
+                              // Fetch XML from URL using the existing API
+                              console.log('[IATI Import] Fetching XML from URL:', urlContent.trim())
+                              const fetchResponse = await fetch('/api/xml/fetch', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ url: urlContent.trim() })
+                              })
+                              
+                              if (!fetchResponse.ok) {
+                                const error = await fetchResponse.json()
+                                throw new Error(error.error || 'Failed to fetch XML from URL')
+                              }
+                              
+                              setParsingProgress(30)
+                              const { content } = await fetchResponse.json()
+                              console.log('[IATI Import] Successfully fetched XML, length:', content?.length)
+                              
+                              // Now parse the XML content (reuse existing parse logic)
+                              setParsingProgress(50)
+                              const parseResponse = await fetch('/api/iati/parse', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ xmlContent: content })
+                              })
+                              
+                              if (!parseResponse.ok) {
+                                const parseError = await parseResponse.json()
+                                throw new Error(parseError.error || 'Failed to parse IATI file from URL')
+                              }
+                              
+                              setParsingProgress(70)
+                              const data = await parseResponse.json()
+                              setParsingProgress(90)
+                              setParsedData(data)
+                              setSummary({
+                                activities: data.activities.length,
+                                organizations: data.organizations.length,
+                                transactions: data.transactions.length,
+                                errors: data.errors?.length || 0
+                              })
+                              setParsingProgress(100)
+                              
+                              // Initialize import state with parsed data
+                              setImportState({
+                                organizations: {
+                                  phase: 'review',
+                                  selected: new Set(data.organizations.filter((o: any) => !o.matched).map((o: any) => o.ref)),
+                                  imported: [],
+                                  errors: []
+                                },
+                                activities: {
+                                  phase: 'review',
+                                  selected: new Set(data.activities.filter((a: any) => !a.matched).map((a: any) => a.iatiIdentifier)),
+                                  imported: [],
+                                  errors: []
+                                },
+                                transactions: {
+                                  phase: 'review',
+                                  selected: new Set(data.transactions.map((t: any, i: number) => `${i}`)),
+                                  imported: [],
+                                  errors: []
+                                }
+                              })
+                              
+                              // Start with summary step
+                              setStep('summary')
+                              toast.success('Successfully fetched and parsed IATI XML from URL')
+                              
+                            } catch (error) {
+                              console.error('[IATI Import] URL import error:', error)
+                              toast.error(`Failed to import from URL: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                              setParsing(false)
+                              setStep('upload')
+                            }
+                          }}
+                          disabled={!urlContent.trim() || parsing}
                           className="w-full"
                         >
-                          Fetch and Parse
+                          {parsing ? 'Fetching...' : 'Fetch and Parse'}
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </div>
@@ -776,8 +897,8 @@ export default function IATIImportPage() {
                             <li>Fetch data from public IATI XML endpoints</li>
                             <li>Automatically update from scheduled URLs</li>
                           </ul>
-                          <p className="mt-2 text-sm text-amber-600">
-                            Note: This feature is coming soon!
+                          <p className="mt-2 text-sm text-emerald-600">
+                            Enter a URL above and click &quot;Fetch and Parse&quot; to begin.
                           </p>
                         </AlertDescription>
                       </Alert>

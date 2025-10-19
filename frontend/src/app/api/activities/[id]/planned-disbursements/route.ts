@@ -46,4 +46,96 @@ export async function GET(
     console.error('[PlannedDisbursementsAPI] Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabase = getSupabaseAdmin();
+    const activityId = params.id;
+    const body = await request.json();
+
+    console.log('[PlannedDisbursementsAPI] Creating disbursement for activity:', activityId, body);
+
+    if (!activityId) {
+      return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
+    }
+
+    // Validate required fields
+    if (!body.period_start || !body.period_end || body.amount === undefined || !body.currency) {
+      return NextResponse.json({ error: 'Missing required fields: period_start, period_end, amount, currency' }, { status: 400 });
+    }
+
+    // Validate period dates
+    if (new Date(body.period_start) >= new Date(body.period_end)) {
+      return NextResponse.json({ error: 'Period start must be before period end' }, { status: 400 });
+    }
+
+    const disbursementData = {
+      activity_id: activityId,
+      amount: Number(body.amount),
+      currency: body.currency,
+      period_start: body.period_start,
+      period_end: body.period_end,
+      provider_org_id: body.provider_org_id || null,
+      provider_org_name: body.provider_org_name || null,
+      receiver_org_id: body.receiver_org_id || null,
+      receiver_org_name: body.receiver_org_name || null,
+      status: body.status || 'original',
+      value_date: body.value_date || body.period_start,
+      notes: body.notes || null
+    };
+
+    const { data: disbursement, error } = await supabase
+      .from('planned_disbursements')
+      .insert(disbursementData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[PlannedDisbursementsAPI] Error creating disbursement:', error);
+      return NextResponse.json({ error: 'Failed to create planned disbursement', details: error.message }, { status: 500 });
+    }
+
+    console.log('[PlannedDisbursementsAPI] Successfully created disbursement:', disbursement);
+    return NextResponse.json(disbursement);
+  } catch (error) {
+    console.error('[PlannedDisbursementsAPI] Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error', details: String(error) }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabase = getSupabaseAdmin();
+    const activityId = params.id;
+
+    console.log('[PlannedDisbursementsAPI] Deleting disbursements for activity:', activityId);
+
+    if (!activityId) {
+      return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
+    }
+
+    const { data: deletedData, error } = await supabase
+      .from('planned_disbursements')
+      .delete()
+      .eq('activity_id', activityId)
+      .select();
+
+    if (error) {
+      console.error('[PlannedDisbursementsAPI] Error deleting disbursements:', error);
+      return NextResponse.json({ error: 'Failed to delete planned disbursements', details: error.message }, { status: 500 });
+    }
+
+    console.log('[PlannedDisbursementsAPI] Successfully deleted', deletedData?.length || 0, 'disbursements');
+    return NextResponse.json({ success: true, deleted: deletedData?.length || 0 });
+  } catch (error) {
+    console.error('[PlannedDisbursementsAPI] Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error', details: String(error) }, { status: 500 });
+  }
 } 

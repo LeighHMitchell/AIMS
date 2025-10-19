@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
     const userId = url.searchParams.get('userId');
     const status = url.searchParams.get('status') || undefined;
     const category = url.searchParams.get('category') || undefined;
+    const priority = url.searchParams.get('priority') || undefined;
+    const feature = url.searchParams.get('feature') || undefined;
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '25');
     const offset = (page - 1) * limit;
@@ -143,6 +145,14 @@ export async function GET(request: NextRequest) {
       countQuery = countQuery.eq('category', category);
     }
 
+    if (priority) {
+      countQuery = countQuery.eq('priority', priority);
+    }
+
+    if (feature) {
+      countQuery = countQuery.eq('feature', feature);
+    }
+
     const { count: totalCount, error: countError } = await countQuery;
 
     if (countError) {
@@ -161,6 +171,14 @@ export async function GET(request: NextRequest) {
 
     if (category) {
       query = query.eq('category', category);
+    }
+
+    if (priority) {
+      query = query.eq('priority', priority);
+    }
+
+    if (feature) {
+      query = query.eq('feature', feature);
     }
 
     query = query.range(offset, offset + limit - 1);

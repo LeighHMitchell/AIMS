@@ -6,7 +6,7 @@ const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org/search';
 const DEFAULT_SEARCH_PARAMS = {
   format: 'json',
   addressdetails: '1',
-  limit: '10',
+  limit: '30',
   dedupe: '1',
 } as const;
 
@@ -24,6 +24,12 @@ export async function GET(request: NextRequest) {
   const limit = searchParams.get('limit') || DEFAULT_SEARCH_PARAMS.limit;
   const countryCodes = searchParams.get('countryCodes');
 
+  console.log('[Geocoding API] Search request:', {
+    query: query.trim(),
+    countryCodes,
+    limit
+  });
+
   const params = new URLSearchParams({
     ...DEFAULT_SEARCH_PARAMS,
     q: query.trim(),
@@ -35,7 +41,10 @@ export async function GET(request: NextRequest) {
   }
 
   const fetchWithParams = async (p: URLSearchParams) => {
-    const response = await fetch(`${NOMINATIM_BASE_URL}?${p.toString()}`, {
+    const url = `${NOMINATIM_BASE_URL}?${p.toString()}`;
+    console.log('[Geocoding API] Fetching from Nominatim:', url);
+    
+    const response = await fetch(url, {
       headers: {
         'User-Agent': NOMINATIM_USER_AGENT,
         Accept: 'application/json',
@@ -45,28 +54,23 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
+      console.error('[Geocoding API] Nominatim error:', response.status, response.statusText);
       throw new Error(`${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    return Array.isArray(data)
+    const validated = Array.isArray(data)
       ? data.map((item) => validateLocationSearchResult(item))
       : [];
+    
+    console.log('[Geocoding API] Results count:', validated.length);
+    return validated;
   };
 
   try {
-    // Try Myanmar first when no explicit country code provided
-    if (!countryCodes) {
-      const mmParams = new URLSearchParams(params);
-      mmParams.set('countrycodes', 'mm');
-
-      const mmResults = await fetchWithParams(mmParams);
-      if (mmResults.length > 0) {
-        return NextResponse.json({ results: mmResults });
-      }
-    }
-
+    // Search globally by default, or filter by country if specified
     const results = await fetchWithParams(params);
+    console.log('[Geocoding API] Returning results:', results.length);
     return NextResponse.json({ results });
   } catch (error) {
     console.error('[Geocoding Search] Unexpected error:', error);

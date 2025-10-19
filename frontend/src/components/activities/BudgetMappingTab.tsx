@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Plus, Edit2, Trash2, AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CountryBudgetItems, Narrative } from "@/types/country-budget-items";
 import { BUDGET_IDENTIFIER_VOCABULARIES } from "@/data/budget-identifier-vocabulary";
@@ -153,11 +153,7 @@ export default function BudgetMappingTab({ activityId, onDataChange }: BudgetMap
     return (
       <Card className="bg-white">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <Skeleton className="h-7 w-48 mb-2" />
-              <Skeleton className="h-4 w-96" />
-            </div>
+          <div className="flex items-center justify-end">
             <Skeleton className="h-10 w-48" />
           </div>
         </CardHeader>
@@ -169,7 +165,7 @@ export default function BudgetMappingTab({ activityId, onDataChange }: BudgetMap
               <div className="bg-white px-4 py-3 flex items-center justify-between border-b">
                 <div className="flex-1">
                   <Skeleton className="h-5 w-64 mb-2" />
-                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-16 mt-1" />
                 </div>
                 <div className="flex gap-2">
                   <Skeleton className="h-9 w-20" />
@@ -211,7 +207,7 @@ export default function BudgetMappingTab({ activityId, onDataChange }: BudgetMap
               <div className="bg-white px-4 py-3 flex items-center justify-between border-b">
                 <div className="flex-1">
                   <Skeleton className="h-5 w-56 mb-2" />
-                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-4 w-16 mt-1" />
                 </div>
                 <div className="flex gap-2">
                   <Skeleton className="h-9 w-20" />
@@ -257,13 +253,7 @@ export default function BudgetMappingTab({ activityId, onDataChange }: BudgetMap
     <>
       <Card className="bg-white">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Budget Mapping</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Map activity budget to recipient country budget classifications
-              </p>
-            </div>
+          <div className="flex items-center justify-end">
             {availableVocabularies.length > 0 && (
               <Button onClick={handleAddNew} disabled={saving}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -308,11 +298,8 @@ export default function BudgetMappingTab({ activityId, onDataChange }: BudgetMap
                     <div className="bg-white px-4 py-3 flex items-center justify-between">
                       <div>
                         <h4 className="font-semibold text-gray-900">{getVocabularyName(cbi.vocabulary)}</h4>
-                        <p className="text-sm text-gray-600">
-                          {cbi.budget_items.length} item{cbi.budget_items.length !== 1 ? 's' : ''} • 
-                          <span className="text-gray-700">
-                            {' '}{percentageSum.toFixed(2)}% total
-                          </span>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {percentageSum.toFixed(2)}%
                         </p>
                       </div>
                       <div className="flex gap-2">

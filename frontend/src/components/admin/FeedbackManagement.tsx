@@ -12,11 +12,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FEEDBACK_TYPES, FEEDBACK_STATUS_TYPES, FEEDBACK_PRIORITY_TYPES } from '@/data/feedback-types';
 import { ALL_APP_FEATURES, APP_FEATURES } from '@/data/app-features';
-import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search } from 'lucide-react';
+import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { FeedbackModal } from '@/components/ui/feedback-modal';
 
 interface Feedback {
   id: string;
@@ -151,9 +152,11 @@ export function FeedbackManagement() {
   const [loading, setLoading] = useState(true);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [isAddFeedbackModalOpen, setIsAddFeedbackModalOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>('open');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [filterFeature, setFilterFeature] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
   
   // Sorting state
@@ -174,9 +177,22 @@ export function FeedbackManagement() {
     try {
       const params = new URLSearchParams();
       params.append('userId', user.id);
-      if (filterStatus !== 'all') params.append('status', filterStatus);
+      
+      // Handle status filter - if showing archived, only show closed items
+      if (showArchived) {
+        params.append('status', 'closed');
+      } else {
+        // If not showing archived, filter out closed items by using status filter
+        if (filterStatus !== 'all' && filterStatus !== 'closed') {
+          params.append('status', filterStatus);
+        }
+        // If filterStatus is 'closed' but we're not showing archived, don't add status filter
+        // This will show all non-closed items
+      }
+      
       if (filterCategory !== 'all') params.append('category', filterCategory);
       if (filterPriority !== 'all') params.append('priority', filterPriority);
+      if (filterFeature !== 'all') params.append('feature', filterFeature);
       params.append('page', currentPage.toString());
       params.append('limit', pageSize.toString());
       
@@ -223,7 +239,7 @@ export function FeedbackManagement() {
       setCurrentPage(1); // Reset to first page when filters change
       fetchFeedback();
     }
-  }, [filterStatus, filterCategory, filterPriority, user?.id]);
+  }, [filterStatus, filterCategory, filterPriority, filterFeature, showArchived, user?.id]);
 
   // Separate effect for pagination changes
   useEffect(() => {
@@ -277,12 +293,24 @@ export function FeedbackManagement() {
 
   // Archive/unarchive feedback
   const toggleArchive = async (id: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'archived' ? 'open' : 'archived';
+    const newStatus = currentStatus === 'closed' ? 'open' : 'closed';
+    
+    // Store the original item for potential rollback
+    const originalItem = feedback.find(item => item.id === id);
+    if (!originalItem) return;
     
     // Optimistically update local state
-    setFeedback(prev => prev.map(item => 
-      item.id === id ? { ...item, status: newStatus } : item
-    ));
+    // If archiving and not showing archived view, remove from list
+    // If restoring and showing archived view, remove from list
+    if ((newStatus === 'closed' && !showArchived) || (newStatus === 'open' && showArchived)) {
+      setFeedback(prev => prev.filter(item => item.id !== id));
+      setTotalCount(prev => prev - 1);
+    } else {
+      // Just update the status
+      setFeedback(prev => prev.map(item => 
+        item.id === id ? { ...item, status: newStatus } : item
+      ));
+    }
     
     try {
       const requestBody = { userId: user?.id, id, status: newStatus };
@@ -294,15 +322,22 @@ export function FeedbackManagement() {
       });
 
       if (response.ok) {
-        toast.success(`Feedback ${newStatus === 'archived' ? 'archived' : 'restored'} successfully`);
+        toast.success(`Feedback ${newStatus === 'closed' ? 'closed and archived' : 'restored'} successfully`);
       } else {
         throw new Error('Failed to update feedback');
       }
     } catch (error) {
       // Revert optimistic update on error
-      setFeedback(prev => prev.map(item => 
-        item.id === id ? { ...item, status: currentStatus } : item
-      ));
+      if ((newStatus === 'closed' && !showArchived) || (newStatus === 'open' && showArchived)) {
+        // Add the item back to the list
+        setFeedback(prev => [...prev, originalItem]);
+        setTotalCount(prev => prev + 1);
+      } else {
+        // Revert the status change
+        setFeedback(prev => prev.map(item => 
+          item.id === id ? { ...item, status: currentStatus } : item
+        ));
+      }
       console.error('[FeedbackManagement] Archive error:', error);
       toast.error("Failed to update feedback. Please try again.");
     }
@@ -390,14 +425,8 @@ export function FeedbackManagement() {
     return sorted;
   }, [feedback, sortField, sortDirection]);
 
-  // Filter feedback based on status, category, priority, and archived state
-  const filteredFeedback = sortedFeedback.filter(item => {
-    const statusMatch = filterStatus === 'all' || item.status === filterStatus;
-    const categoryMatch = filterCategory === 'all' || item.category === filterCategory;
-    const priorityMatch = filterPriority === 'all' || item.priority === filterPriority;
-    const archivedMatch = showArchived ? item.status === 'archived' : item.status !== 'archived';
-    return statusMatch && categoryMatch && priorityMatch && archivedMatch;
-  });
+  // Use sorted feedback directly since filtering is now handled server-side
+  const filteredFeedback = sortedFeedback;
 
 
 
@@ -409,17 +438,28 @@ export function FeedbackManagement() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            User Feedback Management
-          </CardTitle>
-          <CardDescription>
-            View and manage user feedback, questions, and feature requests
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                User Feedback Management
+              </CardTitle>
+              <CardDescription>
+                View and manage user feedback, questions, and feature requests
+              </CardDescription>
+            </div>
+            <Button 
+              onClick={() => setIsAddFeedbackModalOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Feedback
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            <div>
               <label className="text-sm font-medium mb-2 block">Filter by Status</label>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger>
@@ -441,7 +481,7 @@ export function FeedbackManagement() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1">
+            <div>
               <label className="text-sm font-medium mb-2 block">Filter by Category</label>
               <Select value={filterCategory} onValueChange={setFilterCategory}>
                 <SelectTrigger>
@@ -463,7 +503,7 @@ export function FeedbackManagement() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1">
+            <div>
               <label className="text-sm font-medium mb-2 block">Filter by Priority</label>
               <Select value={filterPriority} onValueChange={setFilterPriority}>
                 <SelectTrigger>
@@ -485,7 +525,23 @@ export function FeedbackManagement() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Filter by Feature</label>
+              <Select value={filterFeature} onValueChange={setFilterFeature}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All features" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Features</SelectItem>
+                  {ALL_APP_FEATURES.map((feature) => (
+                    <SelectItem key={feature.code} value={feature.code}>
+                      {feature.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <label className="text-sm font-medium mb-2 block">View</label>
               <div className="flex gap-2">
                 <Button
@@ -620,14 +676,28 @@ export function FeedbackManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="max-w-[300px]">
-                          <div className="font-medium truncate">
-                            {item.subject || `${categoryInfo.name} from ${getUserDisplayName(item.user)}`}
-                          </div>
-                          <div className="text-sm text-gray-500 line-clamp-2 mt-1">
-                            {item.message}
-                          </div>
-                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="max-w-[300px]">
+                              <div className="font-medium truncate">
+                                {item.subject || `${categoryInfo.name} from ${getUserDisplayName(item.user)}`}
+                              </div>
+                              <div className="text-sm text-gray-500 line-clamp-2 mt-1">
+                                {item.message}
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">
+                            <div className="text-sm text-gray-600 font-normal space-y-2">
+                              <div>
+                                <span className="font-medium">Subject:</span> {item.subject || `${categoryInfo.name} from ${getUserDisplayName(item.user)}`}
+                              </div>
+                              <div>
+                                <span className="font-medium">Message:</span> {item.message}
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
@@ -749,9 +819,9 @@ export function FeedbackManagement() {
                               e.stopPropagation();
                               toggleArchive(item.id, item.status);
                             }}
-                            title={item.status === 'archived' ? 'Restore' : 'Archive'}
+                            title={item.status === 'closed' ? 'Restore' : 'Close and Archive'}
                           >
-                            {item.status === 'archived' ? (
+                            {item.status === 'closed' ? (
                               <ArchiveRestore className="h-4 w-4" />
                             ) : (
                               <Archive className="h-4 w-4" />
@@ -888,6 +958,16 @@ export function FeedbackManagement() {
           setSelectedFeedback(null);
         }}
         onUpdate={updateFeedback}
+      />
+
+      {/* Add Feedback Modal */}
+      <FeedbackModal
+        isOpen={isAddFeedbackModalOpen}
+        onClose={() => {
+          setIsAddFeedbackModalOpen(false);
+          // Refresh the feedback list after submission
+          fetchFeedback();
+        }}
       />
       </div>
     </TooltipProvider>

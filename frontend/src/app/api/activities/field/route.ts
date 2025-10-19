@@ -640,6 +640,12 @@ export async function POST(request: Request) {
         updateData.activity_scope = body.value;
         break;
         
+      case 'hierarchy':
+        oldValue = existingActivity.hierarchy;
+        newValue = body.value;
+        updateData.hierarchy = body.value;
+        break;
+        
       case 'language':
         oldValue = existingActivity.language;
         newValue = body.value;
@@ -750,6 +756,8 @@ export async function POST(request: Request) {
           if (workingGroupsToSave.length > 0) {
             // Fetch working group IDs from database
             const codes = workingGroupsToSave.map((wg: any) => wg.code);
+            console.log('[Field API] Looking up working groups with codes:', codes);
+            
             const { data: dbWorkingGroups, error: wgFetchError } = await getSupabaseAdmin()
               .from('working_groups')
               .select('id, code')
@@ -763,6 +771,46 @@ export async function POST(request: Request) {
               );
             }
 
+            console.log('[Field API] Found', dbWorkingGroups?.length || 0, 'working groups in database');
+
+            // Check if any working groups weren't found in the database and create them
+            const foundCodes = dbWorkingGroups?.map((wg: any) => wg.code) || [];
+            const missingCodes = codes.filter(code => !foundCodes.includes(code));
+            
+            if (missingCodes.length > 0) {
+              console.log('[Field API] Creating missing working groups:', missingCodes);
+              
+              // Create missing working groups from the provided data
+              const workingGroupsToCreate = workingGroupsToSave
+                .filter((wg: any) => missingCodes.includes(wg.code))
+                .map((wg: any) => ({
+                  code: wg.code,
+                  label: wg.label,
+                  vocabulary: wg.vocabulary || '99',
+                  is_active: true
+                }));
+
+              const { data: newWorkingGroups, error: createError } = await getSupabaseAdmin()
+                .from('working_groups')
+                .insert(workingGroupsToCreate)
+                .select('id, code');
+
+              if (createError) {
+                console.error('[Field API] Error creating working groups:', createError);
+                return NextResponse.json(
+                  { error: `Failed to create working groups: ${createError.message}` },
+                  { status: 500 }
+                );
+              }
+
+              console.log('[Field API] Successfully created', newWorkingGroups?.length || 0, 'working groups');
+              
+              // Merge newly created working groups with found ones
+              if (newWorkingGroups) {
+                dbWorkingGroups?.push(...newWorkingGroups);
+              }
+            }
+
             if (dbWorkingGroups && dbWorkingGroups.length > 0) {
               const workingGroupsData = dbWorkingGroups.map((dbWg: any) => ({
                 activity_id: body.activityId,
@@ -770,7 +818,7 @@ export async function POST(request: Request) {
                 vocabulary: '99' // IATI custom vocabulary
               }));
 
-              console.log('[Field API] Inserting working groups:', JSON.stringify(workingGroupsData, null, 2));
+              console.log('[Field API] Inserting', workingGroupsData.length, 'working group associations');
 
               const { error: insertError } = await getSupabaseAdmin()
                 .from('activity_working_groups')
@@ -785,6 +833,8 @@ export async function POST(request: Request) {
               }
 
               console.log('[Field API] Successfully saved', workingGroupsData.length, 'working groups');
+            } else {
+              console.warn('[Field API] No working groups found or created - this should not happen');
             }
           } else {
             console.log('[Field API] No working groups to save - all cleared');

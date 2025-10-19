@@ -62,6 +62,12 @@ export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavPr
       show: true
     },
     {
+      name: "Transactions",
+      href: "/transactions",
+      icon: FileText,
+      show: true
+    },
+    {
       name: "Organizations",
       href: "/organizations",
       icon: Building,
@@ -71,12 +77,6 @@ export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavPr
       name: "Partners",
       href: "/partners",
       icon: Users,
-      show: true
-    },
-    {
-      name: "Transactions",
-      href: "/transactions",
-      icon: FileText,
       show: true
     },
     {

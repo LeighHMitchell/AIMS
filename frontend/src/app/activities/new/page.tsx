@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ActivityStatusSelect } from "@/components/forms/ActivityStatusSelect";
 import { CollaborationTypeSelect } from "@/components/forms/CollaborationTypeSelect";
 import { ActivityScopeSearchableSelect } from "@/components/forms/ActivityScopeSearchableSelect";
+import { HierarchySelect } from "@/components/forms/HierarchySelect";
 import { OtherIdentifierTypeSelect } from "@/components/forms/OtherIdentifierTypeSelect";
 import { DropdownProvider } from "@/contexts/DropdownContext";
 import { LinkedActivityTitle } from "@/components/ui/linked-activity-title";
@@ -101,6 +102,7 @@ import { ConditionsTab } from "@/components/activities/ConditionsTab";
 import MetadataTab from "@/components/activities/MetadataTab";
 import { DocumentsAndImagesTabInline } from "@/components/activities/DocumentsAndImagesTabInline";
 import { IatiDocumentLink } from "@/lib/iatiDocumentLink";
+import { HumanitarianTab } from "@/components/activities/HumanitarianTab";
 
 import GovernmentEndorsementTab from "@/components/activities/GovernmentEndorsementTab";
 
@@ -243,6 +245,18 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     },
   });
 
+  const hierarchyAutosave = useFieldAutosave('hierarchy', {
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    immediate: false,
+    debounceMs: 0,
+    additionalData: {
+      title: general.title || 'New Activity'
+    },
+    onSuccess: (data) => {
+      // Disabled autosave flow
+    },
+  });
 
   const publicationStatusAutosave = useFieldAutosave('publicationStatus', { 
     activityId: effectiveActivityId, 
@@ -1304,8 +1318,49 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             </div>
             {activityScopeAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {activityScopeAutosave.state.error.message}</p>}
           </div>
-          <div className="w-full">
-            {/* Empty column for now - can be used for another field later */}
+          
+          {/* Hierarchy Level */}
+          <div className="w-full space-y-2">
+            <LabelSaveIndicator
+              isSaving={hierarchyAutosave.state.isSaving}
+              isSaved={hierarchyAutosave.state.isPersistentlySaved || general.hierarchy !== undefined}
+              hasValue={general.hierarchy !== undefined}
+              className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
+            >
+              <div className="flex items-center gap-2">
+                Activity Hierarchy Level
+                <HelpTextTooltip>
+                  Indicates the organizational level of this activity within a project structure. Level 1 represents top-level programs, while higher numbers represent sub-components. This helps establish parent-child relationships between activities for better project organization and reporting.
+                </HelpTextTooltip>
+              </div>
+              {fieldLockStatus.isLocked && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{fieldLockStatus.tooltipMessage}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </LabelSaveIndicator>
+            <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
+              <HierarchySelect
+                value={general.hierarchy}
+                onValueChange={(value) => {
+                  if (!fieldLockStatus.isLocked) {
+                    setGeneral((g: any) => ({ ...g, hierarchy: value }));
+                    hierarchyAutosave.triggerFieldSave(value);
+                  }
+                }}
+                placeholder="Select Hierarchy Level"
+                disabled={fieldLockStatus.isLocked}
+                dropdownId="general-hierarchy"
+              />
+            </div>
+            {hierarchyAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {hierarchyAutosave.state.error.message}</p>}
           </div>
         </div>
       </div>
@@ -1645,6 +1700,13 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             />
         </div>
       );
+    case "humanitarian":
+      return (
+        <HumanitarianTab 
+          activityId={general.id || ''}
+          readOnly={!permissions?.canEditActivity}
+        />
+      );
     case "organisations":
       return <OrganisationsSection
         activityId={general.id}
@@ -1932,6 +1994,7 @@ function NewActivityPageContent() {
       collaborationType: "",
       activityStatus: "1", // Default to Pipeline (IATI code 1)
       activityScope: "4", // Default to National
+      hierarchy: 1, // Default to top-level activity
       language: "en", // Default to English
       defaultAidType: "",
       defaultFinanceType: "",
@@ -2035,6 +2098,9 @@ function NewActivityPageContent() {
   
   const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([]);
   const [forwardSpendCount, setForwardSpendCount] = useState(0);
+  
+  const [humanitarian, setHumanitarian] = useState(false);
+  const [humanitarianScopes, setHumanitarianScopes] = useState<any[]>([]);
   
   const [documents, setDocuments] = useState<any[]>([]);
   
@@ -2339,6 +2405,7 @@ function NewActivityPageContent() {
         syncStatus: "not_synced",
         autoSyncFields: [],
         activityScope: "4",
+        hierarchy: 1,
         language: "en"
       });
       setSectors([]);
@@ -2811,6 +2878,27 @@ function NewActivityPageContent() {
             setForwardSpendCount(0);
           }
 
+          // Fetch Humanitarian data for tab completion
+          try {
+            const humanitarianResponse = await fetch(`/api/activities/${activityId}/humanitarian`);
+            if (humanitarianResponse.ok) {
+              const humanitarianData = await humanitarianResponse.json();
+              setHumanitarian(humanitarianData.humanitarian || false);
+              setHumanitarianScopes(humanitarianData.humanitarian_scopes || []);
+              console.log('[AIMS] Loaded Humanitarian for tab completion:', {
+                humanitarian: humanitarianData.humanitarian,
+                scopesCount: humanitarianData.humanitarian_scopes?.length || 0
+              });
+            } else {
+              setHumanitarian(false);
+              setHumanitarianScopes([]);
+            }
+          } catch (error) {
+            console.warn('[AIMS] Failed to load Humanitarian for tab completion:', error);
+            setHumanitarian(false);
+            setHumanitarianScopes([]);
+          }
+
           // Fetch transactions for tab completion status
           try {
             console.log('[AIMS] Fetching transactions for activityId:', activityId);
@@ -3111,6 +3199,17 @@ function NewActivityPageContent() {
     const forwardSpendComplete = forwardSpendCount > 0;
     console.log('[TabCompletion] Forward Spend:', { count: forwardSpendCount, complete: forwardSpendComplete });
 
+    // Humanitarian tab: green check if flag is true or scopes exist
+    const humanitarianCompletion = getTabCompletionStatus('humanitarian', {
+      humanitarian: humanitarian,
+      humanitarianScopes: humanitarianScopes
+    });
+    console.log('[TabCompletion] Humanitarian:', { 
+      humanitarian, 
+      scopesCount: humanitarianScopes?.length || 0, 
+      complete: humanitarianCompletion?.isComplete 
+    });
+
     // SDG tab: green check if at least one SDG goal is mapped
     const sdgComplete = sdgMappings && sdgMappings.length > 0;
 
@@ -3243,6 +3342,10 @@ function NewActivityPageContent() {
       budgets: { isComplete: budgetsComplete, isInProgress: false },
       "planned-disbursements": { isComplete: plannedDisbursementsComplete, isInProgress: false },
       "forward-spending-survey": { isComplete: forwardSpendComplete, isInProgress: false },
+      humanitarian: humanitarianCompletion ? { 
+        isComplete: humanitarianCompletion.isComplete,
+        isInProgress: humanitarianCompletion.isInProgress 
+      } : { isComplete: false, isInProgress: false },
       results: resultsCompletion ? { 
         isComplete: resultsCompletion.isComplete,
         isInProgress: resultsCompletion.isInProgress 
@@ -3281,7 +3384,7 @@ function NewActivityPageContent() {
         isInProgress: aidEffectivenessCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, sectors, getDateFieldStatus, sectorValidation, sectorsCompletionStatus, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, governmentInputs, contacts, countryBudgetItemsCount]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, sectorsCompletionStatus, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, governmentInputs, contacts, countryBudgetItemsCount]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -3473,6 +3576,8 @@ function NewActivityPageContent() {
         return <GenericTabSkeleton />;
       case 'sectors':
         return <SectorAllocationSkeleton />;
+      case 'humanitarian':
+        return <GenericTabSkeleton />;
       case 'organisations':
         return <OrganisationsSkeleton />;
       case 'finances':

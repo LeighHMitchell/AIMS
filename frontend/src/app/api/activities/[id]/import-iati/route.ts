@@ -95,6 +95,9 @@ export async function POST(
     const previousValues: Record<string, any> = {};
     const updatedFields: string[] = [];
     
+    // Track import warnings
+    const importWarnings: Array<{type: string; message: string; details?: any}> = [];
+    
     // Build update object based on selected fields
     const updateData: Record<string, any> = {};
     
@@ -217,6 +220,7 @@ export async function POST(
     // Handle participating organizations if selected
     if (fields.participating_orgs && iati_data.participating_orgs) {
       console.log('[IATI Import] Updating participating organizations');
+      console.log(`[IATI Import] Attempting to import ${iati_data.participating_orgs.length} participating organizations`);
       
       // Store previous participating organizations
       const { data: previousParticipatingOrgs } = await supabase
@@ -241,17 +245,38 @@ export async function POST(
         orgMap.set(org.name, org.id);
       });
       
+      console.log(`[IATI Import] Found ${organizations?.length || 0} matching organizations in database`);
+      
       // Clear existing participating organizations
       await supabase
         .from('activity_participating_organizations')
         .delete()
         .eq('activity_id', activityId);
       
+      // Track unmatched organizations for logging
+      const unmatchedOrgs: Array<{ref?: string; name?: string; role?: string}> = [];
+      
       // Insert new participating organizations
       const participatingOrgs = iati_data.participating_orgs
         .map((org: IATIOrganization, index: number) => {
           const orgId = orgMap.get(org.ref || '') || orgMap.get(org.name || '');
-          if (!orgId) return null;
+          if (!orgId) {
+            // Log detailed warning about unmatched organization
+            const orgIdentifier = org.ref || org.name || 'Unknown';
+            console.warn(`[IATI Import] ⚠️  Organization not found in database: ${orgIdentifier}`);
+            console.warn(`[IATI Import]     - IATI Ref: ${org.ref || 'N/A'}`);
+            console.warn(`[IATI Import]     - Name: ${org.name || 'N/A'}`);
+            console.warn(`[IATI Import]     - Role: ${org.role || 'N/A'}`);
+            console.warn(`[IATI Import]     - Type: ${org.type || 'N/A'}`);
+            
+            unmatchedOrgs.push({
+              ref: org.ref,
+              name: org.name,
+              role: org.role
+            });
+            
+            return null;
+          }
           
           // Map IATI role codes to our role types
           let roleType: 'extending' | 'implementing' | 'government' | 'funding' = 'implementing';
@@ -278,6 +303,34 @@ export async function POST(
         await supabase
           .from('activity_participating_organizations')
           .insert(participatingOrgs);
+        console.log(`[IATI Import] ✅ Successfully imported ${participatingOrgs.length} participating organizations`);
+      }
+      
+      // Log summary of unmatched organizations
+      if (unmatchedOrgs.length > 0) {
+        console.error(`[IATI Import] ❌ Failed to match ${unmatchedOrgs.length} organizations:`);
+        unmatchedOrgs.forEach((org, idx) => {
+          console.error(`[IATI Import]    ${idx + 1}. ${org.ref || org.name || 'Unknown'} (${org.ref ? 'ref' : 'name'}-based lookup)`);
+        });
+        console.error('[IATI Import] 💡 Tip: Ensure these organizations exist in the organizations table with matching iati_org_id or name values');
+        
+        // Add to import warnings
+        importWarnings.push({
+          type: 'organization_matching',
+          message: `${unmatchedOrgs.length} organization(s) could not be matched and were skipped`,
+          details: {
+            total_attempted: iati_data.participating_orgs.length,
+            successfully_matched: participatingOrgs.length,
+            unmatched_count: unmatchedOrgs.length,
+            unmatched_organizations: unmatchedOrgs.map(org => ({
+              identifier: org.ref || org.name || 'Unknown',
+              ref: org.ref,
+              name: org.name,
+              role: org.role,
+              lookup_method: org.ref ? 'iati_org_id' : 'name'
+            }))
+          }
+        });
       }
       
       updatedFields.push('participating_orgs');
@@ -579,6 +632,323 @@ export async function POST(
       }
     }
     
+    // Handle contacts if selected
+    if (fields.contacts && iati_data.contactInfo) {
+      console.log('[IATI Import] Updating contacts');
+      
+      // Clear existing contacts
+      await supabase
+        .from('activity_contacts')
+        .delete()
+        .eq('activity_id', activityId);
+      
+      // Insert new contacts
+      if (Array.isArray(iati_data.contactInfo) && iati_data.contactInfo.length > 0) {
+        const contactData = iati_data.contactInfo.map((contact: any) => ({
+          activity_id: activityId,
+          contact_type: contact.type || '1',
+          organization_name: contact.organization,
+          department: contact.department,
+          person_name: contact.personName,
+          job_title: contact.jobTitle,
+          telephone: contact.telephone,
+          email: contact.email,
+          website: contact.website,
+          mailing_address: contact.mailingAddress
+        }));
+        
+        const { error: contactsError } = await supabase
+          .from('activity_contacts')
+          .insert(contactData);
+        
+        if (!contactsError) {
+          updatedFields.push('contacts');
+          console.log(`[IATI Import] ✓ Imported ${contactData.length} contacts`);
+        } else {
+          console.error('[IATI Import] Error inserting contacts:', contactsError);
+        }
+      }
+    }
+    
+    // Handle conditions if selected
+    if (fields.conditions && iati_data.conditions) {
+      console.log('[IATI Import] Updating conditions');
+      
+      // Update conditions_attached flag on activity
+      await supabase
+        .from('activities')
+        .update({ conditions_attached: iati_data.conditions.attached })
+        .eq('id', activityId);
+      
+      // Clear existing conditions
+      await supabase
+        .from('activity_conditions')
+        .delete()
+        .eq('activity_id', activityId);
+      
+      // Insert new conditions
+      if (iati_data.conditions.conditions && iati_data.conditions.conditions.length > 0) {
+        const conditionData = iati_data.conditions.conditions.map((condition: any, index: number) => ({
+          activity_id: activityId,
+          condition_type: condition.type || '1',
+          condition_text: condition.narrative,
+          language: condition.narrativeLang || 'en',
+          display_order: index
+        }));
+        
+        const { error: conditionsError } = await supabase
+          .from('activity_conditions')
+          .insert(conditionData);
+        
+        if (!conditionsError) {
+          updatedFields.push('conditions');
+          console.log(`[IATI Import] ✓ Imported ${conditionData.length} conditions`);
+        } else {
+          console.error('[IATI Import] Error inserting conditions:', conditionsError);
+        }
+      }
+    }
+    
+    // Handle budgets if selected
+    if (fields.budgets && iati_data.budgets) {
+      console.log('[IATI Import] Updating budgets');
+      
+      // Clear existing budgets
+      await supabase
+        .from('activity_budgets')
+        .delete()
+        .eq('activity_id', activityId);
+      
+      // Insert new budgets
+      if (Array.isArray(iati_data.budgets) && iati_data.budgets.length > 0) {
+        const budgetData = iati_data.budgets.map((budget: any) => ({
+          activity_id: activityId,
+          budget_type: budget.type || '1',
+          budget_status: budget.status || '1',
+          period_start: budget.period?.start,
+          period_end: budget.period?.end,
+          amount: budget.value,
+          currency: budget.currency,
+          value_date: budget.valueDate
+        }));
+        
+        const { error: budgetsError } = await supabase
+          .from('activity_budgets')
+          .insert(budgetData);
+        
+        if (!budgetsError) {
+          updatedFields.push('budgets');
+          console.log(`[IATI Import] ✓ Imported ${budgetData.length} budgets`);
+        } else {
+          console.error('[IATI Import] Error inserting budgets:', budgetsError);
+        }
+      }
+    }
+    
+    // Handle planned disbursements if selected
+    if (fields.planned_disbursements && iati_data.plannedDisbursements) {
+      console.log('[IATI Import] Updating planned disbursements');
+      
+      // Clear existing planned disbursements
+      await supabase
+        .from('planned_disbursements')
+        .delete()
+        .eq('activity_id', activityId);
+      
+      // Insert new planned disbursements
+      if (Array.isArray(iati_data.plannedDisbursements) && iati_data.plannedDisbursements.length > 0) {
+        const pdData = iati_data.plannedDisbursements.map((pd: any) => ({
+          activity_id: activityId,
+          disbursement_type: pd.type || '1',
+          period_start: pd.period?.start,
+          period_end: pd.period?.end,
+          amount: pd.value,
+          currency: pd.currency,
+          value_date: pd.valueDate,
+          provider_org_ref: pd.providerOrg?.ref,
+          provider_org_name: pd.providerOrg?.name,
+          provider_org_activity_id: pd.providerOrg?.providerActivityId,
+          receiver_org_ref: pd.receiverOrg?.ref,
+          receiver_org_name: pd.receiverOrg?.name,
+          receiver_org_activity_id: pd.receiverOrg?.receiverActivityId
+        }));
+        
+        const { error: pdError } = await supabase
+          .from('planned_disbursements')
+          .insert(pdData);
+        
+        if (!pdError) {
+          updatedFields.push('planned_disbursements');
+          console.log(`[IATI Import] ✓ Imported ${pdData.length} planned disbursements`);
+        } else {
+          console.error('[IATI Import] Error inserting planned disbursements:', pdError);
+        }
+      }
+    }
+    
+    // Handle humanitarian scopes if selected
+    if (fields.humanitarian_scopes && iati_data.humanitarianScopes) {
+      console.log('[IATI Import] Updating humanitarian scopes');
+      
+      // Update humanitarian flag on activity
+      await supabase
+        .from('activities')
+        .update({ humanitarian: iati_data.humanitarian || false })
+        .eq('id', activityId);
+      
+      // Clear existing humanitarian scopes
+      await supabase
+        .from('activity_humanitarian_scope')
+        .delete()
+        .eq('activity_id', activityId);
+      
+      // Insert new humanitarian scopes
+      if (Array.isArray(iati_data.humanitarianScopes) && iati_data.humanitarianScopes.length > 0) {
+        const hsData = iati_data.humanitarianScopes.map((scope: any) => ({
+          activity_id: activityId,
+          scope_type: scope.type || '1',
+          vocabulary: scope.vocabulary || '1-2',
+          code: scope.code,
+          vocabulary_uri: scope.vocabularyUri,
+          narratives: scope.narratives ? JSON.stringify(scope.narratives) : null
+        }));
+        
+        const { error: hsError } = await supabase
+          .from('activity_humanitarian_scope')
+          .insert(hsData);
+        
+        if (!hsError) {
+          updatedFields.push('humanitarian_scopes');
+          console.log(`[IATI Import] ✓ Imported ${hsData.length} humanitarian scopes`);
+        } else {
+          console.error('[IATI Import] Error inserting humanitarian scopes:', hsError);
+        }
+      }
+    }
+    
+    // Handle document links if selected
+    if (fields.document_links && iati_data.document_links) {
+      console.log('[IATI Import] Updating document links');
+      
+      // Clear existing document links
+      await supabase
+        .from('activity_documents')
+        .delete()
+        .eq('activity_id', activityId);
+      
+      // Insert new document links
+      if (Array.isArray(iati_data.document_links) && iati_data.document_links.length > 0) {
+        const docData = iati_data.document_links.map((doc: any) => ({
+          activity_id: activityId,
+          document_format: doc.format,
+          url: doc.url,
+          title: doc.title,
+          description: doc.description,
+          category_code: doc.category_code,
+          language_code: doc.language_code || 'en',
+          document_date: doc.document_date
+        }));
+        
+        const { error: docsError } = await supabase
+          .from('activity_documents')
+          .insert(docData);
+        
+        if (!docsError) {
+          updatedFields.push('document_links');
+          console.log(`[IATI Import] ✓ Imported ${docData.length} document links`);
+        } else {
+          console.error('[IATI Import] Error inserting document links:', docsError);
+        }
+      }
+    }
+    
+    // Handle financing terms if selected
+    if (fields.financing_terms && iati_data.financingTerms) {
+      console.log('[IATI Import] Updating financing terms');
+      
+      try {
+        // First, create or get the financing_terms record
+        const { data: existingFT, error: ftCheckError } = await supabase
+          .from('financing_terms')
+          .select('id')
+          .eq('activity_id', activityId)
+          .single();
+        
+        let financingTermsId: string;
+        
+        if (existingFT) {
+          financingTermsId = existingFT.id;
+          // Clear existing related data
+          await supabase.from('loan_terms').delete().eq('financing_terms_id', financingTermsId);
+          await supabase.from('loan_statuses').delete().eq('financing_terms_id', financingTermsId);
+          await supabase.from('financing_other_flags').delete().eq('financing_terms_id', financingTermsId);
+        } else {
+          // Create new financing_terms record
+          const { data: newFT, error: ftInsertError } = await supabase
+            .from('financing_terms')
+            .insert({
+              activity_id: activityId,
+              channel_code: iati_data.financingTerms.channelCode
+            })
+            .select('id')
+            .single();
+          
+          if (ftInsertError || !newFT) {
+            throw new Error('Failed to create financing_terms record');
+          }
+          financingTermsId = newFT.id;
+        }
+        
+        // Insert loan terms if present
+        if (iati_data.financingTerms.loanTerms) {
+          const loanTermsData = {
+            financing_terms_id: financingTermsId,
+            rate_1: iati_data.financingTerms.loanTerms.rate_1,
+            rate_2: iati_data.financingTerms.loanTerms.rate_2,
+            repayment_type_code: iati_data.financingTerms.loanTerms.repayment_type_code,
+            repayment_plan_code: iati_data.financingTerms.loanTerms.repayment_plan_code,
+            commitment_date: iati_data.financingTerms.loanTerms.commitment_date,
+            repayment_first_date: iati_data.financingTerms.loanTerms.repayment_first_date,
+            repayment_final_date: iati_data.financingTerms.loanTerms.repayment_final_date
+          };
+          
+          await supabase.from('loan_terms').insert(loanTermsData);
+        }
+        
+        // Insert loan statuses if present
+        if (iati_data.financingTerms.loanStatuses && iati_data.financingTerms.loanStatuses.length > 0) {
+          const loanStatusData = iati_data.financingTerms.loanStatuses.map((status: any) => ({
+            financing_terms_id: financingTermsId,
+            year: status.year,
+            currency: status.currency,
+            value_date: status.value_date,
+            interest_received: status.interest_received,
+            principal_outstanding: status.principal_outstanding,
+            principal_arrears: status.principal_arrears,
+            interest_arrears: status.interest_arrears
+          }));
+          
+          await supabase.from('loan_statuses').insert(loanStatusData);
+        }
+        
+        // Insert other flags if present
+        if (iati_data.financingTerms.otherFlags && iati_data.financingTerms.otherFlags.length > 0) {
+          const otherFlagsData = iati_data.financingTerms.otherFlags.map((flag: any) => ({
+            financing_terms_id: financingTermsId,
+            code: flag.code,
+            significance: flag.significance
+          }));
+          
+          await supabase.from('financing_other_flags').insert(otherFlagsData);
+        }
+        
+        updatedFields.push('financing_terms');
+        console.log('[IATI Import] ✓ Imported financing terms');
+      } catch (error) {
+        console.error('[IATI Import] Error importing financing terms:', error);
+      }
+    }
+    
     // Update sync tracking fields
     const syncUpdate = {
       last_sync_time: new Date().toISOString(),
@@ -627,6 +997,7 @@ export async function POST(
       success: true,
       activity_id: activityId,
       fields_updated: updatedFields,
+      warnings: importWarnings.length > 0 ? importWarnings : undefined,
       summary: {
         total_fields_requested: Object.keys(fields).filter(k => fields[k]).length,
         total_fields_updated: updatedFields.length,
@@ -635,7 +1006,8 @@ export async function POST(
           iati_data.participating_orgs.length : 0,
         transactions_added: fields.transactions ? newTransactionsCount : 0,
         last_sync_time: syncUpdate.last_sync_time,
-        sync_status: syncUpdate.sync_status
+        sync_status: syncUpdate.sync_status,
+        has_warnings: importWarnings.length > 0
       }
     });
     

@@ -23,6 +23,7 @@ import { useDropzone } from 'react-dropzone'
 import Flag from 'react-world-flags'
 import { CreateCustomGroupModal } from '@/components/organizations/CreateCustomGroupModal'
 import { EditCustomGroupModal } from '@/components/organizations/EditCustomGroupModal'
+import { OrganizationTable } from '@/components/organizations/OrganizationTable'
 import {
   Tooltip,
   TooltipContent,
@@ -2083,6 +2084,10 @@ function OrganizationsPageContent() {
   const [editGroupModalOpen, setEditGroupModalOpen] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
   
+  // Sorting state for table view
+  const [sortField, setSortField] = useState<'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding'>('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  
   // AbortController refs for race condition prevention
   const mainFetchControllerRef = useRef<AbortController | null>(null)
   const typesControllerRef = useRef<AbortController | null>(null)
@@ -2114,11 +2119,54 @@ function OrganizationsPageContent() {
     setMounted(true)
   }, [])
 
+  // Sort organizations for table view
+  const sortedOrganizations = React.useMemo(() => {
+    if (viewMode !== 'table') return filteredOrganizations
+    
+    return [...filteredOrganizations].sort((a, b) => {
+      let aValue: any
+      let bValue: any
+      
+      switch (sortField) {
+        case 'name':
+          aValue = a.name?.toLowerCase() || ''
+          bValue = b.name?.toLowerCase() || ''
+          break
+        case 'acronym':
+          aValue = a.acronym?.toLowerCase() || ''
+          bValue = b.acronym?.toLowerCase() || ''
+          break
+        case 'type':
+          aValue = getOrganizationTypeLabel(a.Organisation_Type_Code, availableTypes).toLowerCase()
+          bValue = getOrganizationTypeLabel(b.Organisation_Type_Code, availableTypes).toLowerCase()
+          break
+        case 'location':
+          aValue = a.country_represented?.toLowerCase() || ''
+          bValue = b.country_represented?.toLowerCase() || ''
+          break
+        case 'activities':
+          aValue = a.activeProjects || 0
+          bValue = b.activeProjects || 0
+          break
+        case 'funding':
+          aValue = a.totalBudgeted || 0
+          bValue = b.totalBudgeted || 0
+          break
+        default:
+          return 0
+      }
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+  }, [filteredOrganizations, sortField, sortOrder, viewMode, availableTypes])
+
   // Calculate pagination
-  const totalPages = Math.ceil(filteredOrganizations.length / itemsPerPage)
+  const totalPages = Math.ceil(sortedOrganizations.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const paginatedOrganizations = filteredOrganizations.slice(startIndex, endIndex)
+  const paginatedOrganizations = sortedOrganizations.slice(startIndex, endIndex)
 
   // Reset pagination when filter changes
   useEffect(() => {
@@ -2429,6 +2477,16 @@ function OrganizationsPageContent() {
       }
       return newFilters
     })
+  }
+
+  // Handle table sorting
+  const handleSort = (field: 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding') => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
   }
 
   // Clear all filters
@@ -2808,12 +2866,14 @@ function OrganizationsPageContent() {
                       ))}
                     </div>
                   ) : (
-                    <OrganizationListView
+                    <OrganizationTable
                       organizations={paginatedOrganizations}
+                      availableTypes={availableTypes}
+                      sortField={sortField}
+                      sortOrder={sortOrder}
+                      onSort={handleSort}
                       onEdit={handleEditOrganization}
                       onDelete={handleDeleteOrganization}
-                      availableTypes={availableTypes}
-                      onTagClick={handleTagClick}
                     />
                   )}
                   

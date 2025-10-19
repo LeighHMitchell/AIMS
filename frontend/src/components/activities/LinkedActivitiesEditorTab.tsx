@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Edit2, Trash2, ArrowRight, ArrowLeft, ArrowUpDown, CheckCircle, Loader2 } from 'lucide-react';
+import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Edit2, Trash2, ArrowRight, ArrowLeft, ArrowUpDown, CheckCircle, Loader2, FileCode } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -553,12 +553,18 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                           </div>
                           
                           <div className="space-y-1 ml-6">
-                            <p className="text-xs text-gray-500 break-words">
-                              {[
-                                link.otherIdentifier,
-                                link.iatiIdentifier
-                              ].filter(Boolean).join(' • ')}
-                            </p>
+                            {link.iatiIdentifier && (
+                              <p className="text-xs break-words">
+                                <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 font-mono">
+                                  {link.iatiIdentifier}
+                                </code>
+                              </p>
+                            )}
+                            {link.otherIdentifier && (
+                              <p className="text-xs text-gray-500 break-words">
+                                {link.otherIdentifier}
+                              </p>
+                            )}
                             {(link.organizationName || link.organizationAcronym) && (
                               <p className="text-xs text-gray-500 break-words">
                                 {link.organizationName && link.organizationAcronym 
@@ -567,7 +573,16 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                               </p>
                             )}
                             {link.narrative && (
-                              <p className="text-sm text-gray-600 mt-2">{link.narrative}</p>
+                              <div className="mt-2">
+                                {link.narrative.startsWith('Imported from XML') ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-md" style={{ backgroundColor: '#004F59', color: 'white' }}>
+                                    <FileCode className="h-3 w-3 flex-shrink-0" />
+                                    Imported from XML
+                                  </span>
+                                ) : (
+                                  <p className="text-sm text-gray-600">{link.narrative}</p>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>

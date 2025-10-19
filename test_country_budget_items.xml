@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>TEST-BUDGET-001</iati-identifier>
+    <title>
+      <narrative>Test Activity for Budget Mapping Import</narrative>
+    </title>
+    
+    <!--country-budget-items starts-->
+    <country-budget-items vocabulary="4">
+      <budget-item code="1844" percentage="50">
+        <description>
+          <narrative>Description text for item 1</narrative>
+        </description>
+      </budget-item>
+      <budget-item code="1900" percentage="50">
+        <description>
+          <narrative>Description text for item 2</narrative>
+        </description>
+      </budget-item>
+    </country-budget-items>
+    <!--country-budget-items ends-->
+    
+  </iati-activity>
+</iati-activities>

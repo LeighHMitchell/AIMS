@@ -43,6 +43,7 @@ import {
   UserCheck,
   UserX,
   FileText,
+  FileCode,
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
 import { TIED_STATUS_LABELS } from "@/types/transaction";
@@ -73,6 +74,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Transaction type to icon mapping
 const TRANSACTION_TYPE_ICONS: Record<string, React.FC<any>> = {
@@ -263,6 +265,9 @@ interface TransactionTableProps {
   onDelete?: (transactionId: string) => void;
   onConvertCurrency?: (transactionId: string) => void;
   variant?: "full" | "compact";
+  selectedIds?: Set<string>;
+  onSelectAll?: (checked: boolean) => void;
+  onSelectTransaction?: (id: string, checked: boolean) => void;
 }
 
 export function TransactionTable({
@@ -277,6 +282,9 @@ export function TransactionTable({
   onDelete,
   onConvertCurrency,
   variant = "full",
+  selectedIds,
+  onSelectAll,
+  onSelectTransaction,
 }: TransactionTableProps) {
   const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -463,7 +471,16 @@ export function TransactionTable({
         <TableHeader className="bg-muted/50 border-b border-border/70">
           <TableRow>
             <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-10 text-center">
-              
+              {onSelectAll && selectedIds && (
+                <div className="flex items-center justify-center">
+                  <Checkbox
+                    checked={selectedIds.size === transactions.length && transactions.length > 0}
+                    indeterminate={selectedIds.size > 0 && selectedIds.size < transactions.length}
+                    onCheckedChange={onSelectAll}
+                    aria-label="Select all transactions"
+                  />
+                </div>
+              )}
             </TableHead>
             {variant === "full" && (
               <TableHead 
@@ -560,30 +577,43 @@ export function TransactionTable({
               transaction.description
             );
             
+            const isSelected = selectedIds?.has(transactionId) || false;
+            
             return (
             <React.Fragment key={transaction.id}>
             <TableRow
               className={cn(
-                "border-b border-border/40 hover:bg-muted/30 transition-colors"
+                "border-b border-border/40 hover:bg-muted/30 transition-colors",
+                isSelected && "bg-blue-50 border-blue-200"
               )}
             >
-                {/* Expand/Collapse Button */}
-                <td className="py-3 px-4 text-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleRowExpansion(transactionId);
-                    }}
-                  >
-                    {isExpanded ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
+                {/* Checkbox or Expand/Collapse Button */}
+                <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                  {onSelectTransaction && selectedIds ? (
+                    <div className="flex items-center justify-center">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => onSelectTransaction(transactionId, !!checked)}
+                        aria-label={`Select transaction ${transactionId}`}
+                      />
+                    </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleRowExpansion(transactionId);
+                      }}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                 </td>
             
                 {variant === "full" && (
@@ -685,6 +715,22 @@ export function TransactionTable({
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                      
+                      {/* IATI Import Pill for imported transactions */}
+                      {!transaction.created_by && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex items-center justify-center">
+                                <FileCode className="h-4 w-4" style={{ color: '#004F59' }} />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p className="text-sm">This transaction was imported from IATI XML data</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                       
                       {/* Icons in order: Link → Heart → Shield (validated) */}
                       {(transaction.provider_org_activity_id || transaction.receiver_org_activity_id) && (

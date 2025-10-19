@@ -465,6 +465,15 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const generateDetailedFields = (itemType: 'budget' | 'transaction' | 'plannedDisbursement', itemData: any, itemIndex: number): ParsedField[] => {
     const detailFields: ParsedField[] = [];
     
+    // Enhanced Select All Fix: Check if comprehensive selection is active
+    // If >80% of fields are selected, default all detailed fields to selected
+    const selectedFields = parsedFields.filter(f => f.selected);
+    const totalFields = parsedFields.length;
+    const selectionRatio = selectedFields.length / totalFields;
+    const isComprehensiveSelection = selectionRatio > 0.8;
+    
+    console.log(`[XML Import] generateDetailedFields: Comprehensive selection active: ${isComprehensiveSelection}, defaulting detailed fields to selected`);
+    
     if (itemType === 'budget') {
       if (itemData.type) {
         detailFields.push({
@@ -602,7 +611,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: `transaction/@type`,
           currentValue: null,
           importValue: { code: itemData.type, name: transactionTypes[itemData.type] || 'Unknown' },
-          selected: true,
+          selected: isComprehensiveSelection || true, // Always selected, or enhanced if comprehensive
           hasConflict: false,
           tab: 'transactions',
           description: 'Type of transaction'
@@ -615,7 +624,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: `transaction/transaction-date/@iso-date`,
           currentValue: null,
           importValue: itemData.date,
-          selected: true,
+          selected: isComprehensiveSelection || true, // Always selected, or enhanced if comprehensive
           hasConflict: false,
           tab: 'transactions',
           description: 'Date of the transaction'
@@ -786,6 +795,33 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const openFinancialDetailModal = (field: ParsedField) => {
     if (field.isFinancialItem && field.itemType && field.itemData !== undefined && field.itemIndex !== undefined) {
       const detailFields = generateDetailedFields(field.itemType, field.itemData, field.itemIndex);
+      
+      // Enhanced Select All Fix: Auto-select all fields if comprehensive selection is active
+      const selectedFields = parsedFields.filter(f => f.selected);
+      const totalFields = parsedFields.length;
+      const selectionRatio = selectedFields.length / totalFields;
+      const isComprehensiveSelection = selectionRatio > 0.8;
+      
+      console.log(`[XML Import] Modal Opening: Selection analysis - ${selectedFields.length}/${totalFields} fields selected (${(selectionRatio * 100).toFixed(1)}%)`);
+      console.log(`[XML Import] Modal Opening: Comprehensive selection active: ${isComprehensiveSelection}`);
+      console.log(`[XML Import] Modal Opening: Generated ${detailFields.length} detailed fields for ${field.itemType} ${field.itemIndex + 1}`);
+      
+      if (isComprehensiveSelection) {
+        console.log(`[XML Import] Modal Opening: FORCING all transaction field toggles to selected=true`);
+        // Force ALL detailed fields to selected for comprehensive imports
+        detailFields.forEach((detailField, index) => {
+          const wasSelected = detailField.selected;
+          detailField.selected = true;
+          console.log(`[XML Import] Modal Opening: Field ${index + 1} "${detailField.fieldName}": ${wasSelected} → true`);
+        });
+        console.log(`[XML Import] Modal Opening: All ${detailFields.length} transaction fields forced to selected=true`);
+      } else {
+        console.log(`[XML Import] Modal Opening: Not comprehensive selection - keeping default field states`);
+        detailFields.forEach((detailField, index) => {
+          console.log(`[XML Import] Modal Opening: Field ${index + 1} "${detailField.fieldName}": selected=${detailField.selected} (unchanged)`);
+        });
+      }
+      
       setSelectedItem({
         type: field.itemType,
         index: field.itemIndex,
@@ -897,6 +933,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     const fetchActivityData = async () => {
       if (!activityId) return;
       
+      // Declare variables that will be used in multiple places
+      let currentLocations: any[] = [];
+      let currentParticipatingOrgs: any[] = [];
+      
       try {
         // Fetch full activity data to include location data
         console.log('[XmlImportTab] Fetching activity data for:', activityId);
@@ -916,7 +956,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         const locationsResponse = await fetch(`/api/activities/${activityId}/locations`);
         
         const locationsData = locationsResponse.ok ? await locationsResponse.json() : { locations: [] };
-        const currentLocations = locationsData.locations || [];
+        currentLocations = locationsData.locations || [];
         
         console.log('[XmlImportTab] Current locations:', currentLocations);
 
@@ -925,7 +965,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         
         const participatingOrgsResponse = await fetch(`/api/activities/${activityId}/participating-organizations`);
         
-        const currentParticipatingOrgs = participatingOrgsResponse.ok ? await participatingOrgsResponse.json() : [];
+        currentParticipatingOrgs = participatingOrgsResponse.ok ? await participatingOrgsResponse.json() : [];
         
         console.log('[XmlImportTab] Current participating organizations:', currentParticipatingOrgs);
         
@@ -1308,6 +1348,15 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         fileToCheck = new File([content], 'snippet.xml', { type: 'text/xml' });
       }
       
+      // Ensure valid IATI structure across all import methods
+      const wrappedAll = wrapSnippetIfNeeded(content);
+      if (wrappedAll !== content) {
+        console.log('[XML Import Debug] Applied wrapping to', importMethod, 'import');
+        console.log('[XML Import Debug] Original content length:', content.length);
+        console.log('[XML Import Debug] Wrapped content length:', wrappedAll.length);
+        content = wrappedAll;
+      }
+      
       setXmlContent(content);
       
       console.log('[XML Import Debug] Setting status to parsing');
@@ -1342,6 +1391,25 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       setParsedActivity(parsedActivity);
       
       console.log('[XML Import Debug] Parsed activity data:', parsedActivity);
+      
+      // PHASE 1: Comprehensive diagnostic logging for URL import debugging
+      console.log('🔍 [XML Import] DIAGNOSTIC - Parsed Activity Analysis:');
+      console.log('🔍 [XML Import] DIAGNOSTIC - Transactions:', {
+        exists: !!parsedActivity.transactions,
+        count: parsedActivity.transactions?.length || 0,
+        firstTransaction: parsedActivity.transactions?.[0],
+        allTransactions: parsedActivity.transactions
+      });
+      console.log('🔍 [XML Import] DIAGNOSTIC - Financing Terms:', {
+        exists: !!parsedActivity.financingTerms,
+        data: parsedActivity.financingTerms
+      });
+      console.log('🔍 [XML Import] DIAGNOSTIC - Capital Spend:', {
+        exists: !!parsedActivity.capitalSpendPercentage,
+        value: parsedActivity.capitalSpendPercentage
+      });
+      console.log('🔍 [XML Import] DIAGNOSTIC - Import Method:', importMethod);
+      console.log('🔍 [XML Import] DIAGNOSTIC - Is Snippet:', importMethod === 'snippet');
       
       // Update progress for field processing
       setImportStatus({ stage: 'parsing', progress: 80 });
@@ -2049,6 +2117,21 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      // === DOCUMENT LINKS ===
+      
+      if (parsedActivity.document_links && parsedActivity.document_links.length > 0) {
+        fields.push({
+          fieldName: `Document Links (${parsedActivity.document_links.length})`,
+          iatiPath: 'iati-activity/document-link',
+          currentValue: null,
+          importValue: `${parsedActivity.document_links.length} document${parsedActivity.document_links.length > 1 ? 's' : ''} to import`,
+          selected: true,
+          hasConflict: false,
+          tab: 'documents',
+          description: 'Activity-level document links from XML'
+        });
+      }
+
       // === COUNTRY BUDGET ITEMS TAB ===
       
       if (parsedActivity.countryBudgetItems && parsedActivity.countryBudgetItems.length > 0) {
@@ -2458,6 +2541,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             code: s.code,
             name: sectorName,
             percentage: s.percentage || 0,
+            vocabulary: s.vocabulary, // CRITICAL: Preserve vocabulary for validation
             isDac: true
           };
         });
@@ -2475,11 +2559,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         const allSectorInfo = [...importSectorInfo, ...nonDacSectorInfo];
         
         // Check for 3-digit sectors that need refinement
+        // NOTE: Only vocabulary="1" 3-digit codes need refinement
+        // vocabulary="2" 3-digit codes are CORRECT as-is (DAC 3 Digit standard)
         const has3DigitSectors = parsedActivity.sectors.some(s => 
-          s.code && s.code.length === 3 && /^\d{3}$/.test(s.code)
+          s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) &&
+          (s.vocabulary === '1' || !s.vocabulary) // Only vocabulary 1 or missing
         );
         console.log('[Sector Import Debug] Parsed sectors:', parsedActivity.sectors);
-        console.log('[Sector Import Debug] 3-digit sectors detected:', has3DigitSectors);
+        console.log('[Sector Import Debug] 3-digit sectors needing refinement:', has3DigitSectors);
         console.log('[Sector Import Debug] Sector codes:', parsedActivity.sectors.map(s => s.code));
         
         const hasConflict = !!currentActivityData.sectors?.length;
@@ -2504,10 +2591,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         // Add metadata to track sectors that need refinement
         if (has3DigitSectors) {
           (sectorField as any).needsRefinement = true;
-          // Only pass 3-digit DAC sectors that need refinement, not all sectors
+          // Only pass 3-digit DAC 5 Digit (vocabulary=1) sectors that need refinement
+          // vocabulary=2 (DAC 3 Digit) codes are CORRECT as 3-digit and should NOT be refined
           const sectorsNeedingRefinement = parsedActivity.sectors.filter(s => 
             s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) && 
-            (s.vocabulary === '1' || s.vocabulary === '2' || !s.vocabulary)
+            (s.vocabulary === '1' || !s.vocabulary) // Exclude vocabulary=2
           );
           (sectorField as any).importedSectors = sectorsNeedingRefinement;
         }
@@ -2618,6 +2706,178 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      // === CONTACTS ===
+      
+      if (parsedActivity.contactInfo && parsedActivity.contactInfo.length > 0) {
+        const currentContactsValue = 'Check Contacts tab for existing contacts';
+        const importContactsValue = `${parsedActivity.contactInfo.length} contact(s)`;
+        
+        fields.push({
+          fieldName: 'Contact Information',
+          iatiPath: 'iati-activity/contact-info',
+          currentValue: currentContactsValue,
+          importValue: importContactsValue,
+          selected: false,
+          hasConflict: false,
+          tab: 'contacts',
+          description: `${parsedActivity.contactInfo.length} contact(s) found in XML`,
+          category: 'contacts'
+        });
+      }
+      
+      // === CONDITIONS ===
+      
+      if (parsedActivity.conditions && parsedActivity.conditions.conditions.length > 0) {
+        const currentConditionsValue = 'Check Conditions tab for existing conditions';
+        const importConditionsValue = `${parsedActivity.conditions.conditions.length} condition(s)`;
+        
+        fields.push({
+          fieldName: 'Conditions',
+          iatiPath: 'iati-activity/conditions',
+          currentValue: currentConditionsValue,
+          importValue: importConditionsValue,
+          selected: false,
+          hasConflict: false,
+          tab: 'conditions',
+          description: `${parsedActivity.conditions.conditions.length} condition(s) found in XML (Attached: ${parsedActivity.conditions.attached})`,
+          category: 'conditions'
+        });
+      }
+      
+      // === BUDGETS ===
+      
+      if (parsedActivity.budgets && parsedActivity.budgets.length > 0) {
+        const currentBudgetsValue = 'Check Budgets tab for existing budgets';
+        const budgetsSummary = parsedActivity.budgets.map((b: any) => 
+          `${b.value || 0} ${b.currency || 'USD'} (${b.period?.start || 'N/A'} to ${b.period?.end || 'N/A'})`
+        ).join(', ');
+        
+        fields.push({
+          fieldName: 'Budgets',
+          iatiPath: 'iati-activity/budget',
+          currentValue: currentBudgetsValue,
+          importValue: budgetsSummary,
+          selected: false,
+          hasConflict: false,
+          tab: 'budgets',
+          description: `${parsedActivity.budgets.length} budget(s) found in XML`,
+          category: 'financial'
+        });
+      }
+      
+      // === PLANNED DISBURSEMENTS ===
+      
+      if (parsedActivity.plannedDisbursements && parsedActivity.plannedDisbursements.length > 0) {
+        const currentPDValue = 'Check Planned Disbursements tab for existing data';
+        const pdSummary = parsedActivity.plannedDisbursements.map((pd: any) => 
+          `${pd.value || 0} ${pd.currency || 'USD'} (${pd.period?.start || 'N/A'} to ${pd.period?.end || 'N/A'})`
+        ).join(', ');
+        
+        fields.push({
+          fieldName: 'Planned Disbursements',
+          iatiPath: 'iati-activity/planned-disbursement',
+          currentValue: currentPDValue,
+          importValue: pdSummary,
+          selected: false,
+          hasConflict: false,
+          tab: 'planned-disbursements',
+          description: `${parsedActivity.plannedDisbursements.length} planned disbursement(s) found in XML`,
+          category: 'financial'
+        });
+      }
+      
+      // === HUMANITARIAN SCOPE ===
+      
+      if (parsedActivity.humanitarianScopes && parsedActivity.humanitarianScopes.length > 0) {
+        const currentHSValue = parsedActivity.humanitarian ? 'Humanitarian activity' : 'Not marked as humanitarian';
+        const hsSummary = parsedActivity.humanitarianScopes.map((scope: any) => {
+          const narrativeText = scope.narratives?.[0]?.text || scope.code;
+          return `${scope.code} (${scope.vocabulary || '1-2'}): ${narrativeText}`;
+        }).join(', ');
+        
+        fields.push({
+          fieldName: 'Humanitarian Scope',
+          iatiPath: 'iati-activity/humanitarian-scope',
+          currentValue: currentHSValue,
+          importValue: hsSummary,
+          selected: false,
+          hasConflict: false,
+          tab: 'humanitarian',
+          description: `${parsedActivity.humanitarianScopes.length} humanitarian scope(s) found in XML`,
+          category: 'humanitarian'
+        });
+      }
+      
+      // === DOCUMENT LINKS ===
+      
+      if (parsedActivity.document_links && parsedActivity.document_links.length > 0) {
+        const currentDocsValue = 'Check Documents tab for existing documents';
+        const docsSummary = parsedActivity.document_links.map((doc: any) => 
+          `${doc.title || 'Untitled'} (${doc.category_code || 'No category'})`
+        ).join(', ');
+        
+        fields.push({
+          fieldName: 'Document Links',
+          iatiPath: 'iati-activity/document-link',
+          currentValue: currentDocsValue,
+          importValue: docsSummary,
+          selected: false,
+          hasConflict: false,
+          tab: 'documents',
+          description: `${parsedActivity.document_links.length} document link(s) found in XML`,
+          category: 'documents'
+        });
+      }
+      
+      // === LOCATIONS ===
+      
+      if (parsedActivity.locations && parsedActivity.locations.length > 0) {
+        const currentLocsValue = 'Check Locations tab for existing locations';
+        const locsSummary = parsedActivity.locations.map((loc: any) => 
+          `${loc.name || loc.ref || 'Unnamed location'}`
+        ).join(', ');
+        
+        fields.push({
+          fieldName: 'Locations',
+          iatiPath: 'iati-activity/location',
+          currentValue: currentLocsValue,
+          importValue: locsSummary,
+          selected: false,
+          hasConflict: false,
+          tab: 'locations',
+          description: `${parsedActivity.locations.length} location(s) found in XML`,
+          category: 'geography'
+        });
+      }
+      
+      // === FINANCING TERMS ===
+      
+      if (parsedActivity.financingTerms) {
+        const currentFTValue = 'Check Financing Terms tab for existing data';
+        const ftSummary = [];
+        if (parsedActivity.financingTerms.loanTerms) {
+          ftSummary.push('Loan terms included');
+        }
+        if (parsedActivity.financingTerms.loanStatuses?.length > 0) {
+          ftSummary.push(`${parsedActivity.financingTerms.loanStatuses.length} loan status(es)`);
+        }
+        if (parsedActivity.financingTerms.other_flags?.length > 0) {
+          ftSummary.push(`${parsedActivity.financingTerms.other_flags.length} flag(s)`);
+        }
+        
+        fields.push({
+          fieldName: 'Financing Terms',
+          iatiPath: 'iati-activity/crs-add',
+          currentValue: currentFTValue,
+          importValue: ftSummary.join(', ') || 'CRS financing data',
+          selected: false,
+          hasConflict: false,
+          tab: 'financing',
+          description: 'CRS financing terms and loan data',
+          category: 'financial'
+        });
+      }
+      
       // === PARTNERS TAB ===
       
       if (parsedActivity.reportingOrg) {
@@ -2840,11 +3100,68 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
 
+      // === HUMANITARIAN TAB ===
+      
+      // Humanitarian flag
+      if (parsedActivity.humanitarian !== undefined) {
+        fields.push({
+          fieldName: 'Humanitarian Activity',
+          iatiPath: 'iati-activity/@humanitarian',
+          currentValue: null,
+          importValue: parsedActivity.humanitarian ? 'Yes' : 'No',
+          selected: false,
+          hasConflict: false,
+          tab: 'humanitarian',
+          description: 'Marks activity as humanitarian in nature'
+        });
+      }
+
+      // Humanitarian scopes
+      if (parsedActivity.humanitarianScopes && parsedActivity.humanitarianScopes.length > 0) {
+        parsedActivity.humanitarianScopes.forEach((scope, index) => {
+          const typeLabel = scope.type === '1' ? 'Emergency' : scope.type === '2' ? 'Appeal' : scope.type;
+          const narrativesText = scope.narratives?.map(n => n.text).join('; ') || scope.code;
+          
+          fields.push({
+            fieldName: `Humanitarian Scope ${index + 1}`,
+            iatiPath: 'iati-activity/humanitarian-scope',
+            currentValue: null,
+            importValue: {
+              type: scope.type,
+              vocabulary: scope.vocabulary,
+              code: scope.code,
+              vocabularyUri: scope.vocabularyUri,
+              narratives: scope.narratives
+            },
+            selected: false,
+            hasConflict: false,
+            tab: 'humanitarian',
+            description: `${typeLabel}: ${narrativesText}`
+          });
+        });
+      }
+
       if (fields.length === 0) {
         throw new Error('No importable fields found in the XML file. Please check that it contains valid IATI activity data.');
       }
 
-      console.log('[XML Import Debug] Setting parsed fields:', fields.length, 'fields');
+        console.log('[XML Import Debug] Setting parsed fields:', fields.length, 'fields');
+        
+        // PHASE 1: Diagnostic logging for field creation analysis
+        const transactionFields = fields.filter(f => f.fieldName.includes('Transaction'));
+        const financingFields = fields.filter(f => f.fieldName.includes('Financing') || f.fieldName.includes('Capital'));
+        
+        console.log('🔍 [XML Import] DIAGNOSTIC - Field Creation Results:');
+        console.log('🔍 [XML Import] DIAGNOSTIC - Transaction Fields Created:', {
+          count: transactionFields.length,
+          names: transactionFields.map(f => f.fieldName),
+          hasItemData: transactionFields.map(f => ({ name: f.fieldName, hasItemData: !!f.itemData, itemIndex: f.itemIndex }))
+        });
+        console.log('🔍 [XML Import] DIAGNOSTIC - Financing Fields Created:', {
+          count: financingFields.length,
+          names: financingFields.map(f => f.fieldName),
+          hasImportValue: financingFields.map(f => ({ name: f.fieldName, hasValue: !!f.importValue }))
+        });
       setParsedFields(fields);
       
       // EXTERNAL PUBLISHER DETECTION - After parsing is complete
@@ -2913,13 +3230,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // AUTO-TRIGGER SECTOR REFINEMENT for 3-digit sectors
       const sectorField = fields.find(f => f.fieldName === 'Sectors');
       if (sectorField && (sectorField as any).needsRefinement) {
-        console.log('[XML Import] Auto-triggering sector refinement for 3-digit sectors');
+        console.log('[XML Import] Auto-triggering sector refinement for 3-digit DAC 5 Digit sectors');
         const importedSectors = (sectorField as any).importedSectors || [];
         
-        // Filter to only include 3-digit DAC sectors that need refinement
+        // Filter to only include 3-digit DAC 5 Digit (vocabulary=1) sectors that need refinement
+        // vocabulary=2 (DAC 3 Digit) codes are CORRECT as 3-digit and should NOT be refined
         const sectorsNeedingRefinement = importedSectors.filter((s: any) => 
           s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) && 
-          (s.vocabulary === '1' || s.vocabulary === '2' || !s.vocabulary)
+          (s.vocabulary === '1' || !s.vocabulary) // Exclude vocabulary=2
         );
         
         // Show sector refinement modal immediately
@@ -2958,9 +3276,84 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     });
   };
 
-  // Select all fields
+  // Enhanced Select all fields - selects main fields AND all sub-toggles
   const selectAllFields = (select: boolean) => {
+    console.log(`[XML Import] Enhanced Select All: ${select ? 'Selecting' : 'Clearing'} all fields and sub-items`);
+    
+    // 1. Select all main fields (existing behavior)
     setParsedFields(prev => prev.map(field => ({ ...field, selected: select })));
+    
+    if (select) {
+      console.log('[XML Import] Enhanced Select All: Setting all sub-selection flags');
+      
+      // 2. Select all financial items - set flags to import ALL items
+      if (parsedActivity?.budgets?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.budgets.length} budgets`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      if (parsedActivity?.transactions?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.transactions.length} transactions`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      if (parsedActivity?.plannedDisbursements?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.plannedDisbursements.length} planned disbursements`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      // 3. Select all policy markers
+      if (parsedActivity?.policyMarkers?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.policyMarkers.length} policy markers`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      // 4. Select all locations
+      if (parsedActivity?.locations?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.locations.length} locations`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      // 5. Select all tags
+      if (parsedActivity?.tagClassifications?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.tagClassifications.length} tags`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      // 6. Select all conditions
+      if (parsedActivity?.conditions?.conditions?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.conditions.conditions.length} conditions`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      // 7. Select all FSS items
+      if (parsedActivity?.forwardSpendingPlans?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.forwardSpendingPlans.length} FSS items`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      // 8. Select all humanitarian scopes
+      if (parsedActivity?.humanitarianScopes?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.humanitarianScopes.length} humanitarian scopes`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      // 9. Select all document links
+      if (parsedActivity?.document_links?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.document_links.length} document links`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      // 10. Select all results
+      if (parsedActivity?.results?.length > 0) {
+        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.results.length} results`);
+        // This will be processed in importSelectedFields as bulk import
+      }
+      
+      console.log('[XML Import] Enhanced Select All: All items selected for comprehensive import');
+    } else {
+      console.log('[XML Import] Enhanced Select All: Cleared all selections');
+    }
   };
 
   // Handle sector refinement
@@ -2974,10 +3367,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       codeLength: s.code?.length
     })));
     
-    // Filter to only include 3-digit DAC sectors that need refinement
+    // Filter to only include 3-digit DAC 5 Digit (vocabulary=1) sectors that need refinement
+    // vocabulary=2 (DAC 3 Digit) codes are CORRECT as 3-digit and should NOT be refined
     const sectorsNeedingRefinement = importedSectors.filter(s => 
       s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) && 
-      (s.vocabulary === '1' || s.vocabulary === '2' || !s.vocabulary)
+      (s.vocabulary === '1' || !s.vocabulary) // Exclude vocabulary=2
     );
     
     setSectorRefinementData({
@@ -2989,7 +3383,87 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
   // Import selected fields
   const importSelectedFields = async () => {
-    console.log('🚀 [XML Import] Starting import process...');
+    console.log('🚀 [XML Import] Starting enhanced import process with comprehensive selection support...');
+    
+    // Enhanced: Check if this is a comprehensive selection (Select All was used)
+    const selectedFields = parsedFields.filter(f => f.selected);
+    const totalFields = parsedFields.length;
+    const selectionRatio = selectedFields.length / totalFields;
+    const isComprehensiveSelection = selectionRatio > 0.8; // If more than 80% of fields are selected
+    
+    console.log(`[XML Import] Selection analysis: ${selectedFields.length}/${totalFields} fields selected (${(selectionRatio * 100).toFixed(1)}%)`);
+    console.log(`[XML Import] Comprehensive selection detected: ${isComprehensiveSelection}`);
+    
+    if (isComprehensiveSelection) {
+      console.log('[XML Import] Comprehensive selection detected - enabling bulk import for all available sub-items');
+      
+      // Auto-enable bulk import flags for comprehensive selection
+      const updateData: any = {};
+      
+      if (parsedActivity?.transactions?.length > 0) {
+        updateData._importTransactions = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.transactions.length} transactions`);
+      }
+      
+      if (parsedActivity?.budgets?.length > 0) {
+        updateData._importBudgets = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.budgets.length} budgets`);
+      }
+      
+      if (parsedActivity?.plannedDisbursements?.length > 0) {
+        updateData._importPlannedDisbursements = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.plannedDisbursements.length} planned disbursements`);
+      }
+      
+      if (parsedActivity?.policyMarkers?.length > 0) {
+        updateData._importPolicyMarkers = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.policyMarkers.length} policy markers`);
+      }
+      
+      if (parsedActivity?.locations?.length > 0) {
+        updateData._importLocations = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.locations.length} locations`);
+      }
+      
+      if (parsedActivity?.tagClassifications?.length > 0) {
+        updateData._importTags = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.tagClassifications.length} tags`);
+      }
+      
+      if (parsedActivity?.conditions?.conditions?.length > 0) {
+        updateData._importConditions = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.conditions.conditions.length} conditions`);
+      }
+      
+      if (parsedActivity?.humanitarianScopes?.length > 0) {
+        updateData._importHumanitarianScopes = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.humanitarianScopes.length} humanitarian scopes`);
+      }
+      
+      if (parsedActivity?.document_links?.length > 0) {
+        updateData._importDocumentLinks = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.document_links.length} document links`);
+      }
+      
+      if (parsedActivity?.results?.length > 0) {
+        updateData._importResults = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.results.length} results`);
+      }
+      
+      if (parsedActivity?.sectors?.length > 0) {
+        updateData._importSectors = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.sectors.length} sectors`);
+      }
+      
+      if (parsedActivity?.forwardSpendingPlans?.length > 0) {
+        updateData._importFss = true;
+        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.forwardSpendingPlans.length} FSS items`);
+      }
+      
+      // Store the comprehensive selection flags
+      (window as any).__comprehensiveImportFlags = updateData;
+      console.log('[XML Import] Comprehensive import flags stored for processing');
+    }
     const selectedFieldsList = parsedFields.filter(f => f.selected);
     console.log('📋 [XML Import] Selected fields:', selectedFieldsList);
     console.log('📋 [XML Import] Selected fields count:', selectedFieldsList.length);
@@ -3005,11 +3479,68 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // Prepare the update data based on selected fields
       const updateData: any = {};
       
+      // Enhanced: Merge comprehensive import flags if available
+      const comprehensiveFlags = (window as any).__comprehensiveImportFlags;
+      if (comprehensiveFlags) {
+        Object.assign(updateData, comprehensiveFlags);
+        console.log('[XML Import] Merged comprehensive import flags:', Object.keys(comprehensiveFlags));
+        // Clear the flags after use
+        delete (window as any).__comprehensiveImportFlags;
+      }
+      
+      // CRITICAL FIX: Bulk collection for comprehensive selections
+      // When Enhanced Select All is used, collect bulk data BEFORE processing individual fields
+      if (updateData._importTransactions === true && !updateData.importedTransactions) {
+        updateData.importedTransactions = parsedActivity.transactions || [];
+        console.log(`[XML Import] 🎯 BULK MODE: Collected ${updateData.importedTransactions.length} transactions from parsed activity for comprehensive import`);
+      }
+      
+      if (updateData._importBudgets === true && !updateData.importedBudgets) {
+        updateData.importedBudgets = parsedActivity.budgets || [];
+        console.log(`[XML Import] 🎯 BULK MODE: Collected ${updateData.importedBudgets.length} budgets from parsed activity for comprehensive import`);
+      }
+      
+      if (updateData._importPlannedDisbursements === true && !updateData.importedPlannedDisbursements) {
+        updateData.importedPlannedDisbursements = parsedActivity.plannedDisbursements || [];
+        console.log(`[XML Import] 🎯 BULK MODE: Collected ${updateData.importedPlannedDisbursements.length} planned disbursements from parsed activity for comprehensive import`);
+      }
+      
+      if (updateData._importLocations === true && !updateData.importedLocations) {
+        updateData.importedLocations = parsedActivity.locations || [];
+        console.log(`[XML Import] 🎯 BULK MODE: Collected ${updateData.importedLocations.length} locations from parsed activity for comprehensive import`);
+      }
+      
+      // PHASE 1: Comprehensive diagnostic logging for field processing
+      console.log('🔍 [XML Import] DIAGNOSTIC - Field Processing Analysis:');
+      console.log('🔍 [XML Import] DIAGNOSTIC - Fields to Process:', selectedFieldsList.map(f => ({ 
+        name: f.fieldName, 
+        hasItemData: !!f.itemData, 
+        itemType: f.itemType,
+        itemIndex: f.itemIndex,
+        tab: f.tab
+      })));
+      console.log('🔍 [XML Import] DIAGNOSTIC - Comprehensive Flags:', {
+        transactions: updateData._importTransactions,
+        budgets: updateData._importBudgets,
+        financingTerms: updateData._importFinancingTerms,
+        locations: updateData._importLocations
+      });
+
       selectedFieldsList.forEach(field => {
         setImportStatus({ 
           stage: 'importing', 
           progress: Math.round((selectedFieldsList.indexOf(field) / selectedFieldsList.length) * 50),
           message: `Preparing ${field.fieldName}...`
+        });
+        
+        // PHASE 1: Diagnostic logging for each field being processed
+        console.log(`🔍 [XML Import] DIAGNOSTIC - Processing Field: ${field.fieldName} (tab: ${field.tab})`);
+        console.log(`🔍 [XML Import] DIAGNOSTIC - Field Data:`, {
+          hasImportValue: !!field.importValue,
+          hasItemData: !!field.itemData,
+          isFinancialItem: field.isFinancialItem,
+          itemType: field.itemType,
+          itemIndex: field.itemIndex
         });
 
         switch (field.fieldName) {
@@ -3194,6 +3725,124 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             // Handle results import - will be processed separately after main activity update
             updateData._importResults = true;
             break;
+          case 'Contacts':
+          case 'Contact Information':
+            // Handle contact info import
+            if (parsedActivity.contactInfo && parsedActivity.contactInfo.length > 0) {
+              // Use importedContacts to match existing handler at line 4160
+              if (!updateData.importedContacts) updateData.importedContacts = [];
+              parsedActivity.contactInfo.forEach((contact: any) => {
+                updateData.importedContacts.push({
+                  type: contact.type || '1',
+                  organization: contact.organization,
+                  department: contact.department,
+                  personName: contact.personName,
+                  jobTitle: contact.jobTitle,
+                  telephone: contact.telephone,
+                  email: contact.email,
+                  website: contact.website,
+                  mailingAddress: contact.mailingAddress
+                });
+              });
+              console.log(`[XML Import] Adding ${parsedActivity.contactInfo.length} contacts for import`);
+            }
+            break;
+          case 'Conditions':
+            // Handle conditions import
+            console.log('[XML Import DEBUG] Conditions case triggered!', parsedActivity.conditions);
+            if (parsedActivity.conditions && parsedActivity.conditions.conditions.length > 0) {
+              updateData._importConditions = true;
+              updateData.conditionsData = {
+                attached: parsedActivity.conditions.attached,
+                conditions: parsedActivity.conditions.conditions.map((condition: any) => ({
+                  condition_type: condition.type || '1',
+                  condition_text: condition.narrative,
+                  language: condition.narrativeLang || 'en'
+                }))
+              };
+              console.log(`[XML Import] Adding ${parsedActivity.conditions.conditions.length} conditions for import`);
+            }
+            break;
+          case 'Budgets':
+            // Handle budgets import - use importedBudgets to match existing handler at line 4277
+            if (parsedActivity.budgets && parsedActivity.budgets.length > 0) {
+              if (!updateData.importedBudgets) updateData.importedBudgets = [];
+              parsedActivity.budgets.forEach((budget: any) => {
+                updateData.importedBudgets.push(budget);
+              });
+              console.log(`[XML Import] Adding ${parsedActivity.budgets.length} budgets for import`);
+            }
+            break;
+          case 'Planned Disbursements':
+            // Handle planned disbursements import - use importedPlannedDisbursements to match existing handler at line 4342
+            if (parsedActivity.plannedDisbursements && parsedActivity.plannedDisbursements.length > 0) {
+              if (!updateData.importedPlannedDisbursements) updateData.importedPlannedDisbursements = [];
+              parsedActivity.plannedDisbursements.forEach((pd: any) => {
+                updateData.importedPlannedDisbursements.push(pd);
+              });
+              console.log(`[XML Import] Adding ${parsedActivity.plannedDisbursements.length} planned disbursements for import`);
+            }
+            break;
+          case 'Locations':
+            // Locations are already handled in the import-iati API
+            // Just set the flag to trigger import
+            if (parsedActivity.locations && parsedActivity.locations.length > 0) {
+              updateData._importLocations = true;
+              updateData.locationsData = parsedActivity.locations;
+              console.log(`[XML Import] Adding ${parsedActivity.locations.length} locations for import`);
+            }
+            break;
+          case 'Humanitarian Scope':
+          case 'Humanitarian Scopes':
+            // Handle humanitarian scope import
+            if (parsedActivity.humanitarianScopes && parsedActivity.humanitarianScopes.length > 0) {
+              updateData._importHumanitarianScopes = true;
+              updateData.humanitarianScopesData = parsedActivity.humanitarianScopes.map((scope: any) => ({
+                scope_type: scope.type || '1',
+                vocabulary: scope.vocabulary || '1-2',
+                code: scope.code,
+                vocabulary_uri: scope.vocabularyUri,
+                narratives: scope.narratives
+              }));
+              // Also update humanitarian flag if set
+              if (parsedActivity.humanitarian) {
+                updateData.humanitarian = parsedActivity.humanitarian;
+              }
+              console.log(`[XML Import] Adding ${parsedActivity.humanitarianScopes.length} humanitarian scopes for import`);
+            }
+            break;
+          case 'Document Links':
+          case 'Documents':
+            // Handle activity-level document links import
+            if (parsedActivity.document_links && parsedActivity.document_links.length > 0) {
+              updateData._importDocumentLinks = true;
+              updateData.documentLinksData = parsedActivity.document_links.map((doc: any) => ({
+                document_format: doc.format,
+                url: doc.url,
+                title: doc.title,
+                description: doc.description,
+                category_code: doc.category_code,
+                language_code: doc.language_code || 'en',
+                document_date: doc.document_date
+              }));
+              console.log(`[XML Import] Adding ${parsedActivity.document_links.length} document links for import`);
+            }
+            break;
+          case 'Financing Terms':
+          case 'CRS Financing':
+            // Handle CRS financing terms import
+            console.log('[XML Import DEBUG] Financing Terms case triggered!', parsedActivity.financingTerms);
+            if (parsedActivity.financingTerms) {
+              updateData._importFinancingTerms = true;
+              updateData.financingTermsData = {
+                loanTerms: parsedActivity.financingTerms.loanTerms,
+                otherFlags: parsedActivity.financingTerms.other_flags,
+                loanStatuses: parsedActivity.financingTerms.loanStatuses,
+                channelCode: parsedActivity.financingTerms.channel_code
+              };
+              console.log('[XML Import] Adding financing terms for import');
+            }
+            break;
           default:
             if (field.fieldName.startsWith('Other Identifier ')) {
               // Collect other identifier data for import (use raw data if available)
@@ -3214,8 +3863,81 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             } else
             if (field.fieldName.startsWith('Policy Marker:')) {
               // Handle individual policy marker import
+              // Enhanced Select All Fix: Check if comprehensive selection is active
+              if (updateData._importPolicyMarkers === true) {
+                // Comprehensive selection is active - skip individual processing
+                console.log('[XML Import] Skipping individual policy marker processing - comprehensive selection active');
+              } else {
+                // Individual selection mode
               if (!updateData._importPolicyMarkers) updateData._importPolicyMarkers = [];
               updateData._importPolicyMarkers.push(field.policyMarkerData);
+              }
+            } else if (field.fieldName.startsWith('Transaction ')) {
+              // PHASE 2: Fixed unified transaction processing - works for both URL and snippet imports
+              console.log('🔍 [XML Import] DIAGNOSTIC - Transaction Processing:', {
+                fieldName: field.fieldName,
+                comprehensiveMode: updateData._importTransactions === true,
+                hasItemData: !!field.itemData,
+                hasFieldIndex: field.itemIndex !== undefined
+              });
+              
+              if (!updateData.importedTransactions) updateData.importedTransactions = [];
+              
+              const transactionIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
+              
+              // Always collect transaction data - get from appropriate source
+              let txData = null;
+              
+              if (updateData._importTransactions === true) {
+                // Comprehensive mode: Get from parsedActivity (for URL imports)
+                txData = parsedActivity.transactions?.[transactionIndex];
+                console.log('🔍 [XML Import] DIAGNOSTIC - Comprehensive mode: Getting transaction from parsedActivity:', !!txData);
+              } else {
+                // Individual mode: Get from field data (for snippet imports)
+                txData = field.itemData;
+                console.log('🔍 [XML Import] DIAGNOSTIC - Individual mode: Getting transaction from field.itemData:', !!txData);
+              }
+              
+              if (txData) {
+                console.log('[XML Import DEBUG] Adding transaction to array:', txData);
+                updateData.importedTransactions.push(txData);
+                console.log('[XML Import DEBUG] Total transactions in array now:', updateData.importedTransactions.length);
+              } else {
+                console.warn('🔍 [XML Import] DIAGNOSTIC - No transaction data found for:', field.fieldName);
+              }
+            } else if (field.fieldName.startsWith('Budget ') && field.itemType === 'budget') {
+              // Handle individual budget import
+              // Enhanced Select All Fix: Check if comprehensive selection is active
+              if (updateData._importBudgets === true) {
+                // Comprehensive selection is active - skip individual processing
+                console.log('[XML Import] Skipping individual budget processing - comprehensive selection active');
+              } else {
+                // Individual selection mode
+                if (!updateData.importedBudgets) updateData.importedBudgets = [];
+                updateData.importedBudgets.push(field.itemData);
+              }
+            } else if (field.fieldName.startsWith('Planned Disbursement ')) {
+              // Handle individual planned disbursement import
+              // Enhanced Select All Fix: Check if comprehensive selection is active
+              if (updateData._importPlannedDisbursements === true) {
+                // Comprehensive selection is active - skip individual processing
+                console.log('[XML Import] Skipping individual planned disbursement processing - comprehensive selection active');
+              } else {
+                // Individual selection mode
+                if (!updateData.importedPlannedDisbursements) updateData.importedPlannedDisbursements = [];
+                updateData.importedPlannedDisbursements.push(field.itemData);
+              }
+            } else if (field.fieldName.startsWith('Location ')) {
+              // Handle individual location import
+              // Enhanced Select All Fix: Check if comprehensive selection is active
+              if (updateData._importLocations === true) {
+                // Comprehensive selection is active - skip individual processing
+                console.log('[XML Import] Skipping individual location processing - comprehensive selection active');
+              } else {
+                // Individual selection mode
+                if (!updateData.importedLocations) updateData.importedLocations = [];
+                updateData.importedLocations.push(field.itemData);
+              }
             } else if (field.fieldName.startsWith('Budget Mapping ')) {
               // NOTE: This MUST come BEFORE 'Budget ' check since "Budget Mapping" starts with "Budget"
               // Collect country budget items data for import
@@ -3259,14 +3981,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 updateData.importedFss = field.fssData;
                 console.log('[XML Import] Adding FSS for import');
               }
-            } else if (field.fieldName.startsWith('Transaction ')) {
-              // Collect transaction data for import
-              if (!updateData.importedTransactions) updateData.importedTransactions = [];
-              const transactionIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
-              if (parsedActivity.transactions && parsedActivity.transactions[transactionIndex]) {
-                updateData.importedTransactions.push(parsedActivity.transactions[transactionIndex]);
+            } else if (field.fieldName.startsWith('Document Links')) {
+              // Collect document links for import
+              if (parsedActivity.document_links && parsedActivity.document_links.length > 0) {
+                updateData.importedDocuments = parsedActivity.document_links;
+                console.log('[XML Import] Adding', parsedActivity.document_links.length, 'documents for import');
               }
-              console.log(`[XML Import] Adding transaction ${transactionIndex + 1} for import`);
+              // PHASE 2: Transaction processing is now handled earlier in the unified logic (line 3824-3856)
             } else if (field.fieldName.startsWith('Location ')) {
               // Collect location data for import
               if (!updateData.importedLocations) updateData.importedLocations = [];
@@ -3280,6 +4001,34 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               if (!updateData.importedContacts) updateData.importedContacts = [];
               updateData.importedContacts.push(field.importValue);
               console.log(`[XML Import] Adding contact for import:`, field.importValue);
+            } else if (field.fieldName === 'Humanitarian Activity') {
+              // Collect humanitarian flag for import
+              if (!updateData.importedHumanitarian) updateData.importedHumanitarian = {};
+              updateData.importedHumanitarian.humanitarian = field.importValue === 'Yes';
+              console.log(`[XML Import] Adding humanitarian flag for import:`, field.importValue);
+            } else if (field.fieldName.startsWith('Humanitarian Scope ')) {
+              // Collect humanitarian scope data for import
+              if (!updateData.importedHumanitarian) updateData.importedHumanitarian = {};
+              if (!updateData.importedHumanitarian.humanitarian_scopes) updateData.importedHumanitarian.humanitarian_scopes = [];
+              
+              // If scopes are being imported, automatically set humanitarian flag to true
+              updateData.importedHumanitarian.humanitarian = true;
+              
+              // Transform narratives from parser format (language/text) to API format (language/narrative)
+              const scopeData = field.importValue;
+              const transformedScope = {
+                type: scopeData.type,
+                vocabulary: scopeData.vocabulary,
+                code: scopeData.code,
+                vocabulary_uri: scopeData.vocabularyUri,
+                narratives: scopeData.narratives?.map((n: any) => ({
+                  language: n.language || 'en',
+                  narrative: n.text || n.narrative || ''
+                })) || []
+              };
+              
+              updateData.importedHumanitarian.humanitarian_scopes.push(transformedScope);
+              console.log(`[XML Import] Adding humanitarian scope for import (flag auto-set to true):`, transformedScope);
             }
             break;
         }
@@ -3414,6 +4163,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               sector_code: sector.code,
               sector_name: sector.name,
               percentage: sector.percentage,
+              vocabulary: sector.vocabulary, // Preserve vocabulary for validation
               type: 'secondary',
               level: 'subsector'
             }));
@@ -3422,25 +4172,89 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           if (sectorsToImport.length > 0) {
             console.log('[XML Import] Importing sectors to database:', sectorsToImport);
             
+            // Helper function: Vocabulary-aware sector code validation
+            const isValidSectorCode = (code: string, vocabulary?: string): boolean => {
+              if (!code) return false;
+              
+              // DAC 3 Digit Sector (vocabulary 2)
+              // Examples: 111 (Education), 112 (Basic education), 113 (Secondary education)
+              if (vocabulary === '2') {
+                return /^\d{3}$/.test(code);
+              }
+              
+              // DAC 5 Digit Sector (vocabulary 1 or no vocabulary specified)
+              // Examples: 11110, 11120, 11130
+              if (vocabulary === '1' || !vocabulary) {
+                return /^\d{5}$/.test(code);
+              }
+              
+              // Reporting Organisation (vocabulary 99 - custom)
+              // Accept any alphanumeric format
+              if (vocabulary === '99') {
+                return /^[A-Z0-9-_]+$/i.test(code);
+              }
+              
+              // Other IATI vocabularies (3-10)
+              // Accept alphanumeric codes
+              return /^[A-Z0-9-]+$/i.test(code);
+            };
+            
+            // Helper function: Get vocabulary-specific error message
+            const getInvalidSectorMessage = (code: string, vocabulary?: string) => {
+              const vocabName = vocabulary === '1' ? 'DAC 5 Digit' :
+                                vocabulary === '2' ? 'DAC 3 Digit' :
+                                vocabulary === '99' ? 'Custom' :
+                                'Unknown';
+              
+              return `Invalid ${vocabName} sector code: ${code}. Expected format: ${
+                vocabulary === '1' ? '5 digits (e.g., 11110)' :
+                vocabulary === '2' ? '3 digits (e.g., 111)' :
+                'valid code for vocabulary'
+              }`;
+            };
+            
             // Validate sectors before sending to API
             const totalPercentage = sectorsToImport.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0);
             if (Math.abs(totalPercentage - 100) > 0.01) {
               console.error('[XML Import] Invalid sector percentage total:', totalPercentage);
               toast.error('Sector import failed: Invalid percentages', {
-                description: `Sector percentages total ${totalPercentage.toFixed(1)}% instead of 100%. Please use the sector refinement modal to fix this.`
+                description: `Sector percentages total ${totalPercentage.toFixed(1)}% instead of 100%. Continuing with other imports...`
               });
-              return;
-            }
-            
-            // Check for invalid sector codes
-            const invalidSectors = sectorsToImport.filter((s: any) => !s.sector_code || !/^\d{5}$/.test(s.sector_code));
-            if (invalidSectors.length > 0) {
-              console.error('[XML Import] Invalid sector codes found:', invalidSectors);
-              toast.error('Sector import failed: Invalid codes', {
-                description: `${invalidSectors.length} sectors have invalid codes. Valid sector codes must be 5-digit numbers.`
+              // Don't return - continue with other imports
+            } else {
+              // Only proceed with sector import if percentages are valid
+              
+              // Check for invalid sector codes using vocabulary-aware validation
+              const invalidSectors = sectorsToImport.filter((s: any) => {
+                const isValid = isValidSectorCode(s.sector_code, s.vocabulary);
+                
+                // Log validation for debugging
+                console.log('[Sector Validation] Checking code:', s.sector_code, 'vocabulary:', s.vocabulary, 'result:', isValid ? 'VALID' : 'INVALID');
+                
+                if (!isValid) {
+                  console.warn('[Sector Validation] Invalid sector:', {
+                    code: s.sector_code,
+                    vocabulary: s.vocabulary,
+                    expectedFormat: s.vocabulary === '1' ? '5-digit' : s.vocabulary === '2' ? '3-digit' : 'varies'
+                  });
+                }
+                
+                return !isValid;
               });
-              return;
-            }
+              
+              if (invalidSectors.length > 0) {
+                console.error('[XML Import] Invalid sector codes found:', invalidSectors);
+                // Show specific error messages for each invalid sector
+                const errorMessages = invalidSectors.map((s: any) => 
+                  getInvalidSectorMessage(s.sector_code, s.vocabulary)
+                ).join('; ');
+                
+                toast.error('Sector import failed: Invalid codes', {
+                  description: `${invalidSectors.length} sector(s) have invalid codes. Continuing with other imports...`
+                });
+                // Don't return - continue with other imports
+              } else {
+                // Sectors are valid, proceed with import
             
             try {
               const sectorResponse = await fetch(`/api/activities/${activityId}/sectors`, {
@@ -3476,6 +4290,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               toast.error('Failed to import sectors', {
                 description: 'Network error occurred while importing sectors. Please check your connection and try again.'
               });
+            }
+              }
             }
           } else {
             console.log('[XML Import] No sectors to import');
@@ -3652,6 +4468,45 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         }
       }
 
+      // Handle document links import if any
+      if (updateData.importedDocuments && updateData.importedDocuments.length > 0) {
+        console.log('[XML Import] Processing document links import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 87,
+          message: 'Importing document links...'
+        });
+
+        try {
+          const docResponse = await fetch(`/api/activities/${activityId}/documents/import`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ documents: updateData.importedDocuments }),
+          });
+
+          if (!docResponse.ok) {
+            const errorData = await docResponse.json();
+            console.error('[XML Import] Document import API error:', errorData);
+            toast.error('Failed to import document links', {
+              description: errorData.error || 'Could not import documents. Main activity data was imported successfully.'
+            });
+          } else {
+            const successData = await docResponse.json();
+            console.log('[XML Import] Documents imported successfully:', successData);
+            toast.success(`Document links imported successfully`, {
+              description: `${successData.success} of ${updateData.importedDocuments.length} document(s) added to the activity`
+            });
+          }
+        } catch (docError) {
+          console.error('[XML Import] Document import network error:', docError);
+          toast.error('Failed to import documents', {
+            description: 'Network error occurred while importing documents. Please check your connection and try again.'
+          });
+        }
+      }
+
       // Handle contacts import if any
       if (updateData.importedContacts && updateData.importedContacts.length > 0) {
         console.log('[XML Import] Processing contacts import...');
@@ -3723,6 +4578,179 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           console.error('[XML Import] Contacts import network error:', contactError);
           toast.error('Failed to import contacts', {
             description: 'Network error occurred while importing contacts. Please check your connection and try again.'
+          });
+        }
+      }
+
+      // Handle humanitarian data import if any
+      if (updateData.importedHumanitarian) {
+        console.log('[XML Import] Processing humanitarian data import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 89,
+          message: 'Importing humanitarian data...'
+        });
+
+        try {
+          console.log('[XML Import] Saving humanitarian data:', updateData.importedHumanitarian);
+
+          const humanitarianResponse = await fetch(`/api/activities/${activityId}/humanitarian`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updateData.importedHumanitarian),
+          });
+
+          if (!humanitarianResponse.ok) {
+            const errorText = await humanitarianResponse.text();
+            console.error('[XML Import] Humanitarian data import error:', errorText);
+            toast.error('Failed to import humanitarian data', {
+              description: 'Could not import humanitarian data. Main activity data was imported successfully.'
+            });
+          } else {
+            const successData = await humanitarianResponse.json();
+            console.log('[XML Import] Humanitarian data imported successfully:', successData);
+            const scopeCount = updateData.importedHumanitarian.humanitarian_scopes?.length || 0;
+            toast.success(`Humanitarian data imported successfully`, {
+              description: scopeCount > 0 ? `Humanitarian flag set with ${scopeCount} scope(s)` : 'Humanitarian flag set'
+            });
+          }
+        } catch (error) {
+          console.error('[XML Import] Error importing humanitarian data:', error);
+          toast.error('Failed to import humanitarian data', {
+            description: 'Network error occurred while importing humanitarian data.'
+          });
+        }
+      }
+
+      // Handle budgets import if any
+      if (updateData.importedBudgets && updateData.importedBudgets.length > 0) {
+        console.log('[XML Import] Processing budgets import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 89,
+          message: 'Importing budgets...'
+        });
+
+        try {
+          // Clear existing budgets to avoid duplicates
+          const clearResponse = await fetch(`/api/activities/${activityId}/budgets`, {
+            method: 'DELETE'
+          });
+          
+          if (!clearResponse.ok) {
+            console.warn('[XML Import] Could not clear existing budgets');
+          }
+
+          let successCount = 0;
+          let errorCount = 0;
+
+          for (const budget of updateData.importedBudgets) {
+            try {
+              const budgetData = {
+                type: budget.type || '1',
+                status: budget.status || '1',
+                period_start: budget.period?.start,
+                period_end: budget.period?.end,
+                value: budget.value,
+                currency: budget.currency || currentActivityData?.default_currency || 'USD',
+                value_date: budget.valueDate || budget.period?.start
+              };
+
+              const response = await fetch(`/api/activities/${activityId}/budgets`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(budgetData)
+              });
+
+              if (response.ok) {
+                successCount++;
+              } else {
+                errorCount++;
+                console.error('[XML Import] Budget import failed:', await response.text());
+              }
+            } catch (budgetError) {
+              console.error('[XML Import] Error importing budget:', budgetError);
+              errorCount++;
+            }
+          }
+
+          if (successCount > 0) {
+            toast.success(`Budgets imported successfully`, {
+              description: `${successCount} budget(s) added${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
+            });
+          }
+        } catch (budgetsError) {
+          console.error('[XML Import] Budgets import error:', budgetsError);
+          toast.error('Failed to import budgets', {
+            description: 'Main activity data was imported successfully.'
+          });
+        }
+      }
+
+      // Handle planned disbursements import if any
+      if (updateData.importedPlannedDisbursements && updateData.importedPlannedDisbursements.length > 0) {
+        console.log('[XML Import] Processing planned disbursements import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 90,
+          message: 'Importing planned disbursements...'
+        });
+
+        try {
+          // Clear existing planned disbursements to avoid duplicates
+          const clearResponse = await fetch(`/api/activities/${activityId}/planned-disbursements`, {
+            method: 'DELETE'
+          });
+          
+          if (!clearResponse.ok) {
+            console.warn('[XML Import] Could not clear existing planned disbursements');
+          }
+
+          let successCount = 0;
+          let errorCount = 0;
+
+          for (const disbursement of updateData.importedPlannedDisbursements) {
+            try {
+              const disbursementData = {
+                amount: disbursement.value,
+                currency: disbursement.currency || currentActivityData?.default_currency || 'USD',
+                period_start: disbursement.period?.start,
+                period_end: disbursement.period?.end,
+                provider_org_name: disbursement.providerOrg?.name || null,
+                receiver_org_name: disbursement.receiverOrg?.name || null,
+                status: disbursement.type === '2' ? 'revised' : 'original',
+                value_date: disbursement.valueDate || disbursement.period?.start
+              };
+
+              const response = await fetch(`/api/activities/${activityId}/planned-disbursements`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(disbursementData)
+              });
+
+              if (response.ok) {
+                successCount++;
+              } else {
+                errorCount++;
+                console.error('[XML Import] Disbursement import failed:', await response.text());
+              }
+            } catch (disbursementError) {
+              console.error('[XML Import] Error importing disbursement:', disbursementError);
+              errorCount++;
+            }
+          }
+
+          if (successCount > 0) {
+            toast.success(`Planned disbursements imported successfully`, {
+              description: `${successCount} disbursement(s) added${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
+            });
+          }
+        } catch (disbursementsError) {
+          console.error('[XML Import] Planned disbursements import error:', disbursementsError);
+          toast.error('Failed to import planned disbursements', {
+            description: 'Main activity data was imported successfully.'
           });
         }
       }
@@ -4188,10 +5216,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       }
 
       // Handle conditions import
-      const conditionsField = parsedFields.find(f => f.fieldName === 'Conditions' && f.selected);
-      if (conditionsField && (conditionsField as any).isConditionsField && (conditionsField as any).conditionsData) {
+      console.log('[XML Import DEBUG] Checking conditions handler...', {
+        hasFlag: !!updateData._importConditions,
+        hasData: !!updateData.conditionsData,
+        flagValue: updateData._importConditions,
+        conditionsCount: updateData.conditionsData?.conditions?.length || 0
+      });
+      
+      if (updateData._importConditions && updateData.conditionsData) {
         console.log('[XML Import] Processing conditions import...');
-        console.log('[XML Import] Conditions data:', (conditionsField as any).conditionsData);
+        console.log('[XML Import] Conditions data:', updateData.conditionsData);
         setImportStatus({ 
           stage: 'importing', 
           progress: 87,
@@ -4199,7 +5233,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
 
         try {
-          const conditionsData = (conditionsField as any).conditionsData;
+          const conditionsData = updateData.conditionsData;
           const totalConditions = conditionsData.conditions.length;
           console.log('[XML Import] Total conditions to process:', totalConditions);
           
@@ -4219,23 +5253,23 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             .filter((cond: any) => {
               // Validate condition type (must be '1', '2', or '3')
               const validTypes = ['1', '2', '3'];
-              if (!validTypes.includes(cond.type)) {
-                console.warn(`[XML Import] Invalid condition type: ${cond.type}, skipping...`);
+              if (!validTypes.includes(cond.condition_type)) {
+                console.warn(`[XML Import] Invalid condition type: ${cond.condition_type}, skipping...`);
                 return false;
               }
               // Validate narrative is not empty
-              if (!cond.narrative || !cond.narrative.trim()) {
-                console.warn('[XML Import] Empty condition narrative, skipping...');
+              if (!cond.condition_text || !cond.condition_text.trim()) {
+                console.warn('[XML Import] Empty condition text, skipping...');
                 return false;
               }
               return true;
             })
-            .map((cond: any) => ({
+            .map((cond: any, index: number) => ({
               activity_id: activityId,
-              type: cond.type,
-              narrative: { [cond.narrativeLang || 'en']: cond.narrative },
-              attached: conditionsData.attached
-              // Note: created_by is nullable since app uses custom auth, not Supabase Auth
+              condition_type: cond.condition_type || '1',
+              condition_text: cond.condition_text,
+              language: cond.language || 'en',
+              display_order: index
             }));
           
           console.log('[XML Import] Conditions to insert:', JSON.stringify(conditionsToInsert, null, 2));
@@ -4253,6 +5287,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             }
             
             console.log('[XML Import] Successfully imported conditions:', insertedConditions);
+            
+            // Also update conditions_attached flag on activity
+            await supabase
+              .from('activities')
+              .update({ conditions_attached: conditionsData.attached })
+              .eq('id', activityId);
             
             const skippedCount = totalConditions - conditionsToInsert.length;
             if (skippedCount > 0) {
@@ -4274,6 +5314,271 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           console.error('[XML Import] Conditions import error:', conditionsError);
           toast.error('Failed to import conditions', {
             description: `An error occurred while processing conditions: ${conditionsError.message}`
+          });
+        }
+      }
+
+      // Handle transactions import if any
+      console.log('[XML Import DEBUG] About to check transactions handler...', {
+        hasImportedTransactions: !!updateData.importedTransactions,
+        arrayLength: updateData.importedTransactions?.length || 0,
+        arrayContents: updateData.importedTransactions
+      });
+      
+      if (updateData.importedTransactions && updateData.importedTransactions.length > 0) {
+        console.log('[XML Import] Processing transactions import...');
+        console.log('[XML Import] Transactions array:', updateData.importedTransactions);
+        console.log('[XML Import] Transaction count:', updateData.importedTransactions.length);
+        
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 88,
+          message: 'Importing transactions...'
+        });
+
+        try {
+          // Check Supabase client availability
+          console.log('[XML Import DEBUG] Supabase client check:', {
+            supabaseExists: typeof supabase !== 'undefined',
+            supabaseType: typeof supabase,
+            hasFrom: typeof supabase?.from === 'function'
+          });
+          
+          let successCount = 0;
+          let errorCount = 0;
+
+          console.log('[XML Import] Starting transaction loop...');
+
+          for (const transaction of updateData.importedTransactions) {
+            console.log('[XML Import] Processing transaction:', transaction);
+            
+            try {
+              const transactionData = {
+                activity_id: activityId,
+                transaction_type: transaction.type,
+                transaction_date: transaction.date,
+                value: transaction.value,
+                currency: transaction.currency || currentActivityData?.default_currency || 'USD',
+                status: 'actual',
+                description: transaction.description,
+                provider_org_name: transaction.providerOrg?.name,
+                provider_org_ref: transaction.providerOrg?.ref,
+                receiver_org_name: transaction.receiverOrg?.name,
+                receiver_org_ref: transaction.receiverOrg?.ref,
+                aid_type: transaction.aidType?.code || transaction.aidType,
+                finance_type: transaction.financeType,
+                tied_status: transaction.tiedStatus,
+                flow_type: transaction.flowType,
+                disbursement_channel: transaction.disbursementChannel,
+                humanitarian: transaction.humanitarian,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+
+              console.log('[XML Import] Prepared transaction data:', transactionData);
+              console.log('[XML Import] Calling API to create transaction...');
+
+              const apiRes = await fetch(`/api/activities/${activityId}/transactions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(transactionData)
+              });
+
+              if (apiRes.ok) {
+                successCount++;
+                console.log('[XML Import] ✓ Transaction inserted via API');
+              } else {
+                errorCount++;
+                let apiError: any = null;
+                try {
+                  apiError = await apiRes.json();
+                } catch {}
+                console.error('[XML Import] ✗ API insert failed:', apiError || { status: apiRes.status });
+              }
+            } catch (transactionError) {
+              errorCount++;
+              console.error('[XML Import] Exception inserting transaction:', transactionError);
+            }
+          }
+
+          console.log('[XML Import] Transaction import complete:', { successCount, errorCount });
+
+          if (successCount > 0) {
+            toast.success(`Transactions imported successfully`, {
+              description: `${successCount} transaction(s) added${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
+            });
+            invalidateActivityCache(activityId);
+          } else if (errorCount > 0) {
+            toast.error('Failed to import transactions', {
+              description: `All ${errorCount} transaction(s) failed to import`
+            });
+          } else {
+            console.warn('[XML Import] No transactions processed (successCount and errorCount both 0)');
+            toast.warning('No transactions were processed', {
+              description: 'Loop completed but no transactions were inserted or failed'
+            });
+          }
+        } catch (transactionsError: any) {
+          console.error('[XML Import] Transactions import error:', transactionsError);
+          toast.error('Failed to import transactions', {
+            description: 'An error occurred while processing transactions.'
+          });
+        }
+      } else {
+        console.log('[XML Import] Skipping transactions - no data or empty array:', {
+          hasArray: !!updateData.importedTransactions,
+          length: updateData.importedTransactions?.length || 0
+        });
+      }
+
+      // Handle financing terms import if any
+      console.log('[XML Import DEBUG] Checking financing terms handler...', {
+        hasFlag: !!updateData._importFinancingTerms,
+        hasData: !!updateData.financingTermsData,
+        flagValue: updateData._importFinancingTerms,
+        dataKeys: updateData.financingTermsData ? Object.keys(updateData.financingTermsData) : 'none'
+      });
+      
+      if (updateData._importFinancingTerms && updateData.financingTermsData) {
+        console.log('[XML Import] Processing financing terms import...');
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 89,
+          message: 'Importing financing terms...'
+        });
+
+        try {
+          const ftData = updateData.financingTermsData;
+          
+          // Use Supabase directly instead of API endpoint to avoid CORS issues
+          // Check if financing_terms record exists for this activity
+          const { data: existingFT, error: checkError } = await supabase
+            .from('financing_terms')
+            .select('id')
+            .eq('activity_id', activityId)
+            .maybeSingle();
+          
+          let financingTermsId: string;
+          
+          if (existingFT) {
+            console.log('[XML Import] Existing financing_terms found, clearing related data');
+            financingTermsId = existingFT.id;
+            
+            // Clear existing related data
+            await supabase.from('loan_terms').delete().eq('financing_terms_id', financingTermsId);
+            await supabase.from('loan_statuses').delete().eq('financing_terms_id', financingTermsId);
+            await supabase.from('financing_other_flags').delete().eq('financing_terms_id', financingTermsId);
+            
+            // Update channel_code if provided
+            if (ftData.channelCode) {
+              await supabase
+                .from('financing_terms')
+                .update({ channel_code: ftData.channelCode })
+                .eq('id', financingTermsId);
+            }
+          } else {
+            console.log('[XML Import] Creating new financing_terms record');
+            
+            // Create new financing_terms record
+            const { data: newFT, error: insertError } = await supabase
+              .from('financing_terms')
+              .insert({
+                activity_id: activityId,
+                channel_code: ftData.channelCode || null
+              })
+              .select('id')
+              .single();
+            
+            if (insertError || !newFT) {
+              throw new Error('Failed to create financing_terms record: ' + insertError?.message);
+            }
+            
+            financingTermsId = newFT.id;
+          }
+          
+          let componentsAdded = 0;
+          
+          // Insert loan terms if provided
+          if (ftData.loanTerms) {
+            console.log('[XML Import] Inserting loan terms');
+            const { error: loanTermsError } = await supabase
+              .from('loan_terms')
+              .insert({
+                financing_terms_id: financingTermsId,
+                rate_1: ftData.loanTerms.rate_1 || null,
+                rate_2: ftData.loanTerms.rate_2 || null,
+                repayment_type_code: ftData.loanTerms.repayment_type_code || null,
+                repayment_plan_code: ftData.loanTerms.repayment_plan_code || null,
+                commitment_date: ftData.loanTerms.commitment_date || null,
+                repayment_first_date: ftData.loanTerms.repayment_first_date || null,
+                repayment_final_date: ftData.loanTerms.repayment_final_date || null
+              });
+            
+            if (!loanTermsError) {
+              componentsAdded++;
+              console.log('[XML Import] ✓ Loan terms created');
+            } else {
+              console.error('[XML Import] Error inserting loan terms:', loanTermsError);
+            }
+          }
+          
+          // Insert loan statuses if provided
+          if (ftData.loanStatuses && Array.isArray(ftData.loanStatuses) && ftData.loanStatuses.length > 0) {
+            console.log('[XML Import] Inserting', ftData.loanStatuses.length, 'loan statuses');
+            
+            const loanStatusData = ftData.loanStatuses.map((status: any) => ({
+              financing_terms_id: financingTermsId,
+              year: status.year,
+              currency: status.currency || 'USD',
+              value_date: status.value_date || null,
+              interest_received: status.interest_received || null,
+              principal_outstanding: status.principal_outstanding || null,
+              principal_arrears: status.principal_arrears || null,
+              interest_arrears: status.interest_arrears || null
+            }));
+            
+            const { data: insertedStatuses, error: statusesError } = await supabase
+              .from('loan_statuses')
+              .insert(loanStatusData);
+            
+            if (!statusesError) {
+              componentsAdded++;
+              console.log('[XML Import] ✓ Loan statuses created');
+            } else {
+              console.error('[XML Import] Error inserting loan statuses:', statusesError);
+            }
+          }
+          
+          // Insert other flags if provided
+          if (ftData.otherFlags && Array.isArray(ftData.otherFlags) && ftData.otherFlags.length > 0) {
+            console.log('[XML Import] Inserting', ftData.otherFlags.length, 'other flags');
+            
+            const otherFlagsData = ftData.otherFlags.map((flag: any) => ({
+              financing_terms_id: financingTermsId,
+              code: flag.code,
+              significance: flag.significance || '1'
+            }));
+            
+            const { data: insertedFlags, error: flagsError } = await supabase
+              .from('financing_other_flags')
+              .insert(otherFlagsData);
+            
+            if (!flagsError) {
+              componentsAdded++;
+              console.log('[XML Import] ✓ Other flags created');
+            } else {
+              console.error('[XML Import] Error inserting other flags:', flagsError);
+            }
+          }
+          
+          toast.success('Financing terms imported successfully', {
+            description: `CRS loan data added (${componentsAdded} component${componentsAdded !== 1 ? 's' : ''})`
+          });
+          invalidateActivityCache(activityId);
+        } catch (ftError: any) {
+          console.error('[XML Import] Financing terms import error:', ftError);
+          toast.error('Failed to import financing terms', {
+            description: ftError.message || 'An error occurred while processing financing terms.'
           });
         }
       }
@@ -4568,58 +5873,39 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 relationshipTypeLabel: relatedActivityData.relationshipTypeLabel
               });
 
-              // First, try to find the activity by IATI identifier with comprehensive logging
-              const searchUrl = `/api/activities/search?q=${encodeURIComponent(relatedActivityData.ref)}`;
+              // First, try to find the activity by IATI identifier using Supabase directly
               console.log(`[XML Import] Searching for activity with IATI ID: ${relatedActivityData.ref}`);
-              console.log(`[XML Import] Search URL: ${searchUrl}`);
               
-              const findActivityResponse = await fetch(searchUrl);
+              // Use Supabase directly instead of search API to avoid CORS issues
+              const { data: matchingActivities, error: searchError } = await supabase
+                .from('activities')
+                .select('id, iati_identifier, title_narrative')
+                .eq('iati_identifier', relatedActivityData.ref)
+                .limit(1);
               
-              console.log(`[XML Import] Search API response status: ${findActivityResponse.status} ${findActivityResponse.statusText}`);
-              
-              if (!findActivityResponse.ok) {
-                console.error(`[XML Import] Search API failed for ${relatedActivityData.ref}:`, {
-                  status: findActivityResponse.status,
-                  statusText: findActivityResponse.statusText
-                });
+              if (searchError) {
+                console.error(`[XML Import] Supabase search error for ${relatedActivityData.ref}:`, searchError);
                 skippedCount++;
                 continue;
               }
 
-              const searchData = await findActivityResponse.json();
-              console.log(`[XML Import] Search response data:`, searchData);
+              console.log(`[XML Import] Found ${matchingActivities?.length || 0} matching activities`);
               
-              // Validate response structure
-              if (!searchData || typeof searchData !== 'object') {
-                console.error(`[XML Import] Invalid search response structure for ${relatedActivityData.ref}:`, searchData);
-                errorCount++;
-                continue;
-              }
-              
-              if (!Array.isArray(searchData.activities)) {
-                console.error(`[XML Import] Search response activities is not an array for ${relatedActivityData.ref}:`, searchData.activities);
-                errorCount++;
-                continue;
-              }
-              
-              const searchResults = searchData.activities;
-              console.log(`[XML Import] Found ${searchResults.length} matching activities`);
-              
-              if (searchResults.length > 0) {
+              if (matchingActivities && matchingActivities.length > 0) {
                 console.log(`[XML Import] First match:`, {
-                  id: searchResults[0].id,
-                  title: searchResults[0].title_narrative,
-                  iatiId: searchResults[0].iati_identifier
+                  id: matchingActivities[0].id,
+                  title: matchingActivities[0].title_narrative,
+                  iatiId: matchingActivities[0].iati_identifier
                 });
               }
               
-              if (searchResults.length === 0) {
+              if (!matchingActivities || matchingActivities.length === 0) {
                 console.warn(`[XML Import] No activities found with IATI ID: ${relatedActivityData.ref}`);
                 skippedCount++;
                 continue;
               }
 
-              const targetActivity = searchResults[0];
+              const targetActivity = matchingActivities[0];
               console.log(`[XML Import] Selected target activity:`, {
                 id: targetActivity.id,
                 title: targetActivity.title_narrative || 'Untitled'
@@ -5453,10 +6739,50 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               variant="outline"
               size="sm"
               onClick={() => {
+                console.log(`[XML Import] Tab-level Select All clicked for tab: ${tabName}`);
+                
+                // Select main fields for this tab
                 fields.forEach((field) => {
                   const globalIndex = parsedFields.indexOf(field);
                   toggleFieldSelection(globalIndex, true);
                 });
+                
+                // Enhanced: Also select all sub-toggles for fields in this tab
+                fields.forEach((field) => {
+                  console.log(`[XML Import] Tab Select All: Processing field ${field.fieldName}, type: ${field.itemType}`);
+                  
+                  // For financial items, the bulk import flags will be set during importSelectedFields
+                  if (field.isFinancialItem) {
+                    console.log(`[XML Import] Tab Select All: Financial item ${field.itemType} selected for bulk import`);
+                  }
+                  
+                  // For policy markers, the bulk import flags will be set during importSelectedFields
+                  if (field.isPolicyMarker) {
+                    console.log(`[XML Import] Tab Select All: Policy marker selected for bulk import`);
+                  }
+                  
+                  // For location items, the bulk import flags will be set during importSelectedFields
+                  if (field.isLocationItem) {
+                    console.log(`[XML Import] Tab Select All: Location item selected for bulk import`);
+                  }
+                  
+                  // For tag fields, the bulk import flags will be set during importSelectedFields
+                  if (field.isTagField) {
+                    console.log(`[XML Import] Tab Select All: Tag field selected for bulk import`);
+                  }
+                  
+                  // For conditions, the bulk import flags will be set during importSelectedFields
+                  if (field.isConditionsField) {
+                    console.log(`[XML Import] Tab Select All: Conditions field selected for bulk import`);
+                  }
+                  
+                  // For FSS items, the bulk import flags will be set during importSelectedFields
+                  if (field.isFssItem) {
+                    console.log(`[XML Import] Tab Select All: FSS item selected for bulk import`);
+                  }
+                });
+                
+                console.log(`[XML Import] Tab-level Select All completed for tab: ${tabName}`);
               }}
             >
               Select All
@@ -5922,6 +7248,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     onClick={() => selectAllFields(true)}
                   >
                     Select All Fields
+                    {parsedActivity && (
+                      <Badge variant="secondary" className="ml-2">
+                        Enhanced
+                      </Badge>
+                    )}
                   </Button>
                   <Button
                     variant="outline"
@@ -6291,6 +7622,41 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                       {selectedItem.data.value && <div><strong>Amount:</strong> {selectedItem.data.value.toLocaleString()} {selectedItem.data.currency}</div>}
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Enhanced Select All for Detail Fields */}
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-medium text-gray-900">Field Selection</h4>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      console.log(`[XML Import] Detail Modal: Selecting all fields for ${selectedItem.type} ${selectedItem.index + 1}`);
+                      const updatedFields = selectedItem.fields.map(field => ({ ...field, selected: true }));
+                      setSelectedItem({
+                        ...selectedItem,
+                        fields: updatedFields
+                      });
+                    }}
+                  >
+                    Select All Fields
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      console.log(`[XML Import] Detail Modal: Clearing all fields for ${selectedItem.type} ${selectedItem.index + 1}`);
+                      const updatedFields = selectedItem.fields.map(field => ({ ...field, selected: false }));
+                      setSelectedItem({
+                        ...selectedItem,
+                        fields: updatedFields
+                      });
+                    }}
+                  >
+                    Clear All
+                  </Button>
                 </div>
               </div>
 

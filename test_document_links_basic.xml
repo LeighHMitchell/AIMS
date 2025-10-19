@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>TEST-DOC-001</iati-identifier>
+    
+    <reporting-org ref="US-GOV-1" type="10">
+      <narrative>US Government</narrative>
+    </reporting-org>
+    
+    <title>
+      <narrative xml:lang="en">Test Activity with Document Links</narrative>
+    </title>
+    
+    <description>
+      <narrative xml:lang="en">This is a test activity to verify document-link parsing and import functionality.</narrative>
+    </description>
+    
+    <activity-status code="2"/>
+    
+    <activity-date iso-date="2024-01-01" type="1"/>
+    <activity-date iso-date="2024-12-31" type="3"/>
+    
+    <participating-org ref="US-GOV-1" role="1" type="10">
+      <narrative>Funding Organization</narrative>
+    </participating-org>
+    
+    <!-- Test Case 1: Basic document with all fields -->
+    <document-link format="application/pdf" url="https://example.com/project-proposal.pdf">
+      <title>
+        <narrative xml:lang="en">Project Proposal Document</narrative>
+      </title>
+      <description>
+        <narrative xml:lang="en">Comprehensive project proposal including objectives, methodology, and expected outcomes</narrative>
+      </description>
+      <category code="A02"/>
+      <language code="en"/>
+      <document-date iso-date="2023-12-15"/>
+    </document-link>
+    
+    <!-- Test Case 2: Document with minimal fields -->
+    <document-link url="https://example.com/budget-summary.xlsx">
+      <title>
+        <narrative xml:lang="en">Budget Summary</narrative>
+      </title>
+    </document-link>
+    
+    <!-- Test Case 3: Image document -->
+    <document-link format="image/jpeg" url="https://example.com/project-site-photo.jpg">
+      <title>
+        <narrative xml:lang="en">Project Site Photo</narrative>
+      </title>
+      <description>
+        <narrative xml:lang="en">Aerial view of the project implementation site</narrative>
+      </description>
+      <category code="A08"/>
+      <language code="en"/>
+      <document-date iso-date="2024-01-10"/>
+    </document-link>
+    
+    <recipient-country code="MM" percentage="100">
+      <narrative>Myanmar</narrative>
+    </recipient-country>
+    
+    <sector vocabulary="1" code="11220" percentage="100">
+      <narrative>Primary education</narrative>
+    </sector>
+  </iati-activity>
+</iati-activities>
+

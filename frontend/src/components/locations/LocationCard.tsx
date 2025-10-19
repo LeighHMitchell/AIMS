@@ -33,6 +33,7 @@ import {
   LOCATION_CLASS_CODES,
   SITE_TYPES,
 } from '@/lib/schemas/location';
+import { IATI_COUNTRIES } from '@/data/iati-countries';
 
 // Map thumbnail component using static tiles with location marker
 function MapThumbnail({
@@ -150,7 +151,16 @@ export default function LocationCard({
     if (location.city) parts.push(location.city);
     if (location.state_region_name) parts.push(location.state_region_name);
     if (location.postal_code) parts.push(location.postal_code);
-    if (location.country_code) parts.push(location.country_code);
+    
+    // Use full country name instead of country code
+    if (location.country_code) {
+      const countryName = IATI_COUNTRIES.find(c => c.code === location.country_code)?.name;
+      if (countryName) {
+        parts.push(countryName);
+      } else {
+        parts.push(location.country_code); // fallback to code if name not found
+      }
+    }
     
     const formattedAddress = parts.join(', ');
     if (formattedAddress) return formattedAddress;

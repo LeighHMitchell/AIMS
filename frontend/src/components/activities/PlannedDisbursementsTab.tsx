@@ -45,6 +45,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useUser } from '@/hooks/useUser';
 import { BUDGET_TYPES } from '@/data/budget-type';
 import { OrganizationTypeSelect } from '@/components/forms/OrganizationTypeSelect';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Granularity removed - users can now create any period length they want
 import {
@@ -157,6 +158,10 @@ export default function PlannedDisbursementsTab({
   // Sorting state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Bulk selection state
+  const [selectedDisbursementIds, setSelectedDisbursementIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Save status tracking
   const [saveStatus, setSaveStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
@@ -1075,6 +1080,60 @@ export default function PlannedDisbursementsTab({
     });
   }, []);
 
+  const handleSelectDisbursement = useCallback((id: string, checked: boolean) => {
+    const newSelected = new Set(selectedDisbursementIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedDisbursementIds(newSelected);
+  }, [selectedDisbursementIds]);
+
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(sortedFilteredDisbursements.filter(d => d.id).map(d => d.id!));
+      setSelectedDisbursementIds(allIds);
+    } else {
+      setSelectedDisbursementIds(new Set());
+    }
+  }, [sortedFilteredDisbursements]);
+
+  const handleBulkDelete = useCallback(async () => {
+    const selectedArray = Array.from(selectedDisbursementIds);
+    if (selectedArray.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedArray.length} planned disbursement(s)?`)) return;
+    
+    setIsBulkDeleting(true);
+    
+    try {
+      // Delete all selected disbursements
+      await Promise.all(selectedArray.map(async (id) => {
+        const response = await fetch(`/api/planned-disbursements?id=${id}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete planned disbursement');
+        }
+      }));
+      
+      // Remove deleted disbursements from state
+      setDisbursements(prev => prev.filter(d => !selectedDisbursementIds.has(d.id!)));
+      
+      // Clear selection
+      setSelectedDisbursementIds(new Set());
+      
+      toast.success(`Successfully deleted ${selectedArray.length} planned disbursement(s)`);
+    } catch (error: any) {
+      console.error('Error deleting planned disbursements:', error);
+      toast.error('Failed to delete some planned disbursements');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  }, [selectedDisbursementIds]);
+
   // Export to CSV
   const handleExport = () => {
     const dataToExport = filteredDisbursements.map(d => ({
@@ -1388,6 +1447,26 @@ export default function PlannedDisbursementsTab({
               </Button>
             </div>
             <div className="flex gap-2">
+              {selectedDisbursementIds.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={isBulkDeleting}
+                >
+                  {isBulkDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Selected ({selectedDisbursementIds.size})
+                    </>
+                  )}
+                </Button>
+              )}
               {disbursements.length > 0 && !loading && (
                 <Button variant="outline" onClick={handleExport}>
                   <Download className="h-4 w-4 mr-1" />
@@ -1414,6 +1493,14 @@ export default function PlannedDisbursementsTab({
                 <Table aria-label="Planned disbursements table">
                   <TableHeader className="bg-muted/50 border-b border-border/70">
                     <TableRow>
+                      <TableHead className="w-[50px] text-center">
+                        <Checkbox
+                          checked={selectedDisbursementIds.size === sortedFilteredDisbursements.length && sortedFilteredDisbursements.length > 0}
+                          onCheckedChange={handleSelectAll}
+                          disabled={isBulkDeleting || sortedFilteredDisbursements.length === 0}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
                         <div 
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
@@ -1493,9 +1580,19 @@ export default function PlannedDisbursementsTab({
                           key={disbursement.id || 'new'}
                           className={cn(
                             "border-b border-border/40 hover:bg-muted/30 transition-colors",
-                            disbursement.hasError ? 'bg-red-50' : hasOverlapWarning ? 'bg-orange-50/30' : ''
+                            disbursement.hasError ? 'bg-red-50' : hasOverlapWarning ? 'bg-orange-50/30' : '',
+                            selectedDisbursementIds.has(disbursement.id!) && "bg-blue-50 border-blue-200"
                           )}
                         >
+                          {/* Checkbox */}
+                          <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedDisbursementIds.has(disbursement.id!)}
+                              onCheckedChange={(checked) => handleSelectDisbursement(disbursement.id!, !!checked)}
+                              disabled={isBulkDeleting || !disbursement.id}
+                              aria-label={`Select disbursement ${disbursement.id}`}
+                            />
+                          </TableCell>
                           {/* Period */}
                           <TableCell className="py-3 px-4">
                             <div className="flex items-center gap-1">

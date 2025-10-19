@@ -262,6 +262,11 @@ export default function ImprovedSectorAllocationForm({
   const [sortField, setSortField] = useState<SortField>('subSector');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [activeVisualizationTab, setActiveVisualizationTab] = useState<'sunburst' | 'sankey'>('sunburst');
+  
+  // User action tracking for toast notifications
+  const userActionInProgressRef = useRef(false);
+  const userActionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingSaveCompletedRef = useRef(false);
 
   // Handle column sorting
   const handleSort = (field: SortField) => {
@@ -419,12 +424,38 @@ export default function ImprovedSectorAllocationForm({
         return { ...s, ...updated };
       });
       
-      // Only show toast if we have meaningful sectors to save
-      if (allocations.length > 0) {
-        toast.success('Sectors saved successfully!', { position: 'top-right', duration: 2000 });
+      // Mark that a save completed (for debounced toast logic)
+      if (userActionInProgressRef.current) {
+        pendingSaveCompletedRef.current = true;
       }
     }
   }, [sectorsAutosave.state.lastSaved, sectorsAutosave.state.isSaving, sectorsAutosave.state.error, allocations]);
+  
+  // Debounced toast for user-initiated saves
+  // Shows toast 2-3 seconds after user stops making changes
+  useEffect(() => {
+    if (userActionInProgressRef.current && pendingSaveCompletedRef.current && allocations.length > 0) {
+      // Clear any existing timeout
+      if (userActionTimeoutRef.current) {
+        clearTimeout(userActionTimeoutRef.current);
+      }
+      
+      // Set new timeout for debounced toast
+      userActionTimeoutRef.current = setTimeout(() => {
+        toast.success('Sectors saved successfully!', { position: 'top-right', duration: 2000 });
+        userActionInProgressRef.current = false;
+        pendingSaveCompletedRef.current = false;
+        userActionTimeoutRef.current = null;
+      }, 2500); // 2.5 second debounce
+    }
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (userActionTimeoutRef.current) {
+        clearTimeout(userActionTimeoutRef.current);
+      }
+    };
+  }, [sectorsAutosave.state.lastSaved, allocations.length]);
 
   // On save error, set all 'saving' allocations to 'error'
   const lastErrorRef = useRef<Error | null>(null);
@@ -456,6 +487,10 @@ export default function ImprovedSectorAllocationForm({
 
   // Handler for multi-select
   const handleSectorsChange = (sectorCodes: string[]) => {
+    // Mark as user-initiated action
+    userActionInProgressRef.current = true;
+    pendingSaveCompletedRef.current = false;
+    
     const sectorGroupData = require('@/data/SectorGroup.json');
     const currentCodes = allocations.map(a => a.code);
     const toAdd = sectorCodes.filter(code => !currentCodes.includes(code));
@@ -653,6 +688,10 @@ export default function ImprovedSectorAllocationForm({
 
   // Update percentage for a specific allocation
   const updatePercentage = (id: string, percentage: number) => {
+    // Mark as user-initiated action
+    userActionInProgressRef.current = true;
+    pendingSaveCompletedRef.current = false;
+    
     const updated = allocations.map(a => 
       a.id === id ? { ...a, percentage: Math.max(0, Math.min(100, percentage)) } : a
     );
@@ -674,6 +713,10 @@ export default function ImprovedSectorAllocationForm({
 
   // Remove a sector
   const removeSector = (id: string) => {
+    // Mark as user-initiated action
+    userActionInProgressRef.current = true;
+    pendingSaveCompletedRef.current = false;
+    
     const updated = allocations.filter(a => a.id !== id);
     
     console.log('[SectorForm] Removing sector without auto-redistribution:', {
@@ -700,6 +743,10 @@ export default function ImprovedSectorAllocationForm({
   // Distribute percentages equally
   const distributeEqually = () => {
     if (allocations.length === 0) return;
+    
+    // Mark as user-initiated action
+    userActionInProgressRef.current = true;
+    pendingSaveCompletedRef.current = false;
     
     const equalShare = 100 / allocations.length;
     const updated = allocations.map(a => ({
@@ -985,7 +1032,7 @@ export default function ImprovedSectorAllocationForm({
                           variant="outline" 
                           size="sm"
                           onClick={clearAll}
-                          className="text-xs"
+                          className="text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 active:text-red-600 focus-visible:text-red-600"
                         >
                           <Trash2 className="h-3 w-3 mr-1" />
                           Clear All

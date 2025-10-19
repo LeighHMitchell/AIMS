@@ -636,20 +636,11 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           <HelpText content={HELP_CONTENT} />
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-600">
-            {selectedCount} of {totalMarkers} markers selected
-          </div>
-          {selectedCount > 0 && (
-            <div className="flex items-center gap-2 text-xs">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-green-700 font-medium">Policy markers saved</span>
-            </div>
-          )}
           <Dialog open={showAddCustomDialog} onOpenChange={setShowAddCustomDialog}>
             <DialogTrigger asChild>
               <Button size="sm" className="text-xs bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="h-3 w-3 mr-1" />
-                Add Custom
+                Add Custom Policy Marker
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
@@ -889,26 +880,6 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           </Dialog>
         </div>
       </div>
-
-      {/* Summary */}
-      {selectedCount > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-medium text-sm text-blue-900 mb-2">Selected Policy Markers</h4>
-          <div className="flex flex-wrap gap-2">
-            {Array.from(selectedMarkers.entries()).map(([markerId, markerData]) => {
-              const marker = availableMarkers.find(m => m.id === markerId);
-              if (!marker) return null;
-              
-              return (
-                <Badge key={markerId} variant="secondary" className="text-xs bg-gray-100 text-gray-700">
-                  {marker.is_iati_standard ? `IATI ${marker.iati_code}: ` : `${marker.code.startsWith('CUSTOM_') ? marker.code.substring(7) : marker.code}: `}
-                  {marker.name} ({getSignificanceLabel(marker.iati_code === '9', markerData.significance)})
-                </Badge>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Tabbed Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

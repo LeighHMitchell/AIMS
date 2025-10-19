@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('q') || searchParams.get('search') || '';
     const limit = parseInt(searchParams.get('limit') || '100', 10);
 
+    console.log('[Activities Search API] Received search request:', { search, limit });
+
     const supabase = getSupabaseAdmin();
     
     if (!supabase) {
@@ -37,18 +39,26 @@ export async function GET(request: NextRequest) {
 
     // Add search filter if provided
     if (search) {
-      query = query.or(`title_narrative.ilike.%${search}%,acronym.ilike.%${search}%,other_identifier.ilike.%${search}%,iati_identifier.ilike.%${search}%,created_by_org_name.ilike.%${search}%`);
+      const searchFilter = `title_narrative.ilike.%${search}%,acronym.ilike.%${search}%,other_identifier.ilike.%${search}%,iati_identifier.ilike.%${search}%,created_by_org_name.ilike.%${search}%`;
+      console.log('[Activities Search API] Applying search filter:', searchFilter);
+      query = query.or(searchFilter);
     }
 
     const { data, error } = await query;
 
     if (error) {
-      console.error('[Activities Search] Error:', error);
+      console.error('[Activities Search] Database error:', error);
       return NextResponse.json(
         { error: 'Failed to fetch activities' },
         { status: 500 }
       );
     }
+
+    console.log('[Activities Search API] Query completed:', {
+      searchTerm: search,
+      resultsCount: data?.length || 0,
+      results: data?.map(a => ({ id: a.id, title: a.title_narrative, iatiId: a.iati_identifier }))
+    });
 
     return NextResponse.json({ activities: data || [] });
   } catch (error) {

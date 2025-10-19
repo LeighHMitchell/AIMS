@@ -46,7 +46,7 @@ import { toast } from "sonner";
 import { formatReportedBy, formatSubmittedBy } from "@/utils/format-helpers";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { 
-  Plus, Download, Edit2, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
+  Plus, Download, Edit2, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
   FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings
 } from "lucide-react";
@@ -61,6 +61,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import Link from 'next/link';
 import { IATISyncStatusIndicator, IATISyncStatusBadge } from '@/components/activities/IATISyncStatusIndicator';
 import { CurrencyTooltip, InfoIconTooltip } from '@/components/ui/currency-tooltip';
+import { Checkbox } from "@/components/ui/checkbox";
+import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
+import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 
 // Aid Type mappings (simplified)
 const AID_TYPE_LABELS: Record<string, string> = {
@@ -287,6 +290,11 @@ function ActivitiesPageContent() {
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [pageLimit, setPageLimit] = useState<number>(20);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  
+  // Bulk selection state
+  const [selectedActivityIds, setSelectedActivityIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   
   // Use optimized hook if enabled, otherwise fall back to original implementation
   const optimizedData = useOptimizedActivities({
@@ -631,40 +639,6 @@ function ActivitiesPageContent() {
   // Don't refetch on filter changes - we do client-side filtering
   // Only refetch if we need fresh data
 
-  const handleDuplicateActivity = async (id: string) => {
-    try {
-      // Show loading toast
-      const loadingToastId = toast.loading("Duplicating activity...");
-      
-      const response = await fetch(`/api/activities/${id}/duplicate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to duplicate activity');
-      }
-
-      const result = await response.json();
-      
-      // Dismiss loading toast
-      toast.dismiss(loadingToastId);
-      
-      // Show success toast
-      toast.success("Activity duplicated successfully!");
-      
-      // Redirect to the new activity
-      router.push(`/activities/new?id=${result.id}`);
-      
-    } catch (error) {
-      console.error('Error duplicating activity:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to duplicate activity');
-    }
-  };
-
   const handleDelete = async (id: string, retryCount = 0) => {
     const MAX_RETRIES = 3;
     
@@ -759,6 +733,81 @@ function ActivitiesPageContent() {
             : error instanceof Error ? error.message : "Failed to delete activity"
         );
       }
+    }
+  };
+
+  // Bulk selection handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = paginatedActivities.map(activity => activity.id);
+      setSelectedActivityIds(new Set(allIds));
+    } else {
+      setSelectedActivityIds(new Set());
+    }
+  };
+
+  const handleSelectActivity = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedActivityIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedActivityIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedArray = Array.from(selectedActivityIds);
+    if (selectedArray.length === 0) return;
+    
+    setShowBulkDeleteDialog(false);
+    setIsBulkDeleting(true);
+    
+    try {
+      // Optimistic update - remove from UI immediately
+      const remainingActivities = activities.filter(activity => !selectedActivityIds.has(activity.id));
+      
+      if (usingOptimization) {
+        // Remove each activity from optimized data
+        selectedArray.forEach(id => safeOptimizedData.removeActivity(id));
+      } else {
+        setLegacyActivities(remainingActivities);
+      }
+      
+      const response = await fetch('/api/activities', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: selectedArray,
+          user: user ? {
+            id: user.id,
+            name: user.name,
+            role: user.role
+          } : undefined
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete activities');
+      }
+      
+      const result = await response.json();
+      toast.success(`${result.deletedCount} ${result.deletedCount === 1 ? 'activity' : 'activities'} deleted successfully`);
+      
+      // Clear selection
+      setSelectedActivityIds(new Set());
+      
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+      toast.error('Failed to delete some activities');
+      // Revert optimistic updates by refetching
+      if (usingOptimization) {
+        safeOptimizedData.refetch();
+      } else {
+        fetchActivities(currentPage, false);
+      }
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -921,7 +970,9 @@ function ActivitiesPageContent() {
   const effectiveLimit = pageLimit;
   const totalPages = usingOptimization ? safeOptimizedData.totalPages : Math.ceil(totalActivities / pageLimit);
   
-  let paginatedActivities, startIndex, endIndex;
+  let paginatedActivities: Activity[];
+  let startIndex: number;
+  let endIndex: number;
   
   if (usingOptimization) {
     // Server-side pagination already applied
@@ -1088,27 +1139,8 @@ function ActivitiesPageContent() {
             
         </div>
 
-        {/* Center-Right: Page Size */}
-        <div className="flex items-center gap-2 lg:ml-auto lg:mr-6">
-          <span className="text-sm text-slate-600">Show:</span>
-          <Select 
-            value={pageLimit.toString()} 
-            onValueChange={(value) => handlePageLimitChange(Number(value))}
-          >
-            <SelectTrigger className="w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Right Side: View Toggle + Results Count - Fixed width */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-shrink-0 lg:ml-auto">
           {/* View Mode Toggle */}
           <div className="flex items-center">
             <Button
@@ -1129,17 +1161,15 @@ function ActivitiesPageContent() {
             </Button>
           </div>
           
-          {/* Results Summary with Performance Metrics */}
+          {/* Results Summary */}
           <div className="flex flex-col items-end gap-1">
             {loading || userLoading || !hasLoadedOnce || isInitialLoad ? (
-              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-4 w-32" />
             ) : (
               <p className="text-sm text-slate-600 whitespace-nowrap">
                 {showEmptyState
                   ? "No activities"
-                  : paginatedActivities.length === 0
-                  ? "No activities on this page"
-                  : `Showing ${Math.min(startIndex + 1, totalActivities)}–${Math.min(endIndex, totalActivities)} of ${totalActivities}`}
+                  : `${totalActivities} ${totalActivities === 1 ? 'activity' : 'activities'}`}
               </p>
             )}
           </div>
@@ -1184,6 +1214,16 @@ function ActivitiesPageContent() {
             <table className="w-full table-fixed border-collapse min-w-[1300px] activities-table">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>
+                  <th className="h-12 px-4 py-3 text-center align-middle w-[50px]">
+                    <div className="flex items-center justify-center">
+                      <Checkbox
+                        checked={selectedActivityIds.size === paginatedActivities.length && paginatedActivities.length > 0}
+                        indeterminate={selectedActivityIds.size > 0 && selectedActivityIds.size < paginatedActivities.length}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all activities"
+                      />
+                    </div>
+                  </th>
                   <th 
                     className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[30%]"
                     onClick={() => handleSort('title')}
@@ -1283,11 +1323,23 @@ function ActivitiesPageContent() {
                   const publicationStatus = activity.publicationStatus || 'draft';
                   const submissionStatus = activity.submissionStatus || 'draft';
                   
+                  const isSelected = selectedActivityIds.has(activity.id);
+                  
                   return (
                     <tr
                       key={activity.id}
-                      className="group hover:bg-muted transition-colors"
+                      className={`group hover:bg-muted transition-colors ${isSelected ? 'bg-blue-50 border-blue-200' : ''}`}
                     >
+                      <td className="px-4 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => handleSelectActivity(activity.id, !!checked)}
+                            disabled={isBulkDeleting}
+                            aria-label={`Select activity: ${activity.title}`}
+                          />
+                        </div>
+                      </td>
                       <td className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
                         <div 
                           className="cursor-pointer"
@@ -1513,13 +1565,6 @@ function ActivitiesPageContent() {
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem 
-                                onClick={() => handleDuplicateActivity(activity.id)}
-                                className="cursor-pointer"
-                              >
-                                <Copy className="mr-2 h-4 w-4" />
-                                Duplicate
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
                                 onClick={() => setDeleteActivityId(activity.id)}
                                 className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
@@ -1575,59 +1620,115 @@ function ActivitiesPageContent() {
         />
       )}
 
-      {/* Pagination Controls */}
-      {!isShowingAll && totalPages > 1 && totalActivities > 0 && (
-        <div className="flex items-center justify-center space-x-2 mt-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const newPage = Math.max(1, currentPage - 1);
-              usingOptimization ? safeOptimizedData.setPage(newPage) : setCurrentPage(newPage);
-            }}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
-          <div className="flex items-center space-x-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
-              return (
+      {/* Pagination */}
+      {!isShowingAll && totalActivities > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {Math.min(startIndex + 1, totalActivities)} to {Math.min(endIndex, totalActivities)} of {totalActivities} activities
+              </div>
+              
+              <div className="flex items-center gap-2">
                 <Button
-                  key={pageNum}
-                  variant={currentPage === pageNum ? "default" : "outline"}
+                  variant="outline"
                   size="sm"
                   onClick={() => {
-                    usingOptimization ? safeOptimizedData.setPage(pageNum) : setCurrentPage(pageNum);
+                    usingOptimization ? safeOptimizedData.setPage(1) : setCurrentPage(1);
                   }}
-                  className="w-10"
+                  disabled={currentPage === 1}
                 >
-                  {pageNum}
+                  <ChevronLeft className="h-4 w-4" />
+                  First
                 </Button>
-              );
-            })}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const newPage = Math.min(totalPages, currentPage + 1);
-              usingOptimization ? safeOptimizedData.setPage(newPage) : setCurrentPage(newPage);
-            }}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </Button>
-        </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newPage = Math.max(1, currentPage - 1);
+                    usingOptimization ? safeOptimizedData.setPage(newPage) : setCurrentPage(newPage);
+                  }}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          usingOptimization ? safeOptimizedData.setPage(pageNum) : setCurrentPage(pageNum);
+                        }}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newPage = Math.min(totalPages, currentPage + 1);
+                    usingOptimization ? safeOptimizedData.setPage(newPage) : setCurrentPage(newPage);
+                  }}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    usingOptimization ? safeOptimizedData.setPage(totalPages) : setCurrentPage(totalPages);
+                  }}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Items per page:</label>
+                <Select 
+                  value={pageLimit.toString()} 
+                  onValueChange={(value) => handlePageLimitChange(Number(value))}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Delete Confirmation Dialog */}
@@ -1652,6 +1753,25 @@ function ActivitiesPageContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Action Toolbar */}
+      <BulkActionToolbar
+        selectedCount={selectedActivityIds.size}
+        itemType="activities"
+        onDelete={() => setShowBulkDeleteDialog(true)}
+        onCancel={() => setSelectedActivityIds(new Set())}
+        isDeleting={isBulkDeleting}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDialog
+        isOpen={showBulkDeleteDialog}
+        itemCount={selectedActivityIds.size}
+        itemType="activities"
+        onConfirm={handleBulkDelete}
+        onCancel={() => setShowBulkDeleteDialog(false)}
+        isDeleting={isBulkDeleting}
+      />
       </div>
     </MainLayout>
   );

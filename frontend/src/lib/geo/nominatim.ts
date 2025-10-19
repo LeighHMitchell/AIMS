@@ -15,7 +15,7 @@ const NOMINATIM_REVERSE_URL = '/api/geocoding/reverse';
 const DEFAULT_SEARCH_PARAMS = {
   format: 'json',
   addressdetails: '1',
-  limit: '10',
+  limit: '30',
   dedupe: '1',
 } as const;
 
@@ -83,8 +83,13 @@ export async function searchLocations(
 
     const data = await response.json();
 
+    // Handle API response format { results: [...] }
+    const results = data.results || data;
+    
     // Validate and transform results
-    return data.map((item: unknown) => validateLocationSearchResult(item));
+    return Array.isArray(results) 
+      ? results.map((item: unknown) => validateLocationSearchResult(item))
+      : [];
   } catch (error) {
     console.error('Error searching locations:', error);
     throw new Error('Failed to search locations. Please try again.');
@@ -221,27 +226,77 @@ export async function searchGlobalLocations(
 }
 
 /**
- * Smart location search that tries Myanmar first, then global
+ * Smart location search with cascading approach: Myanmar → Regional → Global
  * @param query - Search query
  * @param options - Search options
  * @returns Promise<LocationSearchResult[]>
  */
 export async function smartLocationSearch(
   query: string,
-  options: { limit?: number } = {}
+  options: { limit?: number; countryCodes?: string[] } = {}
 ): Promise<LocationSearchResult[]> {
   try {
-    // First try Myanmar-specific search
-    const myanmarResults = await searchMyanmarLocations(query, options);
-    if (myanmarResults.length > 0) {
-      return myanmarResults;
+    const results: LocationSearchResult[] = [];
+    const maxResults = options.limit || 30;
+    
+    // If countryCodes specified, just do that search
+    if (options.countryCodes && options.countryCodes.length > 0) {
+      return searchLocations(query, options);
     }
-
-    // Fallback to global search
-    return await searchGlobalLocations(query, options);
+    
+    // Step 1: Search Myanmar first (up to 10 results)
+    console.log('[Smart Search] Step 1: Searching Myanmar...');
+    const myanmarResults = await searchLocations(query, { 
+      ...options, 
+      countryCodes: ['mm'],
+      limit: 10
+    });
+    console.log('[Smart Search] Myanmar results:', myanmarResults.length);
+    results.push(...myanmarResults);
+    
+    // Step 2: Search ASEAN region (if we haven't hit limit)
+    if (results.length < maxResults) {
+      console.log('[Smart Search] Step 2: Searching ASEAN region...');
+      const aseanCountries = ['th', 'la', 'kh', 'vn', 'id', 'my', 'sg', 'ph', 'bn'];
+      const regionalResults = await searchLocations(query, {
+        ...options,
+        countryCodes: aseanCountries,
+        limit: Math.min(10, maxResults - results.length)
+      });
+      console.log('[Smart Search] Regional results:', regionalResults.length);
+      
+      // Filter out any Myanmar results we already have
+      const newRegionalResults = regionalResults.filter(r => 
+        r.address?.country_code?.toLowerCase() !== 'mm'
+      );
+      results.push(...newRegionalResults);
+    }
+    
+    // Step 3: Search globally (if we still haven't hit limit)
+    if (results.length < maxResults) {
+      console.log('[Smart Search] Step 3: Searching globally...');
+      const globalResults = await searchLocations(query, {
+        ...options,
+        limit: Math.min(15, maxResults - results.length)
+      });
+      console.log('[Smart Search] Global results:', globalResults.length);
+      
+      // Filter out results we already have (by comparing lat/lon)
+      const existingCoords = new Set(
+        results.map(r => `${r.lat.toFixed(6)},${r.lon.toFixed(6)}`)
+      );
+      const newGlobalResults = globalResults.filter(r => 
+        !existingCoords.has(`${r.lat.toFixed(6)},${r.lon.toFixed(6)}`)
+      );
+      results.push(...newGlobalResults);
+    }
+    
+    console.log('[Smart Search] Total results:', results.length);
+    return results.slice(0, maxResults);
   } catch (error) {
-    console.warn('Myanmar search failed, falling back to global search:', error);
-    return await searchGlobalLocations(query, options);
+    console.error('[Smart Search] Error:', error);
+    // Fallback to simple global search
+    return searchLocations(query, options);
   }
 }
 

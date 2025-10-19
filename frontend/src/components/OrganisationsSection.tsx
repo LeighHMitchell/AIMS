@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { getOrganizationRoleName } from '@/data/iati-organization-roles';
 import { getOrganizationTypeName } from '@/data/iati-organization-types';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface OrganisationsSectionProps {
   activityId?: string;
@@ -23,8 +24,6 @@ interface OrganisationsSectionProps {
   governmentPartners?: any[];
   fundingPartners?: any[];
   onChange?: (field: string, value: any[]) => void;
-  contributors?: any[];
-  onContributorAdd?: (contributor: any) => void;
   canNominateContributors?: boolean;
 }
 
@@ -254,14 +253,63 @@ export default function OrganisationsSection({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Participating Organisations
-          </CardTitle>
+          <div className="flex items-center justify-end">
+            <div className="h-9 w-40 bg-gray-200 animate-pulse rounded-md" />
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="w-[28%]">
+                    <div className="h-4 w-24 bg-gray-200 animate-pulse rounded" />
+                  </TableHead>
+                  <TableHead className="w-[18%]">
+                    <div className="h-4 w-16 bg-gray-200 animate-pulse rounded" />
+                  </TableHead>
+                  <TableHead className="w-[22%]">
+                    <div className="h-4 w-28 bg-gray-200 animate-pulse rounded" />
+                  </TableHead>
+                  <TableHead className="w-[18%]">
+                    <div className="h-4 w-16 bg-gray-200 animate-pulse rounded" />
+                  </TableHead>
+                  <TableHead className="w-[14%] text-right">
+                    <div className="h-4 w-16 bg-gray-200 animate-pulse rounded ml-auto" />
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-200 animate-pulse rounded" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-gray-200 animate-pulse rounded w-3/4" />
+                          <div className="h-3 bg-gray-200 animate-pulse rounded w-1/2" />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-6 w-24 bg-gray-200 animate-pulse rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-6 w-32 bg-gray-200 animate-pulse rounded" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-6 w-28 bg-gray-200 animate-pulse rounded" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-2">
+                        <div className="h-8 w-8 bg-gray-200 animate-pulse rounded" />
+                        <div className="h-8 w-8 bg-gray-200 animate-pulse rounded" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
@@ -362,9 +410,22 @@ export default function OrganisationsSection({
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="font-medium text-gray-900 truncate">
-                                {participatingOrg.narrative || 
-                                 participatingOrg.organization?.name || 
-                                 'Unknown Organization'}
+                                {participatingOrg.organization_id ? (
+                                  <Link 
+                                    href={`/organizations/${participatingOrg.organization_id}`}
+                                    className="hover:text-gray-700 transition-colors"
+                                  >
+                                    {participatingOrg.narrative || 
+                                     participatingOrg.organization?.name || 
+                                     'Unknown Organization'}
+                                  </Link>
+                                ) : (
+                                  <span>
+                                    {participatingOrg.narrative || 
+                                     participatingOrg.organization?.name || 
+                                     'Unknown Organization'}
+                                  </span>
+                                )}
                               </div>
                               {participatingOrg.narrative && participatingOrg.organization?.name && 
                                participatingOrg.narrative !== participatingOrg.organization.name && (

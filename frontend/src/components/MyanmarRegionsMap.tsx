@@ -229,22 +229,6 @@ export default function MyanmarRegionsMap({
                     >
                       <title>{`${region.fullName}: ${region.percentage.toFixed(1)}%`}</title>
                     </path>
-                    {/* Show percentage if > 0 */}
-                    {region.percentage > 0 && (
-                      <text
-                        x={centroid.x}
-                        y={centroid.y}
-                        textAnchor="middle"
-                        className="pointer-events-none"
-                        fill={region.percentage > 40 ? '#ffffff' : '#1e293b'}
-                        style={{
-                          fontSize: '0.4px',
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {region.percentage.toFixed(0)}%
-                      </text>
-                    )}
                   </g>
                 )
               })}

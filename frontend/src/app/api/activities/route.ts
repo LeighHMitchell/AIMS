@@ -1408,6 +1408,8 @@ export async function POST(request: Request) {
       
       // Fetch working group IDs from database
       const codes = body.workingGroups.map((wg: any) => wg.code);
+      console.log('[AIMS API] Looking up working groups with codes:', codes);
+      
       const { data: dbWorkingGroups, error: wgFetchError } = await getSupabaseAdmin()
         .from('working_groups')
         .select('id, code')
@@ -1415,21 +1417,59 @@ export async function POST(request: Request) {
 
       if (wgFetchError) {
         console.error('[AIMS API] Error fetching working groups:', wgFetchError);
-      } else if (dbWorkingGroups && dbWorkingGroups.length > 0) {
-        const workingGroupsData = dbWorkingGroups.map((dbWg: any) => ({
-          activity_id: newActivity.id,
-          working_group_id: dbWg.id,
-          vocabulary: '99' // IATI custom vocabulary
-        }));
-
-        const { error: wgError } = await getSupabaseAdmin()
-          .from('activity_working_groups')
-          .insert(workingGroupsData);
+      } else {
+        console.log('[AIMS API] Found', dbWorkingGroups?.length || 0, 'working groups in database');
+        
+        // Check if any working groups weren't found in the database and create them
+        const foundCodes = dbWorkingGroups?.map((wg: any) => wg.code) || [];
+        const missingCodes = codes.filter(code => !foundCodes.includes(code));
+        
+        if (missingCodes.length > 0) {
+          console.log('[AIMS API] Creating missing working groups:', missingCodes);
           
-        if (wgError) {
-          console.error('[AIMS API] Error saving working groups:', wgError);
-        } else {
-          console.log('[AIMS API] Successfully saved', workingGroupsData.length, 'working groups');
+          // Create missing working groups from the provided data
+          const workingGroupsToCreate = body.workingGroups
+            .filter((wg: any) => missingCodes.includes(wg.code))
+            .map((wg: any) => ({
+              code: wg.code,
+              label: wg.label,
+              vocabulary: wg.vocabulary || '99',
+              is_active: true
+            }));
+
+          const { data: newWorkingGroups, error: createError } = await getSupabaseAdmin()
+            .from('working_groups')
+            .insert(workingGroupsToCreate)
+            .select('id, code');
+
+          if (createError) {
+            console.error('[AIMS API] Error creating working groups:', createError);
+          } else {
+            console.log('[AIMS API] Successfully created', newWorkingGroups?.length || 0, 'working groups');
+            
+            // Merge newly created working groups with found ones
+            if (newWorkingGroups) {
+              dbWorkingGroups?.push(...newWorkingGroups);
+            }
+          }
+        }
+        
+        if (dbWorkingGroups && dbWorkingGroups.length > 0) {
+          const workingGroupsData = dbWorkingGroups.map((dbWg: any) => ({
+            activity_id: newActivity.id,
+            working_group_id: dbWg.id,
+            vocabulary: '99' // IATI custom vocabulary
+          }));
+
+          const { error: wgError } = await getSupabaseAdmin()
+            .from('activity_working_groups')
+            .insert(workingGroupsData);
+            
+          if (wgError) {
+            console.error('[AIMS API] Error saving working groups:', wgError);
+          } else {
+            console.log('[AIMS API] Successfully saved', workingGroupsData.length, 'working groups');
+          }
         }
       }
     }
@@ -2192,8 +2232,58 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, user } = body;
+    const { id, ids, user } = body;
     
+    // Handle bulk deletion
+    if (ids && Array.isArray(ids)) {
+      if (ids.length === 0) {
+        return NextResponse.json({ error: "At least one activity ID required" }, { status: 400 });
+      }
+      
+      console.log(`[AIMS] Bulk deleting ${ids.length} activities:`, ids);
+      
+      // Fetch all activities before deletion for logging
+      const { data: activities, error: fetchError } = await getSupabaseAdmin()
+        .from('activities')
+        .select('*')
+        .in('id', ids);
+      
+      if (fetchError) {
+        console.error("[AIMS] Error fetching activities for bulk deletion:", fetchError);
+        return NextResponse.json({ error: "Failed to fetch activities" }, { status: 500 });
+      }
+      
+      if (!activities || activities.length === 0) {
+        return NextResponse.json({ error: "No activities found" }, { status: 404 });
+      }
+      
+      // Delete all activities (cascading will handle related records)
+      const { error: deleteError } = await getSupabaseAdmin()
+        .from('activities')
+        .delete()
+        .in('id', ids);
+      
+      if (deleteError) {
+        console.error("[AIMS] Error bulk deleting activities:", deleteError);
+        return NextResponse.json({ error: "Failed to delete activities" }, { status: 500 });
+      }
+      
+      // Log each activity deletion
+      if (user && activities) {
+        for (const activity of activities) {
+          await ActivityLogger.activityDeleted(activity, user);
+        }
+      }
+      
+      console.log(`[AIMS] Successfully bulk deleted ${activities.length} activities`);
+      return NextResponse.json({ 
+        message: `${activities.length} activities deleted successfully`,
+        deletedCount: activities.length,
+        activities 
+      });
+    }
+    
+    // Handle single deletion (existing logic)
     if (!id) {
       return NextResponse.json({ error: "Activity ID required" }, { status: 400 });
     }

@@ -667,7 +667,64 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id') || searchParams.get('uuid'); // Support both for compatibility
+    
+    // Check if this is a bulk delete request (body contains uuids array)
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      // No body, continue with single delete from query params
+      body = {};
+    }
+    
+    const { uuids } = body;
+    
+    // Handle bulk deletion
+    if (uuids && Array.isArray(uuids)) {
+      if (uuids.length === 0) {
+        return NextResponse.json(
+          { error: 'At least one transaction UUID required' },
+          { status: 400 }
+        );
+      }
+      
+      console.log(`[Transactions API] Bulk deleting ${uuids.length} transactions:`, uuids);
+      
+      // Validate all UUIDs
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const invalidUuids = uuids.filter(uuid => !uuidRegex.test(uuid));
+      
+      if (invalidUuids.length > 0) {
+        console.error('[Transactions API] Invalid UUIDs in bulk delete:', invalidUuids);
+        return NextResponse.json(
+          { error: 'One or more invalid transaction UUIDs', invalidUuids },
+          { status: 400 }
+        );
+      }
+      
+      // Perform bulk deletion
+      const { error, count } = await getSupabaseAdmin()
+        .from('transactions')
+        .delete()
+        .in('uuid', uuids);
+      
+      if (error) {
+        console.error('[Transactions API] Error bulk deleting transactions:', error);
+        return NextResponse.json(
+          { error: error.message || 'Failed to delete transactions' },
+          { status: 500 }
+        );
+      }
+      
+      console.log(`[Transactions API] Successfully bulk deleted ${count || uuids.length} transactions`);
+      return NextResponse.json({ 
+        success: true, 
+        deletedCount: count || uuids.length,
+        message: `${count || uuids.length} transactions deleted successfully`
+      });
+    }
 
+    // Handle single deletion (existing logic)
     if (!id || id === 'undefined') {
       console.error('[Transactions API] DELETE request with invalid ID:', id);
       return NextResponse.json(

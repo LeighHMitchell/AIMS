@@ -759,6 +759,99 @@ export async function PATCH(
       
       console.log('[AIMS API] 🎉 Budget mappings import complete:', countryBudgetImportResult);
     }
+
+    // Handle imported contacts
+    if (body.importedContacts !== undefined && Array.isArray(body.importedContacts)) {
+      console.log('[AIMS API] Processing imported contacts for activity:', id);
+      console.log('[AIMS API] Imported contacts count:', body.importedContacts.length);
+      
+      // Delete existing contacts for this activity (import replaces)
+      const { error: deleteError } = await getSupabaseAdmin()
+        .from('activity_contacts')
+        .delete()
+        .eq('activity_id', id);
+      
+      if (deleteError) {
+        console.error('[AIMS API] Error deleting existing contacts:', deleteError);
+        throw deleteError;
+      }
+      
+      // Insert new contacts
+      if (body.importedContacts.length > 0) {
+        const contactsToInsert = body.importedContacts.map((contact: any) => {
+          // Split personName into first and last name
+          // IATI person-name is a single field, but our DB has first_name/last_name
+          let firstName = '';
+          let lastName = '';
+          
+          if (contact.personName && contact.personName.trim()) {
+            const nameParts = contact.personName.trim().split(/\s+/);
+            if (nameParts.length === 1) {
+              // Single name - use as last name
+              firstName = '';
+              lastName = nameParts[0];
+            } else if (nameParts.length === 2) {
+              // First and last name
+              firstName = nameParts[0];
+              lastName = nameParts[1];
+            } else {
+              // Multiple parts - first is firstName, rest is lastName
+              firstName = nameParts[0];
+              lastName = nameParts.slice(1).join(' ');
+            }
+          }
+          
+          // Database requires first_name and last_name to be non-null
+          // If no person name provided, use organization name or defaults
+          if (!firstName && !lastName) {
+            if (contact.organization) {
+              // Use organization name as contact identifier
+              firstName = '';
+              lastName = contact.organization;
+            } else {
+              // Last resort: use contact type as identifier
+              const typeLabels: Record<string, string> = {
+                '1': 'General Enquiries',
+                '2': 'Project Management',
+                '3': 'Financial Management',
+                '4': 'Communications'
+              };
+              firstName = '';
+              lastName = typeLabels[contact.type || '1'] || 'Contact';
+            }
+          }
+          
+          return {
+            activity_id: id,
+            type: contact.type || '1',
+            first_name: firstName,
+            last_name: lastName,
+            organisation: contact.organization || null, // Note: British spelling
+            department: contact.department || null,
+            job_title: contact.jobTitle || null,
+            position: contact.jobTitle || null, // Also populate position for backward compatibility
+            phone: contact.telephone || null,
+            email: contact.email || null,
+            website: contact.website || null,
+            mailing_address: contact.mailingAddress || null,
+            imported_from_iati: true
+          };
+        });
+        
+        console.log('[AIMS API] Inserting contacts:', JSON.stringify(contactsToInsert, null, 2));
+        
+        const { error: insertError } = await getSupabaseAdmin()
+          .from('activity_contacts')
+          .insert(contactsToInsert);
+        
+        if (insertError) {
+          console.error('[AIMS API] Error inserting contacts:', insertError);
+          throw insertError;
+        }
+        
+        console.log('[AIMS API] Successfully imported', body.importedContacts.length, 'contacts');
+      }
+    }
     
     // Update activity updated_at timestamp only if no basic fields were updated
     if (Object.keys(activityFields).length === 0) {

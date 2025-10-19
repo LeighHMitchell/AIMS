@@ -23,6 +23,7 @@ import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BarChart, Bar } from 'recharts';
 import { useUser } from '@/hooks/useUser';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
 import { showValidationError } from '@/lib/toast-manager';
 import {
@@ -260,6 +261,10 @@ export default function ActivityBudgetsTab({
   // Sorting state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Bulk selection state
+  const [selectedBudgetIds, setSelectedBudgetIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const currencies = useMemo(() => getAllCurrenciesWithPinned(), []);
   const { user, isLoading: userLoading } = useUser();
@@ -557,6 +562,65 @@ export default function ActivityBudgetsTab({
       setError('Failed to delete budget');
     }
   }, [budgets]);
+
+  const handleSelectBudget = useCallback((id: string, checked: boolean) => {
+    const newSelected = new Set(selectedBudgetIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedBudgetIds(newSelected);
+  }, [selectedBudgetIds]);
+
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(sortedBudgets.filter(b => b.id).map(b => b.id!));
+      setSelectedBudgetIds(allIds);
+    } else {
+      setSelectedBudgetIds(new Set());
+    }
+  }, [sortedBudgets]);
+
+  const handleBulkDelete = useCallback(async () => {
+    const selectedArray = Array.from(selectedBudgetIds);
+    if (selectedArray.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedArray.length} budget(s)?`)) return;
+    
+    setIsBulkDeleting(true);
+    
+    try {
+      // Delete all selected budgets
+      await Promise.all(selectedArray.map(async (id) => {
+        const { error } = await supabase
+          .from('activity_budgets')
+          .delete()
+          .eq('id', id);
+        
+        if (error) throw error;
+      }));
+      
+      // Remove deleted budgets from state
+      setBudgets(prev => prev.filter(b => !selectedBudgetIds.has(b.id!)));
+      
+      // Clear selection
+      setSelectedBudgetIds(new Set());
+      
+      // Refresh summary cards
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('refreshFinancialSummaryCards');
+        window.dispatchEvent(event);
+      }
+      
+      toast.success(`Successfully deleted ${selectedArray.length} budget(s)`);
+    } catch (err) {
+      console.error('Error deleting budgets:', err);
+      toast.error('Failed to delete some budgets');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  }, [selectedBudgetIds]);
 
   // Helper function to find next non-overlapping period
   const findNextAvailablePeriod = useCallback((sourceStart: string, sourceEnd: string, existingBudgets: ActivityBudget[]) => {
@@ -1452,6 +1516,26 @@ export default function ActivityBudgetsTab({
                 </Button>
               </div>
             <div className="flex gap-2">
+              {selectedBudgetIds.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={isBulkDeleting}
+                >
+                  {isBulkDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Selected ({selectedBudgetIds.size})
+                    </>
+                  )}
+                </Button>
+              )}
               {budgets.length > 0 && !loading && (
                 <Button variant="outline" size="sm" onClick={handleExport}>
                   <Download className="h-4 w-4 mr-1" />
@@ -1569,6 +1653,14 @@ export default function ActivityBudgetsTab({
             <Table aria-label="Budgets table">
               <TableHeader className="bg-muted/50 border-b border-border/70">
                 <TableRow>
+                  <TableHead className="w-[50px] text-center">
+                    <Checkbox
+                      checked={selectedBudgetIds.size === sortedBudgets.length && sortedBudgets.length > 0}
+                      onCheckedChange={handleSelectAll}
+                      disabled={isBulkDeleting || sortedBudgets.length === 0}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
                   <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-[180px]">
                     <div 
                       className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
@@ -1619,7 +1711,7 @@ export default function ActivityBudgetsTab({
               <TableBody>
                 {sortedBudgets.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-24 text-center px-2 py-8">
+                    <TableCell colSpan={8} className="h-24 text-center px-2 py-8">
                       No budgets added yet. Use the "Add Period" buttons above to get started.
                     </TableCell>
                   </TableRow>
@@ -1633,9 +1725,18 @@ export default function ActivityBudgetsTab({
                       key={budget.id || `budget-${index}`} 
                       className={cn(
                         "border-b border-border/40 cursor-pointer hover:bg-muted/30 transition-colors",
-                        budget.hasError ? 'bg-red-50' : hasOverlapWarning ? 'bg-orange-50/30' : ''
+                        budget.hasError ? 'bg-red-50' : hasOverlapWarning ? 'bg-orange-50/30' : '',
+                        selectedBudgetIds.has(budget.id!) && "bg-blue-50 border-blue-200"
                       )}
                     > 
+                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedBudgetIds.has(budget.id!)}
+                          onCheckedChange={(checked) => handleSelectBudget(budget.id!, !!checked)}
+                          disabled={isBulkDeleting || !budget.id}
+                          aria-label={`Select budget ${budget.id}`}
+                        />
+                      </TableCell>
                       <TableCell className="py-3 px-4">
                         <div className="flex items-center gap-1">
                           <span className="font-medium">

@@ -29,20 +29,21 @@ export async function GET(request: NextRequest) {
 
     console.log('[AIMS-SIMPLE] Database URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...');
 
-    // Avoid exact count(*) which can be expensive. Use a light approximate count via a small window.
-    // Frontend can operate without total count or with a best-effort estimate.
+    // Get accurate total count for pagination
     let count: number | null = null;
     try {
-      const { data: sample, error: sampleError } = await supabase
+      const { count: totalCount, error: countError } = await supabase
         .from('activities')
-        .select('id')
-        .range(0, 999);
-      if (!sampleError) {
-        // If we got a full 1000 rows, the real count is >= 1000; otherwise it equals sample length.
-        count = (sample?.length || 0) >= 1000 ? 1000 : (sample?.length || 0);
+        .select('*', { count: 'exact', head: true });
+      
+      if (!countError && totalCount !== null) {
+        count = totalCount;
+        console.log('[AIMS-SIMPLE] Total activity count:', count);
+      } else {
+        console.error('[AIMS-SIMPLE] Count error:', countError);
       }
-    } catch (_) {
-      // ignore
+    } catch (error) {
+      console.error('[AIMS-SIMPLE] Error getting count:', error);
     }
 
     // Check if card view is requested (needs banner and icon)
@@ -274,12 +275,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       data: transformedActivities,
+      totalCount: count ?? 0,
       pagination: {
         page,
         limit,
-        // Provide best-effort total; if null, omit it to avoid forcing UI to use it
-        total: count ?? undefined,
-        totalPages: count ? Math.ceil(count / limit) : undefined
+        total: count ?? 0,
+        totalCount: count ?? 0,
+        totalPages: count ? Math.ceil(count / limit) : 1
       }
     }, {
       headers: {

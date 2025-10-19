@@ -441,28 +441,6 @@ export function checkOrganizationsTabCompletion(participatingOrganizations: any[
 }
 
 /**
- * Check if the Contributors tab is complete based on nominated contributors
- */
-export function checkContributorsTabCompletion(contributors: any[]): TabCompletionStatus {
-  const completedFields: string[] = []
-  const missingFields: string[] = []
-  
-  // Check if we have at least one contributor
-  if (contributors && contributors.length > 0) {
-    completedFields.push('contributors')
-  } else {
-    missingFields.push('contributors')
-  }
-  
-  return {
-    isComplete: missingFields.length === 0,
-    isInProgress: false, // Contributors don't have an in-progress state
-    completedFields,
-    missingFields
-  }
-}
-
-/**
  * Check if the Contacts tab is complete based on contacts
  */
 export function checkContactsTabCompletion(contacts: any[]): TabCompletionStatus {
@@ -557,6 +535,42 @@ export function checkDocumentsTabCompletion(documents: any[]): TabCompletionStat
   return {
     isComplete: missingFields.length === 0,
     isInProgress: false, // Documents don't have an in-progress state
+    completedFields,
+    missingFields
+  }
+}
+
+/**
+ * Check if the Humanitarian tab is complete based on humanitarian flag and scopes
+ */
+export function checkHumanitarianTabCompletion(data: { 
+  humanitarian?: boolean, 
+  humanitarianScopes?: any[] 
+}): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  // Check if humanitarian flag is set
+  if (data.humanitarian) {
+    completedFields.push('humanitarian_flag')
+  }
+  
+  // Check if we have at least one humanitarian scope
+  if (data.humanitarianScopes && data.humanitarianScopes.length > 0) {
+    completedFields.push('humanitarian_scopes')
+  }
+  
+  // Tab is complete if humanitarian flag is set OR if there are scopes
+  // (scopes automatically set the flag to true)
+  const isComplete = data.humanitarian === true || (data.humanitarianScopes && data.humanitarianScopes.length > 0)
+  
+  if (!isComplete) {
+    missingFields.push('humanitarian_data')
+  }
+
+  return {
+    isComplete,
+    isInProgress: false,
     completedFields,
     missingFields
   }
@@ -769,6 +783,8 @@ export function getTabCompletionStatus(
       return checkFinancesTabCompletion(data);
     case 'sectors':
       return checkSectorsTabCompletion(data);
+    case 'humanitarian':
+      return checkHumanitarianTabCompletion(data);
     case 'locations':
       return checkLocationsTabCompletion(data);
     case 'tags':
@@ -779,8 +795,6 @@ export function getTabCompletionStatus(
       return checkPolicyMarkersTabCompletion(data);
     case 'organisations':
       return checkOrganizationsTabCompletion(data);
-    case 'contributors':
-      return checkContributorsTabCompletion(data);
     case 'contacts':
       return checkContactsTabCompletion(data);
     case 'linked-activities':

@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Edit, Download, DollarSign, AlertCircle, FileText, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CheckCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Trash2, Edit, Download, DollarSign, AlertCircle, FileText, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CheckCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { usePartners } from "@/hooks/usePartners";
@@ -130,6 +131,10 @@ export default function TransactionsManager({
   const [quickFilter, setQuickFilter] = useState<"all" | "commitments" | "disbursements" | "expenditures">("all");
   const [hasFetchedTransactions, setHasFetchedTransactions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Bulk selection state
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   
   // Track last notified transaction count to prevent infinite loops
   const lastNotifiedCountRef = React.useRef<number>(-1);
@@ -363,6 +368,62 @@ export default function TransactionsManager({
     }
   };
 
+  const handleSelectTransaction = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedTransactionIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedTransactionIds(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(paginatedTransactions.filter(t => t.id).map(t => t.id));
+      setSelectedTransactionIds(allIds);
+    } else {
+      setSelectedTransactionIds(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedArray = Array.from(selectedTransactionIds);
+    if (selectedArray.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedArray.length} transaction(s)?`)) return;
+    
+    setIsBulkDeleting(true);
+    
+    try {
+      // Delete all selected transactions
+      await Promise.all(selectedArray.map(async (id) => {
+        const response = await fetch(`/api/transactions?id=${id}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to delete transaction');
+        }
+      }));
+      
+      // Clear selection
+      setSelectedTransactionIds(new Set());
+      
+      // Refresh data
+      if (onRefreshNeeded) {
+        await onRefreshNeeded();
+      }
+      
+      toast.success(`Successfully deleted ${selectedArray.length} transaction(s)`);
+    } catch (error: any) {
+      console.error('[TransactionsManager] Error deleting transactions:', error);
+      toast.error('Failed to delete some transactions');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   const handleExport = () => {
     const dataToExport = filteredTransactions.map(t => ({
       type: TRANSACTION_TYPES[t.transaction_type],
@@ -566,6 +627,26 @@ export default function TransactionsManager({
               </p>
             </div>
             <div className="flex gap-2">
+              {selectedTransactionIds.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={isBulkDeleting}
+                >
+                  {isBulkDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Selected ({selectedTransactionIds.size})
+                    </>
+                  )}
+                </Button>
+              )}
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Transaction
@@ -674,6 +755,9 @@ export default function TransactionsManager({
                 onEdit={(transaction: any) => handleEdit(transaction as Transaction)}
                 onDelete={handleDelete}
                 variant="compact"
+                selectedIds={selectedTransactionIds}
+                onSelectAll={handleSelectAll}
+                onSelectTransaction={handleSelectTransaction}
               />
 
               {/* Pagination Controls */}

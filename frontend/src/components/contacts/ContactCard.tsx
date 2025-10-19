@@ -3,6 +3,7 @@
 import React from 'react';
 import { Mail, Phone, Building2, Edit2, Trash2, User, Globe, ExternalLink, MailPlus, FileCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getContactTypeIcon, validateIatiContactType } from '@/lib/contact-utils';
 
 interface Contact {
@@ -101,10 +102,32 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
           <h3 className="text-lg font-semibold text-slate-900 leading-tight break-words">
             {fullName}
             {contact.isFocalPoint && (
-              <MailPlus className="h-4 w-4 ml-2 inline text-slate-600" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-default">
+                      <MailPlus className="h-4 w-4 ml-2 inline text-slate-600" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">
+                    <p className="text-sm text-gray-600 font-normal">This contact is designated as the focal point for this activity</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             {contact.importedFromIati && (
-              <FileCode className="h-4 w-4 ml-2 inline text-slate-600" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center justify-center ml-2">
+                      <FileCode className="h-4 w-4" style={{ color: '#004F59' }} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">
+                    <p className="text-sm text-gray-600 font-normal">This contact was imported from IATI XML</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </h3>
 

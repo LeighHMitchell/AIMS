@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2025-01-17T00:00:00Z">
+  <iati-activity 
+    humanitarian="1"
+    default-currency="USD" 
+    last-updated-datetime="2025-01-17T00:00:00Z"
+    xml:lang="en">
+    
+    <iati-identifier>TEST-HUM-001</iati-identifier>
+    
+    <title>
+      <narrative>Nepal Earthquake Emergency Response 2015</narrative>
+    </title>
+    
+    <description>
+      <narrative>Emergency response providing shelter, food, and medical assistance to earthquake-affected communities in Nepal.</narrative>
+    </description>
+    
+    <!--humanitarian-scope starts-->
+    <humanitarian-scope type="1" vocabulary="1-2" code="EQ-2015-000048-NPL">
+      <narrative>Nepal Earthquake April 2015</narrative>
+      <narrative xml:lang="fr">Népal Earthquake Avril 2015</narrative>
+    </humanitarian-scope>
+    <humanitarian-scope type="2" vocabulary="2-1" code="FNPL15">
+      <narrative xml:lang="en">Nepal Earthquake Flash Appeal 2015</narrative>
+    </humanitarian-scope>
+    <!--humanitarian-scope ends-->
+    
+    <activity-status code="3" />
+    
+    <activity-date iso-date="2015-04-27" type="1" />
+    <activity-date iso-date="2015-05-01" type="2" />
+    <activity-date iso-date="2015-12-31" type="3" />
+    
+    <participating-org ref="US-EIN-12-3456789" role="1" type="10">
+      <narrative>Test Organization</narrative>
+    </participating-org>
+    
+    <recipient-country code="NP" percentage="100">
+      <narrative>Nepal</narrative>
+    </recipient-country>
+    
+    <sector vocabulary="1" code="72010" percentage="60">
+      <narrative>Material relief assistance and services</narrative>
+    </sector>
+    <sector vocabulary="1" code="72040" percentage="40">
+      <narrative>Emergency food assistance</narrative>
+    </sector>
+    
+    <transaction ref="T001" humanitarian="1">
+      <transaction-type code="3" />
+      <transaction-date iso-date="2015-05-15" />
+      <value currency="USD">100000</value>
+      <description>
+        <narrative>Emergency relief disbursement</narrative>
+      </description>
+    </transaction>
+    
+  </iati-activity>
+</iati-activities>
+

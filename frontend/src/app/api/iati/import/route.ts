@@ -84,8 +84,305 @@ function getErrorMessage(error: unknown): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const contentType = request.headers.get('content-type') || '';
+
+    // Branch: JSON body import (used by URL import tool and stepwise imports)
+    if (contentType.includes('application/json')) {
+      try {
+        const data: ImportRequest = await request.json();
+        const { activities, organizations, transactions } = data as any;
+
+        console.log('[IATI Import] JSON import detected:', {
+          activities: activities?.length || 0,
+          organizations: organizations?.length || 0,
+          transactions: transactions?.length || 0
+        });
+
+        const results = {
+          organizationsCreated: 0,
+          organizationsUpdated: 0,
+          activitiesCreated: 0,
+          activitiesUpdated: 0,
+          transactionsCreated: 0,
+          errors: [] as string[]
+        };
+
+        // Import organizations first (if provided)
+        if (Array.isArray(organizations) && organizations.length > 0) {
+          // Map IATI organization type codes to database type values
+          const iatiToDbTypeMapping: Record<string, string> = {
+            '10': 'government',
+            '11': 'government',
+            '15': 'government',
+            '21': 'ngo',
+            '22': 'ngo',
+            '23': 'ngo',
+            '24': 'ngo',
+            '30': 'private',
+            '40': 'multilateral',
+            '60': 'foundation',
+            '70': 'private',
+            '71': 'private',
+            '72': 'private',
+            '73': 'private',
+            '80': 'academic',
+            '90': 'other'
+          };
+
+          for (const org of organizations) {
+            try {
+              const dbType = iatiToDbTypeMapping[(org as any).type];
+
+              if ((org as any).matched && (org as any).existingId) {
+                const updateData: any = {
+                  name: (org as any).name,
+                  country: (org as any).country,
+                  iati_org_id: (org as any).ref,
+                  acronym: (org as any).acronym,
+                  updated_at: new Date().toISOString()
+                };
+                if (dbType) updateData.type = dbType;
+
+                const { data: updateResult, error } = await getSupabaseAdmin()
+                  .from('organizations')
+                  .update(updateData)
+                  .eq('id', (org as any).existingId)
+                  .select();
+
+                if (error) throw error;
+                if (!updateResult || updateResult.length === 0) {
+                  throw new Error(`No rows updated for organization ID ${(org as any).existingId}`);
+                }
+                results.organizationsUpdated++;
+              } else {
+                const insertData: any = {
+                  name: (org as any).name,
+                  type: dbType || null,
+                  country: (org as any).country || 'MM',
+                  iati_org_id: (org as any).ref,
+                  acronym: (org as any).acronym
+                };
+                const { error } = await getSupabaseAdmin()
+                  .from('organizations')
+                  .insert(insertData)
+                  .select()
+                  .single();
+                if (error) throw error;
+                results.organizationsCreated++;
+              }
+            } catch (error) {
+              const errorMsg = getErrorMessage(error);
+              results.errors.push(`Failed to import organization ${(org as any).name}: ${errorMsg}`);
+            }
+          }
+        }
+
+        // Fetch orgs to map for activities and transactions
+        const { data: allOrgs } = await getSupabaseAdmin()
+          .from('organizations')
+          .select('id, iati_org_id, name');
+        const orgMap = new Map((allOrgs || []).map((o: any) => [o.iati_org_id || o.name, o.id]));
+
+        // Import activities (if provided)
+        const activityIdMap = new Map<string, string>();
+        if (Array.isArray(activities) && activities.length > 0) {
+          for (const activity of activities) {
+            try {
+              const implementingOrg = (activity as any).participatingOrgs?.find((o: any) => o.role === '4');
+              const fundingOrg = (activity as any).participatingOrgs?.find((o: any) => o.role === '1');
+              const partnerId = implementingOrg ? (orgMap.get(implementingOrg.ref) || orgMap.get(implementingOrg.name)) : (fundingOrg ? (orgMap.get(fundingOrg.ref) || orgMap.get(fundingOrg.name)) : null);
+
+              const activityData: any = {
+                title: (activity as any).title,
+                description: (activity as any).description,
+                iati_id: (activity as any).iatiIdentifier,
+                activity_status: (activity as any).status === 'Implementation' ? 'active' : (activity as any).status === 'Completion' ? 'completed' : (activity as any).status === 'Cancelled' ? 'cancelled' : 'planned',
+                planned_start_date: (activity as any).startDate,
+                planned_end_date: (activity as any).endDate,
+                partner_id: partnerId,
+                updated_at: new Date().toISOString()
+              };
+
+              let activityId: string;
+              if ((activity as any).matched && (activity as any).existingId) {
+                const { data: updateResult, error } = await getSupabaseAdmin()
+                  .from('activities')
+                  .update(activityData)
+                  .eq('id', (activity as any).existingId)
+                  .select();
+                if (error) throw error;
+                if (!updateResult || updateResult.length === 0) {
+                  throw new Error(`No rows updated for activity ID ${(activity as any).existingId}`);
+                }
+                activityId = (activity as any).existingId;
+                results.activitiesUpdated++;
+              } else {
+                activityData.publication_status = 'draft';
+                activityData.submission_status = 'not_submitted';
+                const { data: newActivity, error } = await getSupabaseAdmin()
+                  .from('activities')
+                  .insert(activityData)
+                  .select()
+                  .single();
+                if (error) throw error;
+                activityId = newActivity.id;
+                results.activitiesCreated++;
+              }
+              activityIdMap.set((activity as any).iatiIdentifier, activityId);
+
+              // Link participating orgs
+              for (const participatingOrg of (activity as any).participatingOrgs || []) {
+                const orgId = orgMap.get(participatingOrg.ref) || orgMap.get(participatingOrg.name);
+                if (orgId && orgId !== partnerId) {
+                  await getSupabaseAdmin()
+                    .from('activity_contributors')
+                    .upsert({
+                      activity_id: activityId,
+                      organization_id: orgId,
+                      contribution_type: participatingOrg.role === '1' ? 'funder' : 'partner'
+                    }, { onConflict: 'activity_id,organization_id' });
+                }
+              }
+            } catch (error) {
+              const errorMsg = getErrorMessage(error);
+              results.errors.push(`Failed to import activity ${(activity as any).title}: ${errorMsg}`);
+            }
+          }
+        }
+
+        // Import transactions (if provided)
+        if (Array.isArray(transactions) && transactions.length > 0) {
+          // Map IATI transaction type codes
+          const iatiTypeToDbType: Record<string, string> = {
+            'Incoming Funds': '12',
+            'Incoming Commitment': '1',
+            'Outgoing Commitment': '2',
+            'Disbursement': '3',
+            'Expenditure': '4',
+            'Interest Payment': '5',
+            'Interest Repayment': '5',
+            'Loan Repayment': '6',
+            'Reimbursement': '7',
+            'Purchase of Equity': '8',
+            'Sale of Equity': '9',
+            'Credit Guarantee': '11',
+            'Commitment Cancellation': '13',
+            '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '11': '11', '12': '12', '13': '13'
+          };
+
+          for (const transaction of transactions) {
+            try {
+              const dbTransactionType = iatiTypeToDbType[(transaction as any).type] || '4';
+
+              // Resolve activity id
+              let activityId = activityIdMap.get((transaction as any).activityRef);
+              if (!activityId) {
+                const { data: existingActivity } = await getSupabaseAdmin()
+                  .from('activities')
+                  .select('id')
+                  .eq('iati_id', (transaction as any).activityRef)
+                  .single();
+                activityId = existingActivity?.id;
+              }
+              if (!activityId) {
+                // Create minimal activity if truly missing
+                const minimalActivity = {
+                  title: `[Auto-created] ${(transaction as any).activityRef}`,
+                  description: 'Auto-created for imported transaction',
+                  iati_id: (transaction as any).activityRef,
+                  activity_status: 'active',
+                  publication_status: 'draft',
+                  submission_status: 'not_submitted',
+                  planned_start_date: (transaction as any).date || new Date().toISOString().split('T')[0],
+                  planned_end_date: new Date().toISOString().split('T')[0]
+                };
+                const { data: newActivity, error } = await getSupabaseAdmin()
+                  .from('activities')
+                  .insert(minimalActivity)
+                  .select()
+                  .single();
+                if (error) throw error;
+                activityId = newActivity.id;
+                results.activitiesCreated++;
+              }
+
+              // Resolve org ids by name or ref if available
+              const providerOrgId = (transaction as any).providerOrg ? (orgMap.get((transaction as any).providerOrg) || null) : null;
+              const receiverOrgId = (transaction as any).receiverOrg ? (orgMap.get((transaction as any).receiverOrg) || null) : null;
+
+              const transactionData: any = {
+                activity_id: activityId,
+                transaction_type: dbTransactionType,
+                transaction_date: (transaction as any).date || new Date().toISOString().split('T')[0],
+                value: (transaction as any).value,
+                currency: (transaction as any).currency || 'USD',
+                status: 'actual',
+                transaction_reference: (transaction as any).transactionReference || null,
+                value_date: (transaction as any).valueDate || null,
+                description: (transaction as any).description || null,
+                provider_org_id: providerOrgId,
+                provider_org_type: (transaction as any).providerOrgType || null,
+                provider_org_ref: (transaction as any).providerOrgRef || (transaction as any).providerOrg || null,
+                provider_org_name: (transaction as any).providerOrgName || (transaction as any).providerOrg || null,
+                receiver_org_id: receiverOrgId,
+                receiver_org_type: (transaction as any).receiverOrgType || null,
+                receiver_org_ref: (transaction as any).receiverOrgRef || (transaction as any).receiverOrg || null,
+                receiver_org_name: (transaction as any).receiverOrgName || (transaction as any).receiverOrg || null,
+                disbursement_channel: (transaction as any).disbursementChannel || null,
+                flow_type: (transaction as any).flowType || null,
+                finance_type: (transaction as any).financeType || null,
+                aid_type: (transaction as any).aidType || null,
+                tied_status: (transaction as any).tiedStatus || null,
+                sector_code: (transaction as any).sectorCode || null,
+                sector_vocabulary: (transaction as any).sectorVocabulary || null,
+                recipient_country_code: (transaction as any).recipientCountryCode || null,
+                recipient_region_code: (transaction as any).recipientRegionCode || null,
+                recipient_region_vocab: (transaction as any).recipientRegionVocab || null,
+                is_humanitarian: (transaction as any).isHumanitarian || false
+              };
+
+              if (!transactionData.transaction_type || transactionData.value === undefined || transactionData.value === null) {
+                throw new Error(`Missing required fields: type=${transactionData.transaction_type}, value=${transactionData.value}`);
+              }
+
+              const { error } = await getSupabaseAdmin()
+                .rpc('insert_iati_transaction', {
+                  p_activity_id: transactionData.activity_id,
+                  p_transaction_type: transactionData.transaction_type,
+                  p_transaction_date: transactionData.transaction_date,
+                  p_value: transactionData.value,
+                  p_currency: transactionData.currency,
+                  p_description: transactionData.description,
+                  p_disbursement_channel: transactionData.disbursement_channel,
+                  p_flow_type: transactionData.flow_type,
+                  p_finance_type: transactionData.finance_type,
+                  p_aid_type: transactionData.aid_type,
+                  p_tied_status: transactionData.tied_status,
+                  p_provider_org_name: transactionData.provider_org_name,
+                  p_receiver_org_name: transactionData.receiver_org_name
+                });
+              if (error) throw error;
+              results.transactionsCreated++;
+            } catch (error) {
+              const errorMsg = getErrorMessage(error);
+              results.errors.push(`Failed to import transaction: ${errorMsg}`);
+            }
+          }
+        }
+
+        return NextResponse.json({ success: results.errors.length === 0, results });
+      } catch (error) {
+        const errorMsg = getErrorMessage(error);
+        return NextResponse.json(
+          { error: 'Failed to import IATI data', details: errorMsg },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Default branch: multipart upload (external publisher detection flow)
     console.log('[IATI Import] Starting external publisher detection import process');
-    
+
     // Parse multipart form data
     const formData = await request.formData();
     const file = formData.get('file') as File;

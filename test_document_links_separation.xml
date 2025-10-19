@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>TEST-DOC-003</iati-identifier>
+    
+    <reporting-org ref="US-GOV-1" type="10">
+      <narrative>US Government</narrative>
+    </reporting-org>
+    
+    <title>
+      <narrative xml:lang="en">Activity vs Result Document Links Test</narrative>
+    </title>
+    
+    <description>
+      <narrative xml:lang="en">Testing that activity-level and result-level document links are properly separated</narrative>
+    </description>
+    
+    <activity-status code="2"/>
+    
+    <!-- ACTIVITY-LEVEL DOCUMENT LINKS (Should go to activity_documents table) -->
+    <document-link format="application/pdf" url="https://example.com/activity-doc-1.pdf">
+      <title>
+        <narrative xml:lang="en">Activity Level Document 1</narrative>
+      </title>
+      <description>
+        <narrative xml:lang="en">This should appear in the Documents &amp; Images tab</narrative>
+      </description>
+      <category code="A01"/>
+      <language code="en"/>
+    </document-link>
+    
+    <document-link format="application/pdf" url="https://example.com/activity-doc-2.pdf">
+      <title>
+        <narrative xml:lang="en">Activity Level Document 2</narrative>
+      </title>
+      <category code="A05"/>
+    </document-link>
+    
+    <recipient-country code="MM" percentage="100">
+      <narrative>Myanmar</narrative>
+    </recipient-country>
+    
+    <!-- RESULT WITH RESULT-LEVEL DOCUMENT LINKS (Should go to result_document_links table) -->
+    <result type="2" aggregation-status="1">
+      <title>
+        <narrative xml:lang="en">Test Result with Documents</narrative>
+      </title>
+      <description>
+        <narrative xml:lang="en">A result with its own document links</narrative>
+      </description>
+      
+      <!-- RESULT-LEVEL DOCUMENT LINK (Should NOT appear in activity documents) -->
+      <document-link format="application/pdf" url="https://example.com/result-doc-1.pdf">
+        <title>
+          <narrative xml:lang="en">Result Level Document 1</narrative>
+        </title>
+        <description>
+          <narrative xml:lang="en">This should appear in the Results tab, NOT in Documents tab</narrative>
+        </description>
+        <category code="A08"/>
+      </document-link>
+      
+      <indicator measure="1" ascending="1">
+        <title>
+          <narrative xml:lang="en">Test Indicator</narrative>
+        </title>
+        
+        <baseline year="2023" value="100">
+          <comment>
+            <narrative xml:lang="en">Baseline value</narrative>
+          </comment>
+        </baseline>
+        
+        <period>
+          <period-start iso-date="2024-01-01"/>
+          <period-end iso-date="2024-12-31"/>
+          <target value="200">
+            <comment>
+              <narrative xml:lang="en">Target value</narrative>
+            </comment>
+          </target>
+        </period>
+      </indicator>
+    </result>
+  </iati-activity>
+</iati-activities>
+

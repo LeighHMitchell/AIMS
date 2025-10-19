@@ -383,7 +383,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <div className="mb-4">
           <h2 className="text-lg font-semibold">
-            Current Activity Contacts ({contacts.length})
+            Current Activity Contacts
           </h2>
         </div>
 

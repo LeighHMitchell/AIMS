@@ -559,7 +559,7 @@ export function EnhancedSubnationalBreakdown({
                   variant="outline"
                   size="sm"
                   onClick={clearAllocations}
-                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 active:text-red-600 focus-visible:text-red-600"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Clear All

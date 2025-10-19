@@ -190,11 +190,12 @@ export function generateActivityXML(
 ): string {
   const xml: string[] = [];
   
-  // Activity element
+  // Activity element with optional humanitarian attribute
+  const humanitarianAttr = activity.humanitarian ? ' humanitarian="1"' : '';
   xml.push(`<iati-activity 
     default-currency="${activity.currency || 'USD'}"
     last-updated-datetime="${new Date().toISOString()}"
-    xml:lang="${activity.language || 'en'}">`);
+    xml:lang="${activity.language || 'en'}"${humanitarianAttr}>`);
   
   // Activity identifier
   xml.push(`  <iati-identifier>${escapeXML(activity.iati_identifier || activity.iati_id)}</iati-identifier>`);
@@ -229,6 +230,31 @@ export function generateActivityXML(
   }
   if (activity.actual_end_date) {
     xml.push(`  <activity-date iso-date="${activity.actual_end_date}" type="4" />`);
+  }
+  
+  // Humanitarian scope elements
+  if (activity.humanitarian_scopes && activity.humanitarian_scopes.length > 0) {
+    xml.push('');
+    xml.push('  <!-- Humanitarian Scope -->');
+    activity.humanitarian_scopes.forEach((scope: any) => {
+      const scopeAttrs: string[] = [];
+      if (scope.type) scopeAttrs.push(`type="${scope.type}"`);
+      if (scope.vocabulary) scopeAttrs.push(`vocabulary="${escapeXML(scope.vocabulary)}"`);
+      if (scope.code) scopeAttrs.push(`code="${escapeXML(scope.code)}"`);
+      if (scope.vocabulary_uri) scopeAttrs.push(`vocabulary-uri="${escapeXML(scope.vocabulary_uri)}"`);
+      
+      if (scope.narratives && scope.narratives.length > 0) {
+        xml.push(`  <humanitarian-scope ${scopeAttrs.join(' ')}>`);
+        scope.narratives.forEach((narrative: any) => {
+          const lang = narrative.language || 'en';
+          const langAttr = lang !== 'en' ? ` xml:lang="${lang}"` : '';
+          xml.push(`    <narrative${langAttr}>${escapeXML(narrative.narrative)}</narrative>`);
+        });
+        xml.push(`  </humanitarian-scope>`);
+      } else {
+        xml.push(`  <humanitarian-scope ${scopeAttrs.join(' ')} />`);
+      }
+    });
   }
   
   // Default values

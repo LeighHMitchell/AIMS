@@ -18,6 +18,19 @@ interface ParsedActivity {
   defaultCurrency?: string;
   crsChannelCode?: string; // CRS Channel Code
   
+  // Humanitarian
+  humanitarian?: boolean;
+  humanitarianScopes?: Array<{
+    type?: string; // 1=emergency, 2=appeal
+    vocabulary?: string; // 1-2=GLIDE, 2-1=HRP, 99=custom
+    code?: string;
+    vocabularyUri?: string;
+    narratives?: Array<{
+      language?: string;
+      text?: string;
+    }>;
+  }>;
+  
   // Dates
   plannedStartDate?: string;
   plannedEndDate?: string;
@@ -30,6 +43,11 @@ interface ParsedActivity {
   defaultAidType?: string;
   defaultTiedStatus?: string;
   capitalSpendPercentage?: number;
+  
+  // IATI Activity Attributes
+  hierarchy?: number;
+  budgetNotProvided?: boolean;
+  linkedDataUri?: string;
   
   // Locations
   recipientCountries?: Array<{
@@ -274,6 +292,44 @@ interface ParsedActivity {
       value?: number;
     }>;
   };
+  
+  // CRS Financing Terms
+  financingTerms?: {
+    loanTerms?: {
+      rate_1?: number;
+      rate_2?: number;
+      repayment_type_code?: string;
+      repayment_plan_code?: string;
+      commitment_date?: string;
+      repayment_first_date?: string;
+      repayment_final_date?: string;
+    };
+    loanStatuses?: Array<{
+      year: number;
+      currency: string;
+      value_date?: string;
+      interest_received?: number;
+      principal_outstanding?: number;
+      principal_arrears?: number;
+      interest_arrears?: number;
+    }>;
+    other_flags?: Array<{
+      code: string;
+      significance: string;
+    }>;
+    channel_code?: string;
+  };
+  
+  // Activity-Level Document Links
+  document_links?: Array<{
+    format?: string;
+    url: string;
+    title?: string;
+    description?: string;
+    category_code?: string;
+    language_code?: string;
+    document_date?: string;
+  }>;
 }
 
 export class IATIXMLParser {
@@ -501,6 +557,57 @@ export class IATIXMLParser {
       result.activityScope = scope.getAttribute('code') || undefined;
     }
 
+    // === HUMANITARIAN ===
+    
+    // Humanitarian flag (boolean attribute on iati-activity)
+    const humanitarianAttr = activity.getAttribute('humanitarian');
+    result.humanitarian = humanitarianAttr === '1' || humanitarianAttr === 'true';
+    
+    // === IATI ACTIVITY ATTRIBUTES ===
+    
+    // Hierarchy attribute (IATI activity level indicator)
+    const hierarchyAttr = activity.getAttribute('hierarchy');
+    if (hierarchyAttr) {
+      result.hierarchy = parseInt(hierarchyAttr, 10);
+    }
+    
+    // Budget not provided flag
+    const budgetNotProvided = activity.getAttribute('budget-not-provided');
+    if (budgetNotProvided) {
+      result.budgetNotProvided = budgetNotProvided === '1' || budgetNotProvided === 'true';
+    }
+    
+    // Linked data URI
+    const linkedDataUri = activity.getAttribute('linked-data-uri');
+    if (linkedDataUri) {
+      result.linkedDataUri = linkedDataUri;
+    }
+    
+    // Humanitarian Scope elements
+    const humanitarianScopes = activity.querySelectorAll('humanitarian-scope');
+    if (humanitarianScopes.length > 0) {
+      result.humanitarianScopes = [];
+      humanitarianScopes.forEach(scopeEl => {
+        const narrativeElements = scopeEl.querySelectorAll('narrative');
+        const narratives: Array<{ language?: string; text?: string }> = [];
+        
+        narrativeElements.forEach(narrativeEl => {
+          narratives.push({
+            language: narrativeEl.getAttribute('xml:lang') || 'en',
+            text: narrativeEl.textContent?.trim() || ''
+          });
+        });
+        
+        result.humanitarianScopes!.push({
+          type: scopeEl.getAttribute('type') || undefined,
+          vocabulary: scopeEl.getAttribute('vocabulary') || undefined,
+          code: scopeEl.getAttribute('code') || undefined,
+          vocabularyUri: scopeEl.getAttribute('vocabulary-uri') || undefined,
+          narratives: narratives.length > 0 ? narratives : undefined
+        });
+      });
+    }
+
     // Language (from xml:lang attribute on root activity or from narrative elements)
     result.language = activity.getAttribute('xml:lang') || 
                      activity.getAttribute('default-language') ||
@@ -557,13 +664,76 @@ export class IATIXMLParser {
       }
     }
 
-    // CRS Channel Code
-    const crsChannelCode = activity.querySelector('crs-add');
-    if (crsChannelCode) {
-      const channelCode = crsChannelCode.querySelector('channel-code');
-      if (channelCode) {
-        result.crsChannelCode = channelCode.textContent?.trim();
+    // === CRS FINANCING TERMS (CRS-ADD) ===
+    
+    const crsAdd = activity.querySelector('crs-add');
+    if (crsAdd) {
+      result.financingTerms = {};
+      
+      // Extract loan terms
+      const loanTerms = crsAdd.querySelector('loan-terms');
+      if (loanTerms) {
+        const rate1 = loanTerms.getAttribute('rate-1');
+        const rate2 = loanTerms.getAttribute('rate-2');
+        
+        result.financingTerms.loanTerms = {
+          rate_1: rate1 ? parseFloat(rate1) : undefined,
+          rate_2: rate2 ? parseFloat(rate2) : undefined,
+          repayment_type_code: loanTerms.querySelector('repayment-type')?.getAttribute('code') || undefined,
+          repayment_plan_code: loanTerms.querySelector('repayment-plan')?.getAttribute('code') || undefined,
+          commitment_date: loanTerms.querySelector('commitment-date')?.getAttribute('iso-date') || undefined,
+          repayment_first_date: loanTerms.querySelector('repayment-first-date')?.getAttribute('iso-date') || undefined,
+          repayment_final_date: loanTerms.querySelector('repayment-final-date')?.getAttribute('iso-date') || undefined
+        };
       }
+      
+      // Extract loan statuses
+      const loanStatuses = crsAdd.querySelectorAll('loan-status');
+      if (loanStatuses.length > 0) {
+        result.financingTerms.loanStatuses = [];
+        for (let i = 0; i < loanStatuses.length; i++) {
+          const status = loanStatuses[i];
+          const yearAttr = status.getAttribute('year');
+          if (yearAttr) {
+            const interestReceived = status.querySelector('interest-received');
+            const principalOutstanding = status.querySelector('principal-outstanding');
+            const principalArrears = status.querySelector('principal-arrears');
+            const interestArrears = status.querySelector('interest-arrears');
+            
+            result.financingTerms.loanStatuses.push({
+              year: parseInt(yearAttr),
+              currency: status.getAttribute('currency') || 'USD',
+              value_date: status.getAttribute('value-date') || undefined,
+              interest_received: interestReceived?.textContent ? parseFloat(interestReceived.textContent) : undefined,
+              principal_outstanding: principalOutstanding?.textContent ? parseFloat(principalOutstanding.textContent) : undefined,
+              principal_arrears: principalArrears?.textContent ? parseFloat(principalArrears.textContent) : undefined,
+              interest_arrears: interestArrears?.textContent ? parseFloat(interestArrears.textContent) : undefined
+            });
+          }
+        }
+      }
+      
+      // Extract other-flags
+      const otherFlags = crsAdd.querySelectorAll('other-flags');
+      if (otherFlags.length > 0) {
+        result.financingTerms.other_flags = [];
+        for (let i = 0; i < otherFlags.length; i++) {
+          const flag = otherFlags[i];
+          result.financingTerms.other_flags.push({
+            code: flag.getAttribute('code') || '',
+            significance: flag.getAttribute('significance') || '1'
+          });
+        }
+      }
+      
+      // Channel code
+      const channelCode = crsAdd.querySelector('channel-code');
+      if (channelCode) {
+        result.financingTerms.channel_code = channelCode.textContent?.trim();
+      }
+      
+      // Keep crsChannelCode for backward compatibility
+      result.crsChannelCode = result.financingTerms.channel_code;
     }
 
     // === LOCATIONS ===
@@ -1518,6 +1688,47 @@ export class IATIXMLParser {
           });
         }
         console.log('[XML Parser] Parsed', forecasts.length, 'FSS forecasts');
+      }
+    }
+
+    // === ACTIVITY-LEVEL DOCUMENT LINKS ===
+    
+    const activityDocLinks = activity.querySelectorAll(':scope > document-link');
+    if (activityDocLinks.length > 0) {
+      result.document_links = [];
+      console.log('[XML Parser] Found', activityDocLinks.length, 'activity-level document links');
+      
+      for (let i = 0; i < activityDocLinks.length; i++) {
+        const docLink = activityDocLinks[i];
+        const docTitle = docLink.querySelector('title');
+        const docDescription = docLink.querySelector('description');
+        const docCategory = docLink.querySelector('category');
+        const docLanguage = docLink.querySelector('language');
+        const docDate = docLink.querySelector('document-date');
+        
+        const url = docLink.getAttribute('url');
+        
+        // Only include document links with valid URLs
+        if (url && url.trim()) {
+          // Fix common URL issues (like missing // after http:)
+          let fixedUrl = url.trim();
+          if (fixedUrl.startsWith('http:') && !fixedUrl.startsWith('http://')) {
+            fixedUrl = fixedUrl.replace('http:', 'http://');
+          }
+          if (fixedUrl.startsWith('https:') && !fixedUrl.startsWith('https://')) {
+            fixedUrl = fixedUrl.replace('https:', 'https://');
+          }
+          
+          result.document_links.push({
+            format: docLink.getAttribute('format') || undefined,
+            url: fixedUrl,
+            title: this.extractNarrative(docTitle),
+            description: this.extractNarrative(docDescription),
+            category_code: docCategory?.getAttribute('code') || undefined,
+            language_code: docLanguage?.getAttribute('code') || 'en',
+            document_date: docDate?.getAttribute('iso-date') || undefined
+          });
+        }
       }
     }
 

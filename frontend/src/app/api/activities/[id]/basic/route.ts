@@ -106,6 +106,11 @@ export async function GET(
           tag_id,
           tags (id, name, vocabulary, code, vocabulary_uri, created_by, created_at, updated_at)
         ),
+        activity_working_groups (
+          working_group_id,
+          vocabulary,
+          working_groups (id, code, label, description)
+        ),
         activity_sdg_mappings (*),
         recipient_countries,
         recipient_regions,
@@ -174,6 +179,11 @@ export async function GET(
             activity_tags (
               tag_id,
               tags (id, name, vocabulary, code, vocabulary_uri, created_by, created_at, updated_at)
+            ),
+            activity_working_groups (
+              working_group_id,
+              vocabulary,
+              working_groups (id, code, label, description)
             ),
             activity_sdg_mappings (*),
             recipient_countries,
@@ -305,6 +315,11 @@ export async function GET(
         created_by: at.tags.created_by,
         created_at: at.tags.created_at,
         updated_at: at.tags.updated_at
+      })) || [],
+      workingGroups: activity.activity_working_groups?.map((wgRelation: any) => ({
+        code: wgRelation.working_groups.code,
+        label: wgRelation.working_groups.label,
+        vocabulary: wgRelation.vocabulary
       })) || [],
       sdgMappings: activity.activity_sdg_mappings?.map((mapping: any) => ({
         id: mapping.id,

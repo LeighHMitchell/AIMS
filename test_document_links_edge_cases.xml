@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>TEST-DOC-002</iati-identifier>
+    
+    <reporting-org ref="US-GOV-1" type="10">
+      <narrative>US Government</narrative>
+    </reporting-org>
+    
+    <title>
+      <narrative xml:lang="en">Document Links Edge Cases Test</narrative>
+    </title>
+    
+    <description>
+      <narrative xml:lang="en">Testing edge cases: malformed URLs, special characters, multiple languages</narrative>
+    </description>
+    
+    <activity-status code="2"/>
+    
+    <!-- Test Case 1: Malformed URL (missing //) -->
+    <document-link format="application/pdf" url="http:example.com/malformed-http.pdf">
+      <title>
+        <narrative xml:lang="en">Malformed HTTP URL Test</narrative>
+      </title>
+      <category code="A01"/>
+    </document-link>
+    
+    <!-- Test Case 2: Malformed HTTPS URL -->
+    <document-link format="application/pdf" url="https:example.com/malformed-https.pdf">
+      <title>
+        <narrative xml:lang="en">Malformed HTTPS URL Test</narrative>
+      </title>
+      <category code="A01"/>
+    </document-link>
+    
+    <!-- Test Case 3: Special characters in title and description -->
+    <document-link format="application/pdf" url="https://example.com/special-chars.pdf">
+      <title>
+        <narrative xml:lang="fr">Rapport d'évaluation – 2024 &amp; "Project" (français)</narrative>
+      </title>
+      <description>
+        <narrative xml:lang="fr">Émile's document with €5,000 budget &amp; 100% completion</narrative>
+      </description>
+      <category code="A07"/>
+      <language code="fr"/>
+    </document-link>
+    
+    <!-- Test Case 4: Empty URL (should be skipped) -->
+    <document-link format="application/pdf" url="">
+      <title>
+        <narrative xml:lang="en">Empty URL - Should Be Skipped</narrative>
+      </title>
+      <category code="A01"/>
+    </document-link>
+    
+    <!-- Test Case 5: Missing URL attribute (should be skipped) -->
+    <document-link format="application/pdf">
+      <title>
+        <narrative xml:lang="en">Missing URL - Should Be Skipped</narrative>
+      </title>
+      <category code="A01"/>
+    </document-link>
+    
+    <!-- Test Case 6: Long URL -->
+    <document-link format="application/pdf" url="https://example.com/very/long/path/with/many/segments/that/goes/on/and/on/subfolder/another/level/deep/document-with-long-name.pdf?param1=value1&amp;param2=value2&amp;param3=value3">
+      <title>
+        <narrative xml:lang="en">Document with Very Long URL</narrative>
+      </title>
+      <category code="A01"/>
+    </document-link>
+    
+    <!-- Test Case 7: Different document categories -->
+    <document-link format="application/pdf" url="https://example.com/evaluation-report.pdf">
+      <title>
+        <narrative xml:lang="en">Evaluation Report</narrative>
+      </title>
+      <category code="A07"/>
+      <language code="en"/>
+    </document-link>
+    
+    <document-link format="application/pdf" url="https://example.com/mou.pdf">
+      <title>
+        <narrative xml:lang="en">Memorandum of Understanding</narrative>
+      </title>
+      <category code="A09"/>
+    </document-link>
+    
+    <document-link format="application/pdf" url="https://example.com/contract.pdf">
+      <title>
+        <narrative xml:lang="en">Project Contract</narrative>
+      </title>
+      <category code="A11"/>
+    </document-link>
+    
+    <!-- Test Case 8: Spanish language document -->
+    <document-link format="application/pdf" url="https://example.com/documento-espanol.pdf">
+      <title>
+        <narrative xml:lang="es">Documento del Proyecto en Español</narrative>
+      </title>
+      <description>
+        <narrative xml:lang="es">Descripción completa del proyecto con objetivos y resultados esperados</narrative>
+      </description>
+      <category code="A02"/>
+      <language code="es"/>
+      <document-date iso-date="2024-02-20"/>
+    </document-link>
+    
+    <recipient-country code="MM" percentage="100">
+      <narrative>Myanmar</narrative>
+    </recipient-country>
+  </iati-activity>
+</iati-activities>
+

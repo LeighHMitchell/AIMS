@@ -49,11 +49,8 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build optimized query
-    // Avoid expensive exact count unless explicitly requested
-    const wantCount = searchParams.get('withCount') === 'true';
-    let countQuery = wantCount
-      ? supabase.from('activities').select('id', { count: 'exact', head: true })
-      : null;
+    // Always get count for proper pagination
+    let countQuery = supabase.from('activities').select('*', { count: 'exact', head: true });
 
     let dataQuery = supabase
       .from('activities')
@@ -105,22 +102,22 @@ export async function GET(request: NextRequest) {
       searchConditions.push(`acronym.ilike.%${search}%`);
       
       const orCondition = searchConditions.join(',');
-      if (countQuery) countQuery = countQuery.or(orCondition);
+      countQuery = countQuery.or(orCondition);
       dataQuery = dataQuery.or(orCondition);
     }
 
     if (activityStatus && activityStatus !== 'all') {
-      if (countQuery) countQuery = countQuery.eq('activity_status', activityStatus);
+      countQuery = countQuery.eq('activity_status', activityStatus);
       dataQuery = dataQuery.eq('activity_status', activityStatus);
     }
 
     if (publicationStatus && publicationStatus !== 'all') {
-      if (countQuery) countQuery = countQuery.eq('publication_status', publicationStatus);
+      countQuery = countQuery.eq('publication_status', publicationStatus);
       dataQuery = dataQuery.eq('publication_status', publicationStatus);
     }
 
     if (submissionStatus && submissionStatus !== 'all') {
-      if (countQuery) countQuery = countQuery.eq('submission_status', submissionStatus);
+      countQuery = countQuery.eq('submission_status', submissionStatus);
       dataQuery = dataQuery.eq('submission_status', submissionStatus);
     }
 
@@ -146,9 +143,9 @@ export async function GET(request: NextRequest) {
     // Note: Budget and disbursement sorting will be handled client-side after data aggregation
     // since these are calculated fields from multiple tables
 
-    // Execute queries (run count only if requested)
+    // Execute queries in parallel
     const [countResult, dataResult] = await Promise.all([
-      countQuery ? countQuery : Promise.resolve({ count: null, error: null }),
+      countQuery,
       dataQuery
     ]);
 
@@ -418,12 +415,15 @@ export async function GET(request: NextRequest) {
 
     // Return paginated response
     const response = {
+      activities: transformedActivities,
       data: transformedActivities,
+      totalCount: totalCount ?? 0,
       pagination: {
         page,
         limit,
-        total: totalCount ?? undefined,
-        totalPages: totalCount ? Math.ceil(totalCount / limit) : undefined
+        total: totalCount ?? 0,
+        totalCount: totalCount ?? 0,
+        totalPages: totalCount ? Math.ceil(totalCount / limit) : 1
       },
       performance: {
         executionTimeMs: executionTime

@@ -166,6 +166,15 @@ const DEFAULT_SPATIAL_REFERENCE_SYSTEM = 'http://www.opengis.net/def/crs/EPSG/0/
 
 type GeocodeAddress = Record<string, string | undefined>;
 
+// Helper function: Country code to flag emoji mapping
+const getCountryFlag = (countryCode?: string): string => {
+  if (!countryCode) return '🌍';
+  const code = countryCode.toUpperCase();
+  return String.fromCodePoint(
+    ...[...code].map(c => 127397 + c.charCodeAt(0))
+  );
+};
+
 const ISO_LEVEL_MAPPINGS: Array<{ key: string; level: typeof ADMIN_LEVELS[number] }> = [
   { key: 'ISO3166-2-lvl6', level: '3' },
   { key: 'ISO3166-2-lvl5', level: '2' },
@@ -782,7 +791,7 @@ export default function LocationModal({
     }
   }, [isOpen, location, reset]);
 
-  // Search functionality
+  // Search functionality with cascading approach: Myanmar → Regional → Global
   useEffect(() => {
     const performSearch = async () => {
       if (searchQuery.trim().length < 2) {
@@ -792,10 +801,20 @@ export default function LocationModal({
 
       setIsSearching(true);
       try {
-        const results = await smartLocationSearch(searchQuery.trim(), { limit: 8 });
+        const options: any = { limit: 30 };
+        
+        console.log('[Location Search] Starting cascading search for:', searchQuery.trim());
+        
+        const results = await smartLocationSearch(searchQuery.trim(), options);
+        
+        console.log('[Location Search] Results:', {
+          count: results.length,
+          results: results.slice(0, 3) // Log first 3 results for debugging
+        });
+        
         setSearchResults(results);
       } catch (error) {
-        console.error('Search error:', error);
+        console.error('[Location Search] Error:', error);
         setSearchResults([]);
       } finally {
         setIsSearching(false);
@@ -1237,10 +1256,12 @@ const autoPopulateIatiFields = useCallback((params: {
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <Label className="text-sm font-medium">Search Locations</Label>
+                  
+                  {/* Search Input */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                      placeholder="Search for a location (e.g., 'Yangon', 'Mandalay')..."
+                      placeholder="Search for a location"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10"
@@ -1248,15 +1269,24 @@ const autoPopulateIatiFields = useCallback((params: {
 
                     {/* Search Results Dropdown */}
                     {searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto z-50">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-96 overflow-auto z-50">
+                        {/* Result count header */}
+                        <div className="sticky top-0 bg-gray-50 px-4 py-2 border-b text-xs text-gray-600 font-medium">
+                          Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                        </div>
+                        
                         {searchResults.map((result, index) => (
                           <button
                             key={index}
                             onClick={() => handleSelectSearchResult(result)}
-                            className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                            className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
                           >
-                      <div className="font-medium text-gray-900">{result.name || result.display_name}</div>
-                            <div className="text-sm text-gray-500 mt-1">{result.display_name}</div>
+                            <div className="font-medium text-gray-900 truncate">
+                              {result.name || result.display_name}
+                            </div>
+                            <div className="text-sm text-gray-500 mt-1 line-clamp-2">
+                              {result.display_name}
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -1267,6 +1297,20 @@ const autoPopulateIatiFields = useCallback((params: {
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Searching...
+                    </div>
+                  )}
+                  
+                  {!isSearching && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
+                    <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded border border-gray-200">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <div className="font-medium">No results found</div>
+                          <div className="text-xs mt-1">
+                            Try searching with different terms (e.g., city name, street name, address)
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
