@@ -49,6 +49,7 @@ import { ActivityPortfolioTimeline } from '@/components/organizations/ActivityPo
 import { GeographicFootprint } from '@/components/organizations/GeographicFootprint'
 import { PartnershipNetwork } from '@/components/organizations/PartnershipNetwork'
 import { SectorAllocationChart } from '@/components/organizations/SectorAllocationChart'
+import { EditOrganizationModal } from '@/components/organizations/EditOrganizationModal'
 import {
   Table,
   TableBody,
@@ -177,6 +178,7 @@ export default function OrganizationProfilePage() {
   const [activitiesView, setActivitiesView] = useState<'card' | 'table'>('card')
   const [hoveredPoint, setHoveredPoint] = useState<{year: number, count: number, x: number, y: number} | null>(null)
   const [hoveredBudgetPoint, setHoveredBudgetPoint] = useState<{year: number, amount: number, x: number, y: number} | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
   
   // AbortController ref for race condition prevention
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -191,8 +193,21 @@ export default function OrganizationProfilePage() {
       // Create new AbortController for this request
       abortControllerRef.current = new AbortController()
       
+      // Set loading first to prevent flash of error state
+      setLoading(true)
+      
+      // Reset state when navigating to a different organization
+      setOrganization(null)
+      setError(null)
+      setActivities([])
+      setBudgets([])
+      setExpenditures([])
+      setDocuments([])
+      setTransactions([])
+      setContacts([])
+      setSectors([])
+      
       try {
-        setLoading(true)
         
         if (!params?.id) {
           throw new Error('Organization ID is required')
@@ -430,7 +445,34 @@ export default function OrganizationProfilePage() {
     return budgetsByYear
   }
 
-  if (loading) {
+  // Show loading skeleton while fetching OR if organization is null (during navigation)
+  if (loading || !organization) {
+    // Only show error if we're definitely not loading and there's an actual error
+    if (!loading && error) {
+      return (
+        <MainLayout>
+          <div className="min-h-screen flex items-center justify-center">
+            <Card className="max-w-md mx-auto">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Organization Not Found</h3>
+                  <p className="text-slate-600 mb-4">
+                    {error || 'The organization you are looking for could not be found.'}
+                  </p>
+                  <Button onClick={() => router.push('/organizations')} className="bg-slate-600 hover:bg-slate-700">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Organizations
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </MainLayout>
+      )
+    }
+    
+    // Show loading skeleton
     return (
       <MainLayout>
         <div className="min-h-screen">
@@ -449,39 +491,40 @@ export default function OrganizationProfilePage() {
     )
   }
 
-  if (!loading && (error || !organization)) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">Organization Not Found</h3>
-                <p className="text-slate-600 mb-4">
-                  {error || 'The organization you are looking for could not be found.'}
-                </p>
-                <Button onClick={() => router.push('/organizations')} className="bg-slate-600 hover:bg-slate-700">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Organizations
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </MainLayout>
-    )
-  }
-
   const totals = calculateTotals()
 
   // Type guard - organization is guaranteed to be non-null here due to earlier checks
   if (!organization) return null
 
+  const handleEditSuccess = async () => {
+    // Refetch organization data after successful edit
+    try {
+      if (!params?.id) return
+      
+      const orgResponse = await fetch(`/api/organizations/${params.id}`)
+      if (orgResponse.ok) {
+        const orgData = await orgResponse.json()
+        setOrganization(orgData)
+      }
+    } catch (err) {
+      console.error('Failed to refresh organization data:', err)
+    }
+  }
+
   return (
     <MainLayout>
       <div className="min-h-screen">
         <div className="w-full p-6">
+          {/* Edit Organization Modal */}
+          {organization && (
+            <EditOrganizationModal
+              organization={organization}
+              open={editModalOpen}
+              onOpenChange={setEditModalOpen}
+              onSuccess={handleEditSuccess}
+            />
+          )}
+
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <Button 
@@ -498,7 +541,10 @@ export default function OrganizationProfilePage() {
                 <Download className="h-4 w-4 mr-2" />
                 Export Profile
               </Button>
-              <Button className="bg-slate-600 hover:bg-slate-700">
+              <Button 
+                className="bg-slate-600 hover:bg-slate-700"
+                onClick={() => setEditModalOpen(true)}
+              >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Organization
               </Button>

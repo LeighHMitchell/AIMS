@@ -36,30 +36,60 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
     
     console.log('[ActivityLogger] Logging activity:', newLog);
 
-    // Always use the API endpoint to save logs to the database
-    // For server-side calls, we need to use the full URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const apiUrl = typeof window === 'undefined' 
-      ? `${baseUrl}/api/activity-logs`
-      : '/api/activity-logs';
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(params),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[ActivityLogger] Failed to log activity:', errorText);
-      // Use memory logger as fallback
-      const { MemoryActivityLogger } = await import('./activity-logger-memory');
-      await MemoryActivityLogger.logActivity(params);
-      console.log('[ActivityLogger] Logged to memory as fallback');
+    // For server-side calls, directly insert into database instead of HTTP fetch
+    if (typeof window === 'undefined') {
+      // Server-side: use direct database insert
+      try {
+        const { getSupabaseAdmin } = await import('./supabase');
+        const supabase = getSupabaseAdmin();
+        
+        const { error } = await supabase
+          .from('activity_logs')
+          .insert([{
+            action_type: params.actionType,
+            entity_type: params.entityType,
+            entity_id: params.entityId,
+            activity_id: params.activityId,
+            activity_title: params.activityTitle,
+            user_id: params.user.id,
+            user_name: params.user.name,
+            user_role: params.user.role,
+            metadata: params.metadata,
+          }]);
+        
+        if (error) {
+          console.error('[ActivityLogger] Database insert failed:', error);
+          const { MemoryActivityLogger } = await import('./activity-logger-memory');
+          await MemoryActivityLogger.logActivity(params);
+          console.log('[ActivityLogger] Logged to memory as fallback');
+        } else {
+          console.log('[ActivityLogger] Activity logged successfully to database');
+        }
+      } catch (error) {
+        console.error('[ActivityLogger] Error logging activity:', error);
+        const { MemoryActivityLogger } = await import('./activity-logger-memory');
+        await MemoryActivityLogger.logActivity(params);
+        console.log('[ActivityLogger] Logged to memory as fallback');
+      }
     } else {
-      console.log('[ActivityLogger] Activity logged successfully');
+      // Client-side: use API endpoint
+      const response = await fetch('/api/activity-logs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[ActivityLogger] Failed to log activity:', errorText);
+        const { MemoryActivityLogger } = await import('./activity-logger-memory');
+        await MemoryActivityLogger.logActivity(params);
+        console.log('[ActivityLogger] Logged to memory as fallback');
+      } else {
+        console.log('[ActivityLogger] Activity logged successfully');
+      }
     }
   } catch (error) {
     console.error('[ActivityLogger] Error logging activity:', error);

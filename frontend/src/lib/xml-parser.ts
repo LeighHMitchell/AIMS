@@ -667,8 +667,14 @@ export class IATIXMLParser {
     // === CRS FINANCING TERMS (CRS-ADD) ===
     
     const crsAdd = activity.querySelector('crs-add');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[XML Parser] Looking for crs-add element:', !!crsAdd);
+    }
     if (crsAdd) {
       result.financingTerms = {};
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[XML Parser] Processing crs-add element...');
+      }
       
       // Extract loan terms
       const loanTerms = crsAdd.querySelector('loan-terms');
@@ -734,6 +740,14 @@ export class IATIXMLParser {
       
       // Keep crsChannelCode for backward compatibility
       result.crsChannelCode = result.financingTerms.channel_code;
+      
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[XML Parser] Final financing terms result:', result.financingTerms);
+      }
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.log('[XML Parser] No crs-add element found. Available elements in activity:');
+      const childElements = Array.from(activity.children).map(el => el.tagName);
+      console.log('[XML Parser] Activity child elements:', childElements);
     }
 
     // === LOCATIONS ===

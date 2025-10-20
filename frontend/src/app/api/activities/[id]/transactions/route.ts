@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 
 export const dynamic = 'force-dynamic';
 
-export async function OPTIONS() {
-  const response = new NextResponse(null, { status: 200 });
-  response.headers.set('Access-Control-Allow-Origin', '*');
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  return response;
-}
 
 export async function GET(
   request: NextRequest,
@@ -50,12 +44,8 @@ export async function GET(
     }));
     
     console.log(`[AIMS] Successfully fetched ${transformedTransactions.length} transactions for activity ${activityId}`);
-    
-    const response = NextResponse.json(transformedTransactions);
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    return response;
+
+    return NextResponse.json(transformedTransactions);
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
@@ -142,10 +132,27 @@ export async function POST(
       updated_at: new Date().toISOString()
     };
     
+    // Convert to USD following the same pattern as budgets and planned disbursements
+    console.log(`[AIMS] Converting transaction to USD: ${transactionData.value} ${transactionData.currency}`);
+    const usdResult = await convertTransactionToUSD(
+      transactionData.value,
+      transactionData.currency,
+      transactionData.value_date || transactionData.transaction_date
+    );
+
+    if (usdResult.success) {
+      console.log(`[AIMS] USD conversion successful: ${transactionData.value} ${transactionData.currency} = $${usdResult.value_usd} USD`);
+    } else {
+      console.warn(`[AIMS] USD conversion failed: ${usdResult.error}`);
+    }
+
+    // Add USD fields to transaction data
+    const transactionDataWithUSD = addUSDFieldsToTransaction(transactionData, usdResult);
+    
     // Insert the transaction
     const { data: insertedTransaction, error } = await getSupabaseAdmin()
       .from('transactions')
-      .insert(transactionData)
+      .insert(transactionDataWithUSD)
       .select(`
         *,
         provider_org:provider_org_id(
@@ -185,12 +192,8 @@ export async function POST(
     };
     
     console.log('[AIMS] Successfully created transaction with ID:', transformedTransaction.uuid);
-    
-    const response = NextResponse.json(transformedTransaction);
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    return response;
+
+    return NextResponse.json(transformedTransaction);
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(

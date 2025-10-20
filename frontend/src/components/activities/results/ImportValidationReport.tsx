@@ -15,7 +15,8 @@ import {
   Tag,
   BarChart3,
   Target,
-  TrendingUp
+  TrendingUp,
+  FileCode
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
@@ -86,14 +87,14 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
           {/* Success/Error Overview */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <CheckCircle2 className="h-5 w-5 text-gray-600" />
               <span className="text-lg font-semibold">{totalCreated}</span>
               <span className="text-sm text-gray-600">elements created</span>
             </div>
             
             {summary.errors.length > 0 && (
               <div className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-600" />
+                <XCircle className="h-5 w-5 text-gray-600" />
                 <span className="text-lg font-semibold">{summary.errors.length}</span>
                 <span className="text-sm text-gray-600">errors</span>
               </div>
@@ -101,7 +102,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
             
             {summary.warnings && summary.warnings.length > 0 && (
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
+                <AlertCircle className="h-5 w-5 text-gray-600" />
                 <span className="text-lg font-semibold">{summary.warnings.length}</span>
                 <span className="text-sm text-gray-600">warnings</span>
               </div>
@@ -121,186 +122,13 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
         </CardContent>
       </Card>
 
-      {/* Core Elements Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Target className="h-4 w-4" />
-            Core Elements Created
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-gray-50 rounded">
-              <div className="text-2xl font-bold text-gray-900">{summary.results_created}</div>
-              <div className="text-xs text-gray-600">Results</div>
-            </div>
-            <div className="text-center p-3 bg-gray-50 rounded">
-              <div className="text-2xl font-bold text-gray-900">{summary.indicators_created}</div>
-              <div className="text-xs text-gray-600">Indicators</div>
-            </div>
-            <div className="text-center p-3 bg-gray-50 rounded">
-              <div className="text-2xl font-bold text-gray-900">{summary.baselines_created}</div>
-              <div className="text-xs text-gray-600">Baselines</div>
-            </div>
-            <div className="text-center p-3 bg-gray-50 rounded">
-              <div className="text-2xl font-bold text-gray-900">{summary.periods_created}</div>
-              <div className="text-xs text-gray-600">Periods</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Metadata Elements Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <TrendingUp className="h-4 w-4" />
-            Metadata Elements Created
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {/* Result Level */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">Result Level</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <Link2 className="h-3 w-3 text-gray-500" />
-                    References
-                  </span>
-                  <Badge variant="outline">{summary.result_references_created}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-3 w-3 text-gray-500" />
-                    Documents
-                  </span>
-                  <Badge variant="outline">{summary.result_documents_created}</Badge>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Indicator Level */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">Indicator Level</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <Link2 className="h-3 w-3 text-gray-500" />
-                    References
-                  </span>
-                  <Badge variant="outline">{summary.indicator_references_created}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-3 w-3 text-gray-500" />
-                    Documents
-                  </span>
-                  <Badge variant="outline">{summary.indicator_documents_created}</Badge>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Baseline Level */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">Baseline Level</h4>
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <MapPin className="h-3 w-3 text-gray-500" />
-                    Locations
-                  </span>
-                  <Badge variant="outline">{summary.baseline_locations_created}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <Tag className="h-3 w-3 text-gray-500" />
-                    Dimensions
-                  </span>
-                  <Badge variant="outline">{summary.baseline_dimensions_created}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-3 w-3 text-gray-500" />
-                    Documents
-                  </span>
-                  <Badge variant="outline">{summary.baseline_documents_created}</Badge>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Period Level - Target */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">Period - Target</h4>
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <MapPin className="h-3 w-3 text-gray-500" />
-                    Locations
-                  </span>
-                  <Badge variant="outline">{summary.period_target_locations_created}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <Tag className="h-3 w-3 text-gray-500" />
-                    Dimensions
-                  </span>
-                  <Badge variant="outline">{summary.period_target_dimensions_created}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-3 w-3 text-gray-500" />
-                    Documents
-                  </span>
-                  <Badge variant="outline">{summary.period_target_documents_created}</Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* Period Level - Actual */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">Period - Actual</h4>
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <MapPin className="h-3 w-3 text-gray-500" />
-                    Locations
-                  </span>
-                  <Badge variant="outline">{summary.period_actual_locations_created}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <Tag className="h-3 w-3 text-gray-500" />
-                    Dimensions
-                  </span>
-                  <Badge variant="outline">{summary.period_actual_dimensions_created}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-3 w-3 text-gray-500" />
-                    Documents
-                  </span>
-                  <Badge variant="outline">{summary.period_actual_documents_created}</Badge>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Element Coverage Report */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <CheckCircle2 className="h-4 w-4" />
+            <FileCode className="h-4 w-4" />
             IATI Element Coverage
           </CardTitle>
         </CardHeader>
@@ -320,11 +148,11 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
                 return (
                   <Badge 
                     key={element} 
-                    variant={found ? 'default' : 'outline'}
-                    className={`text-xs ${found ? 'bg-green-100 text-green-800 border-green-300' : 'text-gray-500'}`}
+                    variant="outline"
+                    className="text-xs text-gray-500"
                   >
-                    {found && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                    {element}
+                    {found && <FileCode className="h-3 w-3 mr-1" />}
+                    <span className="font-mono bg-gray-100 px-1 rounded">{`<${element}>`}</span>
                   </Badge>
                 );
               })}
@@ -348,11 +176,11 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
                 return (
                   <Badge 
                     key={element} 
-                    variant={found ? 'default' : 'outline'}
-                    className={`text-xs ${found ? 'bg-green-100 text-green-800 border-green-300' : 'text-gray-500'}`}
+                    variant="outline"
+                    className="text-xs text-gray-500"
                   >
-                    {found && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                    {element}
+                    {found && <FileCode className="h-3 w-3 mr-1" />}
+                    <span className="font-mono bg-gray-100 px-1 rounded">{`<${element}>`}</span>
                   </Badge>
                 );
               })}
@@ -376,11 +204,11 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
                 return (
                   <Badge 
                     key={element} 
-                    variant={found ? 'default' : 'outline'}
-                    className={`text-xs ${found ? 'bg-green-100 text-green-800 border-green-300' : 'text-gray-500'}`}
+                    variant="outline"
+                    className="text-xs text-gray-500"
                   >
-                    {found && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                    {element}
+                    {found && <FileCode className="h-3 w-3 mr-1" />}
+                    <span className="font-mono bg-gray-100 px-1 rounded">{`<${element}>`}</span>
                   </Badge>
                 );
               })}
@@ -402,14 +230,15 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
               {['period-start', 'period-end', 'target/value', 'target/comment', 'target/location', 'target/dimension', 'target/document-link',
                 'actual/value', 'actual/comment', 'actual/location', 'actual/dimension', 'actual/document-link'].map(element => {
                 const found = summary.coverage.period_elements_found.includes(element);
+                const displayElement = element.includes('/') ? element.replace('/', '/') : element;
                 return (
                   <Badge 
                     key={element} 
-                    variant={found ? 'default' : 'outline'}
-                    className={`text-xs ${found ? 'bg-green-100 text-green-800 border-green-300' : 'text-gray-500'}`}
+                    variant="outline"
+                    className="text-xs text-gray-500"
                   >
-                    {found && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                    {element}
+                    {found && <FileCode className="h-3 w-3 mr-1" />}
+                    <span className="font-mono bg-gray-100 px-1 rounded">{`<${displayElement}>`}</span>
                   </Badge>
                 );
               })}
@@ -464,9 +293,9 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
 
       {/* Success Message */}
       {summary.errors.length === 0 && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
+        <Alert className="border-gray-200 bg-gray-50">
+          <CheckCircle2 className="h-4 w-4 text-gray-600" />
+          <AlertDescription className="text-gray-800">
             <p className="font-semibold">Import Completed Successfully!</p>
             <p className="text-sm mt-1">
               All results data has been imported with {overallCoverage}% IATI element coverage. 

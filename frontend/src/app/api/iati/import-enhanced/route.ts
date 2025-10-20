@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 
 interface ImportData {
   activities: any[];
@@ -418,10 +419,27 @@ export async function POST(request: NextRequest) {
           // are not included as they don't exist in the current database schema
         };
 
+        // Convert to USD following the same pattern as budgets and planned disbursements
+        console.log(`[IATI Import Enhanced] Converting transaction to USD: ${transactionData.value} ${transactionData.currency}`);
+        const usdResult = await convertTransactionToUSD(
+          transactionData.value,
+          transactionData.currency,
+          transactionData.value_date || transactionData.transaction_date
+        );
+
+        if (usdResult.success) {
+          console.log(`[IATI Import Enhanced] USD conversion successful: ${transactionData.value} ${transactionData.currency} = $${usdResult.value_usd} USD`);
+        } else {
+          console.warn(`[IATI Import Enhanced] USD conversion failed: ${usdResult.error}`);
+        }
+
+        // Add USD fields to transaction data
+        const transactionDataWithUSD = addUSDFieldsToTransaction(transactionData, usdResult);
+
         // Insert transaction directly into the table
         const { data: insertedTransaction, error } = await getSupabaseAdmin()
           .from('transactions')
-          .insert(transactionData)
+          .insert(transactionDataWithUSD)
           .select()
           .single();
 

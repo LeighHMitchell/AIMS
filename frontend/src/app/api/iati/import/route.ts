@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { extractIatiMeta, IatiParseError } from '@/lib/iati/parseMeta';
 import { iatiAnalytics } from '@/lib/analytics';
+import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -345,22 +346,26 @@ export async function POST(request: NextRequest) {
                 throw new Error(`Missing required fields: type=${transactionData.transaction_type}, value=${transactionData.value}`);
               }
 
+              // Convert to USD following the same pattern as budgets and planned disbursements
+              console.log(`[IATI Import] Converting transaction to USD: ${transactionData.value} ${transactionData.currency}`);
+              const usdResult = await convertTransactionToUSD(
+                transactionData.value,
+                transactionData.currency,
+                transactionData.value_date || transactionData.transaction_date
+              );
+
+              if (usdResult.success) {
+                console.log(`[IATI Import] USD conversion successful: ${transactionData.value} ${transactionData.currency} = $${usdResult.value_usd} USD`);
+              } else {
+                console.warn(`[IATI Import] USD conversion failed: ${usdResult.error}`);
+              }
+
+              // Add USD fields to transaction data and insert directly (replacing RPC call)
+              const transactionDataWithUSD = addUSDFieldsToTransaction(transactionData, usdResult);
+              
               const { error } = await getSupabaseAdmin()
-                .rpc('insert_iati_transaction', {
-                  p_activity_id: transactionData.activity_id,
-                  p_transaction_type: transactionData.transaction_type,
-                  p_transaction_date: transactionData.transaction_date,
-                  p_value: transactionData.value,
-                  p_currency: transactionData.currency,
-                  p_description: transactionData.description,
-                  p_disbursement_channel: transactionData.disbursement_channel,
-                  p_flow_type: transactionData.flow_type,
-                  p_finance_type: transactionData.finance_type,
-                  p_aid_type: transactionData.aid_type,
-                  p_tied_status: transactionData.tied_status,
-                  p_provider_org_name: transactionData.provider_org_name,
-                  p_receiver_org_name: transactionData.receiver_org_name
-                });
+                .from('transactions')
+                .insert(transactionDataWithUSD);
               if (error) throw error;
               results.transactionsCreated++;
             } catch (error) {

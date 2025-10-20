@@ -11,8 +11,8 @@ export function middleware(request: NextRequest) {
       const response = new NextResponse(null, { status: 200 });
       response.headers.set('Access-Control-Allow-Origin', '*');
       response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
+      // Remove Access-Control-Allow-Credentials as it conflicts with wildcard origin
       return response;
     }
 
@@ -20,8 +20,7 @@ export function middleware(request: NextRequest) {
     const response = NextResponse.next();
     response.headers.set('Access-Control-Allow-Origin', '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
     return response;
   }
 
@@ -47,11 +46,9 @@ export function middleware(request: NextRequest) {
 
   // Clone the response to add headers
   const response = NextResponse.next()
-  
-  // Add CORS headers to all API routes
-  response.headers.set('Access-Control-Allow-Origin', '*')
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+  // CORS headers are already handled above for API routes
+  // No need to add them again
   
   // Add cache headers to prevent stale responses
   response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, s-maxage=0')

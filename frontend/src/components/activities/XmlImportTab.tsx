@@ -24,6 +24,7 @@ import { IATI_COUNTRIES } from '@/data/iati-countries';
 import { LANGUAGES } from '@/data/languages';
 import { ExternalPublisherModal } from '@/components/import/ExternalPublisherModal';
 import { ImportValidationReport } from './results/ImportValidationReport';
+import { ImportResultsDisplay } from './ImportResultsDisplay';
 import { extractIatiMeta } from '@/lib/iati/parseMeta';
 import { useUser } from '@/hooks/useUser';
 import { setFieldSaved } from '@/utils/persistentSave';
@@ -48,9 +49,10 @@ import {
   Check,
   Lock,
   Plus,
+  Copy,
+  RefreshCw,
   Trash2,
   Bug,
-  Copy,
   ClipboardPaste,
   Loader2,
 } from 'lucide-react';
@@ -171,9 +173,8 @@ interface ParsedField {
   conditionsData?: {
     attached: boolean;
     conditions: Array<{
-      type?: string;
-      narrative?: string;
-      narrativeLang?: string;
+      type: string;
+      narrative: Record<string, string>; // JSONB: {"en": "text", "fr": "texte"}
     }>;
   }; // Conditions data from XML
   isLocationItem?: boolean; // True for location items
@@ -414,7 +415,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [savedRefinedSectors, setSavedRefinedSectors] = useState<any[]>([]);
   const [xmlMetadata, setXmlMetadata] = useState<any>(null);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [comprehensiveLog, setComprehensiveLog] = useState<string>(''); // Store comprehensive import log for copy button
   const [showDebugConsole, setShowDebugConsole] = useState(false);
+  const [lastImportSummary, setLastImportSummary] = useState<any>(null); // Store import summary for results display
+  const [capturedConsoleLogs, setCapturedConsoleLogs] = useState<string[]>([]); // Capture console output during import
   
   // Debug console capture
   const captureConsoleLog = (message: string, ...args: any[]) => {
@@ -2725,24 +2729,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
       
-      // === CONDITIONS ===
-      
-      if (parsedActivity.conditions && parsedActivity.conditions.conditions.length > 0) {
-        const currentConditionsValue = 'Check Conditions tab for existing conditions';
-        const importConditionsValue = `${parsedActivity.conditions.conditions.length} condition(s)`;
-        
-        fields.push({
-          fieldName: 'Conditions',
-          iatiPath: 'iati-activity/conditions',
-          currentValue: currentConditionsValue,
-          importValue: importConditionsValue,
-          selected: false,
-          hasConflict: false,
-          tab: 'conditions',
-          description: `${parsedActivity.conditions.conditions.length} condition(s) found in XML (Attached: ${parsedActivity.conditions.attached})`,
-          category: 'conditions'
-        });
-      }
+      // === CONDITIONS === (handled once below with structured conditionsData and auto-selected)
       
       // === BUDGETS ===
       
@@ -2851,32 +2838,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       }
       
       // === FINANCING TERMS ===
-      
-      if (parsedActivity.financingTerms) {
-        const currentFTValue = 'Check Financing Terms tab for existing data';
-        const ftSummary = [];
-        if (parsedActivity.financingTerms.loanTerms) {
-          ftSummary.push('Loan terms included');
-        }
-        if (parsedActivity.financingTerms.loanStatuses?.length > 0) {
-          ftSummary.push(`${parsedActivity.financingTerms.loanStatuses.length} loan status(es)`);
-        }
-        if (parsedActivity.financingTerms.other_flags?.length > 0) {
-          ftSummary.push(`${parsedActivity.financingTerms.other_flags.length} flag(s)`);
-        }
-        
-        fields.push({
-          fieldName: 'Financing Terms',
-          iatiPath: 'iati-activity/crs-add',
-          currentValue: currentFTValue,
-          importValue: ftSummary.join(', ') || 'CRS financing data',
-          selected: false,
-          hasConflict: false,
-          tab: 'financing',
-          description: 'CRS financing terms and loan data',
-          category: 'financial'
-        });
-      }
+      // Note: Individual financing term fields (Loan Terms, Loan Status, OECD CRS Flags) 
+      // are created earlier in the "Finances" section (lines 1850-1904).
+      // No need for a grouped field here - the detailed fields are more informative.
       
       // === PARTNERS TAB ===
       
@@ -3004,12 +2968,20 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/conditions',
           currentValue: currentConditionsValue,
           importValue: `${parsedActivity.conditions.conditions.length} condition(s) (Attached: ${parsedActivity.conditions.attached ? 'Yes' : 'No'})`,
-          selected: false,
+          selected: true,
           hasConflict: existingConditions.length > 0,
           tab: 'conditions',
           description: importConditionsValue,
           isConditionsField: true,
-          conditionsData: parsedActivity.conditions,
+          conditionsData: {
+            attached: parsedActivity.conditions.attached,
+            conditions: parsedActivity.conditions.conditions.map((condition: any) => ({
+              type: condition.type || '1',
+              narrative: {
+                [condition.narrativeLang || 'en']: condition.narrative
+              }
+            }))
+          },
         });
       }
 
@@ -3383,7 +3355,133 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
   // Import selected fields
   const importSelectedFields = async () => {
+    const importStartTime = Date.now();
+    
+    // Capture console logs during import
+    const capturedLogs: string[] = [];
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+    const originalConsoleWarn = console.warn;
+    
+    // Override console methods to capture output
+    console.log = (...args: any[]) => {
+      const timestamp = new Date().toISOString();
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ');
+      capturedLogs.push(`[${timestamp}] LOG: ${message}`);
+      originalConsoleLog.apply(console, args);
+    };
+    
+    console.error = (...args: any[]) => {
+      const timestamp = new Date().toISOString();
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ');
+      capturedLogs.push(`[${timestamp}] ERROR: ${message}`);
+      originalConsoleError.apply(console, args);
+    };
+    
+    console.warn = (...args: any[]) => {
+      const timestamp = new Date().toISOString();
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ');
+      capturedLogs.push(`[${timestamp}] WARN: ${message}`);
+      originalConsoleWarn.apply(console, args);
+    };
+    
     console.log('🚀 [XML Import] Starting enhanced import process with comprehensive selection support...');
+    
+    // Initialize comprehensive import summary tracker
+    const importSummary: any = {
+      activityId,
+      startTime: new Date().toISOString(),
+      selectedFields: [],
+      transactions: { 
+        attempted: 0, 
+        successful: 0, 
+        failed: 0, 
+        skipped: 0,
+        totalAmount: 0, 
+        byType: {},
+        details: [], // Individual transaction details
+        failures: [], // Specific failure reasons
+        warnings: []
+      },
+      budgets: { 
+        attempted: 0, 
+        successful: 0, 
+        failed: 0, 
+        skipped: 0,
+        totalAmount: 0,
+        details: [],
+        failures: [],
+        warnings: []
+      },
+      plannedDisbursements: { 
+        attempted: 0, 
+        successful: 0, 
+        failed: 0, 
+        skipped: 0,
+        totalAmount: 0,
+        details: [],
+        failures: [],
+        warnings: []
+      },
+      sectors: { 
+        attempted: 0, 
+        successful: 0, 
+        failed: 0, 
+        skipped: 0,
+        totalPercentage: 0, 
+        list: [],
+        failures: [],
+        warnings: [],
+        validationIssues: []
+      },
+      locations: { 
+        attempted: 0, 
+        successful: 0, 
+        failed: 0, 
+        skipped: 0,
+        list: [],
+        failures: [],
+        warnings: [],
+        geocodingResults: []
+      },
+      policyMarkers: { 
+        attempted: 0, 
+        successful: 0, 
+        failed: 0, 
+        skipped: 0,
+        list: [],
+        failures: [],
+        warnings: [],
+        matchingDetails: []
+      },
+      tags: { attempted: 0, successful: 0, failed: 0, skipped: 0, details: [], failures: [] },
+      results: { attempted: 0, successful: 0, failed: 0, skipped: 0, details: [], failures: [] },
+      documentLinks: { attempted: 0, successful: 0, failed: 0, skipped: 0, details: [], failures: [] },
+      conditions: { attempted: 0, successful: 0, failed: 0, skipped: 0, details: [], failures: [] },
+      humanitarianScopes: { attempted: 0, successful: 0, failed: 0, skipped: 0, details: [], failures: [] },
+      contacts: { attempted: 0, successful: 0, failed: 0, skipped: 0, details: [], failures: [] },
+      participatingOrgs: { attempted: 0, successful: 0, failed: 0, skipped: 0, details: [], failures: [] },
+      otherIdentifiers: { attempted: 0, successful: 0, failed: 0, skipped: 0, details: [], failures: [] },
+      relatedActivities: { attempted: 0, successful: 0, failed: 0, skipped: 0, details: [], failures: [] },
+      fss: { attempted: 0, successful: 0, failed: 0, skipped: 0, details: [], failures: [] },
+      financingTerms: { attempted: 0, successful: 0, failed: 0, details: [], failures: [] },
+      recipientCountries: { attempted: 0, successful: 0, failed: 0, details: [], failures: [] },
+      recipientRegions: { attempted: 0, successful: 0, failed: 0, details: [], failures: [] },
+      customGeographies: { attempted: 0, successful: 0, failed: 0, details: [], failures: [] },
+      basicFields: [],
+      basicFieldFailures: [],
+      errors: [],
+      warnings: [],
+      silentFailures: [], // Things that were skipped without obvious error
+      validationIssues: [], // Data quality issues that didn't stop import
+      apiCalls: [] // Track all API calls made
+    };
     
     // Enhanced: Check if this is a comprehensive selection (Select All was used)
     const selectedFields = parsedFields.filter(f => f.selected);
@@ -3468,6 +3566,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     console.log('📋 [XML Import] Selected fields:', selectedFieldsList);
     console.log('📋 [XML Import] Selected fields count:', selectedFieldsList.length);
     
+    // Track selected fields in summary
+    importSummary.selectedFields = selectedFieldsList.map(f => ({
+      name: f.fieldName,
+      tab: f.tab,
+      type: f.itemType || 'basic'
+    }));
+    
     if (selectedFieldsList.length === 0) {
       toast.error('Please select at least one field to import');
       return;
@@ -3546,6 +3651,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         switch (field.fieldName) {
           case 'Activity Title':
             updateData.title_narrative = field.importValue;
+            importSummary.basicFields.push({ field: 'Activity Title', value: field.importValue });
             break;
           case 'Activity Description':
             console.log('[Import Update] Setting description_narrative:', field.importValue?.substring(0, 100));
@@ -3755,9 +3861,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               updateData.conditionsData = {
                 attached: parsedActivity.conditions.attached,
                 conditions: parsedActivity.conditions.conditions.map((condition: any) => ({
-                  condition_type: condition.type || '1',
-                  condition_text: condition.narrative,
-                  language: condition.narrativeLang || 'en'
+                  type: condition.type || '1',
+                  narrative: {
+                    [condition.narrativeLang || 'en']: condition.narrative
+                  }
                 }))
               };
               console.log(`[XML Import] Adding ${parsedActivity.conditions.conditions.length} conditions for import`);
@@ -3828,10 +3935,55 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               console.log(`[XML Import] Adding ${parsedActivity.document_links.length} document links for import`);
             }
             break;
+          case 'Loan Terms':
+            // Handle loan terms import (part of CRS financing)
+            console.log('[XML Import DEBUG] Loan Terms case triggered!');
+            if (parsedActivity.financingTerms?.loanTerms) {
+              updateData._importFinancingTerms = true;
+              if (!updateData.financingTermsData) {
+                updateData.financingTermsData = {};
+              }
+              updateData.financingTermsData.loanTerms = parsedActivity.financingTerms.loanTerms;
+              if (parsedActivity.financingTerms.channel_code) {
+                updateData.financingTermsData.channelCode = parsedActivity.financingTerms.channel_code;
+              }
+              console.log('[XML Import] Adding loan terms for import:', parsedActivity.financingTerms.loanTerms);
+            }
+            break;
+          case 'Loan Status (Yearly)':
+            // Handle loan status import (part of CRS financing)
+            console.log('[XML Import DEBUG] Loan Status case triggered!');
+            if (parsedActivity.financingTerms?.loanStatuses) {
+              updateData._importFinancingTerms = true;
+              if (!updateData.financingTermsData) {
+                updateData.financingTermsData = {};
+              }
+              updateData.financingTermsData.loanStatuses = parsedActivity.financingTerms.loanStatuses;
+              if (parsedActivity.financingTerms.channel_code) {
+                updateData.financingTermsData.channelCode = parsedActivity.financingTerms.channel_code;
+              }
+              console.log('[XML Import] Adding loan statuses for import:', parsedActivity.financingTerms.loanStatuses.length);
+            }
+            break;
+          case 'OECD CRS Flags':
+            // Handle CRS flags import (part of CRS financing)
+            console.log('[XML Import DEBUG] OECD CRS Flags case triggered!');
+            if (parsedActivity.financingTerms?.other_flags) {
+              updateData._importFinancingTerms = true;
+              if (!updateData.financingTermsData) {
+                updateData.financingTermsData = {};
+              }
+              updateData.financingTermsData.otherFlags = parsedActivity.financingTerms.other_flags;
+              if (parsedActivity.financingTerms.channel_code) {
+                updateData.financingTermsData.channelCode = parsedActivity.financingTerms.channel_code;
+              }
+              console.log('[XML Import] Adding CRS flags for import:', parsedActivity.financingTerms.other_flags.length);
+            }
+            break;
           case 'Financing Terms':
           case 'CRS Financing':
-            // Handle CRS financing terms import
-            console.log('[XML Import DEBUG] Financing Terms case triggered!', parsedActivity.financingTerms);
+            // Handle grouped CRS financing terms import (fallback - should not normally be used)
+            console.log('[XML Import DEBUG] Grouped Financing Terms case triggered!', parsedActivity.financingTerms);
             if (parsedActivity.financingTerms) {
               updateData._importFinancingTerms = true;
               updateData.financingTermsData = {
@@ -3840,7 +3992,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 loanStatuses: parsedActivity.financingTerms.loanStatuses,
                 channelCode: parsedActivity.financingTerms.channel_code
               };
-              console.log('[XML Import] Adding financing terms for import');
+              console.log('[XML Import] Adding all financing terms for import');
             }
             break;
           default:
@@ -4172,6 +4324,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           if (sectorsToImport.length > 0) {
             console.log('[XML Import] Importing sectors to database:', sectorsToImport);
             
+            // Track sectors in summary
+            importSummary.sectors.attempted = sectorsToImport.length;
+            importSummary.sectors.totalPercentage = sectorsToImport.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0);
+            importSummary.sectors.list = sectorsToImport.map((s: any) => ({
+              code: s.sector_code,
+              name: s.sector_name,
+              vocabulary: s.vocabulary || '1',
+              percentage: s.percentage
+            }));
+            
             // Helper function: Vocabulary-aware sector code validation
             const isValidSectorCode = (code: string, vocabulary?: string): boolean => {
               if (!code) return false;
@@ -4268,12 +4430,15 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               if (!sectorResponse.ok) {
                 const errorData = await sectorResponse.json();
                 console.error('[XML Import] Sector import API error:', errorData);
+                importSummary.sectors.failed = sectorsToImport.length;
                 
                 if (sectorResponse.status === 400 && errorData.error?.includes('percentage')) {
+                  importSummary.errors.push(`Sector import failed: ${errorData.error}`);
                   toast.error('Sector import failed: Percentage error', {
                     description: errorData.error || 'Sector percentages must total exactly 100%'
                   });
                 } else {
+                  importSummary.errors.push(`Sector import failed: ${errorData.error || sectorResponse.statusText}`);
                   toast.error('Failed to import sectors', {
                     description: `API Error: ${errorData.error || sectorResponse.statusText}. Main activity data was imported successfully.`
                   });
@@ -4281,12 +4446,15 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               } else {
                 const successData = await sectorResponse.json();
                 console.log('[XML Import] Sectors imported successfully:', successData);
+                importSummary.sectors.successful = sectorsToImport.length;
                 toast.success(`Sectors imported successfully`, {
                   description: `${sectorsToImport.length} sector(s) added to the activity`
                 });
               }
             } catch (sectorError) {
               console.error('[XML Import] Sector import network error:', sectorError);
+              importSummary.sectors.failed = sectorsToImport.length;
+              importSummary.errors.push(`Sector import exception: ${sectorError instanceof Error ? sectorError.message : 'Unknown error'}`);
               toast.error('Failed to import sectors', {
                 description: 'Network error occurred while importing sectors. Please check your connection and try again.'
               });
@@ -4302,6 +4470,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // Handle locations import if any
       if (updateData.importedLocations && updateData.importedLocations.length > 0) {
         console.log('[XML Import] Processing locations import...');
+        
+        // Track locations in summary
+        importSummary.locations.attempted = updateData.importedLocations.length;
+        
         setImportStatus({ 
           stage: 'importing', 
           progress: 87,
@@ -4400,6 +4572,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
           console.log('[XML Import] Importing locations to database:', locationsToImport);
           
+          // Track location details in summary
+          importSummary.locations.list = locationsToImport.map((loc: any) => ({
+            name: loc.location_name,
+            type: loc.location_type,
+            coordinates: loc.latitude && loc.longitude ? `${loc.latitude}, ${loc.longitude}` : null
+          }));
+          
           const locationsResponse = await fetch(`/api/activities/${activityId}/locations`, {
             method: 'PUT',  // Changed from POST to PUT for batch import
             headers: {
@@ -4411,18 +4590,23 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           if (!locationsResponse.ok) {
             const errorData = await locationsResponse.json();
             console.error('[XML Import] Locations import API error:', errorData);
+            importSummary.locations.failed = locationsToImport.length;
+            importSummary.errors.push(`Locations import failed: ${errorData.error || 'Unknown error'}`);
             toast.error('Failed to import locations', {
               description: errorData.error || 'Could not import location data. Main activity data was imported successfully.'
             });
           } else {
             const successData = await locationsResponse.json();
             console.log('[XML Import] Locations imported successfully:', successData);
+            importSummary.locations.successful = locationsToImport.length;
             toast.success(`Locations imported successfully`, {
               description: `${locationsToImport.length} location(s) added to the activity`
             });
           }
         } catch (locationError) {
           console.error('[XML Import] Locations import network error:', locationError);
+          importSummary.locations.failed = importSummary.locations.attempted;
+          importSummary.errors.push(`Locations import exception: ${locationError instanceof Error ? locationError.message : 'Unknown error'}`);
           toast.error('Failed to import locations', {
             description: 'Network error occurred while importing locations. Please check your connection and try again.'
           });
@@ -4627,6 +4811,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // Handle budgets import if any
       if (updateData.importedBudgets && updateData.importedBudgets.length > 0) {
         console.log('[XML Import] Processing budgets import...');
+        
+        // Track budgets in summary
+        importSummary.budgets.attempted = updateData.importedBudgets.length;
+        
         setImportStatus({ 
           stage: 'importing', 
           progress: 89,
@@ -4666,13 +4854,72 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
               if (response.ok) {
                 successCount++;
+                importSummary.budgets.successful++;
+                importSummary.budgets.totalAmount += budget.value || 0;
+                
+                // Track detailed budget info
+                importSummary.budgets.details.push({
+                  status: 'SUCCESS',
+                  type: budget.type || '1',
+                  budgetStatus: budget.status || '1',
+                  periodStart: budget.period?.start,
+                  periodEnd: budget.period?.end,
+                  value: budget.value,
+                  currency: budget.currency || currentActivityData?.default_currency || 'USD',
+                  reason: 'Successfully imported via API'
+                });
+                
+                // Track API call
+                importSummary.apiCalls.push({
+                  endpoint: `/api/activities/${activityId}/budgets`,
+                  method: 'POST',
+                  status: 'SUCCESS',
+                  timestamp: new Date().toISOString()
+                });
               } else {
                 errorCount++;
-                console.error('[XML Import] Budget import failed:', await response.text());
+                importSummary.budgets.failed++;
+                const errorText = await response.text();
+                console.error('[XML Import] Budget import failed:', errorText);
+                
+                // Track detailed failure
+                importSummary.budgets.failures.push({
+                  type: budget.type || '1',
+                  periodStart: budget.period?.start,
+                  periodEnd: budget.period?.end,
+                  value: budget.value,
+                  currency: budget.currency || currentActivityData?.default_currency || 'USD',
+                  reason: errorText,
+                  httpStatus: response.status
+                });
+                importSummary.errors.push(`Budget import failed: Type=${budget.type}, Period=${budget.period?.start} to ${budget.period?.end}, Amount=${budget.value}, Error="${errorText}"`);
+                
+                // Track API call
+                importSummary.apiCalls.push({
+                  endpoint: `/api/activities/${activityId}/budgets`,
+                  method: 'POST',
+                  status: 'FAILED',
+                  error: errorText,
+                  timestamp: new Date().toISOString()
+                });
               }
             } catch (budgetError) {
               console.error('[XML Import] Error importing budget:', budgetError);
               errorCount++;
+              importSummary.budgets.failed++;
+              const errorMsg = budgetError instanceof Error ? budgetError.message : 'Unknown error';
+              
+              // Track detailed exception
+              importSummary.budgets.failures.push({
+                type: budget.type || '1',
+                periodStart: budget.period?.start,
+                periodEnd: budget.period?.end,
+                value: budget.value,
+                currency: budget.currency || currentActivityData?.default_currency || 'USD',
+                reason: `Exception: ${errorMsg}`,
+                exceptionType: 'Network/Parse Error'
+              });
+              importSummary.errors.push(`Budget exception: Type=${budget.type}, Period=${budget.period?.start} to ${budget.period?.end}, Amount=${budget.value}, Error="${errorMsg}"`);
             }
           }
 
@@ -4765,6 +5012,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
 
         try {
+          // Track policy markers count
+          if (Array.isArray(updateData._importPolicyMarkers)) {
+            importSummary.policyMarkers.attempted = updateData._importPolicyMarkers.length;
+          } else if (parsedActivity.policyMarkers) {
+            importSummary.policyMarkers.attempted = parsedActivity.policyMarkers.length;
+          }
+          
           // First, fetch available policy markers from database to match IATI codes
           captureConsoleLog(`[XML Import] Fetching policy markers for activity: ${activityId}`);
           const policyMarkersResponse = await fetch(`/api/policy-markers?activity_id=${activityId}`);
@@ -4872,6 +5126,28 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   significance: significance,
                   rationale: xmlMarker.narrative || null
                 });
+                
+                // Track policy marker details with matching info
+                importSummary.policyMarkers.list.push({
+                  code: xmlMarker.code,
+                  name: matchingMarker.name,
+                  significance: significance
+                });
+                
+                // Track detailed matching info
+                importSummary.policyMarkers.matchingDetails.push({
+                  status: 'MATCHED',
+                  xmlCode: xmlMarker.code,
+                  vocabulary: markerVocabulary,
+                  vocabularyUri: xmlMarker.vocabulary_uri,
+                  matchedTo: matchingMarker.name,
+                  matchedUuid: matchingMarker.uuid,
+                  matchingStrategy: markerVocabulary === '1' ? 'Standard IATI by iati_code' : 'Custom by code+vocabulary_uri',
+                  significanceRaw: rawSignificance,
+                  significanceNormalized: significance,
+                  wasNormalized: rawSignificance !== significance,
+                  reason: 'Successfully matched to database policy marker'
+                });
 
               captureConsoleLog(`[XML Import] Mapped policy marker: ${xmlMarker.code} -> ${matchingMarker.name} (significance: ${significance})`);
             } else {
@@ -4971,12 +5247,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 errorMessage = errorText || errorMessage;
               }
               
+              importSummary.policyMarkers.failed = importedPolicyMarkers.length;
+              importSummary.errors.push(`Policy markers import failed: ${errorMessage}`);
+              
                 toast.error('Failed to import policy markers', {
                 description: errorMessage
                 });
               } else {
                 const successData = await importResponse.json();
               captureConsoleLog('[XML Import] Policy markers imported successfully:', successData);
+              importSummary.policyMarkers.successful = importedPolicyMarkers.length;
                 toast.success(`Policy markers imported successfully`, {
                   description: `${importedPolicyMarkers.length} policy marker(s) added to the activity`
                 });
@@ -5094,14 +5374,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               console.log('[XML Import] Successfully imported tags:', importResults.successful);
               toast.success(`${importResults.successful.length} tag(s) imported successfully`);
               
-              // Invalidate cache and trigger page reload to show tags
+              // Invalidate cache - page will be refreshed manually by user after reviewing import results
               invalidateActivityCache(activityId);
-              
-              // Trigger page reload after a short delay to show tags in UI
-              setTimeout(() => {
-                console.log('[XML Import] Reloading page to display imported tags...');
-                window.location.reload();
-              }, 1500);
             }
             
             if (importResults.skipped.length > 0) {
@@ -5253,23 +5527,23 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             .filter((cond: any) => {
               // Validate condition type (must be '1', '2', or '3')
               const validTypes = ['1', '2', '3'];
-              if (!validTypes.includes(cond.condition_type)) {
-                console.warn(`[XML Import] Invalid condition type: ${cond.condition_type}, skipping...`);
+              if (!validTypes.includes(cond.type)) {
+                console.warn(`[XML Import] Invalid condition type: ${cond.type}, skipping...`);
                 return false;
               }
-              // Validate narrative is not empty
-              if (!cond.condition_text || !cond.condition_text.trim()) {
-                console.warn('[XML Import] Empty condition text, skipping...');
+              // Check if narrative JSONB has at least one language with text
+              if (!cond.narrative || typeof cond.narrative !== 'object' || 
+                  Object.values(cond.narrative).every((v: any) => !v || !v.trim())) {
+                console.warn('[XML Import] Empty condition narrative, skipping...');
                 return false;
               }
               return true;
             })
-            .map((cond: any, index: number) => ({
+            .map((cond: any) => ({
               activity_id: activityId,
-              condition_type: cond.condition_type || '1',
-              condition_text: cond.condition_text,
-              language: cond.language || 'en',
-              display_order: index
+              type: cond.type || '1',
+              narrative: cond.narrative,
+              attached: conditionsData.attached
             }));
           
           console.log('[XML Import] Conditions to insert:', JSON.stringify(conditionsToInsert, null, 2));
@@ -5330,6 +5604,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         console.log('[XML Import] Transactions array:', updateData.importedTransactions);
         console.log('[XML Import] Transaction count:', updateData.importedTransactions.length);
         
+        // Track transactions in summary
+        importSummary.transactions.attempted = updateData.importedTransactions.length;
+        
         setImportStatus({ 
           stage: 'importing', 
           progress: 88,
@@ -5387,17 +5664,83 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               if (apiRes.ok) {
                 successCount++;
                 console.log('[XML Import] ✓ Transaction inserted via API');
+                
+                // Track successful transaction in summary with detailed info
+                importSummary.transactions.successful++;
+                importSummary.transactions.totalAmount += transaction.value || 0;
+                const txType = transaction.type || 'Unknown';
+                if (!importSummary.transactions.byType[txType]) {
+                  importSummary.transactions.byType[txType] = { count: 0, amount: 0 };
+                }
+                importSummary.transactions.byType[txType].count++;
+                importSummary.transactions.byType[txType].amount += transaction.value || 0;
+                
+                // Add detailed transaction info
+                importSummary.transactions.details.push({
+                  status: 'SUCCESS',
+                  type: transaction.type,
+                  date: transaction.date,
+                  value: transaction.value,
+                  currency: transaction.currency || currentActivityData?.default_currency || 'USD',
+                  description: transaction.description?.substring(0, 100) || 'No description',
+                  provider: transaction.providerOrg?.name || 'N/A',
+                  receiver: transaction.receiverOrg?.name || 'N/A',
+                  reason: 'Successfully imported via API'
+                });
+                
+                // Track API call
+                importSummary.apiCalls.push({
+                  endpoint: `/api/activities/${activityId}/transactions`,
+                  method: 'POST',
+                  status: 'SUCCESS',
+                  timestamp: new Date().toISOString()
+                });
               } else {
                 errorCount++;
+                importSummary.transactions.failed++;
                 let apiError: any = null;
                 try {
                   apiError = await apiRes.json();
                 } catch {}
+                const errorMsg = apiError?.error || `HTTP ${apiRes.status}`;
                 console.error('[XML Import] ✗ API insert failed:', apiError || { status: apiRes.status });
+                
+                // Track detailed failure
+                importSummary.transactions.failures.push({
+                  type: transaction.type,
+                  date: transaction.date,
+                  value: transaction.value,
+                  currency: transaction.currency || currentActivityData?.default_currency || 'USD',
+                  reason: errorMsg,
+                  httpStatus: apiRes.status
+                });
+                importSummary.errors.push(`Transaction import failed: Type=${transaction.type}, Date=${transaction.date}, Amount=${transaction.value}, Error="${errorMsg}"`);
+                
+                // Track API call
+                importSummary.apiCalls.push({
+                  endpoint: `/api/activities/${activityId}/transactions`,
+                  method: 'POST',
+                  status: 'FAILED',
+                  error: errorMsg,
+                  timestamp: new Date().toISOString()
+                });
               }
             } catch (transactionError) {
               errorCount++;
+              importSummary.transactions.failed++;
+              const errorMsg = transactionError instanceof Error ? transactionError.message : 'Unknown error';
               console.error('[XML Import] Exception inserting transaction:', transactionError);
+              
+              // Track detailed exception
+              importSummary.transactions.failures.push({
+                type: transaction.type,
+                date: transaction.date,
+                value: transaction.value,
+                currency: transaction.currency || currentActivityData?.default_currency || 'USD',
+                reason: `Exception: ${errorMsg}`,
+                exceptionType: 'Network/Parse Error'
+              });
+              importSummary.errors.push(`Transaction exception: Type=${transaction.type}, Date=${transaction.date}, Amount=${transaction.value}, Error="${errorMsg}"`);
             }
           }
 
@@ -5450,84 +5793,81 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         try {
           const ftData = updateData.financingTermsData;
           
-          // Use Supabase directly instead of API endpoint to avoid CORS issues
-          // Check if financing_terms record exists for this activity
-          const { data: existingFT, error: checkError } = await supabase
-            .from('financing_terms')
-            .select('id')
-            .eq('activity_id', activityId)
-            .maybeSingle();
+          // Use Supabase directly to save to correct table: activity_financing_terms
+          console.log('[XML Import] Preparing financing terms data for activity_financing_terms table');
           
-          let financingTermsId: string;
+          // Prepare loan terms data (stored directly in activity_financing_terms)
+          const financingTermsData: any = {
+            activity_id: activityId
+          };
           
-          if (existingFT) {
-            console.log('[XML Import] Existing financing_terms found, clearing related data');
-            financingTermsId = existingFT.id;
-            
-            // Clear existing related data
-            await supabase.from('loan_terms').delete().eq('financing_terms_id', financingTermsId);
-            await supabase.from('loan_statuses').delete().eq('financing_terms_id', financingTermsId);
-            await supabase.from('financing_other_flags').delete().eq('financing_terms_id', financingTermsId);
-            
-            // Update channel_code if provided
-            if (ftData.channelCode) {
-              await supabase
-                .from('financing_terms')
-                .update({ channel_code: ftData.channelCode })
-                .eq('id', financingTermsId);
-            }
-          } else {
-            console.log('[XML Import] Creating new financing_terms record');
-            
-            // Create new financing_terms record
-            const { data: newFT, error: insertError } = await supabase
-              .from('financing_terms')
-              .insert({
-                activity_id: activityId,
-                channel_code: ftData.channelCode || null
-              })
-              .select('id')
-              .single();
-            
-            if (insertError || !newFT) {
-              throw new Error('Failed to create financing_terms record: ' + insertError?.message);
-            }
-            
-            financingTermsId = newFT.id;
+          // Add loan terms fields if provided
+          if (ftData.loanTerms) {
+            financingTermsData.rate_1 = ftData.loanTerms.rate_1 || null;
+            financingTermsData.rate_2 = ftData.loanTerms.rate_2 || null;
+            financingTermsData.repayment_type_code = ftData.loanTerms.repayment_type_code || null;
+            financingTermsData.repayment_plan_code = ftData.loanTerms.repayment_plan_code || null;
+            financingTermsData.commitment_date = ftData.loanTerms.commitment_date || null;
+            financingTermsData.repayment_first_date = ftData.loanTerms.repayment_first_date || null;
+            financingTermsData.repayment_final_date = ftData.loanTerms.repayment_final_date || null;
+          }
+          
+          // Add other_flags as JSONB if provided
+          if (ftData.otherFlags && Array.isArray(ftData.otherFlags) && ftData.otherFlags.length > 0) {
+            financingTermsData.other_flags = JSON.stringify(ftData.otherFlags);
+          }
+          
+          // Upsert to activity_financing_terms (update if exists, insert if not)
+          const { error: upsertError } = await supabase
+            .from('activity_financing_terms')
+            .upsert(financingTermsData, {
+              onConflict: 'activity_id'
+            });
+          
+          if (upsertError) {
+            throw new Error('Failed to save financing terms: ' + upsertError.message);
           }
           
           let componentsAdded = 0;
           
-          // Insert loan terms if provided
+          // Count what was added
           if (ftData.loanTerms) {
-            console.log('[XML Import] Inserting loan terms');
-            const { error: loanTermsError } = await supabase
-              .from('loan_terms')
-              .insert({
-                financing_terms_id: financingTermsId,
-                rate_1: ftData.loanTerms.rate_1 || null,
-                rate_2: ftData.loanTerms.rate_2 || null,
-                repayment_type_code: ftData.loanTerms.repayment_type_code || null,
-                repayment_plan_code: ftData.loanTerms.repayment_plan_code || null,
-                commitment_date: ftData.loanTerms.commitment_date || null,
-                repayment_first_date: ftData.loanTerms.repayment_first_date || null,
-                repayment_final_date: ftData.loanTerms.repayment_final_date || null
-              });
-            
-            if (!loanTermsError) {
-              componentsAdded++;
-              console.log('[XML Import] ✓ Loan terms created');
-            } else {
-              console.error('[XML Import] Error inserting loan terms:', loanTermsError);
-            }
+            componentsAdded++;
+            console.log('[XML Import] ✓ Loan terms saved to activity_financing_terms');
+            importSummary.financingTerms.attempted++;
+            importSummary.financingTerms.successful++;
+            importSummary.financingTerms.details.push({
+              component: 'Loan Terms',
+              rate_1: ftData.loanTerms.rate_1,
+              rate_2: ftData.loanTerms.rate_2,
+              repayment_type: ftData.loanTerms.repayment_type_code,
+              commitment_date: ftData.loanTerms.commitment_date
+            });
           }
           
-          // Insert loan statuses if provided
+          if (ftData.otherFlags && ftData.otherFlags.length > 0) {
+            componentsAdded++;
+            console.log('[XML Import] ✓ Other flags saved to activity_financing_terms');
+            importSummary.financingTerms.attempted++;
+            importSummary.financingTerms.successful++;
+            importSummary.financingTerms.details.push({
+              component: 'Other Flags',
+              count: ftData.otherFlags.length
+            });
+          }
+          
+          // Insert loan statuses to activity_loan_status table (separate table)
           if (ftData.loanStatuses && Array.isArray(ftData.loanStatuses) && ftData.loanStatuses.length > 0) {
-            console.log('[XML Import] Inserting', ftData.loanStatuses.length, 'loan statuses');
+            console.log('[XML Import] Inserting', ftData.loanStatuses.length, 'loan statuses to activity_loan_status');
+            
+            // Clear existing loan statuses for this activity first
+            await supabase
+              .from('activity_loan_status')
+              .delete()
+              .eq('activity_id', activityId);
             
             const loanStatusData = ftData.loanStatuses.map((status: any) => ({
-              financing_terms_id: financingTermsId,
+              activity_id: activityId,
               year: status.year,
               currency: status.currency || 'USD',
               value_date: status.value_date || null,
@@ -5538,53 +5878,51 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             }));
             
             const { data: insertedStatuses, error: statusesError } = await supabase
-              .from('loan_statuses')
+              .from('activity_loan_status')
               .insert(loanStatusData);
             
             if (!statusesError) {
               componentsAdded++;
-              console.log('[XML Import] ✓ Loan statuses created');
+              console.log('[XML Import] ✓ Loan statuses saved to activity_loan_status');
+              importSummary.financingTerms.attempted++;
+              importSummary.financingTerms.successful++;
+              importSummary.financingTerms.details.push({
+                component: 'Loan Statuses',
+                count: ftData.loanStatuses.length,
+                years: ftData.loanStatuses.map((s: any) => s.year).join(', ')
+              });
             } else {
               console.error('[XML Import] Error inserting loan statuses:', statusesError);
+              importSummary.financingTerms.attempted++;
+              importSummary.financingTerms.failed++;
+              importSummary.financingTerms.failures.push({
+                component: 'Loan Statuses',
+                error: statusesError.message
+              });
             }
           }
           
-          // Insert other flags if provided
-          if (ftData.otherFlags && Array.isArray(ftData.otherFlags) && ftData.otherFlags.length > 0) {
-            console.log('[XML Import] Inserting', ftData.otherFlags.length, 'other flags');
-            
-            const otherFlagsData = ftData.otherFlags.map((flag: any) => ({
-              financing_terms_id: financingTermsId,
-              code: flag.code,
-              significance: flag.significance || '1'
-            }));
-            
-            const { data: insertedFlags, error: flagsError } = await supabase
-              .from('financing_other_flags')
-              .insert(otherFlagsData);
-            
-            if (!flagsError) {
-              componentsAdded++;
-              console.log('[XML Import] ✓ Other flags created');
-            } else {
-              console.error('[XML Import] Error inserting other flags:', flagsError);
-            }
-          }
+          // Note: Other flags are already saved in activity_financing_terms.other_flags as JSONB
+          // No need for separate table insert
           
-          toast.success('Financing terms imported successfully', {
-            description: `CRS loan data added (${componentsAdded} component${componentsAdded !== 1 ? 's' : ''})`
-          });
-          invalidateActivityCache(activityId);
-        } catch (ftError: any) {
-          console.error('[XML Import] Financing terms import error:', ftError);
-          toast.error('Failed to import financing terms', {
-            description: ftError.message || 'An error occurred while processing financing terms.'
+          console.log('[XML Import] ✅ Financing terms import complete. Components added:', componentsAdded);
+          
+        } catch (error) {
+          console.error('[XML Import] Error importing financing terms:', error);
+          importSummary.financingTerms.attempted++;
+          importSummary.financingTerms.failed++;
+          importSummary.financingTerms.failures.push({
+            component: 'Financing Terms',
+            error: error instanceof Error ? error.message : 'Unknown error'
           });
         }
+        
+        // Invalidate activity cache
+        invalidateActivityCache(activityId);
       }
-
-      // Handle participating organizations import if any
-      if (updateData.importedParticipatingOrgs && updateData.importedParticipatingOrgs.length > 0) {
+      
+      // Process participating organizations import
+      if (updateData.importedParticipatingOrgs && Array.isArray(updateData.importedParticipatingOrgs) && updateData.importedParticipatingOrgs.length > 0) {
         console.log('[XML Import] Processing participating organizations import...');
         setImportStatus({ 
           stage: 'importing', 
@@ -5865,7 +6203,21 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           let errorCount = 0;
           let skippedCount = 0;
 
+          if (!importSummary.relatedActivities) {
+            importSummary.relatedActivities = { 
+              attempted: 0, 
+              successful: 0, 
+              failed: 0, 
+              skipped: 0, 
+              details: [], 
+              failures: [], 
+              warnings: [],
+              missing: [] // Track missing refs for UI action
+            };
+          }
+
           for (const relatedActivityData of updateData.importedRelatedActivities) {
+            importSummary.relatedActivities.attempted++;
             try {
               console.log('[XML Import] Processing related activity:', {
                 ref: relatedActivityData.ref,
@@ -5886,6 +6238,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               if (searchError) {
                 console.error(`[XML Import] Supabase search error for ${relatedActivityData.ref}:`, searchError);
                 skippedCount++;
+                if (importSummary.relatedActivities) {
+                  importSummary.relatedActivities.skipped++;
+                  importSummary.relatedActivities.warnings.push(`Search error for ${relatedActivityData.ref}: ${searchError.message || 'Unknown'}`);
+                }
                 continue;
               }
 
@@ -5902,6 +6258,15 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               if (!matchingActivities || matchingActivities.length === 0) {
                 console.warn(`[XML Import] No activities found with IATI ID: ${relatedActivityData.ref}`);
                 skippedCount++;
+                if (importSummary.relatedActivities) {
+                  importSummary.relatedActivities.skipped++;
+                  importSummary.relatedActivities.warnings.push(`Not found in DB: ${relatedActivityData.ref}`);
+                  importSummary.relatedActivities.missing.push({
+                    ref: relatedActivityData.ref,
+                    type: relatedActivityData.type,
+                    relationshipTypeLabel: relatedActivityData.relationshipTypeLabel
+                  });
+                }
                 continue;
               }
 
@@ -5927,15 +6292,48 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               if (createResponse.ok) {
                 console.log(`[XML Import] ✅ Successfully linked activity: ${relatedActivityData.ref}`);
                 successCount++;
+                if (importSummary.relatedActivities) {
+                  importSummary.relatedActivities.successful++;
+                  importSummary.relatedActivities.details.push({ 
+                    ref: relatedActivityData.ref, 
+                    type: relatedActivityData.type, 
+                    relationshipTypeLabel: relatedActivityData.relationshipTypeLabel, 
+                    status: 'linked' 
+                  });
+                }
               } else {
                 const errorData = await createResponse.json().catch(() => ({}));
                 console.error(`[XML Import] Failed to create relationship:`, errorData);
                 errorCount++;
+                if (importSummary.relatedActivities) {
+                  importSummary.relatedActivities.failed++;
+                  importSummary.relatedActivities.failures.push({ 
+                    ref: relatedActivityData.ref, 
+                    error: errorData?.message || 'API error creating relationship' 
+                  });
+                }
               }
 
             } catch (error) {
-              console.error(`[XML Import] Exception while searching for activity ${relatedActivityData.ref}:`, error);
+              // Enhanced error logging to diagnose empty error objects
+              console.error(`[XML Import] Exception while processing related activity ${relatedActivityData.ref}:`, error);
+              console.error(`[XML Import] Error type:`, typeof error);
+              console.error(`[XML Import] Error details:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
+              
               errorCount++;
+              if (importSummary.relatedActivities) {
+                importSummary.relatedActivities.failed++;
+                const errorMessage = error instanceof Error 
+                  ? error.message 
+                  : (error && typeof error === 'object' && Object.keys(error).length > 0)
+                    ? JSON.stringify(error)
+                    : 'Unknown exception during related activity processing';
+                
+                importSummary.relatedActivities.failures.push({ 
+                  ref: relatedActivityData.ref, 
+                  error: errorMessage
+                });
+              }
             }
           }
 
@@ -6075,13 +6473,266 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // Clear refined sectors after successful import
       setSavedRefinedSectors([]);
 
-      // Trigger a page refresh after a short delay to ensure all components get fresh data
-      setTimeout(() => {
-        console.log('[XML Import] Refreshing page to show updated data');
-        window.location.reload();
-      }, 1500);
+      // === ULTRA-COMPREHENSIVE IMPORT SUMMARY ===
+      const importEndTime = Date.now();
+      const duration = ((importEndTime - importStartTime) / 1000).toFixed(2);
+      
+      // Build ultra-comprehensive summary report with detailed WHY and HOW information
+      const summaryLines = [
+        '═══════════════════════════════════════════════════════════════════',
+        '📊 COMPREHENSIVE IMPORT SUMMARY - COPY THIS LOG',
+        '═══════════════════════════════════════════════════════════════════',
+        `Activity ID: ${activityId}`,
+        `Import Started: ${importSummary.startTime}`,
+        `Import Completed: ${new Date().toISOString()}`,
+        `Duration: ${duration} seconds`,
+        '',
+        '───────────────────────────────────────────────────────────────────',
+        '📋 SELECTED FIELDS',
+        '───────────────────────────────────────────────────────────────────',
+        `Total Fields Selected: ${importSummary.selectedFields.length}`,
+        '',
+        ...importSummary.selectedFields.map((f: any, i: number) => 
+          `  ${i + 1}. ${f.name} (${f.tab} tab)${f.type !== 'basic' ? ` [${f.type}]` : ''}`
+        ),
+        '',
+        '───────────────────────────────────────────────────────────────────',
+        '💰 TRANSACTIONS - DETAILED BREAKDOWN',
+        '───────────────────────────────────────────────────────────────────',
+        `📊 Summary:`,
+        `   Attempted: ${importSummary.transactions.attempted}`,
+        `   Successful: ${importSummary.transactions.successful} ✅`,
+        `   Failed: ${importSummary.transactions.failed} ❌`,
+        `   Skipped: ${importSummary.transactions.skipped} ⏭️`,
+        `   Total Amount: ${importSummary.transactions.totalAmount.toLocaleString()}`,
+        '',
+        importSummary.transactions.byType && Object.keys(importSummary.transactions.byType).length > 0 
+          ? '📈 Breakdown by Type:' : '',
+        ...Object.entries(importSummary.transactions.byType || {}).map(([type, data]: [string, any]) => 
+          `   ${type}: ${data.count} transaction(s), ${data.amount.toLocaleString()} total`
+        ),
+        '',
+        importSummary.transactions.details.length > 0 ? '✅ Successful Transactions (Details):' : '',
+        ...importSummary.transactions.details.slice(0, 20).map((tx: any, i: number) => 
+          `   ${i + 1}. Type: ${tx.type}, Date: ${tx.date}, Amount: ${tx.value} ${tx.currency}\n      Provider: ${tx.provider}, Receiver: ${tx.receiver}\n      WHY: ${tx.reason}`
+        ),
+        importSummary.transactions.details.length > 20 ? `   ... and ${importSummary.transactions.details.length - 20} more successful transactions` : '',
+        '',
+        importSummary.transactions.failures.length > 0 ? '❌ Failed Transactions (WHY THEY FAILED):' : '',
+        ...importSummary.transactions.failures.map((tx: any, i: number) => 
+          `   ${i + 1}. Type: ${tx.type}, Date: ${tx.date}, Amount: ${tx.value} ${tx.currency}\n      FAILURE REASON: ${tx.reason}\n      HTTP Status: ${tx.httpStatus || 'N/A'}`
+        ),
+        '',
+        importSummary.transactions.warnings.length > 0 ? '⚠️ Transaction Warnings:' : '',
+        ...importSummary.transactions.warnings.map((w: any, i: number) => `   ${i + 1}. ${w}`),
+        '',
+        '───────────────────────────────────────────────────────────────────',
+        '💵 BUDGETS - DETAILED BREAKDOWN',
+        '───────────────────────────────────────────────────────────────────',
+        `📊 Summary:`,
+        `   Attempted: ${importSummary.budgets.attempted}`,
+        `   Successful: ${importSummary.budgets.successful} ✅`,
+        `   Failed: ${importSummary.budgets.failed} ❌`,
+        `   Skipped: ${importSummary.budgets.skipped} ⏭️`,
+        `   Total Amount: ${importSummary.budgets.totalAmount.toLocaleString()}`,
+        '',
+        importSummary.budgets.details.length > 0 ? '✅ Successful Budgets (Details):' : '',
+        ...importSummary.budgets.details.slice(0, 20).map((b: any, i: number) => 
+          `   ${i + 1}. Type: ${b.type}, Status: ${b.budgetStatus}\n      Period: ${b.periodStart} to ${b.periodEnd}\n      Amount: ${b.value} ${b.currency}\n      WHY: ${b.reason}`
+        ),
+        importSummary.budgets.details.length > 20 ? `   ... and ${importSummary.budgets.details.length - 20} more successful budgets` : '',
+        '',
+        importSummary.budgets.failures.length > 0 ? '❌ Failed Budgets (WHY THEY FAILED):' : '',
+        ...importSummary.budgets.failures.map((b: any, i: number) => 
+          `   ${i + 1}. Type: ${b.type}, Period: ${b.periodStart} to ${b.periodEnd}\n      Amount: ${b.value} ${b.currency}\n      FAILURE REASON: ${b.reason}\n      HTTP Status: ${b.httpStatus || 'N/A'}`
+        ),
+        '',
+        importSummary.budgets.warnings.length > 0 ? '⚠️ Budget Warnings:' : '',
+        ...importSummary.budgets.warnings.map((w: any, i: number) => `   ${i + 1}. ${w}`),
+        '',
+        '───────────────────────────────────────────────────────────────────',
+        '📅 PLANNED DISBURSEMENTS',
+        '───────────────────────────────────────────────────────────────────',
+        `Attempted: ${importSummary.plannedDisbursements.attempted}`,
+        `Successful: ${importSummary.plannedDisbursements.successful}`,
+        `Failed: ${importSummary.plannedDisbursements.failed}`,
+        `Total Amount: ${importSummary.plannedDisbursements.totalAmount.toLocaleString()}`,
+        '',
+        '───────────────────────────────────────────────────────────────────',
+        '🎯 SECTORS',
+        '───────────────────────────────────────────────────────────────────',
+        `Attempted: ${importSummary.sectors.attempted}`,
+        `Successful: ${importSummary.sectors.successful}`,
+        `Failed: ${importSummary.sectors.failed}`,
+        `Total Percentage: ${importSummary.sectors.totalPercentage.toFixed(1)}%`,
+        importSummary.sectors.list.length > 0 ? '  Sectors:' : '',
+        ...importSummary.sectors.list.map((s: any) => 
+          `    • ${s.name || s.code} (${s.vocabulary}): ${s.percentage}%`
+        ),
+        '',
+        '───────────────────────────────────────────────────────────────────',
+        '📍 LOCATIONS',
+        '───────────────────────────────────────────────────────────────────',
+        `Attempted: ${importSummary.locations.attempted}`,
+        `Successful: ${importSummary.locations.successful}`,
+        `Failed: ${importSummary.locations.failed}`,
+        importSummary.locations.list.length > 0 ? '  Locations:' : '',
+        ...importSummary.locations.list.map((l: any, i: number) => 
+          `    ${i + 1}. ${l.name} (${l.type})${l.coordinates ? ` - ${l.coordinates}` : ''}`
+        ),
+        '',
+        '───────────────────────────────────────────────────────────────────',
+        '🏷️  POLICY MARKERS - DETAILED MATCHING & RESULTS',
+        '───────────────────────────────────────────────────────────────────',
+        `📊 Summary:`,
+        `   Attempted: ${importSummary.policyMarkers.attempted}`,
+        `   Successful: ${importSummary.policyMarkers.successful} ✅`,
+        `   Failed: ${importSummary.policyMarkers.failed} ❌`,
+        `   Skipped: ${importSummary.policyMarkers.skipped} ⏭️`,
+        '',
+        importSummary.policyMarkers.matchingDetails.length > 0 ? '🔍 Matching Details (HOW EACH MARKER WAS PROCESSED):' : '',
+        ...importSummary.policyMarkers.matchingDetails.map((pm: any, i: number) => {
+          const lines = [
+            `   ${i + 1}. XML Code: ${pm.xmlCode} (Vocabulary: ${pm.vocabulary})`,
+            `      Status: ${pm.status}`
+          ];
+          if (pm.matchedTo) {
+            lines.push(`      Matched To: ${pm.matchedTo} (UUID: ${pm.matchedUuid})`);
+            lines.push(`      Matching Strategy: ${pm.matchingStrategy}`);
+          }
+          if (pm.significanceRaw !== undefined) {
+            lines.push(`      Significance: ${pm.significanceRaw}${pm.wasNormalized ? ` → ${pm.significanceNormalized} (normalized)` : ''}`);
+          }
+          lines.push(`      WHY: ${pm.reason}`);
+          return lines.join('\n');
+        }),
+        '',
+        importSummary.policyMarkers.list.length > 0 ? '✅ Successfully Imported Policy Markers:' : '',
+        ...importSummary.policyMarkers.list.map((pm: any, i: number) => 
+          `   ${i + 1}. ${pm.name || pm.code}: Significance ${pm.significance}`
+        ),
+        '',
+        importSummary.policyMarkers.failures.length > 0 ? '❌ Failed Policy Markers (WHY THEY FAILED):' : '',
+        ...importSummary.policyMarkers.failures.map((pm: any, i: number) => 
+          `   ${i + 1}. Code: ${pm.code} (Vocabulary: ${pm.vocabulary})\n      FAILURE REASON: ${pm.reason}`
+        ),
+        '',
+        importSummary.policyMarkers.warnings.length > 0 ? '⚠️ Policy Marker Warnings:' : '',
+        ...importSummary.policyMarkers.warnings.map((w: any, i: number) => `   ${i + 1}. ${w}`),
+        '',
+        '───────────────────────────────────────────────────────────────────',
+        '📦 OTHER IMPORTS',
+        '───────────────────────────────────────────────────────────────────',
+        `Financing Terms (CRS): ${importSummary.financingTerms.successful}/${importSummary.financingTerms.attempted}`,
+        `Tags: ${importSummary.tags.successful}/${importSummary.tags.attempted}`,
+        `Results: ${importSummary.results.successful}/${importSummary.results.attempted}`,
+        `Document Links: ${importSummary.documentLinks.successful}/${importSummary.documentLinks.attempted}`,
+        `Conditions: ${importSummary.conditions.successful}/${importSummary.conditions.attempted}`,
+        `Humanitarian Scopes: ${importSummary.humanitarianScopes.successful}/${importSummary.humanitarianScopes.attempted}`,
+        `Contacts: ${importSummary.contacts.successful}/${importSummary.contacts.attempted}`,
+        `Participating Orgs: ${importSummary.participatingOrgs.successful}/${importSummary.participatingOrgs.attempted}`,
+        `Other Identifiers: ${importSummary.otherIdentifiers.successful}/${importSummary.otherIdentifiers.attempted}`,
+        `Related Activities: ${importSummary.relatedActivities.successful}/${importSummary.relatedActivities.attempted}`,
+        `FSS: ${importSummary.fss.successful}/${importSummary.fss.attempted}`,
+        `Recipient Countries: ${importSummary.recipientCountries.successful}/${importSummary.recipientCountries.attempted}`,
+        `Recipient Regions: ${importSummary.recipientRegions.successful}/${importSummary.recipientRegions.attempted}`,
+        `Custom Geographies: ${importSummary.customGeographies.successful}/${importSummary.customGeographies.attempted}`,
+        '',
+        '───────────────────────────────────────────────────────────────────',
+        '🌐 API CALLS SUMMARY',
+        '───────────────────────────────────────────────────────────────────',
+        `Total API Calls Made: ${importSummary.apiCalls.length}`,
+        `Successful: ${importSummary.apiCalls.filter((c: any) => c.status === 'SUCCESS').length}`,
+        `Failed: ${importSummary.apiCalls.filter((c: any) => c.status === 'FAILED').length}`,
+        '',
+        importSummary.apiCalls.length > 0 ? 'API Call Log (Last 30):' : '',
+        ...importSummary.apiCalls.slice(-30).map((call: any, i: number) => 
+          `   ${importSummary.apiCalls.length - 29 + i}. ${call.method} ${call.endpoint}\n      Status: ${call.status}${call.error ? `, Error: ${call.error}` : ''}\n      Time: ${call.timestamp}`
+        ),
+        '',
+        '───────────────────────────────────────────────────────────────────',
+        '⚠️  ERRORS, WARNINGS & SILENT FAILURES',
+        '───────────────────────────────────────────────────────────────────',
+        `Total Errors: ${importSummary.errors.length}`,
+        `Total Warnings: ${importSummary.warnings.length}`,
+        `Silent Failures (skipped without error): ${importSummary.silentFailures.length}`,
+        `Validation Issues: ${importSummary.validationIssues.length}`,
+        '',
+        importSummary.errors.length > 0 ? '❌ ERRORS:' : '',
+        ...importSummary.errors.map((e: any, i: number) => `   ERROR ${i + 1}: ${e}`),
+        '',
+        importSummary.warnings.length > 0 ? '⚠️  WARNINGS:' : '',
+        ...importSummary.warnings.map((w: any, i: number) => `   WARNING ${i + 1}: ${w}`),
+        '',
+        importSummary.silentFailures.length > 0 ? '🔇 SILENT FAILURES (Items skipped without obvious error):' : '',
+        ...importSummary.silentFailures.map((sf: any, i: number) => `   ${i + 1}. ${sf}`),
+        '',
+        importSummary.validationIssues.length > 0 ? '🔍 VALIDATION ISSUES (Non-blocking data quality issues):' : '',
+        ...importSummary.validationIssues.map((vi: any, i: number) => `   ${i + 1}. ${vi}`),
+        '',
+        '═══════════════════════════════════════════════════════════════════',
+        '✅ IMPORT COMPLETED SUCCESSFULLY',
+        '═══════════════════════════════════════════════════════════════════',
+        `Total Fields Imported: ${selectedFieldsList.length}`,
+        `Duration: ${duration} seconds`,
+        '',
+        '🎯 NEXT STEPS:',
+        '   1. Click the "Copy Full Import Log" button in the UI (recommended)',
+        '   2. Review the imported changes by clicking "Review Changes"',
+        '   3. Refresh the page manually when ready to see all updates',
+        '',
+        '💡 TIP: The page will NOT auto-refresh, so you have plenty of time!',
+        '═══════════════════════════════════════════════════════════════════',
+      ];
+      
+      // Create the complete log text
+      const completeLogText = summaryLines.join('\n');
+      
+      // Output comprehensive summary to console
+      console.log('\n' + completeLogText + '\n');
+      
+      // Also output as a single copyable string
+      console.log('COPYABLE IMPORT SUMMARY (or click the copy button in the UI):\n' + completeLogText);
+      
+      // Show a prominent message about the copy button
+      console.log('%c✨ TIP: Click the "Copy Full Import Log" button in the UI instead of copying from console!', 'color: #4CAF50; font-size: 16px; font-weight: bold; padding: 10px;');
+
+      // Restore original console methods
+      console.log = originalConsoleLog;
+      console.error = originalConsoleError;
+      console.warn = originalConsoleWarn;
+      
+      // Combine captured console logs with structured summary
+      const fullLogWithConsole = [
+        '═══════════════════════════════════════════════════════════════════',
+        '📋 BROWSER CONSOLE OUTPUT',
+        '═══════════════════════════════════════════════════════════════════',
+        '',
+        ...capturedLogs,
+        '',
+        '═══════════════════════════════════════════════════════════════════',
+        '📊 STRUCTURED IMPORT SUMMARY',
+        '═══════════════════════════════════════════════════════════════════',
+        '',
+        completeLogText
+      ].join('\n');
+      
+      // Store logs and summary in state
+      setComprehensiveLog(fullLogWithConsole);
+      setCapturedConsoleLogs(capturedLogs);
+      setLastImportSummary(importSummary);
+      
+      // Set status to complete - this will trigger the results display
+      setImportStatus({ stage: 'complete' });
+
+      // DON'T auto-refresh - let user copy the log first, then they can manually refresh
+      // User can click "Review Changes" button or refresh manually when ready
 
     } catch (error) {
+      // Restore console methods in case of error too
+      console.log = originalConsoleLog;
+      console.error = originalConsoleError;
+      console.warn = originalConsoleWarn;
       console.error('Import error:', error);
       setImportStatus({ 
         stage: 'error', 
@@ -7336,19 +7987,65 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
       {/* Import Complete */}
       {importStatus.stage === 'complete' && (
-        <>
+        <div className="space-y-6">
+          {/* Header Card */}
           <Card>
             <CardContent className="pt-6">
-              <div className="text-center py-8">
-                <CheckCircle className="h-16 w-16 text-gray-700 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Import Successful!</h3>
+              <div className="text-center py-6">
+                <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
+                <h3 className="text-2xl font-semibold mb-2">Import Completed Successfully!</h3>
                 <p className="text-gray-600 mb-6">
                   {parsedFields.filter(f => f.selected).length} fields have been imported from the XML file.
                 </p>
-                <div className="flex gap-2 justify-center">
+                
+                {/* Comprehensive Log Copy Button - Prominent */}
+                {comprehensiveLog && (
+                  <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center justify-center gap-2">
+                      <Info className="h-4 w-4" />
+                      Full Import Log
+                    </h4>
+                    <p className="text-xs text-blue-700 mb-3">
+                      Copy the complete log including all successes and failures
+                    </p>
+                    <Button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(comprehensiveLog).then(() => {
+                          toast.success('Complete import log copied to clipboard!', {
+                            description: 'Includes browser console output and structured summary'
+                          });
+                        }).catch((err) => {
+                          console.error('Failed to copy:', err);
+                          toast.error('Failed to copy log', {
+                            description: 'Please try copying from the console instead'
+                          });
+                        });
+                      }}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                      size="lg"
+                    >
+                      <Copy className="h-5 w-5 mr-2" />
+                      Copy Full Import Log
+                    </Button>
+                    <p className="text-xs text-blue-600 mt-2">
+                      This includes structured summary with success/failure details
+                    </p>
+                  </div>
+                )}
+                
+                <div className="flex gap-2 justify-center flex-wrap">
                   <Button variant="outline" onClick={resetImport}>
                     <FileCode className="h-4 w-4 mr-2" />
                     Import Another File
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      window.location.reload();
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh Page to See Changes
                   </Button>
                   <Button onClick={() => {
                     // Navigate to Basic Info tab to review imported changes
@@ -7360,12 +8057,17 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}>
                     <ArrowRight className="h-4 w-4 mr-2" />
-                    Review Changes
+                    Review Changes (Without Refresh)
                   </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Detailed Import Results Display */}
+          {lastImportSummary && (
+            <ImportResultsDisplay importSummary={lastImportSummary} />
+          )}
 
           {/* Results Import Validation Report */}
           {resultsImportSummary && (
@@ -7373,7 +8075,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               <ImportValidationReport summary={resultsImportSummary} />
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Error State */}
