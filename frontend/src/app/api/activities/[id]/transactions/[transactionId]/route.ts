@@ -67,10 +67,6 @@ export async function PUT(
       aid_type_vocabulary: body.aid_type_vocabulary || null,
       tied_status: body.tied_status || null,
       is_humanitarian: body.is_humanitarian || false,
-      // Add language fields
-      description_language: body.description_language || 'en',
-      provider_org_language: body.provider_org_language || 'en',
-      receiver_org_language: body.receiver_org_language || 'en',
       // Add financing classification if provided
       financing_classification: body.financing_classification || null,
       // Activity linking fields

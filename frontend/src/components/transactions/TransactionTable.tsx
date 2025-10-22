@@ -44,9 +44,11 @@ import {
   UserX,
   FileText,
   FileCode,
+  Loader2,
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
 import { TIED_STATUS_LABELS } from "@/types/transaction";
+import { fixedCurrencyConverter } from "@/lib/currency-converter-fixed";
 
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -292,6 +294,15 @@ export function TransactionTable({
   const [activityDetails, setActivityDetails] = useState<Record<string, {title: string; iati_identifier: string; acronym?: string; reporting_org?: string} | null>>({});
   const [loadingActivities, setLoadingActivities] = useState<Set<string>>(new Set());
 
+  // USD conversion tracking
+  const [usdValues, setUsdValues] = useState<Record<string, { 
+    usd: number | null, 
+    rate: number | null, 
+    date: string, 
+    loading: boolean, 
+    error?: string 
+  }>>({});
+
   const toggleRowExpansion = (transactionId: string) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
@@ -354,6 +365,62 @@ export function TransactionTable({
       }
     });
   }, [expandedRows, transactions]);
+
+  // Convert all transactions to USD when they change
+  React.useEffect(() => {
+    let cancelled = false;
+    async function convertAll() {
+      const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
+      for (const transaction of transactions) {
+        const transactionId = transaction.uuid || transaction.id;
+        if (!transaction.value || !transaction.currency || !transaction.transaction_date) {
+          newUsdValues[transactionId] = { 
+            usd: null, 
+            rate: null, 
+            date: transaction.transaction_date, 
+            loading: false, 
+            error: 'Missing data' 
+          };
+          continue;
+        }
+        newUsdValues[transactionId] = { 
+          usd: null, 
+          rate: null, 
+          date: transaction.transaction_date, 
+          loading: true 
+        };
+        try {
+          const result = await fixedCurrencyConverter.convertToUSD(
+            transaction.value, 
+            transaction.currency, 
+            new Date(transaction.transaction_date)
+          );
+          if (!cancelled) {
+            newUsdValues[transactionId] = {
+              usd: result.usd_amount,
+              rate: result.exchange_rate,
+              date: result.conversion_date || transaction.transaction_date,
+              loading: false,
+              error: result.success ? undefined : result.error || 'Conversion failed'
+            };
+          }
+        } catch (err) {
+          if (!cancelled) {
+            newUsdValues[transactionId] = { 
+              usd: null, 
+              rate: null, 
+              date: transaction.transaction_date, 
+              loading: false, 
+              error: 'Conversion error' 
+            };
+          }
+        }
+      }
+      if (!cancelled) setUsdValues(newUsdValues);
+    }
+    if (transactions.length > 0) convertAll();
+    return () => { cancelled = true; };
+  }, [transactions]);
 
   const copyToClipboard = async (text: string, type: string, transactionId: string) => {
     try {
@@ -526,8 +593,17 @@ export function TransactionTable({
               onClick={() => onSort("value")}
             >
               <div className="flex items-center justify-end gap-1">
-                <span>Reported Value</span>
+                <span>Amount</span>
                 {getSortIcon("value")}
+              </div>
+            </TableHead>
+            <TableHead
+              className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+              onClick={() => onSort("value_date")}
+            >
+              <div className="flex items-center gap-1">
+                <span>Value Date</span>
+                {getSortIcon("value_date")}
               </div>
             </TableHead>
             <TableHead
@@ -910,20 +986,34 @@ export function TransactionTable({
                     monotone={true}
                   />
                 </td>
+                <td className="py-3 px-4 whitespace-nowrap">
+                  {formatTransactionDate(transaction.value_date || transaction.transaction_date)}
+                </td>
                 <td className="py-3 px-4 text-right whitespace-nowrap">
-                  {transaction.value_usd !== null && transaction.value_usd !== undefined ? (
-                    <TransactionValueDisplay
-                      transaction={transaction}
-                      onConvert={onConvertCurrency}
-                      showConvertButton={!!onConvertCurrency}
-                      compact={true}
-                      variant="usd-only"
-                      decimalPlaces={2}
-                      monotone={true}
-                    />
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  <div className="flex items-center justify-end gap-1">
+                    {usdValues[transactionId]?.loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                    ) : usdValues[transactionId]?.usd != null ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="font-medium cursor-help">
+                              {formatCurrency(usdValues[transactionId].usd!, 'USD')}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div>
+                              <div>Original: {formatCurrency(transaction.value, transaction.currency)}</div>
+                              <div>Rate: {usdValues[transactionId].rate}</div>
+                              <div>Date: {usdValues[transactionId].date}</div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
                 </td>
                 {variant === "full" && (
                   <td className="hidden xl:table-cell py-3 px-4 whitespace-nowrap">
@@ -993,7 +1083,7 @@ export function TransactionTable({
             {/* Expanded Row Content - Data-Rich Card Dashboard */}
             {isExpanded && (
               <TableRow className="bg-slate-50/50">
-                <td colSpan={variant === "full" ? 9 : 8} className="p-6">
+                <td colSpan={variant === "full" ? 10 : 9} className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* LEFT COLUMN */}
                   <div className="space-y-4">

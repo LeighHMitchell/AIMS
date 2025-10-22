@@ -1810,6 +1810,7 @@ export async function GET(request: NextRequest) {
     
     // Get search parameter from query string
     const searchQuery = request.nextUrl.searchParams.get('search');
+    const iatiIdentifierFilter = request.nextUrl.searchParams.get('iati_identifier');
     
     // Build the query
     let query = getSupabaseAdmin()
@@ -1847,6 +1848,12 @@ export async function GET(request: NextRequest) {
         actual_start_date,
         actual_end_date
       `);
+    
+    // Apply exact iati_identifier filter if provided
+    if (iatiIdentifierFilter) {
+      console.log('[AIMS] Filtering activities by IATI identifier:', iatiIdentifierFilter);
+      query = query.eq('iati_identifier', iatiIdentifierFilter);
+    }
     
     // Apply search filter if provided
     if (searchQuery) {

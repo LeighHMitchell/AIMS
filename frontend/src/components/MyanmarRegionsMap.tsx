@@ -197,7 +197,7 @@ export default function MyanmarRegionsMap({
             <svg 
               viewBox={viewBox}
               className="w-full h-full max-w-[600px] max-h-[700px]"
-              style={{ backgroundColor: '#fafbfc' }}
+              style={{ backgroundColor: 'white' }}
             >
               {/* Draw regions */}
               {paths.map(region => {
@@ -236,7 +236,7 @@ export default function MyanmarRegionsMap({
 
               {/* Hover info box */}
               {hoveredRegion && hoveredCentroid && (
-                <g transform={`translate(${hoveredCentroid.x - 2}, ${hoveredCentroid.y - 2})`}>
+                <g transform={`translate(${hoveredCentroid.x - 2}, ${hoveredCentroid.y - 2})`} style={{ pointerEvents: 'none' }}>
                   <rect
                     x="0"
                     y="0"

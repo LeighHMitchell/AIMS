@@ -1655,9 +1655,9 @@ export default function PlannedDisbursementsTab({
 
                           {/* USD Value */}
                           <TableCell className="py-3 px-4 text-right">
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center justify-end gap-1">
                               {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`]?.loading ? (
-                                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                               ) : usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`]?.usd != null ? (
                                 <TooltipProvider>
                                   <UITooltip>

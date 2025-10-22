@@ -21,12 +21,13 @@ if (typeof window !== 'undefined') {
   });
 }
 
-type MapLayerKey = 'roads' | 'satellite';
+type MapLayerKey = 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri';
 
 interface MapLayerConfig {
   name: string;
   url: string;
   attribution: string;
+  category: string;
   fallbacks?: string[];
 }
 
@@ -49,12 +50,15 @@ interface LocationMapProps {
   displayLongitude?: number | null;
 }
 
-function LayerChangeHandler({ onLayerChange }: { onLayerChange: (layer: MapLayerKey) => void }) {
+function LayerChangeHandler({ onLayerChange, mapLayers }: { onLayerChange: (layer: MapLayerKey) => void; mapLayers: Record<MapLayerKey, MapLayerConfig> }) {
   useMapEvents({
     baselayerchange(event) {
       const name = event.name as string;
-      if (name === 'Street Map') onLayerChange('roads');
-      else if (name === 'Satellite Image') onLayerChange('satellite');
+      // Find the layer key that matches this display name
+      const layerEntry = Object.entries(mapLayers).find(([_, layer]) => layer.name === name);
+      if (layerEntry) {
+        onLayerChange(layerEntry[0] as MapLayerKey);
+      }
     },
   });
 
@@ -92,28 +96,21 @@ function LocationMapComponent({
   return (
     <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%' }} ref={mapRef as any}>
       <LayersControl position="topright" style={{ zIndex: 1000 }}>
-        <LayersControl.BaseLayer
-          checked={currentLayer === 'roads'}
-          name="Street Map"
-        >
-          <TileLayer
-            attribution={mapLayers.roads.attribution}
-            url={mapLayers.roads.url}
-            eventHandlers={{ tileerror: onMapError }}
-          />
-        </LayersControl.BaseLayer>
-
-        <LayersControl.BaseLayer
-          checked={currentLayer === 'satellite'}
-          name="Satellite Image"
-        >
-          <TileLayer
-            attribution={mapLayers.satellite.attribution}
-            url={mapLayers.satellite.url}
-            eventHandlers={{ tileerror: onMapError }}
-          />
-        </LayersControl.BaseLayer>
+        {Object.entries(mapLayers).map(([key, layer]) => (
+          <LayersControl.BaseLayer
+            key={key}
+            checked={currentLayer === key}
+            name={layer.name}
+          >
+            <TileLayer
+              attribution={layer.attribution}
+              url={getLayerUrl()}
+              eventHandlers={{ tileerror: onMapError }}
+            />
+          </LayersControl.BaseLayer>
+        ))}
       </LayersControl>
+      <LayerChangeHandler onLayerChange={onLayerChange} mapLayers={mapLayers} />
       {existingLocations
         .filter((loc) => loc.latitude && loc.longitude && loc.id !== currentLocationId)
         .map((loc) => (

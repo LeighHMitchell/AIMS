@@ -418,12 +418,16 @@ export default function OrganisationsSection({
                                     {participatingOrg.narrative || 
                                      participatingOrg.organization?.name || 
                                      'Unknown Organization'}
+                                    {participatingOrg.organization?.acronym && 
+                                     ` (${participatingOrg.organization.acronym})`}
                                   </Link>
                                 ) : (
                                   <span>
                                     {participatingOrg.narrative || 
                                      participatingOrg.organization?.name || 
                                      'Unknown Organization'}
+                                    {participatingOrg.organization?.acronym && 
+                                     ` (${participatingOrg.organization.acronym})`}
                                   </span>
                                 )}
                               </div>
@@ -431,14 +435,8 @@ export default function OrganisationsSection({
                                participatingOrg.narrative !== participatingOrg.organization.name && (
                                 <div className="text-xs text-gray-500">
                                   From: {participatingOrg.organization.name}
-                                  {participatingOrg.organization.acronym && ` (${participatingOrg.organization.acronym})`}
               </div>
             )}
-                              {!participatingOrg.narrative && participatingOrg.organization?.acronym && (
-                                <div className="text-xs text-gray-500">
-                                  ({participatingOrg.organization.acronym})
-          </div>
-                              )}
                               {participatingOrg.organization?.country && (
                                 <div className="text-xs text-gray-500">
                                   {participatingOrg.organization.country}

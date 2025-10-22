@@ -6,10 +6,12 @@ export const revalidate = 0;
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    // Handle both sync and async params (Next.js 14/15 compatibility)
+    const resolvedParams = await Promise.resolve(params);
+    const { id } = resolvedParams;
     const body = await request.json();
     
     if (!id) {
@@ -889,12 +891,24 @@ export async function PATCH(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    console.log('[AIMS API] ===== GET /api/activities/[id] START =====');
+    console.log('[AIMS API] Request URL:', request.url);
+    
+    // Handle both sync and async params (Next.js 14/15 compatibility)
+    const resolvedParams = await Promise.resolve(params);
+    console.log('[AIMS API] Full params object:', JSON.stringify(resolvedParams, null, 2));
+    
+    const { id } = resolvedParams;
+    
+    console.log('[AIMS API] Extracted ID:', id);
+    console.log('[AIMS API] ID type:', typeof id);
+    console.log('[AIMS API] ID length:', id?.length);
     
     if (!id) {
+      console.error('[AIMS API] ERROR: Activity ID is missing!');
       return NextResponse.json(
         { error: 'Activity ID is required' },
         { status: 400 }
@@ -913,8 +927,27 @@ export async function GET(
       );
     }
     
+    // First, check if the activity exists at all (simple query without joins)
+    console.log('[AIMS API] Step 1: Checking if activity exists...');
+    const { data: basicActivity, error: basicError } = await supabase
+      .from('activities')
+      .select('id, title_narrative')
+      .eq('id', id)
+      .single();
+    
+    if (basicError || !basicActivity) {
+      console.error('[AIMS API] Activity not found (basic check):', basicError);
+      console.error('[AIMS API] Error details:', JSON.stringify(basicError, null, 2));
+      return NextResponse.json(
+        { error: 'Activity not found', details: basicError?.message },
+        { status: 404 }
+      );
+    }
+    
+    console.log('[AIMS API] Activity found:', basicActivity.title_narrative);
+    
     // OPTIMIZED: Fetch activity with all related data in a single query
-    console.log('[AIMS API] Using optimized single-query approach...');
+    console.log('[AIMS API] Step 2: Fetching full activity data with relations...');
     
     const { data: activityWithRelations, error } = await supabase
       .from('activities')
@@ -943,7 +976,8 @@ export async function GET(
       .single();
     
     if (error || !activityWithRelations) {
-      console.error('[AIMS API] Activity not found:', error);
+      console.error('[AIMS API] Error fetching full activity data:', error);
+      console.error('[AIMS API] Error details:', JSON.stringify(error, null, 2));
       return NextResponse.json(
         { error: 'Activity not found' },
         { status: 404 }

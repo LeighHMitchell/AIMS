@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import {
   MapPin,
@@ -524,18 +525,46 @@ const DEFAULT_CENTER: [number, number] = [21.9162, 96.0785];
 const DEFAULT_ZOOM = 6;
 
 // Map layer configuration
-const MAP_LAYERS = {
-  roads: {
-    name: 'Street Map',
+type MapLayerKey = 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri';
+
+interface MapLayerConfig {
+  name: string;
+  url: string;
+  attribution: string;
+  category: string;
+  fallbacks?: string[];
+}
+
+const MAP_LAYERS: Record<MapLayerKey, MapLayerConfig> = {
+  osm_standard: {
+    name: 'OpenStreetMap Standard',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    attribution: '© OpenStreetMap contributors',
+    category: 'Streets'
   },
-  satellite: {
-    name: 'Satellite Image',
-    // Primary: ESRI World Imagery
+  osm_humanitarian: {
+    name: 'Humanitarian (HOT)',
+    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors, © HOT',
+    category: 'Humanitarian'
+  },
+  cyclosm: {
+    name: 'CyclOSM Transport',
+    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors, © CyclOSM',
+    category: 'Transport'
+  },
+  opentopo: {
+    name: 'OpenTopo Terrain',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors, © OpenTopoMap',
+    category: 'Terrain'
+  },
+  satellite_esri: {
+    name: 'ESRI Satellite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; <a href="https://www.arcgis.com/">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-    // Fallbacks
+    attribution: '© Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    category: 'Satellite',
     fallbacks: [
       // Mapbox (if token available)
       process.env.NEXT_PUBLIC_MAPBOX_TOKEN
@@ -583,7 +612,7 @@ export default function LocationModal({
   const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<Partial<LocationFormSchema>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [currentLayer, setCurrentLayer] = useState<'roads' | 'satellite'>('roads');
+  const [currentLayer, setCurrentLayer] = useState<MapLayerKey>('osm_standard');
   const [mapError, setMapError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
   const [satelliteFallbackIndex, setSatelliteFallbackIndex] = useState(0);
@@ -593,15 +622,15 @@ export default function LocationModal({
   // Load saved layer preference
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedLayer = localStorage.getItem(LAYER_PREFERENCE_KEY) as 'roads' | 'satellite';
-      if (savedLayer && ['roads', 'satellite'].includes(savedLayer)) {
+      const savedLayer = localStorage.getItem(LAYER_PREFERENCE_KEY) as MapLayerKey;
+      if (savedLayer && Object.keys(MAP_LAYERS).includes(savedLayer)) {
         setCurrentLayer(savedLayer);
       }
     }
   }, []);
 
   // Save layer preference
-  const saveLayerPreference = useCallback((layer: 'roads' | 'satellite') => {
+  const saveLayerPreference = useCallback((layer: MapLayerKey) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(LAYER_PREFERENCE_KEY, layer);
       setCurrentLayer(layer);
@@ -623,9 +652,9 @@ export default function LocationModal({
   }, [currentLayer, satelliteFallbackIndex]);
 
   // Handle layer change
-  const handleLayerChange = useCallback((layer: 'roads' | 'satellite') => {
+  const handleLayerChange = useCallback((layer: MapLayerKey) => {
     setMapError(null);
-    if (layer !== 'satellite') {
+    if (!layer.includes('satellite')) {
       setSatelliteFallbackIndex(0);
     }
     saveLayerPreference(layer);
@@ -633,9 +662,9 @@ export default function LocationModal({
 
   // Handle map tile error
   const handleMapError = useCallback(() => {
-    if (currentLayer === 'satellite') {
-      const fallbacks = MAP_LAYERS.satellite.fallbacks ?? [];
-      const urls = [MAP_LAYERS.satellite.url, ...fallbacks];
+    if (currentLayer === 'satellite_esri') {
+      const fallbacks = MAP_LAYERS.satellite_esri.fallbacks ?? [];
+      const urls = [MAP_LAYERS.satellite_esri.url, ...fallbacks];
 
       setSatelliteFallbackIndex((prev) => {
         const hasNext = prev < urls.length - 1;
@@ -650,7 +679,7 @@ export default function LocationModal({
         setMapError('Satellite tiles failed to load. Try switching layers or retry.');
       }
     } else {
-      setMapError('Map tiles failed to load. Click retry to try again.');
+      setMapError('Map tiles failed to load. Try switching layers or retry.');
     }
   }, [currentLayer, satelliteFallbackIndex]);
 
@@ -1169,15 +1198,19 @@ const autoPopulateIatiFields = useCallback((params: {
                   Location Map
                 </CardTitle>
                   <div className="flex items-center gap-2">
-                    {/* Map Layer Toggle */}
-                    <Button
-                      variant={currentLayer === 'roads' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleLayerChange(currentLayer === 'roads' ? 'satellite' : 'roads')}
-                      className="flex items-center gap-2"
-                    >
-                      {currentLayer === 'roads' ? 'Street Map' : 'Satellite Image'}
-                    </Button>
+                    {/* Map Layer Dropdown */}
+                    <Select value={currentLayer} onValueChange={handleLayerChange}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Select map type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(MAP_LAYERS).map(([key, layer]) => (
+                          <SelectItem key={key} value={key}>
+                            {layer.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1245,7 +1278,7 @@ const autoPopulateIatiFields = useCallback((params: {
                   </div>
 
                   <div className="absolute top-4 left-4 bg-white/90 p-2 rounded shadow text-xs text-gray-600">
-                    Layer: {MAP_LAYERS[currentLayer].name}
+                    Map: {MAP_LAYERS[currentLayer].name}
                   </div>
                 </div>
               </CardContent>

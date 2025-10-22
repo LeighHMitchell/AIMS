@@ -536,6 +536,9 @@ export async function POST(
       newTransactionsCount = newTransactions.length;
       console.log(`[IATI Import] Found ${newTransactionsCount} new transactions out of ${iati_data.transactions.length} total`);
       
+      // Initialize organization stats
+      let orgStats = { created: 0, linked: 0 };
+      
       if (newTransactions.length > 0) {
         // Map organization names to IDs if needed
         const allOrgNames = new Set<string>();
@@ -575,6 +578,103 @@ export async function POST(
           console.log(`[Transaction] No activity found with IATI ID "${iatiId}"`);
           return null;
         };
+        
+        // AUTO-CREATE MISSING ORGANIZATIONS
+        const createMissingOrganizations = async (transactions: IATITransaction[]) => {
+          const orgRefsToCheck = new Set<string>();
+          const orgData = new Map<string, { name: string, ref: string }>();
+          
+          // Collect all unique organization references from transactions
+          transactions.forEach(t => {
+            if (t.providerOrg?.ref) {
+              orgRefsToCheck.add(t.providerOrg.ref);
+              orgData.set(t.providerOrg.ref, {
+                name: t.providerOrg.name || t.providerOrg.ref,
+                ref: t.providerOrg.ref
+              });
+            }
+            if (t.receiverOrg?.ref) {
+              orgRefsToCheck.add(t.receiverOrg.ref);
+              orgData.set(t.receiverOrg.ref, {
+                name: t.receiverOrg.name || t.receiverOrg.ref,
+                ref: t.receiverOrg.ref
+              });
+            }
+          });
+
+          if (orgRefsToCheck.size === 0) return { created: 0, linked: 0 };
+
+          // Check which organizations already exist in database
+          const { data: existingOrgs, error: fetchError } = await supabase
+            .from('organizations')
+            .select('id, name, iati_org_id')
+            .in('iati_org_id', Array.from(orgRefsToCheck));
+
+          if (fetchError) {
+            console.error('Error fetching existing organizations:', fetchError);
+            throw new Error(`Failed to check existing organizations: ${fetchError.message}`);
+          }
+
+          const existingOrgRefs = new Set(existingOrgs?.map(o => o.iati_org_id) || []);
+          let linkedCount = 0;
+          
+          // Update orgNameMap with existing organizations
+          existingOrgs?.forEach(org => {
+            if (org.iati_org_id) {
+              orgNameMap.set(org.iati_org_id, org.id);
+              linkedCount++;
+            }
+          });
+
+          // Determine which organizations need to be created
+          const orgsToCreate = Array.from(orgRefsToCheck)
+            .filter(ref => !existingOrgRefs.has(ref))
+            .map(ref => {
+              const data = orgData.get(ref)!;
+              return {
+                name: data.name,
+                iati_org_id: ref,
+                organization_type: 'other', // Default type for auto-created orgs
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+            });
+
+          let createdCount = 0;
+
+          // Create missing organizations
+          if (orgsToCreate.length > 0) {
+            console.log(`[IATI Import] Creating ${orgsToCreate.length} missing organizations:`, orgsToCreate);
+            
+            const { data: newOrgs, error: createError } = await supabase
+              .from('organizations')
+              .insert(orgsToCreate)
+              .select('id, name, iati_org_id');
+
+            if (createError) {
+              console.error('[IATI Import] Error creating organizations:', createError);
+              throw new Error(`Failed to create organizations: ${createError.message}`);
+            }
+
+            createdCount = newOrgs?.length || 0;
+            
+            // Update orgNameMap with newly created organizations
+            newOrgs?.forEach(org => {
+              if (org.iati_org_id) {
+                orgNameMap.set(org.iati_org_id, org.id);
+              }
+            });
+
+            console.log(`[IATI Import] Successfully created ${createdCount} organizations`);
+          }
+
+          return { created: createdCount, linked: linkedCount };
+        };
+        
+        // Auto-create missing organizations and get creation stats
+        console.log('[IATI Import] Processing organizations for', newTransactions.length, 'transactions...');
+        orgStats = await createMissingOrganizations(newTransactions);
+        console.log('[IATI Import] Organization stats:', orgStats);
         
         // Prepare transaction data with activity linking
         const transactionData = await Promise.all(newTransactions.map(async (t: IATITransaction) => {
@@ -1005,6 +1105,8 @@ export async function POST(
         organizations_updated: fields.participating_orgs && iati_data.participating_orgs ? 
           iati_data.participating_orgs.length : 0,
         transactions_added: fields.transactions ? newTransactionsCount : 0,
+        organizations_created: orgStats.created,
+        organizations_linked: orgStats.linked,
         last_sync_time: syncUpdate.last_sync_time,
         sync_status: syncUpdate.sync_status,
         has_warnings: importWarnings.length > 0

@@ -436,7 +436,38 @@ export function IATISyncPanel({
 
             const result = await response.json();
             
-            toast.success(`Successfully imported ${result.fields_updated.length} fields`);
+            // Enhanced success message with organization info
+            let message = `Successfully imported ${result.fields_updated.length} field${result.fields_updated.length !== 1 ? 's' : ''}`;
+            
+            if (result.summary) {
+              const { organizations_created, organizations_linked, transactions_added } = result.summary;
+              
+              // Add transaction count if any were imported
+              if (transactions_added > 0) {
+                message += ` (${transactions_added} transaction${transactions_added !== 1 ? 's' : ''})`;
+              }
+              
+              // Add organization info if any were created or linked
+              if (organizations_created > 0 || organizations_linked > 0) {
+                const orgParts = [];
+                if (organizations_created > 0) {
+                  orgParts.push(`${organizations_created} new org${organizations_created !== 1 ? 's' : ''} created`);
+                }
+                if (organizations_linked > 0) {
+                  orgParts.push(`${organizations_linked} existing org${organizations_linked !== 1 ? 's' : ''} linked`);
+                }
+                toast.success(message);
+                toast.info(`Organizations: ${orgParts.join(', ')}`, {
+                  description: 'Auto-created organizations can be managed in the Organizations section.',
+                  duration: 7000
+                });
+              } else {
+                toast.success(message);
+              }
+            } else {
+              toast.success(message);
+            }
+            
             setShowComparisonModal(false);
             
             // Update the parent component

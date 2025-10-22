@@ -4946,6 +4946,80 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
 
         try {
+          // Build organization lookup map for planned disbursements
+          console.log('[XML Import] Building organization lookup map for planned disbursements...');
+          const pdOrgRefToIdMap = new Map<string, string>();
+          let pdOrgsCreated = 0;
+          let pdOrgsLinked = 0;
+          
+          // Collect all unique org refs from planned disbursements
+          const pdUniqueOrgRefs = new Set<string>();
+          const pdOrgRefToNameMap = new Map<string, string>();
+          updateData.importedPlannedDisbursements.forEach((pd: any) => {
+            if (pd.providerOrg?.ref) {
+              pdUniqueOrgRefs.add(pd.providerOrg.ref);
+              pdOrgRefToNameMap.set(pd.providerOrg.ref, pd.providerOrg.name || pd.providerOrg.ref);
+            }
+            if (pd.receiverOrg?.ref) {
+              pdUniqueOrgRefs.add(pd.receiverOrg.ref);
+              pdOrgRefToNameMap.set(pd.receiverOrg.ref, pd.receiverOrg.name || pd.receiverOrg.ref);
+            }
+          });
+          
+          // Fetch and create organizations if needed
+          if (pdUniqueOrgRefs.size > 0) {
+            try {
+              const orgsResponse = await fetch('/api/organizations');
+              if (orgsResponse.ok) {
+                const allOrgs = await orgsResponse.json();
+                console.log(`[XML Import] Fetched ${allOrgs.length} organizations for planned disbursements`);
+                
+                // Build lookup map for existing organizations
+                const existingOrgRefs = new Set<string>();
+                allOrgs.forEach((org: any) => {
+                  if (org.iati_org_id && pdUniqueOrgRefs.has(org.iati_org_id)) {
+                    pdOrgRefToIdMap.set(org.iati_org_id, org.id);
+                    existingOrgRefs.add(org.iati_org_id);
+                    pdOrgsLinked++;
+                    console.log(`[XML Import] Linked existing org for PD: "${org.iati_org_id}" -> "${org.name}"`);
+                  }
+                });
+                
+                // Create missing organizations
+                const missingOrgRefs = Array.from(pdUniqueOrgRefs).filter(ref => !existingOrgRefs.has(ref));
+                if (missingOrgRefs.length > 0) {
+                  console.log(`[XML Import] Creating ${missingOrgRefs.length} missing organizations for planned disbursements...`);
+                  
+                  for (const ref of missingOrgRefs) {
+                    const orgName = pdOrgRefToNameMap.get(ref) || ref;
+                    try {
+                      const createResponse = await fetch('/api/organizations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          name: orgName,
+                          iati_org_id: ref,
+                          organization_type: 'other'
+                        })
+                      });
+                      
+                      if (createResponse.ok) {
+                        const newOrg = await createResponse.json();
+                        pdOrgRefToIdMap.set(ref, newOrg.id);
+                        pdOrgsCreated++;
+                        console.log(`[XML Import] Created new org for PD: "${ref}" -> "${orgName}"`);
+                      }
+                    } catch (createError) {
+                      console.error(`[XML Import] Error creating org ${ref}:`, createError);
+                    }
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('[XML Import] Error fetching organizations for PD:', error);
+            }
+          }
+          
           // Clear existing planned disbursements to avoid duplicates
           const clearResponse = await fetch(`/api/activities/${activityId}/planned-disbursements`, {
             method: 'DELETE'
@@ -4960,12 +5034,22 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
 
           for (const disbursement of updateData.importedPlannedDisbursements) {
             try {
+              // Look up organization IDs
+              const providerOrgId = disbursement.providerOrg?.ref 
+                ? pdOrgRefToIdMap.get(disbursement.providerOrg.ref) 
+                : undefined;
+              const receiverOrgId = disbursement.receiverOrg?.ref 
+                ? pdOrgRefToIdMap.get(disbursement.receiverOrg.ref) 
+                : undefined;
+              
               const disbursementData = {
                 amount: disbursement.value,
                 currency: disbursement.currency || currentActivityData?.default_currency || 'USD',
                 period_start: disbursement.period?.start,
                 period_end: disbursement.period?.end,
+                provider_org_id: providerOrgId || null,
                 provider_org_name: disbursement.providerOrg?.name || null,
+                receiver_org_id: receiverOrgId || null,
                 receiver_org_name: disbursement.receiverOrg?.name || null,
                 status: disbursement.type === '2' ? 'revised' : 'original',
                 value_date: disbursement.valueDate || disbursement.period?.start
@@ -4993,6 +5077,21 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             toast.success(`Planned disbursements imported successfully`, {
               description: `${successCount} disbursement(s) added${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
             });
+            
+            // Show organization creation/linking notification for planned disbursements
+            if (pdOrgsCreated > 0 || pdOrgsLinked > 0) {
+              const orgParts = [];
+              if (pdOrgsCreated > 0) {
+                orgParts.push(`${pdOrgsCreated} new org${pdOrgsCreated !== 1 ? 's' : ''} created`);
+              }
+              if (pdOrgsLinked > 0) {
+                orgParts.push(`${pdOrgsLinked} existing org${pdOrgsLinked !== 1 ? 's' : ''} linked`);
+              }
+              toast.info(`Organizations: ${orgParts.join(', ')}`, {
+                description: pdOrgsCreated > 0 ? 'Auto-created organizations can be managed in the Organizations section.' : undefined,
+                duration: 7000
+              });
+            }
           }
         } catch (disbursementsError) {
           console.error('[XML Import] Planned disbursements import error:', disbursementsError);
@@ -5623,6 +5722,82 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           
           let successCount = 0;
           let errorCount = 0;
+          
+          // Build organization lookup map and auto-create missing organizations
+          console.log('[XML Import] Building organization lookup map...');
+          const orgRefToIdMap = new Map<string, string>();
+          let orgsCreated = 0;
+          let orgsLinked = 0;
+          
+          // Collect all unique org refs and names from transactions
+          const uniqueOrgRefs = new Set<string>();
+          const orgRefToNameMap = new Map<string, string>();
+          updateData.importedTransactions.forEach((t: any) => {
+            if (t.providerOrg?.ref) {
+              uniqueOrgRefs.add(t.providerOrg.ref);
+              orgRefToNameMap.set(t.providerOrg.ref, t.providerOrg.name || t.providerOrg.ref);
+            }
+            if (t.receiverOrg?.ref) {
+              uniqueOrgRefs.add(t.receiverOrg.ref);
+              orgRefToNameMap.set(t.receiverOrg.ref, t.receiverOrg.name || t.receiverOrg.ref);
+            }
+          });
+          
+          // Fetch all organizations and filter for matching IATI IDs
+          if (uniqueOrgRefs.size > 0) {
+            try {
+              const orgsResponse = await fetch('/api/organizations');
+              if (orgsResponse.ok) {
+                const allOrgs = await orgsResponse.json();
+                console.log(`[XML Import] Fetched ${allOrgs.length} organizations for lookup`);
+                
+                // Build lookup map for existing organizations
+                const existingOrgRefs = new Set<string>();
+                allOrgs.forEach((org: any) => {
+                  if (org.iati_org_id && uniqueOrgRefs.has(org.iati_org_id)) {
+                    orgRefToIdMap.set(org.iati_org_id, org.id);
+                    existingOrgRefs.add(org.iati_org_id);
+                    orgsLinked++;
+                    console.log(`[XML Import] Linked existing org: "${org.iati_org_id}" -> ID "${org.id}" (${org.name})`);
+                  }
+                });
+                
+                // Create missing organizations
+                const missingOrgRefs = Array.from(uniqueOrgRefs).filter(ref => !existingOrgRefs.has(ref));
+                if (missingOrgRefs.length > 0) {
+                  console.log(`[XML Import] Creating ${missingOrgRefs.length} missing organizations...`);
+                  
+                  for (const ref of missingOrgRefs) {
+                    const orgName = orgRefToNameMap.get(ref) || ref;
+                    try {
+                      const createResponse = await fetch('/api/organizations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          name: orgName,
+                          iati_org_id: ref,
+                          organization_type: 'other' // Default type for auto-created orgs
+                        })
+                      });
+                      
+                      if (createResponse.ok) {
+                        const newOrg = await createResponse.json();
+                        orgRefToIdMap.set(ref, newOrg.id);
+                        orgsCreated++;
+                        console.log(`[XML Import] Created new org: "${ref}" -> ID "${newOrg.id}" (${orgName})`);
+                      } else {
+                        console.error(`[XML Import] Failed to create org: ${ref}`);
+                      }
+                    } catch (createError) {
+                      console.error(`[XML Import] Error creating org ${ref}:`, createError);
+                    }
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('[XML Import] Error fetching organizations:', error);
+            }
+          }
 
           console.log('[XML Import] Starting transaction loop...');
 
@@ -5630,6 +5805,21 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             console.log('[XML Import] Processing transaction:', transaction);
             
             try {
+              // Look up organization IDs by their IATI refs
+              const providerOrgId = transaction.providerOrg?.ref 
+                ? orgRefToIdMap.get(transaction.providerOrg.ref) 
+                : undefined;
+              const receiverOrgId = transaction.receiverOrg?.ref 
+                ? orgRefToIdMap.get(transaction.receiverOrg.ref) 
+                : undefined;
+              
+              console.log('[XML Import] Organization lookup:', {
+                providerRef: transaction.providerOrg?.ref,
+                providerOrgId,
+                receiverRef: transaction.receiverOrg?.ref,
+                receiverOrgId
+              });
+              
               const transactionData = {
                 activity_id: activityId,
                 transaction_type: transaction.type,
@@ -5638,10 +5828,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 currency: transaction.currency || currentActivityData?.default_currency || 'USD',
                 status: 'actual',
                 description: transaction.description,
+                provider_org_id: providerOrgId || null,
                 provider_org_name: transaction.providerOrg?.name,
                 provider_org_ref: transaction.providerOrg?.ref,
+                provider_org_activity_id: transaction.providerOrg?.providerActivityId || transaction.provider_org_activity_id || null,
+                receiver_org_id: receiverOrgId || null,
                 receiver_org_name: transaction.receiverOrg?.name,
                 receiver_org_ref: transaction.receiverOrg?.ref,
+                receiver_org_activity_id: transaction.receiverOrg?.receiverActivityId || transaction.receiver_org_activity_id || null,
                 aid_type: transaction.aidType?.code || transaction.aidType,
                 finance_type: transaction.financeType,
                 tied_status: transaction.tiedStatus,
@@ -5750,6 +5944,22 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             toast.success(`Transactions imported successfully`, {
               description: `${successCount} transaction(s) added${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
             });
+            
+            // Show organization creation/linking notification
+            if (orgsCreated > 0 || orgsLinked > 0) {
+              const orgParts = [];
+              if (orgsCreated > 0) {
+                orgParts.push(`${orgsCreated} new org${orgsCreated !== 1 ? 's' : ''} created`);
+              }
+              if (orgsLinked > 0) {
+                orgParts.push(`${orgsLinked} existing org${orgsLinked !== 1 ? 's' : ''} linked`);
+              }
+              toast.info(`Organizations: ${orgParts.join(', ')}`, {
+                description: orgsCreated > 0 ? 'Auto-created organizations can be managed in the Organizations section.' : undefined,
+                duration: 7000
+              });
+            }
+            
             invalidateActivityCache(activityId);
           } else if (errorCount > 0) {
             toast.error('Failed to import transactions', {

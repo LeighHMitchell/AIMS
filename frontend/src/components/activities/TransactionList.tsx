@@ -35,7 +35,8 @@ import {
   ArrowDown,
   FileClock,
   CheckCircle,
-  Frown
+  Frown,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData } from '@/types/transaction';
@@ -43,6 +44,7 @@ import TransactionForm from './TransactionForm';
 import { TransactionDocumentIndicator } from '../TransactionDocumentIndicator';
 import { TransactionValueDisplay } from '@/components/currency/TransactionValueDisplay';
 import { useCurrencyConverter } from '@/hooks/useCurrencyConverter';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { toast } from 'sonner';
 import { 
   Tooltip,
@@ -161,6 +163,15 @@ export default function TransactionList({
   // Currency converter hook
   const { convertTransaction, isConverting, convertingIds, error: conversionError } = useCurrencyConverter();
 
+  // USD conversion tracking
+  const [usdValues, setUsdValues] = useState<Record<string, { 
+    usd: number | null, 
+    rate: number | null, 
+    date: string, 
+    loading: boolean, 
+    error?: string 
+  }>>({});
+
   // Calculate summary statistics
   const summary = React.useMemo(() => {
     const stats = {
@@ -245,6 +256,62 @@ export default function TransactionList({
       return 0;
     });
   }, [transactions, sortField, sortDirection]);
+
+  // Convert all transactions to USD when they change
+  React.useEffect(() => {
+    let cancelled = false;
+    async function convertAll() {
+      const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
+      for (const transaction of transactions) {
+        const transactionId = transaction.uuid || transaction.id;
+        if (!transaction.value || !transaction.currency || !transaction.transaction_date) {
+          newUsdValues[transactionId] = { 
+            usd: null, 
+            rate: null, 
+            date: transaction.transaction_date, 
+            loading: false, 
+            error: 'Missing data' 
+          };
+          continue;
+        }
+        newUsdValues[transactionId] = { 
+          usd: null, 
+          rate: null, 
+          date: transaction.transaction_date, 
+          loading: true 
+        };
+        try {
+          const result = await fixedCurrencyConverter.convertToUSD(
+            transaction.value, 
+            transaction.currency, 
+            new Date(transaction.transaction_date)
+          );
+          if (!cancelled) {
+            newUsdValues[transactionId] = {
+              usd: result.usd_amount,
+              rate: result.exchange_rate,
+              date: result.conversion_date || transaction.transaction_date,
+              loading: false,
+              error: result.success ? undefined : result.error || 'Conversion failed'
+            };
+          }
+        } catch (err) {
+          if (!cancelled) {
+            newUsdValues[transactionId] = { 
+              usd: null, 
+              rate: null, 
+              date: transaction.transaction_date, 
+              loading: false, 
+              error: 'Conversion error' 
+            };
+          }
+        }
+      }
+      if (!cancelled) setUsdValues(newUsdValues);
+    }
+    if (transactions.length > 0) convertAll();
+    return () => { cancelled = true; };
+  }, [transactions]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -610,11 +677,30 @@ export default function TransactionList({
                         )}
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right">
-                        {(transaction as any).value_usd != null ? (
-                          <span>{formatCurrency((transaction as any).value_usd, 'USD')}</span>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
+                        <div className="flex items-center justify-end gap-1">
+                          {usdValues[transaction.uuid || transaction.id]?.loading ? (
+                            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                          ) : usdValues[transaction.uuid || transaction.id]?.usd != null ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="font-medium cursor-help">
+                                    {formatCurrency(usdValues[transaction.uuid || transaction.id].usd!, 'USD')}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div>
+                                    <div>Original: {formatCurrency(transaction.value, transaction.currency)}</div>
+                                    <div>Rate: {usdValues[transaction.uuid || transaction.id].rate}</div>
+                                    <div>Date: {usdValues[transaction.uuid || transaction.id].date}</div>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="py-3 px-4 text-center w-16">
                         <TransactionDocumentIndicator 

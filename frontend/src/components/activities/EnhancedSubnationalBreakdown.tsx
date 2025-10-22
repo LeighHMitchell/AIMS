@@ -8,7 +8,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
 
 
-import { MapPin, Trash2, Sparkles, Loader2, Check } from 'lucide-react'
+import { MapPin, Trash2, Sparkles, Loader2 } from 'lucide-react'
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
 import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
@@ -532,20 +532,6 @@ export function EnhancedSubnationalBreakdown({
             {/* Action Buttons */}
             {entries.length > 0 && canEdit && (
               <div className="flex justify-end gap-2">
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={autoSave}
-                  disabled={saving}
-                  className="text-xs bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {saving ? (
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  ) : (
-                    <Check className="h-3 w-3 mr-1" />
-                  )}
-                  Save Now
-                </Button>
                 <Button
                   variant="default"
                   size="sm"

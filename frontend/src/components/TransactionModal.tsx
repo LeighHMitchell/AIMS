@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown } from "lucide-react";
+import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { 
   showTransactionSuccess, 
@@ -460,6 +460,7 @@ export default function TransactionModal({
       provider_org_ref: transaction?.provider_org_ref || '',
       provider_org_name: transaction?.provider_org_name || '',
       provider_org_activity_id: transaction?.provider_org_activity_id || '',
+      provider_activity_uuid: transaction?.provider_activity_uuid || undefined,
       
       // Receiver organization
       receiver_org_id: transaction?.receiver_org_id || undefined,
@@ -467,6 +468,7 @@ export default function TransactionModal({
       receiver_org_ref: transaction?.receiver_org_ref || '',
       receiver_org_name: transaction?.receiver_org_name || '',
       receiver_org_activity_id: transaction?.receiver_org_activity_id || '',
+      receiver_activity_uuid: transaction?.receiver_activity_uuid || undefined,
       
       // Classifications - Use activity defaults when creating new transactions
       disbursement_channel: transaction?.disbursement_channel || undefined,
@@ -662,6 +664,7 @@ export default function TransactionModal({
         provider_org_ref: transaction.provider_org_ref || '',
         provider_org_name: transaction.provider_org_name || '',
         provider_org_activity_id: transaction.provider_org_activity_id || '',
+        provider_activity_uuid: transaction.provider_activity_uuid || undefined,
         
         // Receiver organization
         receiver_org_id: transaction.receiver_org_id || undefined,
@@ -669,6 +672,7 @@ export default function TransactionModal({
         receiver_org_ref: transaction.receiver_org_ref || '',
         receiver_org_name: transaction.receiver_org_name || '',
         receiver_org_activity_id: transaction.receiver_org_activity_id || '',
+        receiver_activity_uuid: transaction.receiver_activity_uuid || undefined,
         
         // Classifications - keep existing values when editing
         disbursement_channel: transaction.disbursement_channel || undefined,
@@ -722,11 +726,13 @@ export default function TransactionModal({
         provider_org_ref: '',
         provider_org_name: user?.organizationId ? (organizations.find(o => o.id === user.organizationId)?.acronym || organizations.find(o => o.id === user.organizationId)?.name || '') : '',
         provider_org_activity_id: '',
+        provider_activity_uuid: undefined,
         receiver_org_id: undefined,
         receiver_org_type: undefined,
         receiver_org_ref: '',
         receiver_org_name: '',
         receiver_org_activity_id: '',
+        receiver_activity_uuid: undefined,
         disbursement_channel: undefined,
         flow_type: (defaultFlowType as FlowType) || undefined,
         finance_type: (defaultFinanceType as FinanceType) || undefined,
@@ -767,8 +773,8 @@ export default function TransactionModal({
     const allowed = [
       'id', 'uuid', 'activity_id', 'transaction_type', 'transaction_date', 'value', 'currency', 'status',
       'transaction_reference', 'value_date', 'description',
-      'provider_org_id', 'provider_org_type', 'provider_org_ref', 'provider_org_name', 'provider_org_activity_id',
-      'receiver_org_id', 'receiver_org_type', 'receiver_org_ref', 'receiver_org_name', 'receiver_org_activity_id',
+      'provider_org_id', 'provider_org_type', 'provider_org_ref', 'provider_org_name', 'provider_org_activity_id', 'provider_activity_uuid',
+      'receiver_org_id', 'receiver_org_type', 'receiver_org_ref', 'receiver_org_name', 'receiver_org_activity_id', 'receiver_activity_uuid',
       'disbursement_channel', 'flow_type', 'finance_type', 'aid_type', 'tied_status',
       'sector_code', 'sector_vocabulary', 'recipient_country_code', 'recipient_region_code', 'recipient_region_vocab',
       'sectors', 'aid_types', 'recipient_countries', 'recipient_regions',
@@ -897,6 +903,8 @@ export default function TransactionModal({
 
   // Dropdown coordination - track which dropdown is currently open
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isCheckingProviderActivity, setIsCheckingProviderActivity] = useState(false);
+  const [isCheckingReceiverActivity, setIsCheckingReceiverActivity] = useState(false);
 
   // Helper functions for number formatting
   const formatNumberWithCommas = (num: number | string): string => {
@@ -1606,21 +1614,162 @@ export default function TransactionModal({
                   helpText="Link to the IATI activity of the provider organization (optional)"
                   isSaving={providerActivityAutosave.isSaving}
                   isSaved={providerActivityAutosave.isSaved}
-                  hasValue={!!formData.provider_org_activity_id}
+                  hasValue={!!formData.provider_org_activity_id || !!formData.provider_activity_uuid}
                 >
                   Provider Activity
                 </LabelWithInfoAndSave>
-                <ActivityCombobox
-                  value={formData.provider_org_activity_id || ''}
-                  onValueChange={async (activityId) => {
-                    setFormData({...formData, provider_org_activity_id: activityId});
-                    providerActivityAutosave.triggerFieldSave(activityId);
-                  }}
-                  placeholder="Search for provider activity..."
-                  disabled={isSubmitting}
-                  open={openDropdown === 'provider-activity'}
-                  onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'provider-activity' : null)}
-                />
+                
+                {/* Show warning UI if IATI reference exists but not linked to database */}
+                {formData.provider_org_activity_id && !formData.provider_activity_uuid ? (
+                  <div className="space-y-2">
+                    {/* IATI Reference Display with Warning */}
+                    <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-md">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-amber-800 truncate">
+                            {formData.provider_org_activity_id}
+                          </div>
+                          <div className="text-xs text-amber-600">
+                            IATI reference - not linked to database
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Check & Link Button */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-amber-700 border-amber-300 hover:bg-amber-100 ml-2 flex-shrink-0"
+                        onClick={async () => {
+                          setIsCheckingProviderActivity(true);
+                          try {
+                            const response = await fetch(
+                              `/api/activities?iati_identifier=${encodeURIComponent(formData.provider_org_activity_id || '')}`
+                            );
+                            if (response.ok) {
+                              const activities = await response.json();
+                              const matchedActivity = activities.find(
+                                (a: any) => a.iati_identifier === formData.provider_org_activity_id
+                              );
+                              
+                              if (matchedActivity) {
+                                // Save to database using activity-specific endpoint
+                                // Send current form data with updated UUID to avoid null constraint issues
+                                const updatePayload = {
+                                  ...formData,
+                                  provider_activity_uuid: matchedActivity.id
+                                };
+                                const updateResponse = await fetch(`/api/activities/${activityId}/transactions/${transactionId}`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify(updatePayload)
+                                });
+                                
+                                if (updateResponse.ok) {
+                                  // Update local state
+                                  setFormData({
+                                    ...formData, 
+                                    provider_activity_uuid: matchedActivity.id
+                                  });
+                                  
+                                  toast.success(`Linked to activity: ${matchedActivity.title_narrative || matchedActivity.title || 'Untitled'}`);
+                                  providerActivityAutosave.triggerFieldSave(matchedActivity.id);
+                                } else {
+                                  const errorData = await updateResponse.json().catch(() => ({}));
+                                  console.error('Failed to save activity link:', errorData);
+                                  toast.error('Failed to save activity link', {
+                                    description: errorData.error || 'Please try again'
+                                  });
+                                }
+                              } else {
+                                toast.info('Activity not found in database', {
+                                  description: 'The referenced activity may not be imported yet'
+                                });
+                              }
+                            } else {
+                              toast.error('Failed to check for activity');
+                            }
+                          } catch (error) {
+                            console.error('Error checking for activity:', error);
+                            toast.error('Failed to check for activity');
+                          } finally {
+                            setIsCheckingProviderActivity(false);
+                          }
+                        }}
+                        disabled={isSubmitting || isCheckingProviderActivity}
+                      >
+                        <RefreshCw className={`h-3 w-3 mr-1 ${isCheckingProviderActivity ? 'animate-spin' : ''}`} />
+                        {isCheckingProviderActivity ? 'Checking...' : 'Check & Link'}
+                      </Button>
+                    </div>
+                    
+                    {/* Clear Reference Button */}
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-gray-500 hover:text-gray-700 w-full"
+                      onClick={() => {
+                        setFormData({...formData, provider_org_activity_id: ''});
+                        providerActivityAutosave.triggerFieldSave('');
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      Clear Reference
+                    </Button>
+                  </div>
+                ) : (
+                  /* Normal ActivityCombobox when linked or no reference */
+                  <ActivityCombobox
+                    value={formData.provider_activity_uuid || ''}
+                    onValueChange={async (activityUuid) => {
+                      if (!activityUuid) {
+                        // Clear both fields
+                        setFormData({
+                          ...formData, 
+                          provider_activity_uuid: undefined,
+                          provider_org_activity_id: ''
+                        });
+                        providerActivityAutosave.triggerFieldSave('');
+                      } else {
+                        // Fetch the activity to get its IATI identifier
+                        try {
+                          const response = await fetch(`/api/activities/${activityUuid}`);
+                          if (response.ok) {
+                            const activity = await response.json();
+                            setFormData({
+                              ...formData, 
+                              provider_activity_uuid: activityUuid,
+                              provider_org_activity_id: activity.iati_identifier || activity.iatiId || ''
+                            });
+                            providerActivityAutosave.triggerFieldSave(activityUuid);
+                          } else {
+                            // Fallback if fetch fails
+                            setFormData({
+                              ...formData, 
+                              provider_activity_uuid: activityUuid
+                            });
+                            providerActivityAutosave.triggerFieldSave(activityUuid);
+                          }
+                        } catch (error) {
+                          console.error('Error fetching activity:', error);
+                          // Fallback if fetch fails
+                          setFormData({
+                            ...formData, 
+                            provider_activity_uuid: activityUuid
+                          });
+                          providerActivityAutosave.triggerFieldSave(activityUuid);
+                        }
+                      }
+                    }}
+                    placeholder="Search for provider activity..."
+                    disabled={isSubmitting}
+                    open={openDropdown === 'provider-activity'}
+                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'provider-activity' : null)}
+                  />
+                )}
               </div>
 
               {/* Receiver Organization */}
@@ -1669,21 +1818,162 @@ export default function TransactionModal({
                   helpText="Link to the IATI activity of the receiver organization (optional)"
                   isSaving={receiverActivityAutosave.isSaving}
                   isSaved={receiverActivityAutosave.isSaved}
-                  hasValue={!!formData.receiver_org_activity_id}
+                  hasValue={!!formData.receiver_org_activity_id || !!formData.receiver_activity_uuid}
                 >
                   Receiver Activity
                 </LabelWithInfoAndSave>
-                <ActivityCombobox
-                  value={formData.receiver_org_activity_id || ''}
-                  onValueChange={async (activityId) => {
-                    setFormData({...formData, receiver_org_activity_id: activityId});
-                    receiverActivityAutosave.triggerFieldSave(activityId);
-                  }}
-                  placeholder="Search for receiver activity..."
-                  disabled={isSubmitting}
-                  open={openDropdown === 'receiver-activity'}
-                  onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'receiver-activity' : null)}
-                />
+                
+                {/* Show warning UI if IATI reference exists but not linked to database */}
+                {formData.receiver_org_activity_id && !formData.receiver_activity_uuid ? (
+                  <div className="space-y-2">
+                    {/* IATI Reference Display with Warning */}
+                    <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-md">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-amber-800 truncate">
+                            {formData.receiver_org_activity_id}
+                          </div>
+                          <div className="text-xs text-amber-600">
+                            IATI reference - not linked to database
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Check & Link Button */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-amber-700 border-amber-300 hover:bg-amber-100 ml-2 flex-shrink-0"
+                        onClick={async () => {
+                          setIsCheckingReceiverActivity(true);
+                          try {
+                            const response = await fetch(
+                              `/api/activities?iati_identifier=${encodeURIComponent(formData.receiver_org_activity_id || '')}`
+                            );
+                            if (response.ok) {
+                              const activities = await response.json();
+                              const matchedActivity = activities.find(
+                                (a: any) => a.iati_identifier === formData.receiver_org_activity_id
+                              );
+                              
+                              if (matchedActivity) {
+                                // Save to database using activity-specific endpoint
+                                // Send current form data with updated UUID to avoid null constraint issues
+                                const updatePayload = {
+                                  ...formData,
+                                  receiver_activity_uuid: matchedActivity.id
+                                };
+                                const updateResponse = await fetch(`/api/activities/${activityId}/transactions/${transactionId}`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify(updatePayload)
+                                });
+                                
+                                if (updateResponse.ok) {
+                                  // Update local state
+                                  setFormData({
+                                    ...formData, 
+                                    receiver_activity_uuid: matchedActivity.id
+                                  });
+                                  
+                                  toast.success(`Linked to activity: ${matchedActivity.title_narrative || matchedActivity.title || 'Untitled'}`);
+                                  receiverActivityAutosave.triggerFieldSave(matchedActivity.id);
+                                } else {
+                                  const errorData = await updateResponse.json().catch(() => ({}));
+                                  console.error('Failed to save activity link:', errorData);
+                                  toast.error('Failed to save activity link', {
+                                    description: errorData.error || 'Please try again'
+                                  });
+                                }
+                              } else {
+                                toast.info('Activity not found in database', {
+                                  description: 'The referenced activity may not be imported yet'
+                                });
+                              }
+                            } else {
+                              toast.error('Failed to check for activity');
+                            }
+                          } catch (error) {
+                            console.error('Error checking for activity:', error);
+                            toast.error('Failed to check for activity');
+                          } finally {
+                            setIsCheckingReceiverActivity(false);
+                          }
+                        }}
+                        disabled={isSubmitting || isCheckingReceiverActivity}
+                      >
+                        <RefreshCw className={`h-3 w-3 mr-1 ${isCheckingReceiverActivity ? 'animate-spin' : ''}`} />
+                        {isCheckingReceiverActivity ? 'Checking...' : 'Check & Link'}
+                      </Button>
+                    </div>
+                    
+                    {/* Clear Reference Button */}
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-gray-500 hover:text-gray-700 w-full"
+                      onClick={() => {
+                        setFormData({...formData, receiver_org_activity_id: ''});
+                        receiverActivityAutosave.triggerFieldSave('');
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      Clear Reference
+                    </Button>
+                  </div>
+                ) : (
+                  /* Normal ActivityCombobox when linked or no reference */
+                  <ActivityCombobox
+                    value={formData.receiver_activity_uuid || ''}
+                    onValueChange={async (activityUuid) => {
+                      if (!activityUuid) {
+                        // Clear both fields
+                        setFormData({
+                          ...formData, 
+                          receiver_activity_uuid: undefined,
+                          receiver_org_activity_id: ''
+                        });
+                        receiverActivityAutosave.triggerFieldSave('');
+                      } else {
+                        // Fetch the activity to get its IATI identifier
+                        try {
+                          const response = await fetch(`/api/activities/${activityUuid}`);
+                          if (response.ok) {
+                            const activity = await response.json();
+                            setFormData({
+                              ...formData, 
+                              receiver_activity_uuid: activityUuid,
+                              receiver_org_activity_id: activity.iati_identifier || activity.iatiId || ''
+                            });
+                            receiverActivityAutosave.triggerFieldSave(activityUuid);
+                          } else {
+                            // Fallback if fetch fails
+                            setFormData({
+                              ...formData, 
+                              receiver_activity_uuid: activityUuid
+                            });
+                            receiverActivityAutosave.triggerFieldSave(activityUuid);
+                          }
+                        } catch (error) {
+                          console.error('Error fetching activity:', error);
+                          // Fallback if fetch fails
+                          setFormData({
+                            ...formData, 
+                            receiver_activity_uuid: activityUuid
+                          });
+                          receiverActivityAutosave.triggerFieldSave(activityUuid);
+                        }
+                      }
+                    }}
+                    placeholder="Search for receiver activity..."
+                    disabled={isSubmitting}
+                    open={openDropdown === 'receiver-activity'}
+                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'receiver-activity' : null)}
+                  />
+                )}
               </div>
             </div>
 

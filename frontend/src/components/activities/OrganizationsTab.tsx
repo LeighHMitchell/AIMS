@@ -249,12 +249,8 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                       <div>
                         <div className="font-medium text-gray-900">
                           {org.organization?.name || 'Unknown Organization'}
+                          {org.organization?.acronym && ` (${org.organization.acronym})`}
                         </div>
-                        {org.organization?.acronym && (
-                          <div className="text-sm text-gray-500">
-                            {org.organization.acronym}
-                          </div>
-                        )}
                         {org.organization?.iati_org_id && (
                           <div className="text-xs text-gray-400">
                             IATI ID: {org.organization.iati_org_id}

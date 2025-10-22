@@ -61,10 +61,12 @@ interface ActivityLog {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    // Handle both sync and async params (Next.js 14/15 compatibility)
+    const resolvedParams = await Promise.resolve(params);
+    const { id } = resolvedParams;
     
     if (!id) {
       return NextResponse.json(

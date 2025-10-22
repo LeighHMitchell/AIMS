@@ -271,6 +271,77 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
         </DialogHeader>
 
         <form id="contact-form" onSubmit={handleSubmit} className="space-y-4 py-4">
+          {/* Profile Photo Upload */}
+          <div>
+            <Label>Profile Photo</Label>
+            <div className="flex flex-col items-center gap-3">
+              {/* Photo Preview/Upload Area */}
+              <div
+                className={cn(
+                  "relative w-24 h-24 rounded-full border-2 border-dashed transition-all cursor-pointer",
+                  isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400",
+                  formData.profilePhoto && "border-solid border-gray-200"
+                )}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {formData.profilePhoto ? (
+                  <>
+                    <img
+                      src={formData.profilePhoto}
+                      alt="Profile preview"
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removePhoto();
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-full">
+                    <User className="h-10 w-10 text-gray-400" />
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Button */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileInput}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {formData.profilePhoto ? 'Change Photo' : 'Upload Photo'}
+              </Button>
+              
+              {/* Upload Instructions */}
+              <p className="text-xs text-gray-500 text-center">
+                Drag & drop or click to upload
+                <br />
+                Max 2MB • JPEG, PNG, GIF, WebP
+              </p>
+              {errors.profilePhoto && (
+                <p className="text-xs text-red-500 text-center">{errors.profilePhoto}</p>
+              )}
+            </div>
+          </div>
+
           {/* Contact Type */}
           <div>
             <Label htmlFor="type">
@@ -349,77 +420,6 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
               </PopoverContent>
             </Popover>
             {errors.type && <p className="text-xs text-red-500 mt-1">{errors.type}</p>}
-          </div>
-
-          {/* Profile Photo Upload */}
-          <div>
-            <Label>Profile Photo</Label>
-            <div className="flex flex-col items-center gap-3">
-              {/* Photo Preview/Upload Area */}
-              <div
-                className={cn(
-                  "relative w-24 h-24 rounded-full border-2 border-dashed transition-all cursor-pointer",
-                  isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400",
-                  formData.profilePhoto && "border-solid border-gray-200"
-                )}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {formData.profilePhoto ? (
-                  <>
-                    <img
-                      src={formData.profilePhoto}
-                      alt="Profile preview"
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removePhoto();
-                      }}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-full">
-                    <User className="h-10 w-10 text-gray-400" />
-                  </div>
-                )}
-              </div>
-
-              {/* Upload Button */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileInput}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {formData.profilePhoto ? 'Change Photo' : 'Upload Photo'}
-              </Button>
-              
-              {/* Upload Instructions */}
-              <p className="text-xs text-gray-500 text-center">
-                Drag & drop or click to upload
-                <br />
-                Max 2MB • JPEG, PNG, GIF, WebP
-              </p>
-              {errors.profilePhoto && (
-                <p className="text-xs text-red-500 text-center">{errors.profilePhoto}</p>
-              )}
-            </div>
           </div>
 
       {/* Name Row */}
