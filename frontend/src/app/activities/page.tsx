@@ -132,6 +132,7 @@ type Organization = {
   id: string;
   name: string;
   acronym?: string;
+  logo?: string;
   type?: string;
   country?: string;
 };
@@ -163,7 +164,8 @@ type Activity = {
   actualEndDate?: string;
   sectors?: any[];
   transactions?: Transaction[];
-  createdByOrg?: string; // Organization that created the activity
+  createdByOrg?: string; // Organization that created the activity (legacy)
+  reportingOrgId?: string; // Organization that created/reports the activity
   createdBy?: { id: string; name: string; role: string }; // User who created the activity
   contributors?: any[]; // Added for contributors
   
@@ -1345,29 +1347,60 @@ function ActivitiesPageContent() {
                           className="cursor-pointer"
                           onClick={() => router.push(`/activities/${activity.id}`)}
                         >
-                          <div className="space-y-1 pr-2">
-                            <h3 className="font-medium text-foreground leading-tight line-clamp-2" title={activity.title}>
-                              {activity.title}
-                              {activity.acronym && (
-                                <span>
-                                  {' '}({activity.acronym})
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(activity.acronym!, 'acronym', activity.id);
+                          <div className="flex items-start gap-2">
+                            {/* Activity Icon */}
+                            <div className="flex-shrink-0 mt-0.5">
+                              {activity.icon && activity.icon.trim() !== '' ? (
+                                <div className="w-6 h-6 rounded-sm overflow-hidden border border-gray-200 bg-white">
+                                  <img 
+                                    src={activity.icon} 
+                                    alt="Activity icon" 
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const parent = target.parentElement;
+                                      if (parent) {
+                                        parent.innerHTML = `
+                                          <div class="w-6 h-6 bg-blue-100 rounded-sm flex items-center justify-center">
+                                            <span class="text-blue-600 font-semibold text-xs">A</span>
+                                          </div>
+                                        `;
+                                      }
                                     }}
-                                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
-                                    title="Copy Acronym"
-                                  >
-                                    {copiedId === `${activity.id}-acronym` ? (
-                                      <Check className="w-3 h-3 text-green-500" />
-                                    ) : (
-                                      <Copy className="w-3 h-3" />
-                                    )}
-                                  </button>
-                                </span>
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-6 h-6 bg-blue-100 rounded-sm flex items-center justify-center">
+                                  <span className="text-blue-600 font-semibold text-xs">A</span>
+                                </div>
                               )}
-                            </h3>
+                            </div>
+                            
+                            {/* Activity Title and Details */}
+                            <div className="space-y-1 pr-2 flex-1 min-w-0">
+                              <h3 className="font-medium text-foreground leading-tight line-clamp-2" title={activity.title}>
+                                {activity.title}
+                                {activity.acronym && (
+                                  <span>
+                                    {' '}({activity.acronym})
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyToClipboard(activity.acronym!, 'acronym', activity.id);
+                                      }}
+                                      className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                      title="Copy Acronym"
+                                    >
+                                      {copiedId === `${activity.id}-acronym` ? (
+                                        <Check className="w-3 h-3 text-green-500" />
+                                      ) : (
+                                        <Copy className="w-3 h-3" />
+                                      )}
+                                    </button>
+                                  </span>
+                                )}
+                              </h3>
                             {(activity.partnerId || activity.iatiIdentifier) && (
                               <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1 text-left">
                                 {activity.partnerId && (
@@ -1412,6 +1445,7 @@ function ActivitiesPageContent() {
                               </div>
                             )}
                           </div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-2 text-sm text-foreground text-left">
@@ -1420,8 +1454,10 @@ function ActivitiesPageContent() {
                       <td className="px-4 py-2 text-sm text-foreground text-center">
                         <TooltipProvider>
                           <Tooltip>
-                            <TooltipTrigger>
-                              <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer mx-auto`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
+                            <TooltipTrigger asChild>
+                              <div className="flex justify-center">
+                                <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent>
                               <div className="space-y-2 p-1">
@@ -1446,8 +1482,58 @@ function ActivitiesPageContent() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
-                              <div className="text-left" style={{textAlign: 'left'}}>
-                                {creatorOrg}
+                              <div className="flex items-center gap-2 text-left" style={{textAlign: 'left'}}>
+                                {/* Organization Logo */}
+                                {(() => {
+                                  const orgId = activity.reportingOrgId || activity.createdByOrg;
+                                  const org = organizations.find(o => o.id === orgId);
+                                  
+                                  // Debug logging
+                                  if (!org && orgId) {
+                                    console.log('[Activities] Org not found:', { 
+                                      orgId, 
+                                      reportingOrgId: activity.reportingOrgId, 
+                                      createdByOrg: activity.createdByOrg,
+                                      availableOrgs: organizations.length,
+                                      activityTitle: activity.title
+                                    });
+                                  }
+                                  if (org && !org.logo) {
+                                    console.log('[Activities] Org found but no logo:', { 
+                                      orgId, 
+                                      orgName: org.name,
+                                      activityTitle: activity.title 
+                                    });
+                                  }
+                                  
+                                  if (org?.logo) {
+                                    return (
+                                      <div className="flex-shrink-0">
+                                        <div className="w-5 h-5 rounded-sm overflow-hidden border border-gray-200 bg-white">
+                                          <img 
+                                            src={org.logo} 
+                                            alt={`${org.name} logo`} 
+                                            className="w-full h-full object-contain"
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
+                                              target.style.display = 'none';
+                                              const parent = target.parentElement;
+                                              if (parent) {
+                                                parent.innerHTML = `
+                                                  <div class="w-5 h-5 bg-green-100 rounded-sm flex items-center justify-center">
+                                                    <span class="text-green-600 font-semibold text-xs">O</span>
+                                                  </div>
+                                                `;
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                                <span>{creatorOrg}</span>
                               </div>
                             </TooltipTrigger>
                             <TooltipContent 

@@ -127,6 +127,24 @@ export async function PUT(
     // Remove computed fields before updating
     const { active_project_count, ...updates } = body;
     
+    // Handle new IATI fields - ensure proper data types and defaults
+    if ('reporting_org_secondary_reporter' in updates) {
+      updates.reporting_org_secondary_reporter = updates.reporting_org_secondary_reporter || false;
+    }
+    
+    if ('last_updated_datetime' in updates) {
+      // Auto-update to current timestamp if not provided
+      updates.last_updated_datetime = updates.last_updated_datetime || new Date().toISOString();
+    }
+    
+    if ('default_currency' in updates) {
+      updates.default_currency = updates.default_currency || 'USD';
+    }
+    
+    if ('default_language' in updates) {
+      updates.default_language = updates.default_language || 'en';
+    }
+    
     // Handle iati_org_id field - convert empty strings to null to avoid unique constraint issues
     if ('iati_org_id' in updates) {
       if (!updates.iati_org_id || updates.iati_org_id.trim() === '') {

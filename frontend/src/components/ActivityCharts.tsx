@@ -159,12 +159,12 @@ export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
                 <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
               </linearGradient>
               <linearGradient id="disbursements" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.1}/>
+                <stop offset="5%" stopColor="#64748b" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#64748b" stopOpacity={0.1}/>
               </linearGradient>
               <linearGradient id="expenditures" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                <stop offset="5%" stopColor="#475569" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#475569" stopOpacity={0.1}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -189,7 +189,7 @@ export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
               type="monotone"
               dataKey="disbursements"
               stackId="2"
-              stroke="#F59E0B"
+              stroke="#64748b"
               fillOpacity={1}
               fill="url(#disbursements)"
               name="Disbursements"
@@ -198,7 +198,7 @@ export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
               type="monotone"
               dataKey="expenditures"
               stackId="3"
-              stroke="#10B981"
+              stroke="#475569"
               fillOpacity={1}
               fill="url(#expenditures)"
               name="Expenditures"

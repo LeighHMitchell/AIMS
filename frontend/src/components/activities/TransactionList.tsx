@@ -36,7 +36,8 @@ import {
   FileClock,
   CheckCircle,
   Frown,
-  Loader2
+  Loader2,
+  Eye
 } from "lucide-react";
 import { format } from "date-fns";
 import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData } from '@/types/transaction';
@@ -55,6 +56,23 @@ import {
 import { useUser } from '@/hooks/useUser';
 import { getUserPermissions } from '@/types/user';
 import financeTypesData from '@/data/finance-types.json';
+import { OrganizationLogo } from "@/components/ui/organization-logo";
+
+// IATI Transaction Type Definitions
+const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
+  '1': 'A firm written obligation from a donor to provide a specified amount of funds, under particular terms and conditions.',
+  '2': 'A firm written obligation to provide a specified amount of funds under particular financial terms and conditions.',
+  '3': 'Money moved from the donor to an implementing organization.',
+  '4': 'Outgoing funds that are spent on goods and services for the activity.',
+  '5': 'The actual payment of interest on a loan.',
+  '6': 'The actual repayment of the principal of a loan.',
+  '7': 'A transaction that covers costs already incurred by the organization.',
+  '8': 'Outgoing funds that are used to purchase equity in a business.',
+  '9': 'Incoming funds from the sale of equity.',
+  '11': 'A commitment made by a funding organization to underwrite a loan or other financial instrument.',
+  '12': 'Funds received for use on the activity, which can be from any source.',
+  '13': 'Cancellation of a commitment.'
+};
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -70,9 +88,10 @@ interface TransactionListProps {
   defaultAidType?: string;
   defaultTiedStatus?: string;
   defaultFlowType?: string;
+  hideSummaryCards?: boolean;
 }
 
-type SortField = 'transaction_date' | 'transaction_type' | 'value' | 'provider_org_name' | 'receiver_org_name';
+type SortField = 'transaction_date' | 'transaction_type' | 'value' | 'provider_org_name' | 'receiver_org_name' | 'value_date' | 'value_usd' | 'finance_type';
 type SortDirection = 'asc' | 'desc';
 
 // Create finance type labels mapping from JSON data
@@ -152,7 +171,8 @@ export default function TransactionList({
   defaultFinanceType,
   defaultAidType,
   defaultTiedStatus,
-  defaultFlowType
+  defaultFlowType,
+  hideSummaryCards = false
 }: TransactionListProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -247,6 +267,18 @@ export default function TransactionList({
           aValue = (a.receiver_org_name || '').toLowerCase();
           bValue = (b.receiver_org_name || '').toLowerCase();
           break;
+        case 'value_date':
+          aValue = a.value_date ? new Date(a.value_date).getTime() : 0;
+          bValue = b.value_date ? new Date(b.value_date).getTime() : 0;
+          break;
+        case 'value_usd':
+          aValue = usdValues[a.uuid || a.id]?.usd || 0;
+          bValue = usdValues[b.uuid || b.id]?.usd || 0;
+          break;
+        case 'finance_type':
+          aValue = (a.finance_type || '').toLowerCase();
+          bValue = (b.finance_type || '').toLowerCase();
+          break;
         default:
           return 0;
       }
@@ -255,7 +287,7 @@ export default function TransactionList({
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [transactions, sortField, sortDirection]);
+  }, [transactions, sortField, sortDirection, usdValues]);
 
   // Convert all transactions to USD when they change
   React.useEffect(() => {
@@ -376,6 +408,36 @@ export default function TransactionList({
     }
   };
 
+  const handleExport = () => {
+    const dataToExport = transactions.map(t => ({
+      transaction_date: t.transaction_date,
+      transaction_type: TRANSACTION_TYPE_LABELS[t.transaction_type] || t.transaction_type,
+      value: t.value,
+      currency: t.currency,
+      provider_org: t.provider_org_name || '',
+      receiver_org: t.receiver_org_name || '',
+      description: t.description || '',
+      status: t.status || 'planned',
+      finance_type: t.finance_type ? (FINANCE_TYPE_LABELS[t.finance_type] || t.finance_type) : '',
+      aid_type: t.aid_type || '',
+      tied_status: t.tied_status || '',
+      flow_type: t.flow_type || ''
+    }));
+
+    const csv = [
+      Object.keys(dataToExport[0] || {}).join(","),
+      ...dataToExport.map(row => Object.values(row).map(v => `"${v}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transactions-${activityId}-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleConvertCurrency = async (transactionId: string) => {
     const transaction = transactions.find(t => (t.uuid || t.id) === transactionId);
     if (!transaction) {
@@ -463,25 +525,30 @@ export default function TransactionList({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Transactions
-              </CardTitle>
+              <CardTitle>Transactions</CardTitle>
               <CardDescription>
-                Manage financial transactions for this activity
+                Commitments, disbursements, and expenditures
               </CardDescription>
             </div>
-            {!readOnly && (
-              <Button onClick={() => setShowForm(true)} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Transaction
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {!readOnly && (
+                <Button onClick={() => setShowForm(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Transaction
+                </Button>
+              )}
+              {transactions.length > 0 && (
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-1" />
+                  Export
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           {/* Financial Summary Cards - Unified component */}
-          {activityId && (
+          {activityId && !hideSummaryCards && (
             <div className="mb-6">
               <FinancialSummaryCards activityId={activityId} />
             </div>
@@ -509,68 +576,48 @@ export default function TransactionList({
               <Table>
                 <TableHeader className="bg-muted/50 border-b border-border/70">
                   <TableRow>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
-                      <div 
-                        className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
-                        onClick={() => handleSort('transaction_date')}
-                      >
-                        Date
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('transaction_date')}>
+                      <div className="flex items-center gap-1">
+                        <span>Date</span>
                         {getSortIcon('transaction_date')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
-                      <div 
-                        className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
-                        onClick={() => handleSort('transaction_type')}
-                      >
-                        Type
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('transaction_type')}>
+                      <div className="flex items-center gap-1">
+                        <span>Transaction Type</span>
                         {getSortIcon('transaction_type')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">Aid Type</TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">Finance Type</TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
-                      <div 
-                        className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
-                        onClick={() => handleSort('provider_org_name')}
-                      >
-                        Provider
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('finance_type')}>
+                      <div className="flex items-center gap-1">
+                        <span>Finance Type</span>
+                        {getSortIcon('finance_type')}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('provider_org_name')}>
+                      <div className="flex items-center gap-1">
+                        <span>Provider → Receiver</span>
                         {getSortIcon('provider_org_name')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
-                      <div 
-                        className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
-                        onClick={() => handleSort('receiver_org_name')}
-                      >
-                        Receiver
-                        {getSortIcon('receiver_org_name')}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
-                      <div 
-                        className="flex items-center justify-end gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
-                        onClick={() => handleSort('value')}
-                      >
-                        Reported Value
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('value')}>
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Amount</span>
                         {getSortIcon('value')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">USD Value</TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center w-16">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            Docs
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            Supporting Documents
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('value_date')}>
+                      <div className="flex items-center gap-1">
+                        <span>Value Date</span>
+                        {getSortIcon('value_date')}
+                      </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center w-10">Validation Status</TableHead>
-                    {!readOnly && <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center w-[50px]"></TableHead>}
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('value_usd')}>
+                      <div className="flex items-center justify-end gap-1">
+                        <span>USD Value</span>
+                        {getSortIcon('value_usd')}
+                      </div>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -585,97 +632,134 @@ export default function TransactionList({
                     return (
                     <TableRow 
                       key={transaction.uuid || transaction.id} 
-                      className={`border-b border-border/40 hover:bg-muted/30 transition-colors ${!transaction.created_by ? 'bg-blue-50/50' : ''}`}
+                      className="border-b border-border/40 hover:bg-muted/30 transition-colors"
                       onClick={(e) => {
                         // Prevent any row click navigation
                         e.stopPropagation();
                         e.preventDefault();
                       }}
                     >
+                      {/* Date */}
                       <TableCell className="py-3 px-4 font-medium">
                         {format(new Date(transaction.transaction_date), 'MMM d, yyyy')}
                       </TableCell>
+                      
+                      {/* Transaction Type */}
                       <TableCell className="py-3 px-4">
-                        <span className={`font-medium ${getTransactionTypeColor(transaction.transaction_type)}`}>
-                          {TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}
-                        </span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2 cursor-default">
+                                <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                                  {transaction.transaction_type}
+                                </span>
+                                <span className="font-medium">
+                                  {TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <div className="space-y-1">
+                                <div className="font-semibold">
+                                  {TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {TRANSACTION_TYPE_DEFINITIONS[transaction.transaction_type] || 'No definition available'}
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
+                      
+                      {/* Finance Type */}
                       <TableCell className="py-3 px-4">
-                        <span className="font-medium">{transaction.aid_type || <span className="text-gray-400 font-normal">-</span>}</span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4">
-                        <span className="font-medium">
-                          {transaction.finance_type ? (
-                            FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type
+                        {transaction.finance_type ? (
+                          transaction.finance_type_inherited ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center gap-2 text-gray-400 opacity-70 cursor-help">
+                                    <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                                      {transaction.finance_type}
+                                    </span>
+                                    <span className="text-sm">
+                                      {FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}
+                                    </span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">
+                                    Inherited from activity's default finance type (code {transaction.finance_type} – {FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type})
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           ) : (
-                            <span className="text-gray-400 font-normal">-</span>
-                          )}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4">
-                        <div className="max-w-[200px]">
-                          <p className="truncate text-sm font-medium">
-                            {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name) || <span className="text-gray-400 font-normal">Not specified</span>}
-                          </p>
-                          {transaction.provider_org_ref && (
-                            <p className="text-xs text-gray-500 truncate">{transaction.provider_org_ref}</p>
-                          )}
-                          {transaction.provider_activity_uuid && transaction.provider_org_activity_id && (
-                            <div className="mt-1 flex items-center gap-1">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                </svg>
-                                Activity
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                                {transaction.finance_type}
                               </span>
-                              <span className="text-xs text-gray-500 truncate">{transaction.provider_org_activity_id}</span>
+                              <span className="text-sm">
+                                {FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}
+                              </span>
                             </div>
-                          )}
+                          )
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </TableCell>
+                      
+                      {/* Provider → Receiver */}
+                      <TableCell className="py-3 px-4">
+                        <div className="flex items-center gap-2 font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <OrganizationLogo
+                              logo={(transaction as any).provider_org_logo}
+                              name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name) || "Unknown"}
+                              size="sm"
+                            />
+                            <span className="truncate max-w-[120px]">
+                              {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name) || "Unknown"}
+                            </span>
+                          </div>
+                          <span className="text-muted-foreground">→</span>
+                          <div className="flex items-center gap-1.5">
+                            <OrganizationLogo
+                              logo={(transaction as any).receiver_org_logo}
+                              name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name) || "Unknown"}
+                              size="sm"
+                            />
+                            <span className="truncate max-w-[120px]">
+                              {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name) || "Unknown"}
+                            </span>
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 px-4">
-                        <div className="max-w-[200px]">
-                          <p className="truncate text-sm font-medium">
-                            {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name) || <span className="text-gray-400 font-normal">Not specified</span>}
-                          </p>
-                          {transaction.receiver_org_ref && (
-                            <p className="text-xs text-gray-500 truncate">{transaction.receiver_org_ref}</p>
-                          )}
-                          {transaction.receiver_activity_uuid && transaction.receiver_org_activity_id && (
-                            <div className="mt-1 flex items-center gap-1">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                </svg>
-                                Activity
-                              </span>
-                              <span className="text-xs text-gray-500 truncate">{transaction.receiver_org_activity_id}</span>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
+                      
+                      {/* Amount */}
                       <TableCell className="py-3 px-4 text-right">
                         {transaction.value > 0 ? (
-                          <TransactionValueDisplay
-                            transaction={{
-                              id: transaction.uuid || transaction.id,
-                              value: transaction.value,
-                              currency: transaction.currency,
-                              transaction_date: transaction.transaction_date,
-                              value_usd: (transaction as any).value_usd,
-                              usd_convertible: (transaction as any).usd_convertible,
-                              usd_conversion_date: (transaction as any).usd_conversion_date,
-                              exchange_rate_used: (transaction as any).exchange_rate_used
-                            }}
-                            onConvert={handleConvertCurrency}
-                            showConvertButton={!readOnly}
-                            compact={true}
-                            variant="original-only"
-                          />
+                          <span className="font-medium">
+                            {formatCurrency(transaction.value, transaction.currency)}
+                          </span>
                         ) : (
                           <span className="text-red-600">Invalid</span>
                         )}
                       </TableCell>
+                      
+                      {/* Value Date */}
+                      <TableCell className="py-3 px-4">
+                        <span className="text-sm">
+                          {transaction.value_date 
+                            ? format(new Date(transaction.value_date), 'MMM d, yyyy') 
+                            : transaction.transaction_date 
+                            ? format(new Date(transaction.transaction_date), 'MMM d, yyyy')
+                            : '—'}
+                        </span>
+                      </TableCell>
+                      
+                      {/* USD Value */}
                       <TableCell className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {usdValues[transaction.uuid || transaction.id]?.loading ? (
@@ -702,60 +786,6 @@ export default function TransactionList({
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 px-4 text-center w-16">
-                        <TransactionDocumentIndicator 
-                          transactionId={transaction.uuid || transaction.id} 
-                          compactView={true}
-                        />
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-center w-10">
-                        <ValidationStatusCell transaction={transaction} />
-                      </TableCell>
-                      {!readOnly && (
-                        <TableCell className="py-3 px-4 text-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-                              <DropdownMenuItem 
-                                onSelect={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleEdit(transaction);
-                                }}
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onSelect={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log('[TransactionList] Delete button clicked for transaction:', {
-                                    id: transaction.id,
-                                    uuid: transaction.uuid,
-                                    transaction_reference: transaction.transaction_reference,
-                                    hasValidUuid: !!transaction.uuid && transaction.uuid !== 'undefined'
-                                  });
-                                  if (!transaction.uuid || transaction.uuid === 'undefined') {
-                                    console.error('[TransactionList] Cannot delete transaction with invalid UUID:', transaction);
-                                    alert('Cannot delete transaction: Invalid transaction UUID');
-                                    return;
-                                  }
-                                  handleDelete(transaction.uuid);
-                                }}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      )}
                     </TableRow>
                   );
                   })}

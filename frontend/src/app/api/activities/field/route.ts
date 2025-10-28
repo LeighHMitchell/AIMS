@@ -168,31 +168,36 @@ export async function POST(request: Request) {
       case 'defaultAidType':
         oldValue = existingActivity.default_aid_type;
         newValue = body.value;
-        updateData.default_aid_type = body.value || null;
+        // Explicitly convert empty strings to null
+        updateData.default_aid_type = (!body.value || body.value.trim() === '') ? null : body.value;
         break;
         
       case 'defaultFinanceType':
         oldValue = existingActivity.default_finance_type;
         newValue = body.value;
-        updateData.default_finance_type = body.value || null;
+        // Explicitly convert empty strings to null to prevent constraint violations
+        updateData.default_finance_type = (!body.value || body.value.trim() === '') ? null : body.value;
         break;
         
       case 'defaultCurrency':
         oldValue = existingActivity.default_currency;
         newValue = body.value;
-        updateData.default_currency = body.value || null;
+        // Explicitly convert empty strings to null
+        updateData.default_currency = (!body.value || body.value.trim() === '') ? null : body.value;
         break;
         
       case 'defaultTiedStatus':
         oldValue = existingActivity.default_tied_status;
         newValue = body.value;
-        updateData.default_tied_status = body.value || null;
+        // Explicitly convert empty strings to null
+        updateData.default_tied_status = (!body.value || body.value.trim() === '') ? null : body.value;
         break;
         
       case 'defaultFlowType':
         oldValue = existingActivity.default_flow_type;
         newValue = body.value;
-        updateData.default_flow_type = body.value || null;
+        // Explicitly convert empty strings to null
+        updateData.default_flow_type = (!body.value || body.value.trim() === '') ? null : body.value;
         break;
         
       case 'defaultModality':

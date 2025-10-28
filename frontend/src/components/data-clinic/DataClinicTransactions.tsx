@@ -17,7 +17,9 @@ import {
   Edit2,
   Save,
   X,
-  CalendarClock
+  CalendarClock,
+  Copy,
+  Check
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -107,8 +109,21 @@ export function DataClinicTransactions() {
   const [bulkEditField, setBulkEditField] = useState<string>('');
   const [bulkEditValue, setBulkEditValue] = useState<string>('');
   const [dataGaps, setDataGaps] = useState<DataGap[]>([]);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const isSuperUser = user?.role === 'super_user';
+
+  const copyToClipboard = async (text: string, type: string, transactionId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(`${transactionId}-${type}`);
+      toast.success(`${type} copied to clipboard`);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      toast.error('Failed to copy to clipboard');
+    }
+  };
 
   useEffect(() => {
     fetchTransactionsWithGaps();
@@ -520,7 +535,7 @@ export function DataClinicTransactions() {
                           />
                         </td>
                       )}
-                      <td className="p-4">
+                      <td className="p-4 group">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>

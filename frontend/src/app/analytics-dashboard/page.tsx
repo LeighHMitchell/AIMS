@@ -498,7 +498,7 @@ export default function AnalyticsDashboardPage() {
   // KPI Cards Configuration
   const kpiCards = [
     {
-      title: 'TOTAL BUDGET',
+      title: 'TOTAL BUDGETED',
       value: loading ? '...' : `$${formatCurrency(kpiData.totalBudget)}`,
       description: kpiData.totalBudget < 1000000 ? 'Limited budget data available' : 'Approved budget for period',
       icon: Target,

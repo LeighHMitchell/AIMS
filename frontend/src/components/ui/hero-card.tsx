@@ -10,6 +10,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
+
+interface BudgetByYear {
+  year: number;
+  amount: number;
+}
 
 interface HeroCardProps<T = any> {
   title: string;
@@ -31,6 +37,9 @@ interface HeroCardProps<T = any> {
   helpText?: string;
   // Legacy support for simple value prop
   value?: string | number;
+  // New: Budget breakdown by year for bar chart
+  budgetsByYear?: BudgetByYear[];
+  showChart?: boolean;
 }
 
 function useCountUp(targetValue: number, duration: number = 400, animate: boolean = true) {
@@ -98,6 +107,8 @@ export function HeroCard<T = any>({
   helpText,
   // Legacy support
   value,
+  budgetsByYear,
+  showChart = false,
 }: HeroCardProps<T>) {
   // Calculate value from data or use static value or legacy value
   const calculatedValue = useMemo(() => {
@@ -201,12 +212,17 @@ export function HeroCard<T = any>({
   
   const { cardClass, valueClass } = getVariantClasses();
 
+  // Format currency for chart tooltip
+  const formatChartCurrency = (value: number) => {
+    return `$${value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  };
+
   return (
     <TooltipProvider>
-      <Card className={cn(cardClass, className)}>
+      <Card className={cn(cardClass, className, showChart && "overflow-hidden")}>
         <CardContent className="p-6">
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center justify-between">
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1">
                 <p className="text-sm font-medium text-gray-600">{title}</p>
                 {helpText && (
@@ -263,6 +279,46 @@ export function HeroCard<T = any>({
             </p>
             {subtitle && (
               <p className="text-xs text-gray-500">{subtitle}</p>
+            )}
+            
+            {/* Bar Chart for Budget by Year */}
+            {showChart && budgetsByYear && budgetsByYear.length > 0 && (
+              <div className="w-full -mx-6 px-2 mt-auto pt-4">
+                <ResponsiveContainer width="100%" height={100}>
+                  <BarChart data={budgetsByYear} margin={{ top: 0, right: 8, left: 0, bottom: 5 }}>
+                    <XAxis 
+                      dataKey="year" 
+                      tick={{ fontSize: 10, fill: '#64748b' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 10, fill: '#64748b' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      tickLine={false}
+                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <RechartsTooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
+                              <p className="text-sm font-semibold">{payload[0].payload.year}</p>
+                              <p className="text-sm text-gray-600">{formatChartCurrency(payload[0].value as number)}</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                      {budgetsByYear.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill="#475569" />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </div>
         </CardContent>

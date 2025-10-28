@@ -4,6 +4,14 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Helper function to clean date values (convert empty strings to null)
+function cleanDateValue(value: any): string | null {
+  if (!value || value === '' || value === 'null') {
+    return null;
+  }
+  return value;
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } | Promise<{ id: string }> }
@@ -21,7 +29,10 @@ export async function PATCH(
       );
     }
     
-    console.log('[AIMS API] PATCH /api/activities/[id] - Updating activity:', id);
+    console.log('[AIMS API] ===== PATCH /api/activities/[id] START =====');
+    console.log('[AIMS API] Activity ID:', id);
+    console.log('[AIMS API] Request body keys:', Object.keys(body));
+    console.log('[AIMS API] publicationStatus:', body.publicationStatus);
     console.log('[AIMS API] Update data:', JSON.stringify(body, null, 2));
     
     // Handle basic activity field updates (title, description, dates, etc.)
@@ -59,18 +70,19 @@ export async function PATCH(
     if (body.descriptionObjectives !== undefined) activityFields.description_objectives = body.descriptionObjectives;
     if (body.descriptionTargetGroups !== undefined) activityFields.description_target_groups = body.descriptionTargetGroups;
     if (body.descriptionOther !== undefined) activityFields.description_other = body.descriptionOther;
-    if (body.plannedStartDate !== undefined) activityFields.planned_start_date = body.plannedStartDate;
-    if (body.plannedEndDate !== undefined) activityFields.planned_end_date = body.plannedEndDate;
-    if (body.actualStartDate !== undefined) activityFields.actual_start_date = body.actualStartDate;
-    if (body.actualEndDate !== undefined) activityFields.actual_end_date = body.actualEndDate;
+    if (body.plannedStartDate !== undefined) activityFields.planned_start_date = cleanDateValue(body.plannedStartDate);
+    if (body.plannedEndDate !== undefined) activityFields.planned_end_date = cleanDateValue(body.plannedEndDate);
+    if (body.actualStartDate !== undefined) activityFields.actual_start_date = cleanDateValue(body.actualStartDate);
+    if (body.actualEndDate !== undefined) activityFields.actual_end_date = cleanDateValue(body.actualEndDate);
     if (body.activityStatus !== undefined) activityFields.activity_status = body.activityStatus;
     if (body.collaborationType !== undefined) activityFields.collaboration_type = body.collaborationType;
     if (body.iatiIdentifier !== undefined) activityFields.iati_identifier = body.iatiIdentifier;
-    if (body.defaultCurrency !== undefined) activityFields.default_currency = body.defaultCurrency;
-    if (body.defaultAidType !== undefined) activityFields.default_aid_type = body.defaultAidType;
-    if (body.defaultFinanceType !== undefined) activityFields.default_finance_type = body.defaultFinanceType;
-    if (body.defaultFlowType !== undefined) activityFields.default_flow_type = body.defaultFlowType;
-    if (body.defaultTiedStatus !== undefined) activityFields.default_tied_status = body.defaultTiedStatus;
+    // Explicitly convert empty strings to null for default fields to prevent constraint violations
+    if (body.defaultCurrency !== undefined) activityFields.default_currency = (!body.defaultCurrency || body.defaultCurrency.trim() === '') ? null : body.defaultCurrency;
+    if (body.defaultAidType !== undefined) activityFields.default_aid_type = (!body.defaultAidType || body.defaultAidType.trim() === '') ? null : body.defaultAidType;
+    if (body.defaultFinanceType !== undefined) activityFields.default_finance_type = (!body.defaultFinanceType || body.defaultFinanceType.trim() === '') ? null : body.defaultFinanceType;
+    if (body.defaultFlowType !== undefined) activityFields.default_flow_type = (!body.defaultFlowType || body.defaultFlowType.trim() === '') ? null : body.defaultFlowType;
+    if (body.defaultTiedStatus !== undefined) activityFields.default_tied_status = (!body.defaultTiedStatus || body.defaultTiedStatus.trim() === '') ? null : body.defaultTiedStatus;
     if (body.language !== undefined) activityFields.language = body.language;
     if (body.acronym !== undefined) activityFields.acronym = body.acronym;
     if (body.activityScope !== undefined) activityFields.activity_scope = normalizeScope(body.activityScope);
@@ -81,6 +93,8 @@ export async function PATCH(
         if (field === 'activity_scope') {
           const normalized = normalizeScope(body[field]);
           if (normalized !== null) activityFields[field] = normalized;
+        } else if (field === 'planned_start_date' || field === 'planned_end_date' || field === 'actual_start_date' || field === 'actual_end_date') {
+          activityFields[field] = cleanDateValue(body[field]);
         } else {
           activityFields[field] = body[field];
         }
@@ -880,10 +894,20 @@ export async function PATCH(
     }
     
     return NextResponse.json(response);
-  } catch (error) {
+  } catch (error: any) {
     console.error('[AIMS API] Error in PATCH /api/activities/[id]:', error);
+    console.error('[AIMS API] Error message:', error?.message);
+    console.error('[AIMS API] Error details:', error?.details);
+    console.error('[AIMS API] Error hint:', error?.hint);
+    console.error('[AIMS API] Error stack:', error?.stack);
+    
+    // Return more detailed error information
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        message: error?.message || 'Unknown error',
+        details: error?.details || error?.hint || null
+      },
       { status: 500 }
     );
   }
@@ -893,10 +917,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
+  // Log immediately - should appear in terminal
+  console.error('[AIMS API ERROR LOG] ===== ROUTE CALLED =====');
+  console.log('[AIMS API] ===== GET /api/activities/[id] START =====');
+  console.log('[AIMS API] Request URL:', request.url);
+  
   try {
-    console.log('[AIMS API] ===== GET /api/activities/[id] START =====');
-    console.log('[AIMS API] Request URL:', request.url);
-    
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
     console.log('[AIMS API] Full params object:', JSON.stringify(resolvedParams, null, 2));
@@ -910,7 +936,10 @@ export async function GET(
     if (!id) {
       console.error('[AIMS API] ERROR: Activity ID is missing!');
       return NextResponse.json(
-        { error: 'Activity ID is required' },
+        { 
+          error: 'Activity ID is required',
+          debug: { params: resolvedParams }
+        },
         { status: 400 }
       );
     }
@@ -939,7 +968,16 @@ export async function GET(
       console.error('[AIMS API] Activity not found (basic check):', basicError);
       console.error('[AIMS API] Error details:', JSON.stringify(basicError, null, 2));
       return NextResponse.json(
-        { error: 'Activity not found', details: basicError?.message },
+        { 
+          error: 'Activity not found', 
+          details: basicError?.message,
+          id: id,
+          debug: {
+            errorCode: basicError?.code,
+            errorMessage: basicError?.message,
+            errorDetails: basicError?.details
+          }
+        },
         { status: 404 }
       );
     }
@@ -957,7 +995,7 @@ export async function GET(
           id, activity_id, sector_code, sector_name, percentage, level, 
           category_code, category_name, type, created_at, updated_at
         ),
-        transactions (*),
+        transactions!activity_id (*),
         activity_contacts (*),
         activity_locations (*),
         activity_sdg_mappings (*),
@@ -979,7 +1017,11 @@ export async function GET(
       console.error('[AIMS API] Error fetching full activity data:', error);
       console.error('[AIMS API] Error details:', JSON.stringify(error, null, 2));
       return NextResponse.json(
-        { error: 'Activity not found' },
+        { 
+          error: 'Activity not found',
+          details: error?.message,
+          id: id 
+        },
         { status: 404 }
       );
     }

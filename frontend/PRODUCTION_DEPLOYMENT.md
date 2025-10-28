@@ -38,12 +38,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 ```
 
-#### Optional Variables
+#### Optional Variables (Recommended for Better Currency Conversion)
 ```
 EXCHANGERATE_HOST_API_KEY=your_exchange_rate_api_key
 NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION=true
 NODE_ENV=production
 ```
+
+**⚠️ Important**: While `EXCHANGERATE_HOST_API_KEY` is optional, it's **highly recommended** for production to get accurate historical exchange rates. Without it, the app will use fallback rates from the database, which may not be as accurate for very old dates (before 2010).
 
 ### 4. Deploy
 

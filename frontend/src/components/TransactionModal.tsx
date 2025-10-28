@@ -522,6 +522,13 @@ export default function TransactionModal({
     }
   }, [transaction, open]);
 
+  // Reset submission flag when modal opens/closes
+  useEffect(() => {
+    if (!open) {
+      isSubmittingRef.current = false;
+    }
+  }, [open]);
+
   // Count populated advanced IATI fields
   const countAdvancedFields = () => {
     let count = 0;
@@ -790,6 +797,15 @@ export default function TransactionModal({
   };
 
   const handleSubmit = async () => {
+    // Prevent concurrent submissions using ref to avoid race conditions
+    if (isSubmittingRef.current || isSubmitting || isInternallySubmitting) {
+      console.log('[TransactionModal] Submission already in progress, ignoring duplicate call');
+      return;
+    }
+
+    // Mark as submitting
+    isSubmittingRef.current = true;
+
     const submissionData = getTransactionPayload({
       ...formData,
       activity_id: activityId,
@@ -806,6 +822,8 @@ export default function TransactionModal({
       } else {
         showValidationError(validationError);
       }
+      // Reset the flag before returning
+      isSubmittingRef.current = false;
       return;
     }
     try {
@@ -881,6 +899,9 @@ export default function TransactionModal({
       onOpenChange(false);
     } catch (e: any) {
       showTransactionError(e.message || 'Failed to save transaction');
+    } finally {
+      // Always reset the submission flag
+      isSubmittingRef.current = false;
     }
   };
 
@@ -907,13 +928,20 @@ export default function TransactionModal({
   const [isCheckingReceiverActivity, setIsCheckingReceiverActivity] = useState(false);
 
   // Helper functions for number formatting
-  const formatNumberWithCommas = (num: number | string): string => {
+  const formatNumberWithCommas = (num: number | string, includeDecimals: boolean = true): string => {
     if (num === 0 || num === '' || num === null || num === undefined) return '';
     const numValue = typeof num === 'string' ? parseFloat(num) : num;
-    return numValue.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+    if (includeDecimals) {
+      return numValue.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    } else {
+      // Format without decimals for typing
+      const [integerPart, decimalPart] = String(numValue).split('.');
+      const formattedInteger = Number(integerPart).toLocaleString('en-US');
+      return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+    }
   };
 
   const parseNumberFromFormatted = (formattedStr: string): number => {
@@ -923,7 +951,11 @@ export default function TransactionModal({
     return cleanStr === '' ? 0 : Number(cleanStr);
   };
 
+  // Track if the value field is focused to avoid formatting while typing
+  const [isValueFocused, setIsValueFocused] = useState(false);
 
+  // Use ref to track submission state to prevent race conditions
+  const isSubmittingRef = useRef(false);
 
   // Add missing imports and components needed
   const LabelSaveIndicator = ({ children, isSaving, isSaved }: { children: React.ReactNode; isSaving?: boolean; isSaved?: boolean }) => (
@@ -1437,7 +1469,12 @@ export default function TransactionModal({
                   <Input
                     type="text"
                     inputMode="numeric"
-                    value={formatNumberWithCommas(formData.value || 0)}
+                    value={
+                      isValueFocused 
+                        ? (formData.value === 0 ? '' : formatNumberWithCommas(formData.value, false)) // Show commas but no decimals while typing
+                        : formatNumberWithCommas(formData.value || 0, true)  // Show commas and decimals when not focused
+                    }
+                    onFocus={() => setIsValueFocused(true)}
                     onChange={e => {
                       const inputValue = e.target.value;
                       // Allow empty string, numbers, decimal point, and commas
@@ -1448,12 +1485,13 @@ export default function TransactionModal({
                       }
                     }}
                     onBlur={e => {
+                      setIsValueFocused(false);
                       // Ensure proper formatting on blur
                       const inputValue = e.target.value;
                       if (inputValue === '') {
                         setFormData({...formData, value: 0});
                       } else {
-                        // Re-format the number to ensure consistent display
+                        // Parse the number to ensure it's stored correctly
                         const numericValue = parseNumberFromFormatted(inputValue);
                         setFormData({...formData, value: numericValue});
                       }

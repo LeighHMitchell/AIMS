@@ -261,7 +261,7 @@ export default function ImprovedSectorAllocationForm({
   const sectorsAutosave = useSectorsAutosave(activityId, user?.id);
   const [sortField, setSortField] = useState<SortField>('subSector');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [activeVisualizationTab, setActiveVisualizationTab] = useState<'sunburst' | 'sankey'>('sunburst');
+  const [activeVisualizationTab, setActiveVisualizationTab] = useState<'sunburst' | 'sankey'>('sankey');
   
   // User action tracking for toast notifications
   const userActionInProgressRef = useRef(false);
@@ -1051,9 +1051,9 @@ export default function ImprovedSectorAllocationForm({
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
-                      <SortableHeader field="subSector">Sub-sector</SortableHeader>
-                      <SortableHeader field="sector">Sector</SortableHeader>
                       <SortableHeader field="category">Sector Category</SortableHeader>
+                      <SortableHeader field="sector">Sector</SortableHeader>
+                      <SortableHeader field="subSector">Sub-sector</SortableHeader>
                       <SortableHeader field="percentage" className="w-40 text-center">%</SortableHeader>
                       <TableHead className="w-20 text-center py-3"></TableHead>
                     </TableRow>
@@ -1080,14 +1080,15 @@ export default function ImprovedSectorAllocationForm({
                             allocation.percentage === 0 && "bg-red-50 hover:bg-red-100"
                           )}
                         >
-                          {/* Sub-sector Code and Name */}
+                          {/* Sector Category Code and Name */}
                           <TableCell className="py-2 text-sm">
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <div className="cursor-help flex items-center gap-2">
-                                    <span className="font-mono">{subSectorCode}</span> - {subSectorName}
-                                    <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 transition-colors duration-150" />
+                                  <div className="cursor-help flex items-center gap-2 whitespace-nowrap">
+                                    <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{categoryGroupCode}</span>
+                                    <span>{categoryGroupName}</span>
+                                    <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 transition-colors duration-150 flex-shrink-0" />
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent 
@@ -1127,9 +1128,10 @@ export default function ImprovedSectorAllocationForm({
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <div className="cursor-help flex items-center gap-2">
-                                    <span className="font-mono">{sectorCode}</span> - {sectorName.replace(/^\d{3}\s*-\s*/, '')}
-                                    <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 transition-colors duration-150" />
+                                  <div className="cursor-help flex items-center gap-2 whitespace-nowrap">
+                                    <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{sectorCode}</span>
+                                    <span>{sectorName.replace(/^\d{3}\s*-\s*/, '')}</span>
+                                    <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 transition-colors duration-150 flex-shrink-0" />
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent 
@@ -1164,14 +1166,15 @@ export default function ImprovedSectorAllocationForm({
                             </TooltipProvider>
                           </TableCell>
                           
-                          {/* Sector Category Code and Name */}
+                          {/* Sub-sector Code and Name */}
                           <TableCell className="py-2 text-sm">
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <div className="cursor-help flex items-center gap-2">
-                                    <span className="font-mono">{categoryGroupCode}</span> - {categoryGroupName}
-                                    <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 transition-colors duration-150" />
+                                  <div className="cursor-help flex items-center gap-2 whitespace-nowrap">
+                                    <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{subSectorCode}</span>
+                                    <span>{subSectorName}</span>
+                                    <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 transition-colors duration-150 flex-shrink-0" />
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent 
@@ -1332,8 +1335,8 @@ export default function ImprovedSectorAllocationForm({
             <CardContent>
               <Tabs value={activeVisualizationTab} onValueChange={(value) => setActiveVisualizationTab(value as 'sunburst' | 'sankey')}>
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="sunburst">Sunburst</TabsTrigger>
                   <TabsTrigger value="sankey">Sankey Flow</TabsTrigger>
+                  <TabsTrigger value="sunburst">Sunburst</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="sunburst" className="mt-4">

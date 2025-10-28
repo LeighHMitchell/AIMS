@@ -228,7 +228,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
           <Bar 
             dataKey="disbursements" 
             name="Disbursements" 
-            fill="#10B981"
+            fill="#64748b"
             radius={[2, 2, 0, 0]}
           />
           
@@ -236,7 +236,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
           <Bar 
             dataKey="expenditures" 
             name="Expenditures" 
-            fill="#F59E0B"
+            fill="#475569"
             radius={[2, 2, 0, 0]}
           />
           

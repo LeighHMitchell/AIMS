@@ -49,6 +49,7 @@ interface DocumentsAndImagesTabV2Props {
   customCategories?: typeof DOCUMENT_CATEGORIES;
   customFormats?: Record<string, string>;
   customLanguages?: typeof COMMON_LANGUAGES;
+  readOnly?: boolean;
 }
 
 interface UploadingFile {
@@ -68,6 +69,7 @@ export function DocumentsAndImagesTabV2({
   customCategories,
   customFormats,
   customLanguages,
+  readOnly = false,
 }: DocumentsAndImagesTabV2Props) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [filterCategory, setFilterCategory] = React.useState<string>('all');
@@ -340,81 +342,73 @@ export function DocumentsAndImagesTabV2({
             Upload files or link to external documents
           </p>
         </div>
-        <div className="flex items-center">
-          <Badge
-            variant={validationStatus.hasIssues ? 'destructive' : 'default'}
-            className="gap-1"
-          >
-            {validationStatus.hasIssues ? (
-              <>
-                <AlertCircle className="w-3 h-3" />
-                {validationStatus.issueCount} Issues
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-3 h-3" />
-                All Valid
-              </>
-            )}
-          </Badge>
-        </div>
+        {!readOnly && validationStatus.hasIssues && (
+          <div className="flex items-center">
+            <Badge variant="destructive" className="gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {validationStatus.issueCount} Issues
+            </Badge>
+          </div>
+        )}
       </div>
 
       {/* Add Documents Section */}
-      <div className="w-full">
-        <div className="mt-4">
-          <div 
-            className={cn(
-              "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
-              isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-100",
-              !activityId && "opacity-50 cursor-not-allowed"
-            )}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => activityId && fileInputRef.current?.click()}
-          >
-            <div className="text-center max-w-md">
-              <div className="mb-6">
-                {isDragOver ? (
-                  <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
-                ) : (
-                  <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                )}
+      {!readOnly && (
+        <div className="w-full">
+          <div className="mt-4">
+            <div 
+              className={cn(
+                "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
+                isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-100",
+                !activityId && "opacity-50 cursor-not-allowed"
+              )}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => activityId && fileInputRef.current?.click()}
+            >
+              <div className="text-center max-w-md">
+                <div className="mb-6">
+                  {isDragOver ? (
+                    <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
+                  ) : (
+                    <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  )}
+                </div>
+                <h4 className="text-2xl font-medium text-gray-900 mb-3">
+                  {isDragOver ? "Drop your files here" : "Upload Documents & Images"}
+                </h4>
+                <p className="text-gray-600 mb-6 text-lg">
+                  Drag and drop files anywhere in this area, or click to browse your computer
+                </p>
+                <Button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (activityId) fileInputRef.current?.click();
+                  }}
+                  disabled={!activityId}
+                  className="gap-2 text-lg px-6 py-3"
+                  size="lg"
+                >
+                  <Upload className="w-5 h-5" />
+                  Choose Files
+                </Button>
+                <p className="text-sm text-gray-500 mt-4">
+                  Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={(e) => handleFileSelect(e.target.files)}
+                  className="hidden"
+                  accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv"
+                />
               </div>
-              <h4 className="text-2xl font-medium text-gray-900 mb-3">
-                {isDragOver ? "Drop your files here" : "Upload Documents & Images"}
-              </h4>
-              <p className="text-gray-600 mb-6 text-lg">
-                Drag and drop files anywhere in this area, or click to browse your computer
-              </p>
-              <Button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (activityId) fileInputRef.current?.click();
-                }}
-                disabled={!activityId}
-                className="gap-2 text-lg px-6 py-3"
-                size="lg"
-              >
-                <Upload className="w-5 h-5" />
-                Choose Files
-              </Button>
-              <p className="text-sm text-gray-500 mt-4">
-                Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={(e) => handleFileSelect(e.target.files)}
-                className="hidden"
-                accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv"
-              />
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Search and Filter Section */}
       {documents.length > 0 && (
@@ -552,6 +546,7 @@ export function DocumentsAndImagesTabV2({
                             onEdit={() => handleEditDocument(doc)}
                             onDelete={() => handleDeleteDocument(doc.url)}
                             locale={locale}
+                            readOnly={readOnly}
                           />
                         </div>
                       ))}
@@ -576,6 +571,7 @@ export function DocumentsAndImagesTabV2({
                             onEdit={() => handleEditDocument(doc)}
                             onDelete={() => handleDeleteDocument(doc.url)}
                             locale={locale}
+                            readOnly={readOnly}
                           />
                         </div>
                       ))}

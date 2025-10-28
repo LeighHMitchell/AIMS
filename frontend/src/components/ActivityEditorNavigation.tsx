@@ -164,6 +164,7 @@ export default function ActivityEditorNavigation({
                     type="button"
                     onClick={() => !isLocked && !disabled && handleSectionChange(section.id)}
                     disabled={isLocked || disabled}
+                    data-tab={section.id}
                     className={cn(
                       "w-full text-left py-2 px-3 rounded text-sm font-normal transition-all duration-200 ease-in-out",
                       "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:ring-offset-1",

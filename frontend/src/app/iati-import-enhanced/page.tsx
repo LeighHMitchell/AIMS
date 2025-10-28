@@ -381,7 +381,8 @@ export default function IATIImportEnhancedPage() {
           fixes: appliedFixes,
           orphanResolutions: orphanResolutions,
           codeMappings: codeMappings,
-          organizationAssignments: organizationAssignments
+          organizationAssignments: organizationAssignments,
+          organizationId: user?.organizationId
         })
       });
 

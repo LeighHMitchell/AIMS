@@ -6,6 +6,94 @@ import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to fetch linked transactions for all activities
+async function fetchAllLinkedTransactions(activityIds: string[]) {
+  if (activityIds.length === 0) return [];
+  
+  try {
+    // Get all linked activities (both directions)
+    const { data: relatedActivities, error: relatedError } = await getSupabaseAdmin()
+      .from('related_activities')
+      .select('linked_activity_id, source_activity_id')
+      .or(activityIds.map(id => `source_activity_id.eq.${id},linked_activity_id.eq.${id}`).join(','));
+    
+    if (relatedError) {
+      console.error('[AIMS] Error fetching related activities:', relatedError);
+      return [];
+    }
+
+    // Extract all linked activity IDs for each activity
+    const linkedActivityMap = new Map<string, Set<string>>();
+    
+    relatedActivities?.forEach((ra: any) => {
+      activityIds.forEach(activityId => {
+        if (!linkedActivityMap.has(activityId)) {
+          linkedActivityMap.set(activityId, new Set());
+        }
+        
+        if (ra.source_activity_id === activityId && ra.linked_activity_id) {
+          linkedActivityMap.get(activityId)!.add(ra.linked_activity_id);
+        } else if (ra.linked_activity_id === activityId && ra.source_activity_id) {
+          linkedActivityMap.get(activityId)!.add(ra.source_activity_id);
+        }
+      });
+    });
+
+    // Get all unique linked activity IDs
+    const allLinkedActivityIds = new Set<string>();
+    linkedActivityMap.forEach(linkedIds => {
+      linkedIds.forEach(id => allLinkedActivityIds.add(id));
+    });
+
+    if (allLinkedActivityIds.size === 0) return [];
+
+    // Fetch transactions from all linked activities
+    const { data: linkedTransactions, error: transError } = await getSupabaseAdmin()
+      .from('transactions')
+      .select(`
+        *,
+        activity:activities!activity_id (
+          id,
+          title_narrative,
+          iati_identifier
+        ),
+        provider_organization:organizations!provider_org_id (
+          id,
+          name,
+          acronym,
+          logo
+        ),
+        receiver_organization:organizations!receiver_org_id (
+          id,
+          name,
+          acronym,
+          logo
+        )
+      `)
+      .in('activity_id', Array.from(allLinkedActivityIds))
+      .not('activity_id', 'in', `(${activityIds.join(',')})`); // Exclude user's own activities
+
+    if (transError) {
+      console.error('[AIMS] Error fetching linked transactions:', transError);
+      return [];
+    }
+
+    // Add transaction source and linked activity info
+    return linkedTransactions?.map((t: any) => ({
+      ...t,
+      transaction_source: 'linked' as const,
+      linked_from_activity_id: t.activity_id,
+      linked_from_activity_title: t.activity?.title_narrative,
+      linked_from_activity_iati_id: t.activity?.iati_identifier,
+      acceptance_status: 'pending' as const
+    })) || [];
+
+  } catch (error) {
+    console.error('[AIMS] Error in fetchAllLinkedTransactions:', error);
+    return [];
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -28,6 +116,8 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
+    const includeLinked = searchParams.get('includeLinked') !== 'false'; // Default to true
+    const transactionSource = searchParams.get('transactionSource') || 'all';
     
     // Build the query
     let query = getSupabaseAdmin()
@@ -39,15 +129,17 @@ export async function GET(request: Request) {
           title_narrative,
           iati_identifier
         ),
-        provider_org:organizations!provider_org_id (
+        provider_organization:organizations!provider_org_id (
           id,
           name,
-          acronym
+          acronym,
+          logo
         ),
-        receiver_org:organizations!receiver_org_id (
+        receiver_organization:organizations!receiver_org_id (
           id,
           name,
-          acronym
+          acronym,
+          logo
         )
       `, { count: 'exact' });
     
@@ -97,41 +189,70 @@ export async function GET(request: Request) {
       query = query.order(sortField, orderOptions);
     }
     
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1);
-    
-    const { data: transactions, error, count } = await query;
+    // Execute the main query to get own transactions
+    const { data: ownTransactions, error, count } = await query;
     
     if (error) {
-      console.error('[AIMS] Error fetching transactions:', error);
+      console.error('[AIMS] Error fetching own transactions:', error);
       return NextResponse.json(
         { error: 'Failed to fetch transactions', details: error.message },
         { status: 500 }
       );
     }
+
+    // Transform own transactions with source classification
+    let allTransactions = (ownTransactions || []).map((t: any) => ({
+      ...t,
+      transaction_source: 'own' as const
+    }));
+
+    // Fetch linked transactions if requested
+    if (includeLinked) {
+      // Get all user's activity IDs to find linked transactions
+      const userActivityIds = Array.from(new Set(allTransactions.map(t => t.activity_id)));
+      
+      if (userActivityIds.length > 0) {
+        const linkedTransactions = await fetchAllLinkedTransactions(userActivityIds);
+        allTransactions = [...allTransactions, ...linkedTransactions];
+      }
+    }
+
+    // Apply transaction source filtering
+    if (transactionSource !== 'all') {
+      allTransactions = allTransactions.filter(t => t.transaction_source === transactionSource);
+    }
+
+    // Apply pagination to combined results (client-side for now)
+    const totalCombined = allTransactions.length;
+    const paginatedTransactions = allTransactions.slice(offset, offset + limit);
     
     // Transform the data for frontend compatibility
-    const transformedTransactions = (transactions || []).map((t: any) => ({
+    const transformedTransactions = paginatedTransactions.map((t: any) => ({
       ...t,
       id: t.uuid || t.id,
       // Flatten organization names for easier access - use acronyms when available
-      from_org: t.provider_org?.acronym || t.provider_org?.name || t.provider_org_name,
-      to_org: t.receiver_org?.acronym || t.receiver_org?.name || t.receiver_org_name,
+      from_org: t.provider_organization?.acronym || t.provider_organization?.name || t.provider_org_name,
+      to_org: t.receiver_organization?.acronym || t.receiver_organization?.name || t.receiver_org_name,
       // Keep the original fields as well - use acronyms when available
-      provider_org_name: t.provider_org?.acronym || t.provider_org?.name || t.provider_org_name,
-      receiver_org_name: t.receiver_org?.acronym || t.receiver_org?.name || t.receiver_org_name,
+      provider_org_name: t.provider_organization?.acronym || t.provider_organization?.name || t.provider_org_name,
+      receiver_org_name: t.receiver_organization?.acronym || t.receiver_organization?.name || t.receiver_org_name,
       // Keep full names for display if needed
-      provider_org_full_name: t.provider_org?.name || t.provider_org_name,
-      receiver_org_full_name: t.receiver_org?.name || t.receiver_org_name,
+      provider_org_full_name: t.provider_organization?.name || t.provider_org_name,
+      receiver_org_full_name: t.receiver_organization?.name || t.receiver_org_name,
+      // Include organization logos
+      provider_org_logo: t.provider_organization?.logo,
+      receiver_org_logo: t.receiver_organization?.logo,
     }));
     
     // Return paginated response
     return NextResponse.json({
       data: transformedTransactions,
-      total: count || 0,
+      total: totalCombined,
       page,
       limit,
-      totalPages: Math.ceil((count || 0) / limit),
+      totalPages: Math.ceil(totalCombined / limit),
+      includeLinked,
+      transactionSource
     });
     
   } catch (error) {

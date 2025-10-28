@@ -53,7 +53,7 @@ const BASE_COLORS = [
   '#C7303C', '#00588D', '#0092A7', '#00786B', '#8D6300', '#667100', '#925977', '#826636',
   '#DB444B', '#0C4A6E', '#0E7490', '#065F46', '#A16207', '#4D7C0F', '#7C2D12', '#92400E',
   '#F87171', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#FB7185', '#38BDF8', '#4ADE80',
-  '#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#22C55E',
+  '#EF4444', '#3B82F6', '#64748b', '#475569', '#8B5CF6', '#EC4899', '#06B6D4', '#22C55E',
   '#DC2626', '#2563EB', '#059669', '#D97706', '#7C3AED', '#DB2777', '#0891B2', '#16A34A',
   '#B91C1C', '#1D4ED8', '#047857', '#B45309', '#6D28D9', '#BE185D', '#0E7490', '#15803D'
 ];
@@ -190,7 +190,7 @@ export default function SectorSankeyVisualization({
     // Add root node
     nodes.push({
       id: 'root',
-      name: 'Total Budget',
+      name: 'Total Budgeted',
       level: 'category',
       value: allocations.reduce((sum, a) => sum + a.percentage, 0),
       color: '#6b7280'
@@ -408,7 +408,7 @@ export default function SectorSankeyVisualization({
     const getNodeDetails = (node: PositionedNode) => {
       if (node.id === 'root') {
         return {
-          title: 'Total Budget',
+          title: 'Total Budgeted',
           category: null,
           sector: null,
           subsector: null,

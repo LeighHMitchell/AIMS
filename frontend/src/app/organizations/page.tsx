@@ -25,6 +25,7 @@ import { CreateCustomGroupModal } from '@/components/organizations/CreateCustomG
 import { EditCustomGroupModal } from '@/components/organizations/EditCustomGroupModal'
 import { EditOrganizationModal } from '@/components/organizations/EditOrganizationModal'
 import { OrganizationTable } from '@/components/organizations/OrganizationTable'
+import { CustomGroupCard } from '@/components/organizations/CustomGroupCard'
 import {
   Tooltip,
   TooltipContent,
@@ -960,22 +961,26 @@ const OrganizationCard: React.FC<{
               
               {/* IATI ID */}
               <div className="flex items-center gap-1 mt-2">
-                <p className="text-sm text-gray-500">
-                  {organization.iati_org_id || 'No IATI identifier'}
-                </p>
-                {organization.iati_org_id && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      copyToClipboard(organization.iati_org_id || '')
-                    }}
-                    className="h-5 w-5 p-0"
-                    title="Copy IATI ID"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
+                {organization.iati_org_id ? (
+                  <div className="flex items-center gap-1">
+                    <code className="text-xs font-mono bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                      {organization.iati_org_id}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        copyToClipboard(organization.iati_org_id || '')
+                      }}
+                      className="h-5 w-5 p-0"
+                      title="Copy IATI ID"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No IATI identifier</p>
                 )}
               </div>
 
@@ -1001,7 +1006,7 @@ const OrganizationCard: React.FC<{
           {/* Description */}
           {organization.description && (
             <div className="pt-3 border-t border-gray-200">
-              <p className={`text-sm text-gray-600 ${showFullDescription ? '' : 'line-clamp-3'}`}>
+              <p className={`text-sm text-gray-600 whitespace-pre-wrap ${showFullDescription ? '' : 'line-clamp-3'}`}>
                 {organization.description}
               </p>
               {organization.description.length > 150 && (

@@ -5,10 +5,11 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Grid3X3, TableIcon, Frown } from "lucide-react";
+import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Grid3X3, TableIcon, Frown, ChevronLeft, ChevronRight } from "lucide-react";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { useTransactions } from "@/hooks/useTransactions";
 import { TRANSACTION_TYPE_LABELS, Transaction } from "@/types/transaction";
@@ -27,6 +28,7 @@ type FilterState = {
   dateFrom: string;
   dateTo: string;
   status: string;
+  transactionSource: string;
 };
 
 export default function TransactionsPage() {
@@ -46,6 +48,8 @@ export default function TransactionsPage() {
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkAccepting, setIsBulkAccepting] = useState(false);
+  const [isBulkRejecting, setIsBulkRejecting] = useState(false);
   
   const [filters, setFilters] = useState<FilterState>({
     transactionType: "all",
@@ -56,14 +60,16 @@ export default function TransactionsPage() {
     dateFrom: "",
     dateTo: "",
     status: "all",
+    transactionSource: "all",
   });
 
   // Use the custom hook to fetch transactions (without sorting - we'll sort client-side)
-  const { transactions, loading, error, refetch, deleteTransaction, addTransaction } = useTransactions({
+  const { transactions, loading, error, refetch, deleteTransaction, addTransaction, acceptTransaction, rejectTransaction } = useTransactions({
     searchQuery,
     filters,
     page: currentPage,
     limit: pageLimit,
+    includeLinked: true, // Always include linked transactions
   });
 
   // Currency converter hook
@@ -242,8 +248,9 @@ export default function TransactionsPage() {
 
   const handleEdit = (transaction: any) => {
     if (transaction && transaction.activity_id) {
-      // Navigate to Activity Editor's finances section for editing
-      router.push(`/activities/new?id=${transaction.activity_id}&section=finances`);
+      // Navigate to Activity Editor's finances section for editing with transaction ID
+      const transactionId = transaction.uuid || transaction.id;
+      router.push(`/activities/new?id=${transaction.activity_id}&section=finances&transactionId=${transactionId}`);
     } else {
       // Fallback to modal if no activity_id
       setEditingTransaction(transaction);
@@ -318,6 +325,26 @@ export default function TransactionsPage() {
     }
   };
 
+  const handleAcceptTransaction = async (transactionId: string, acceptingActivityId: string) => {
+    try {
+      await acceptTransaction(transactionId, acceptingActivityId);
+      refetch(); // Refresh the data to show updated status
+    } catch (error) {
+      console.error("Failed to accept transaction:", error);
+      // Error handling is done in the hook
+    }
+  };
+
+  const handleRejectTransaction = async (transactionId: string, rejectionReason?: string) => {
+    try {
+      await rejectTransaction(transactionId, undefined, rejectionReason);
+      refetch(); // Refresh the data to show updated status
+    } catch (error) {
+      console.error("Failed to reject transaction:", error);
+      // Error handling is done in the hook
+    }
+  };
+
   // Bulk selection handlers
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -374,6 +401,100 @@ export default function TransactionsPage() {
       refetch();
     } finally {
       setIsBulkDeleting(false);
+    }
+  };
+
+  const handleBulkAccept = async () => {
+    const selectedArray = Array.from(selectedTransactionIds);
+    const linkedTransactions = sortedTransactions.filter(t => 
+      selectedArray.includes(t.uuid || t.id) && 
+      t.transaction_source === 'linked' && 
+      t.acceptance_status === 'pending'
+    );
+    
+    if (linkedTransactions.length === 0) {
+      toast.error('No pending linked transactions selected');
+      return;
+    }
+
+    setIsBulkAccepting(true);
+    
+    try {
+      const response = await fetch('/api/transactions/bulk-accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactionIds: linkedTransactions.map(t => t.uuid || t.id),
+          acceptingActivityId: linkedTransactions[0]?.activity_id, // Use first transaction's activity
+          acceptingUserId: undefined // Could be passed from user context
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to accept transactions');
+      }
+
+      const result = await response.json();
+      
+      toast.success(result.message);
+      
+      // Clear selection and refresh data
+      setSelectedTransactionIds(new Set());
+      refetch();
+      
+    } catch (error) {
+      console.error('Bulk accept failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to accept transactions');
+    } finally {
+      setIsBulkAccepting(false);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    const selectedArray = Array.from(selectedTransactionIds);
+    const linkedTransactions = sortedTransactions.filter(t => 
+      selectedArray.includes(t.uuid || t.id) && 
+      t.transaction_source === 'linked' && 
+      t.acceptance_status === 'pending'
+    );
+    
+    if (linkedTransactions.length === 0) {
+      toast.error('No pending linked transactions selected');
+      return;
+    }
+
+    setIsBulkRejecting(true);
+    
+    try {
+      const response = await fetch('/api/transactions/bulk-reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactionIds: linkedTransactions.map(t => t.uuid || t.id),
+          rejectingUserId: undefined, // Could be passed from user context
+          rejectionReason: 'Bulk rejection' // Could be made configurable
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reject transactions');
+      }
+
+      const result = await response.json();
+      
+      toast.success(result.message);
+      
+      // Clear selection and refresh data
+      setSelectedTransactionIds(new Set());
+      refetch();
+      
+    } catch (error) {
+      console.error('Bulk reject failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to reject transactions');
+    } finally {
+      setIsBulkRejecting(false);
     }
   };
 
@@ -499,26 +620,17 @@ export default function TransactionsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              
-              {/* Page Size Selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-600">Show:</span>
-                <Select 
-                  value={pageLimit.toString()} 
-                  onValueChange={(value) => handlePageLimitChange(Number(value))}
-                >
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                    <SelectItem value="9999">All</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={filters.transactionSource} onValueChange={(value) => setFilters({...filters, transactionSource: value})}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Transactions</SelectItem>
+                  <SelectItem value="own">My Transactions</SelectItem>
+                  <SelectItem value="linked">Linked Transactions</SelectItem>
+                  <SelectItem value="pending_acceptance">Pending Acceptance</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -593,6 +705,8 @@ export default function TransactionsPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onConvertCurrency={handleConvertCurrency}
+                onAcceptTransaction={handleAcceptTransaction}
+                onRejectTransaction={handleRejectTransaction}
                 selectedIds={selectedTransactionIds}
                 onSelectAll={handleSelectAll}
                 onSelectTransaction={handleSelectTransaction}
@@ -608,31 +722,106 @@ export default function TransactionsPage() {
 
         {/* Pagination */}
         {transactions.total > pageLimit && pageLimit !== 9999 && (
-          <div className="flex justify-center items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <span className="text-sm">
-              Page {currentPage} of {Math.ceil(transactions.total / pageLimit)}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(Math.ceil(transactions.total / pageLimit), prev + 1)
-                )
-              }
-              disabled={currentPage >= Math.ceil(transactions.total / pageLimit)}
-            >
-              Next
-            </Button>
-          </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  Showing {Math.min((currentPage - 1) * pageLimit + 1, transactions.total)} to {Math.min(currentPage * pageLimit, transactions.total)} of {transactions.total} transactions
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, Math.ceil(transactions.total / pageLimit)) }, (_, i) => {
+                      const totalPages = Math.ceil(transactions.total / pageLimit);
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.min(Math.ceil(transactions.total / pageLimit), prev + 1)
+                      )
+                    }
+                    disabled={currentPage >= Math.ceil(transactions.total / pageLimit)}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.ceil(transactions.total / pageLimit))}
+                    disabled={currentPage >= Math.ceil(transactions.total / pageLimit)}
+                  >
+                    Last
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Items per page:</label>
+                  <Select 
+                    value={pageLimit.toString()} 
+                    onValueChange={(value) => handlePageLimitChange(Number(value))}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Transaction Modal */}
@@ -657,6 +846,17 @@ export default function TransactionsPage() {
           onDelete={() => setShowBulkDeleteDialog(true)}
           onCancel={() => setSelectedTransactionIds(new Set())}
           isDeleting={isBulkDeleting}
+          linkedTransactionCount={
+            sortedTransactions.filter(t => 
+              selectedTransactionIds.has(t.uuid || t.id) && 
+              t.transaction_source === 'linked' && 
+              t.acceptance_status === 'pending'
+            ).length
+          }
+          onAcceptLinked={handleBulkAccept}
+          onRejectLinked={handleBulkReject}
+          isAccepting={isBulkAccepting}
+          isRejecting={isBulkRejecting}
         />
 
         {/* Bulk Delete Confirmation Dialog */}

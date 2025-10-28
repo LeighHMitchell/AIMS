@@ -179,7 +179,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
               <SelectItem value="activity_count">Activity Count</SelectItem>
               <SelectItem value="gpedc_compliance_rate">GPEDC Compliance</SelectItem>
               <SelectItem value="gov_systems_usage_rate">Gov Systems Usage</SelectItem>
-              <SelectItem value="total_budget">Total Budget</SelectItem>
+              <SelectItem value="total_budget">Total Budgeted</SelectItem>
               <SelectItem value="avg_outcome_indicators">Outcome Indicators</SelectItem>
             </SelectContent>
           </Select>
@@ -260,7 +260,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
               {sortBy === 'activity_count' ? 'Activity Count' :
                sortBy === 'gpedc_compliance_rate' ? 'GPEDC Compliance' :
                sortBy === 'gov_systems_usage_rate' ? 'Government Systems Usage' :
-               sortBy === 'total_budget' ? 'Total Budget' :
+               sortBy === 'total_budget' ? 'Total Budgeted' :
                'Average Outcome Indicators'}
             </CardTitle>
           </CardHeader>

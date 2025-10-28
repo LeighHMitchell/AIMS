@@ -21,7 +21,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BarChart, Bar } from 'recharts';
 import { useUser } from '@/hooks/useUser';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
@@ -42,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BUDGET_TYPES } from '@/data/budget-type';
 import { BUDGET_STATUSES } from '@/data/budget-status';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -81,6 +80,8 @@ interface ActivityBudgetsTabProps {
   endDate: string;
   defaultCurrency?: string;
   onBudgetsChange?: (budgets: ActivityBudget[]) => void;
+  hideSummaryCards?: boolean;
+  readOnly?: boolean;
 }
 
 // Granularity types removed - users can now create any period length they want
@@ -175,50 +176,6 @@ function BudgetLineChart({ title, data, dataKey, color = "#64748b", currencyMode
   );
 }
 
-function BudgetBarChart({ title, data, dataKey, color = "#64748b", currencyMode, usdValues, budgets, defaultCurrency }: BudgetLineChartProps) {
-  return (
-    <div className="bg-white border rounded-xl p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="period" tick={{ fontSize: 12 }} stroke="#64748b" />
-            <YAxis 
-              {...getYAxisProps(data, [dataKey], 'USD')} 
-              stroke="#64748b" 
-              fontSize={12}
-              label={{
-                value: 'USD',
-                angle: -90,
-                position: 'insideLeft',
-                offset: -10,
-                style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13, fontWeight: 600 }
-              }}
-            />
-            <Tooltip 
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  const data = payload[0].payload;
-                  return (
-                    <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                      <p className="font-semibold text-gray-900 mb-1">{data.period}</p>
-                      <p className="text-sm text-gray-600">Total Budget</p>
-                      <p className="text-lg font-bold text-gray-900">USD {Number(data.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Bar dataKey={dataKey} fill={color} barSize={32} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
 // generateBudgetPeriods function removed - users can now create custom periods freely
 
 export default function ActivityBudgetsTab({ 
@@ -226,7 +183,9 @@ export default function ActivityBudgetsTab({
   startDate, 
   endDate, 
   defaultCurrency = 'USD',
-  onBudgetsChange
+  onBudgetsChange,
+  hideSummaryCards = false,
+  readOnly = false
 }: ActivityBudgetsTabProps) {
   console.log('[ActivityBudgetsTab] Component mounted with:', { activityId, startDate, endDate, defaultCurrency });
 
@@ -1467,11 +1426,12 @@ export default function ActivityBudgetsTab({
   return (
     <div className="space-y-6">
       {/* Financial Summary Cards - Unified component */}
-      {activityId && (
+      {activityId && !hideSummaryCards && (
         <FinancialSummaryCards 
           activityId={activityId} 
           className="mb-6" 
           budgets={memoizedBudgetsForSummary}
+          showBudgetChart={false}
         />
       )}
 
@@ -1484,57 +1444,43 @@ export default function ActivityBudgetsTab({
       {/* Budgets Table */}
       <Card>
         <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                onClick={() => openModalForNewBudget('month')}
-                >
-                + Monthly
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                onClick={() => openModalForNewBudget('quarter')}
-                >
-                + Quarterly
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                onClick={() => openModalForNewBudget('half-year')}
-                >
-                + Semi-Annual
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                onClick={() => openModalForNewBudget('year')}
-                >
-                + Annual
-                </Button>
-              </div>
-            <div className="flex gap-2">
-              {selectedBudgetIds.size > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                  disabled={isBulkDeleting}
-                >
-                  {isBulkDeleting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Selected ({selectedBudgetIds.size})
-                    </>
-                  )}
-                </Button>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Budgets</CardTitle>
+              <CardDescription>Activity budget allocations by period</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {!readOnly && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openModalForNewBudget('month')}
+                  >
+                    + Monthly
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openModalForNewBudget('quarter')}
+                  >
+                    + Quarterly
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openModalForNewBudget('half-year')}
+                  >
+                    + Semi-Annual
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openModalForNewBudget('year')}
+                  >
+                    + Annual
+                  </Button>
+                </>
               )}
               {budgets.length > 0 && !loading && (
                 <Button variant="outline" size="sm" onClick={handleExport}>
@@ -1544,6 +1490,28 @@ export default function ActivityBudgetsTab({
               )}
             </div>
           </div>
+          {selectedBudgetIds.size > 0 && (
+            <div className="flex items-center justify-end mt-4">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
+              >
+                {isBulkDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Selected ({selectedBudgetIds.size})
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
 
@@ -1653,14 +1621,16 @@ export default function ActivityBudgetsTab({
             <Table aria-label="Budgets table">
               <TableHeader className="bg-muted/50 border-b border-border/70">
                 <TableRow>
-                  <TableHead className="w-[50px] text-center">
-                    <Checkbox
-                      checked={selectedBudgetIds.size === sortedBudgets.length && sortedBudgets.length > 0}
-                      onCheckedChange={handleSelectAll}
-                      disabled={isBulkDeleting || sortedBudgets.length === 0}
-                      aria-label="Select all"
-                    />
-                  </TableHead>
+                  {!readOnly && (
+                    <TableHead className="w-[50px] text-center">
+                      <Checkbox
+                        checked={selectedBudgetIds.size === sortedBudgets.length && sortedBudgets.length > 0}
+                        onCheckedChange={handleSelectAll}
+                        disabled={isBulkDeleting || sortedBudgets.length === 0}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-[180px]">
                     <div 
                       className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
@@ -1687,8 +1657,7 @@ export default function ActivityBudgetsTab({
                     { label: "Type", width: "w-[100px]", sortKey: "type", align: "left" },
                     { label: "Amount", width: "w-[140px]", sortKey: "value", align: "right" },
                     { label: "Value Date", width: "w-[130px]", sortKey: "value_date", align: "left" },
-                    { label: "USD Value", width: "w-[120px]", sortKey: "usd_value", align: "right" },
-                    { label: "Actions", width: "w-[80px]", sortKey: null, align: "right" }
+                    { label: "USD Value", width: "w-[120px]", sortKey: "usd_value", align: "right" }
                   ].map((header, i) => (
                     <TableHead key={i + 2} className={`text-sm font-medium text-foreground/90 py-3 px-4 ${header.width} ${header.align === 'right' ? 'text-right' : ''}`}>
                       {header.sortKey ? (
@@ -1711,7 +1680,7 @@ export default function ActivityBudgetsTab({
               <TableBody>
                 {sortedBudgets.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center px-2 py-8">
+                    <TableCell colSpan={7} className="h-24 text-center px-2 py-8">
                       No budgets added yet. Use the "Add Period" buttons above to get started.
                     </TableCell>
                   </TableRow>
@@ -1729,14 +1698,16 @@ export default function ActivityBudgetsTab({
                         selectedBudgetIds.has(budget.id!) && "bg-blue-50 border-blue-200"
                       )}
                     > 
-                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={selectedBudgetIds.has(budget.id!)}
-                          onCheckedChange={(checked) => handleSelectBudget(budget.id!, !!checked)}
-                          disabled={isBulkDeleting || !budget.id}
-                          aria-label={`Select budget ${budget.id}`}
-                        />
-                      </TableCell>
+                      {!readOnly && (
+                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedBudgetIds.has(budget.id!)}
+                            onCheckedChange={(checked) => handleSelectBudget(budget.id!, !!checked)}
+                            disabled={isBulkDeleting || !budget.id}
+                            aria-label={`Select budget ${budget.id}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="py-3 px-4">
                         <div className="flex items-center gap-1">
                           <span className="font-medium">
@@ -1776,7 +1747,7 @@ export default function ActivityBudgetsTab({
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right">
                         <span className="font-medium">
-                          <span className="text-muted-foreground">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          <span className="text-muted-foreground">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       </TableCell>
                       <TableCell className="py-3 px-4">
@@ -1793,7 +1764,7 @@ export default function ActivityBudgetsTab({
                             <UITooltip>
                               <TooltipTrigger asChild>
                                 <span className="font-medium cursor-help">
-                                  ${usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  ${usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -1827,26 +1798,28 @@ export default function ActivityBudgetsTab({
                         )}
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 px-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 p-0">
-                              <MoreVertical className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openModalForEditBudget(budget)}>
-                              <Edit className="h-4 w-4 mr-2" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => duplicateForward(index)}>
-                              <Copy className="h-4 w-4 mr-2" /> Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => deleteBudget(index)} className="text-red-600">
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                      {!readOnly && (
+                        <TableCell className="py-3 px-4 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 p-0">
+                                <MoreVertical className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openModalForEditBudget(budget)}>
+                                <Edit className="h-4 w-4 mr-2" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => duplicateForward(index)}>
+                                <Copy className="h-4 w-4 mr-2" /> Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => deleteBudget(index)} className="text-red-600">
+                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
                     </TableRow>
                     );
                   })
@@ -1858,7 +1831,7 @@ export default function ActivityBudgetsTab({
       </Card>
 
       {/* Budget Charts */}
-      {budgets.length > 0 && (
+      {budgets.length > 0 && !readOnly && (
         <>
           <div className="flex flex-wrap gap-2 items-center mb-4 mt-8">
             <Button
@@ -1890,31 +1863,17 @@ export default function ActivityBudgetsTab({
               Annual
             </Button>
           </div>
-          <div className="flex flex-row gap-6 w-full items-stretch">
-            <div className="flex-1 flex flex-col">
-              <BudgetBarChart 
-                title={`${aggregationMode.charAt(0).toUpperCase() + aggregationMode.slice(1)} ${currencyMode.charAt(0).toUpperCase() + currencyMode.slice(1)} Budget`}
-                data={chartData.aggregatedData}
-                dataKey="value"
-                color="#64748b"
-                currencyMode={currencyMode}
-                usdValues={usdValues}
-                budgets={budgets}
-                defaultCurrency={defaultCurrency}
-              />
-            </div>
-            <div className="flex-1 flex flex-col">
-              <BudgetLineChart 
-                title="Cumulative Budget"
-                data={chartData.cumulativeData}
-                dataKey="total"
-                color="#64748b"
-                currencyMode={currencyMode}
-                usdValues={usdValues}
-                budgets={budgets}
-                defaultCurrency={defaultCurrency}
-              />
-            </div>
+          <div className="w-full">
+            <BudgetLineChart 
+              title="Cumulative Budget"
+              data={chartData.cumulativeData}
+              dataKey="total"
+              color="#64748b"
+              currencyMode={currencyMode}
+              usdValues={usdValues}
+              budgets={budgets}
+              defaultCurrency={defaultCurrency}
+            />
           </div>
         </>
       )}

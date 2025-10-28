@@ -511,11 +511,9 @@ export class IATIXMLParser {
     
     // IATI specific description types
     const descriptions = activity.querySelectorAll('description');
-    console.log('[XML Parser] Found descriptions:', descriptions.length);
     descriptions.forEach(desc => {
       const type = desc.getAttribute('type');
       const narrative = this.extractNarrative(desc);
-      console.log(`[XML Parser] Description type="${type || 'none'}", narrative="${narrative?.substring(0, 100)}..."`);
       if (narrative) {
         switch (type) {
           case '1':
@@ -913,8 +911,6 @@ export class IATIXMLParser {
           }
         }
         
-        console.log('[XML Parser] Participating org:', org.getAttribute('ref'), 'Multilingual narratives:', multilingualNarratives);
-        
         result.participatingOrgs.push({
           ref: org.getAttribute('ref') || undefined,
           type: org.getAttribute('type') || undefined,
@@ -950,13 +946,6 @@ export class IATIXMLParser {
             ref: ownerOrg.getAttribute('ref') || undefined,
             narrative: this.extractNarrative(ownerOrg) || undefined,
           };
-          
-          console.log('[XML Parser] Other-identifier with owner-org:', {
-            identifierRef: otherIdentifierData.ref,
-            identifierType: otherIdentifierData.type,
-            ownerOrgRef: otherIdentifierData.ownerOrg.ref,
-            ownerOrgNarrative: otherIdentifierData.ownerOrg.narrative
-          });
         }
         
         result.otherIdentifiers.push(otherIdentifierData);
@@ -1657,7 +1646,6 @@ export class IATIXMLParser {
     const relatedActivityElements = activity.querySelectorAll('related-activity');
     if (relatedActivityElements.length > 0) {
       result.relatedActivities = [];
-      console.log('[XML Parser] Found related activities:', relatedActivityElements.length);
       
       for (let i = 0; i < relatedActivityElements.length; i++) {
         const relatedElement = relatedActivityElements[i];
@@ -1669,9 +1657,6 @@ export class IATIXMLParser {
             ref: ref.trim(),
             type: type.trim()
           });
-          console.log(`[XML Parser] Related activity: ref="${ref}", type="${type}"`);
-        } else {
-          console.warn('[XML Parser] Skipping related-activity with missing ref or type attribute');
         }
       }
     }
@@ -1680,7 +1665,6 @@ export class IATIXMLParser {
     
     const fssElement = activity.querySelector('fss');
     if (fssElement) {
-      console.log('[XML Parser] Found FSS element');
       result.fss = {
         extractionDate: fssElement.getAttribute('extraction-date') || undefined,
         priority: fssElement.getAttribute('priority') 
@@ -1701,7 +1685,6 @@ export class IATIXMLParser {
             value: forecast.textContent ? parseFloat(forecast.textContent) : undefined
           });
         }
-        console.log('[XML Parser] Parsed', forecasts.length, 'FSS forecasts');
       }
     }
 
@@ -1710,7 +1693,6 @@ export class IATIXMLParser {
     const activityDocLinks = activity.querySelectorAll(':scope > document-link');
     if (activityDocLinks.length > 0) {
       result.document_links = [];
-      console.log('[XML Parser] Found', activityDocLinks.length, 'activity-level document links');
       
       for (let i = 0; i < activityDocLinks.length; i++) {
         const docLink = activityDocLinks[i];

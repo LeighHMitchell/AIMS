@@ -77,7 +77,20 @@ class FixedCurrencyConverter {
         return { rate: nearbyRate.exchange_rate, source: 'cache-nearby' };
       }
 
-      // Strategy 4: Try current date if original date is future/problematic
+      // Strategy 4: For historical dates (>1 year old), look for ANY cached rate for this currency pair
+      const targetDate = new Date(dateStr);
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      
+      if (targetDate < oneYearAgo) {
+        const anyHistoricalRate = await this.findAnyHistoricalRate(from, to, dateStr);
+        if (anyHistoricalRate) {
+          console.log(`[FixedConverter] Using historical fallback rate for ${from}→${to}: ${anyHistoricalRate.exchange_rate} from ${anyHistoricalRate.rate_date}`);
+          return { rate: anyHistoricalRate.exchange_rate, source: 'historical-fallback' };
+        }
+      }
+
+      // Strategy 5: Try current date if original date is future/problematic
       const today = new Date().toISOString().split('T')[0];
       if (dateStr !== today) {
         const currentRate = await this.fetchRateWithRetry(from, to, today);
@@ -125,6 +138,34 @@ class FixedCurrencyConverter {
       return data[0];
     } catch (error) {
       console.warn(`[FixedConverter] Error finding nearby rate:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Find ANY historical rate for very old dates (fallback for dates >1 year old)
+   * This searches for the closest rate on or before the target date, regardless of how far back
+   */
+  private async findAnyHistoricalRate(from: string, to: string, targetDate: string): Promise<ExchangeRate | null> {
+    try {
+      const supabase = getSupabaseAdmin();
+      if (!supabase) return null;
+
+      // Look for the most recent rate on or before the target date
+      const { data, error } = await supabase
+        .from('exchange_rates')
+        .select('*')
+        .eq('from_currency', from)
+        .eq('to_currency', to)
+        .lte('rate_date', targetDate)
+        .order('rate_date', { ascending: false })
+        .limit(1);
+
+      if (error || !data || data.length === 0) return null;
+
+      return data[0];
+    } catch (error) {
+      console.warn(`[FixedConverter] Error finding historical rate:`, error);
       return null;
     }
   }

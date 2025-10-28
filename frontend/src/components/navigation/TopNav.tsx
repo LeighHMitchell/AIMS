@@ -13,11 +13,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { FolderPlus, User, LogOut, Briefcase, Settings, Shield, MessageSquare } from "lucide-react"
+import { FolderPlus, User, LogOut, Briefcase, Settings, Shield, MessageSquare, ChevronDown, Zap } from "lucide-react"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
 import { FeedbackModal } from "@/components/ui/feedback-modal"
+import { QuickAddActivityModal } from "@/components/modals/QuickAddActivityModal"
 
 interface TopNavProps {
   user?: {
@@ -45,6 +46,7 @@ interface TopNavProps {
 
 export function TopNav({ user, canCreateActivities, isInActivityEditor = false, onLogout }: TopNavProps) {
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
 
   // Function to construct full name - only FirstName LastName
   const getFullName = (user: TopNavProps['user']) => {
@@ -66,20 +68,43 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
           {/* Global Search Bar */}
           <GlobalSearchBar className="w-[500px]" />
           
-          {/* Add New Activity Button - conditionally rendered but with stable structure */}
+          {/* Add New Activity Dropdown - conditionally rendered but with stable structure */}
           <div className={canCreateActivities ? undefined : "hidden"}>
-            <Link href="/activities/new">
-              <Button 
-                variant="default" 
-                size="sm"
-                disabled={isInActivityEditor}
-                className={isInActivityEditor ? "opacity-50 cursor-not-allowed" : ""}
-                title={isInActivityEditor ? "Please finish editing the current activity first" : "Create a new activity"}
-              >
-                <FolderPlus className="h-4 w-4 mr-2" />
-                Add New Activity
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  disabled={isInActivityEditor}
+                  className={isInActivityEditor ? "opacity-50 cursor-not-allowed" : ""}
+                  title={isInActivityEditor ? "Please finish editing the current activity first" : "Create a new activity"}
+                >
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  Add New Activity
+                  <ChevronDown className="h-3 w-3 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Create Activity</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <Link href="/activities/new">
+                  <DropdownMenuItem>
+                    <FolderPlus className="mr-2 h-4 w-4" />
+                    <div className="flex flex-col">
+                      <span className="font-medium">Full Activity Editor</span>
+                      <span className="text-xs text-muted-foreground">Complete data entry</span>
+                    </div>
+                  </DropdownMenuItem>
+                </Link>
+                <DropdownMenuItem onClick={() => setShowQuickAddModal(true)}>
+                  <Zap className="mr-2 h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">Quick Add</span>
+                    <span className="text-xs text-muted-foreground">Minimal activity creation</span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           
           {/* User Menu - always rendered if user exists */}
@@ -177,6 +202,13 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
       <FeedbackModal 
         isOpen={isFeedbackModalOpen} 
         onClose={() => setIsFeedbackModalOpen(false)} 
+      />
+      
+      {/* Quick Add Activity Modal */}
+      <QuickAddActivityModal
+        isOpen={showQuickAddModal}
+        onClose={() => setShowQuickAddModal(false)}
+        user={user}
       />
     </nav>
   )

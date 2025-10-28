@@ -16,8 +16,7 @@ import {
   Save,
   ChevronsUpDown,
   Check,
-  Search,
-  ChevronDown
+  Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useConditions } from '@/hooks/use-conditions';
@@ -30,7 +29,6 @@ import {
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 // Condition type options for the styled select
 const CONDITION_TYPE_OPTIONS = [
@@ -265,8 +263,6 @@ export function ConditionsTab({
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
-  // State for collapsible IATI condition types section
-  const [showConditionTypes, setShowConditionTypes] = useState(false);
 
   // Determine if conditions are attached (all conditions should have same value)
   const areConditionsAttached = conditions.length > 0 ? conditions[0].attached : true;
@@ -407,29 +403,6 @@ export function ConditionsTab({
         </Card>
       )}
 
-      {/* IATI Condition Types - Collapsible Reference */}
-      <Collapsible open={showConditionTypes} onOpenChange={setShowConditionTypes}>
-        <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:underline">
-          <ChevronDown className={cn(
-            "h-4 w-4 transition-transform",
-            showConditionTypes && "rotate-180"
-          )} />
-          IATI Condition Types
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pt-2">
-          <ul className="text-sm text-gray-600 space-y-2 list-none ml-4">
-            <li>
-              <strong>Policy:</strong> Requires implementation of a particular policy
-            </li>
-            <li>
-              <strong>Performance:</strong> Requires achieving certain outputs or outcomes
-            </li>
-            <li>
-              <strong>Fiduciary:</strong> Requires use of specific financial management measures
-            </li>
-          </ul>
-        </CollapsibleContent>
-      </Collapsible>
 
       {/* Add Condition Button */}
       {!readOnly && !showAddCondition && (

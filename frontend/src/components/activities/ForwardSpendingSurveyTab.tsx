@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
-import { Trash2, Plus, Loader2, Edit, Save, X, AlertCircle, CheckCircle, TrendingUp, Calendar } from 'lucide-react';
+import { Trash2, Plus, Loader2, Edit, Save, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,28 +49,6 @@ interface ForwardSpendingSurveyTabProps {
   onFssChange?: (count: number) => void;
 }
 
-// Hero Card Component
-interface HeroCardProps {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon?: React.ReactNode;
-}
-
-function HeroCard({ title, value, subtitle, icon }: HeroCardProps) {
-  return (
-    <div className="p-4 border rounded-xl bg-white shadow-sm">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-sm text-muted-foreground">{title}</div>
-          <div className="text-2xl font-bold mt-1">{value}</div>
-          <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
-        </div>
-        {icon && <div className="text-muted-foreground">{icon}</div>}
-      </div>
-    </div>
-  );
-}
 
 export default function ForwardSpendingSurveyTab({ 
   activityId, 
@@ -93,6 +71,15 @@ export default function ForwardSpendingSurveyTab({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [isCalculatingUSD, setIsCalculatingUSD] = useState(false);
+
+  // USD conversion tracking
+  const [usdValues, setUsdValues] = useState<Record<string, { 
+    usd: number | null, 
+    rate: number | null, 
+    date: string, 
+    loading: boolean, 
+    error?: string 
+  }>>({});
 
   // Get all currencies
   const currencies = useMemo(() => getAllCurrenciesWithPinned(), []);
@@ -141,6 +128,61 @@ export default function ForwardSpendingSurveyTab({
       onFssChange(count);
     }
   }, [forecasts, onFssChange, loading]);
+
+  // Convert all forecasts to USD when they change
+  useEffect(() => {
+    let cancelled = false;
+    async function convertAll() {
+      const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
+      for (const forecast of forecasts) {
+        if (!forecast.amount || !forecast.currency || !forecast.value_date) {
+          newUsdValues[forecast.id || ''] = { 
+            usd: null, 
+            rate: null, 
+            date: forecast.value_date || '', 
+            loading: false, 
+            error: 'Missing data' 
+          };
+          continue;
+        }
+        newUsdValues[forecast.id || ''] = { 
+          usd: null, 
+          rate: null, 
+          date: forecast.value_date, 
+          loading: true 
+        };
+        try {
+          const result = await fixedCurrencyConverter.convertToUSD(
+            forecast.amount, 
+            forecast.currency, 
+            new Date(forecast.value_date)
+          );
+          if (!cancelled) {
+            newUsdValues[forecast.id || ''] = {
+              usd: result.usd_amount,
+              rate: result.exchange_rate,
+              date: result.conversion_date || forecast.value_date,
+              loading: false,
+              error: result.success ? undefined : result.error || 'Conversion failed'
+            };
+          }
+        } catch (err) {
+          if (!cancelled) {
+            newUsdValues[forecast.id || ''] = { 
+              usd: null, 
+              rate: null, 
+              date: forecast.value_date, 
+              loading: false, 
+              error: 'Conversion error' 
+            };
+          }
+        }
+      }
+      if (!cancelled) setUsdValues(newUsdValues);
+    }
+    if (forecasts.length > 0) convertAll();
+    return () => { cancelled = true; };
+  }, [forecasts]);
 
   // Save FSS (extraction date, priority, phaseout year)
   const saveFss = async (updatedFss: Partial<ForwardSpendingSurvey>) => {
@@ -452,33 +494,10 @@ export default function ForwardSpendingSurveyTab({
 
   return (
     <div className="p-8 space-y-8">
-      {/* Hero Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <HeroCard
-          title="Total Forecasts"
-          value={forecasts.length.toString()}
-          subtitle="Forecast years"
-          icon={<TrendingUp className="h-5 w-5" />}
-        />
-        <HeroCard
-          title="Total Amount (USD)"
-          value={`$${totalUSD.toLocaleString()}`}
-          subtitle="Across all forecast years"
-          icon={<span className="text-xl">💰</span>}
-        />
-        <HeroCard
-          title="Phaseout Year"
-          value={fss?.phaseout_year?.toString() || 'Not set'}
-          subtitle="Expected end of funding"
-          icon={<Calendar className="h-5 w-5" />}
-        />
-      </div>
-
       {/* FSS Form Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Forward Spending Survey Details</span>
             {fss && !isReadOnly && (
               <Button
                 variant="destructive"
@@ -541,21 +560,30 @@ export default function ForwardSpendingSurveyTab({
 
             <div className="space-y-2">
               <Label htmlFor="phaseout_year">Phaseout Year</Label>
-              <Input
-                id="phaseout_year"
-                type="number"
-                min="2000"
-                max="2100"
-                value={fss?.phaseout_year || ''}
-                onChange={(e) => handleFssFieldChange('phaseout_year', e.target.value ? parseInt(e.target.value) : null)}
-                onBlur={() => {
+              <Select
+                value={fss?.phaseout_year?.toString() || ''}
+                onValueChange={(value) => {
+                  handleFssFieldChange('phaseout_year', value ? parseInt(value) : null);
                   if (fss?.extraction_date) {
-                    saveFss(fss);
+                    saveFss({ ...fss, phaseout_year: value ? parseInt(value) : null });
                   }
                 }}
                 disabled={isReadOnly || savingFss}
-                placeholder="e.g. 2030"
-              />
+              >
+                <SelectTrigger id="phaseout_year">
+                  <SelectValue placeholder="Select phaseout year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 101 }, (_, i) => {
+                    const year = 2000 + i;
+                    return (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
               <p className="text-xs text-muted-foreground">
                 Expected end year of funding
               </p>
@@ -620,58 +648,86 @@ export default function ForwardSpendingSurveyTab({
                 )}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Year</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Currency</TableHead>
-                    <TableHead>USD Amount</TableHead>
-                    <TableHead>Value Date</TableHead>
-                    {!isReadOnly && <TableHead className="text-right">Actions</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {forecasts.map((forecast) => (
-                    <TableRow key={forecast.id}>
-                      <TableCell className="font-medium">{forecast.forecast_year}</TableCell>
-                      <TableCell>{forecast.amount.toLocaleString()}</TableCell>
-                      <TableCell>{forecast.currency}</TableCell>
-                      <TableCell className="font-medium">
-                        ${(forecast.usd_amount || 0).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        {forecast.value_date ? format(parseISO(forecast.value_date), 'MMM d, yyyy') : '-'}
-                      </TableCell>
-                      {!isReadOnly && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openForecastModal(forecast)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteForecast(forecast.id!)}
-                              disabled={deleteLoading === forecast.id}
-                            >
-                              {deleteLoading === forecast.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader className="bg-muted/50 border-b border-border/70">
+                    <TableRow>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-1/5">Year</TableHead>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right w-1/5">Amount</TableHead>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-1/5">Value Date</TableHead>
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right w-1/5">USD Value</TableHead>
+                      {!isReadOnly && <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center w-1/5">Actions</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {forecasts.map((forecast) => (
+                      <TableRow 
+                        key={forecast.id}
+                        className="border-b border-border/40 hover:bg-muted/30 transition-colors"
+                      >
+                        <TableCell className="py-3 px-4 font-medium">{forecast.forecast_year}</TableCell>
+                        <TableCell className="py-3 px-4 text-right font-medium">
+                          {forecast.currency} {forecast.amount.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="py-3 px-4">
+                          {forecast.value_date ? format(parseISO(forecast.value_date), 'MMM d, yyyy') : '-'}
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-right font-medium">
+                          <div className="flex items-center justify-end gap-1">
+                            {usdValues[forecast.id || '']?.loading ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                            ) : usdValues[forecast.id || '']?.usd != null ? (
+                              <TooltipProvider>
+                                <UITooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="font-medium cursor-help">
+                                      ${usdValues[forecast.id || ''].usd?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <div>
+                                      <div>Original: {forecast.amount.toLocaleString()} {forecast.currency}</div>
+                                      <div>Rate: {usdValues[forecast.id || ''].rate}</div>
+                                      <div>Date: {usdValues[forecast.id || ''].date}</div>
+                                    </div>
+                                  </TooltipContent>
+                                </UITooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </div>
                         </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        {!isReadOnly && (
+                          <TableCell className="py-3 px-4 text-center">
+                            <div className="flex justify-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openForecastModal(forecast)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteForecast(forecast.id!)}
+                                disabled={deleteLoading === forecast.id}
+                              >
+                                {deleteLoading === forecast.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -728,15 +784,24 @@ export default function ForwardSpendingSurveyTab({
                 <Label htmlFor="forecast_year">
                   Forecast Year <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="forecast_year"
-                  type="number"
-                  min="2000"
-                  max="2100"
-                  value={modalForecast?.forecast_year || ''}
-                  onChange={(e) => updateForecastField('forecast_year', parseInt(e.target.value))}
-                  placeholder="e.g. 2025"
-                />
+                <Select
+                  value={modalForecast?.forecast_year?.toString() || ''}
+                  onValueChange={(value) => updateForecastField('forecast_year', parseInt(value))}
+                >
+                  <SelectTrigger id="forecast_year">
+                    <SelectValue placeholder="Select forecast year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 101 }, (_, i) => {
+                      const year = 2000 + i;
+                      return (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
                 {fieldErrors.forecast_year && (
                   <p className="text-sm text-red-500">{fieldErrors.forecast_year}</p>
                 )}

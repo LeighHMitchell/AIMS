@@ -49,6 +49,7 @@ interface EnhancedFinancesSectionProps {
   onTransactionsChange?: (transactions: any[]) => void;
   onRefreshNeeded?: () => Promise<void>;
   disabled?: boolean;
+  initialTransactionId?: string;
 }
 
 export function EnhancedFinancesSection({
@@ -58,7 +59,8 @@ export function EnhancedFinancesSection({
   transactions = [],
   onTransactionsChange,
   onRefreshNeeded,
-  disabled = false
+  disabled = false,
+  initialTransactionId
 }: EnhancedFinancesSectionProps) {
   const [updateStats, setUpdateStats] = useState({
     totalUpdates: 0,
@@ -425,6 +427,7 @@ export function EnhancedFinancesSection({
             defaultCurrency={general.defaultCurrency || undefined}
             defaultTiedStatus={general.defaultTiedStatus || undefined}
             defaultFlowType={general.defaultFlowType || undefined}
+            initialTransactionId={initialTransactionId}
           />
         </TabsContent>
 

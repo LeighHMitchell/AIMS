@@ -14,6 +14,7 @@ interface TransactionTabProps {
   defaultTiedStatus?: string;
   defaultFlowType?: string;
   onTransactionsChange?: (transactions: Transaction[]) => void;
+  hideSummaryCards?: boolean;
 }
 
 export default function TransactionTab({ 
@@ -24,7 +25,8 @@ export default function TransactionTab({
   defaultCurrency = 'USD',
   defaultTiedStatus,
   defaultFlowType,
-  onTransactionsChange
+  onTransactionsChange,
+  hideSummaryCards = false
 }: TransactionTabProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -245,6 +247,7 @@ export default function TransactionTab({
       defaultAidType={defaultAidType}
       defaultTiedStatus={defaultTiedStatus}
       defaultFlowType={defaultFlowType}
+      hideSummaryCards={hideSummaryCards}
     />
   );
 } 

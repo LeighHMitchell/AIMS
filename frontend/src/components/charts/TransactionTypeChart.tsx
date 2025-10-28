@@ -71,7 +71,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
     }
   };
 
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+  const COLORS = ['#3B82F6', '#64748b', '#475569', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
   const formatValue = (value: number) => {
     if (metric === 'value') {

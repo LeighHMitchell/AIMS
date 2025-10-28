@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   CheckCircle2, 
   Info, 
@@ -16,7 +17,11 @@ import {
   ChevronDown,
   DollarSign,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  Edit,
+  Percent,
+  Clock,
+  FileText
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
@@ -36,6 +41,7 @@ import { OECD_CRS_FLAGS } from '@/data/oecd-crs-flags';
 import { RepaymentTypeSelect } from '@/components/forms/RepaymentTypeSelect';
 import { RepaymentPlanSelect } from '@/components/forms/RepaymentPlanSelect';
 import { OECDCRSFlagsMultiSelect } from '@/components/forms/OECDCRSFlagsMultiSelect';
+import { AddLoanStatusModal } from './AddLoanStatusModal';
 
 export function FinancingTermsTab({ 
   activityId, 
@@ -74,13 +80,12 @@ export function FinancingTermsTab({
   const [channelCode, setChannelCode] = useState<string | null>(null);
 
   // State for loan status management
-  const [showAddLoanStatus, setShowAddLoanStatus] = useState(false);
-  const [newLoanStatus, setNewLoanStatus] = useState<Partial<CreateLoanStatusData>>({
-    year: new Date().getFullYear(),
-    currency: 'USD'
-  });
+  const [showAddLoanStatusModal, setShowAddLoanStatusModal] = useState(false);
   const [editingLoanStatusId, setEditingLoanStatusId] = useState<string | null>(null);
   const [editingLoanStatusValues, setEditingLoanStatusValues] = useState<Partial<UpdateLoanStatusData>>({});
+
+  // State for loan terms modal
+  const [showLoanTermsModal, setShowLoanTermsModal] = useState(false);
 
   // Saving states
   const [savingLoanTerms, setSavingLoanTerms] = useState(false);
@@ -186,31 +191,9 @@ export function FinancingTermsTab({
   };
 
   // Handle add loan status
-  const handleAddLoanStatus = async () => {
-    if (!newLoanStatus.year || !newLoanStatus.currency) {
-      toast.error('Year and currency are required');
-      return;
-    }
-
-    const data: CreateLoanStatusData = {
-      activity_id: activityId,
-      year: newLoanStatus.year,
-      currency: newLoanStatus.currency,
-      value_date: newLoanStatus.value_date || null,
-      interest_received: newLoanStatus.interest_received || null,
-      principal_outstanding: newLoanStatus.principal_outstanding || null,
-      principal_arrears: newLoanStatus.principal_arrears || null,
-      interest_arrears: newLoanStatus.interest_arrears || null
-    };
-
+  const handleAddLoanStatus = async (data: CreateLoanStatusData) => {
     const success = await createLoanStatus(data);
-    if (success) {
-      setShowAddLoanStatus(false);
-      setNewLoanStatus({
-        year: new Date().getFullYear(),
-        currency: 'USD'
-      });
-    }
+    return success;
   };
 
   // Handle update loan status
@@ -248,11 +231,36 @@ export function FinancingTermsTab({
     );
   }
 
+  // Helper function to get repayment type label
+  const getRepaymentTypeLabel = (code: string) => {
+    const type = REPAYMENT_TYPES.find(t => t.code === code);
+    return type ? type.name : code;
+  };
+
+  // Helper function to get repayment plan label
+  const getRepaymentPlanLabel = (code: string) => {
+    const plan = REPAYMENT_PLANS.find(p => p.code === code);
+    return plan ? plan.name : code;
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Loan Terms Section */}
+      {/* Loan Terms Hero Cards */}
       <Card>
         <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-gray-600" />
             Loan Terms
@@ -261,8 +269,20 @@ export function FinancingTermsTab({
           <CardDescription>
             Interest rates, repayment schedule, and commitment dates
           </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+            </div>
+            {!readOnly && (
+              <Dialog open={showLoanTermsModal} onOpenChange={setShowLoanTermsModal}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Edit className="h-4 w-4" />
+                    Edit Loan Terms
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl h-[75vh] flex flex-col">
+                  <DialogHeader>
+                    <DialogTitle>Edit Loan Terms</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-6 overflow-y-auto flex-1 pr-2">
           {/* Rates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -280,7 +300,6 @@ export function FinancingTermsTab({
                   value={loanTermsForm.rate_1}
                   onChange={(e) => setLoanTermsForm({ ...loanTermsForm, rate_1: e.target.value })}
                   placeholder="e.g., 4.00"
-                  disabled={readOnly}
                   className="pr-8"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
@@ -302,7 +321,6 @@ export function FinancingTermsTab({
                   value={loanTermsForm.rate_2}
                   onChange={(e) => setLoanTermsForm({ ...loanTermsForm, rate_2: e.target.value })}
                   placeholder="e.g., 3.00"
-                  disabled={readOnly}
                   className="pr-8"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
@@ -320,7 +338,6 @@ export function FinancingTermsTab({
               <RepaymentTypeSelect
                 value={loanTermsForm.repayment_type_code}
                 onValueChange={(value) => setLoanTermsForm({ ...loanTermsForm, repayment_type_code: value })}
-                disabled={readOnly}
                 placeholder="Select repayment type..."
               />
             </div>
@@ -333,7 +350,6 @@ export function FinancingTermsTab({
               <RepaymentPlanSelect
                 value={loanTermsForm.repayment_plan_code}
                 onValueChange={(value) => setLoanTermsForm({ ...loanTermsForm, repayment_plan_code: value })}
-                disabled={readOnly}
                 placeholder="Select repayment plan..."
               />
             </div>
@@ -352,7 +368,6 @@ export function FinancingTermsTab({
                 type="date"
                 value={loanTermsForm.commitment_date}
                 onChange={(e) => setLoanTermsForm({ ...loanTermsForm, commitment_date: e.target.value })}
-                disabled={readOnly}
               />
             </div>
 
@@ -367,7 +382,6 @@ export function FinancingTermsTab({
                 type="date"
                 value={loanTermsForm.repayment_first_date}
                 onChange={(e) => setLoanTermsForm({ ...loanTermsForm, repayment_first_date: e.target.value })}
-                disabled={readOnly}
               />
             </div>
 
@@ -382,7 +396,6 @@ export function FinancingTermsTab({
                 type="date"
                 value={loanTermsForm.repayment_final_date}
                 onChange={(e) => setLoanTermsForm({ ...loanTermsForm, repayment_final_date: e.target.value })}
-                disabled={readOnly}
               />
             </div>
           </div>
@@ -396,16 +409,17 @@ export function FinancingTermsTab({
             <OECDCRSFlagsMultiSelect
               value={selectedCRSFlags}
               onValueChange={setSelectedCRSFlags}
-              disabled={readOnly}
               placeholder="Select CRS flags..."
             />
           </div>
 
           {/* Save Button */}
-          {!readOnly && (
             <div className="flex justify-end pt-4">
               <Button
-                onClick={handleSaveLoanTerms}
+                        onClick={() => {
+                          handleSaveLoanTerms();
+                          setShowLoanTermsModal(false);
+                        }}
                 disabled={savingLoanTerms}
                 className="flex items-center gap-2"
               >
@@ -422,7 +436,146 @@ export function FinancingTermsTab({
                 )}
               </Button>
             </div>
-          )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* First Row: Interest Rates and Repayment Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Interest Rates Card */}
+              <Card className="hover:border-gray-300 transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg">
+                      <Percent className="h-4 w-4 text-gray-600" />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div>
+                        <div className="text-xs font-medium text-gray-600 mb-1">Interest Rate 1</div>
+                        <div className="text-lg font-semibold text-gray-900">
+                          {loanTermsForm.rate_1 ? `${loanTermsForm.rate_1}%` : '-'}
+                        </div>
+                      </div>
+                      <div className="border-t pt-3">
+                        <div className="text-xs font-medium text-gray-600 mb-1">Interest Rate 2</div>
+                        <div className="text-lg font-semibold text-gray-900">
+                          {loanTermsForm.rate_2 ? `${loanTermsForm.rate_2}%` : '-'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Repayment Info Card */}
+              <Card className="hover:border-gray-300 transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg">
+                      <FileText className="h-4 w-4 text-gray-600" />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div>
+                        <div className="text-xs font-medium text-gray-600 mb-1">Repayment Type</div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          {loanTermsForm.repayment_type_code ? 
+                            getRepaymentTypeLabel(loanTermsForm.repayment_type_code) : 
+                            '-'
+                          }
+                        </div>
+                      </div>
+                      <div className="border-t pt-3">
+                        <div className="text-xs font-medium text-gray-600 mb-1">Repayment Plan</div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          {loanTermsForm.repayment_plan_code ? 
+                            getRepaymentPlanLabel(loanTermsForm.repayment_plan_code) : 
+                            '-'
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Second Row: Dates */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Commitment Date */}
+              <Card className="hover:border-gray-300 transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg">
+                      <Calendar className="h-4 w-4 text-gray-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-gray-600 mb-1">Commitment Date</div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {loanTermsForm.commitment_date ? formatDate(loanTermsForm.commitment_date) : '-'}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* First Repayment */}
+              <Card className="hover:border-gray-300 transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg">
+                      <Calendar className="h-4 w-4 text-gray-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-gray-600 mb-1">First Repayment</div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {loanTermsForm.repayment_first_date ? formatDate(loanTermsForm.repayment_first_date) : '-'}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Final Repayment */}
+              <Card className="hover:border-gray-300 transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg">
+                      <Calendar className="h-4 w-4 text-gray-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-gray-600 mb-1">Final Repayment</div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {loanTermsForm.repayment_final_date ? formatDate(loanTermsForm.repayment_final_date) : '-'}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Third Row: OECD CRS Flags */}
+            <div className="grid grid-cols-1 gap-4">
+              <Card className="hover:border-gray-300 transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg">
+                      <FileText className="h-4 w-4 text-gray-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-gray-600 mb-1">OECD CRS Flags</div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {selectedCRSFlags.length > 0 ? `${selectedCRSFlags.length} selected` : '-'}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -441,7 +594,7 @@ export function FinancingTermsTab({
             </div>
             {!readOnly && (
               <Button
-                onClick={() => setShowAddLoanStatus(true)}
+                onClick={() => setShowAddLoanStatusModal(true)}
                 size="sm"
                 variant="outline"
                 className="flex items-center gap-2"
@@ -453,115 +606,6 @@ export function FinancingTermsTab({
           </div>
         </CardHeader>
         <CardContent>
-          {/* Add New Loan Status Form */}
-          {showAddLoanStatus && (
-            <div className="mb-4 p-4 border rounded-lg bg-gray-50 space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">Add Loan Status for Year</h4>
-                <Button
-                  onClick={() => setShowAddLoanStatus(false)}
-                  variant="ghost"
-                  size="sm"
-                >
-                  Cancel
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <Label htmlFor="new-year" className="text-xs">Year *</Label>
-                  <Input
-                    id="new-year"
-                    type="number"
-                    value={newLoanStatus.year || ''}
-                    onChange={(e) => setNewLoanStatus({ ...newLoanStatus, year: parseInt(e.target.value) })}
-                    placeholder="2024"
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-currency" className="text-xs">Currency *</Label>
-                  <Input
-                    id="new-currency"
-                    type="text"
-                    value={newLoanStatus.currency || ''}
-                    onChange={(e) => setNewLoanStatus({ ...newLoanStatus, currency: e.target.value.toUpperCase() })}
-                    placeholder="USD"
-                    maxLength={3}
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-value-date" className="text-xs">Value Date</Label>
-                  <Input
-                    id="new-value-date"
-                    type="date"
-                    value={newLoanStatus.value_date || ''}
-                    onChange={(e) => setNewLoanStatus({ ...newLoanStatus, value_date: e.target.value })}
-                    className="text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <Label htmlFor="new-interest-received" className="text-xs">Interest Received</Label>
-                  <Input
-                    id="new-interest-received"
-                    type="number"
-                    step="0.01"
-                    value={newLoanStatus.interest_received || ''}
-                    onChange={(e) => setNewLoanStatus({ ...newLoanStatus, interest_received: parseFloat(e.target.value) })}
-                    placeholder="0.00"
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-principal-outstanding" className="text-xs">Principal Outstanding</Label>
-                  <Input
-                    id="new-principal-outstanding"
-                    type="number"
-                    step="0.01"
-                    value={newLoanStatus.principal_outstanding || ''}
-                    onChange={(e) => setNewLoanStatus({ ...newLoanStatus, principal_outstanding: parseFloat(e.target.value) })}
-                    placeholder="0.00"
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-principal-arrears" className="text-xs">Principal Arrears</Label>
-                  <Input
-                    id="new-principal-arrears"
-                    type="number"
-                    step="0.01"
-                    value={newLoanStatus.principal_arrears || ''}
-                    onChange={(e) => setNewLoanStatus({ ...newLoanStatus, principal_arrears: parseFloat(e.target.value) })}
-                    placeholder="0.00"
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-interest-arrears" className="text-xs">Interest Arrears</Label>
-                  <Input
-                    id="new-interest-arrears"
-                    type="number"
-                    step="0.01"
-                    value={newLoanStatus.interest_arrears || ''}
-                    onChange={(e) => setNewLoanStatus({ ...newLoanStatus, interest_arrears: parseFloat(e.target.value) })}
-                    placeholder="0.00"
-                    className="text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <Button onClick={handleAddLoanStatus} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* Loan Status Table */}
           {loanStatuses.length > 0 ? (
@@ -591,14 +635,36 @@ export function FinancingTermsTab({
                       <td className="p-2 text-right">{status.interest_arrears?.toLocaleString() || '0'}</td>
                       {!readOnly && (
                         <td className="p-2 text-center">
-                          <Button
-                            onClick={() => handleDeleteLoanStatus(status.id, status.year)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              onClick={() => {
+                                setEditingLoanStatusId(status.id);
+                                setEditingLoanStatusValues({
+                                  year: status.year,
+                                  currency: status.currency,
+                                  value_date: status.value_date,
+                                  interest_received: status.interest_received,
+                                  principal_outstanding: status.principal_outstanding,
+                                  principal_arrears: status.principal_arrears,
+                                  interest_arrears: status.interest_arrears
+                                });
+                                setShowAddLoanStatusModal(true);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteLoanStatus(status.id, status.year)}
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -616,32 +682,23 @@ export function FinancingTermsTab({
         </CardContent>
       </Card>
 
-      {/* Channel Code (Read-Only Reference) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Info className="h-4 w-4 text-gray-600" />
-            CRS Channel Code
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Derived from participating organisations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {channelCode ? (
-            <div className="p-3 bg-gray-50 rounded-md border">
-              <div className="font-medium text-sm">{channelCode}</div>
-              <div className="text-xs text-gray-600 mt-1">
-                This channel code is automatically populated from the primary implementing organisation
-              </div>
-            </div>
-          ) : (
-            <div className="text-sm text-gray-500">
-              No channel code available. Add an implementing organisation with a CRS channel code.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+      {/* Add Loan Status Modal */}
+      <AddLoanStatusModal
+        open={showAddLoanStatusModal}
+        onOpenChange={(open) => {
+          setShowAddLoanStatusModal(open);
+          if (!open) {
+            setEditingLoanStatusId(null);
+            setEditingLoanStatusValues({});
+          }
+        }}
+        onSubmit={handleAddLoanStatus}
+        onUpdate={handleUpdateLoanStatus}
+        activityId={activityId}
+        editingId={editingLoanStatusId}
+        editingValues={editingLoanStatusValues}
+      />
     </div>
   );
 }

@@ -244,11 +244,11 @@ export const SectorAllocationChart: React.FC<SectorAllocationChartProps> = ({
   );
 };
 
-// Color palette for sectors
+// Color palette for sectors - muted and consistent
 const SECTOR_COLORS = [
   '#3B82F6', // Blue
-  '#10B981', // Green
-  '#F59E0B', // Yellow
+  '#64748b', // Slate-500 (muted blue-gray)
+  '#475569', // Slate-600 (darker blue-gray)
   '#EF4444', // Red
   '#8B5CF6', // Purple
   '#F97316', // Orange

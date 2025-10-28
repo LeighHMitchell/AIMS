@@ -27,11 +27,14 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 NODE_ENV=production
 ```
 
-#### Optional Variables:
+#### Optional Variables (Recommended):
 ```
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 NEXT_PUBLIC_APP_URL=https://your-vercel-domain.vercel.app
+EXCHANGERATE_HOST_API_KEY=your_exchange_rate_api_key
 ```
+
+**Note**: `EXCHANGERATE_HOST_API_KEY` is optional but recommended for accurate historical currency conversion. Without it, fallback rates from the database will be used.
 
 ### 4. GitHub Actions Workflow ✅
 - [x] `.github/workflows/deploy.yml` configured

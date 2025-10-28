@@ -21,26 +21,132 @@ export async function GET(
     
     console.log('[AIMS] GET /api/activities/[id]/transactions - Fetching for activity:', activityId);
     
-    const { data: transactions, error } = await getSupabaseAdmin()
+    // Get query parameters for linked transactions
+    const { searchParams } = new URL(request.url);
+    const includeLinked = searchParams.get('includeLinked') !== 'false'; // Default to true
+    
+    // Fetch own transactions
+    const { data: ownTransactions, error } = await getSupabaseAdmin()
       .from('transactions')
-      .select('*')
+      .select(`
+        *,
+        provider_organization:organizations!provider_org_id (
+          id,
+          name,
+          acronym,
+          logo
+        ),
+        receiver_organization:organizations!receiver_org_id (
+          id,
+          name,
+          acronym,
+          logo
+        )
+      `)
       .eq('activity_id', activityId)
       .order('transaction_date', { ascending: false });
-    
+      
     if (error) {
-      console.error('[AIMS] Error fetching transactions:', error);
+      console.error('[AIMS] Error fetching own transactions:', error);
       return NextResponse.json(
         { error: 'Failed to fetch transactions', details: error.message },
         { status: 500 }
       );
     }
+
+    // Transform own transactions with source classification
+    let allTransactions = (ownTransactions || []).map((t: any) => ({
+      ...t,
+      transaction_source: 'own' as const
+    }));
+
+    // Fetch linked transactions if requested
+    if (includeLinked) {
+      try {
+        // Get linked activities (both directions)
+        const { data: relatedActivities, error: relatedError } = await getSupabaseAdmin()
+          .from('related_activities')
+          .select('linked_activity_id, source_activity_id')
+          .or(`source_activity_id.eq.${activityId},linked_activity_id.eq.${activityId}`);
+        
+        if (relatedError) {
+          console.error('[AIMS] Error fetching related activities:', relatedError);
+        } else if (relatedActivities && relatedActivities.length > 0) {
+          // Extract linked activity IDs
+          const linkedActivityIds = new Set<string>();
+          relatedActivities.forEach((ra: any) => {
+            if (ra.source_activity_id === activityId && ra.linked_activity_id) {
+              linkedActivityIds.add(ra.linked_activity_id);
+            } else if (ra.linked_activity_id === activityId && ra.source_activity_id) {
+              linkedActivityIds.add(ra.source_activity_id);
+            }
+          });
+
+          if (linkedActivityIds.size > 0) {
+            // Fetch transactions from linked activities
+            const { data: linkedTransactions, error: linkedError } = await getSupabaseAdmin()
+              .from('transactions')
+              .select(`
+                *,
+                activity:activities!activity_id (
+                  id,
+                  title_narrative,
+                  iati_identifier
+                ),
+                provider_organization:organizations!provider_org_id (
+                  id,
+                  name,
+                  acronym,
+                  logo
+                ),
+                receiver_organization:organizations!receiver_org_id (
+                  id,
+                  name,
+                  acronym,
+                  logo
+                )
+              `)
+              .in('activity_id', Array.from(linkedActivityIds))
+              .neq('activity_id', activityId) // Exclude current activity
+              .order('transaction_date', { ascending: false });
+
+            if (linkedError) {
+              console.error('[AIMS] Error fetching linked transactions:', linkedError);
+            } else if (linkedTransactions) {
+              // Add linked transactions with proper classification
+              const formattedLinkedTransactions = linkedTransactions.map((t: any) => ({
+                ...t,
+                transaction_source: 'linked' as const,
+                linked_from_activity_id: t.activity_id,
+                linked_from_activity_title: t.activity?.title_narrative,
+                linked_from_activity_iati_id: t.activity?.iati_identifier,
+                acceptance_status: t.acceptance_status || 'pending' as const
+              }));
+              
+              allTransactions = [...allTransactions, ...formattedLinkedTransactions];
+            }
+          }
+        }
+      } catch (linkedError) {
+        console.error('[AIMS] Error processing linked transactions:', linkedError);
+        // Continue with just own transactions
+      }
+    }
+
+    const transactions = allTransactions;
     
     // Map uuid to id for frontend compatibility and ensure all required fields
     const transformedTransactions = (transactions || []).map((t: any) => ({
       ...t,
       id: t.uuid || t.id, // UI components expect 'id' field
       uuid: t.uuid || t.id, // But also provide 'uuid' for filtering
-      organization_id: t.provider_org_id || t.receiver_org_id
+      organization_id: t.provider_org_id || t.receiver_org_id,
+      // Include organization logos
+      provider_org_logo: t.provider_organization?.logo,
+      receiver_org_logo: t.receiver_organization?.logo,
+      // Update org names to use joined data if available
+      provider_org_name: t.provider_organization?.acronym || t.provider_organization?.name || t.provider_org_name,
+      receiver_org_name: t.receiver_organization?.acronym || t.receiver_organization?.name || t.receiver_org_name,
     }));
     
     console.log(`[AIMS] Successfully fetched ${transformedTransactions.length} transactions for activity ${activityId}`);

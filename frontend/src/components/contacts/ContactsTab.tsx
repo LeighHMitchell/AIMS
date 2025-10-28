@@ -202,7 +202,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
   };
 
   // Handle search result selection
-  const handleSearchSelect = (result: SearchResult) => {
+  const handleSearchSelect = async (result: SearchResult) => {
     const normalized = normalizeContact(result, result.source);
     
     // Check for duplicates
@@ -213,9 +213,18 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       return;
     }
 
-    // Pre-fill form with search result
-    setEditingContact(normalized);
-    setShowForm(true);
+    // Add contact directly without showing form
+    try {
+      console.log('[ContactsTab] Adding contact from search:', normalized);
+      const updatedContacts = [...contacts, normalized];
+      console.log('[ContactsTab] New contacts array length:', updatedContacts.length);
+      
+      await saveContacts(updatedContacts);
+      console.log('[ContactsTab] Contact added successfully');
+    } catch (error) {
+      console.error('[ContactsTab] Error adding contact from search:', error);
+      // Error handled by saveContacts
+    }
   };
 
   // Handle create new contact

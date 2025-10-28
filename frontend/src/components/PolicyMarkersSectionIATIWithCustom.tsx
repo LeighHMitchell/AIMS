@@ -41,6 +41,7 @@ interface PolicyMarkersSectionProps {
   policyMarkers: ActivityPolicyMarker[];
   onChange: (markers: ActivityPolicyMarker[]) => void;
   setHasUnsavedChanges?: (hasChanges: boolean) => void;
+  readOnly?: boolean;
 }
 
 // Helper function to get significance label based on marker type
@@ -116,7 +117,7 @@ const FALLBACK_IATI_MARKERS: IATIPolicyMarker[] = [
   { id: '12', code: '12', name: 'Nutrition', description: 'Activities that address nutrition outcomes', marker_type: 'other', vocabulary: '1', iati_code: '12', is_iati_standard: true }
 ];
 
-export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyMarkers, onChange, setHasUnsavedChanges }: PolicyMarkersSectionProps) {
+export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyMarkers, onChange, setHasUnsavedChanges, readOnly = false }: PolicyMarkersSectionProps) {
   const { user } = useUser();
   const policyMarkersAutosave = usePolicyMarkersAutosave(activityId, user?.id);
   
@@ -486,119 +487,83 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     const isSelected = significance > 0;
 
     return (
-      <div key={markerUuid} className={`border rounded-lg p-4 transition-all ${
-        isSelected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-white'
+      <div key={markerUuid} className={`border rounded-lg p-3 transition-all ${
+        isSelected ? 'border-slate-400 bg-slate-50' : 'border-slate-200 bg-white'
       }`}>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center gap-2">
-                {MARKER_TYPE_ICONS[marker.marker_type]}
-                {marker.is_iati_standard ? (
-                  <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                    IATI {marker.iati_code}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                    {marker.code.startsWith('CUSTOM_') ? marker.code.substring(7) : marker.code}
-                  </span>
-                )}
-                <h4 className="font-medium text-sm text-gray-900">{marker.name}</h4>
-              </div>
-              
-              {/* Vocabulary Badge */}
-              <div className="flex items-center gap-1">
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                  {!marker.is_iati_standard ? '99' : (marker.vocabulary || '1')}
+        <div className="space-y-2">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                  {marker.is_iati_standard ? marker.iati_code : marker.code.startsWith('CUSTOM_') ? marker.code.substring(7) : marker.code}
                 </span>
-                <span className="text-xs text-gray-400 font-normal">
-                  {!marker.is_iati_standard ? (marker.vocabulary_name || 'Custom Organization') : (VOCABULARY_LABELS[marker.vocabulary as keyof typeof VOCABULARY_LABELS] || 'OECD DAC CRS')}
-                </span>
-              </div>
-              
-              {/* Custom Badge, Edit and Delete Buttons */}
-              {!marker.is_iati_standard && (
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs border-gray-400 text-gray-600">
+                {!marker.is_iati_standard && (
+                  <Badge variant="outline" className="text-xs border-slate-400 text-slate-600">
                     Custom
                   </Badge>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs h-6 px-2 text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      editCustomMarker(marker.id);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs h-6 px-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteCustomMarker(marker.id);
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
+              <h4 className="font-medium text-xs text-slate-900 leading-tight">{marker.name}</h4>
             </div>
             
-            {marker.description && (
-              <p className="text-xs text-gray-600 mb-3">{marker.description}</p>
+            {isSelected && (
+              <CheckCircle className="h-4 w-4 text-slate-600 flex-shrink-0" />
             )}
-            
-            {/* Significance Selection */}
-            <div className="mb-3">
-              <Label className="text-xs font-medium mb-1 block">Significance Level</Label>
+          </div>
+          
+          {/* Significance Level */}
+          {readOnly ? (
+            <div className="text-xs">
+              <span className="text-slate-600">Significance: </span>
+              <span className="font-medium text-slate-900">
+                {getSignificanceLabel(marker.code === '8', significance)}
+              </span>
+            </div>
+          ) : (
+            <div>
+              <Label className="text-xs font-medium mb-1 block text-slate-700">Significance</Label>
               <PolicyMarkerScoreSelectIATI
                 value={significance}
                 onValueChange={(value) => updateMarkerSignificance(markerUuid, value as 0 | 1 | 2 | 3 | 4)}
-                policyMarker={marker} // Use new IATI-compliant validation
+                policyMarker={marker}
               />
             </div>
-            
-            {/* Rationale (only show if marker is selected) */}
-            {isSelected && (
-              <div className="mb-3">
-                <Label className="text-xs font-medium mb-1 block">Rationale</Label>
-                <Textarea
-                  value={rationale}
-                  onChange={(e) => {
-                    const newSelectedMarkers = new Map(selectedMarkers);
-                    const existingMarker = newSelectedMarkers.get(markerUuid);
-                    if (existingMarker) {
-                      newSelectedMarkers.set(markerUuid, {
-                        ...existingMarker,
-                        rationale: e.target.value
-                      });
-                      setSelectedMarkers(newSelectedMarkers);
-                      
-                      const updatedMarkers = Array.from(newSelectedMarkers.values());
-                      onChange(updatedMarkers);
-                      
-                      if (policyMarkersAutosave) {
-                        policyMarkersAutosave.trigger(updatedMarkers);
-                      }
-                      
-                      setHasUnsavedChanges?.(true);
-                    }
-                  }}
-                  placeholder="Explain why this marker applies to your activity..."
-                  className="text-xs"
-                  rows={2}
-                />
-              </div>
-            )}
-          </div>
-
-          {isSelected && (
-            <div className="ml-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+          )}
+          
+          {/* Rationale */}
+          {isSelected && rationale && (
+            <div>
+              <Label className="text-xs font-medium mb-1 block text-slate-700">Rationale</Label>
+              <p className="text-xs text-slate-600 line-clamp-2">{rationale}</p>
+            </div>
+          )}
+          
+          {/* Edit/Delete for custom markers */}
+          {!marker.is_iati_standard && !readOnly && (
+            <div className="flex gap-1 pt-2 border-t border-slate-200">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-6 px-2 text-slate-600 border-slate-300 hover:bg-slate-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  editCustomMarker(marker.id);
+                }}
+              >
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-6 px-2 text-slate-600 border-slate-300 hover:bg-slate-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteCustomMarker(marker.id);
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
             </div>
           )}
         </div>
@@ -636,13 +601,14 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           <HelpText content={HELP_CONTENT} />
         </div>
         <div className="flex items-center gap-4">
-          <Dialog open={showAddCustomDialog} onOpenChange={setShowAddCustomDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="text-xs bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="h-3 w-3 mr-1" />
-                Add Custom Policy Marker
-              </Button>
-            </DialogTrigger>
+          {!readOnly && (
+            <Dialog open={showAddCustomDialog} onOpenChange={setShowAddCustomDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="text-xs bg-blue-600 hover:bg-blue-700 text-white">
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add Custom Policy Marker
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Add Custom Policy Marker</DialogTitle>
@@ -759,9 +725,11 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
               </div>
             </DialogContent>
           </Dialog>
+          )}
 
           {/* Edit Custom Marker Dialog */}
-          <Dialog open={showEditCustomDialog} onOpenChange={setShowEditCustomDialog}>
+          {!readOnly && (
+            <Dialog open={showEditCustomDialog} onOpenChange={setShowEditCustomDialog}>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Edit Custom Policy Marker</DialogTitle>
@@ -878,62 +846,90 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
               </div>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
 
-      {/* Tabbed Interface */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          {Object.entries(MARKER_TYPE_LABELS).map(([type, label]) => {
-            const typeMarkers = getMarkersByType(type);
-            const selectedInType = typeMarkers.filter(m => selectedMarkers.has(m.id)).length;
-            const totalInType = typeMarkers.length;
-            
-            return (
-              <TabsTrigger key={type} value={type} className="relative">
-                <div className="flex items-center gap-2">
-                  {MARKER_TYPE_ICONS[type as keyof typeof MARKER_TYPE_ICONS]}
-                  <span className="hidden sm:inline">{label}</span>
-                  <span className="sm:hidden">{label.split(' ')[0]}</span>
-                </div>
-                <Badge 
-                  variant={selectedInType > 0 ? "default" : "secondary"} 
-                  className={`ml-2 text-xs ${
-                    selectedInType > 0 
-                      ? 'bg-green-100 text-green-700 border-green-200' 
-                      : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  {selectedInType}/{totalInType}
-                </Badge>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+      {/* Single View - All Targeted Policy Markers */}
+      {readOnly ? (
+        <div className="space-y-4">
+          {/* Filter to show only targeted markers (significance > 0) */}
+          {(() => {
+            const targetedMarkers = availableMarkers.filter(marker => {
+              const markerUuid = marker.uuid || marker.id;
+              const significance = getMarkerSignificance(markerUuid);
+              return significance > 0;
+            });
 
-        {Object.keys(MARKER_TYPE_LABELS).map(type => (
-          <TabsContent key={type} value={type} className="mt-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-4">
-                {MARKER_TYPE_ICONS[type as keyof typeof MARKER_TYPE_ICONS]}
-                <h4 className="font-medium">
-                  {MARKER_TYPE_LABELS[type as keyof typeof MARKER_TYPE_LABELS]}
-                </h4>
-              </div>
-              
-              <div className="grid gap-4">
-                {getMarkersByType(type).map(renderMarkerCard)}
-              </div>
-              
-              {getMarkersByType(type).length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No {MARKER_TYPE_LABELS[type as keyof typeof MARKER_TYPE_LABELS].toLowerCase()} markers available</p>
+            if (targetedMarkers.length === 0) {
+              return (
+                <div className="text-center py-12 text-slate-500">
+                  <p>No policy markers have been selected for this activity.</p>
                 </div>
-              )}
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {targetedMarkers.map(renderMarkerCard)}
+              </div>
+            );
+          })()}
+        </div>
+      ) : (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            {Object.entries(MARKER_TYPE_LABELS).map(([type, label]) => {
+              const typeMarkers = getMarkersByType(type);
+              const selectedInType = typeMarkers.filter(m => selectedMarkers.has(m.id)).length;
+              const totalInType = typeMarkers.length;
+              
+              return (
+                <TabsTrigger key={type} value={type} className="relative">
+                  <div className="flex items-center gap-2">
+                    {MARKER_TYPE_ICONS[type as keyof typeof MARKER_TYPE_ICONS]}
+                    <span className="hidden sm:inline">{label}</span>
+                    <span className="sm:hidden">{label.split(' ')[0]}</span>
+                  </div>
+                  <Badge 
+                    variant={selectedInType > 0 ? "default" : "secondary"} 
+                    className={`ml-2 text-xs ${
+                      selectedInType > 0 
+                        ? 'bg-green-100 text-green-700 border-green-200' 
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {selectedInType}/{totalInType}
+                  </Badge>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {Object.keys(MARKER_TYPE_LABELS).map(type => (
+            <TabsContent key={type} value={type} className="mt-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  {MARKER_TYPE_ICONS[type as keyof typeof MARKER_TYPE_ICONS]}
+                  <h4 className="font-medium">
+                    {MARKER_TYPE_LABELS[type as keyof typeof MARKER_TYPE_LABELS]}
+                  </h4>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {getMarkersByType(type).map(renderMarkerCard)}
+                </div>
+                
+                {getMarkersByType(type).length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No {MARKER_TYPE_LABELS[type as keyof typeof MARKER_TYPE_LABELS].toLowerCase()} markers available</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
     </div>
   );
 }

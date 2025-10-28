@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +97,7 @@ interface TransactionsManagerProps {
   defaultTiedStatus?: string;
   defaultFlowType?: string;
   defaultDisbursementChannel?: string;
+  initialTransactionId?: string;
 }
 
 export default function TransactionsManager({ 
@@ -109,8 +111,10 @@ export default function TransactionsManager({
   defaultCurrency,
   defaultTiedStatus,
   defaultFlowType,
-  defaultDisbursementChannel
+  defaultDisbursementChannel,
+  initialTransactionId
 }: TransactionsManagerProps) {
+  const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -124,7 +128,8 @@ export default function TransactionsManager({
     status: "all",
     financeType: "all",
     dateFrom: "",
-    dateTo: ""
+    dateTo: "",
+    transactionSource: "all"
   });
   const [submitting, setSubmitting] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
@@ -258,6 +263,31 @@ export default function TransactionsManager({
       fetchActivityData();
     }
   }, [activityId, activityPartnerId]);
+
+  // Auto-open transaction modal when initialTransactionId is provided
+  useEffect(() => {
+    if (initialTransactionId && transactions.length > 0) {
+      console.log('[TransactionsManager] Auto-opening modal for transaction:', initialTransactionId);
+      
+      // Find the transaction by ID (check both uuid and id fields)
+      const transaction = transactions.find(
+        t => t.uuid === initialTransactionId || t.id === initialTransactionId
+      );
+      
+      if (transaction) {
+        console.log('[TransactionsManager] Found transaction to edit:', transaction);
+        setEditingTransaction(transaction);
+        setShowAddDialog(true);
+        
+        // Remove the transactionId from URL to prevent re-opening on refresh
+        const url = new URL(window.location.href);
+        url.searchParams.delete('transactionId');
+        router.replace(url.pathname + url.search, { scroll: false });
+      } else {
+        console.warn('[TransactionsManager] Transaction not found with ID:', initialTransactionId);
+      }
+    }
+  }, [initialTransactionId, transactions, router]);
 
   const handleSubmit = async (formData: Partial<Transaction>) => {
     setSubmitting(true);
@@ -424,6 +454,90 @@ export default function TransactionsManager({
     }
   };
 
+  const handleAcceptTransaction = async (transactionId: string, acceptingActivityId: string) => {
+    try {
+      const response = await fetch(`/api/transactions/${transactionId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          acceptingActivityId,
+          acceptingUserId: undefined // Could be passed as prop if needed
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to accept transaction');
+      }
+
+      const result = await response.json();
+      
+      // Update local state - mark transaction as accepted
+      const updatedTransactions = transactions.map(t => 
+        t.id === transactionId 
+          ? { ...t, acceptance_status: 'accepted' }
+          : t
+      );
+      setTransactions(updatedTransactions);
+      onTransactionsChange?.(updatedTransactions);
+
+      toast.success('Transaction accepted successfully');
+      
+      // Refresh transactions to get the latest state
+      if (onRefreshNeeded) {
+        onRefreshNeeded();
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to accept transaction';
+      console.error('Failed to accept transaction:', error);
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleRejectTransaction = async (transactionId: string, rejectionReason?: string) => {
+    try {
+      const response = await fetch(`/api/transactions/${transactionId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rejectingUserId: undefined, // Could be passed as prop if needed
+          rejectionReason
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reject transaction');
+      }
+
+      const result = await response.json();
+      
+      // Update local state - mark transaction as rejected
+      const updatedTransactions = transactions.map(t => 
+        t.id === transactionId 
+          ? { ...t, acceptance_status: 'rejected' }
+          : t
+      );
+      setTransactions(updatedTransactions);
+      onTransactionsChange?.(updatedTransactions);
+
+      toast.success('Transaction rejected successfully');
+      
+      // Refresh transactions to get the latest state
+      if (onRefreshNeeded) {
+        onRefreshNeeded();
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reject transaction';
+      console.error('Failed to reject transaction:', error);
+      toast.error(errorMessage);
+    }
+  };
+
   const handleExport = () => {
     const dataToExport = filteredTransactions.map(t => ({
       type: TRANSACTION_TYPES[t.transaction_type],
@@ -499,6 +613,13 @@ export default function TransactionsManager({
     if (filters.financeType !== "all" && t.finance_type !== filters.financeType) return false;
     if (filters.dateFrom && t.transaction_date && t.transaction_date < filters.dateFrom) return false;
     if (filters.dateTo && t.transaction_date && t.transaction_date > filters.dateTo) return false;
+    
+    // Transaction source filter
+    if (filters.transactionSource !== "all") {
+      if (filters.transactionSource === "pending_acceptance" && t.acceptance_status !== "pending") return false;
+      else if (filters.transactionSource !== "pending_acceptance" && t.transaction_source !== filters.transactionSource) return false;
+    }
+    
     return true;
   });
 
@@ -586,6 +707,7 @@ export default function TransactionsManager({
   };
 
   return (
+    <TooltipProvider>
     <div className="space-y-4">
       {/* Hero Cards Summary */}
       {transactions.length > 0 && (
@@ -754,6 +876,9 @@ export default function TransactionsManager({
                 }}
                 onEdit={(transaction: any) => handleEdit(transaction as Transaction)}
                 onDelete={handleDelete}
+                onAcceptTransaction={handleAcceptTransaction}
+                onRejectTransaction={handleRejectTransaction}
+                currentActivityId={activityId}
                 variant="compact"
                 selectedIds={selectedTransactionIds}
                 onSelectAll={handleSelectAll}
@@ -878,5 +1003,6 @@ export default function TransactionsManager({
         isSubmitting={submitting}
       />
     </div>
+    </TooltipProvider>
   );
 } 

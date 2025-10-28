@@ -12,11 +12,13 @@ interface TransactionFilter {
     dateFrom: string;
     dateTo: string;
     status: string;
+    transactionSource?: string;
   };
   sortField?: string;
   sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
+  includeLinked?: boolean;
 }
 
 interface TransactionResponse {
@@ -71,6 +73,10 @@ export function useTransactions(params: TransactionFilter = {}) {
       if (params.limit) {
         queryParams.append("limit", params.limit.toString());
       }
+      
+      if (params.includeLinked !== undefined) {
+        queryParams.append("includeLinked", params.includeLinked.toString());
+      }
 
       const response = await fetch(`/api/transactions?${queryParams.toString()}`);
       
@@ -113,6 +119,7 @@ export function useTransactions(params: TransactionFilter = {}) {
     params.sortOrder,
     params.page,
     params.limit,
+    params.includeLinked,
   ]);
 
   // Optimistic delete function
@@ -133,6 +140,86 @@ export function useTransactions(params: TransactionFilter = {}) {
     }));
   };
 
+  // Accept linked transaction
+  const acceptTransaction = async (transactionId: string, acceptingActivityId: string, acceptingUserId?: string) => {
+    try {
+      const response = await fetch(`/api/transactions/${transactionId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          acceptingActivityId,
+          acceptingUserId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to accept transaction');
+      }
+
+      const result = await response.json();
+      
+      // Update transactions list - remove linked transaction and add accepted copy if it belongs to current view
+      setTransactions(prev => ({
+        ...prev,
+        data: prev.data.map(t => 
+          (t.uuid || t.id) === transactionId 
+            ? { ...t, acceptance_status: 'accepted' }
+            : t
+        )
+      }));
+
+      toast.success('Transaction accepted successfully');
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to accept transaction';
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
+  // Reject linked transaction
+  const rejectTransaction = async (transactionId: string, rejectingUserId?: string, rejectionReason?: string) => {
+    try {
+      const response = await fetch(`/api/transactions/${transactionId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rejectingUserId,
+          rejectionReason
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reject transaction');
+      }
+
+      const result = await response.json();
+      
+      // Update transactions list - mark as rejected
+      setTransactions(prev => ({
+        ...prev,
+        data: prev.data.map(t => 
+          (t.uuid || t.id) === transactionId 
+            ? { ...t, acceptance_status: 'rejected' }
+            : t
+        )
+      }));
+
+      toast.success('Transaction rejected successfully');
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reject transaction';
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
   return {
     transactions,
     loading,
@@ -140,5 +227,7 @@ export function useTransactions(params: TransactionFilter = {}) {
     refetch: fetchTransactions,
     deleteTransaction,
     addTransaction,
+    acceptTransaction,
+    rejectTransaction,
   };
 } 

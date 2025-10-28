@@ -90,8 +90,8 @@ export async function POST(request: NextRequest) {
     // Branch: JSON body import (used by URL import tool and stepwise imports)
     if (contentType.includes('application/json')) {
       try {
-        const data: ImportRequest = await request.json();
-        const { activities, organizations, transactions } = data as any;
+        const data: ImportRequest & { organizationId?: string } = await request.json();
+        const { activities, organizations, transactions, organizationId } = data as any;
 
         console.log('[IATI Import] JSON import detected:', {
           activities: activities?.length || 0,
@@ -184,6 +184,23 @@ export async function POST(request: NextRequest) {
           .select('id, iati_org_id, name');
         const orgMap = new Map((allOrgs || []).map((o: any) => [o.iati_org_id || o.name, o.id]));
 
+        // Load org import preferences (if provided) and build helpers
+        let orgPrefs: any | null = null;
+        if (organizationId) {
+          const { data: org } = await getSupabaseAdmin()
+            .from('organizations')
+            .select('iati_import_preferences')
+            .eq('id', organizationId)
+            .single();
+          orgPrefs = org?.iati_import_preferences || null;
+        }
+
+        const isAllowed = (fieldId: string) => {
+          if (!orgPrefs || !orgPrefs.fields) return true;
+          const val = orgPrefs.fields[fieldId];
+          return val !== false;
+        };
+
         // Import activities (if provided)
         const activityIdMap = new Map<string, string>();
         if (Array.isArray(activities) && activities.length > 0) {
@@ -194,12 +211,12 @@ export async function POST(request: NextRequest) {
               const partnerId = implementingOrg ? (orgMap.get(implementingOrg.ref) || orgMap.get(implementingOrg.name)) : (fundingOrg ? (orgMap.get(fundingOrg.ref) || orgMap.get(fundingOrg.name)) : null);
 
               const activityData: any = {
-                title: (activity as any).title,
-                description: (activity as any).description,
+                title: isAllowed('iati-activity/title') ? (activity as any).title : null,
+                description: isAllowed('iati-activity/description') ? (activity as any).description : null,
                 iati_id: (activity as any).iatiIdentifier,
                 activity_status: (activity as any).status === 'Implementation' ? 'active' : (activity as any).status === 'Completion' ? 'completed' : (activity as any).status === 'Cancelled' ? 'cancelled' : 'planned',
-                planned_start_date: (activity as any).startDate,
-                planned_end_date: (activity as any).endDate,
+                planned_start_date: isAllowed('iati-activity/activity-date[@type=start-planned]') ? (activity as any).startDate : null,
+                planned_end_date: isAllowed('iati-activity/activity-date[@type=end-planned]') ? (activity as any).endDate : null,
                 partner_id: partnerId,
                 updated_at: new Date().toISOString()
               };
@@ -208,7 +225,17 @@ export async function POST(request: NextRequest) {
               if ((activity as any).matched && (activity as any).existingId) {
                 const { data: updateResult, error } = await getSupabaseAdmin()
                   .from('activities')
-                  .update(activityData)
+                  .update({
+                    // Do not overwrite existing data on update per preference (2b)
+                    // Only set fields that are allowed and non-null
+                    ...(activityData.title !== null ? { title: activityData.title } : {}),
+                    ...(activityData.description !== null ? { description: activityData.description } : {}),
+                    activity_status: activityData.activity_status,
+                    ...(activityData.planned_start_date !== null ? { planned_start_date: activityData.planned_start_date } : {}),
+                    ...(activityData.planned_end_date !== null ? { planned_end_date: activityData.planned_end_date } : {}),
+                    partner_id: activityData.partner_id,
+                    updated_at: activityData.updated_at
+                  })
                   .eq('id', (activity as any).existingId)
                   .select();
                 if (error) throw error;
@@ -318,9 +345,9 @@ export async function POST(request: NextRequest) {
                 value: (transaction as any).value,
                 currency: (transaction as any).currency || 'USD',
                 status: 'actual',
-                transaction_reference: (transaction as any).transactionReference || null,
+                transaction_reference: isAllowed('iati-activity/transaction') ? ((transaction as any).transactionReference || null) : null,
                 value_date: (transaction as any).valueDate || null,
-                description: (transaction as any).description || null,
+                description: isAllowed('iati-activity/transaction') ? ((transaction as any).description || null) : null,
                 provider_org_id: providerOrgId,
                 provider_org_type: (transaction as any).providerOrgType || null,
                 provider_org_ref: (transaction as any).providerOrgRef || (transaction as any).providerOrg || null,
@@ -329,16 +356,16 @@ export async function POST(request: NextRequest) {
                 receiver_org_type: (transaction as any).receiverOrgType || null,
                 receiver_org_ref: (transaction as any).receiverOrgRef || (transaction as any).receiverOrg || null,
                 receiver_org_name: (transaction as any).receiverOrgName || (transaction as any).receiverOrg || null,
-                disbursement_channel: (transaction as any).disbursementChannel || null,
-                flow_type: (transaction as any).flowType || null,
-                finance_type: (transaction as any).financeType || null,
-                aid_type: (transaction as any).aidType || null,
-                tied_status: (transaction as any).tiedStatus || null,
-                sector_code: (transaction as any).sectorCode || null,
-                sector_vocabulary: (transaction as any).sectorVocabulary || null,
-                recipient_country_code: (transaction as any).recipientCountryCode || null,
-                recipient_region_code: (transaction as any).recipientRegionCode || null,
-                recipient_region_vocab: (transaction as any).recipientRegionVocab || null,
+                disbursement_channel: isAllowed('iati-activity/transaction') ? ((transaction as any).disbursementChannel || null) : null,
+                flow_type: isAllowed('iati-activity/transaction') ? ((transaction as any).flowType || null) : null,
+                finance_type: isAllowed('iati-activity/transaction') ? ((transaction as any).financeType || null) : null,
+                aid_type: isAllowed('iati-activity/transaction') ? ((transaction as any).aidType || null) : null,
+                tied_status: isAllowed('iati-activity/transaction') ? ((transaction as any).tiedStatus || null) : null,
+                sector_code: isAllowed('iati-activity/transaction') ? ((transaction as any).sectorCode || null) : null,
+                sector_vocabulary: isAllowed('iati-activity/transaction') ? ((transaction as any).sectorVocabulary || null) : null,
+                recipient_country_code: isAllowed('iati-activity/transaction') ? ((transaction as any).recipientCountryCode || null) : null,
+                recipient_region_code: isAllowed('iati-activity/transaction') ? ((transaction as any).recipientRegionCode || null) : null,
+                recipient_region_vocab: isAllowed('iati-activity/transaction') ? ((transaction as any).recipientRegionVocab || null) : null,
                 is_humanitarian: (transaction as any).isHumanitarian || false
               };
 

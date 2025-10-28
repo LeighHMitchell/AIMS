@@ -192,7 +192,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-blue-600 font-medium">Total Budget</p>
+            <p className="text-sm text-blue-600 font-medium">Total Budgeted</p>
             <p className="text-2xl font-bold text-blue-900">
               {formatCurrency(financials.totalBudget)}
             </p>

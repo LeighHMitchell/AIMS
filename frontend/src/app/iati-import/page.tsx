@@ -320,6 +320,7 @@ export default function IATIImportPage() {
           organizations: orgsToImport,
           transactions: [],
           userId: user?.id,
+          organizationId: user?.organizationId,
           timestamp: new Date().toISOString()
         })
       })
@@ -384,6 +385,7 @@ export default function IATIImportPage() {
           organizations: [],
           transactions: [],
           userId: user?.id,
+          organizationId: user?.organizationId,
           timestamp: new Date().toISOString()
         })
       })
@@ -448,6 +450,7 @@ export default function IATIImportPage() {
           organizations: [],
           transactions: transactionsToImport,
           userId: user?.id,
+          organizationId: user?.organizationId,
           timestamp: new Date().toISOString()
         })
       })

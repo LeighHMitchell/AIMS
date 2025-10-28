@@ -28,8 +28,23 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now();
 
     // Get import data
-    const data: ImportData = await request.json();
-    const { activities, transactions, fixes, orphanResolutions, codeMappings, organizationAssignments } = data;
+    const data: ImportData & { organizationId?: string } = await request.json();
+    const { activities, transactions, fixes, orphanResolutions, codeMappings, organizationAssignments, organizationId } = data as any;
+    // Load org preferences if org is provided
+    let orgPrefs: any | null = null;
+    if (organizationId) {
+      const { data: org } = await getSupabaseAdmin()
+        .from('organizations')
+        .select('iati_import_preferences')
+        .eq('id', organizationId)
+        .single();
+      orgPrefs = org?.iati_import_preferences || null;
+    }
+    const isAllowed = (fieldId: string) => {
+      if (!orgPrefs || !orgPrefs.fields) return true;
+      const val = orgPrefs.fields[fieldId];
+      return val !== false;
+    };
     
     // Get code mappings from either location
     const effectiveCodeMappings = codeMappings || fixes?.codeMappings || {};
@@ -83,11 +98,11 @@ export async function POST(request: NextRequest) {
           const { error } = await getSupabaseAdmin()
             .from('activities')
             .update({
-              title: activity.title,
-              description: activity.description,
+              ...(isAllowed('iati-activity/title') && activity.title ? { title: activity.title } : {}),
+              ...(isAllowed('iati-activity/description') && activity.description ? { description: activity.description } : {}),
               activity_status: activity.activity_status,
-              planned_start_date: activity.planned_start_date,
-              planned_end_date: activity.planned_end_date,
+              ...(isAllowed('iati-activity/activity-date[@type=start-planned]') && activity.planned_start_date ? { planned_start_date: activity.planned_start_date } : {}),
+              ...(isAllowed('iati-activity/activity-date[@type=end-planned]') && activity.planned_end_date ? { planned_end_date: activity.planned_end_date } : {}),
               actual_start_date: activity.actual_start_date,
               actual_end_date: activity.actual_end_date,
               updated_at: new Date().toISOString()
@@ -103,11 +118,11 @@ export async function POST(request: NextRequest) {
             .from('activities')
             .insert({
               iati_id: iatiId,
-              title: activity.title,
-              description: activity.description,
+              title: isAllowed('iati-activity/title') ? activity.title : null,
+              description: isAllowed('iati-activity/description') ? activity.description : null,
               activity_status: activity.activity_status || 'draft',
-              planned_start_date: activity.planned_start_date,
-              planned_end_date: activity.planned_end_date,
+              planned_start_date: isAllowed('iati-activity/activity-date[@type=start-planned]') ? activity.planned_start_date : null,
+              planned_end_date: isAllowed('iati-activity/activity-date[@type=end-planned]') ? activity.planned_end_date : null,
               actual_start_date: activity.actual_start_date,
               actual_end_date: activity.actual_end_date,
               created_at: new Date().toISOString(),
@@ -388,6 +403,25 @@ export async function POST(request: NextRequest) {
           continue; // Skip this transaction
         }
 
+        // Check if finance type should be inherited from activity defaults
+        let effectiveFinanceType = financeType;
+        let financeTypeInherited = false;
+        
+        if (!financeType) {
+          // Fetch activity's default finance type
+          const { data: activityData } = await getSupabaseAdmin()
+            .from('activities')
+            .select('default_finance_type')
+            .eq('id', activityId)
+            .single();
+          
+          if (activityData?.default_finance_type) {
+            effectiveFinanceType = activityData.default_finance_type;
+            financeTypeInherited = true;
+            console.log(`[IATI Import Enhanced] Finance type inherited from activity default: ${effectiveFinanceType}`);
+          }
+        }
+
         // Prepare transaction data - only include fields that exist in the database
         const transactionData = {
           activity_id: activityId,
@@ -398,7 +432,7 @@ export async function POST(request: NextRequest) {
           currency: currency,
           status: transaction.status || 'actual',
           value_date: transaction.value_date,
-          description: transaction.description,
+          description: isAllowed('iati-activity/transaction') ? transaction.description : null,
           // Provider organization fields
           provider_org_id: providerOrgId,
           provider_org_ref: transaction.provider_org_ref || transaction.providerOrgRef,
@@ -411,11 +445,13 @@ export async function POST(request: NextRequest) {
           activity_iati_ref: transaction.activityRef,
           // Classification fields
           flow_type: flowType,
+          finance_type: effectiveFinanceType,
+          finance_type_inherited: financeTypeInherited,
           aid_type: aidType,
           tied_status: tiedStatus,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-          // Note: Fields like disbursement_channel, finance_type, sector_code, etc. 
+          // Note: Fields like disbursement_channel, sector_code, etc. 
           // are not included as they don't exist in the current database schema
         };
 

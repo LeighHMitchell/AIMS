@@ -1638,7 +1638,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs }: any) {
   
   // OPTIMIZATION: Lazy loading - only render heavy components after tab has been visited
   // Removed the duplicate skeleton rendering logic here since the parent component
@@ -1758,6 +1758,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         transactions={transactions}
         onTransactionsChange={setTransactions}
         onRefreshNeeded={refreshTransactions}
+        initialTransactionId={transactionId}
         onDefaultsChange={(field, value) => {
           console.log('[AIMS DEBUG] Default field changed:', field, '=', value);
           console.log('[AIMS DEBUG] Current general.id:', general.id);
@@ -2309,6 +2310,9 @@ function NewActivityPageContent() {
       setActiveSection(sectionParam);
     }
   }, [searchParams]);
+
+  // Extract transactionId from URL parameter for auto-opening transaction modal
+  const transactionId = searchParams?.get('transactionId') || undefined;
 
   // Track previous activity ID to detect actual activity switches vs tab navigation
   const [previousActivityId, setPreviousActivityId] = useState<string | null>(null);
@@ -3030,6 +3034,7 @@ function NewActivityPageContent() {
       general: "General Information",
       iati: "IATI Sync",
       sectors: "Sectors",
+      humanitarian: "Humanitarian",
       locations: "Activity Locations",
       subnational_breakdown: "Subnational Breakdown",
       organisations: "Participating Organisations",
@@ -3049,6 +3054,8 @@ function NewActivityPageContent() {
       aid_effectiveness: "Aid Effectiveness",
       budgets: "Budgets",
       "planned-disbursements": "Planned Disbursements",
+      "forward-spending-survey": "Forward Spending Survey",
+      "financing-terms": "Financing Terms",
       "conditions": "Conditions",
       "xml-import": "XML Import"
     };
@@ -3071,7 +3078,9 @@ function NewActivityPageContent() {
       "xml-import": "Import activity data from an IATI-compliant XML file. You can review and select which fields to import.",
       "capital-spend": "Capital expenditure represents the percentage of the total activity cost used for fixed assets or infrastructure (e.g., buildings, equipment, vehicles). This helps distinguish between capital investment and operational/recurrent costs.",
       "conditions": "Conditions are requirements that must be met for the activity to proceed. They can be policy-related (requiring implementation of particular policies), performance-based (requiring achievement of specific outputs or outcomes), or fiduciary (requiring use of specific financial management measures).",
-      "country-budget": "Map activity budget to recipient country budget classifications."
+      "country-budget": "Map activity budget to recipient country budget classifications.",
+      "forward-spending-survey": "Complete this section to provide additional details about your activity.",
+      "financing-terms": "Complete this section to provide additional details about your activity."
     };
     return sectionHelpTexts[sectionId] || "Complete this section to provide additional details about your activity.";
   };
@@ -3468,8 +3477,8 @@ function NewActivityPageContent() {
   };
 
   // Save activity to API
-  const saveActivity = useCallback(async ({ publish = false, goToList = false, goToNext = false }) => {
-    console.log('[DEBUG] saveActivity called with:', { publish, goToList, goToNext });
+  const saveActivity = useCallback(async ({ publish = false, goToList = false, goToNext = false, suppressErrorToast = false }) => {
+    console.log('[DEBUG] saveActivity called with:', { publish, goToList, goToNext, suppressErrorToast });
     if (!general.title?.trim()) {
       toast.error('Activity Title is required');
       return;
@@ -3561,7 +3570,10 @@ function NewActivityPageContent() {
       }
     } catch (e: any) {
       console.error('[Manual Save] Failed:', e);
-      toast.error('Failed to save');
+      if (!suppressErrorToast) {
+        toast.error('Failed to save');
+      }
+      throw e; // Re-throw so the caller can handle it
     } finally {
       console.log('[DEBUG] Finally block - clearing loading states');
       setSaving(false);
@@ -3798,34 +3810,49 @@ function NewActivityPageContent() {
                          <TooltipTrigger asChild>
                            <div>
                              <Switch
-                               checked={general.publicationStatus === 'published'}
-                               onCheckedChange={async (checked) => {
-                                 if (checked) {
-                                   // Check if we have the required fields for publishing
-                                   if (!general.title?.trim() || !general.description?.trim() || !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate) {
-                                     toast.error('Please fill in all required fields: Title, Description, Status, Planned Start Date, and Planned End Date');
-                                     return;
-                                   }
-                                   saveActivity({ publish: true });
-                                 } else {
-                                   // Unpublish the activity
-                                   console.log('[AIMS] Attempting to unpublish activity');
-                                   const originalStatus = general.publicationStatus;
-                                   
-                                   // Optimistically update the UI
-                                   setGeneral((prev: any) => ({ ...prev, publicationStatus: 'draft' }));
-                                   
-                                   try {
-                                     await saveActivity({ publish: false });
-                                     console.log('[AIMS] Unpublish successful');
-                                   } catch (error) {
-                                     console.error('[AIMS] Unpublish failed, reverting state:', error);
-                                     // Revert the optimistic update on failure
-                                     setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
-                                     toast.error('Failed to unpublish activity. Please try again.');
-                                   }
-                                 }
-                               }}
+                              checked={general.publicationStatus === 'published'}
+                              onCheckedChange={async (checked) => {
+                                if (checked) {
+                                  // Check if we have the required fields for publishing
+                                  if (!general.title?.trim() || !general.description?.trim() || !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate) {
+                                    toast.error('Please fill in all required fields: Title, Description, Status, Planned Start Date, and Planned End Date');
+                                    return;
+                                  }
+                                  
+                                  console.log('[AIMS] Attempting to publish activity');
+                                  const originalStatus = general.publicationStatus;
+                                  
+                                  // Optimistically update the UI
+                                  setGeneral((prev: any) => ({ ...prev, publicationStatus: 'published' }));
+                                  
+                                  try {
+                                    await saveActivity({ publish: true, suppressErrorToast: true });
+                                    console.log('[AIMS] Publish successful');
+                                  } catch (error) {
+                                    console.error('[AIMS] Publish failed, reverting state:', error);
+                                    // Revert the optimistic update on failure
+                                    setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
+                                    toast.error('Failed to publish activity. Please try again.');
+                                  }
+                                } else {
+                                  // Unpublish the activity
+                                  console.log('[AIMS] Attempting to unpublish activity');
+                                  const originalStatus = general.publicationStatus;
+                                  
+                                  // Optimistically update the UI
+                                  setGeneral((prev: any) => ({ ...prev, publicationStatus: 'draft' }));
+                                  
+                                  try {
+                                    await saveActivity({ publish: false, suppressErrorToast: true });
+                                    console.log('[AIMS] Unpublish successful');
+                                  } catch (error) {
+                                    console.error('[AIMS] Unpublish failed, reverting state:', error);
+                                    // Revert the optimistic update on failure
+                                    setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
+                                    toast.error('Failed to unpublish activity. Please try again.');
+                                  }
+                                }
+                              }}
                                disabled={
                                  // Disable only when minimum required fields are missing
                                  (!general.title?.trim() || !general.description?.trim() || 
@@ -3913,6 +3940,7 @@ function NewActivityPageContent() {
                     transactions={transactions}
                     setTransactions={setTransactions}
                     refreshTransactions={refreshTransactions}
+                    transactionId={transactionId}
                     extendingPartners={extendingPartners}
                     setExtendingPartners={setExtendingPartners}
                     implementingPartners={implementingPartners}

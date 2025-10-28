@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies';
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
@@ -46,6 +46,7 @@ import { useUser } from '@/hooks/useUser';
 import { BUDGET_TYPES } from '@/data/budget-type';
 import { OrganizationTypeSelect } from '@/components/forms/OrganizationTypeSelect';
 import { Checkbox } from '@/components/ui/checkbox';
+import { OrganizationLogo } from '@/components/ui/organization-logo';
 
 // Granularity removed - users can now create any period length they want
 import {
@@ -73,8 +74,10 @@ interface PlannedDisbursement {
   period_end: string;
   provider_org_id?: string;
   provider_org_name?: string;
+  provider_org_logo?: string;
   receiver_org_id?: string;
   receiver_org_name?: string;
+  receiver_org_logo?: string;
   status?: 'original' | 'revised';
   value_date?: string;
   notes?: string;
@@ -93,6 +96,7 @@ interface PlannedDisbursementsTabProps {
   defaultCurrency?: string;
   readOnly?: boolean;
   onDisbursementsChange?: (disbursements: PlannedDisbursement[]) => void;
+  hideSummaryCards?: boolean;
 }
 
 interface Organization {
@@ -134,7 +138,8 @@ export default function PlannedDisbursementsTab({
   endDate, 
   defaultCurrency = 'USD',
   readOnly = false,
-  onDisbursementsChange
+  onDisbursementsChange,
+  hideSummaryCards = false
 }: PlannedDisbursementsTabProps) {
   const [disbursements, setDisbursements] = useState<PlannedDisbursement[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -154,6 +159,8 @@ export default function PlannedDisbursementsTab({
   const [isCalculatingUSD, setIsCalculatingUSD] = useState(false);
   const [typePopoverOpen, setTypePopoverOpen] = useState(false);
   const [currencyPopoverOpen, setCurrencyPopoverOpen] = useState(false);
+  const [amountInputValue, setAmountInputValue] = useState<string>('');
+  const [isAmountFocused, setIsAmountFocused] = useState(false);
   
   // Sorting state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -212,6 +219,13 @@ export default function PlannedDisbursementsTab({
       usdAmount: 0
     };
     setModalDisbursement(newDisbursement);
+    // Initialize amount input with formatted value
+    if (newDisbursement.amount && newDisbursement.amount > 0) {
+      setAmountInputValue(newDisbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    } else {
+      setAmountInputValue('');
+    }
+    setIsAmountFocused(false);
     setFieldErrors({});
     setIsFormDirty(false);
     setShowModal(true);
@@ -224,12 +238,16 @@ export default function PlannedDisbursementsTab({
         setModalDisbursement(null);
         setFieldErrors({});
         setIsFormDirty(false);
+        setAmountInputValue('');
+        setIsAmountFocused(false);
       }
     } else {
       setShowModal(false);
       setModalDisbursement(null);
       setFieldErrors({});
       setIsFormDirty(false);
+      setAmountInputValue('');
+      setIsAmountFocused(false);
     }
   };
 
@@ -252,6 +270,10 @@ export default function PlannedDisbursementsTab({
           errors.period_start = 'Start date must be before end date';
         } else {
           delete errors.period_start;
+          // Also clear period_end error if it was due to date comparison
+          if (fieldErrors.period_end === 'End date must be after start date' && modalDisbursement?.period_end && value < modalDisbursement.period_end) {
+            delete errors.period_end;
+          }
         }
         break;
       case 'period_end':
@@ -261,6 +283,10 @@ export default function PlannedDisbursementsTab({
           errors.period_end = 'End date must be after start date';
         } else {
           delete errors.period_end;
+          // Also clear period_start error if it was due to date comparison
+          if (fieldErrors.period_start === 'Start date must be before end date' && modalDisbursement?.period_start && value > modalDisbursement.period_start) {
+            delete errors.period_start;
+          }
         }
         break;
       case 'currency':
@@ -473,6 +499,13 @@ export default function PlannedDisbursementsTab({
     };
     
     setModalDisbursement(newDisbursement);
+    // Initialize amount input with formatted value
+    if (newDisbursement.amount && newDisbursement.amount > 0) {
+      setAmountInputValue(newDisbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    } else {
+      setAmountInputValue('');
+    }
+    setIsAmountFocused(false);
     setFieldErrors({});
     setIsFormDirty(false);
     setShowModal(true);
@@ -488,6 +521,10 @@ export default function PlannedDisbursementsTab({
           .order('name');
 
         if (error) throw error;
+
+        console.log('[PlannedDisbursementsTab] Fetched organizations with logos:', 
+          data?.filter(org => org.logo).map(org => ({ name: org.name, hasLogo: !!org.logo }))
+        );
 
         setOrganizations(data || []);
       } catch (err) {
@@ -510,7 +547,21 @@ export default function PlannedDisbursementsTab({
       try {
         const { data, error } = await supabase
           .from('planned_disbursements')
-          .select('*')
+          .select(`
+            *,
+            provider_organization:organizations!provider_org_id (
+              id,
+              name,
+              acronym,
+              logo
+            ),
+            receiver_organization:organizations!receiver_org_id (
+              id,
+              name,
+              acronym,
+              logo
+            )
+          `)
           .eq('activity_id', activityId)
           .order('period_start', { ascending: true });
 
@@ -559,7 +610,27 @@ export default function PlannedDisbursementsTab({
                 }
               }
               
-              return { ...disbursement, usdAmount };
+              // Include organization logos from joined data
+              const result = { 
+                ...disbursement, 
+                usdAmount,
+                provider_org_logo: disbursement.provider_organization?.logo,
+                receiver_org_logo: disbursement.receiver_organization?.logo,
+              };
+              
+              // Debug logging
+              if (disbursement.provider_org_name || disbursement.receiver_org_name) {
+                console.log('[PlannedDisbursementsTab] Organization logos:', {
+                  provider: disbursement.provider_org_name,
+                  provider_logo: disbursement.provider_organization?.logo ? 'HAS LOGO' : 'NO LOGO',
+                  receiver: disbursement.receiver_org_name,
+                  receiver_logo: disbursement.receiver_organization?.logo ? 'HAS LOGO' : 'NO LOGO',
+                  provider_org_data: disbursement.provider_organization,
+                  receiver_org_data: disbursement.receiver_organization
+                });
+              }
+              
+              return result;
             })
           );
           setDisbursements(disbursementsWithUSD);
@@ -1315,6 +1386,9 @@ export default function PlannedDisbursementsTab({
         toast.success('Planned disbursement added successfully');
       }
 
+      // Reset amount input states
+      setAmountInputValue('');
+      setIsAmountFocused(false);
       closeModal();
     } catch (err: any) {
       toast.error(err.message || 'Failed to save planned disbursement');
@@ -1404,7 +1478,7 @@ export default function PlannedDisbursementsTab({
   return (
     <div className="space-y-4">
       {/* Financial Summary Cards - Unified component */}
-      {activityId && (
+      {activityId && !hideSummaryCards && (
         <FinancialSummaryCards activityId={activityId} className="mb-6" />
       )}
 
@@ -1412,69 +1486,77 @@ export default function PlannedDisbursementsTab({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => addPeriod('month')}
-                disabled={isReadOnly}
-              >
-                + Monthly
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => addPeriod('quarter')}
-                disabled={isReadOnly}
-              >
-                + Quarterly
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => addPeriod('half-year')}
-                disabled={isReadOnly}
-              >
-                + Semi-Annual
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => addPeriod('year')}
-                disabled={isReadOnly}
-              >
-                + Annual
-              </Button>
+            <div>
+              <CardTitle>Planned Disbursements</CardTitle>
+              <CardDescription>Scheduled future disbursements</CardDescription>
             </div>
-            <div className="flex gap-2">
-              {selectedDisbursementIds.size > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                  disabled={isBulkDeleting}
-                >
-                  {isBulkDeleting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Selected ({selectedDisbursementIds.size})
-                    </>
-                  )}
-                </Button>
+            <div className="flex items-center gap-2">
+              {!readOnly && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addPeriod('month')}
+                    disabled={isReadOnly}
+                  >
+                    + Monthly
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addPeriod('quarter')}
+                    disabled={isReadOnly}
+                  >
+                    + Quarterly
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addPeriod('half-year')}
+                    disabled={isReadOnly}
+                  >
+                    + Semi-Annual
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addPeriod('year')}
+                    disabled={isReadOnly}
+                  >
+                    + Annual
+                  </Button>
+                </>
               )}
               {disbursements.length > 0 && !loading && (
-                <Button variant="outline" onClick={handleExport}>
+                <Button variant="outline" size="sm" onClick={handleExport}>
                   <Download className="h-4 w-4 mr-1" />
                   Export
                 </Button>
               )}
             </div>
           </div>
+          {selectedDisbursementIds.size > 0 && (
+            <div className="flex items-center justify-end mt-4">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
+              >
+                {isBulkDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Selected ({selectedDisbursementIds.size})
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
 
@@ -1493,14 +1575,16 @@ export default function PlannedDisbursementsTab({
                 <Table aria-label="Planned disbursements table">
                   <TableHeader className="bg-muted/50 border-b border-border/70">
                     <TableRow>
-                      <TableHead className="w-[50px] text-center">
-                        <Checkbox
-                          checked={selectedDisbursementIds.size === sortedFilteredDisbursements.length && sortedFilteredDisbursements.length > 0}
-                          onCheckedChange={handleSelectAll}
-                          disabled={isBulkDeleting || sortedFilteredDisbursements.length === 0}
-                          aria-label="Select all"
-                        />
-                      </TableHead>
+                      {!readOnly && (
+                        <TableHead className="w-[50px] text-center">
+                          <Checkbox
+                            checked={selectedDisbursementIds.size === sortedFilteredDisbursements.length && sortedFilteredDisbursements.length > 0}
+                            onCheckedChange={handleSelectAll}
+                            disabled={isBulkDeleting || sortedFilteredDisbursements.length === 0}
+                            aria-label="Select all"
+                          />
+                        </TableHead>
+                      )}
                       <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
                         <div 
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
@@ -1567,7 +1651,6 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1585,14 +1668,16 @@ export default function PlannedDisbursementsTab({
                           )}
                         >
                           {/* Checkbox */}
-                          <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                            <Checkbox
-                              checked={selectedDisbursementIds.has(disbursement.id!)}
-                              onCheckedChange={(checked) => handleSelectDisbursement(disbursement.id!, !!checked)}
-                              disabled={isBulkDeleting || !disbursement.id}
-                              aria-label={`Select disbursement ${disbursement.id}`}
-                            />
-                          </TableCell>
+                          {!readOnly && (
+                            <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                checked={selectedDisbursementIds.has(disbursement.id!)}
+                                onCheckedChange={(checked) => handleSelectDisbursement(disbursement.id!, !!checked)}
+                                disabled={isBulkDeleting || !disbursement.id}
+                                aria-label={`Select disbursement ${disbursement.id}`}
+                              />
+                            </TableCell>
+                          )}
                           {/* Period */}
                           <TableCell className="py-3 px-4">
                             <div className="flex items-center gap-1">
@@ -1631,8 +1716,24 @@ export default function PlannedDisbursementsTab({
 
                           {/* Provider → Receiver */}
                           <TableCell className="py-3 px-4">
-                            <div className="font-medium">
-                              {getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name)} → {getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name)}
+                            <div className="flex items-center gap-2 font-medium">
+                              <div className="flex items-center gap-1.5">
+                                <OrganizationLogo
+                                  logo={disbursement.provider_org_logo}
+                                  name={getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name)}
+                                  size="sm"
+                                />
+                                <span>{getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name)}</span>
+                              </div>
+                              <span className="text-muted-foreground">→</span>
+                              <div className="flex items-center gap-1.5">
+                                <OrganizationLogo
+                                  logo={disbursement.receiver_org_logo}
+                                  name={getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name)}
+                                  size="sm"
+                                />
+                                <span>{getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name)}</span>
+                              </div>
                             </div>
                           </TableCell>
 
@@ -1640,7 +1741,7 @@ export default function PlannedDisbursementsTab({
                           <TableCell className="py-3 px-4 text-right">
                             <div className="font-medium">
                               {disbursement.amount > 0 
-                                ? <><span className="text-muted-foreground">{disbursement.currency}</span> {disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                                ? <><span className="text-muted-foreground">{disbursement.currency}</span> {disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</>
                                 : '-'
                               }
                             </div>
@@ -1663,7 +1764,7 @@ export default function PlannedDisbursementsTab({
                                   <UITooltip>
                                     <TooltipTrigger asChild>
                                       <span className="font-medium cursor-help">
-                                        ${usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        ${usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -1699,38 +1800,40 @@ export default function PlannedDisbursementsTab({
                           </TableCell>
 
                           {/* Actions */}
-                          <TableCell className="py-3 px-4 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0" disabled={isReadOnly}>
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => openModal(disbursement)} disabled={isReadOnly}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDuplicate(disbursement)} disabled={isReadOnly}>
-                                  <Copy className="mr-2 h-4 w-4" />
-                                  Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => handleDelete(disbursement.id || '')} 
-                                  disabled={isReadOnly || deleteLoading === disbursement.id}
-                                  className="text-red-600"
-                                >
-                                  {deleteLoading === disbursement.id ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                  )}
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
+                          {!readOnly && (
+                            <TableCell className="py-3 px-4 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0" disabled={isReadOnly}>
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openModal(disbursement)} disabled={isReadOnly}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDuplicate(disbursement)} disabled={isReadOnly}>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Duplicate
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDelete(disbursement.id || '')} 
+                                    disabled={isReadOnly || deleteLoading === disbursement.id}
+                                    className="text-red-600"
+                                  >
+                                    {deleteLoading === disbursement.id ? (
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                    )}
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     })}
@@ -1952,18 +2055,31 @@ export default function PlannedDisbursementsTab({
                 <Input
                   id="amount"
                   type="text"
-                  value={modalDisbursement?.amount ? modalDisbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
+                  value={isAmountFocused ? amountInputValue : (modalDisbursement?.amount && modalDisbursement.amount > 0 ? modalDisbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')}
                   onChange={(e) => {
-                    // Remove formatting and parse the number
-                    const rawValue = e.target.value.replace(/[^\d.-]/g, '');
+                    const value = e.target.value;
+                    setAmountInputValue(value);
+                    // Remove all non-numeric characters except decimal point
+                    const rawValue = value.replace(/[^\d.]/g, '');
                     const numericValue = parseFloat(rawValue) || 0;
                     updateFormField('amount', numericValue);
                   }}
-                  onBlur={(e) => {
-                    // Format on blur
-                    if (modalDisbursement?.amount) {
-                      const formatted = modalDisbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                      e.target.value = formatted;
+                  onFocus={() => {
+                    setIsAmountFocused(true);
+                    // Show raw number without formatting when focused
+                    if (modalDisbursement?.amount && modalDisbursement.amount > 0) {
+                      setAmountInputValue(modalDisbursement.amount.toString());
+                    } else {
+                      setAmountInputValue('');
+                    }
+                  }}
+                  onBlur={() => {
+                    setIsAmountFocused(false);
+                    // Format the value on blur
+                    if (modalDisbursement?.amount && modalDisbursement.amount > 0) {
+                      setAmountInputValue(modalDisbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                    } else {
+                      setAmountInputValue('');
                     }
                   }}
                   className={cn("h-10", fieldErrors.amount && "border-red-500")}
@@ -2169,7 +2285,7 @@ export default function PlannedDisbursementsTab({
       </Dialog>
 
       {/* Chart Aggregation Filters */}
-      {disbursements.length > 0 && (
+      {disbursements.length > 0 && !readOnly && (
         <>
           <div className="flex flex-wrap gap-2 items-center mb-4 mt-8">
             <Button

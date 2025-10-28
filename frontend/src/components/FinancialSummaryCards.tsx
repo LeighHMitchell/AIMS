@@ -10,6 +10,9 @@ interface Budget {
   id?: string;
   usd_value?: number;
   value?: number;
+  currency?: string;
+  value_date?: string;
+  period_start?: string;
 }
 
 interface FinancialSummaryCardsProps {
@@ -17,9 +20,11 @@ interface FinancialSummaryCardsProps {
   className?: string;
   // Optional prop to provide real-time budget data
   budgets?: Budget[];
+  // Control whether to show the bar chart on the Total Budgeted card
+  showBudgetChart?: boolean;
 }
 
-export function FinancialSummaryCards({ activityId, className, budgets }: FinancialSummaryCardsProps) {
+export function FinancialSummaryCards({ activityId, className, budgets, showBudgetChart = true }: FinancialSummaryCardsProps) {
   const [totalBudgeted, setTotalBudgeted] = useState(0);
   const [plannedDisbursements, setPlannedDisbursements] = useState(0);
   const [totalCommitted, setTotalCommitted] = useState(0);
@@ -28,6 +33,7 @@ export function FinancialSummaryCards({ activityId, className, budgets }: Financ
   const [isUpdating, setIsUpdating] = useState(false);
   const [justUpdated, setJustUpdated] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [budgetsByYear, setBudgetsByYear] = useState<Array<{ year: number; amount: number }>>([]);
 
   // Use refs to track previous values and prevent unnecessary updates
   const prevBudgetsRef = useRef<Budget[] | undefined>();
@@ -83,6 +89,44 @@ export function FinancialSummaryCards({ activityId, className, budgets }: Financ
     console.log('[FinancialSummaryCards] Total Budgeted (REAL-TIME):', totalBudgetedUSD);
     setTotalBudgeted(totalBudgetedUSD);
     prevTotalBudgetedRef.current = totalBudgetedUSD;
+
+    // Group budgets by year for the chart
+    const budgetsByYearMap = new Map<number, number>();
+    if (budgets && !budgetsError) {
+      for (const budget of budgets) {
+        if (!budget.value || !budget.currency) continue;
+        
+        // Extract year from period_start or use current year
+        let year = new Date().getFullYear();
+        if (budget.period_start) {
+          year = new Date(budget.period_start).getFullYear();
+        }
+        
+        try {
+          const valueDate = budget.value_date ? new Date(budget.value_date) : new Date();
+          const result = await fixedCurrencyConverter.convertToUSD(
+            budget.value,
+            budget.currency,
+            valueDate
+          );
+          
+          if (result.success && result.usd_amount) {
+            const currentAmount = budgetsByYearMap.get(year) || 0;
+            budgetsByYearMap.set(year, currentAmount + result.usd_amount);
+          }
+        } catch (err) {
+          console.error('[FinancialSummaryCards] Error grouping budget by year:', err);
+        }
+      }
+    }
+    
+    // Convert map to array and sort by year
+    const budgetsByYearArray = Array.from(budgetsByYearMap.entries())
+      .map(([year, amount]) => ({ year, amount }))
+      .sort((a, b) => a.year - b.year);
+    
+    console.log('[FinancialSummaryCards] Budgets by year:', budgetsByYearArray);
+    setBudgetsByYear(budgetsByYearArray);
 
     // ================================================================
     // REAL-TIME USD CONVERSION FOR PLANNED DISBURSEMENTS
@@ -251,6 +295,8 @@ export function FinancialSummaryCards({ activityId, className, budgets }: Financ
         staticValue={totalBudgeted}
         currency="USD"
         animate={false}
+        budgetsByYear={budgetsByYear}
+        showChart={showBudgetChart}
       />
       
       <HeroCard

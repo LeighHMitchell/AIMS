@@ -46,13 +46,15 @@ interface DocumentCardProps {
   onEdit: (document: IatiDocumentLink) => void;
   onDelete: (url: string) => void;
   locale?: string;
+  readOnly?: boolean;
 }
 
 export function DocumentCard({ 
   document, 
   onEdit, 
   onDelete,
-  locale = 'en' 
+  locale = 'en',
+  readOnly = false
 }: DocumentCardProps) {
   const [copyFeedback, setCopyFeedback] = React.useState<'xml' | 'json' | null>(null);
   const validation = React.useMemo(() => {
@@ -233,15 +235,17 @@ export function DocumentCard({
         
         {/* Actions */}
         <div className="flex gap-1 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => window.open(`https://stackedit.io/app#url=${encodeURIComponent(document.url)}`, '_blank')}
-            className="text-xs gap-1"
-          >
-            <Edit className="w-3 h-3" />
-            Stack Edit
-          </Button>
+          {!readOnly && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onEdit(document)}
+              className="text-xs gap-1"
+            >
+              <Edit className="w-3 h-3" />
+              Edit
+            </Button>
+          )}
           
           <Button
             size="sm"
@@ -274,15 +278,17 @@ export function DocumentCard({
             Open
           </Button>
           
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onDelete(document.url)}
-            className="text-xs gap-1 text-red-600 hover:text-red-700"
-          >
-            <Trash2 className="w-3 h-3" />
-            Delete
-          </Button>
+          {!readOnly && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onDelete(document.url)}
+              className="text-xs gap-1 text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="w-3 h-3" />
+              Delete
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

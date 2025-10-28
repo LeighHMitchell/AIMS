@@ -251,15 +251,19 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                   </div>
                 )}
                 
-                <div className="bg-gray-50 rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Budgeted</div>
-                  <div className="text-sm text-gray-700">{formatCurrency(activity.totalBudget || 0)}</div>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Disbursed</div>
-                  <div className="text-sm text-gray-700">{formatCurrency(activity.totalDisbursed || 0)}</div>
-                </div>
+                {activity.publication_status === 'published' && (
+                  <>
+                    <div className="bg-gray-50 rounded-lg p-3 border">
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Budgeted</div>
+                      <div className="text-sm text-gray-700">{formatCurrency(activity.totalBudget || 0)}</div>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3 border">
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Disbursed</div>
+                      <div className="text-sm text-gray-700">{formatCurrency(activity.totalDisbursed || 0)}</div>
+                    </div>
+                  </>
+                )}
                 
                 <div className="bg-gray-50 rounded-lg p-3 border">
                   <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Aid Type</div>

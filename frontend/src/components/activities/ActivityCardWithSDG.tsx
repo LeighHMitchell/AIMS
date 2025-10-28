@@ -475,14 +475,18 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                   </span>
                 </div>
               )}
-              <div className="flex justify-between items-center">
-                <div className="text-sm font-medium text-gray-700">Total Budgeted</div>
-                <div className="text-sm text-gray-900">{formatCurrency(activity.totalBudget || 0)}</div>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                <div className="text-sm font-medium text-gray-700">Total Disbursed</div>
-                <div className="text-sm text-gray-900">{formatCurrency(activity.totalDisbursed || 0)}</div>
-              </div>
+              {activity.publication_status === 'published' && (
+                <>
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm font-medium text-gray-700">Total Budgeted</div>
+                    <div className="text-sm text-gray-900">{formatCurrency(activity.totalBudget || 0)}</div>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                    <div className="text-sm font-medium text-gray-700">Total Disbursed</div>
+                    <div className="text-sm text-gray-900">{formatCurrency(activity.totalDisbursed || 0)}</div>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-700">Default Aid Type</span>
                 <span className="text-sm text-gray-900">

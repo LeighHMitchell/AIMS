@@ -182,6 +182,7 @@ export interface Transaction {
   // Flow types and classifications
   flow_type?: FlowType;
   finance_type?: FinanceType;
+  finance_type_inherited?: boolean; // True if finance_type was inherited from activity default
   aid_type?: string; // DEPRECATED - use aid_types array for IATI compliance
   aid_type_vocabulary?: string;
   tied_status?: TiedStatus;
@@ -254,6 +255,13 @@ export interface Transaction {
   
   // Transaction sector lines (new feature)
   sector_lines?: TransactionSectorLine[];
+  
+  // Linked transaction fields
+  transaction_source?: 'own' | 'linked' | 'pending_acceptance';
+  linked_from_activity_id?: string;
+  acceptance_status?: 'pending' | 'accepted' | 'rejected';
+  linked_from_activity_title?: string;
+  linked_from_activity_iati_id?: string;
 }
 
 // Helper type for creating new transactions

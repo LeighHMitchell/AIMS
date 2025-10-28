@@ -16,6 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem, CommandList, CommandInput, CommandEmpty } from '@/components/ui/command';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CountryCombobox } from '@/components/ui/country-combobox';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { IATIXMLParser, validateIATIXML } from '@/lib/xml-parser';
@@ -55,6 +57,7 @@ import {
   Bug,
   ClipboardPaste,
   Loader2,
+  Search,
 } from 'lucide-react';
 
 interface XmlImportTabProps {
@@ -180,6 +183,8 @@ interface ParsedField {
   isLocationItem?: boolean; // True for location items
   isFssItem?: boolean; // True for FSS import field
   fssData?: any; // The actual FSS data object
+  isInherited?: boolean; // True if value was inherited from activity defaults
+  inheritedFrom?: string; // Description of where the value was inherited from
 }
 
 interface TabSection {
@@ -383,9 +388,6 @@ const parsedXmlCache = new Map<string, {
 }>();
 
 export default function XmlImportTab({ activityId }: XmlImportTabProps) {
-  console.log('🚨 XML IMPORT TAB IS RENDERING! ActivityId:', activityId);
-  console.log('[XML Import Debug] XmlImportTab rendered with activityId:', activityId);
-  
   // Get user data from useUser hook
   const { user } = useUser();
   
@@ -403,10 +405,21 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [activeImportTab, setActiveImportTab] = useState('basic');
   const [parsedActivity, setParsedActivity] = useState<any>(null);
   const [xmlUrl, setXmlUrl] = useState<string>('');
-  const [importMethod, setImportMethod] = useState<'file' | 'url' | 'snippet'>('file');
+  const [importMethod, setImportMethod] = useState<'file' | 'url' | 'snippet' | 'iatiSearch'>('file');
   const [snippetContent, setSnippetContent] = useState<string>('');
   const urlInputRef = useRef<HTMLInputElement>(null);
   const [isUsingPasteButton, setIsUsingPasteButton] = useState(false);
+  
+  // IATI Search state
+  const [iatiSearchFilters, setIatiSearchFilters] = useState({
+    reportingOrgRef: '',
+    recipientCountry: '',
+    activityTitle: ''
+  });
+  const [iatiSearchResults, setIatiSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isFetchingXmlFromDatastore, setIsFetchingXmlFromDatastore] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [showSectorRefinement, setShowSectorRefinement] = useState(false);
   const [sectorRefinementData, setSectorRefinementData] = useState<{
     originalSectors: any[];
@@ -430,6 +443,58 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     setDebugLogs(prev => [...prev, logMessage]);
     console.log(message, ...args);
   };
+
+  // Check for pre-loaded XML from IATI Datastore
+  const [shouldAutoParseRef, setShouldAutoParseRef] = useState(false);
+  const hasCheckedLocalStorage = useRef(false);
+  
+  useEffect(() => {
+    // Only check once
+    if (hasCheckedLocalStorage.current) {
+      console.log('[XML Import] Already checked localStorage, skipping...');
+      return;
+    }
+    hasCheckedLocalStorage.current = true;
+    
+    console.log('[XML Import] 🔍 Checking for preloaded XML from IATI Datastore...')
+    const preloadedXml = localStorage.getItem('iati_import_xml')
+    const source = localStorage.getItem('iati_import_source')
+    const choice = localStorage.getItem('iati_import_choice')
+    
+    console.log('[XML Import] 📦 localStorage check:', {
+      hasXml: !!preloadedXml,
+      xmlLength: preloadedXml?.length || 0,
+      source,
+      choice,
+      allKeys: Object.keys(localStorage)
+    })
+    
+    if (preloadedXml && source === 'iati-datastore') {
+      console.log('[XML Import] ✅ Found preloaded XML from IATI Datastore, auto-parsing...', {
+        xmlLength: preloadedXml.length,
+        choice
+      })
+      
+      // Clear localStorage after reading
+      localStorage.removeItem('iati_import_xml')
+      localStorage.removeItem('iati_import_source')
+      localStorage.removeItem('iati_import_choice')
+      localStorage.removeItem('iati_import_activity_id')
+      localStorage.removeItem('iati_import_timestamp')
+      
+      // Set all required state immediately
+      console.log('[XML Import] 🎯 Setting import method to snippet and loading XML')
+      setImportMethod('snippet')
+      setSnippetContent(preloadedXml)
+      
+      // Set flag to trigger auto-parse once parseXmlFile is defined
+      setShouldAutoParseRef(true)
+      
+      toast.loading(`Parsing IATI activity for ${choice === 'fork' ? 'fork' : 'merge'}...`)
+    } else {
+      console.log('[XML Import] ❌ No preloaded XML found or source mismatch')
+    }
+  }, [activityId])
 
   const clearDebugLogs = () => {
     setDebugLogs([]);
@@ -466,7 +531,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [activeBasicTab, setActiveBasicTab] = useState('identifiers_ids');
   
   // Helper function to generate detailed fields for a specific financial item
-  const generateDetailedFields = (itemType: 'budget' | 'transaction' | 'plannedDisbursement', itemData: any, itemIndex: number): ParsedField[] => {
+  const generateDetailedFields = (itemType: 'budget' | 'transaction' | 'plannedDisbursement', itemData: any, itemIndex: number, activityDefaults?: ActivityData): ParsedField[] => {
     const detailFields: ParsedField[] = [];
     
     // Enhanced Select All Fix: Check if comprehensive selection is active
@@ -739,16 +804,25 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         });
       }
       
-      if (itemData.financeType) {
+      // Finance Type - with inheritance from activity defaults
+      if (itemData.financeType || activityDefaults?.defaultFinanceType) {
+        const isInherited = !itemData.financeType && !!activityDefaults?.defaultFinanceType;
+        const financeTypeValue = itemData.financeType || activityDefaults?.defaultFinanceType;
+        const financeTypeLabel = financeTypeValue ? getFinanceTypeLabel(financeTypeValue) : null;
+        
         detailFields.push({
           fieldName: 'Finance Type',
           iatiPath: `transaction/finance-type/@code`,
           currentValue: null,
-          importValue: itemData.financeType,
+          importValue: financeTypeValue,
           selected: false,
           hasConflict: false,
           tab: 'transactions',
-          description: 'Type of finance'
+          description: 'Type of finance',
+          isInherited: isInherited,
+          inheritedFrom: (isInherited && financeTypeLabel)
+            ? `Inherited from activity's default finance type (code ${financeTypeLabel.code} – ${financeTypeLabel.name})`
+            : undefined
         });
       }
       
@@ -798,7 +872,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   // Function to handle opening the financial detail modal
   const openFinancialDetailModal = (field: ParsedField) => {
     if (field.isFinancialItem && field.itemType && field.itemData !== undefined && field.itemIndex !== undefined) {
-      const detailFields = generateDetailedFields(field.itemType, field.itemData, field.itemIndex);
+      const detailFields = generateDetailedFields(field.itemType, field.itemData, field.itemIndex, currentActivityData);
       
       // Enhanced Select All Fix: Auto-select all fields if comprehensive selection is active
       const selectedFields = parsedFields.filter(f => f.selected);
@@ -922,15 +996,6 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       });
     }
   }, [activityId, selectedFile, parsedFields, xmlContent, importStatus]);
-
-  // Debug logging
-  console.log('[XML Import Debug] Component state:', {
-    hasSelectedFile: !!selectedFile,
-    parsedFieldsCount: parsedFields.length,
-    selectedFieldsCount: parsedFields.filter(f => f.selected).length,
-    importStage: importStatus.stage,
-    activityId
-  });
 
   // Fetch current activity data
   useEffect(() => {
@@ -3239,6 +3304,24 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     }
   };
 
+  // Auto-parse when data is loaded from IATI Search or localStorage
+  useEffect(() => {
+    console.log('[XML Import] 🔄 Auto-parse check:', {
+      shouldAutoParseRef,
+      hasSnippetContent: !!snippetContent,
+      snippetLength: snippetContent?.length || 0,
+      importMethod,
+      isParsing,
+      importStage: importStatus.stage
+    });
+    
+    if (shouldAutoParseRef && snippetContent && (importMethod === 'snippet' || importMethod === 'iatiSearch') && !isParsing && importStatus.stage === 'idle') {
+      console.log('[XML Import] 🚀 Auto-triggering parse from IATI Search/Datastore');
+      setShouldAutoParseRef(false); // Reset flag
+      parseXmlFile();
+    }
+  }, [shouldAutoParseRef, snippetContent, importMethod, isParsing, importStatus.stage]);
+
   // Toggle field selection
   const toggleFieldSelection = (index: number, checked?: boolean) => {
     setParsedFields(prev => {
@@ -3351,6 +3434,214 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       refinedSectors: []
     });
     setShowSectorRefinement(true);
+  };
+
+  // IATI Search handlers
+  const handleIatiSearch = useCallback(async () => {
+    console.log('[IATI Search] Starting search with filters:', iatiSearchFilters);
+
+    if (!iatiSearchFilters.activityTitle.trim()) {
+      toast.error('Please enter an activity title to search');
+      return;
+    }
+    
+    setIsSearching(true);
+    setSearchError(null);
+    setIatiSearchResults([]);
+    
+    try {
+      const response = await fetch('/api/iati/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reportingOrgRef: iatiSearchFilters.reportingOrgRef,
+          recipientCountry: iatiSearchFilters.recipientCountry,
+          activityTitle: iatiSearchFilters.activityTitle,
+          limit: 20
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Search failed');
+      }
+      
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setIatiSearchResults(data.results || []);
+
+      if (data.results && data.results.length === 0) {
+        toast.info(data.note || 'No activities found matching your search criteria');
+      } else if (data.results && data.results.length > 0) {
+        toast.success(`Found ${data.results.length} matching activities`);
+      }
+    } catch (error) {
+      console.error('[IATI Search] Search error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to search IATI Datastore';
+      setSearchError(message);
+      toast.error(message);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [iatiSearchFilters]);
+
+  // Handle External Publisher modal choice
+  const handleExternalPublisherChoice = async (choice: 'reference' | 'fork' | 'merge') => {
+    console.log('[External Publisher] User chose:', choice);
+    console.log('[External Publisher] Current state:', {
+      parsedFieldsCount: parsedFields.length,
+      importStage: importStatus.stage,
+      importMethod,
+      hasSnippetContent: !!snippetContent
+    });
+    setShowExternalPublisherModal(false);
+    
+    if (choice === 'reference') {
+      // Just store as a reference without importing
+      toast.info('Reference mode selected. Activity will be stored as external reference.');
+    } else {
+      // For fork or merge, the fields are already parsed and preview is already showing
+      // Ensure the import status is set correctly
+      console.log('[External Publisher] Ensuring preview mode is active');
+      setImportStatus({ stage: 'previewing', progress: 100 });
+      toast.success(`Proceeding with ${choice}. Review and select fields to import below.`);
+    }
+  };
+
+  const handleSelectIatiActivity = async (activity: any) => {
+    setIsFetchingXmlFromDatastore(true);
+    
+    try {
+      const response = await fetch(`/api/iati/activity/${encodeURIComponent(activity.iatiIdentifier)}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch activity XML');
+      }
+      
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      if (!data.xml) {
+        throw new Error('No XML data received from IATI Datastore');
+      }
+      
+      console.log('[IATI Search] Fetched XML for:', activity.iatiIdentifier);
+      
+      // Extract single activity from multi-activity XML if needed
+      let singleActivityXml = data.xml;
+      
+      if (data.xml.includes('<iati-activities')) {
+        console.log('[IATI Search] Multi-activity XML detected, extracting single activity');
+        
+        try {
+          // Parse the XML DOM
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(data.xml, 'text/xml');
+          const activities = xmlDoc.getElementsByTagName('iati-activity');
+          
+          console.log('[IATI Search] Found', activities.length, 'activities in XML');
+          
+          // Find the activity with matching identifier
+          let matchingActivity = null;
+          for (let i = 0; i < activities.length; i++) {
+            const identifierEl = activities[i].getElementsByTagName('iati-identifier')[0];
+            if (identifierEl && identifierEl.textContent?.trim() === activity.iatiIdentifier) {
+              matchingActivity = activities[i];
+              console.log('[IATI Search] Found matching activity at index', i);
+              break;
+            }
+          }
+          
+          if (matchingActivity) {
+            // Serialize just this activity element back to XML
+            const serializer = new XMLSerializer();
+            singleActivityXml = serializer.serializeToString(matchingActivity);
+            console.log('[IATI Search] Extracted single activity, length:', singleActivityXml.length);
+          } else {
+            console.warn('[IATI Search] Could not find matching activity, using first activity as fallback');
+            if (activities.length > 0) {
+              const serializer = new XMLSerializer();
+              singleActivityXml = serializer.serializeToString(activities[0]);
+              console.log('[IATI Search] Using first activity, length:', singleActivityXml.length);
+            }
+          }
+        } catch (extractError) {
+          console.error('[IATI Search] Error extracting single activity:', extractError);
+          console.log('[IATI Search] Falling back to original XML');
+          // Fall back to using the original XML
+        }
+      }
+      
+      // Parse the XML to check for external publisher
+      const parser = new IATIXMLParser(singleActivityXml);
+      const parsedActivity = parser.parseActivity();
+      
+      // Get user's publisher refs
+      const userPublisherRefs: string[] = [];
+      if (user?.organizationId) {
+        try {
+          const orgResponse = await fetch(`/api/organizations/${user.organizationId}`);
+          if (orgResponse.ok) {
+            const org = await orgResponse.json();
+            if (org.iati_identifier) userPublisherRefs.push(org.iati_identifier);
+            if (org.iati_org_id) userPublisherRefs.push(org.iati_org_id);
+          }
+        } catch (err) {
+          console.error('[IATI Search] Error fetching user org:', err);
+        }
+      }
+      
+      // Check if this is an external publisher
+      const reportingOrgRef = parsedActivity.reportingOrg?.ref || activity.reportingOrgRef;
+      const isOwnedActivity = reportingOrgRef && userPublisherRefs.some(ref => 
+        ref && reportingOrgRef && ref.toLowerCase() === reportingOrgRef.toLowerCase()
+      );
+      
+      // Store the extracted single activity XML
+      console.log('[IATI Search] Setting snippet content, length:', singleActivityXml.length);
+      setSnippetContent(singleActivityXml);
+      
+      if (!isOwnedActivity && reportingOrgRef) {
+        // External publisher detected - parse after state updates
+        console.log('[IATI Search] External publisher detected, will parse after state update');
+        
+        const meta = {
+          iatiId: parsedActivity.iatiIdentifier || activity.iatiIdentifier,
+          reportingOrgRef: reportingOrgRef,
+          reportingOrgName: parsedActivity.reportingOrg?.narrative || activity.reportingOrgName,
+          lastUpdated: new Date().toISOString()
+        };
+        
+        setExternalPublisherMeta(meta);
+        toast.loading('Parsing IATI activity...', { duration: 1500 });
+        
+        // Set flag to trigger parsing after snippetContent updates
+        setShouldAutoParseRef(true);
+      } else {
+        // Activity is owned by user or no reporting org - proceed with automatic import
+        console.log('[IATI Search] Activity is owned by user, will parse after state update');
+        
+        toast.loading('Parsing IATI activity from Datastore...', { duration: 1500 });
+        
+        // Set flag to trigger parsing after snippetContent updates
+        setShouldAutoParseRef(true);
+      }
+      
+    } catch (error) {
+      console.error('[IATI Search] Fetch error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to fetch activity data';
+      toast.error(message);
+    } finally {
+      setIsFetchingXmlFromDatastore(false);
+    }
   };
 
   // Import selected fields
@@ -3873,11 +4164,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           case 'Budgets':
             // Handle budgets import - use importedBudgets to match existing handler at line 4277
             if (parsedActivity.budgets && parsedActivity.budgets.length > 0) {
-              if (!updateData.importedBudgets) updateData.importedBudgets = [];
-              parsedActivity.budgets.forEach((budget: any) => {
-                updateData.importedBudgets.push(budget);
-              });
-              console.log(`[XML Import] Adding ${parsedActivity.budgets.length} budgets for import`);
+              // Check if bulk mode is already active to avoid duplicates
+              if (updateData._importBudgets === true) {
+                console.log(`[XML Import] Skipping individual budget addition - bulk mode already active with ${updateData.importedBudgets?.length || 0} budgets`);
+              } else {
+                if (!updateData.importedBudgets) updateData.importedBudgets = [];
+                parsedActivity.budgets.forEach((budget: any) => {
+                  updateData.importedBudgets.push(budget);
+                });
+                console.log(`[XML Import] Adding ${parsedActivity.budgets.length} budgets for import`);
+              }
             }
             break;
           case 'Planned Disbursements':
@@ -4113,12 +4409,17 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               console.log(`[XML Import] Total budget mappings queued: ${updateData.importedCountryBudgetItems?.length || 0}`);
             } else if (field.fieldName.startsWith('Budget ')) {
               // Collect budget data for import
-              if (!updateData.importedBudgets) updateData.importedBudgets = [];
-              const budgetIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
-              if (parsedActivity.budgets && parsedActivity.budgets[budgetIndex]) {
-                updateData.importedBudgets.push(parsedActivity.budgets[budgetIndex]);
+              // Check if bulk mode is already active to avoid duplicates
+              if (updateData._importBudgets === true) {
+                console.log(`[XML Import] Skipping individual budget ${field.fieldName} - bulk mode already active`);
+              } else {
+                if (!updateData.importedBudgets) updateData.importedBudgets = [];
+                const budgetIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
+                if (parsedActivity.budgets && parsedActivity.budgets[budgetIndex]) {
+                  updateData.importedBudgets.push(parsedActivity.budgets[budgetIndex]);
+                }
+                console.log(`[XML Import] Adding budget ${budgetIndex + 1} for import`);
               }
-              console.log(`[XML Import] Adding budget ${budgetIndex + 1} for import`);
             } else if (field.fieldName.startsWith('Planned Disbursement ')) {
               // Collect planned disbursement data for import
               if (!updateData.importedPlannedDisbursements) updateData.importedPlannedDisbursements = [];
@@ -5820,6 +6121,10 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 receiverOrgId
               });
               
+              // Check if finance type should be inherited from activity defaults
+              const hasExplicitFinanceType = !!transaction.financeType;
+              const effectiveFinanceType = transaction.financeType || currentActivityData?.defaultFinanceType;
+              
               const transactionData = {
                 activity_id: activityId,
                 transaction_type: transaction.type,
@@ -5837,7 +6142,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 receiver_org_ref: transaction.receiverOrg?.ref,
                 receiver_org_activity_id: transaction.receiverOrg?.receiverActivityId || transaction.receiver_org_activity_id || null,
                 aid_type: transaction.aidType?.code || transaction.aidType,
-                finance_type: transaction.financeType,
+                finance_type: effectiveFinanceType,
+                finance_type_inherited: !hasExplicitFinanceType && !!effectiveFinanceType,
                 tied_status: transaction.tiedStatus,
                 flow_type: transaction.flowType,
                 disbursement_channel: transaction.disbursementChannel,
@@ -6985,7 +7291,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       'partners': 'Partners',
       'contacts': 'Contacts',
       'results': 'Results',
-      'country-budget': 'Budget Mapping'
+      'country-budget': 'Budget Mapping',
+      'documents': 'Documents',
+      'tags': 'Tags',
+      'conditions': 'Conditions',
+      'linked_activities': 'Linked Activities',
+      'humanitarian': 'Humanitarian'
     };
 
     // Basic tabs that should be grouped under main General tab
@@ -7026,7 +7337,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
     });
 
     return Array.from(tabMap.values()).sort((a, b) => {
-      const order = ['basic', 'partners', 'contacts', 'sectors', 'policy-markers', 'locations', 'finances', 'country-budget', 'results'];
+      const order = ['basic', 'partners', 'contacts', 'sectors', 'policy-markers', 'locations', 'finances', 'country-budget', 'results', 'documents', 'tags', 'conditions', 'linked_activities', 'humanitarian'];
       return order.indexOf(a.tabId) - order.indexOf(b.tabId);
     });
   };
@@ -7844,12 +8155,24 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       )}
 
       {/* Import Method Selection and Input */}
-      {importStatus.stage === 'idle' && !selectedFile && !xmlContent && (
+      {importStatus.stage === 'idle' && !selectedFile && !xmlContent && !snippetContent && (
         <div>
             {/* Method Selection */}
             <div className="mb-6">
               <Label className="text-base font-medium">Import Method</Label>
               <div className="flex gap-2 mt-2">
+                <Button
+                  variant={importMethod === 'iatiSearch' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setImportMethod('iatiSearch');
+                    setXmlUrl('');
+                    setSnippetContent('');
+                  }}
+                  className="flex-1"
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  IATI Search
+                </Button>
                 <Button
                   variant={importMethod === 'file' ? 'default' : 'outline'}
                   onClick={() => {
@@ -8012,10 +8335,11 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     </Button>
                   </div>
                 </div>
-                <Button 
+                <Button
                   onClick={parseXmlFile}
                   disabled={!snippetContent.trim() || isParsing}
                   className="w-full"
+                  data-action="parse-xml"
                 >
                   {isParsing ? (
                     <>
@@ -8051,24 +8375,155 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               </div>
             )}
 
-            <div className="mt-4">
-              <div className="flex items-start gap-2">
-                <Info className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                <div>
-                  <div className="font-medium text-sm mb-2">Import Guidelines</div>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                    <li>
-                      {importMethod === 'file' && 'File must be a valid IATI Activity XML document'}
-                      {importMethod === 'url' && 'URL must be publicly accessible (no authentication required)'}
-                      {importMethod === 'snippet' && 'Snippet can be any valid IATI XML element'}
-                    </li>
-                    <li>You can review all fields before importing</li>
-                    <li>Existing data will be highlighted if there are conflicts</li>
-                    <li>You can choose which fields to import or skip</li>
-                  </ul>
-                </div>
+            {/* IATI Search Section */}
+            {importMethod === 'iatiSearch' && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Search className="h-5 w-5" />
+                      Search IATI Datastore
+                    </CardTitle>
+                    <CardDescription>
+                      Search for activities in the global IATI registry
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Search Filters */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="iati-title">Activity Title or IATI Identifier *</Label>
+                          <Input
+                            id="iati-title"
+                            placeholder="e.g., Health Project"
+                            value={iatiSearchFilters.activityTitle}
+                            onChange={(e) => setIatiSearchFilters({ ...iatiSearchFilters, activityTitle: e.target.value })}
+                            onKeyPress={(e) => e.key === 'Enter' && handleIatiSearch()}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="iati-org">Reporting Organisation</Label>
+                          <Input
+                            id="iati-org"
+                            placeholder="e.g., GB-GOV-1"
+                            value={iatiSearchFilters.reportingOrgRef}
+                            onChange={(e) => setIatiSearchFilters({ ...iatiSearchFilters, reportingOrgRef: e.target.value })}
+                            onKeyPress={(e) => e.key === 'Enter' && handleIatiSearch()}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="iati-country">Recipient Country</Label>
+                          <CountryCombobox
+                            countries={IATI_COUNTRIES}
+                            value={iatiSearchFilters.recipientCountry}
+                            onValueChange={(value) => setIatiSearchFilters({ ...iatiSearchFilters, recipientCountry: value })}
+                            placeholder="All Countries"
+                            allowClear={true}
+                          />
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={handleIatiSearch}
+                        disabled={!iatiSearchFilters.activityTitle.trim() || isSearching}
+                        className="w-full"
+                      >
+                        {isSearching ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Searching...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="h-4 w-4 mr-2" />
+                            Search IATI Datastore
+                          </>
+                        )}
+                      </Button>
+
+                      {/* Search Error */}
+                      {searchError && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>{searchError}</AlertDescription>
+                        </Alert>
+                      )}
+
+                      {/* Search Results */}
+                      {iatiSearchResults.length > 0 && (
+                        <div className="mt-6 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-base font-semibold">
+                              Search Results ({iatiSearchResults.length})
+                            </Label>
+                          </div>
+                          <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                            {iatiSearchResults.map((activity, index) => (
+                              <Card key={index} className="hover:shadow-md transition-shadow">
+                                <CardContent className="p-4">
+                                  <div className="space-y-2">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <h4 className="font-semibold text-sm">{activity.title || 'Untitled Activity'}</h4>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {activity.iatiIdentifier}
+                                        </p>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleSelectIatiActivity(activity)}
+                                        disabled={isFetchingXmlFromDatastore}
+                                      >
+                                        {isFetchingXmlFromDatastore ? (
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                          'Select'
+                                        )}
+                                      </Button>
+                                    </div>
+                                    {activity.description && (
+                                      <p className="text-xs text-gray-600 line-clamp-2">
+                                        {activity.description}
+                                      </p>
+                                    )}
+                                    <div className="flex flex-wrap gap-2 text-xs">
+                                      {activity.reportingOrgName && (
+                                        <Badge variant="secondary">
+                                          {activity.reportingOrgName}
+                                        </Badge>
+                                      )}
+                                      {activity.activityStatus && (
+                                        <Badge variant="outline">
+                                          {activity.activityStatus}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    <p className="font-medium mb-2">How IATI Search works:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      <li>Searches the global IATI Datastore with 40,000+ activities</li>
+                      <li>Fetches the full IATI XML directly from the registry</li>
+                      <li>Automatically parses and shows field toggle options</li>
+                      <li>You can review and select which fields to import</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
               </div>
-            </div>
+            )}
         </div>
       )}
 
@@ -8109,11 +8564,6 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     onClick={() => selectAllFields(true)}
                   >
                     Select All Fields
-                    {parsedActivity && (
-                      <Badge variant="secondary" className="ml-2">
-                        Enhanced
-                      </Badge>
-                    )}
                   </Button>
                   <Button
                     variant="outline"
@@ -8144,7 +8594,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           <Card>
             <CardContent className="pt-6">
               <Tabs value={activeImportTab} onValueChange={setActiveImportTab}>
-                <TabsList className="grid w-full grid-cols-7">
+                <TabsList className="flex flex-wrap w-full gap-1 h-auto bg-muted/50 p-1">
                   {organizeFieldsByTabs(parsedFields).map((tabSection) => {
                     const selectedCount = tabSection.fields.filter(f => f.selected).length;
                     const totalCount = tabSection.fields.length;
@@ -8154,7 +8604,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                       <TabsTrigger 
                         key={tabSection.tabId} 
                         value={tabSection.tabId}
-                        className="relative"
+                        className="relative flex-shrink-0 min-w-[120px]"
                       >
                         <span className="text-xs font-medium">{tabSection.tabName}</span>
                         {hasConflicts && (
@@ -8603,7 +9053,18 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                         </td>
                         <td className="px-4 py-3">
                           <div className="space-y-1">
-                            {field.tab === 'identifiers_ids' && field.fieldName.startsWith('Other Identifier') && typeof field.importValue === 'object' ? (
+                            {field.isInherited ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-sm font-medium text-gray-400 opacity-70 cursor-help">{field.importValue || 'N/A'}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">{field.inheritedFrom}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : field.tab === 'identifiers_ids' && field.fieldName.startsWith('Other Identifier') && typeof field.importValue === 'object' ? (
                               <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
@@ -8722,6 +9183,20 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* External Publisher Modal */}
+      {showExternalPublisherModal && externalPublisherMeta && (
+        <ExternalPublisherModal
+          isOpen={showExternalPublisherModal}
+          onClose={() => setShowExternalPublisherModal(false)}
+          meta={externalPublisherMeta}
+          userOrgName={user?.organization?.name || 'Your Organization'}
+          userPublisherRefs={userPublisherRefs}
+          onChoose={handleExternalPublisherChoice}
+          currentActivityId={activityId}
+          currentActivityIatiId={currentActivityData.iati_identifier}
+        />
+      )}
 
     </div>
   );

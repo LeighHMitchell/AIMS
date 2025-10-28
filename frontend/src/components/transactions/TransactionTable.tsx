@@ -47,6 +47,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
+import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { TIED_STATUS_LABELS } from "@/types/transaction";
 import { fixedCurrencyConverter } from "@/lib/currency-converter-fixed";
 
@@ -209,16 +210,19 @@ interface TransactionData {
   provider_org_ref?: string;
   provider_org_acronym?: string;
   provider_org_activity_id?: string;
+  provider_org_logo?: string;
   receiver_org_name?: string;
   receiver_org_ref?: string;
   receiver_org_acronym?: string;
   receiver_org_activity_id?: string;
+  receiver_org_logo?: string;
   from_org?: string;
   to_org?: string;
   transaction_type: string;
   aid_type?: string;
   flow_type?: string;
   finance_type?: string;
+  finance_type_inherited?: boolean;
   tied_status?: string;
   disbursement_channel?: string;
   is_humanitarian?: boolean;
@@ -266,6 +270,9 @@ interface TransactionTableProps {
   onEdit?: (transaction: TransactionData) => void;
   onDelete?: (transactionId: string) => void;
   onConvertCurrency?: (transactionId: string) => void;
+  onAcceptTransaction?: (transactionId: string, acceptingActivityId: string) => void;
+  onRejectTransaction?: (transactionId: string, rejectionReason?: string) => void;
+  currentActivityId?: string;
   variant?: "full" | "compact";
   selectedIds?: Set<string>;
   onSelectAll?: (checked: boolean) => void;
@@ -283,6 +290,9 @@ export function TransactionTable({
   onEdit,
   onDelete,
   onConvertCurrency,
+  onAcceptTransaction,
+  onRejectTransaction,
+  currentActivityId,
   variant = "full",
   selectedIds,
   onSelectAll,
@@ -477,7 +487,6 @@ export function TransactionTable({
     const actualStatus = status === 'actual' || status === 'A';
     
     return (
-      <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center justify-center">
@@ -492,7 +501,6 @@ export function TransactionTable({
             <p className="text-sm">{actualStatus ? 'Actual' : 'Draft'}</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
     );
   };
 
@@ -533,6 +541,7 @@ export function TransactionTable({
   }
 
   return (
+    <TooltipProvider>
     <div>
       <Table>
         <TableHeader className="bg-muted/50 border-b border-border/70">
@@ -660,7 +669,9 @@ export function TransactionTable({
             <TableRow
               className={cn(
                 "border-b border-border/40 hover:bg-muted/30 transition-colors",
-                isSelected && "bg-blue-50 border-blue-200"
+                isSelected && "bg-blue-50 border-blue-200",
+                transaction.transaction_source === 'linked' && "border-l-4 border-l-orange-400 bg-orange-50/30",
+                transaction.acceptance_status === 'rejected' && "opacity-60"
               )}
             >
                 {/* Checkbox or Expand/Collapse Button */}
@@ -706,7 +717,6 @@ export function TransactionTable({
                       <div className="flex items-start gap-1">
                         <div className="text-sm font-medium text-foreground line-clamp-2 flex-1">
                           {transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
-                          <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -730,7 +740,6 @@ export function TransactionTable({
                                 <p className="text-sm">Copy activity title</p>
                               </TooltipContent>
                             </Tooltip>
-                          </TooltipProvider>
                         </div>
                       </div>
                       {/* Transaction Reference (if exists) */}
@@ -739,7 +748,6 @@ export function TransactionTable({
                           <span>
                             {transaction.transaction_reference}
                           </span>
-                          <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -766,7 +774,6 @@ export function TransactionTable({
                                 <p className="text-sm">Copy transaction reference</p>
                               </TooltipContent>
                             </Tooltip>
-                          </TooltipProvider>
                         </div>
                       )}
                     </div>
@@ -778,10 +785,9 @@ export function TransactionTable({
                 <td className="py-3 px-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                    <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className="text-sm font-medium text-foreground break-words cursor-help">
+                            <span className="text-sm font-medium text-foreground break-words">
                               {TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}
                             </span>
                         </TooltipTrigger>
@@ -790,11 +796,9 @@ export function TransactionTable({
                             <p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p>
                           </TooltipContent>
                         </Tooltip>
-                      </TooltipProvider>
                       
                       {/* IATI Import Pill for imported transactions */}
                       {!transaction.created_by && (
-                        <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="inline-flex items-center justify-center">
@@ -805,12 +809,10 @@ export function TransactionTable({
                               <p className="text-sm">This transaction was imported from IATI XML data</p>
                             </TooltipContent>
                           </Tooltip>
-                        </TooltipProvider>
                       )}
                       
                       {/* Icons in order: Link → Heart → Shield (validated) */}
                       {(transaction.provider_org_activity_id || transaction.receiver_org_activity_id) && (
-                        <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger 
                               asChild
@@ -873,11 +875,9 @@ export function TransactionTable({
                               </div>
                         </TooltipContent>
                       </Tooltip>
-                    </TooltipProvider>
                       )}
                     
                       {transaction.is_humanitarian && (
-                        <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Heart className="h-3 w-3 text-red-500 fill-red-500" />
@@ -894,11 +894,9 @@ export function TransactionTable({
                               </p>
                             </TooltipContent>
                           </Tooltip>
-                        </TooltipProvider>
                       )}
                       
                       {transaction.status === 'actual' && (
-                        <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <CheckCircle className="h-3 w-3 text-green-600" />
@@ -912,12 +910,73 @@ export function TransactionTable({
                               </div>
                             </TooltipContent>
                           </Tooltip>
-                        </TooltipProvider>
                       )}
                     </div>
                     
                     {/* IATI Indicator Badges */}
                     <div className="flex flex-wrap gap-1">
+                      {/* Transaction Source Badge */}
+                      {transaction.transaction_source === 'linked' && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-xs bg-orange-50 border-orange-200 text-orange-700 px-1 cursor-help">
+                              <Link2 className="h-3 w-3" />
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm">Linked Transaction</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      {transaction.transaction_source === 'own' && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-500 px-1">
+                              <User className="h-3 w-3" />
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm">Own Transaction</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      {transaction.acceptance_status === 'pending' && transaction.transaction_source === 'linked' && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200 text-yellow-700 px-1 cursor-help">
+                              <Clock className="h-3 w-3" />
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm">Pending Acceptance</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      {transaction.acceptance_status === 'accepted' && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-xs bg-green-50 border-green-200 text-green-700 px-1 cursor-help">
+                              <CheckCircle className="h-3 w-3" />
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm">Accepted Transaction</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      {transaction.acceptance_status === 'rejected' && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-xs bg-red-50 border-red-200 text-red-700 px-1 cursor-help">
+                              <UserX className="h-3 w-3" />
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm">Rejected Transaction</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      
                       {(transaction.sectors?.length || 0) > 0 && (
                         <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
                           <Target className="h-3 w-3 mr-1" />
@@ -943,35 +1002,45 @@ export function TransactionTable({
                 <td className="py-3 px-4">
                   <div className="text-sm font-medium text-foreground">
                     <div className="flex items-center gap-2">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="text-sm cursor-help">
-                              {providerDisplay}
-                            </span>
-                          </TooltipTrigger>
-                          {transaction.provider_org_ref && (
-                            <TooltipContent side="top">
-                              <p className="text-xs">{transaction.provider_org_ref}</p>
-                            </TooltipContent>
-                          )}
-                        </Tooltip>
-                      </TooltipProvider>
+                      <div className="flex items-center gap-1">
+                        <OrganizationLogo 
+                          logo={transaction.provider_org_logo}
+                          name={providerDisplay}
+                          size="sm"
+                        />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-sm">
+                                {providerDisplay}
+                              </span>
+                            </TooltipTrigger>
+                            {transaction.provider_org_ref && (
+                              <TooltipContent side="top">
+                                <p className="text-xs">{transaction.provider_org_ref}</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                      </div>
                       <span className="text-muted-foreground">→</span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="text-sm cursor-help">
-                              {receiverDisplay}
-                            </span>
-                          </TooltipTrigger>
-                          {transaction.receiver_org_ref && (
-                            <TooltipContent side="top">
-                              <p className="text-xs">{transaction.receiver_org_ref}</p>
-                            </TooltipContent>
-                          )}
-                        </Tooltip>
-                      </TooltipProvider>
+                      <div className="flex items-center gap-1">
+                        <OrganizationLogo 
+                          logo={transaction.receiver_org_logo}
+                          name={receiverDisplay}
+                          size="sm"
+                        />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-sm">
+                                {receiverDisplay}
+                              </span>
+                            </TooltipTrigger>
+                            {transaction.receiver_org_ref && (
+                              <TooltipContent side="top">
+                                <p className="text-xs">{transaction.receiver_org_ref}</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -994,7 +1063,6 @@ export function TransactionTable({
                     {usdValues[transactionId]?.loading ? (
                       <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                     ) : usdValues[transactionId]?.usd != null ? (
-                      <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span className="font-medium cursor-help">
@@ -1009,7 +1077,6 @@ export function TransactionTable({
                             </div>
                           </TooltipContent>
                         </Tooltip>
-                      </TooltipProvider>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
@@ -1018,18 +1085,21 @@ export function TransactionTable({
                 {variant === "full" && (
                   <td className="hidden xl:table-cell py-3 px-4 whitespace-nowrap">
                     {transaction.finance_type ? (
-                      <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="text-sm font-medium text-foreground cursor-help">
+                            <span className={`text-sm font-medium cursor-help ${transaction.finance_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>
                               {FINANCE_TYPE_LABELS[transaction.finance_type]?.short || transaction.finance_type}
                             </span>
                           </TooltipTrigger>
                           <TooltipContent side="right">
-                            <p className="text-sm">{transaction.finance_type} – {FINANCE_TYPE_LABELS[transaction.finance_type]?.full || 'Unknown'}</p>
+                            <p className="text-sm">
+                              {transaction.finance_type_inherited 
+                                ? `Inherited from activity's default finance type (code ${transaction.finance_type} – ${FINANCE_TYPE_LABELS[transaction.finance_type]?.full || 'Unknown'})`
+                                : `${transaction.finance_type} – ${FINANCE_TYPE_LABELS[transaction.finance_type]?.full || 'Unknown'}`
+                              }
+                            </p>
                           </TooltipContent>
                         </Tooltip>
-                      </TooltipProvider>
                     ) : (
                       <span className="text-sm font-normal text-muted-foreground">—</span>
                     )}
@@ -1049,23 +1119,54 @@ export function TransactionTable({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-                    <DropdownMenuItem onSelect={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (onEdit) {
-                        // If onEdit is provided, use it (for modal editing)
-                        onEdit(transaction);
-                      } else if (transaction.activity_id) {
-                        // Fallback to navigation if no onEdit handler
-                        router.push(`/activities/new?id=${transaction.activity_id}&section=finances`);
-                      } else {
-                        console.error('No activity_id found for transaction:', transaction);
-                      }
-                    }}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      {onEdit ? 'Edit' : 'Edit in Activity Editor'}
-                    </DropdownMenuItem>
-                    {onDelete && (
+                    {/* Accept/Reject actions for linked transactions */}
+                    {transaction.transaction_source === 'linked' && transaction.acceptance_status === 'pending' && (
+                      <>
+                        {onAcceptTransaction && currentActivityId && (
+                          <DropdownMenuItem onSelect={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onAcceptTransaction(transaction.uuid || transaction.id, currentActivityId);
+                          }} className="text-green-600">
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Accept Transaction
+                          </DropdownMenuItem>
+                        )}
+                        {onRejectTransaction && (
+                          <DropdownMenuItem onSelect={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onRejectTransaction(transaction.uuid || transaction.id);
+                          }} className="text-red-600">
+                            <UserX className="mr-2 h-4 w-4" />
+                            Reject Transaction
+                          </DropdownMenuItem>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* Standard edit action - disabled for linked transactions */}
+                    {transaction.transaction_source !== 'linked' && (
+                      <DropdownMenuItem onSelect={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (onEdit) {
+                          // If onEdit is provided, use it (for modal editing)
+                          onEdit(transaction);
+                        } else if (transaction.activity_id) {
+                          // Fallback to navigation if no onEdit handler
+                          router.push(`/activities/new?id=${transaction.activity_id}&section=finances`);
+                        } else {
+                          console.error('No activity_id found for transaction:', transaction);
+                        }
+                      }}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        {onEdit ? 'Edit' : 'Edit in Activity Editor'}
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {/* Delete action - only for own transactions */}
+                    {onDelete && transaction.transaction_source !== 'linked' && (
                       <DropdownMenuItem onSelect={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1073,6 +1174,20 @@ export function TransactionTable({
                       }} className="text-red-600">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {/* View details for linked transactions */}
+                    {transaction.transaction_source === 'linked' && (
+                      <DropdownMenuItem onSelect={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (transaction.linked_from_activity_id) {
+                          window.open(`/activities/${transaction.linked_from_activity_id}`, '_blank');
+                        }
+                      }}>
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        View Source Activity
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
@@ -1163,7 +1278,6 @@ export function TransactionTable({
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-sm truncate">{providerDisplay}</p>
                                 {transaction.provider_org_ref && (
-                                  <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <p className="text-xs text-muted-foreground truncate cursor-help">{transaction.provider_org_ref}</p>
@@ -1172,7 +1286,6 @@ export function TransactionTable({
                                         <p className="text-xs">Provider Reference: {transaction.provider_org_ref}</p>
                                       </TooltipContent>
                                     </Tooltip>
-                                  </TooltipProvider>
                                 )}
                               </div>
                             </div>
@@ -1186,7 +1299,6 @@ export function TransactionTable({
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-sm truncate">{receiverDisplay}</p>
                                 {transaction.receiver_org_ref && (
-                                  <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <p className="text-xs text-muted-foreground truncate cursor-help">{transaction.receiver_org_ref}</p>
@@ -1195,7 +1307,6 @@ export function TransactionTable({
                                         <p className="text-xs">Receiver Reference: {transaction.receiver_org_ref}</p>
                                       </TooltipContent>
                                     </Tooltip>
-                                  </TooltipProvider>
                                 )}
                               </div>
                             </div>
@@ -1603,5 +1714,6 @@ export function TransactionTable({
         </TableBody>
       </Table>
     </div>
+    </TooltipProvider>
   );
 }

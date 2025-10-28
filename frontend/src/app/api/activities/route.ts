@@ -147,11 +147,12 @@ export async function POST(request: Request) {
           planned_end_date: cleanDateValue(body.plannedEndDate),
           actual_start_date: cleanDateValue(body.actualStartDate),
           actual_end_date: cleanDateValue(body.actualEndDate),
-          default_aid_type: body.defaultAidType || null,
-          default_finance_type: body.defaultFinanceType || null,
-          default_currency: body.defaultCurrency || null,
-          default_tied_status: body.defaultTiedStatus || null,
-          default_flow_type: body.defaultFlowType || null,
+          // Explicitly convert empty strings to null for default fields to prevent constraint violations
+          default_aid_type: (!body.defaultAidType || body.defaultAidType.trim() === '') ? null : body.defaultAidType,
+          default_finance_type: (!body.defaultFinanceType || body.defaultFinanceType.trim() === '') ? null : body.defaultFinanceType,
+          default_currency: (!body.defaultCurrency || body.defaultCurrency.trim() === '') ? null : body.defaultCurrency,
+          default_tied_status: (!body.defaultTiedStatus || body.defaultTiedStatus.trim() === '') ? null : body.defaultTiedStatus,
+          default_flow_type: (!body.defaultFlowType || body.defaultFlowType.trim() === '') ? null : body.defaultFlowType,
           documents: body.documents ? JSON.stringify(body.documents) : existingActivity.documents,
           general_info: body.general_info || existingActivity.general_info || {},
           last_edited_by: body.user?.id ? cleanUUIDValue(body.user.id) : null,
@@ -1811,6 +1812,7 @@ export async function GET(request: NextRequest) {
     // Get search parameter from query string
     const searchQuery = request.nextUrl.searchParams.get('search');
     const iatiIdentifierFilter = request.nextUrl.searchParams.get('iati_identifier');
+    const organizationIdFilter = request.nextUrl.searchParams.get('organization_id');
     
     // Build the query
     let query = getSupabaseAdmin()
@@ -1848,6 +1850,12 @@ export async function GET(request: NextRequest) {
         actual_start_date,
         actual_end_date
       `);
+    
+    // Apply organization filter if provided
+    if (organizationIdFilter) {
+      console.log('[AIMS] Filtering activities by organization ID:', organizationIdFilter);
+      query = query.eq('reporting_org_id', organizationIdFilter);
+    }
     
     // Apply exact iati_identifier filter if provided
     if (iatiIdentifierFilter) {

@@ -44,9 +44,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
 import { useDropzone } from 'react-dropzone'
 import Flag from 'react-world-flags'
 import { getCountryCode } from '@/lib/country-utils'
+import { IATIBudgetManager } from './IATIBudgetManager'
+import { IATIDocumentManager } from './IATIDocumentManager'
+import IATIImportPreferences from './IATIImportPreferences'
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 
 // ISO 3166-1 alpha-2 country codes with names
 const ISO_COUNTRIES = [
@@ -325,6 +330,13 @@ interface Organization {
   country_represented?: string
   cooperation_modality?: string
   iati_org_id?: string
+  reporting_org_ref?: string
+  reporting_org_type?: string
+  reporting_org_name?: string
+  reporting_org_secondary_reporter?: boolean
+  last_updated_datetime?: string
+  default_currency?: string
+  default_language?: string
   [key: string]: any
 }
 
@@ -474,6 +486,9 @@ export function EditOrganizationModal({
   const [organizationTypes, setOrganizationTypes] = useState<OrganizationType[]>(DEFAULT_ORGANIZATION_TYPES)
   const [loadingTypes, setLoadingTypes] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
+  const [iatiBudgets, setIatiBudgets] = useState<any[]>([])
+  const [iatiDocuments, setIatiDocuments] = useState<any[]>([])
+  const [showIatiImport, setShowIatiImport] = useState(false)
 
   // Handle both isOpen and open props
   const modalOpen = isOpen ?? open ?? false
@@ -657,15 +672,31 @@ export function EditOrganizationModal({
   const isCreating = !organization
 
   return (
+    <>
     <Dialog open={modalOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-4xl h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="text-xl font-semibold">
-            {isCreating ? 'Add New Organization' : 'Edit Organization Profile'}
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            {isCreating ? 'Create a new organization profile' : 'Update organization information and details'}
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-xl font-semibold">
+                {isCreating ? 'Add New Organization' : 'Edit Organization Profile'}
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                {isCreating ? 'Create a new organization profile' : 'Update organization information and details'}
+              </p>
+            </div>
+            {isCreating && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowIatiImport(true)}
+                className="flex items-center gap-2"
+              >
+                <Globe className="h-4 w-4" />
+                Import from IATI
+              </Button>
+            )}
+          </div>
         </DialogHeader>
         
         {/* Validation Error Banner */}
@@ -685,14 +716,16 @@ export function EditOrganizationModal({
         
         {/* Tabbed Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
-            <TabsTrigger value="basic">Basic Info</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-6 flex-shrink-0">
+            <TabsTrigger value="basic">General</TabsTrigger>
             <TabsTrigger value="branding">Branding</TabsTrigger>
             <TabsTrigger value="contact">Contact & Social</TabsTrigger>
-            <TabsTrigger value="classification">Classification</TabsTrigger>
+            <TabsTrigger value="budgets">IATI Budgets</TabsTrigger>
+            <TabsTrigger value="documents">IATI Documents</TabsTrigger>
+            <TabsTrigger value="iati-prefs">IATI Import Preferences</TabsTrigger>
           </TabsList>
 
-          {/* Basic Info Tab */}
+          {/* General Tab */}
           <TabsContent value="basic" className="h-full overflow-y-auto px-2 mt-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Name (Required) */}
@@ -736,17 +769,14 @@ export function EditOrganizationModal({
                   <SelectTrigger className={validationErrors.some(e => e.includes('Location Represented')) ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select country or region">
                       {formData.country_represented && (
-                        <span className="flex items-center gap-2">
-                          {ISO_COUNTRIES.some(c => c.name === formData.country_represented) && getCountryCode(formData.country_represented) && (
-                            <Flag 
-                              code={getCountryCode(formData.country_represented)!} 
-                              height="12" 
-                              width="18"
-                              className="rounded-sm"
-                            />
-                          )}
-                          {formData.country_represented}
+                        <div className="flex items-center gap-2">
+                          {ISO_COUNTRIES.find(c => c.name === formData.country_represented) && (
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              {ISO_COUNTRIES.find(c => c.name === formData.country_represented)?.code}
                         </span>
+                          )}
+                          <span>{formData.country_represented}</span>
+                        </div>
                       )}
                     </SelectValue>
                   </SelectTrigger>
@@ -770,14 +800,9 @@ export function EditOrganizationModal({
                     {ISO_COUNTRIES.map((country) => (
                       <SelectItem key={country.code} value={country.name}>
                         <div className="flex items-center gap-2">
-                          {getCountryCode(country.name) && (
-                            <Flag 
-                              code={getCountryCode(country.name)!} 
-                              height="12" 
-                              width="18"
-                              className="rounded-sm"
-                            />
-                          )}
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {country.code}
+                          </span>
                           <span>{country.name}</span>
                         </div>
                       </SelectItem>
@@ -804,9 +829,14 @@ export function EditOrganizationModal({
                   >
                     <SelectValue placeholder={loadingTypes ? "Loading types..." : "Select organisation type"}>
                       {formData.Organisation_Type_Code && (
-                        <span>
-                          {formData.Organisation_Type_Code} - {organizationTypes.find(t => t.code === formData.Organisation_Type_Code)?.label || 'Unknown'}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {formData.Organisation_Type_Code}
                         </span>
+                          <span className="font-medium text-foreground">
+                            {organizationTypes.find(t => t.code === formData.Organisation_Type_Code)?.label || 'Unknown'}
+                          </span>
+                        </div>
                       )}
                     </SelectValue>
                   </SelectTrigger>
@@ -829,51 +859,6 @@ export function EditOrganizationModal({
                 </Select>
               </div>
 
-              {/* Partner Origin (Auto-calculated) */}
-              <div className="space-y-2">
-                <Label htmlFor="partner_origin" className="flex items-center gap-2 text-sm font-medium">
-                  Partner Origin
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 text-gray-500 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p>Indicates whether the organisation is internal (Myanmar-based), external (foreign), or global/regional.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </Label>
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <div className="text-sm font-normal text-gray-800">
-                    {formData.cooperation_modality || 'Awaiting calculation...'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Partner Classification (Auto-calculated) */}
-              <div className="space-y-2">
-                <Label htmlFor="partner_classification" className="flex items-center gap-2 text-sm font-medium">
-                  Partner Classification
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 text-gray-500 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p>A detailed, descriptive label combining organisation type and country.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </Label>
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <div className="text-sm font-normal text-gray-700">
-                    {formData.Organisation_Type_Code && formData.country_represented 
-                      ? getPartnerClassification(formData.Organisation_Type_Code, formData.country_represented)
-                      : 'Awaiting calculation...'}
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Description */}
@@ -888,6 +873,263 @@ export function EditOrganizationModal({
                 className="resize-none"
               />
             </div>
+
+            <Separator />
+            
+            {/* IATI Classification Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* IATI Organisation Identifier */}
+              <div className="space-y-2">
+                <Label htmlFor="iati_org_id_class" className="text-sm font-medium">IATI Organisation Identifier</Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      id="iati_org_id_class"
+                      value={formData.iati_org_id || ''}
+                      onChange={(e) => handleInputChange('iati_org_id', e.target.value)}
+                      placeholder="DK-CVR-20228799"
+                      className="pr-10"
+                    />
+                    {formData.iati_org_id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(formData.iati_org_id || '')}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                        title="Copy IATI ID"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Organization UUID (Read-only) */}
+              {organization?.id && (
+                <div className="space-y-2">
+                  <Label htmlFor="uuid_class" className="text-sm font-medium">Organization UUID</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="uuid_class"
+                      value={formData.id || ''}
+                      readOnly
+                      className="bg-gray-50 text-gray-600"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(formData.id || '')}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">This unique identifier is used internally by the system</p>
+                </div>
+              )}
+
+              {/* Default Currency */}
+              <div className="space-y-2">
+                <Label htmlFor="default_currency" className="text-sm font-medium">
+                  Default Currency
+                </Label>
+                <Select
+                  value={formData.default_currency || 'USD'}
+                  onValueChange={(value) => handleInputChange('default_currency', value)}
+                >
+                  <SelectTrigger className="[&>span]:line-clamp-none [&>span]:whitespace-nowrap">
+                    <SelectValue placeholder="Select currency">
+                      {formData.default_currency && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {formData.default_currency}
+                          </span>
+                          <span>
+                            {formData.default_currency === 'USD' && 'US Dollar'}
+                            {formData.default_currency === 'EUR' && 'Euro'}
+                            {formData.default_currency === 'GBP' && 'British Pound'}
+                            {formData.default_currency === 'JPY' && 'Japanese Yen'}
+                            {formData.default_currency === 'CAD' && 'Canadian Dollar'}
+                            {formData.default_currency === 'AUD' && 'Australian Dollar'}
+                            {formData.default_currency === 'CHF' && 'Swiss Franc'}
+                            {formData.default_currency === 'CNY' && 'Chinese Yuan'}
+                            {formData.default_currency === 'SEK' && 'Swedish Krona'}
+                            {formData.default_currency === 'NOK' && 'Norwegian Krone'}
+                            {formData.default_currency === 'DKK' && 'Danish Krone'}
+                          </span>
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">USD</span>
+                        <span>US Dollar</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="EUR">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">EUR</span>
+                        <span>Euro</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="GBP">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">GBP</span>
+                        <span>British Pound</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="JPY">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">JPY</span>
+                        <span>Japanese Yen</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="CAD">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">CAD</span>
+                        <span>Canadian Dollar</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="AUD">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">AUD</span>
+                        <span>Australian Dollar</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="CHF">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">CHF</span>
+                        <span>Swiss Franc</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="CNY">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">CNY</span>
+                        <span>Chinese Yuan</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="SEK">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">SEK</span>
+                        <span>Swedish Krona</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="NOK">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">NOK</span>
+                        <span>Norwegian Krone</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="DKK">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">DKK</span>
+                        <span>Danish Krone</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Default Language */}
+              <div className="space-y-2">
+                <Label htmlFor="default_language" className="text-sm font-medium">
+                  Default Language
+                </Label>
+                <Select
+                  value={formData.default_language || 'en'}
+                  onValueChange={(value) => handleInputChange('default_language', value)}
+                >
+                  <SelectTrigger className="[&>span]:line-clamp-none [&>span]:whitespace-nowrap">
+                    <SelectValue placeholder="Select language">
+                      {formData.default_language && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {formData.default_language.toUpperCase()}
+                          </span>
+                          <span>
+                            {formData.default_language === 'en' && 'English'}
+                            {formData.default_language === 'fr' && 'French'}
+                            {formData.default_language === 'es' && 'Spanish'}
+                            {formData.default_language === 'de' && 'German'}
+                            {formData.default_language === 'pt' && 'Portuguese'}
+                            {formData.default_language === 'ar' && 'Arabic'}
+                            {formData.default_language === 'zh' && 'Chinese'}
+                            {formData.default_language === 'ru' && 'Russian'}
+                            {formData.default_language === 'ja' && 'Japanese'}
+                            {formData.default_language === 'ko' && 'Korean'}
+                          </span>
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">EN</span>
+                        <span>English</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="fr">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">FR</span>
+                        <span>French</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="es">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">ES</span>
+                        <span>Spanish</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="de">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">DE</span>
+                        <span>German</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pt">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">PT</span>
+                        <span>Portuguese</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="ar">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">AR</span>
+                        <span>Arabic</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="zh">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">ZH</span>
+                        <span>Chinese</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="ru">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">RU</span>
+                        <span>Russian</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="ja">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">JA</span>
+                        <span>Japanese</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="ko">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">KO</span>
+                        <span>Korean</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
           </TabsContent>
 
           {/* Branding Tab */}
@@ -1061,130 +1303,36 @@ export function EditOrganizationModal({
             </div>
           </TabsContent>
 
-          {/* Classification Tab */}
-          <TabsContent value="classification" className="h-full overflow-y-auto px-2 mt-4 space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">IATI identifiers and auto-calculated classification fields</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* IATI Organisation Identifier */}
-              <div className="space-y-2">
-                <Label htmlFor="iati_org_id_class" className="text-sm font-medium">IATI Organisation Identifier</Label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      id="iati_org_id_class"
-                      value={formData.iati_org_id || ''}
-                      onChange={(e) => handleInputChange('iati_org_id', e.target.value)}
-                      placeholder="DK-CVR-20228799"
-                      className="pr-10"
-                    />
-                    {formData.iati_org_id && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(formData.iati_org_id || '')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                        title="Copy IATI ID"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
+          {/* IATI Budgets Tab */}
+          <TabsContent value="budgets" className="h-full overflow-y-auto px-2 mt-4">
+            <IATIBudgetManager
+              organizationId={organization?.id}
+              budgets={iatiBudgets}
+              onChange={setIatiBudgets}
+              defaultCurrency={formData.default_currency || 'USD'}
+              readOnly={false}
+            />
+          </TabsContent>
 
-              {/* Organization UUID (Read-only) */}
-              {organization?.id && (
-                <div className="space-y-2">
-                  <Label htmlFor="uuid_class" className="text-sm font-medium">Organization UUID</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="uuid_class"
-                      value={formData.id || ''}
-                      readOnly
-                      className="bg-gray-50 text-gray-600"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyToClipboard(formData.id || '')}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">This unique identifier is used internally by the system</p>
-                </div>
-              )}
+          {/* IATI Documents Tab */}
+          <TabsContent value="documents" className="h-full overflow-y-auto px-2 mt-4">
+            <IATIDocumentManager
+              organizationId={organization?.id}
+              documents={iatiDocuments}
+              onChange={setIatiDocuments}
+              readOnly={false}
+            />
+          </TabsContent>
 
-              {/* Partner Origin (Auto-calculated) */}
-              <div className="space-y-2">
-                <Label htmlFor="partner_origin_class" className="flex items-center gap-2 text-sm font-medium">
-                  Partner Origin (Auto-calculated)
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 text-gray-500 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p>Automatically calculated based on organization type and location. Indicates whether the organisation is internal (Myanmar-based), external (foreign), or global/regional.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </Label>
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <div className="text-sm font-semibold text-gray-800">
-                    {formData.cooperation_modality || 'Select type and country to calculate'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Partner Classification (Auto-calculated) */}
-              <div className="space-y-2">
-                <Label htmlFor="partner_classification_class" className="flex items-center gap-2 text-sm font-medium">
-                  Partner Classification (Auto-calculated)
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 text-gray-500 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p>Automatically calculated. A detailed, descriptive label combining organisation type and country for reporting purposes.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </Label>
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <div className="text-sm font-semibold text-gray-700">
-                    {formData.Organisation_Type_Code && formData.country_represented 
-                      ? getPartnerClassification(formData.Organisation_Type_Code, formData.country_represented)
-                      : 'Select type and country to calculate'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> Partner Origin and Classification are automatically calculated based on the organization type and location you selected in the Basic Info tab. These fields help with reporting and filtering.
-              </p>
-            </div>
+          {/* IATI Import Preferences Tab */}
+          <TabsContent value="iati-prefs" className="h-full overflow-y-auto px-2 mt-4">
+            <IATIImportPreferences organizationId={organization?.id} />
           </TabsContent>
         </Tabs>
 
-        {/* Footer with Delete option */}
-        <DialogFooter className="flex-shrink-0 gap-2">
-          {!isCreating && onDelete && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              className="mr-auto"
-            >
-              Delete Organization
-            </Button>
-          )}
+        {/* Dialog Footer */}
+        <DialogFooter className="flex-shrink-0 border-t pt-4">
           <Button
-            type="button"
             variant="outline"
             onClick={() => handleOpenChange(false)}
             disabled={saving}
@@ -1192,14 +1340,63 @@ export function EditOrganizationModal({
             Cancel
           </Button>
           <Button
-            type="button"
             onClick={handleSave}
             disabled={saving}
+            className="bg-slate-600 hover:bg-slate-700"
           >
-            {saving ? 'Saving...' : (isCreating ? 'Create Organization' : 'Save Changes')}
+            {saving ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* IATI Import Modal */}
+    <Dialog open={showIatiImport} onOpenChange={setShowIatiImport}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Import from IATI</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Enter an IATI organization identifier to import data automatically
+          </p>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="iati_import_id">IATI Organization ID</Label>
+            <Input
+              id="iati_import_id"
+              placeholder="e.g., DK-CVR-20228799"
+              // TODO: Add state for IATI import ID and functionality
+            />
+            <p className="text-xs text-muted-foreground">
+              Example: DK-CVR-20228799 (DANIDA), GB-GOV-1 (FCDO)
+            </p>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowIatiImport(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => {
+              // TODO: Implement IATI import functionality
+              console.log('IATI import functionality not yet implemented');
+              setShowIatiImport(false);
+            }}
+          >
+            Import Organization
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
