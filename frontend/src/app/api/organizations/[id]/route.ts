@@ -127,6 +127,50 @@ export async function PUT(
     // Remove computed fields before updating
     const { active_project_count, ...updates } = body;
     
+    // Handle alias fields - normalize and validate
+    if ('alias_refs' in updates) {
+      if (updates.alias_refs) {
+        // Normalize: trim, remove duplicates, filter empty strings
+        updates.alias_refs = [...new Set(
+          updates.alias_refs
+            .map((ref: string) => ref.trim())
+            .filter((ref: string) => ref.length > 0)
+        )];
+        
+        // Validate: ensure no alias is another org's canonical IATI ID
+        if (updates.alias_refs.length > 0) {
+          const { data: conflictOrgs } = await getSupabaseAdmin()
+            .from('organizations')
+            .select('id, iati_org_id, name')
+            .in('iati_org_id', updates.alias_refs)
+            .neq('id', params.id);
+          
+          if (conflictOrgs && conflictOrgs.length > 0) {
+            const conflicts = conflictOrgs.map(o => `${o.iati_org_id} (${o.name})`).join(', ');
+            return NextResponse.json(
+              { error: `Alias conflict: ${conflicts} already use these identifiers as their canonical IATI IDs` },
+              { status: 400 }
+            );
+          }
+        }
+      } else {
+        updates.alias_refs = [];
+      }
+    }
+    
+    if ('name_aliases' in updates) {
+      if (updates.name_aliases) {
+        // Normalize: trim, remove duplicates, filter empty strings
+        updates.name_aliases = [...new Set(
+          updates.name_aliases
+            .map((name: string) => name.trim())
+            .filter((name: string) => name.length > 0)
+        )];
+      } else {
+        updates.name_aliases = [];
+      }
+    }
+    
     // Handle new IATI fields - ensure proper data types and defaults
     if ('reporting_org_secondary_reporter' in updates) {
       updates.reporting_org_secondary_reporter = updates.reporting_org_secondary_reporter || false;

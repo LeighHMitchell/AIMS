@@ -31,9 +31,14 @@ export async function PATCH(
     const dbField = fieldMap[field] || field;
 
     // Get the old value for logging
+    // For finance_type, also fetch finance_type_inherited to check if it should stay inherited
+    const selectFields = dbField === 'finance_type' 
+      ? 'finance_type, finance_type_inherited' 
+      : dbField;
+    
     const { data: oldData, error: fetchError } = await supabase
       .from('transactions')
-      .select(dbField)
+      .select(selectFields)
       .eq('uuid', id)
       .single();
 
@@ -45,7 +50,21 @@ export async function PATCH(
     }
 
     // Update the field
-    const updateData = { [dbField]: value || null };
+    const updateData: any = { [dbField]: value || null };
+    
+    // Smart logic for finance_type_inherited:
+    // - If value unchanged and was inherited, keep as inherited
+    // - If value changed, mark as explicit (user confirmed)
+    if (dbField === 'finance_type') {
+      if (oldData.finance_type === value && oldData.finance_type_inherited === true) {
+        // User didn't change the value and it was inherited - keep as inherited (GRAY)
+        updateData.finance_type_inherited = true;
+      } else {
+        // User changed it - mark as explicit (BLACK)
+        updateData.finance_type_inherited = false;
+      }
+    }
+    
     const { data: updatedTransaction, error: updateError } = await supabase
       .from('transactions')
       .update(updateData)

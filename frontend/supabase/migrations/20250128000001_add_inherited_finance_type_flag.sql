@@ -18,3 +18,5 @@ WHERE finance_type_inherited = TRUE;
 
 COMMIT;
 
+
+

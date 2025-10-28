@@ -725,6 +725,20 @@ export async function PUT(request: NextRequest) {
       created_by: cleanUUIDValue(updateData.created_by)
     };
 
+    // Smart logic for finance_type_inherited:
+    // - If value unchanged and was inherited, keep as inherited
+    // - If value changed or new transaction, mark as explicit (user confirmed)
+    if ('finance_type' in updateData) {
+      if (currentTransaction?.finance_type === updateData.finance_type && 
+          currentTransaction?.finance_type_inherited === true) {
+        // User didn't change the value and it was inherited - keep as inherited (GRAY)
+        cleanedData.finance_type_inherited = true;
+      } else {
+        // User changed it or it's a new transaction - mark as explicit (BLACK)
+        cleanedData.finance_type_inherited = false;
+      }
+    }
+
     // Only add organization_id if provided and valid
     const orgId = cleanUUIDValue(updateData.organization_id);
     if (orgId) {

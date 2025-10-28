@@ -1,121 +1,83 @@
 -- Fix duplicate iati_org_id values in organizations table
--- This script must be run before adding the unique constraint
+-- Strategy: Keep the most recently updated organization for each duplicate iati_org_id
+--           and set the others' iati_org_id to NULL (preserving the data as aliases)
 
--- Step 1: Identify duplicates
+-- IMPORTANT: Review the diagnostic query results BEFORE running this!
+-- This script will modify your data.
+
+-- Step 1: Identify duplicates and decide which to keep
+-- (Keeps the most recently updated one for each duplicate iati_org_id)
+
 DO $$
 DECLARE
-  duplicate_count INTEGER;
-  empty_string_count INTEGER;
+    duplicate_record RECORD;
+    org_to_keep_id UUID;
+    orgs_to_update UUID[];
 BEGIN
-  -- Count duplicates
-  SELECT COUNT(*) INTO duplicate_count
-  FROM (
-    SELECT iati_org_id, COUNT(*) as cnt
-    FROM organizations
-    WHERE iati_org_id IS NOT NULL
-    GROUP BY iati_org_id
-    HAVING COUNT(*) > 1
-  ) duplicates;
-  
-  -- Count empty strings
-  SELECT COUNT(*) INTO empty_string_count
-  FROM organizations
-  WHERE iati_org_id = '';
-  
-  RAISE NOTICE 'Found % duplicate iati_org_id values', duplicate_count;
-  RAISE NOTICE 'Found % organizations with empty string iati_org_id', empty_string_count;
+    -- Loop through each duplicate iati_org_id
+    FOR duplicate_record IN 
+        SELECT iati_org_id
+        FROM organizations
+        WHERE iati_org_id IS NOT NULL
+        GROUP BY iati_org_id
+        HAVING COUNT(*) > 1
+    LOOP
+        RAISE NOTICE 'Processing duplicate iati_org_id: %', duplicate_record.iati_org_id;
+        
+        -- Find the organization to keep (most recently updated)
+        SELECT id INTO org_to_keep_id
+        FROM organizations
+        WHERE iati_org_id = duplicate_record.iati_org_id
+        ORDER BY updated_at DESC NULLS LAST, created_at DESC
+        LIMIT 1;
+        
+        RAISE NOTICE '  Keeping organization: %', org_to_keep_id;
+        
+        -- Get IDs of organizations to update
+        SELECT ARRAY_AGG(id) INTO orgs_to_update
+        FROM organizations
+        WHERE iati_org_id = duplicate_record.iati_org_id
+        AND id != org_to_keep_id;
+        
+        -- Set iati_org_id to NULL for duplicates (we'll use aliases instead)
+        UPDATE organizations
+        SET iati_org_id = NULL
+        WHERE id = ANY(orgs_to_update);
+        
+        RAISE NOTICE '  Cleared iati_org_id for % duplicate organizations', array_length(orgs_to_update, 1);
+        
+        -- Optional: Add the duplicate iati_org_id as an alias to the kept organization
+        -- This ensures the old reference is still recognized
+        UPDATE organizations
+        SET alias_refs = COALESCE(alias_refs, '{}') || ARRAY[duplicate_record.iati_org_id]
+        WHERE id = ANY(orgs_to_update)
+        AND NOT (COALESCE(alias_refs, '{}') @> ARRAY[duplicate_record.iati_org_id]);
+        
+    END LOOP;
+    
+    RAISE NOTICE 'Duplicate cleanup complete!';
 END $$;
 
--- Step 2: Show duplicate details
+-- Verify no duplicates remain
 SELECT 
-  iati_org_id,
-  COUNT(*) as count,
-  STRING_AGG(id::text, ', ') as organization_ids,
-  STRING_AGG(name, ' | ') as organization_names
+    iati_org_id,
+    COUNT(*) as count
 FROM organizations
 WHERE iati_org_id IS NOT NULL
 GROUP BY iati_org_id
-HAVING COUNT(*) > 1
-ORDER BY count DESC, iati_org_id;
+HAVING COUNT(*) > 1;
+-- Should return 0 rows
 
--- Step 3: Fix empty strings - convert to NULL
--- Empty strings should be NULL for proper uniqueness constraint
-UPDATE organizations
-SET iati_org_id = NULL
-WHERE iati_org_id = '';
-
--- Step 4: Fix other duplicates by appending a sequence number
--- This preserves the data while making it unique
-DO $$
-DECLARE
-  dup_record RECORD;
-  org_record RECORD;
-  counter INTEGER;
-BEGIN
-  -- Process each set of duplicates
-  FOR dup_record IN 
-    SELECT iati_org_id
-    FROM organizations
-    WHERE iati_org_id IS NOT NULL
-    GROUP BY iati_org_id
-    HAVING COUNT(*) > 1
-  LOOP
-    counter := 0;
-    
-    -- Process each organization with this duplicate iati_org_id
-    FOR org_record IN
-      SELECT id, name
-      FROM organizations
-      WHERE iati_org_id = dup_record.iati_org_id
-      ORDER BY created_at, id  -- Keep the oldest one unchanged
-    LOOP
-      IF counter > 0 THEN
-        -- Append sequence number to make it unique
-        UPDATE organizations
-        SET iati_org_id = dup_record.iati_org_id || '-' || counter
-        WHERE id = org_record.id;
-        
-        RAISE NOTICE 'Updated organization % (%) iati_org_id to %', 
-          org_record.name, org_record.id, dup_record.iati_org_id || '-' || counter;
-      END IF;
-      
-      counter := counter + 1;
-    END LOOP;
-  END LOOP;
-END $$;
-
--- Step 5: Verify no duplicates remain
-DO $$
-DECLARE
-  remaining_duplicates INTEGER;
-BEGIN
-  SELECT COUNT(*) INTO remaining_duplicates
-  FROM (
-    SELECT iati_org_id
-    FROM organizations
-    WHERE iati_org_id IS NOT NULL
-    GROUP BY iati_org_id
-    HAVING COUNT(*) > 1
-  ) dups;
-  
-  IF remaining_duplicates > 0 THEN
-    RAISE EXCEPTION 'Still have % duplicate iati_org_id values!', remaining_duplicates;
-  ELSE
-    RAISE NOTICE '✅ All duplicates resolved. Safe to add unique constraint.';
-  END IF;
-END $$;
-
--- Optional: Show the changes that were made
+-- Show organizations that had their iati_org_id cleared
 SELECT 
-  id,
-  name,
-  iati_org_id,
-  CASE 
-    WHEN iati_org_id LIKE '%-_%' THEN 'Modified to resolve duplicate'
-    WHEN iati_org_id IS NULL THEN 'Converted from empty string to NULL'
-    ELSE 'Original'
-  END as status
+    id,
+    name,
+    acronym,
+    alias_refs,
+    created_at,
+    updated_at
 FROM organizations
-WHERE iati_org_id LIKE '%-_%' 
-   OR iati_org_id IS NULL
-ORDER BY iati_org_id; 
+WHERE iati_org_id IS NULL
+AND alias_refs IS NOT NULL
+AND array_length(alias_refs, 1) > 0
+ORDER BY updated_at DESC;

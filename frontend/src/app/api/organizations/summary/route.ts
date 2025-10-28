@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Fetch organizations count
     const { data: organizations, error: orgsError } = await getSupabaseAdmin()
       .from('organizations')
-      .select('id, name, organisation_type, created_at, updated_at');
+      .select('id, name, type, created_at, updated_at');
 
     if (orgsError) {
       console.error('[AIMS] Error fetching organizations:', orgsError);

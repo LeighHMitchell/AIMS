@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // Build query with filters
     let query = getSupabaseAdmin()
       .from('organizations')
-      .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at');
+      .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, created_at, updated_at');
     
     // Filter by IATI org ID (exact match)
     if (iatiOrgId) {

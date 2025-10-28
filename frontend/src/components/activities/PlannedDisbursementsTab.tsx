@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths, getQuarter, getYear } from 'date-fns';
-import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Edit, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, AlertCircle, CheckCircle } from 'lucide-react';
+import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Edit, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, AlertCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -169,6 +169,11 @@ export default function PlannedDisbursementsTab({
   // Bulk selection state
   const [selectedDisbursementIds, setSelectedDisbursementIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Save status tracking
   const [saveStatus, setSaveStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
@@ -193,6 +198,19 @@ export default function PlannedDisbursementsTab({
       setSortDirection('asc');
     }
   }, [sortColumn]);
+
+  // Toggle row expansion
+  const toggleRowExpansion = (disbursementId: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(disbursementId)) {
+        newSet.delete(disbursementId);
+      } else {
+        newSet.add(disbursementId);
+      }
+      return newSet;
+    });
+  };
 
   // Handler to open modal for add/edit
   const openModal = (disbursement?: PlannedDisbursement) => {
@@ -567,23 +585,9 @@ export default function PlannedDisbursementsTab({
 
         if (error) throw error;
 
-        // If no disbursements exist, generate default periods
+        // If no disbursements exist, show empty state (users can create custom periods)
         if (!data || data.length === 0) {
-          const defaultPeriods = generateBudgetPeriods(startDate, endDate, granularity);
-          const generatedDisbursements = defaultPeriods.map(period => ({
-            activity_id: activityId,
-            amount: 0,
-            currency: defaultCurrency,
-            period_start: period.start,
-            period_end: period.end,
-            status: 'original' as const,
-            provider_org_name: '',
-            receiver_org_name: '',
-            value_date: period.start,
-            notes: '',
-            usdAmount: 0
-          }));
-          setDisbursements(generatedDisbursements);
+          setDisbursements([]);
         } else {
           // Use real-time USD conversion (same logic as FinancialSummaryCards)
           const disbursementsWithUSD = await Promise.all(
@@ -775,6 +779,24 @@ export default function PlannedDisbursementsTab({
 
     return sorted;
   }, [filteredDisbursements, sortColumn, sortDirection]);
+
+  // Pagination logic
+  const totalPages = useMemo(() => 
+    Math.ceil(sortedFilteredDisbursements.length / itemsPerPage)
+  , [sortedFilteredDisbursements.length, itemsPerPage]);
+  
+  // Ensure currentPage is within bounds - using callback form to avoid dependency issues
+  useEffect(() => {
+    if (totalPages > 0) {
+      setCurrentPage(prev => prev > totalPages ? totalPages : prev);
+    }
+  }, [totalPages]);
+  
+  const paginatedDisbursements = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedFilteredDisbursements.slice(startIndex, endIndex);
+  }, [sortedFilteredDisbursements, currentPage, itemsPerPage]);
 
   // Calculate total planned disbursements
   const totalPlanned = useMemo(() => {
@@ -1572,11 +1594,12 @@ export default function PlannedDisbursementsTab({
           ) : (
             <>
               <div className="rounded-md border">
-                <Table aria-label="Planned disbursements table">
+                <Table aria-label="Planned disbursements table" className="table-fixed">
                   <TableHeader className="bg-muted/50 border-b border-border/70">
                     <TableRow>
+                      <TableHead className="py-3 px-2" style={{ width: '40px' }}></TableHead>
                       {!readOnly && (
-                        <TableHead className="w-[50px] text-center">
+                        <TableHead className="text-center" style={{ width: '50px' }}>
                           <Checkbox
                             checked={selectedDisbursementIds.size === sortedFilteredDisbursements.length && sortedFilteredDisbursements.length > 0}
                             onCheckedChange={handleSelectAll}
@@ -1654,22 +1677,43 @@ export default function PlannedDisbursementsTab({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedFilteredDisbursements.map((disbursement: PlannedDisbursement) => {
+                    {paginatedDisbursements.map((disbursement: PlannedDisbursement) => {
                       const overlappingDisbursements = checkDisbursementOverlap(disbursement, sortedFilteredDisbursements);
                       const hasOverlapWarning = overlappingDisbursements && overlappingDisbursements.length > 0;
+                      const disbursementId = disbursement.id || 'new';
+                      const isExpanded = expandedRows.has(disbursementId);
                       
                       return (
+                        <React.Fragment key={disbursementId}>
                         <TableRow 
-                          key={disbursement.id || 'new'}
                           className={cn(
                             "border-b border-border/40 hover:bg-muted/30 transition-colors",
                             disbursement.hasError ? 'bg-red-50' : hasOverlapWarning ? 'bg-orange-50/30' : '',
                             selectedDisbursementIds.has(disbursement.id!) && "bg-blue-50 border-blue-200"
                           )}
                         >
+                          {/* Chevron for expand/collapse */}
+                          <TableCell className="py-3 px-2 whitespace-nowrap">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleRowExpansion(disbursementId);
+                              }}
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </TableCell>
+                          
                           {/* Checkbox */}
                           {!readOnly && (
-                            <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                            <TableCell className="text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                               <Checkbox
                                 checked={selectedDisbursementIds.has(disbursement.id!)}
                                 onCheckedChange={(checked) => handleSelectDisbursement(disbursement.id!, !!checked)}
@@ -1679,7 +1723,7 @@ export default function PlannedDisbursementsTab({
                             </TableCell>
                           )}
                           {/* Period */}
-                          <TableCell className="py-3 px-4">
+                          <TableCell className="py-3 px-4 whitespace-nowrap">
                             <div className="flex items-center gap-1">
                               <span className="font-medium">
                                 {format(parseISO(disbursement.period_start), 'MMM yyyy')} - {format(parseISO(disbursement.period_end), 'MMM yyyy')}
@@ -1708,14 +1752,14 @@ export default function PlannedDisbursementsTab({
                           </TableCell>
 
                           {/* Status */}
-                          <TableCell className="py-3 px-4">
+                          <TableCell className="py-3 px-4 whitespace-nowrap">
                             <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
                                 {disbursement.status || 'Original'}
                               </span>
                           </TableCell>
 
                           {/* Provider → Receiver */}
-                          <TableCell className="py-3 px-4">
+                          <TableCell className="py-3 px-4 whitespace-nowrap">
                             <div className="flex items-center gap-2 font-medium">
                               <div className="flex items-center gap-1.5">
                                 <OrganizationLogo
@@ -1738,7 +1782,7 @@ export default function PlannedDisbursementsTab({
                           </TableCell>
 
                           {/* Amount (merged with currency) */}
-                          <TableCell className="py-3 px-4 text-right">
+                          <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                             <div className="font-medium">
                               {disbursement.amount > 0 
                                 ? <><span className="text-muted-foreground">{disbursement.currency}</span> {disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</>
@@ -1748,14 +1792,14 @@ export default function PlannedDisbursementsTab({
                           </TableCell>
 
                           {/* Value Date */}
-                          <TableCell className="py-3 px-4">
+                          <TableCell className="py-3 px-4 whitespace-nowrap">
                             <div>
                               {disbursement.value_date ? format(parseISO(disbursement.value_date), 'MMM dd, yyyy') : '-'}
                             </div>
                           </TableCell>
 
                           {/* USD Value */}
-                          <TableCell className="py-3 px-4 text-right">
+                          <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1">
                               {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`]?.loading ? (
                                 <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
@@ -1801,7 +1845,7 @@ export default function PlannedDisbursementsTab({
 
                           {/* Actions */}
                           {!readOnly && (
-                            <TableCell className="py-3 px-4 text-right">
+                            <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" className="h-8 w-8 p-0" disabled={isReadOnly}>
@@ -1835,11 +1879,204 @@ export default function PlannedDisbursementsTab({
                             </TableCell>
                           )}
                         </TableRow>
+                        
+                        {/* Expandable Detail Row */}
+                        {isExpanded && (
+                          <TableRow className="bg-muted/20 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+                            <TableCell colSpan={readOnly ? 7 : 8} className="py-4 px-6">
+                              <div className="space-y-3 text-sm">
+                                {/* Disbursement Details */}
+                                <div className="grid grid-cols-2 gap-x-12 gap-y-3">
+                                  <div>
+                                    <span className="text-muted-foreground text-xs min-w-[160px]">Status:</span>
+                                    <span className="ml-2 font-medium text-xs capitalize">{disbursement.status || 'Original'}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground text-xs min-w-[160px]">Period Start:</span>
+                                    <span className="ml-2 text-xs">{format(parseISO(disbursement.period_start), 'MMM d, yyyy')}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground text-xs min-w-[160px]">Period End:</span>
+                                    <span className="ml-2 text-xs">{format(parseISO(disbursement.period_end), 'MMM d, yyyy')}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground text-xs min-w-[160px]">Original Amount:</span>
+                                    <span className="ml-2 font-medium text-xs">{disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {disbursement.currency}</span>
+                                  </div>
+                                  {disbursement.value_date && (
+                                    <div>
+                                      <span className="text-muted-foreground text-xs min-w-[160px]">Value Date:</span>
+                                      <span className="ml-2 text-xs">{format(parseISO(disbursement.value_date), 'MMM d, yyyy')}</span>
+                                    </div>
+                                  )}
+                                  {disbursement.usdAmount && (
+                                    <div>
+                                      <span className="text-muted-foreground text-xs min-w-[160px]">USD Value:</span>
+                                      <span className="ml-2 font-medium text-xs">${disbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Organizations */}
+                                {(disbursement.provider_org_name || disbursement.receiver_org_name) && (
+                                  <div className="border-t pt-3 mt-3">
+                                    <div className="text-xs text-muted-foreground font-semibold mb-2">Organisations:</div>
+                                    <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                                      {disbursement.provider_org_name && (
+                                        <>
+                                          <div>
+                                            <span className="text-muted-foreground text-xs min-w-[160px]">Provider Organisation:</span>
+                                            <span className="ml-2 text-xs font-medium">{disbursement.provider_org_name}</span>
+                                          </div>
+                                          {disbursement.provider_org_ref && (
+                                            <div className="flex items-center gap-1">
+                                              <span className="text-muted-foreground text-xs min-w-[160px]">Provider Reference:</span>
+                                              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{disbursement.provider_org_ref}</span>
+                                              <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(disbursement.provider_org_ref!)}>
+                                                <Copy className="h-3 w-3" />
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </>
+                                      )}
+                                      {disbursement.receiver_org_name && (
+                                        <>
+                                          <div>
+                                            <span className="text-muted-foreground text-xs min-w-[160px]">Receiver Organisation:</span>
+                                            <span className="ml-2 text-xs font-medium">{disbursement.receiver_org_name}</span>
+                                          </div>
+                                          {disbursement.receiver_org_ref && (
+                                            <div className="flex items-center gap-1">
+                                              <span className="text-muted-foreground text-xs min-w-[160px]">Receiver Reference:</span>
+                                              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{disbursement.receiver_org_ref}</span>
+                                              <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(disbursement.receiver_org_ref!)}>
+                                                <Copy className="h-3 w-3" />
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Notes */}
+                                {disbursement.notes && (
+                                  <div className="border-t pt-3 mt-3">
+                                    <div className="text-xs text-muted-foreground font-semibold mb-2">Notes:</div>
+                                    <p className="ml-4 text-gray-700 text-xs leading-relaxed">{disbursement.notes}</p>
+                                  </div>
+                                )}
+                                
+                                {/* System Info */}
+                                <div className="border-t pt-3 mt-3">
+                                  <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-xs">
+                                    {disbursement.id && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-muted-foreground min-w-[160px]">Disbursement ID:</span>
+                                        <span className="font-mono bg-muted px-1.5 py-0.5 rounded break-all">{disbursement.id}</span>
+                                        <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(disbursement.id!)}>
+                                          <Copy className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                    {disbursement.created_at && (
+                                      <div>
+                                        <span className="text-muted-foreground min-w-[160px]">Created:</span>
+                                        <span className="ml-2">{format(parseISO(disbursement.created_at), 'MMM d, yyyy')}</span>
+                                      </div>
+                                    )}
+                                    {disbursement.updated_at && (
+                                      <div>
+                                        <span className="text-muted-foreground min-w-[160px]">Updated:</span>
+                                        <span className="ml-2">{format(parseISO(disbursement.updated_at), 'MMM d, yyyy')}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        </React.Fragment>
                       );
                     })}
                   </TableBody>
                 </Table>
               </div>
+              
+              {/* Pagination Controls */}
+              {disbursements.length > itemsPerPage && (
+                <div className="flex items-center justify-between mt-4 px-2">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedFilteredDisbursements.length)} of {sortedFilteredDisbursements.length} planned disbursements
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      First
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Last
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Error Display */}
               {filteredDisbursements.some(d => d.hasError) && (

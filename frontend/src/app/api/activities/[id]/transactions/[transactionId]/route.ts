@@ -77,6 +77,27 @@ export async function PUT(
       updated_at: new Date().toISOString()
     };
 
+    // Smart logic for finance_type_inherited:
+    // - If value unchanged and was inherited, keep as inherited
+    // - If value changed, mark as explicit (user confirmed)
+    if ('finance_type' in body) {
+      // Fetch current transaction to check if value changed
+      const { data: currentTx } = await getSupabaseAdmin()
+        .from('transactions')
+        .select('finance_type, finance_type_inherited')
+        .eq('uuid', transactionId)
+        .single();
+      
+      if (currentTx?.finance_type === body.finance_type && 
+          currentTx?.finance_type_inherited === true) {
+        // User didn't change the value and it was inherited - keep as inherited (GRAY)
+        updateData.finance_type_inherited = true;
+      } else {
+        // User changed it - mark as explicit (BLACK)
+        updateData.finance_type_inherited = false;
+      }
+    }
+
     // Update the transaction
     const { data: updatedTransaction, error } = await getSupabaseAdmin()
       .from('transactions')

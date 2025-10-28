@@ -432,6 +432,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [showDebugConsole, setShowDebugConsole] = useState(false);
   const [lastImportSummary, setLastImportSummary] = useState<any>(null); // Store import summary for results display
   const [capturedConsoleLogs, setCapturedConsoleLogs] = useState<string[]>([]); // Capture console output during import
+  const [orgPreferences, setOrgPreferences] = useState<any>(null); // Organization IATI import preferences
   
   // Debug console capture
   const captureConsoleLog = (message: string, ...args: any[]) => {
@@ -508,6 +509,31 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       toast.error('Failed to copy debug logs');
     });
   };
+  
+  // Load organization IATI import preferences
+  useEffect(() => {
+    const loadOrgPreferences = async () => {
+      if (!user?.organizationId) {
+        console.log('[XML Import] No organization ID, skipping preferences load');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/organizations/${user.organizationId}/iati-import-preferences`);
+        if (response.ok) {
+          const prefs = await response.json();
+          setOrgPreferences(prefs);
+          console.log('[XML Import] Loaded organization IATI import preferences:', prefs);
+        } else {
+          console.log('[XML Import] No preferences found for organization');
+        }
+      } catch (error) {
+        console.error('[XML Import] Failed to load org preferences:', error);
+      }
+    };
+    
+    loadOrgPreferences();
+  }, [user?.organizationId]);
   
   // External Publisher Detection States
   const [showExternalPublisherModal, setShowExternalPublisherModal] = useState(false);
@@ -1505,6 +1531,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         return currentValue !== importValue;
       };
 
+      // Helper function to check if field is allowed by organization preferences
+      const isFieldAllowedByPreferences = (iatiPath: string): boolean => {
+        // If no preferences loaded, default to allowing all fields
+        if (!orgPreferences?.fields) return true;
+        
+        // Check if field is explicitly disabled (false)
+        const fieldValue = orgPreferences.fields[iatiPath];
+        return fieldValue !== false;
+      };
+
       const hasConflict = (currentValue: any, importValue: any): boolean => {
         // Only show conflict if current value exists and differs from import value
         if (!currentValue) return false;
@@ -1580,7 +1616,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/title/narrative',
           currentValue: currentValue,
           importValue: parsedActivity.title,
-          selected: shouldSelectField(currentValue, parsedActivity.title),
+          selected: isFieldAllowedByPreferences('iati-activity/title') && shouldSelectField(currentValue, parsedActivity.title),
           hasConflict: hasConflict(currentValue, parsedActivity.title),
           tab: 'other',
           description: 'Main title/name of the activity'
@@ -1599,7 +1635,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/description[@type="1"]/narrative',
           currentValue: currentValue,
           importValue: parsedActivity.description,
-          selected: shouldSelectField(currentValue, parsedActivity.description),
+          selected: isFieldAllowedByPreferences('iati-activity/description') && shouldSelectField(currentValue, parsedActivity.description),
           hasConflict: hasConflict(currentValue, parsedActivity.description),
           tab: 'descriptions',
           description: 'General activity description (IATI type="1")'
@@ -1617,7 +1653,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/description[@type="2"]/narrative',
           currentValue: currentValue,
           importValue: parsedActivity.descriptionObjectives,
-          selected: shouldSelectField(currentValue, parsedActivity.descriptionObjectives),
+          selected: isFieldAllowedByPreferences('iati-activity/description') && shouldSelectField(currentValue, parsedActivity.descriptionObjectives),
           hasConflict: hasConflict(currentValue, parsedActivity.descriptionObjectives),
           tab: 'descriptions',
           description: 'Objectives of the activity (IATI type="2")'
@@ -1635,7 +1671,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/description[@type="3"]/narrative',
           currentValue: currentValue,
           importValue: parsedActivity.descriptionTargetGroups,
-          selected: shouldSelectField(currentValue, parsedActivity.descriptionTargetGroups),
+          selected: isFieldAllowedByPreferences('iati-activity/description') && shouldSelectField(currentValue, parsedActivity.descriptionTargetGroups),
           hasConflict: hasConflict(currentValue, parsedActivity.descriptionTargetGroups),
           tab: 'descriptions',
           description: 'Target groups and beneficiaries (IATI type="3")'
@@ -1649,7 +1685,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/description[@type="4"]/narrative',
           currentValue: currentValue,
           importValue: parsedActivity.descriptionOther,
-          selected: shouldSelectField(currentValue, parsedActivity.descriptionOther),
+          selected: isFieldAllowedByPreferences('iati-activity/description') && shouldSelectField(currentValue, parsedActivity.descriptionOther),
           hasConflict: hasConflict(currentValue, parsedActivity.descriptionOther),
           tab: 'descriptions',
           description: 'Other relevant information'
@@ -1664,7 +1700,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/collaboration-type',
           currentValue: currentCollabLabel,
           importValue: importCollabLabel,
-          selected: shouldSelectField(currentCollabLabel, importCollabLabel),
+          selected: isFieldAllowedByPreferences('iati-activity/collaboration-type') && shouldSelectField(currentCollabLabel, importCollabLabel),
           hasConflict: hasConflict(currentCollabLabel, importCollabLabel),
           tab: 'other',
           description: 'Type of collaboration arrangement'
@@ -1679,7 +1715,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-status',
           currentValue: currentStatusLabel,
           importValue: importStatusLabel,
-          selected: shouldSelectField(currentStatusLabel, importStatusLabel),
+          selected: isFieldAllowedByPreferences('iati-activity/activity-status') && shouldSelectField(currentStatusLabel, importStatusLabel),
           hasConflict: hasConflict(currentStatusLabel, importStatusLabel),
           tab: 'other',
           description: 'Current implementation status'
@@ -1694,7 +1730,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-scope',
           currentValue: currentScopeLabel,
           importValue: importScopeLabel,
-          selected: shouldSelectField(currentScopeLabel, importScopeLabel),
+          selected: isFieldAllowedByPreferences('iati-activity/activity-scope') && shouldSelectField(currentScopeLabel, importScopeLabel),
           hasConflict: hasConflict(currentScopeLabel, importScopeLabel),
           tab: 'other',
           description: 'Geographical scope of the activity'
@@ -1725,7 +1761,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-date[@type="1"]',
           currentValue: currentValue,
           importValue: parsedActivity.plannedStartDate,
-          selected: shouldSelectField(currentValue, parsedActivity.plannedStartDate),
+          selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=start-planned]') && shouldSelectField(currentValue, parsedActivity.plannedStartDate),
           hasConflict: hasConflict(currentValue, parsedActivity.plannedStartDate),
           tab: 'dates',
           description: 'When the activity is planned to begin'
@@ -1738,7 +1774,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-date[@type="3"]',
           currentValue: currentActivityData.planned_end_date || null,
           importValue: parsedActivity.plannedEndDate,
-          selected: shouldSelectField(currentActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
+          selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=end-planned]') && shouldSelectField(currentActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
           hasConflict: hasConflict(currentActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
           tab: 'dates',
           description: 'When the activity is planned to end'
@@ -1751,7 +1787,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-date[@type="2"]',
           currentValue: currentActivityData.actual_start_date || null,
           importValue: parsedActivity.actualStartDate,
-          selected: shouldSelectField(currentActivityData.actual_start_date || null, parsedActivity.actualStartDate),
+          selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=start-actual]') && shouldSelectField(currentActivityData.actual_start_date || null, parsedActivity.actualStartDate),
           hasConflict: hasConflict(currentActivityData.actual_start_date || null, parsedActivity.actualStartDate),
           tab: 'dates',
           description: 'When the activity actually started'
@@ -1764,7 +1800,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/activity-date[@type="4"]',
           currentValue: currentActivityData.actual_end_date || null,
           importValue: parsedActivity.actualEndDate,
-          selected: shouldSelectField(currentActivityData.actual_end_date || null, parsedActivity.actualEndDate),
+          selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=end-actual]') && shouldSelectField(currentActivityData.actual_end_date || null, parsedActivity.actualEndDate),
           hasConflict: hasConflict(currentActivityData.actual_end_date || null, parsedActivity.actualEndDate),
           tab: 'dates',
           description: 'When the activity actually ended'
@@ -1800,7 +1836,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               ownerOrg: identifier.ownerOrg,
               _rawData: identifier // Keep raw data for import processing
             },
-            selected: false,
+            selected: isFieldAllowedByPreferences('iati-activity/other-identifier'),
             hasConflict: false,
             tab: 'identifiers_ids',
             description: `${typeCode} - ${typeName}`
@@ -1844,7 +1880,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/default-finance-type',
           currentValue: currentFinanceLabel,
           importValue: importFinanceLabel,
-          selected: shouldSelectField(currentFinanceLabel, importFinanceLabel),
+          selected: isFieldAllowedByPreferences('iati-activity/default-finance-type') && shouldSelectField(currentFinanceLabel, importFinanceLabel),
           hasConflict: hasConflict(currentFinanceLabel, importFinanceLabel),
           tab: 'finances',
           description: 'Default type of finance (grant, loan, etc.)'
@@ -1859,7 +1895,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/default-flow-type',
           currentValue: currentFlowLabel,
           importValue: importFlowLabel,
-          selected: shouldSelectField(currentFlowLabel, importFlowLabel),
+          selected: isFieldAllowedByPreferences('iati-activity/default-flow-type') && shouldSelectField(currentFlowLabel, importFlowLabel),
           hasConflict: hasConflict(currentFlowLabel, importFlowLabel),
           tab: 'finances',
           description: 'Default flow classification'
@@ -1874,7 +1910,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/default-aid-type',
           currentValue: currentAidLabel,
           importValue: importAidLabel,
-          selected: shouldSelectField(currentAidLabel, importAidLabel),
+          selected: isFieldAllowedByPreferences('iati-activity/default-aid-type') && shouldSelectField(currentAidLabel, importAidLabel),
           hasConflict: hasConflict(currentAidLabel, importAidLabel),
           tab: 'finances',
           description: 'Default aid type classification'
@@ -1889,7 +1925,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/default-tied-status',
           currentValue: currentTiedLabel,
           importValue: importTiedLabel,
-          selected: shouldSelectField(currentTiedLabel, importTiedLabel),
+          selected: isFieldAllowedByPreferences('iati-activity/default-tied-status') && shouldSelectField(currentTiedLabel, importTiedLabel),
           hasConflict: hasConflict(currentTiedLabel, importTiedLabel),
           tab: 'finances',
           description: 'Default tied aid status'
@@ -1904,7 +1940,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/capital-spend',
           currentValue: currentCapitalSpend !== null && currentCapitalSpend !== undefined ? `${currentCapitalSpend}%` : null,
           importValue: `${importCapitalSpend}%`,
-          selected: shouldSelectField(currentCapitalSpend, importCapitalSpend),
+          selected: isFieldAllowedByPreferences('iati-activity/capital-spend') && shouldSelectField(currentCapitalSpend, importCapitalSpend),
           hasConflict: hasConflict(currentCapitalSpend, importCapitalSpend),
           tab: 'finances',
           description: 'Percentage of budget used for capital expenditure'
@@ -1959,7 +1995,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             iatiPath: 'iati-activity/crs-add/other-flags',
             currentValue: null,
             importValue: ft.other_flags.map(f => `Code ${f.code}`).join(', '),
-            selected: true,
+            selected: isFieldAllowedByPreferences('iati-activity/crs-add'),
             hasConflict: false,
             tab: 'finances',
             description: 'OECD CRS reporting flags'
@@ -2177,7 +2213,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/fss',
           currentValue: null,
           importValue: fssSummary,
-          selected: warnings.length === 0,
+          selected: isFieldAllowedByPreferences('iati-activity/fss') && warnings.length === 0,
           hasConflict: false,
           tab: 'forward-spending-survey',
           description: description,
@@ -2269,7 +2305,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             iatiPath: `iati-activity/country-budget-items[${cbiIndex + 1}]`,
             currentValue: null,
             importValue: cbiSummary,
-            selected: warnings.length === 0, // Auto-select if valid
+            selected: isFieldAllowedByPreferences('iati-activity/country-budget-items') && warnings.length === 0, // Auto-select if valid
             hasConflict: warnings.length > 0,
             tab: 'country-budget',
             description,
@@ -2395,7 +2431,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             iatiPath: 'iati-activity/recipient-country',
             currentValue: currentCountryInfo,
             importValue: countryInfo,
-            selected: shouldSelectField(currentCountryInfo, countryInfo),
+            selected: isFieldAllowedByPreferences('iati-activity/recipient-country') && shouldSelectField(currentCountryInfo, countryInfo),
             hasConflict: hasConflict(currentCountryInfo, countryInfo),
             tab: 'locations',
             description: 'Countries where activity takes place with percentage allocations (vocabulary: A4)'
@@ -2448,7 +2484,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             iatiPath: 'iati-activity/recipient-region',
             currentValue: currentRegionInfo,
             importValue: regionInfo,
-            selected: shouldSelectField(currentRegionInfo, regionInfo),
+            selected: isFieldAllowedByPreferences('iati-activity/recipient-region') && shouldSelectField(currentRegionInfo, regionInfo),
             hasConflict: hasConflict(currentRegionInfo, regionInfo),
             tab: 'locations',
             description: 'Standard regions where activity takes place with percentage allocations'
@@ -2645,7 +2681,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/sector',
           currentValue: currentSectorsInfo,
           importValue: allSectorInfo,
-          selected: shouldSelectField(currentSectorsInfo, importSectorInfo), // Only select DAC sectors
+          selected: isFieldAllowedByPreferences('iati-activity/sector') && shouldSelectField(currentSectorsInfo, importSectorInfo), // Only select DAC sectors
           hasConflict: hasConflict,
           tab: 'sectors',
           description: hasNonDacSectors 
@@ -2713,7 +2749,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               vocabulary_uri: marker.vocabulary_uri,
               rationale: marker.rationale
             },
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/policy-marker'),
             hasConflict: hasConflict(currentValue, {
               code: marker.code,
               significance: marker.significance,
@@ -2765,7 +2801,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/tag',
           currentValue: currentTagsValue,
           importValue: importTagsValue,
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/tag'),
           hasConflict: existingTags.length > 0,
           tab: 'tags',
           description: `${parsedActivity.tagClassifications.length} tag(s) found in XML`,
@@ -2786,7 +2822,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/contact-info',
           currentValue: currentContactsValue,
           importValue: importContactsValue,
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/contact-info'),
           hasConflict: false,
           tab: 'contacts',
           description: `${parsedActivity.contactInfo.length} contact(s) found in XML`,
@@ -2809,7 +2845,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/budget',
           currentValue: currentBudgetsValue,
           importValue: budgetsSummary,
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/budget'),
           hasConflict: false,
           tab: 'budgets',
           description: `${parsedActivity.budgets.length} budget(s) found in XML`,
@@ -2830,7 +2866,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/planned-disbursement',
           currentValue: currentPDValue,
           importValue: pdSummary,
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/planned-disbursement'),
           hasConflict: false,
           tab: 'planned-disbursements',
           description: `${parsedActivity.plannedDisbursements.length} planned disbursement(s) found in XML`,
@@ -2852,7 +2888,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/humanitarian-scope',
           currentValue: currentHSValue,
           importValue: hsSummary,
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/humanitarian-scope'),
           hasConflict: false,
           tab: 'humanitarian',
           description: `${parsedActivity.humanitarianScopes.length} humanitarian scope(s) found in XML`,
@@ -2873,7 +2909,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/document-link',
           currentValue: currentDocsValue,
           importValue: docsSummary,
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/document-link'),
           hasConflict: false,
           tab: 'documents',
           description: `${parsedActivity.document_links.length} document link(s) found in XML`,
@@ -2894,7 +2930,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/location',
           currentValue: currentLocsValue,
           importValue: locsSummary,
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/location'),
           hasConflict: false,
           tab: 'locations',
           description: `${parsedActivity.locations.length} location(s) found in XML`,
@@ -2926,7 +2962,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             narrative: parsedActivity.reportingOrg.narrative || null,
             type: parsedActivity.reportingOrg.type || null
           },
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/reporting-org'),
           hasConflict: false,
           tab: 'reporting_org',
           description: 'Organization reporting this activity'
@@ -2990,7 +3026,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               narrativeLang: org.narrativeLang || 'en',
               narratives: org.narratives || []
             },
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/participating-org'),
           hasConflict: hasConflict,
             tab: 'participating_orgs',
             description: `Participating organization: ${orgName} (Role: ${role})`
@@ -3033,7 +3069,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/conditions',
           currentValue: currentConditionsValue,
           importValue: `${parsedActivity.conditions.conditions.length} condition(s) (Attached: ${parsedActivity.conditions.attached ? 'Yes' : 'No'})`,
-          selected: true,
+          selected: isFieldAllowedByPreferences('iati-activity/conditions'),
           hasConflict: existingConditions.length > 0,
           tab: 'conditions',
           description: importConditionsValue,
@@ -3068,7 +3104,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               type: relatedActivity.type,
               relationshipTypeLabel: relationshipTypeLabel
             },
-            selected: true, // Default to selected since these are explicit relationships
+            selected: isFieldAllowedByPreferences('iati-activity/related-activity'),
             hasConflict: false, // Will be determined during actual matching
             tab: 'linked_activities',
             description: `Related activity (${relationshipTypeLabel}): ${relatedActivity.ref}`
@@ -3130,7 +3166,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           iatiPath: 'iati-activity/result',
           currentValue: null,
           importValue: resultsInfo,
-          selected: false,
+          selected: isFieldAllowedByPreferences('iati-activity/result'),
           hasConflict: false,
           tab: 'results',
           description: 'Results, indicators, and targets'

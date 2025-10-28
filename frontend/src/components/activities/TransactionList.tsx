@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -37,7 +37,12 @@ import {
   CheckCircle,
   Frown,
   Loader2,
-  Eye
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { format } from "date-fns";
 import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData } from '@/types/transaction';
@@ -57,6 +62,7 @@ import { useUser } from '@/hooks/useUser';
 import { getUserPermissions } from '@/types/user';
 import financeTypesData from '@/data/finance-types.json';
 import { OrganizationLogo } from "@/components/ui/organization-logo";
+import { DISBURSEMENT_CHANNEL_TYPES } from '@/data/disbursement-channel-types';
 
 // IATI Transaction Type Definitions
 const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
@@ -96,6 +102,12 @@ type SortDirection = 'asc' | 'desc';
 
 // Create finance type labels mapping from JSON data
 const FINANCE_TYPE_LABELS = financeTypesData.reduce((acc, item) => {
+  acc[item.code] = item.name;
+  return acc;
+}, {} as Record<string, string>);
+
+// Create disbursement channel labels mapping
+const DISBURSEMENT_CHANNEL_LABELS = DISBURSEMENT_CHANNEL_TYPES.reduce((acc, item) => {
   acc[item.code] = item.name;
   return acc;
 }, {} as Record<string, string>);
@@ -179,6 +191,11 @@ export default function TransactionList({
   const [isLoading, setIsLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>('transaction_date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Currency converter hook
   const { convertTransaction, isConverting, convertingIds, error: conversionError } = useCurrencyConverter();
@@ -287,14 +304,45 @@ export default function TransactionList({
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [transactions, sortField, sortDirection, usdValues]);
+  }, [transactions, sortField, sortDirection]);
 
-  // Convert all transactions to USD when they change
+  // Pagination logic
+  const totalPages = React.useMemo(() => 
+    Math.ceil(sortedTransactions.length / itemsPerPage)
+  , [sortedTransactions.length, itemsPerPage]);
+  
+  // Ensure currentPage is within bounds - using callback form to avoid dependency issues
+  React.useEffect(() => {
+    if (totalPages > 0) {
+      setCurrentPage(prev => prev > totalPages ? totalPages : prev);
+    }
+  }, [totalPages]);
+  
+  const paginatedTransactions = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedTransactions.slice(startIndex, endIndex);
+  }, [sortedTransactions, currentPage, itemsPerPage]);
+
+  // Toggle row expansion
+  const toggleRowExpansion = (transactionId: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(transactionId)) {
+        newSet.delete(transactionId);
+      } else {
+        newSet.add(transactionId);
+      }
+      return newSet;
+    });
+  };
+
+  // Convert only paginated transactions to USD when they change
   React.useEffect(() => {
     let cancelled = false;
     async function convertAll() {
       const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
-      for (const transaction of transactions) {
+      for (const transaction of paginatedTransactions) {
         const transactionId = transaction.uuid || transaction.id;
         if (!transaction.value || !transaction.currency || !transaction.transaction_date) {
           newUsdValues[transactionId] = { 
@@ -341,9 +389,9 @@ export default function TransactionList({
       }
       if (!cancelled) setUsdValues(newUsdValues);
     }
-    if (transactions.length > 0) convertAll();
+    if (paginatedTransactions.length > 0) convertAll();
     return () => { cancelled = true; };
-  }, [transactions]);
+  }, [paginatedTransactions]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -497,18 +545,101 @@ export default function TransactionList({
     return isIncoming ? 'text-green-600' : 'text-blue-600';
   };
 
-  // Helper to get org acronym or name by ID
-  const getOrgAcronymOrName = (orgId: string | undefined, fallbackName?: string) => {
-    if (!orgId) return fallbackName;
-    const org = organizations.find((o: any) => o.id === orgId);
-    if (org) {
-      return org.acronym || org.name;
+  // Helper to get org acronym or name by ID or ref (with alias resolution)
+  const getOrgAcronymOrName = (orgId: string | undefined, fallbackName?: string, orgRef?: string) => {
+    // First try to find by UUID
+    if (orgId) {
+      const org = organizations.find((o: any) => o.id === orgId);
+      if (org) {
+        return org.acronym || org.name;
+      }
     }
+    
+    // Then try to resolve by ref (including aliases)
+    if (orgRef) {
+      // Direct match by iati_org_id
+      const directMatch = organizations.find((o: any) => o.iati_org_id === orgRef);
+      if (directMatch) {
+        return directMatch.acronym || directMatch.name;
+      }
+      
+      // Match by alias_refs
+      const aliasMatch = organizations.find((o: any) => 
+        o.alias_refs && Array.isArray(o.alias_refs) && o.alias_refs.includes(orgRef)
+      );
+      if (aliasMatch) {
+        return aliasMatch.acronym || aliasMatch.name;
+      }
+    }
+    
     return fallbackName;
   };
-
-  // Debug logging to diagnose acronym issue
-  console.log('Organizations prop:', organizations);
+  
+  // Helper to get full org details (name and acronym) by ID or ref
+  const getOrgFullDisplay = (orgId: string | undefined, fallbackName?: string, orgRef?: string): string => {
+    // First try to find by UUID
+    if (orgId) {
+      const org = organizations.find((o: any) => o.id === orgId);
+      if (org) {
+        return org.acronym && org.name && org.acronym !== org.name
+          ? `${org.name} (${org.acronym})`
+          : org.name || org.acronym;
+      }
+    }
+    
+    // Then try to resolve by ref (including aliases)
+    if (orgRef) {
+      // Direct match by iati_org_id
+      const directMatch = organizations.find((o: any) => o.iati_org_id === orgRef);
+      if (directMatch) {
+        return directMatch.acronym && directMatch.name && directMatch.acronym !== directMatch.name
+          ? `${directMatch.name} (${directMatch.acronym})`
+          : directMatch.name || directMatch.acronym;
+      }
+      
+      // Match by alias_refs
+      const aliasMatch = organizations.find((o: any) => 
+        o.alias_refs && Array.isArray(o.alias_refs) && o.alias_refs.includes(orgRef)
+      );
+      if (aliasMatch) {
+        return aliasMatch.acronym && aliasMatch.name && aliasMatch.acronym !== aliasMatch.name
+          ? `${aliasMatch.name} (${aliasMatch.acronym})`
+          : aliasMatch.name || aliasMatch.acronym;
+      }
+    }
+    
+    return fallbackName || 'Unknown';
+  };
+  
+  // Helper to get org logo by ID or ref (with alias resolution)
+  const getOrgLogo = (orgId: string | undefined, orgRef?: string): string | null => {
+    // First try to find by UUID
+    if (orgId) {
+      const org = organizations.find((o: any) => o.id === orgId);
+      if (org) {
+        return org.logo || null;
+      }
+    }
+    
+    // Then try to resolve by ref (including aliases)
+    if (orgRef) {
+      // Direct match by iati_org_id
+      const directMatch = organizations.find((o: any) => o.iati_org_id === orgRef);
+      if (directMatch) {
+        return directMatch.logo || null;
+      }
+      
+      // Match by alias_refs
+      const aliasMatch = organizations.find((o: any) => 
+        o.alias_refs && Array.isArray(o.alias_refs) && o.alias_refs.includes(orgRef)
+      );
+      if (aliasMatch) {
+        return aliasMatch.logo || null;
+      }
+    }
+    
+    return null;
+  };
 
   // Filter out transactions without a valid identifier
   const validTransactions = transactions.filter(t => {
@@ -538,10 +669,23 @@ export default function TransactionList({
                 </Button>
               )}
               {transactions.length > 0 && (
-                <Button variant="outline" size="sm" onClick={handleExport}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Export
-                </Button>
+                <>
+                  {expandedRows.size > 0 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setExpandedRows(new Set())}
+                      title="Collapse all expanded rows"
+                    >
+                      <ChevronDown className="h-4 w-4 mr-1" />
+                      Collapse All
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={handleExport}>
+                    <Download className="h-4 w-4 mr-1" />
+                    Export
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -572,66 +716,70 @@ export default function TransactionList({
               )}
             </div>
           ) : (
+            <>
             <div className="rounded-md border">
-              <Table>
+              <Table className="table-fixed">
                 <TableHeader className="bg-muted/50 border-b border-border/70">
                   <TableRow>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('transaction_date')}>
+                    <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '50px' }}></TableHead>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '140px' }} onClick={() => handleSort('transaction_date')}>
                       <div className="flex items-center gap-1">
                         <span>Date</span>
                         {getSortIcon('transaction_date')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('transaction_type')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '200px' }} onClick={() => handleSort('transaction_type')}>
                       <div className="flex items-center gap-1">
                         <span>Transaction Type</span>
                         {getSortIcon('transaction_type')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('finance_type')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '180px' }} onClick={() => handleSort('finance_type')}>
                       <div className="flex items-center gap-1">
                         <span>Finance Type</span>
                         {getSortIcon('finance_type')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('provider_org_name')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ minWidth: '250px' }} onClick={() => handleSort('provider_org_name')}>
                       <div className="flex items-center gap-1">
                         <span>Provider → Receiver</span>
                         {getSortIcon('provider_org_name')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('value')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '160px' }} onClick={() => handleSort('value')}>
                       <div className="flex items-center justify-end gap-1">
                         <span>Amount</span>
                         {getSortIcon('value')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('value_date')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '140px' }} onClick={() => handleSort('value_date')}>
                       <div className="flex items-center gap-1">
                         <span>Value Date</span>
                         {getSortIcon('value_date')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort('value_usd')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '150px' }} onClick={() => handleSort('value_usd')}>
                       <div className="flex items-center justify-end gap-1">
                         <span>USD Value</span>
                         {getSortIcon('value_usd')}
                       </div>
                     </TableHead>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedTransactions.filter(t => {
-                    const isValid = (t.uuid && t.uuid !== 'undefined') || (t.id && t.id !== 'undefined');
-                    if (!isValid) {
-                      console.warn('[TransactionList] Transaction without valid identifier found:', t);
-                    }
-                    return isValid;
-                  }).map((transaction) => {
-                    console.log('Transaction provider_org_id:', transaction.provider_org_id, 'receiver_org_id:', transaction.receiver_org_id);
+              </TableHeader>
+              <TableBody>
+                {paginatedTransactions.filter(t => {
+                  const isValid = (t.uuid && t.uuid !== 'undefined') || (t.id && t.id !== 'undefined');
+                  if (!isValid) {
+                    console.warn('[TransactionList] Transaction without valid identifier found:', t);
+                  }
+                  return isValid;
+                }).map((transaction) => {
+                    const transactionId = transaction.uuid || transaction.id;
+                    const isExpanded = expandedRows.has(transactionId);
+                    
                     return (
+                    <React.Fragment key={transactionId}>
                     <TableRow 
-                      key={transaction.uuid || transaction.id} 
                       className="border-b border-border/40 hover:bg-muted/30 transition-colors"
                       onClick={(e) => {
                         // Prevent any row click navigation
@@ -639,13 +787,32 @@ export default function TransactionList({
                         e.preventDefault();
                       }}
                     >
+                      {/* Chevron for expand/collapse */}
+                      <TableCell className="py-3 px-2 whitespace-nowrap">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleRowExpansion(transactionId);
+                          }}
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TableCell>
+                      
                       {/* Date */}
-                      <TableCell className="py-3 px-4 font-medium">
+                      <TableCell className="py-3 px-4 font-medium whitespace-nowrap">
                         {format(new Date(transaction.transaction_date), 'MMM d, yyyy')}
                       </TableCell>
                       
                       {/* Transaction Type */}
-                      <TableCell className="py-3 px-4">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -673,7 +840,7 @@ export default function TransactionList({
                       </TableCell>
                       
                       {/* Finance Type */}
-                      <TableCell className="py-3 px-4">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         {transaction.finance_type ? (
                           transaction.finance_type_inherited ? (
                             <TooltipProvider>
@@ -711,34 +878,34 @@ export default function TransactionList({
                       </TableCell>
                       
                       {/* Provider → Receiver */}
-                      <TableCell className="py-3 px-4">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2 font-medium">
                           <div className="flex items-center gap-1.5">
                             <OrganizationLogo
-                              logo={(transaction as any).provider_org_logo}
-                              name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name) || "Unknown"}
+                              logo={getOrgLogo(transaction.provider_org_id, transaction.provider_org_ref) || (transaction as any).provider_org_logo}
+                              name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
                               size="sm"
                             />
                             <span className="truncate max-w-[120px]">
-                              {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name) || "Unknown"}
+                              {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
                             </span>
                           </div>
                           <span className="text-muted-foreground">→</span>
                           <div className="flex items-center gap-1.5">
                             <OrganizationLogo
-                              logo={(transaction as any).receiver_org_logo}
-                              name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name) || "Unknown"}
+                              logo={getOrgLogo(transaction.receiver_org_id, transaction.receiver_org_ref) || (transaction as any).receiver_org_logo}
+                              name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
                               size="sm"
                             />
                             <span className="truncate max-w-[120px]">
-                              {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name) || "Unknown"}
+                              {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
                             </span>
                           </div>
                         </div>
                       </TableCell>
                       
                       {/* Amount */}
-                      <TableCell className="py-3 px-4 text-right">
+                      <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                         {transaction.value > 0 ? (
                           <span className="font-medium">
                             {formatCurrency(transaction.value, transaction.currency)}
@@ -749,7 +916,7 @@ export default function TransactionList({
                       </TableCell>
                       
                       {/* Value Date */}
-                      <TableCell className="py-3 px-4">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <span className="text-sm">
                           {transaction.value_date 
                             ? format(new Date(transaction.value_date), 'MMM d, yyyy') 
@@ -760,7 +927,7 @@ export default function TransactionList({
                       </TableCell>
                       
                       {/* USD Value */}
-                      <TableCell className="py-3 px-4 text-right">
+                      <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
                           {usdValues[transaction.uuid || transaction.id]?.loading ? (
                             <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
@@ -787,11 +954,370 @@ export default function TransactionList({
                         </div>
                       </TableCell>
                     </TableRow>
+                    
+                    {/* Expandable Detail Row */}
+                    {isExpanded && (
+                      <TableRow className="bg-muted/20 animate-in fade-in-from-top-2 duration-200">
+                        <TableCell colSpan={8} className="py-4 px-4">
+                          <div className="space-y-4 text-sm">
+                            {/* Transaction Details */}
+                            <div>
+                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Transaction Details</h4>
+                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Transaction Type:</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.transaction_type}</span>
+                                    <span className="text-xs">{TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Validation Status:</span>
+                                  <div className="flex items-center gap-2">
+                                    {transaction.status === 'actual' ? (
+                                      <>
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                        <span className="text-xs text-green-700 font-medium">Validated</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FileClock className="h-4 w-4 text-gray-400" />
+                                        <span className="text-xs text-gray-600 font-medium">Unvalidated</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">USD Value:</span>
+                                  {usdValues[transaction.uuid || transaction.id]?.usd != null ? (
+                                    <span className="font-medium">{formatCurrency(usdValues[transaction.uuid || transaction.id].usd!, 'USD')}</span>
+                                  ) : (
+                                    <span className="text-gray-400">—</span>
+                                  )}
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Transaction Date:</span>
+                                  <span className="font-medium">{format(new Date(transaction.transaction_date), 'MMM d, yyyy')}</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Original Value:</span>
+                                  <span className="font-medium">{transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {transaction.currency}</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Value Date:</span>
+                                  <span className="font-medium">
+                                    {transaction.value_date 
+                                      ? format(new Date(transaction.value_date), 'MMM d, yyyy') 
+                                      : transaction.transaction_date 
+                                      ? format(new Date(transaction.transaction_date), 'MMM d, yyyy')
+                                      : '—'}
+                                  </span>
+                                </div>
+                                {transaction.transaction_reference && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground min-w-[160px]">Reference:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.transaction_reference}</span>
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.transaction_reference!)}>
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Parties Involved */}
+                            <div>
+                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Parties Involved</h4>
+                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                                {transaction.provider_org_name && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Provider Organisation:</span>
+                                    <span className="font-medium">{getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref)}</span>
+                                  </div>
+                                )}
+                                {transaction.provider_org_ref && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground min-w-[160px]">Provider Reference:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.provider_org_ref}</span>
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.provider_org_ref!)}>
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                                {transaction.provider_org_activity_id && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground min-w-[160px]">Provider Activity:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.provider_org_activity_id}</span>
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.provider_org_activity_id!)}>
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                                {transaction.receiver_org_name && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Receiver Organisation:</span>
+                                    <span className="font-medium">{getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref)}</span>
+                                  </div>
+                                )}
+                                {transaction.receiver_org_ref && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground min-w-[160px]">Receiver Reference:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.receiver_org_ref}</span>
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.receiver_org_ref!)}>
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                                {transaction.receiver_org_activity_id && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground min-w-[160px]">Receiver Activity:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.receiver_org_activity_id}</span>
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.receiver_org_activity_id!)}>
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Description */}
+                            {transaction.description && (
+                              <div>
+                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Description</h4>
+                                <p className="ml-4 text-gray-700 text-xs leading-relaxed">{transaction.description}</p>
+                              </div>
+                            )}
+
+                            {/* Funding Modality & Aid Classification */}
+                            <div>
+                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Funding Modality & Aid Classification</h4>
+                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                                {transaction.aid_type && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Aid Type:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.aid_type}</span>
+                                  </div>
+                                )}
+                                {transaction.flow_type && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Flow Type:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.flow_type}</span>
+                                  </div>
+                                )}
+                                {transaction.finance_type && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Finance Type:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.finance_type}</span>
+                                    <span className="text-xs">{FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}</span>
+                                  </div>
+                                )}
+                                {transaction.tied_status && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Tied Status:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.tied_status}</span>
+                                  </div>
+                                )}
+                                {transaction.disbursement_channel && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Disbursement Channel:</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.disbursement_channel}</span>
+                                      <span className="text-xs">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel] || transaction.disbursement_channel}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {transaction.is_humanitarian && (
+                                  <div>
+                                    <span className="text-muted-foreground min-w-[160px]">Humanitarian:</span>
+                                    <span className="ml-2 font-medium text-orange-600">Yes</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* System Identifiers */}
+                            <div>
+                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">System Identifiers</h4>
+                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground min-w-[160px]">Transaction UUID:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.uuid || transaction.id}</span>
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.uuid || transaction.id)}>
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground min-w-[160px]">Activity UUID:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.activity_id}</span>
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.activity_id)}>
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                {transaction.sector_code && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground min-w-[160px]">Sector:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.sector_code}</span>
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.sector_code!)}>
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                                {transaction.recipient_country_code && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Recipient Country:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.recipient_country_code}</span>
+                                  </div>
+                                )}
+                                {transaction.recipient_region_code && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Recipient Region:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.recipient_region_code}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Metadata & History */}
+                            <div>
+                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Metadata & History</h4>
+                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                                {transaction.created_at && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Created:</span>
+                                    <span className="font-medium">{format(new Date(transaction.created_at), 'MMM d, yyyy \'at\' h:mm a')}</span>
+                                  </div>
+                                )}
+                                {transaction.created_by ? (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Created By:</span>
+                                    <span className="font-medium">User ID: {transaction.created_by}</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Source:</span>
+                                    <Badge variant="outline" className="w-fit text-xs bg-gray-100 border-gray-300 text-gray-700">
+                                      Imported from IATI
+                                    </Badge>
+                                  </div>
+                                )}
+                                {transaction.updated_at && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Last Modified:</span>
+                                    <span className="font-medium">{format(new Date(transaction.updated_at), 'MMM d, yyyy \'at\' h:mm a')}</span>
+                                  </div>
+                                )}
+                                {transaction.updated_by && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Last Modified By:</span>
+                                    <span className="font-medium">User ID: {transaction.updated_by}</span>
+                                  </div>
+                                )}
+                                {transaction.validated_at && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Validated:</span>
+                                    <span className="font-medium text-green-700">{format(new Date(transaction.validated_at), 'MMM d, yyyy \'at\' h:mm a')}</span>
+                                  </div>
+                                )}
+                                {transaction.validated_by && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Validated By:</span>
+                                    <span className="font-medium text-green-700">User ID: {transaction.validated_by}</span>
+                                  </div>
+                                )}
+                                {transaction.validation_comments && (
+                                  <div className="col-span-2 flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Validation Notes:</span>
+                                    <span className="text-xs text-gray-700 italic">{transaction.validation_comments}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    </React.Fragment>
                   );
                   })}
                 </TableBody>
               </Table>
             </div>
+            
+            {/* Pagination Controls */}
+            {transactions.length > itemsPerPage && (
+              <div className="flex items-center justify-between mt-4 px-2">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedTransactions.length)} of {sortedTransactions.length} transactions
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Last
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            </>
           )}
 
           {/* Multiple Currencies Notice */}

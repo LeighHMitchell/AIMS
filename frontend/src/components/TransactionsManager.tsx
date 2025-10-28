@@ -116,6 +116,7 @@ export default function TransactionsManager({
 }: TransactionsManagerProps) {
   const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [organizations, setOrganizations] = useState<any[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [sortColumn, setSortColumn] = useState<string>("date");
@@ -143,6 +144,22 @@ export default function TransactionsManager({
   
   // Track last notified transaction count to prevent infinite loops
   const lastNotifiedCountRef = React.useRef<number>(-1);
+
+  // Fetch organizations for alias resolution
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        const response = await fetch('/api/organizations');
+        if (response.ok) {
+          const data = await response.json();
+          setOrganizations(data);
+        }
+      } catch (error) {
+        console.error('Error fetching organizations for alias resolution:', error);
+      }
+    };
+    fetchOrganizations();
+  }, []);
 
   // Convert legacy transaction types to new format
   const convertLegacyTransaction = (transaction: Transaction): Transaction => {
@@ -865,6 +882,7 @@ export default function TransactionsManager({
             <>
               <TransactionTable
                 transactions={paginatedTransactions}
+                organizations={organizations}
                 loading={false}
                 error={null}
                 sortField={sortColumn}

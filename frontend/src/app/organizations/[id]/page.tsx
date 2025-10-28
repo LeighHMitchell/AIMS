@@ -108,6 +108,8 @@ interface Organization {
   country_represented?: string
   cooperation_modality?: string
   iati_org_id?: string
+  alias_refs?: string[]
+  name_aliases?: string[]
   created_at: string
   updated_at: string
   is_active?: boolean
@@ -932,6 +934,42 @@ export default function OrganizationProfilePage() {
                               )}
                             </button>
                           )}
+                        </div>
+                      )}
+                      
+                      {/* Aliases Section */}
+                      {((organization.alias_refs && organization.alias_refs.length > 0) || 
+                        (organization.name_aliases && organization.name_aliases.length > 0)) && (
+                        <div className="mt-4 pt-4 border-t border-slate-200">
+                          <div className="space-y-2">
+                            {organization.alias_refs && organization.alias_refs.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-slate-500 mb-1">Legacy Codes:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {organization.alias_refs.map((ref, idx) => (
+                                    <code key={idx} className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-mono border border-blue-200">
+                                      {ref}
+                                    </code>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {organization.name_aliases && organization.name_aliases.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-slate-500 mb-1">Alternate Names:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {organization.name_aliases.map((name, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs border-slate-300 text-slate-700">
+                                      {name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            <p className="text-xs text-slate-400 italic mt-2">
+                              Used for matching in IATI imports
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>

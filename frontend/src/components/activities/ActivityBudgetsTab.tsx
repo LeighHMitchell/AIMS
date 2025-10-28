@@ -45,7 +45,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { BUDGET_TYPES } from '@/data/budget-type';
 import { BUDGET_STATUSES } from '@/data/budget-status';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronsUpDown, ChevronDown, ChevronUp, Trash2 as TrashIcon, ArrowUp, ArrowDown } from 'lucide-react';
+import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2 as TrashIcon, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Types
@@ -225,6 +225,13 @@ export default function ActivityBudgetsTab({
   const [selectedBudgetIds, setSelectedBudgetIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  // Expandable rows state
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
   const currencies = useMemo(() => getAllCurrenciesWithPinned(), []);
   const { user, isLoading: userLoading } = useUser();
 
@@ -284,6 +291,24 @@ export default function ActivityBudgetsTab({
     return sorted;
   }, [budgets, sortColumn, sortDirection]);
 
+  // Pagination logic
+  const totalPages = useMemo(() => 
+    Math.ceil(sortedBudgets.length / itemsPerPage)
+  , [sortedBudgets.length, itemsPerPage]);
+  
+  // Ensure currentPage is within bounds - using callback form to avoid dependency issues
+  useEffect(() => {
+    if (totalPages > 0) {
+      setCurrentPage(prev => prev > totalPages ? totalPages : prev);
+    }
+  }, [totalPages]);
+  
+  const paginatedBudgets = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedBudgets.slice(startIndex, endIndex);
+  }, [sortedBudgets, currentPage, itemsPerPage]);
+
   // Fetch existing budgets
   useEffect(() => {
     const fetchData = async () => {
@@ -329,12 +354,12 @@ export default function ActivityBudgetsTab({
     }
   }, [budgets, onBudgetsChange, loading]);
 
-  // Convert all budgets to USD when budgets change
+  // Convert only paginated budgets to USD when they change
   useEffect(() => {
     let cancelled = false;
     async function convertAll() {
       const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
-      for (const budget of budgets) {
+      for (const budget of paginatedBudgets) {
         if (!budget.value || !budget.currency || !budget.value_date) {
           newUsdValues[budget.id || `${budget.period_start}-${budget.period_end}`] = { usd: null, rate: null, date: budget.value_date, loading: false, error: 'Missing data' };
           continue;
@@ -359,9 +384,9 @@ export default function ActivityBudgetsTab({
       }
       if (!cancelled) setUsdValues(newUsdValues);
     }
-    if (budgets.length > 0) convertAll();
+    if (paginatedBudgets.length > 0) convertAll();
     return () => { cancelled = true; };
-  }, [budgets]);
+  }, [paginatedBudgets]);
 
   // Calculate budget totals for optional tooltip display
   const budgetSummary = useMemo(() => {
@@ -1483,10 +1508,23 @@ export default function ActivityBudgetsTab({
                 </>
               )}
               {budgets.length > 0 && !loading && (
-                <Button variant="outline" size="sm" onClick={handleExport}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Export
-                </Button>
+                <>
+                  {expandedRows.size > 0 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setExpandedRows(new Set())}
+                      title="Collapse all expanded rows"
+                    >
+                      <ChevronDown className="h-4 w-4 mr-1" />
+                      Collapse All
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={handleExport}>
+                    <Download className="h-4 w-4 mr-1" />
+                    Export
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -1618,11 +1656,12 @@ export default function ActivityBudgetsTab({
 
           {/* Budget table */}
           <div className="rounded-md border">
-            <Table aria-label="Budgets table">
+            <Table aria-label="Budgets table" className="table-fixed">
               <TableHeader className="bg-muted/50 border-b border-border/70">
                 <TableRow>
+                  <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '50px' }}></TableHead>
                   {!readOnly && (
-                    <TableHead className="w-[50px] text-center">
+                    <TableHead className="text-center" style={{ width: '50px' }}>
                       <Checkbox
                         checked={selectedBudgetIds.size === sortedBudgets.length && sortedBudgets.length > 0}
                         onCheckedChange={handleSelectAll}
@@ -1631,7 +1670,7 @@ export default function ActivityBudgetsTab({
                       />
                     </TableHead>
                   )}
-                  <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-[180px]">
+                  <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4" style={{ width: '200px' }}>
                     <div 
                       className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                       onClick={() => handleSort('period_start')}
@@ -1653,13 +1692,17 @@ export default function ActivityBudgetsTab({
                     </div>
                   </TableHead>
                   {[
-                    { label: "Status", width: "w-[110px]", sortKey: "status", align: "left" },
-                    { label: "Type", width: "w-[100px]", sortKey: "type", align: "left" },
-                    { label: "Amount", width: "w-[140px]", sortKey: "value", align: "right" },
-                    { label: "Value Date", width: "w-[130px]", sortKey: "value_date", align: "left" },
-                    { label: "USD Value", width: "w-[120px]", sortKey: "usd_value", align: "right" }
+                    { label: "Status", width: 120, sortKey: "status", align: "left" },
+                    { label: "Type", width: 110, sortKey: "type", align: "left" },
+                    { label: "Amount", width: 150, sortKey: "value", align: "right" },
+                    { label: "Value Date", width: 130, sortKey: "value_date", align: "left" },
+                    { label: "USD Value", width: 140, sortKey: "usd_value", align: "right" }
                   ].map((header, i) => (
-                    <TableHead key={i + 2} className={`text-sm font-medium text-foreground/90 py-3 px-4 ${header.width} ${header.align === 'right' ? 'text-right' : ''}`}>
+                    <TableHead 
+                      key={i + 2} 
+                      className={`text-sm font-medium text-foreground/90 py-3 px-4 ${header.align === 'right' ? 'text-right' : ''}`}
+                      style={{ width: `${header.width}px` }}
+                    >
                       {header.sortKey ? (
                         <div 
                           className={`flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors ${header.align === 'right' ? 'justify-end' : ''}`}
@@ -1675,31 +1718,62 @@ export default function ActivityBudgetsTab({
                       )}
                     </TableHead>
                   ))}
+                  {!readOnly && (
+                    <TableHead className="py-3 px-4 text-right" style={{ width: '60px' }}></TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedBudgets.length === 0 ? (
+                {paginatedBudgets.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center px-2 py-8">
+                    <TableCell colSpan={readOnly ? 7 : 9} className="h-24 text-center px-2 py-8">
                       No budgets added yet. Use the "Add Period" buttons above to get started.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  sortedBudgets.map((budget, index) => {
+                  paginatedBudgets.map((budget, index) => {
                     const overlappingBudgets = checkBudgetOverlap(budget, sortedBudgets);
                     const hasOverlapWarning = overlappingBudgets && overlappingBudgets.length > 0;
+                    const budgetId = budget.id || `budget-${index}`;
+                    const isExpanded = expandedRows.has(budgetId);
                     
                     return (
+                    <React.Fragment key={budgetId}>
                     <TableRow 
-                      key={budget.id || `budget-${index}`} 
                       className={cn(
-                        "border-b border-border/40 cursor-pointer hover:bg-muted/30 transition-colors",
+                        "border-b border-border/40 hover:bg-muted/30 transition-colors",
                         budget.hasError ? 'bg-red-50' : hasOverlapWarning ? 'bg-orange-50/30' : '',
                         selectedBudgetIds.has(budget.id!) && "bg-blue-50 border-blue-200"
                       )}
                     > 
+                      {/* Chevron for expand/collapse */}
+                      <TableCell className="py-3 px-2 whitespace-nowrap">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedRows(prev => {
+                              const newSet = new Set(prev);
+                              if (newSet.has(budgetId)) {
+                                newSet.delete(budgetId);
+                              } else {
+                                newSet.add(budgetId);
+                              }
+                              return newSet;
+                            });
+                          }}
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TableCell>
                       {!readOnly && (
-                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                        <TableCell className="text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={selectedBudgetIds.has(budget.id!)}
                             onCheckedChange={(checked) => handleSelectBudget(budget.id!, !!checked)}
@@ -1708,7 +1782,7 @@ export default function ActivityBudgetsTab({
                           />
                         </TableCell>
                       )}
-                      <TableCell className="py-3 px-4">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-1">
                           <span className="font-medium">
                             {format(parseISO(budget.period_start), 'MMM yyyy')} - {format(parseISO(budget.period_end), 'MMM yyyy')}
@@ -1735,27 +1809,27 @@ export default function ActivityBudgetsTab({
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 px-4">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
                           {budget.status === 1 ? 'Indicative' : 'Committed'}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
                           {budget.type === 1 ? 'Original' : 'Revised'}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4 text-right">
+                      <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                         <span className="font-medium">
                           <span className="text-muted-foreground">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <span>
                           {budget.value_date ? format(parseISO(budget.value_date), 'MMM d, yyyy') : '-'}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4 text-right">
+                      <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
                         {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.loading ? (
                             <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
@@ -1799,7 +1873,7 @@ export default function ActivityBudgetsTab({
                         </div>
                       </TableCell>
                       {!readOnly && (
-                        <TableCell className="py-3 px-4 text-right">
+                        <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button size="icon" variant="ghost" className="h-7 w-7 p-0">
@@ -1821,12 +1895,192 @@ export default function ActivityBudgetsTab({
                         </TableCell>
                       )}
                     </TableRow>
+                    
+                    {/* Expandable Detail Row */}
+                    {isExpanded && (
+                      <TableRow className="bg-muted/20 animate-in fade-in-from-top-2 duration-200">
+                        <TableCell colSpan={readOnly ? 8 : 9} className="py-4 px-4">
+                          <div className="space-y-4 text-sm">
+                            {/* Budget Details */}
+                            <div>
+                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Budget Details</h4>
+                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Type:</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{budget.type}</span>
+                                    <span className="text-xs">{budget.type === 1 ? 'Original' : 'Revised'}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Status:</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{budget.status}</span>
+                                    <span className="text-xs">{budget.status === 1 ? 'Indicative' : 'Committed'}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">USD Value:</span>
+                                  {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.usd != null ? (
+                                    <span className="font-medium">USD {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                  ) : (
+                                    <span className="text-gray-400">—</span>
+                                  )}
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Period Start:</span>
+                                  <span className="font-medium">{format(parseISO(budget.period_start), 'MMM d, yyyy')}</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Original Value:</span>
+                                  <span className="font-medium">{budget.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {budget.currency}</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Period End:</span>
+                                  <span className="font-medium">{format(parseISO(budget.period_end), 'MMM d, yyyy')}</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Value Date:</span>
+                                  <span className="font-medium">
+                                    {budget.value_date ? format(parseISO(budget.value_date), 'MMM d, yyyy') : '—'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Budget Lines */}
+                            {budget.budget_lines && budget.budget_lines.length > 0 && (
+                              <div>
+                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Budget Lines</h4>
+                                <div className="ml-4 space-y-2">
+                                  {budget.budget_lines.map((line, idx) => (
+                                    <div key={idx} className="grid grid-cols-2 gap-x-12 gap-y-1 text-xs bg-muted/30 p-2 rounded">
+                                      <div>
+                                        <span className="text-muted-foreground">Ref:</span>
+                                        <span className="ml-2 font-mono">{line.ref}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Value:</span>
+                                        <span className="ml-2 font-medium">{line.value?.toLocaleString()} {line.currency}</span>
+                                      </div>
+                                      {line.narrative && (
+                                        <div className="col-span-2">
+                                          <span className="text-muted-foreground">Narrative:</span>
+                                          <span className="ml-2">{line.narrative}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* System Identifiers */}
+                            <div>
+                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">System Identifiers</h4>
+                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                                {budget.id && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground min-w-[160px]">Budget ID:</span>
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{budget.id}</span>
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(budget.id!)}>
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-1">
+                                  <span className="text-muted-foreground min-w-[160px]">Activity ID:</span>
+                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{budget.activity_id}</span>
+                                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(budget.activity_id)}>
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    </React.Fragment>
                     );
                   })
                 )}
               </TableBody>
             </Table>
           </div>
+          
+          {/* Pagination Controls */}
+          {budgets.length > itemsPerPage && (
+            <div className="flex items-center justify-between mt-4 px-2">
+              <div className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedBudgets.length)} of {sortedBudgets.length} budgets
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

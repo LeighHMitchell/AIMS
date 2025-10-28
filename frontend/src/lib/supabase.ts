@@ -260,6 +260,8 @@ export type Database = {
           address: string | null
           logo: string | null
           banner: string | null
+          alias_refs: string[] | null
+          name_aliases: string[] | null
           created_at: string
           updated_at: string
         }

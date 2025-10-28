@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { fixedCurrencyConverter } from '@/lib/currency-converter'
+import { currencyConverter } from '@/lib/currency-converter'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -41,7 +41,7 @@ export async function GET(
         if (!budget.usd_value && budget.value && budget.currency) {
           try {
             const valueDate = budget.value_date ? new Date(budget.value_date) : new Date()
-            const result = await fixedCurrencyConverter.convertToUSD(
+            const result = await currencyConverter.convertToUSD(
               budget.value,
               budget.currency,
               valueDate
@@ -98,57 +98,53 @@ export async function GET(
       `)
       .eq('activity_id', activityId)
 
-    // Process Budget vs Actual by Year
-    const budgetsByYear: any = {}
+    // Process raw budget data - return individual budget entries and transactions with dates
+    const rawBudgetData: any[] = []
     
-    // Add budgets by year
+    // Add budgets with dates
     budgets?.forEach((budget: any) => {
-      let year = 'Unknown'
       if (budget.period_start) {
-        year = new Date(budget.period_start).getFullYear().toString()
-      } else if (budget.period_end) {
-        year = new Date(budget.period_end).getFullYear().toString()
-      }
-      
-      console.log(`[Financial Analytics] Processing budget: period_start=${budget.period_start}, year=${year}, usd_value=${budget.usd_value}, value=${budget.value}`)
-      
-      if (year !== 'Unknown') {
-        if (!budgetsByYear[year]) {
-          budgetsByYear[year] = { year: parseInt(year), budget: 0, actual: 0 }
-        }
-        const budgetAmount = budget.usd_value || budget.value || 0
-        budgetsByYear[year].budget += budgetAmount
-        console.log(`[Financial Analytics] Added ${budgetAmount} to year ${year}, new total: ${budgetsByYear[year].budget}`)
+        const dateObj = new Date(budget.period_start)
+        rawBudgetData.push({
+          date: budget.period_start,
+          year: dateObj.getFullYear(),
+          budget: budget.usd_value || budget.value || 0,
+          actual: 0,
+          type: 'budget'
+        })
       }
     })
 
     // Add actual spending from transactions
     transactions?.forEach((transaction: any) => {
       if (transaction.transaction_date && (transaction.transaction_type === '3' || transaction.transaction_type === '4')) {
-        const year = new Date(transaction.transaction_date).getFullYear()
-        if (!budgetsByYear[year]) {
-          budgetsByYear[year] = { year, budget: 0, actual: 0 }
-        }
-        budgetsByYear[year].actual += transaction.usd_value || transaction.value || 0
+        const dateObj = new Date(transaction.transaction_date)
+        rawBudgetData.push({
+          date: transaction.transaction_date,
+          year: dateObj.getFullYear(),
+          budget: 0,
+          actual: transaction.usd_value || transaction.value || 0,
+          type: 'transaction'
+        })
       }
     })
 
-    // If we have activity dates but no budget/transaction data, create entries for those years
-    if (Object.keys(budgetsByYear).length === 0) {
-      const currentYear = new Date().getFullYear()
-      const startYear = activity.planned_start_date 
-        ? new Date(activity.planned_start_date).getFullYear() 
-        : currentYear
+    // If no data, create a placeholder entry
+    if (rawBudgetData.length === 0) {
+      const startDate = activity.planned_start_date 
+        ? new Date(activity.planned_start_date) 
+        : new Date()
       
-      // Create at least one entry for current or start year
-      budgetsByYear[startYear] = { year: startYear, budget: 0, actual: 0 }
+      rawBudgetData.push({
+        date: startDate.toISOString(),
+        year: startDate.getFullYear(),
+        budget: 0,
+        actual: 0,
+        type: 'placeholder'
+      })
     }
-
-    const budgetVsActual = Object.values(budgetsByYear)
-      .filter((item: any) => typeof item.year === 'number')
-      .sort((a: any, b: any) => a.year - b.year)
     
-    console.log(`[Financial Analytics] Budget vs Actual data:`, JSON.stringify(budgetVsActual, null, 2))
+    console.log(`[Financial Analytics] Raw budget data entries: ${rawBudgetData.length}`)
 
     // Calculate Cumulative Spending
     const transactionsByDate = transactions
@@ -248,24 +244,23 @@ export async function GET(
       }
     }
 
-    // Planned vs Actual Disbursements
-    const disbursementsByPeriod: any = {}
+    // Process raw disbursement data - return individual planned disbursements and transactions
+    const rawDisbursementData: any[] = []
     
+    // Add planned disbursements
     plannedDisbursements?.forEach((pd: any) => {
       if (pd.period_start) {
         const dateObj = new Date(pd.period_start)
         if (!isNaN(dateObj.getTime())) {
-          const period = dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-          if (!disbursementsByPeriod[period]) {
-            disbursementsByPeriod[period] = { 
-              period, 
-              date: pd.period_start, // Keep ISO date for filtering
-              timestamp: dateObj.getTime(), // Add timestamp for proper time-based x-axis
-              planned: 0, 
-              actual: 0 
-            }
-          }
-          disbursementsByPeriod[period].planned += pd.usd_amount || pd.amount || 0
+          rawDisbursementData.push({
+            date: pd.period_start,
+            timestamp: dateObj.getTime(),
+            period: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            sortKey: `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`,
+            planned: pd.usd_amount || pd.amount || 0,
+            actual: 0,
+            type: 'planned'
+          })
         }
       }
     })
@@ -275,55 +270,42 @@ export async function GET(
     console.log(`[Financial Analytics] Found ${disbursementTransactions.length} disbursement transactions (type 3)`)
     
     disbursementTransactions.forEach((transaction: any) => {
-      console.log(`[Financial Analytics] Processing transaction: date=${transaction.transaction_date}, type=${transaction.transaction_type}, usd_value=${transaction.usd_value}, value=${transaction.value}`)
-      
       if (transaction.transaction_date) {
         const dateObj = new Date(transaction.transaction_date)
         if (!isNaN(dateObj.getTime())) {
-          const period = dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-          if (!disbursementsByPeriod[period]) {
-            disbursementsByPeriod[period] = { 
-              period, 
-              date: transaction.transaction_date,
-              timestamp: dateObj.getTime(), // Add timestamp for proper time-based x-axis
-              planned: 0, 
-              actual: 0 
-            }
-          }
-          const actualAmount = transaction.usd_value || transaction.value || 0
-          disbursementsByPeriod[period].actual += actualAmount
-          console.log(`[Financial Analytics] Added ${actualAmount} to ${period} actual disbursements`)
+          rawDisbursementData.push({
+            date: transaction.transaction_date,
+            timestamp: dateObj.getTime(),
+            period: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            sortKey: `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`,
+            planned: 0,
+            actual: transaction.usd_value || transaction.value || 0,
+            type: 'actual'
+          })
         }
       }
     })
 
-    let disbursements = Object.values(disbursementsByPeriod).sort((a: any, b: any) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
-    )
-    
-    console.log(`[Financial Analytics] Disbursements data:`, JSON.stringify(disbursements, null, 2))
-
-    // If no disbursement data but we have budgets, create placeholder using budget periods
-    if (disbursements.length === 0 && budgets && budgets.length > 0) {
-      const budgetPeriods = budgets
+    // If no disbursement data but we have budgets, use them as placeholders
+    if (rawDisbursementData.length === 0 && budgets && budgets.length > 0) {
+      budgets
         .filter((b: any) => b.period_start)
         .slice(0, 6)
-        .map((budget: any) => {
+        .forEach((budget: any) => {
           const dateObj = new Date(budget.period_start)
-          return {
-            period: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          rawDisbursementData.push({
             date: budget.period_start,
-            timestamp: dateObj.getTime(), // Add timestamp for proper time-based x-axis
-            planned: budget.usd_value || budget.value || 0,
-            actual: 0
-          }
+            timestamp: dateObj.getTime(),
+            period: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            sortKey: `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`,
+            planned: 0,
+            actual: 0,
+            type: 'placeholder'
+          })
         })
-        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      
-      if (budgetPeriods.length > 0) {
-        disbursements = budgetPeriods
-      }
     }
+    
+    console.log(`[Financial Analytics] Raw disbursement data entries: ${rawDisbursementData.length}`)
 
     // Funding Source Breakdown (by organization role and transactions)
     let fundingSources: any[] = []
@@ -413,10 +395,10 @@ export async function GET(
     const commitmentRatio = totalCommitment > 0 ? (totalDisbursement / totalCommitment) * 100 : 0
 
     return NextResponse.json({
-      budgetVsActual,
+      rawBudgetData,
+      rawDisbursementData,
       cumulative: uniqueCumulativeData,
       budgetComposition,
-      disbursements,
       fundingSources,
       financialFlow,
       commitmentRatio,

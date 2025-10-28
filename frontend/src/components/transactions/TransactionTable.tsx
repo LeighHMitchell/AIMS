@@ -261,6 +261,7 @@ interface TransactionData {
 
 interface TransactionTableProps {
   transactions: TransactionData[];
+  organizations?: any[]; // Organizations list for alias resolution
   loading: boolean;
   error: string | null;
   sortField: string;
@@ -281,6 +282,7 @@ interface TransactionTableProps {
 
 export function TransactionTable({
   transactions,
+  organizations = [],
   loading,
   error,
   sortField,
@@ -640,10 +642,56 @@ export function TransactionTable({
         </TableHeader>
         <TableBody>
           {transactions.map((transaction, index) => {
-            const providerName = transaction.provider_org_name || transaction.from_org || "Unknown";
-            const receiverName = transaction.receiver_org_name || transaction.to_org || "Unknown";
-            const providerDisplay = transaction.provider_org_acronym || providerName;
-            const receiverDisplay = transaction.receiver_org_acronym || receiverName;
+            // Resolve organization names/logos using alias resolution
+            const resolveOrgDisplay = (orgId?: string, orgName?: string, orgRef?: string, orgAcronym?: string) => {
+              // Try to find by org ID or ref (including aliases)
+              let resolvedOrg = null;
+              if (orgId) {
+                resolvedOrg = organizations.find((o: any) => o.id === orgId);
+              }
+              if (!resolvedOrg && orgRef) {
+                // Try iati_org_id match
+                resolvedOrg = organizations.find((o: any) => o.iati_org_id === orgRef);
+                // Try alias_refs match
+                if (!resolvedOrg) {
+                  resolvedOrg = organizations.find((o: any) => 
+                    o.alias_refs && Array.isArray(o.alias_refs) && o.alias_refs.includes(orgRef)
+                  );
+                }
+              }
+              
+              if (resolvedOrg) {
+                return {
+                  name: resolvedOrg.name,
+                  acronym: resolvedOrg.acronym || resolvedOrg.name,
+                  logo: resolvedOrg.logo
+                };
+              }
+              
+              return {
+                name: orgName || "Unknown",
+                acronym: orgAcronym || orgName || "Unknown",
+                logo: null
+              };
+            };
+            
+            const provider = resolveOrgDisplay(
+              transaction.provider_org_id,
+              transaction.provider_org_name,
+              transaction.provider_org_ref,
+              transaction.provider_org_acronym
+            );
+            const receiver = resolveOrgDisplay(
+              transaction.receiver_org_id,
+              transaction.receiver_org_name,
+              transaction.receiver_org_ref,
+              transaction.receiver_org_acronym
+            );
+            
+            const providerName = provider.name;
+            const receiverName = receiver.name;
+            const providerDisplay = provider.acronym;
+            const receiverDisplay = receiver.acronym;
             const orgFlow = `${providerName} → ${receiverName}`;
             const transactionId = transaction.uuid || transaction.id;
             const isExpanded = expandedRows.has(transactionId);
@@ -782,12 +830,12 @@ export function TransactionTable({
                 <td className="py-3 px-4 whitespace-nowrap">
                   {formatTransactionDate(transaction.transaction_date)}
                 </td>
-                <td className="py-3 px-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                <td className="py-3 px-4 whitespace-nowrap">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-1 flex-nowrap min-w-0">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className="text-sm font-medium text-foreground break-words">
+                            <span className="text-sm font-medium text-foreground truncate flex-1">
                               {TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}
                             </span>
                         </TooltipTrigger>
@@ -801,8 +849,8 @@ export function TransactionTable({
                       {!transaction.created_by && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="inline-flex items-center justify-center">
-                                <FileCode className="h-4 w-4" style={{ color: '#004F59' }} />
+                              <span className="inline-flex items-center justify-center shrink-0">
+                                <FileCode className="h-3 w-3" style={{ color: '#004F59' }} />
                               </span>
                             </TooltipTrigger>
                             <TooltipContent side="top">
@@ -811,76 +859,12 @@ export function TransactionTable({
                           </Tooltip>
                       )}
                       
-                      {/* Icons in order: Link → Heart → Shield (validated) */}
-                      {(transaction.provider_org_activity_id || transaction.receiver_org_activity_id) && (
-                          <Tooltip>
-                            <TooltipTrigger 
-                              asChild
-                              onMouseEnter={() => {
-                                if (transaction.provider_org_activity_id) {
-                                  fetchActivityDetails(transaction.provider_org_activity_id);
-                                }
-                                if (transaction.receiver_org_activity_id) {
-                                  fetchActivityDetails(transaction.receiver_org_activity_id);
-                                }
-                              }}
-                            >
-                              <Link2 className="h-3 w-3 text-purple-600" />
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-md">
-                              <div className="space-y-3">
-                                <p className="text-sm font-semibold text-foreground">Linked Activities</p>
-                                
-                                {transaction.provider_org_activity_id && (
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <Building2 className="h-3 w-3 text-gray-500" />
-                                      <p className="text-xs font-medium text-gray-600">Provider Activity</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Target className="h-3 w-3 text-gray-500" />
-                                      <p className="text-sm text-gray-800">{activityDetails[transaction.provider_org_activity_id]?.title || 'Unknown Activity'}</p>
-                                    </div>
-                                    {activityDetails[transaction.provider_org_activity_id]?.reporting_org && (
-                                      <p className="text-xs text-gray-600">{activityDetails[transaction.provider_org_activity_id]?.reporting_org}</p>
-                                    )}
-                                    {activityDetails[transaction.provider_org_activity_id]?.iati_identifier && (
-                                      <p className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-                                        {activityDetails[transaction.provider_org_activity_id]?.iati_identifier}
-                                      </p>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                {transaction.receiver_org_activity_id && (
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <Building2 className="h-3 w-3 text-gray-500" />
-                                      <p className="text-xs font-medium text-gray-600">Receiver Activity</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Target className="h-3 w-3 text-gray-500" />
-                                      <p className="text-sm text-gray-800">{activityDetails[transaction.receiver_org_activity_id]?.title || 'Unknown Activity'}</p>
-                                    </div>
-                                    {activityDetails[transaction.receiver_org_activity_id]?.reporting_org && (
-                                      <p className="text-xs text-gray-600">{activityDetails[transaction.receiver_org_activity_id]?.reporting_org}</p>
-                                    )}
-                                    {activityDetails[transaction.receiver_org_activity_id]?.iati_identifier && (
-                                      <p className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-                                        {activityDetails[transaction.receiver_org_activity_id]?.iati_identifier}
-                                      </p>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                        </TooltipContent>
-                      </Tooltip>
-                      )}
+                      {/* Link icon removed to keep Type column compact */}
                     
                       {transaction.is_humanitarian && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Heart className="h-3 w-3 text-red-500 fill-red-500" />
+                              <Heart className="h-3 w-3 text-red-500 fill-red-500 shrink-0" />
                             </TooltipTrigger>
                             <TooltipContent side="right" className="max-w-sm">
                               <p className="text-xs leading-relaxed">
@@ -899,7 +883,7 @@ export function TransactionTable({
                       {transaction.status === 'actual' && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <CheckCircle className="h-3 w-3 text-green-600" />
+                              <CheckCircle className="h-3 w-3 text-green-600 shrink-0" />
                             </TooltipTrigger>
                             <TooltipContent side="right" className="bg-white text-foreground border border-gray-200 shadow-xl p-3 max-w-[200px] rounded-lg">
                               <div className="space-y-1">
@@ -908,6 +892,17 @@ export function TransactionTable({
                                   This transaction has been verified and approved by your organisation.
                                 </p>
                               </div>
+                            </TooltipContent>
+                          </Tooltip>
+                      )}
+                      
+                      {transaction.transaction_source === 'own' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <User className="h-3 w-3 text-gray-500 shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              <p className="text-sm">Own Transaction</p>
                             </TooltipContent>
                           </Tooltip>
                       )}
@@ -928,18 +923,7 @@ export function TransactionTable({
                           </TooltipContent>
                         </Tooltip>
                       )}
-                      {transaction.transaction_source === 'own' && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-500 px-1">
-                              <User className="h-3 w-3" />
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-sm">Own Transaction</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
+                      {/* Own Transaction icon moved to inline with Type text above */}
                       {transaction.acceptance_status === 'pending' && transaction.transaction_source === 'linked' && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -1004,7 +988,7 @@ export function TransactionTable({
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1">
                         <OrganizationLogo 
-                          logo={transaction.provider_org_logo}
+                          logo={provider.logo || transaction.provider_org_logo}
                           name={providerDisplay}
                           size="sm"
                         />
@@ -1024,7 +1008,7 @@ export function TransactionTable({
                       <span className="text-muted-foreground">→</span>
                       <div className="flex items-center gap-1">
                         <OrganizationLogo 
-                          logo={transaction.receiver_org_logo}
+                          logo={receiver.logo || transaction.receiver_org_logo}
                           name={receiverDisplay}
                           size="sm"
                         />

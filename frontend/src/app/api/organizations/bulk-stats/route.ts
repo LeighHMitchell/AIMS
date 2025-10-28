@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     // Parse query parameters for pagination
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '1000', 10), 2000); // Increased default to 1000, cap at 2000
+    const limit = Math.min(parseInt(searchParams.get('limit') || '5000', 10), 10000); // Increased default to 5000 to ensure all orgs are loaded, cap at 10000
     const offset = (page - 1) * limit;
     
     // Add caching headers to reduce repeated requests
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       // Get organizations with pagination
       getSupabaseAdmin()
         .from('organizations')
-        .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, created_at, updated_at')
+        .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, created_at, updated_at')
         .order('name')
         .range(offset, offset + limit - 1),
       

@@ -52,6 +52,7 @@ import { IATIBudgetManager } from './IATIBudgetManager'
 import { IATIDocumentManager } from './IATIDocumentManager'
 import IATIImportPreferences from './IATIImportPreferences'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
+import { StringArrayInput } from '@/components/ui/string-array-input'
 
 // ISO 3166-1 alpha-2 country codes with names
 const ISO_COUNTRIES = [
@@ -541,6 +542,9 @@ export function EditOrganizationModal({
         email: organization.email || '',
         phone: organization.phone || '',
         address: organization.address || '',
+        // Alias fields
+        alias_refs: organization.alias_refs || [],
+        name_aliases: organization.name_aliases || [],
         // Social media fields
         social_twitter: organization.social_twitter || '',
         social_facebook: organization.social_facebook || '',
@@ -563,6 +567,8 @@ export function EditOrganizationModal({
         website: '',
         email: '',
         phone: '',
+        alias_refs: [],
+        name_aliases: [],
         address: '',
         // Social media fields
         social_twitter: '',
@@ -716,13 +722,14 @@ export function EditOrganizationModal({
         
         {/* Tabbed Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-6 flex-shrink-0">
+          <TabsList className="grid w-full grid-cols-7 flex-shrink-0">
             <TabsTrigger value="basic">General</TabsTrigger>
             <TabsTrigger value="branding">Branding</TabsTrigger>
             <TabsTrigger value="contact">Contact & Social</TabsTrigger>
+            <TabsTrigger value="aliases">Aliases</TabsTrigger>
             <TabsTrigger value="budgets">IATI Budgets</TabsTrigger>
             <TabsTrigger value="documents">IATI Documents</TabsTrigger>
-            <TabsTrigger value="iati-prefs">IATI Import Preferences</TabsTrigger>
+            <TabsTrigger value="iati-prefs">IATI Import</TabsTrigger>
           </TabsList>
 
           {/* General Tab */}
@@ -1325,6 +1332,53 @@ export function EditOrganizationModal({
           </TabsContent>
 
           {/* IATI Import Preferences Tab */}
+          {/* Aliases Tab */}
+          <TabsContent value="aliases" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-3">
+              <HelpCircle className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-800 mb-1">About Aliases</p>
+                <p className="text-sm text-blue-700">
+                  Aliases help AIMS automatically recognize this organization when importing IATI data, 
+                  even if the source uses legacy codes or alternate names. This ensures consistent data 
+                  linking across different reporting sources.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* Legacy or Internal Codes */}
+              <StringArrayInput
+                label="Legacy or Internal Codes"
+                description="Alternative organization identifiers used in IATI data (e.g., 010712, KR-GOV-OLD)"
+                placeholder="e.g., 010712, KR-MOFA-OLD"
+                value={formData.alias_refs || []}
+                onChange={(value) => handleInputChange('alias_refs', value)}
+                id="alias_refs"
+              />
+
+              {/* Alternate Names */}
+              <StringArrayInput
+                label="Alternate Names"
+                description="Other names this organization is known by in IATI data (e.g., KOICA, Korea Intern. Cooperation Agency)"
+                placeholder="e.g., KOICA, Korea Intern. Cooperation Agency"
+                value={formData.name_aliases || []}
+                onChange={(value) => handleInputChange('name_aliases', value)}
+                id="name_aliases"
+              />
+            </div>
+
+            <div className="text-sm text-gray-500 border-t pt-4">
+              <p className="font-medium mb-2">How Aliases Work:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>When importing IATI XML, AIMS checks organization references against these aliases</li>
+                <li>If a match is found, the transaction or activity is automatically linked to this organization</li>
+                <li>You can add new aliases anytime you encounter variations in imported data</li>
+                <li>Aliases are case-insensitive and whitespace is trimmed automatically</li>
+              </ul>
+            </div>
+          </TabsContent>
+
           <TabsContent value="iati-prefs" className="h-full overflow-y-auto px-2 mt-4">
             <IATIImportPreferences organizationId={organization?.id} />
           </TabsContent>

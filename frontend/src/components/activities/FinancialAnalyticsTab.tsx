@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
+type GroupBy = 'year' | 'month'
 
 interface FinancialAnalyticsTabProps {
   activityId: string
@@ -32,10 +33,10 @@ interface FinancialAnalyticsTabProps {
 
 export default function FinancialAnalyticsTab({ activityId }: FinancialAnalyticsTabProps) {
   const [loading, setLoading] = useState(true)
-  const [budgetVsActualData, setBudgetVsActualData] = useState<any[]>([])
+  const [rawBudgetVsActualData, setRawBudgetVsActualData] = useState<any[]>([])
+  const [rawDisbursementData, setRawDisbursementData] = useState<any[]>([])
   const [cumulativeData, setCumulativeData] = useState<any[]>([])
   const [budgetCompositionData, setBudgetCompositionData] = useState<any[]>([])
-  const [disbursementData, setDisbursementData] = useState<any[]>([])
   const [fundingSourceData, setFundingSourceData] = useState<any[]>([])
   const [financialFlowData, setFinancialFlowData] = useState<any>({})
   const [commitmentRatio, setCommitmentRatio] = useState<number>(0)
@@ -46,6 +47,10 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
   const [budgetTimePeriod, setBudgetTimePeriod] = useState<TimePeriod>('all')
   const [cumulativeTimePeriod, setCumulativeTimePeriod] = useState<TimePeriod>('all')
   const [disbursementTimePeriod, setDisbursementTimePeriod] = useState<TimePeriod>('all')
+  
+  // Grouping toggles for charts
+  const [budgetGroupBy, setBudgetGroupBy] = useState<GroupBy>('year')
+  const [disbursementGroupBy, setDisbursementGroupBy] = useState<GroupBy>('month')
   
   // Chart type toggles
   const [disbursementChartType, setDisbursementChartType] = useState<'line' | 'bar'>('line')
@@ -105,10 +110,90 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
     })
   }
 
+  // Group budget data by year or month
+  const groupedBudgetVsActualData = useMemo(() => {
+    if (rawBudgetVsActualData.length === 0) return []
+    
+    const grouped: any = {}
+    
+    rawBudgetVsActualData.forEach((item: any) => {
+      let period: string
+      let periodKey: string
+      let sortKey: string
+      
+      if (budgetGroupBy === 'month' && item.date) {
+        const dateObj = new Date(item.date)
+        period = dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        periodKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`
+        sortKey = periodKey
+      } else {
+        period = item.year?.toString() || 'Unknown'
+        periodKey = period
+        sortKey = period
+      }
+      
+      if (!grouped[periodKey]) {
+        grouped[periodKey] = {
+          period,
+          year: budgetGroupBy === 'year' ? item.year : undefined,
+          sortKey,
+          budget: 0,
+          actual: 0
+        }
+      }
+      
+      grouped[periodKey].budget += item.budget || 0
+      grouped[periodKey].actual += item.actual || 0
+    })
+    
+    return Object.values(grouped).sort((a: any, b: any) => a.sortKey.localeCompare(b.sortKey))
+  }, [rawBudgetVsActualData, budgetGroupBy])
+
+  // Group disbursement data by year or month
+  const groupedDisbursementData = useMemo(() => {
+    if (rawDisbursementData.length === 0) return []
+    
+    const grouped: any = {}
+    
+    rawDisbursementData.forEach((item: any) => {
+      let period: string
+      let periodKey: string
+      let sortKey: string
+      let timestamp = item.timestamp
+      
+      if (disbursementGroupBy === 'year' && item.date) {
+        const dateObj = new Date(item.date)
+        period = dateObj.getFullYear().toString()
+        periodKey = period
+        sortKey = period
+      } else {
+        period = item.period
+        periodKey = item.sortKey || item.period
+        sortKey = periodKey
+      }
+      
+      if (!grouped[periodKey]) {
+        grouped[periodKey] = {
+          period,
+          sortKey,
+          timestamp,
+          date: item.date,
+          planned: 0,
+          actual: 0
+        }
+      }
+      
+      grouped[periodKey].planned += item.planned || 0
+      grouped[periodKey].actual += item.actual || 0
+    })
+    
+    return Object.values(grouped).sort((a: any, b: any) => a.sortKey.localeCompare(b.sortKey))
+  }, [rawDisbursementData, disbursementGroupBy])
+
   // Filtered data using useMemo for performance
   const filteredBudgetVsActual = useMemo(
-    () => filterDataByYear(budgetVsActualData, budgetTimePeriod),
-    [budgetVsActualData, budgetTimePeriod]
+    () => filterDataByYear(groupedBudgetVsActualData, budgetTimePeriod),
+    [groupedBudgetVsActualData, budgetTimePeriod]
   )
 
   const filteredCumulativeData = useMemo(
@@ -117,8 +202,8 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
   )
 
   const filteredDisbursementData = useMemo(
-    () => filterDataByDate(disbursementData, disbursementTimePeriod, 'date'),
-    [disbursementData, disbursementTimePeriod]
+    () => filterDataByDate(groupedDisbursementData, disbursementTimePeriod, 'date'),
+    [groupedDisbursementData, disbursementTimePeriod]
   )
 
   // Time period filter component
@@ -164,6 +249,44 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
     )
   }
 
+  // Group by toggle component
+  const GroupByToggle = ({ 
+    value, 
+    onChange 
+  }: { 
+    value: GroupBy
+    onChange: (groupBy: GroupBy) => void
+  }) => {
+    return (
+      <div className="flex gap-1">
+        <Button
+          variant={value === 'year' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => onChange('year')}
+          className={`h-7 px-3 text-xs ${
+            value === 'year' 
+              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+          }`}
+        >
+          Year
+        </Button>
+        <Button
+          variant={value === 'month' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => onChange('month')}
+          className={`h-7 px-3 text-xs ${
+            value === 'month' 
+              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+          }`}
+        >
+          Month
+        </Button>
+      </div>
+    )
+  }
+
   const fetchFinancialAnalytics = async () => {
     try {
       setLoading(true)
@@ -175,11 +298,11 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
 
       const data = await response.json()
       
-      // Transform the data for charts
-      setBudgetVsActualData(data.budgetVsActual || [])
+      // Store raw data for client-side grouping
+      setRawBudgetVsActualData(data.rawBudgetData || [])
+      setRawDisbursementData(data.rawDisbursementData || [])
       setCumulativeData(data.cumulative || [])
       setBudgetCompositionData(data.budgetComposition || [])
-      setDisbursementData(data.disbursements || [])
       setFundingSourceData(data.fundingSources || [])
       setFinancialFlowData(data.financialFlow || {})
       setCommitmentRatio(data.commitmentRatio || 0)
@@ -331,31 +454,46 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
         </Card>
       </div>
 
-      {/* Budget vs Actual Spending by Year */}
+      {/* Budget vs Actual Spending */}
       <Card className="border-slate-200">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle className="text-lg font-semibold text-slate-900">Budget vs Actual Spending by Year</CardTitle>
-              <CardDescription>Compare planned budgets with actual spending across years</CardDescription>
+              <CardTitle className="text-lg font-semibold text-slate-900">
+                Budget vs Actual Spending by {budgetGroupBy === 'year' ? 'Year' : 'Month'}
+              </CardTitle>
+              <CardDescription>Compare planned budgets with actual spending</CardDescription>
             </div>
-            <TimePeriodFilter 
-              value={budgetTimePeriod} 
-              onChange={setBudgetTimePeriod}
-            />
+            <div className="flex items-center gap-2 flex-wrap">
+              <GroupByToggle 
+                value={budgetGroupBy} 
+                onChange={setBudgetGroupBy}
+              />
+              <TimePeriodFilter 
+                value={budgetTimePeriod} 
+                onChange={setBudgetTimePeriod}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           {filteredBudgetVsActual.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={400} key={`budget-${budgetGroupBy}`}>
               <BarChart data={filteredBudgetVsActual} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="year" stroke="#64748B" fontSize={12} />
+                <XAxis 
+                  dataKey={budgetGroupBy === 'year' ? 'year' : 'period'} 
+                  stroke="#64748B" 
+                  fontSize={12}
+                  angle={budgetGroupBy === 'month' ? -45 : 0}
+                  textAnchor={budgetGroupBy === 'month' ? 'end' : 'middle'}
+                  height={budgetGroupBy === 'month' ? 80 : 30}
+                />
                 <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <Bar dataKey="budget" name="Budget" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="actual" name="Actual Spending" fill="#64748B" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="budget" name="Budget" fill="#3B82F6" radius={[4, 4, 0, 0]} animationDuration={300} />
+                <Bar dataKey="actual" name="Actual Spending" fill="#64748B" radius={[4, 4, 0, 0]} animationDuration={300} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -425,10 +563,12 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle className="text-lg font-semibold text-slate-900">Planned vs Actual Disbursements</CardTitle>
+              <CardTitle className="text-lg font-semibold text-slate-900">
+                Planned vs Actual Disbursements by {disbursementGroupBy === 'year' ? 'Year' : 'Month'}
+              </CardTitle>
               <CardDescription>Compare planned and actual disbursements</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Button
                 variant="outline"
                 size="sm"
@@ -437,6 +577,10 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
               >
                 {disbursementChartType === 'line' ? <BarChart3 className="h-3 w-3" /> : <TrendingUpIcon className="h-3 w-3" />}
               </Button>
+              <GroupByToggle 
+                value={disbursementGroupBy} 
+                onChange={setDisbursementGroupBy}
+              />
               <TimePeriodFilter 
                 value={disbursementTimePeriod} 
                 onChange={setDisbursementTimePeriod}
@@ -446,20 +590,26 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
         </CardHeader>
         <CardContent>
           {filteredDisbursementData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={400} key={`disbursement-${disbursementGroupBy}-${disbursementChartType}`}>
               {disbursementChartType === 'line' ? (
-                <LineChart data={filteredDisbursementData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <LineChart data={filteredDisbursementData} margin={{ top: 20, right: 30, left: 20, bottom: disbursementGroupBy === 'month' ? 60 : 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                   <XAxis 
-                    dataKey="timestamp"
-                    type="number"
-                    domain={['dataMin', 'dataMax']}
-                    tickFormatter={(timestamp) => {
-                      const date = new Date(timestamp)
+                    dataKey={disbursementGroupBy === 'year' ? 'period' : 'timestamp'}
+                    type={disbursementGroupBy === 'year' ? 'category' : 'number'}
+                    domain={disbursementGroupBy === 'year' ? undefined : ['dataMin', 'dataMax']}
+                    tickFormatter={(value) => {
+                      if (disbursementGroupBy === 'year') {
+                        return value
+                      }
+                      const date = new Date(value)
                       return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
                     }}
                     stroke="#64748B" 
                     fontSize={12}
+                    angle={disbursementGroupBy === 'month' ? -45 : 0}
+                    textAnchor={disbursementGroupBy === 'month' ? 'end' : 'middle'}
+                    height={disbursementGroupBy === 'month' ? 80 : 30}
                   />
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
@@ -471,6 +621,7 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
                     stroke="#3B82F6" 
                     strokeWidth={2}
                     dot={{ fill: '#3B82F6', r: 4 }}
+                    animationDuration={300}
                   />
                   <Line 
                     type="monotone" 
@@ -479,27 +630,34 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
                     stroke="#64748B" 
                     strokeWidth={2}
                     dot={{ fill: '#64748B', r: 4 }}
+                    animationDuration={300}
                   />
                 </LineChart>
               ) : (
-                <BarChart data={filteredDisbursementData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <BarChart data={filteredDisbursementData} margin={{ top: 20, right: 30, left: 20, bottom: disbursementGroupBy === 'month' ? 60 : 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                   <XAxis 
-                    dataKey="timestamp"
-                    type="number"
-                    domain={['dataMin', 'dataMax']}
-                    tickFormatter={(timestamp) => {
-                      const date = new Date(timestamp)
+                    dataKey={disbursementGroupBy === 'year' ? 'period' : 'timestamp'}
+                    type={disbursementGroupBy === 'year' ? 'category' : 'number'}
+                    domain={disbursementGroupBy === 'year' ? undefined : ['dataMin', 'dataMax']}
+                    tickFormatter={(value) => {
+                      if (disbursementGroupBy === 'year') {
+                        return value
+                      }
+                      const date = new Date(value)
                       return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
                     }}
                     stroke="#64748B" 
                     fontSize={12}
+                    angle={disbursementGroupBy === 'month' ? -45 : 0}
+                    textAnchor={disbursementGroupBy === 'month' ? 'end' : 'middle'}
+                    height={disbursementGroupBy === 'month' ? 80 : 30}
                   />
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
-                  <Bar dataKey="planned" name="Planned" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="actual" name="Actual" fill="#64748B" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="planned" name="Planned" fill="#3B82F6" radius={[4, 4, 0, 0]} animationDuration={300} />
+                  <Bar dataKey="actual" name="Actual" fill="#64748B" radius={[4, 4, 0, 0]} animationDuration={300} />
                 </BarChart>
               )}
             </ResponsiveContainer>

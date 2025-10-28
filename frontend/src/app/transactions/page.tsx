@@ -696,6 +696,7 @@ export default function TransactionsPage() {
             <div className="overflow-x-auto">
               <TransactionTable
                 transactions={sortedTransactions}
+                organizations={organizations}
                 loading={false}
                 error={null}
                 sortField={sortField}

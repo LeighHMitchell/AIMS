@@ -1501,7 +1501,7 @@ function OrganizationsPageContent() {
     if (activeTagFilters.size > 0) {
       filtered = filtered.filter(org => {
         const orgTags = new Set([
-          getTypeLabel(org.Organisation_Type_Code, availableTypes),
+          getOrganizationTypeLabel(org.Organisation_Type_Code, availableTypes),
           deriveCooperationModality(org.Organisation_Type_Code, org.country_represented || org.country || ''),
           org.derived_category
         ].filter(Boolean))
@@ -1540,7 +1540,7 @@ function OrganizationsPageContent() {
       // Add timestamp for cache busting when needed (after create/update)
       const cacheBuster = bustCache ? `&_=${Date.now()}` : '';
       const [orgsResponse, summaryResponse] = await Promise.all([
-        fetch(`/api/organizations/bulk-stats?limit=1000${cacheBuster}`, {
+        fetch(`/api/organizations/bulk-stats?limit=5000${cacheBuster}`, {
           signal: mainFetchControllerRef.current.signal,
           headers: {
             'Cache-Control': bustCache ? 'no-cache' : 'max-age=60', // 1 minute client cache (reduced from 5 min), no-cache when busting
@@ -1646,7 +1646,17 @@ function OrganizationsPageContent() {
         body: JSON.stringify(data)
       })
       
-      const responseData = await response.json()
+      // Only try to parse JSON if we have a valid response
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (jsonError) {
+        // If JSON parsing fails, create a generic error response
+        console.error('[OrganizationsPage] Failed to parse response as JSON:', jsonError);
+        responseData = { 
+          error: `Server returned ${response.status}: ${response.statusText}` 
+        };
+      }
       
       if (!response.ok) {
         console.error('[OrganizationsPage] Save failed:', responseData);
@@ -1672,7 +1682,14 @@ function OrganizationsPageContent() {
     })
     
     if (!response.ok) {
-      const errorData = await response.json()
+      // Try to parse JSON error response, but handle cases where it might not be JSON
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (jsonError) {
+        console.error('[OrganizationsPage] Failed to parse error response as JSON:', jsonError);
+        errorData = { error: `Server returned ${response.status}: ${response.statusText}` };
+      }
       // Use the detailed error message from the API if available
       const errorMessage = errorData.details || errorData.error || 'Failed to delete organization'
       throw new Error(errorMessage)
