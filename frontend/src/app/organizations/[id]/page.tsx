@@ -615,13 +615,17 @@ export default function OrganizationProfilePage() {
   }
 
   const calculateTotals = () => {
+    // Defensive check to ensure transactions is defined
+    const safeTransactions = transactions || [];
+    const safeActivities = activities || [];
+    
     // Calculate budget from commitment transactions (types '1' = Incoming Commitment, '2' = Outgoing Commitment)
-    const budgetFromTransactions = transactions
+    const budgetFromTransactions = safeTransactions
       .filter(txn => ['1', '2'].includes(txn.transaction_type))
       .reduce((sum, txn) => sum + txn.value, 0)
     
     // Calculate budget from activity budgets (activity_budgets table) - only for published activities
-    const budgetFromActivities = activities
+    const budgetFromActivities = safeActivities
       .filter(activity => activity.publication_status === 'published')
       .reduce((sum, activity) => sum + (activity.totalPlannedBudgetUSD || 0), 0)
     
@@ -632,16 +636,16 @@ export default function OrganizationProfilePage() {
     const totalPlannedDisbursements = plannedDisbursementsByYear.reduce((sum, item) => sum + item.amount, 0)
     
     // Calculate actual disbursements (type '3')
-    const totalDisbursements = transactions
+    const totalDisbursements = safeTransactions
       .filter(txn => txn.transaction_type === '3')
       .reduce((sum, txn) => sum + txn.value, 0)
     
     // Calculate actual expenditures (type '4')
-    const totalExpenditures = transactions
+    const totalExpenditures = safeTransactions
       .filter(txn => txn.transaction_type === '4')
       .reduce((sum, txn) => sum + txn.value, 0)
     
-    const totalTransactions = transactions.reduce((sum, txn) => sum + txn.value, 0)
+    const totalTransactions = safeTransactions.reduce((sum, txn) => sum + txn.value, 0)
     
     return {
       totalBudget,
@@ -649,8 +653,8 @@ export default function OrganizationProfilePage() {
       totalDisbursements,
       totalExpenditures,
       totalTransactions,
-      activeActivities: activities.filter(a => ['2', '3'].includes(a.activity_status)).length, // 2=Implementation, 3=Finalisation
-      totalActivities: activities.length
+      activeActivities: safeActivities.filter(a => ['2', '3'].includes(a.activity_status)).length, // 2=Implementation, 3=Finalisation
+      totalActivities: safeActivities.length
     }
   }
 
@@ -1402,7 +1406,7 @@ export default function OrganizationProfilePage() {
                           tick={{ fontSize: 10, fill: '#64748b' }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
-                          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                          tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
                         />
                         <RechartsTooltip 
                           content={({ active, payload }) => {
@@ -1533,7 +1537,7 @@ export default function OrganizationProfilePage() {
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
-                            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                            tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
                           />
                           <RechartsTooltip 
                             content={({ active, payload }) => {
@@ -2103,43 +2107,43 @@ export default function OrganizationProfilePage() {
                       <CardTitle className="text-slate-900">Financial Transactions</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {transactions.length > 0 ? (
+                      {(transactions || []).length > 0 ? (
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div className="p-4 border border-slate-200 rounded-lg">
                               <p className="text-sm font-medium text-slate-600">Total Commitments</p>
                               <p className="text-2xl font-bold text-slate-900">
                                 {formatCurrency(
-                                  transactions.filter(t => ['1', '2'].includes(t.transaction_type)).reduce((sum, t) => sum + t.value, 0),
-                                  organization.default_currency
+                                  (transactions || []).filter(t => ['1', '2'].includes(t.transaction_type)).reduce((sum, t) => sum + t.value, 0),
+                                  organization?.default_currency || 'USD'
                                 )}
                               </p>
                               <p className="text-xs text-slate-500">
-                                {transactions.filter(t => ['1', '2'].includes(t.transaction_type)).length} transactions
+                                {(transactions || []).filter(t => ['1', '2'].includes(t.transaction_type)).length} transactions
                               </p>
                             </div>
                             <div className="p-4 border border-slate-200 rounded-lg">
                               <p className="text-sm font-medium text-slate-600">Total Disbursements</p>
                               <p className="text-2xl font-bold text-slate-900">
                                 {formatCurrency(
-                                  transactions.filter(t => t.transaction_type === '3').reduce((sum, t) => sum + t.value, 0),
-                                  organization.default_currency
+                                  (transactions || []).filter(t => t.transaction_type === '3').reduce((sum, t) => sum + t.value, 0),
+                                  organization?.default_currency || 'USD'
                                 )}
                               </p>
                               <p className="text-xs text-slate-500">
-                                {transactions.filter(t => t.transaction_type === '3').length} transactions
+                                {(transactions || []).filter(t => t.transaction_type === '3').length} transactions
                               </p>
                             </div>
                             <div className="p-4 border border-slate-200 rounded-lg">
                               <p className="text-sm font-medium text-slate-600">Total Expenditures</p>
                               <p className="text-2xl font-bold text-slate-900">
                                 {formatCurrency(
-                                  transactions.filter(t => t.transaction_type === '4').reduce((sum, t) => sum + t.value, 0),
-                                  organization.default_currency
+                                  (transactions || []).filter(t => t.transaction_type === '4').reduce((sum, t) => sum + t.value, 0),
+                                  organization?.default_currency || 'USD'
                                 )}
                               </p>
                               <p className="text-xs text-slate-500">
-                                {transactions.filter(t => t.transaction_type === '4').length} transactions
+                                {(transactions || []).filter(t => t.transaction_type === '4').length} transactions
                               </p>
                             </div>
                           </div>

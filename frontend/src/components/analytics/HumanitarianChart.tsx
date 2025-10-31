@@ -71,31 +71,58 @@ export function HumanitarianChart({ dateRange, filters, refreshKey }: Humanitari
     try {
       setLoading(true)
       
-      // Build base query for transactions
-      let baseQuery = supabase
-        .from('transactions')
+      // Build base query through activities to properly apply country and sector filters
+      let activityQuery = supabase
+        .from('activities')
         .select(`
-          value,
-          aid_type,
-          transaction_date,
-          activity_id,
-          is_humanitarian,
-          description,
-          activities (
-            collaboration_type
+          id,
+          locations,
+          collaboration_type,
+          activity_sectors!inner(sector_code),
+          transactions!inner(
+            value,
+            aid_type,
+            transaction_date,
+            activity_id,
+            is_humanitarian,
+            description,
+            provider_org_id,
+            transaction_type,
+            status
           )
         `)
-        .in('transaction_type', ['2', '3', '4']) // Include Commitments, Disbursements, and Expenditures
-        .in('status', ['actual', 'draft']) // Include both actual and draft transactions
-        .gte('transaction_date', dateRange.from.toISOString())
-        .lte('transaction_date', dateRange.to.toISOString())
+        .eq('publication_status', 'published')
+        .in('transactions.transaction_type', ['2', '3', '4']) // Include Commitments, Disbursements, and Expenditures
+        .in('transactions.status', ['actual', 'draft']) // Include both actual and draft transactions
+        .gte('transactions.transaction_date', dateRange.from.toISOString())
+        .lte('transactions.transaction_date', dateRange.to.toISOString())
 
-      // Apply filters
-      if (filters.donor && filters.donor !== 'all') {
-        baseQuery = baseQuery.eq('provider_org_id', filters.donor)
+      // Apply country filter
+      if (filters.country && filters.country !== 'all') {
+        activityQuery = activityQuery.contains('locations', [{ country_code: filters.country }])
       }
 
-      const { data: transactions, error: queryError } = await baseQuery
+      // Apply sector filter
+      if (filters.sector && filters.sector !== 'all') {
+        activityQuery = activityQuery.eq('activity_sectors.sector_code', filters.sector)
+      }
+
+      // Apply donor filter
+      if (filters.donor && filters.donor !== 'all') {
+        activityQuery = activityQuery.eq('transactions.provider_org_id', filters.donor)
+      }
+
+      const { data: activities, error: queryError } = await activityQuery
+      
+      // Extract transactions from activities with activity metadata
+      const transactions = activities?.flatMap((activity: any) => 
+        (activity.transactions || []).map((t: any) => ({
+          ...t,
+          activities: {
+            collaboration_type: activity.collaboration_type
+          }
+        }))
+      ) || []
       
       console.log('[HumanitarianChart] Query results:', {
         transactionCount: transactions?.length || 0,
@@ -217,6 +244,55 @@ export function HumanitarianChart({ dateRange, filters, refreshKey }: Humanitari
           <Skeleton className="h-9 w-40 bg-slate-100" />
         </div>
         <Skeleton className="h-[300px] w-full bg-slate-100" />
+      </div>
+    )
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="space-y-4">
+        {/* Aggregation Mode Selector */}
+        <div className="flex items-center justify-between">
+          <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
+            <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="calendar">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3 w-3" />
+                  Calendar Year
+                </div>
+              </SelectItem>
+              <SelectItem value="fiscal">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-3 w-3" />
+                  Financial Year
+                </div>
+              </SelectItem>
+              <SelectItem value="quarter">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-3 w-3" />
+                  Quarterly
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {groupBy === 'fiscal' && (
+            <div className="text-xs text-slate-500">
+              Financial Year: July–June
+            </div>
+          )}
+        </div>
+        
+        {/* Empty State */}
+        <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg">
+          <div className="text-center">
+            <p className="text-slate-600">No humanitarian/development aid data available</p>
+            <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+          </div>
+        </div>
       </div>
     )
   }

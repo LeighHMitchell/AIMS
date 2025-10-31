@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { cleanFieldValue } from '@/lib/transaction-field-cleaner';
 
 export async function PATCH(
   request: NextRequest,
@@ -25,7 +26,10 @@ export async function PATCH(
       aidType: 'aid_type',
       flowType: 'flow_type',
       transactionType: 'transaction_type',
-      transactionDate: 'transaction_date'
+      transactionDate: 'transaction_date',
+      tiedStatus: 'tied_status',
+      disbursementChannel: 'disbursement_channel',
+      isHumanitarian: 'is_humanitarian',
     };
 
     const dbField = fieldMap[field] || field;
@@ -49,8 +53,11 @@ export async function PATCH(
       );
     }
 
+    // Clean the value based on field type - CRITICAL: preserves false for boolean fields
+    const cleanedValue = cleanFieldValue(dbField, value);
+    
     // Update the field
-    const updateData: any = { [dbField]: value || null };
+    const updateData: any = { [dbField]: cleanedValue };
     
     // Smart logic for finance_type_inherited:
     // - If value unchanged and was inherited, keep as inherited

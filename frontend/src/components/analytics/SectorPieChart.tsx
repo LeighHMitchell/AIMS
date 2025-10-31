@@ -58,6 +58,7 @@ export function SectorPieChart({ dateRange, filters, refreshKey }: SectorPieChar
         .from('activities')
         .select(`
           id,
+          locations,
           activity_sectors (
             sector_code,
             sector_name,
@@ -71,10 +72,16 @@ export function SectorPieChart({ dateRange, filters, refreshKey }: SectorPieChar
             provider_org_id
           )
         `)
+        .eq('publication_status', 'published')
         .eq('transactions.transaction_type', '3') // Disbursements
         .eq('transactions.status', 'actual')
         .gte('transactions.transaction_date', dateRange.from.toISOString())
         .lte('transactions.transaction_date', dateRange.to.toISOString())
+      
+      // Apply country filter if specified
+      if (filters.country && filters.country !== 'all') {
+        query = query.contains('locations', [{ country_code: filters.country }])
+      }
       
       // Apply donor filter if specified
       if (filters.donor && filters.donor !== 'all') {
@@ -221,6 +228,17 @@ export function SectorPieChart({ dateRange, filters, refreshKey }: SectorPieChar
     return (
       <div className="space-y-3">
         <Skeleton className="h-[300px] w-full bg-slate-100" />
+      </div>
+    )
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg">
+        <div className="text-center">
+          <p className="text-slate-600">No sector data available</p>
+          <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+        </div>
       </div>
     )
   }

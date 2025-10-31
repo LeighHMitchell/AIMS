@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { cleanTransactionFields, cleanBooleanValue } from '@/lib/transaction-field-cleaner';
 
 export async function PUT(
   request: NextRequest,
@@ -37,45 +38,13 @@ export async function PUT(
       transactionReference = currentTransaction?.transaction_reference || null;
     }
 
-    // Update transaction data - convert empty strings to null
-    const updateData: any = {
-      transaction_type: body.transaction_type,
-      transaction_date: body.transaction_date,
-      value: body.value,
-      currency: body.currency,
-      status: body.status,
-      value_date,
-      transaction_reference: transactionReference,
-      description: body.description || null,
-      provider_org_id: body.provider_org_id || null,
-      provider_org_type: body.provider_org_type || null,
-      provider_org_ref: body.provider_org_ref || null,
-      provider_org_name: body.provider_org_name || null,
-      receiver_org_id: body.receiver_org_id || null,
-      receiver_org_type: body.receiver_org_type || null,
-      receiver_org_ref: body.receiver_org_ref || null,
-      receiver_org_name: body.receiver_org_name || null,
-      disbursement_channel: body.disbursement_channel || null,
-      sector_code: body.sector_code || null,
-      sector_vocabulary: body.sector_vocabulary || null,
-      recipient_country_code: body.recipient_country_code || null,
-      recipient_region_code: body.recipient_region_code || null,
-      recipient_region_vocab: body.recipient_region_vocab || null,
-      flow_type: body.flow_type || null,
-      finance_type: body.finance_type || null,
-      aid_type: body.aid_type || null,
-      aid_type_vocabulary: body.aid_type_vocabulary || null,
-      tied_status: body.tied_status || null,
-      is_humanitarian: body.is_humanitarian || false,
-      // Add financing classification if provided
-      financing_classification: body.financing_classification || null,
-      // Activity linking fields
-      provider_org_activity_id: body.provider_org_activity_id || null,
-      provider_activity_uuid: body.provider_activity_uuid || null,
-      receiver_org_activity_id: body.receiver_org_activity_id || null,
-      receiver_activity_uuid: body.receiver_activity_uuid || null,
-      updated_at: new Date().toISOString()
-    };
+    // Update transaction data using centralized field cleaner
+    const updateData: any = cleanTransactionFields(body);
+    
+    // Override specific fields with validated values
+    updateData.value_date = value_date;
+    updateData.transaction_reference = transactionReference;
+    updateData.updated_at = new Date().toISOString();
 
     // Smart logic for finance_type_inherited:
     // - If value unchanged and was inherited, keep as inherited

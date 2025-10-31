@@ -110,9 +110,11 @@ const getPriorityIcon = (priority: string) => {
 // Helper function to get sort icon
 const getSortIcon = (field: string, currentSortField: string, currentSortDirection: 'asc' | 'desc') => {
   if (field !== currentSortField) {
-    return ArrowUpDown;
+    return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
   }
-  return currentSortDirection === 'asc' ? ArrowUp : ArrowDown;
+  return currentSortDirection === 'asc' 
+    ? <ArrowUp className="h-4 w-4 text-gray-400" />
+    : <ArrowDown className="h-4 w-4 text-gray-400" />;
 };
 
 // Helper function to get status icon and color
@@ -594,10 +596,7 @@ export function FeedbackManagement() {
                   >
                     <div className="flex items-center gap-2">
                       Subject
-                      {(() => {
-                        const SortIcon = getSortIcon('subject', sortField, sortDirection);
-                        return <SortIcon className="h-4 w-4" />;
-                      })()}
+                      {getSortIcon('subject', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead 
@@ -606,10 +605,7 @@ export function FeedbackManagement() {
                   >
                     <div className="flex items-center gap-2">
                       Feature
-                      {(() => {
-                        const SortIcon = getSortIcon('feature', sortField, sortDirection);
-                        return <SortIcon className="h-4 w-4" />;
-                      })()}
+                      {getSortIcon('feature', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead 
@@ -618,10 +614,7 @@ export function FeedbackManagement() {
                   >
                     <div className="flex items-center gap-2">
                       User
-                      {(() => {
-                        const SortIcon = getSortIcon('user', sortField, sortDirection);
-                        return <SortIcon className="h-4 w-4" />;
-                      })()}
+                      {getSortIcon('user', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead 
@@ -630,10 +623,7 @@ export function FeedbackManagement() {
                   >
                     <div className="flex items-center gap-2">
                       Status
-                      {(() => {
-                        const SortIcon = getSortIcon('status', sortField, sortDirection);
-                        return <SortIcon className="h-4 w-4" />;
-                      })()}
+                      {getSortIcon('status', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead 
@@ -642,10 +632,7 @@ export function FeedbackManagement() {
                   >
                     <div className="flex items-center gap-2">
                       Priority
-                      {(() => {
-                        const SortIcon = getSortIcon('priority', sortField, sortDirection);
-                        return <SortIcon className="h-4 w-4" />;
-                      })()}
+                      {getSortIcon('priority', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead>Attachment</TableHead>
@@ -655,10 +642,7 @@ export function FeedbackManagement() {
                   >
                     <div className="flex items-center gap-2">
                       Created
-                      {(() => {
-                        const SortIcon = getSortIcon('created_at', sortField, sortDirection);
-                        return <SortIcon className="h-4 w-4" />;
-                      })()}
+                      {getSortIcon('created_at', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead className="w-[200px]">Actions</TableHead>

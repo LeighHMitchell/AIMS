@@ -7,8 +7,8 @@ import { X } from 'lucide-react';
 const DISBURSEMENT_CHANNEL_SHORT_LABELS: Record<DisbursementChannel, string> = {
   '1': 'Central Ministry/Treasury',
   '2': 'Direct to Institution', 
-  '3': 'Aid in Kind via Third Party',
-  '4': 'Not Reported'
+  '3': 'Aid in Kind (Third Party)',
+  '4': 'Aid in Kind (Donor)'
 };
 
 interface DisbursementChannelSelectProps {

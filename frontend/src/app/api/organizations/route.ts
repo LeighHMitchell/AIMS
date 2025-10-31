@@ -24,8 +24,9 @@ export async function GET(request: NextRequest) {
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     };
-    // Check if getSupabaseAdmin() is properly initialized
-    if (!getSupabaseAdmin()) {
+    // Get Supabase admin client
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
       console.error('[AIMS] getSupabaseAdmin() is not initialized');
       return NextResponse.json(
         { error: 'Database connection not initialized' },
@@ -38,23 +39,20 @@ export async function GET(request: NextRequest) {
     const iatiOrgId = searchParams.get('iati_org_id');
     const searchTerm = searchParams.get('search');
     
-    console.log('[AIMS] GET /api/organizations - Filters:', { iatiOrgId, searchTerm });
-    
     // Build query with filters
-    let query = getSupabaseAdmin()
+    let query = supabaseAdmin
       .from('organizations')
       .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, created_at, updated_at');
     
     // Filter by IATI org ID (exact match)
     if (iatiOrgId) {
-      console.log('[AIMS] Filtering by IATI org ID:', iatiOrgId);
       query = query.eq('iati_org_id', iatiOrgId);
     }
     
     // Filter by search term (fuzzy search on name and acronym)
-    if (searchTerm && !iatiOrgId) {
-      console.log('[AIMS] Filtering by search term:', searchTerm);
-      query = query.or(`name.ilike.%${searchTerm}%,acronym.ilike.%${searchTerm}%`);
+    if (searchTerm && searchTerm.trim() && !iatiOrgId) {
+      const cleanSearchTerm = searchTerm.trim();
+      query = query.or(`name.ilike.%${cleanSearchTerm}%,acronym.ilike.%${cleanSearchTerm}%`);
     }
     
     // Order results
@@ -153,10 +151,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(sampleOrganizations);
     }
     
-    console.log('[AIMS] Fetched organizations count:', organizations.length);
-    
     // Return organizations without expensive activity counting for better performance
-    return NextResponse.json(organizations, { headers });
+    return NextResponse.json(organizations || [], { headers });
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(

@@ -126,7 +126,7 @@ export function PreviewTable({
 
   // Filter transactions
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(transaction => {
+    return (transactions || []).filter(transaction => {
       const matchesSearch = !searchTerm || 
         transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.activityRef?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -296,20 +296,20 @@ export function PreviewTable({
             </div>
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <span className="text-sm font-medium">Transactions</span>
-              <Badge variant="secondary">{transactions.length}</Badge>
+              <Badge variant="secondary">{(transactions || []).length}</Badge>
             </div>
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <span className="text-sm font-medium">Issues</span>
               <Badge variant="destructive">
-                {activities.filter(a => a._hasIssues).length + 
-                 transactions.filter(t => t._hasIssues).length}
+                {(activities || []).filter(a => a._hasIssues).length + 
+                 (transactions || []).filter(t => t._hasIssues).length}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <span className="text-sm font-medium">Total Value</span>
               <Badge variant="default">
                 {formatCurrency(
-                  transactions.reduce((sum, t) => sum + (t.value || 0), 0),
+                  (transactions || []).reduce((sum, t) => sum + (t.value || 0), 0),
                   'USD'
                 )}
               </Badge>
@@ -329,9 +329,9 @@ export function PreviewTable({
               </TabsTrigger>
               <TabsTrigger value="transactions" className="relative">
                 Transactions
-                {transactions.filter(t => t._hasIssues).length > 0 && (
+                {(transactions || []).filter(t => t._hasIssues).length > 0 && (
                   <Badge variant="destructive" className="ml-2 h-5 px-1">
-                    {transactions.filter(t => t._hasIssues).length}
+                    {(transactions || []).filter(t => t._hasIssues).length}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -468,7 +468,7 @@ export function PreviewTable({
                       <TableRow key={index} className={transaction._hasIssues ? 'bg-red-50' : ''}>
                         <TableCell>
                           <Checkbox
-                            checked={selectedRows.transactions.has(index)}
+                            checked={selectedRows.transactions?.has(index)}
                             onCheckedChange={() => handleRowSelect('transactions', index)}
                           />
                         </TableCell>

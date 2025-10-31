@@ -28,6 +28,7 @@ interface HumanitarianTabProps {
   activityId: string;
   readOnly?: boolean;
   onHumanitarianChange?: (humanitarian: boolean) => void;
+  onDataChange?: (data: { humanitarian: boolean; humanitarianScopes: any[] }) => void;
   className?: string;
 }
 
@@ -35,6 +36,7 @@ export function HumanitarianTab({
   activityId, 
   readOnly = false,
   onHumanitarianChange,
+  onDataChange,
   className 
 }: HumanitarianTabProps) {
   const [isLoading, setIsLoading] = useState(true);
@@ -77,18 +79,27 @@ export function HumanitarianTab({
 
     setIsSaving(true);
     try {
+      const humanitarianValue = newHumanitarian !== undefined ? newHumanitarian : humanitarian;
+      const scopesValue = newScopes || scopes;
+      
       const response = await fetch(`/api/activities/${activityId}/humanitarian`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          humanitarian: newHumanitarian !== undefined ? newHumanitarian : humanitarian,
-          humanitarian_scopes: newScopes || scopes
+          humanitarian: humanitarianValue,
+          humanitarian_scopes: scopesValue
         })
       });
 
       if (response.ok) {
         toast.success('Humanitarian data saved');
         await fetchHumanitarianData();
+        
+        // Notify parent component of the data change
+        onDataChange?.({
+          humanitarian: humanitarianValue,
+          humanitarianScopes: scopesValue
+        });
       } else {
         toast.error('Failed to save humanitarian data');
       }

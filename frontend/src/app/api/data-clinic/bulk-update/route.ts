@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { cleanFieldValue } from '@/lib/transaction-field-cleaner';
 
 export async function PATCH(request: NextRequest) {
   const supabase = getSupabaseAdmin();
@@ -70,8 +71,12 @@ export async function PATCH(request: NextRequest) {
       console.error('Error fetching old values:', fetchError);
     }
 
-    // Perform bulk update
-    const updateData = { [dbField]: value || null };
+    // Perform bulk update with proper field cleaning
+    // Note: cleanFieldValue is designed for transaction fields, but works for most field types
+    const cleanedValue = entity === 'transaction' 
+      ? cleanFieldValue(dbField, value)
+      : (value !== undefined ? value : null);
+    const updateData = { [dbField]: cleanedValue };
     const { error: updateError } = await supabase
       .from(tableName)
       .update(updateData)

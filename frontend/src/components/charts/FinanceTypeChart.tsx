@@ -169,11 +169,11 @@ export const FinanceTypeChart: React.FC<FinanceTypeChartProps> = ({
           <span className="text-sm font-medium">Budget</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-500 rounded"></div>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10B981' }}></div>
           <span className="text-sm font-medium">Disbursements</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-orange-500 rounded"></div>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F59E0B' }}></div>
           <span className="text-sm font-medium">Expenditures</span>
         </div>
         <div className="flex items-center gap-2">
@@ -221,13 +221,13 @@ export const FinanceTypeChart: React.FC<FinanceTypeChartProps> = ({
           <Bar 
             dataKey="disbursements" 
             name="Disbursements" 
-            fill="#64748b"
+            fill="#10B981"
             radius={[2, 2, 0, 0]}
           />
           <Bar 
             dataKey="expenditures" 
             name="Expenditures" 
-            fill="#475569"
+            fill="#F59E0B"
             radius={[2, 2, 0, 0]}
           />
           <Bar 

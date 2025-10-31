@@ -99,7 +99,21 @@ export async function GET(request: NextRequest) {
 
       // Process transactions
       activity.transactions?.forEach((transaction: any) => {
-        const value = transaction.currency === defaultCurrency ? transaction.value : transaction.value;
+        // Safely parse transaction value
+        let value = 0;
+        if (transaction.value !== null && transaction.value !== undefined) {
+          if (typeof transaction.value === 'string') {
+            value = parseFloat(transaction.value) || 0;
+          } else if (typeof transaction.value === 'number') {
+            value = transaction.value;
+          } else if (typeof transaction.value === 'object' && transaction.value.toString) {
+            value = parseFloat(transaction.value.toString()) || 0;
+          }
+        }
+        
+        if (isNaN(value) || !isFinite(value)) {
+          return; // Skip invalid values
+        }
 
         switch (transaction.transaction_type) {
           case '2': // Commitment

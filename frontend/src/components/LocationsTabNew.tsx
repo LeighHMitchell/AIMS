@@ -20,6 +20,7 @@ import { useFieldAutosave } from '@/hooks/use-field-autosave-new';
 
 import LocationModal from './locations/LocationModal';
 import LocationCard from './locations/LocationCard';
+import ActivityLocationsHeatmap from './maps/ActivityLocationsHeatmap';
 
 import {
   type LocationSchema,
@@ -243,6 +244,12 @@ export default function LocationsTabNew({
 
   return (
     <div className="space-y-6">
+      {/* Activity Locations Heatmap */}
+      <ActivityLocationsHeatmap 
+        locations={locations}
+        title="Activity Locations Map"
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

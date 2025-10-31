@@ -97,12 +97,12 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+      return <ArrowUpDown className="h-3 w-3 text-gray-400" />;
     }
     return sortDirection === 'asc' ? (
-      <ArrowUp className="h-4 w-4 ml-1" />
+      <ArrowUp className="h-3 w-3 text-gray-400" />
     ) : (
-      <ArrowDown className="h-4 w-4 ml-1" />
+      <ArrowDown className="h-3 w-3 text-gray-400" />
     );
   };
 

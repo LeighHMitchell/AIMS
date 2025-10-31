@@ -136,7 +136,7 @@ export default function TransactionsPage() {
 
   // Sort transactions client-side
   const sortedTransactions = React.useMemo(() => {
-    if (!transactions.data.length) return transactions.data;
+    if (!transactions?.data?.length) return transactions?.data || [];
     
     return [...transactions.data].sort((a, b) => {
       let aValue: any;
@@ -184,7 +184,7 @@ export default function TransactionsPage() {
       if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [transactions.data, sortField, sortOrder]);
+  }, [transactions?.data, sortField, sortOrder]);
 
   const handlePageLimitChange = (newLimit: number) => {
     setPageLimit(newLimit);
@@ -658,22 +658,22 @@ export default function TransactionsPage() {
             
             {/* Results Summary */}
             <p className="text-sm text-slate-600 whitespace-nowrap">
-              {transactions.total === 0 
+              {(transactions?.total || 0) === 0 
                 ? "No transactions" 
-                : `Showing ${(currentPage - 1) * pageLimit + 1}–${Math.min(currentPage * pageLimit, transactions.total)} of ${transactions.total} transactions`}
+                : `Showing ${(currentPage - 1) * pageLimit + 1}–${Math.min(currentPage * pageLimit, transactions?.total || 0)} of ${transactions?.total || 0} transactions`}
             </p>
           </div>
         </div>
         
         {/* Performance Warning (if applicable) */}
-        {transactions.total > 500 && pageLimit === 9999 && (
+        {(transactions?.total || 0) > 500 && pageLimit === 9999 && (
           <div className="text-xs text-amber-600 px-4">
-            ⚠️ Showing {transactions.total} items may affect performance
+            ⚠️ Showing {transactions?.total || 0} items may affect performance
           </div>
         )}
 
         {/* Transactions Table */}
-        {loading || transactions.total === 0 ? (
+        {loading || (transactions?.total || 0) === 0 ? (
           <TransactionsListSkeleton />
         ) : error ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
@@ -722,12 +722,12 @@ export default function TransactionsPage() {
         )}
 
         {/* Pagination */}
-        {transactions.total > pageLimit && pageLimit !== 9999 && (
+        {(transactions?.total || 0) > pageLimit && pageLimit !== 9999 && (
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
-                  Showing {Math.min((currentPage - 1) * pageLimit + 1, transactions.total)} to {Math.min(currentPage * pageLimit, transactions.total)} of {transactions.total} transactions
+                  Showing {Math.min((currentPage - 1) * pageLimit + 1, transactions?.total || 0)} to {Math.min(currentPage * pageLimit, transactions?.total || 0)} of {transactions?.total || 0} transactions
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -751,8 +751,8 @@ export default function TransactionsPage() {
                   </Button>
                   
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, Math.ceil(transactions.total / pageLimit)) }, (_, i) => {
-                      const totalPages = Math.ceil(transactions.total / pageLimit);
+                    {Array.from({ length: Math.min(5, Math.ceil((transactions?.total || 0) / pageLimit)) }, (_, i) => {
+                      const totalPages = Math.ceil((transactions?.total || 0) / pageLimit);
                       let pageNum;
                       if (totalPages <= 5) {
                         pageNum = i + 1;
@@ -783,10 +783,10 @@ export default function TransactionsPage() {
                     size="sm"
                     onClick={() =>
                       setCurrentPage((prev) =>
-                        Math.min(Math.ceil(transactions.total / pageLimit), prev + 1)
+                        Math.min(Math.ceil((transactions?.total || 0) / pageLimit), prev + 1)
                       )
                     }
-                    disabled={currentPage >= Math.ceil(transactions.total / pageLimit)}
+                    disabled={currentPage >= Math.ceil((transactions?.total || 0) / pageLimit)}
                   >
                     Next
                     <ChevronRight className="h-4 w-4" />
@@ -794,8 +794,8 @@ export default function TransactionsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(Math.ceil(transactions.total / pageLimit))}
-                    disabled={currentPage >= Math.ceil(transactions.total / pageLimit)}
+                    onClick={() => setCurrentPage(Math.ceil((transactions?.total || 0) / pageLimit))}
+                    disabled={currentPage >= Math.ceil((transactions?.total || 0) / pageLimit)}
                   >
                     Last
                     <ChevronRight className="h-4 w-4" />

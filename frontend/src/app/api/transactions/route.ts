@@ -3,6 +3,12 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { TransactionType } from '@/types/transaction';
 import { createClient } from '@/lib/supabase-simple';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { 
+  cleanTransactionFields, 
+  cleanEnumValue, 
+  cleanUUIDValue, 
+  cleanDateValue 
+} from '@/lib/transaction-field-cleaner';
 
 export const dynamic = 'force-dynamic';
 
@@ -264,33 +270,7 @@ export async function GET(request: Request) {
   }
 }
 
-// Helper to clean date values
-function cleanDateValue(value: any): string | null {
-  if (!value) return null;
-  if (typeof value === 'string' && value.trim() === '') return null;
-  return value;
-}
-
-// Helper to clean UUID values
-function cleanUUIDValue(value: any): string | null {
-  if (!value) return null;
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (trimmed === '' || trimmed === 'null' || trimmed === 'undefined') return null;
-    // Basic UUID validation
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(trimmed) ? trimmed : null;
-  }
-  return null;
-}
-
-// Helper function to clean enum values
-function cleanEnumValue(value: any): string | null {
-  if (!value || value === 'none' || value === 'undefined' || value === 'null' || value === '') {
-    return null;
-  }
-  return String(value).trim();
-}
+// Helper functions moved to @/lib/transaction-field-cleaner for consistency across all endpoints
 
 // Helper function to validate IATI field values
 async function validateIATIFields(body: any) {
@@ -694,36 +674,26 @@ export async function PUT(request: NextRequest) {
     // Prepare update data (exclude id, uuid and timestamps)
     const { id, uuid, created_at, updated_at, ...updateData } = body;
 
-    // Clean up the data
-    const cleanedData: any = {
-      ...updateData,
-      transaction_type: cleanEnumValue(updateData.transaction_type),
-      transaction_reference: transactionReference,
-      provider_org_id: cleanUUIDValue(updateData.provider_org_id),
-      receiver_org_id: cleanUUIDValue(updateData.receiver_org_id),
-      provider_org_type: cleanEnumValue(updateData.provider_org_type),
-      receiver_org_type: cleanEnumValue(updateData.receiver_org_type),
-      transaction_date: cleanDateValue(updateData.transaction_date),
-      value_date: (() => {
-        const valueDate = cleanDateValue(updateData.value_date);
-        const transactionDate = cleanDateValue(updateData.transaction_date);
-        const result = valueDate || transactionDate;
-        console.log('[DEBUG] value_date logic:', { 
-          input_value_date: updateData.value_date, 
-          input_transaction_date: updateData.transaction_date,
-          cleaned_value_date: valueDate, 
-          cleaned_transaction_date: transactionDate, 
-          final_result: result 
-        });
-        return result; // Use value_date if provided, otherwise use transaction_date
-      })(),
-      aid_type: cleanEnumValue(updateData.aid_type),
-      tied_status: cleanEnumValue(updateData.tied_status),
-      flow_type: cleanEnumValue(updateData.flow_type),
-      finance_type: cleanEnumValue(updateData.finance_type),
-      disbursement_channel: cleanEnumValue(updateData.disbursement_channel),
-      created_by: cleanUUIDValue(updateData.created_by)
-    };
+    // Clean up the data using centralized field cleaner
+    const cleanedData: any = cleanTransactionFields(updateData);
+    
+    // Override transaction_reference with the validated value from above
+    cleanedData.transaction_reference = transactionReference;
+    
+    // Handle value_date logic - use value_date if provided, otherwise use transaction_date
+    if (updateData.value_date !== undefined || updateData.transaction_date !== undefined) {
+      const valueDate = cleanDateValue(updateData.value_date);
+      const transactionDate = cleanDateValue(updateData.transaction_date);
+      const result = valueDate || transactionDate;
+      console.log('[DEBUG] value_date logic:', { 
+        input_value_date: updateData.value_date, 
+        input_transaction_date: updateData.transaction_date,
+        cleaned_value_date: valueDate, 
+        cleaned_transaction_date: transactionDate, 
+        final_result: result 
+      });
+      cleanedData.value_date = result;
+    }
 
     // Smart logic for finance_type_inherited:
     // - If value unchanged and was inherited, keep as inherited

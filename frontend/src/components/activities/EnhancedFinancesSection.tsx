@@ -441,21 +441,9 @@ export function EnhancedFinancesSection({
         {/* Analytics Tab */}
         <TabsContent value="analytics">
           <Card>
-            <CardHeader>
-              <CardTitle>Financial Analytics</CardTitle>
-              <p className="text-sm text-gray-600">
-                Financial analysis and reporting for this activity.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <p>Analytics will include:</p>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Financial flow over time charts</li>
-                  <li>Currency distribution analysis</li>
-                  <li>Organization transaction breakdowns</li>
-                  <li>Transaction type analysis</li>
-                </ul>
+            <CardContent className="py-8">
+              <div className="text-center text-muted-foreground">
+                <p>Analytics coming soon</p>
               </div>
             </CardContent>
           </Card>

@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { MainLayout } from "@/components/layout/main-layout"
@@ -34,12 +34,14 @@ import {
   TrendingUp,
   Building2,
   MessageSquare,
-  Plus
+  Plus,
+  Table as TableIcon
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
 import { DisbursementGauge, CumulativeFinanceChart } from "@/components/ActivityCharts"
 import { ActivityAnalyticsCharts } from "@/components/ActivityAnalyticsCharts"
+import financeTypes from "@/data/finance-types.json"
 import { BannerUpload } from "@/components/BannerUpload"
 import {
   Table,
@@ -76,7 +78,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { v4 as uuidv4 } from 'uuid'
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip2, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend } from 'recharts'
-import { ChevronDown, ChevronUp, BarChart3, Table as TableIcon, GitBranch, Printer } from 'lucide-react'
+import { ChevronDown, ChevronUp, ChevronRight, BarChart3, GitBranch, Printer } from 'lucide-react'
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization'
 import PolicyMarkersSectionIATIWithCustom from '@/components/PolicyMarkersSectionIATIWithCustom'
 import { DocumentsAndImagesTabV2 } from '@/components/activities/DocumentsAndImagesTabV2'
@@ -87,6 +89,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import TagsSection from "@/components/TagsSection"
 
 
 interface Activity {
@@ -96,6 +99,9 @@ interface Activity {
   title: string
   acronym?: string
   description: string
+  descriptionObjectives?: string
+  descriptionTargetGroups?: string
+  descriptionOther?: string
   created_by_org_name: string
   created_by_org_acronym: string
   targetGroups: string
@@ -118,6 +124,7 @@ interface Activity {
   sdgMappings?: any[]
   policyMarkers?: any[]
   documents?: any[]
+  tags?: any[]
   createdBy?: { id: string; name: string; role: string }
   createdByOrg?: string
   plannedStartDate?: string
@@ -141,6 +148,16 @@ interface Activity {
   autoSyncFields?: string[]
 }
 
+// Format large numbers into compact form: 500000000 -> 500m, 200000 -> 200k
+function formatCompactNumber(value: number): string {
+  if (value === null || value === undefined || isNaN(value)) return '0.0';
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}b`;
+  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`;
+  if (abs >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
+  return `${value.toFixed(1)}`;
+}
+
 interface Partner {
   id: string;
   name: string;
@@ -153,6 +170,43 @@ interface Partner {
   logo?: string;
 }
 
+// Function to process finance type data from transactions
+const processFinanceTypeData = (transactions: any[]) => {
+  const financeTypeMap = new Map()
+  let totalAmount = 0
+
+  transactions.forEach(transaction => {
+    const financeType = transaction.finance_type
+    const value = parseFloat(transaction.value) || 0
+    
+    if (financeType && value > 0) {
+      totalAmount += value
+      
+      if (financeTypeMap.has(financeType)) {
+        financeTypeMap.get(financeType).amount += value
+      } else {
+        // Find finance type name from the imported data
+        const financeTypeInfo = financeTypes.find(ft => ft.code === financeType)
+        financeTypeMap.set(financeType, {
+          code: financeType,
+          name: financeTypeInfo?.name || `Finance Type ${financeType}`,
+          amount: value
+        })
+      }
+    }
+  })
+
+  // Convert to array and calculate percentages
+  const result = Array.from(financeTypeMap.values())
+    .map(item => ({
+      ...item,
+      percentage: totalAmount > 0 ? Math.round((item.amount / totalAmount) * 100 * 10) / 10 : 0
+    }))
+    .sort((a, b) => b.amount - a.amount) // Sort by amount descending
+
+  return result
+}
+
 export default function ActivityDetailPage() {
   const params = useParams()
   const id = params?.id as string
@@ -161,6 +215,9 @@ export default function ActivityDetailPage() {
   const [budgets, setBudgets] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("finances")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isBudgetsOpen, setIsBudgetsOpen] = useState(false)
+  const [isPlannedOpen, setIsPlannedOpen] = useState(false)
+  const [isTransactionsOpen, setIsTransactionsOpen] = useState(false)
   const router = useRouter()
   const { user } = useUser()
   const searchParams = useSearchParams()
@@ -196,10 +253,64 @@ export default function ActivityDetailPage() {
   const [banner, setBanner] = useState<string | null>(null)
   const [showActivityDetails, setShowActivityDetails] = useState(false)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+  const descriptionRef = useRef<HTMLDivElement>(null)
+  const shouldScrollToTop = useRef(false)
+  const scrollLockRef = useRef(false)
+  const scrollLockTimeout = useRef<NodeJS.Timeout | null>(null)
   const [budgetYearView, setBudgetYearView] = useState<'chart' | 'table'>('chart')
+  
+  // Force scroll to top after description collapses - runs synchronously before paint
+  useLayoutEffect(() => {
+    if (!isDescriptionExpanded && shouldScrollToTop.current) {
+      shouldScrollToTop.current = false
+      scrollLockRef.current = true
+      
+      // Clear any existing timeout
+      if (scrollLockTimeout.current) {
+        clearTimeout(scrollLockTimeout.current)
+      }
+      
+      // Scroll to top using anchor element for reliability
+      const topElement = document.getElementById('page-top')
+      if (topElement) {
+        topElement.scrollIntoView({ behavior: 'auto', block: 'start' })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'auto' })
+      }
+      document.documentElement.scrollTop = 0
+      document.body.scrollTop = 0
+      
+      // Release scroll lock after 500ms
+      scrollLockTimeout.current = setTimeout(() => {
+        scrollLockRef.current = false
+      }, 500)
+    }
+  }, [isDescriptionExpanded])
+  
+  // Prevent scroll events during scroll lock window
+  useEffect(() => {
+    const preventScroll = (e: Event) => {
+      if (scrollLockRef.current && window.scrollY > 0) {
+        e.preventDefault()
+        window.scrollTo(0, 0)
+        document.documentElement.scrollTop = 0
+        document.body.scrollTop = 0
+      }
+    }
+    
+    window.addEventListener('scroll', preventScroll, { passive: false, capture: true })
+    
+    return () => {
+      window.removeEventListener('scroll', preventScroll, { capture: true } as EventListenerOptions)
+      if (scrollLockTimeout.current) {
+        clearTimeout(scrollLockTimeout.current)
+      }
+    }
+  }, [])
   const [disbursementProgressView, setDisbursementProgressView] = useState<'chart' | 'table'>('chart')
   const [sectorBreakdownView, setSectorBreakdownView] = useState<'chart' | 'table'>('chart')
   const [sectorFlowView, setSectorFlowView] = useState<'flow' | 'distribution'>('flow')
+  const [financeTypeBreakdownView, setFinanceTypeBreakdownView] = useState<'chart' | 'table'>('chart')
   
   const [partners, setPartners] = useState<Partner[]>([])
   const [allPartners, setAllPartners] = useState<Partner[]>([])
@@ -253,6 +364,31 @@ export default function ActivityDetailPage() {
       fetchActivity(false) // Don't show loading when just refreshing
     }
   }, [activeTab])
+
+  // Set initial state of collapsible sections based on data availability
+  useEffect(() => {
+    if (activity) {
+      setIsBudgetsOpen(!!(activity.budgets && activity.budgets.length > 0))
+      setIsPlannedOpen(!!((activity as any).plannedDisbursements && (activity as any).plannedDisbursements.length > 0))
+      setIsTransactionsOpen(!!(activity.transactions && activity.transactions.length > 0))
+    }
+  }, [activity])
+
+  // Update section states when data changes
+  useEffect(() => {
+    if (budgets && budgets.length > 0) {
+      setIsBudgetsOpen(true)
+    }
+  }, [budgets])
+
+  useEffect(() => {
+    if (plannedDisbursements && plannedDisbursements.length > 0) {
+      setIsPlannedOpen(true)
+    }
+  }, [plannedDisbursements])
+
+  // Note: Transaction state is already handled in the activity useEffect above (line 322)
+  // No need for a separate useEffect since transactions come from activity.transactions
 
   const fetchActivity = async (showLoading = true) => {
     if (!params?.id) return;
@@ -475,9 +611,10 @@ export default function ActivityDetailPage() {
       csvRows.push(['SDG ALIGNMENT']);
       csvRows.push(['Goal', 'Target']);
       sdgMappings.forEach((m: any) => {
+        const sdgGoal = m.sdgGoal || m.sdg_goal;
         csvRows.push([
-          `${m.sdg_goal}: ${SDG_GOALS.find(g => g.id === parseInt(m.sdg_goal))?.name || ''}`,
-          m.sdg_target || ''
+          `${sdgGoal}: ${SDG_GOALS.find(g => g.id === parseInt(sdgGoal.toString()))?.name || ''}`,
+          m.sdgTarget || m.sdg_target || ''
         ]);
       });
       csvRows.push([]);
@@ -700,6 +837,8 @@ export default function ActivityDetailPage() {
   return (
     <MainLayout>
       <div className="min-h-screen">
+        {/* Page top anchor for reliable scrolling */}
+        <div id="page-top" className="absolute top-0" />
         <div className="w-full p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -816,6 +955,15 @@ export default function ActivityDetailPage() {
                       ) : (
                         <div className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
                           <Activity className="h-10 w-10 text-slate-400" />
+                        </div>
+                      )}
+                      {activity.tags && activity.tags.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1 max-w-[7rem]">
+                          {activity.tags.slice(0, 12).map((t: any) => (
+                            <Badge key={t.id || t.name} variant="secondary" className="text-[10px] px-1 py-0.5">
+                              {t.name}
+                            </Badge>
+                          ))}
                         </div>
                       )}
                 </div>
@@ -947,8 +1095,9 @@ export default function ActivityDetailPage() {
                         </div>
                       </div>
                     
+                    {/* General Description - Always Shown */}
                     {activity.description && (
-                        <div className="mt-3">
+                        <div ref={descriptionRef} className="mt-3">
                           <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
                             {isDescriptionExpanded 
                               ? activity.description 
@@ -957,26 +1106,106 @@ export default function ActivityDetailPage() {
                                 : activity.description
                             }
                           </p>
-                          {activity.description.length > 700 && (
-                            <button
-                              onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                              className="flex items-center gap-1 text-slate-600 hover:text-slate-900 mt-2 text-sm font-medium transition-colors"
-                            >
-                              {isDescriptionExpanded ? (
-                                <>
-                                  Show less
-                                  <ChevronUp className="h-4 w-4" />
-                                </>
-                              ) : (
-                                <>
-                                  Show more
-                                  <ChevronDown className="h-4 w-4" />
-                                </>
-                              )}
-                            </button>
-                          )}
-                                  </div>
-                                )}
+                        </div>
+                    )}
+
+                    {/* Additional sections shown when expanded */}
+                    {isDescriptionExpanded && (
+                      <>
+                        {/* Objectives Section */}
+                        {activity.descriptionObjectives && (
+                          <div className="mt-4 border-t border-slate-200 pt-3">
+                            <h4 className="text-sm font-medium text-slate-700 mb-2">
+                              Objectives
+                            </h4>
+                            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                              {activity.descriptionObjectives}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Target Groups Section */}
+                        {activity.descriptionTargetGroups && (
+                          <div className="mt-4 border-t border-slate-200 pt-3">
+                            <h4 className="text-sm font-medium text-slate-700 mb-2">
+                              Target Groups
+                            </h4>
+                            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                              {activity.descriptionTargetGroups}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Other Section */}
+                        {activity.descriptionOther && (
+                          <div className="mt-4 border-t border-slate-200 pt-3">
+                            <h4 className="text-sm font-medium text-slate-700 mb-2">
+                              Other
+                            </h4>
+                            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                              {activity.descriptionOther}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Show More/Less button */}
+                    {((activity.description && activity.description.length > 700) || 
+                      activity.descriptionObjectives || 
+                      activity.descriptionTargetGroups || 
+                      activity.descriptionOther) && (
+                      <button
+                        onClick={(event) => {
+                          if (!isDescriptionExpanded) {
+                            setIsDescriptionExpanded(true)
+                          } else {
+                            // Prevent any default behavior and stop propagation
+                            event.preventDefault()
+                            event.stopPropagation()
+                            
+                            // Scroll to top IMMEDIATELY before state change
+                            // This happens synchronously before React's re-render
+                            scrollLockRef.current = true
+                            const topElement = document.getElementById('page-top')
+                            if (topElement) {
+                              topElement.scrollIntoView({ behavior: 'auto', block: 'start' })
+                            } else {
+                              window.scrollTo({ top: 0, behavior: 'auto' })
+                            }
+                            document.documentElement.scrollTop = 0
+                            document.body.scrollTop = 0
+                            
+                            // Set flag for useLayoutEffect fallback
+                            shouldScrollToTop.current = true
+                            
+                            // Collapse the description - useLayoutEffect will also ensure we stay at top
+                            setIsDescriptionExpanded(false)
+                            
+                            // Release scroll lock after 500ms
+                            if (scrollLockTimeout.current) {
+                              clearTimeout(scrollLockTimeout.current)
+                            }
+                            scrollLockTimeout.current = setTimeout(() => {
+                              scrollLockRef.current = false
+                            }, 500)
+                          }
+                        }}
+                        className="flex items-center gap-1 text-slate-600 hover:text-slate-900 mt-2 text-sm font-medium transition-colors"
+                      >
+                        {isDescriptionExpanded ? (
+                          <>
+                            Show less
+                            <ChevronUp className="h-4 w-4" />
+                          </>
+                        ) : (
+                          <>
+                            Show more
+                            <ChevronDown className="h-4 w-4" />
+                          </>
+                        )}
+                      </button>
+                    )}
                         </div>
                       </div>
                 </div>
@@ -1037,6 +1266,18 @@ export default function ActivityDetailPage() {
                         <div className="text-xs text-slate-500">No participating organizations</div>
                       )}
                     </div>
+                    {/* SDG Icons Below Partners */}
+                    {sdgMappings && sdgMappings.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-slate-200">
+                        <div className="text-xs font-medium text-slate-600 mb-2">SDG Alignment</div>
+                        <SDGImageGrid 
+                          sdgCodes={sdgMappings.map((m: any) => m.sdgGoal || m.sdg_goal)} 
+                          size="sm" 
+                          showTooltips={true}
+                          className=""
+                        />
+                      </div>
+                    )}
                     </div>
                   </div>
               </div>
@@ -1044,101 +1285,88 @@ export default function ActivityDetailPage() {
           </Card>
 
           {/* Key Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
             <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-3 w-full">
+                  <div className="space-y-2 w-full">
                   <div>
-                      <p className="text-sm font-medium text-slate-600">Total Budgeted</p>
-                      <p className="text-2xl font-bold text-slate-900">
-                        USD {budgets.reduce((sum: number, b: any) => 
-                          sum + (b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0), 0).toLocaleString()}
+                      <p className="text-xs font-medium text-slate-600">Total Budgeted</p>
+                      <p className="text-lg font-bold text-slate-900">
+                        USD {formatCompactNumber(budgets.reduce((sum: number, b: any) => 
+                          sum + (b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0), 0))}
                       </p>
-                      <p className="text-xs text-slate-500">budgeted funds</p>
                   </div>
-                    <div className="border-t border-slate-200 pt-3">
-                    <p className="text-sm font-medium text-slate-600">Total Committed</p>
-                    <p className="text-2xl font-bold text-slate-900">
-                      USD {financials.totalCommitment.toLocaleString()}
+                    <div className="border-t border-slate-200 pt-2">
+                    <p className="text-xs font-medium text-slate-600">Total Planned Disb.</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      USD {formatCompactNumber(plannedDisbursements.reduce((sum: number, pd: any) => 
+                        sum + (pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0), 0))}
                     </p>
-                    <p className="text-xs text-slate-500">committed funds</p>
                   </div>
                   </div>
-                  <DollarSign className="h-8 w-8 text-slate-400 flex-shrink-0" />
+                  <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-3 w-full">
-                  <div>
-                      <p className="text-sm font-medium text-slate-600">Total Planned Disbursements</p>
-                      <p className="text-2xl font-bold text-slate-900">
-                        ${plannedDisbursements.reduce((sum: number, pd: any) => 
-                          sum + (pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0), 0).toLocaleString()}
+                  <div className="space-y-2 w-full">
+                    <div>
+                      <p className="text-xs font-medium text-slate-600">Disbursed</p>
+                      <p className="text-lg font-bold text-slate-900">
+                      ${formatCompactNumber(financials.totalDisbursement)}
                     </p>
                   </div>
-                    <div className="border-t border-slate-200 pt-3">
-                      <p className="text-sm font-medium text-slate-600">Total Disbursements</p>
-                      <p className="text-2xl font-bold text-slate-900">
-                      ${financials.totalDisbursement.toLocaleString()}
-                    </p>
-                  </div>
-                    <div className="border-t border-slate-200 pt-3">
-                      <p className="text-sm font-medium text-slate-600">Total Expended</p>
-                      <p className="text-2xl font-bold text-slate-900">
-                      ${financials.totalExpenditure.toLocaleString()}
+                    <div className="border-t border-slate-200 pt-2">
+                      <p className="text-xs font-medium text-slate-600">Expended</p>
+                      <p className="text-lg font-bold text-slate-900">
+                      ${formatCompactNumber(financials.totalExpenditure)}
                     </p>
                   </div>
                   </div>
-                  <Wallet className="h-8 w-8 text-slate-400 flex-shrink-0" />
+                  <Wallet className="h-6 w-6 text-slate-400 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-3 w-full">
+                  <div className="space-y-2 w-full">
                   <div>
-                      <p className="text-sm font-medium text-slate-600">Financial Progress</p>
-                      <p className="text-2xl font-bold text-slate-900">{financials.percentDisbursed}%</p>
-                      <p className="text-xs text-slate-500">spent</p>
+                      <p className="text-xs font-medium text-slate-600">Progress</p>
+                      <p className="text-lg font-bold text-slate-900">{financials.percentDisbursed}%</p>
                     </div>
                     
                     {/* Progress Bar */}
                     <div className="w-full">
-                      <div className="w-full bg-slate-200 rounded-full h-2.5">
+                      <div className="w-full bg-slate-200 rounded-full h-2">
                         <div 
-                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
                           style={{ width: `${Math.min(financials.percentDisbursed, 100)}%` }}
                         />
                       </div>
                     </div>
                     
-                    <div className="border-t border-slate-200 pt-3">
-                    <p className="text-sm font-medium text-slate-600">Remaining</p>
-                    <p className="text-2xl font-bold text-slate-900">
-                      USD {(financials.totalCommitment - financials.totalDisbursement).toLocaleString()}
+                    <div className="border-t border-slate-200 pt-2">
+                    <p className="text-xs font-medium text-slate-600">Remaining</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      ${formatCompactNumber(financials.totalCommitment - financials.totalDisbursement)}
                     </p>
-                    <p className="text-xs text-slate-500">unspent funds</p>
                   </div>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-slate-400 flex-shrink-0" />
+                  <TrendingUp className="h-6 w-6 text-slate-400 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Mini-Chart Cards Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {/* Budget by Year Chart */}
             <Card className="border-slate-200 bg-white">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-slate-900">Budget by Year</CardTitle>
+              <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-slate-900">Budget by Year</CardTitle>
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -1183,7 +1411,7 @@ export default function ActivityDetailPage() {
                   </Button>
                   </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-0">
                 {(() => {
                   // Calculate budgets by year
                   const budgetsByYear = new Map<number, number>()
@@ -1200,7 +1428,7 @@ export default function ActivityDetailPage() {
 
                   if (budgetData.length === 0) {
                     return (
-                      <div className="h-40 flex items-center justify-center text-slate-400 text-xs">
+                      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
                         <p>No budget data</p>
                 </div>
                     )
@@ -1208,7 +1436,7 @@ export default function ActivityDetailPage() {
 
                   if (budgetYearView === 'table') {
                     return (
-                      <div className="h-40 overflow-auto">
+                      <div className="h-24 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200">
@@ -1232,7 +1460,7 @@ export default function ActivityDetailPage() {
                   }
 
                   return (
-                    <div className="h-40 -mx-2">
+                    <div className="h-24 -mx-2">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsBarChart data={budgetData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
                           <XAxis 
@@ -1245,7 +1473,10 @@ export default function ActivityDetailPage() {
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
-                            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                            tickFormatter={(value) => {
+                              const rounded = Math.round((value / 1000000) * 10) / 10;
+                              return `$${rounded.toFixed(1)}M`;
+                            }}
                           />
                           <RechartsTooltip2 
                             content={({ active, payload }) => {
@@ -1277,8 +1508,8 @@ export default function ActivityDetailPage() {
 
             {/* Planned vs Actual Spending */}
             <Card className="border-slate-200 bg-white">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-slate-900">Planned vs Actual Spending</CardTitle>
+              <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-slate-900">Planned vs Actual</CardTitle>
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -1350,7 +1581,7 @@ export default function ActivityDetailPage() {
                   </Button>
                   </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-0">
                 {(() => {
                   // Calculate budgets and actuals by year
                   const budgetsByYearMap = new Map<number, number>()
@@ -1397,7 +1628,7 @@ export default function ActivityDetailPage() {
 
                   if (chartData.length === 0) {
                     return (
-                      <div className="h-40 flex items-center justify-center text-slate-400 text-xs">
+                      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
                         <p>No financial data</p>
                 </div>
                     )
@@ -1405,7 +1636,7 @@ export default function ActivityDetailPage() {
 
                   if (disbursementProgressView === 'table') {
                     return (
-                      <div className="h-40 overflow-auto">
+                      <div className="h-24 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200">
@@ -1431,7 +1662,7 @@ export default function ActivityDetailPage() {
                   }
 
                   return (
-                    <div className="h-40 -mx-2">
+                    <div className="h-24 -mx-2">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsBarChart data={chartData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }} barCategoryGap="5%" barGap={0}>
                           <XAxis 
@@ -1444,7 +1675,10 @@ export default function ActivityDetailPage() {
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
-                            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                            tickFormatter={(value) => {
+                              const rounded = Math.round((value / 1000000) * 10) / 10;
+                              return `$${rounded.toFixed(1)}M`;
+                            }}
                           />
                           <RechartsTooltip2 
                             position={{ y: 0 }}
@@ -1486,30 +1720,32 @@ export default function ActivityDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Sector Breakdown */}
+            {/* Finance Type Breakdown */}
             <Card className="border-slate-200 bg-white">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-slate-900">Sector Breakdown</CardTitle>
+              <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-slate-900">Finance Types</CardTitle>
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setSectorBreakdownView(sectorBreakdownView === 'chart' ? 'table' : 'chart')}
+                    onClick={() => setFinanceTypeBreakdownView(financeTypeBreakdownView === 'chart' ? 'table' : 'chart')}
                     className="h-6 w-6 p-0"
                   >
-                    {sectorBreakdownView === 'chart' ? <TableIcon className="h-3 w-3" /> : <PieChart className="h-3 w-3" />}
+                    {financeTypeBreakdownView === 'chart' ? <TableIcon className="h-3 w-3" /> : <PieChart className="h-3 w-3" />}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      const sectors = activity.sectors || []
+                      const transactions = activity.transactions || []
+                      const financeTypeData = processFinanceTypeData(transactions)
                       const csvContent = [
-                        ['Sector Code', 'Sector Name', 'Percentage'],
-                        ...sectors.map((s: any) => [
-                          s.sector_code || s.code,
-                          s.sector_name || s.name,
-                          s.percentage
+                        ['Finance Type Code', 'Finance Type Name', 'Amount (USD)', 'Percentage'],
+                        ...financeTypeData.map((item: any) => [
+                          item.code,
+                          item.name,
+                          item.amount,
+                          item.percentage
                         ])
                       ].map(row => row.join(',')).join('\n')
                       
@@ -1517,7 +1753,7 @@ export default function ActivityDetailPage() {
                       const url = window.URL.createObjectURL(blob)
                       const a = document.createElement('a')
                       a.href = url
-                      a.download = `sector-breakdown-${activity.id}.csv`
+                      a.download = `finance-type-breakdown-${activity.id}.csv`
                       a.click()
                       window.URL.revokeObjectURL(url)
                     }}
@@ -1527,19 +1763,30 @@ export default function ActivityDetailPage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-0">
                 {(() => {
-                  const sectors = activity.sectors || []
-                  if (sectors.length === 0) {
+                  const transactions = activity.transactions || []
+                  if (transactions.length === 0) {
                     return (
-                      <div className="h-40 flex items-center justify-center text-slate-400 text-xs">
-                        <p>No sector data</p>
+                      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
+                        <p>No transaction data</p>
                       </div>
                     )
                   }
 
-                  // Define colors for sectors
-                  const sectorColors = [
+                  // Process finance type data
+                  const financeTypeData = processFinanceTypeData(transactions)
+                  
+                  if (financeTypeData.length === 0) {
+                    return (
+                      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
+                        <p>No finance type data</p>
+                      </div>
+                    )
+                  }
+
+                  // Define colors for finance types
+                  const financeTypeColors = [
                     '#1e40af', // blue-800
                     '#3b82f6', // blue-500
                     '#0f172a', // slate-900
@@ -1548,39 +1795,39 @@ export default function ActivityDetailPage() {
                     '#334155', // slate-700
                     '#94a3b8', // slate-400
                     '#0ea5e9', // sky-500
+                    '#10b981', // emerald-500
+                    '#f59e0b', // amber-500
                   ]
 
-                  const sectorData = sectors.slice(0, 6).map((sector: any, idx: number) => ({
-                    code: sector.sector_code || sector.code,
-                    name: sector.sector_name || sector.name,
-                    value: sector.percentage,
-                    color: sectorColors[idx % sectorColors.length]
+                  const chartData = financeTypeData.slice(0, 6).map((item: any, idx: number) => ({
+                    code: item.code,
+                    name: item.name,
+                    value: item.percentage,
+                    amount: item.amount,
+                    color: financeTypeColors[idx % financeTypeColors.length]
                   }))
 
-                  if (sectorBreakdownView === 'table') {
+                  if (financeTypeBreakdownView === 'table') {
                     return (
-                      <div className="h-40 overflow-auto">
+                      <div className="h-24 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200">
-                              <th className="text-left py-1 text-slate-600 font-medium">Sector</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">%</th>
+                              <th className="text-left py-1 text-slate-600 font-medium">Finance Type</th>
+                              <th className="text-right py-1 text-slate-600 font-medium">Amount</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {sectors.slice(0, 5).map((sector: any, idx: number) => (
+                            {financeTypeData.slice(0, 5).map((item: any, idx: number) => (
                               <tr key={idx} className="border-b border-slate-100">
                                 <td className="py-1 text-slate-900">
                                   <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: sectorColors[idx % sectorColors.length] }} />
-                                    <span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded">
-                                      {sector.sector_code || sector.code}
-                                    </span>
-                                  <span className="truncate">{sector.sector_name || sector.name}</span>
+                                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: financeTypeColors[idx % financeTypeColors.length] }} />
+                                    <span className="break-words">{item.name}</span>
                                   </div>
                                 </td>
                                 <td className="text-right py-1 text-slate-900 font-medium">
-                                  {sector.percentage}%
+                                  ${(Math.round(((parseFloat(item.amount) || 0) / 1000000) * 10) / 10).toFixed(1)}M
                                 </td>
                               </tr>
                             ))}
@@ -1591,19 +1838,19 @@ export default function ActivityDetailPage() {
                   }
 
                   return (
-                    <div className="h-40 flex items-center justify-center">
+                    <div className="h-24 flex items-center justify-center">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
                           <Pie
-                            data={sectorData}
+                            data={chartData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={35}
-                            outerRadius={70}
+                            innerRadius={20}
+                            outerRadius={40}
                             paddingAngle={2}
                             dataKey="value"
                           >
-                            {sectorData.map((entry, index) => (
+                            {chartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
@@ -1617,7 +1864,9 @@ export default function ActivityDetailPage() {
                                     <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono">
                                       {data.code}
                                     </code>
-                                    <p className="text-xs text-slate-600 font-medium mt-1">{data.value}%</p>
+                                    <p className="text-xs text-slate-600 font-medium mt-1">
+                                      ${data.amount.toLocaleString()} ({data.value}%)
+                                    </p>
                                   </div>
                                 )
                               }
@@ -1636,7 +1885,7 @@ export default function ActivityDetailPage() {
           {/* Main Content Tabs */}
           <Card className="border-slate-200">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-11' : 'grid-cols-10'} bg-slate-50 border-b border-slate-200`}>
+              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-12' : 'grid-cols-11'} bg-slate-50 border-b border-slate-200`}>
                 <TabsTrigger value="finances" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Finances
                 </TabsTrigger>
@@ -1657,6 +1906,9 @@ export default function ActivityDetailPage() {
                 </TabsTrigger>
                 <TabsTrigger value="sdg" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   SDG Alignment
+                </TabsTrigger>
+                <TabsTrigger value="tags" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Tags
                 </TabsTrigger>
                 <TabsTrigger value="policy-markers" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Policy Markers
@@ -1683,37 +1935,100 @@ export default function ActivityDetailPage() {
               <TabsContent value="finances" className="p-6" forceMount hidden={activeTab !== "finances"}>
                 <div className="space-y-6">
                   {/* Budgets */}
-                    <ActivityBudgetsTab 
-                      activityId={activity.id}
-                      startDate={activity.plannedStartDate || activity.actualStartDate || ""}
-                      endDate={activity.plannedEndDate || activity.actualEndDate || ""}
-                      defaultCurrency="USD"
-                      hideSummaryCards={true}
-                      readOnly={true}
-                    />
+                  <div className="border rounded-lg">
+                    <div className="px-4 py-3 border-b border-slate-200">
+                      <button
+                        onClick={() => setIsBudgetsOpen(!isBudgetsOpen)}
+                        className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
+                        aria-label={isBudgetsOpen ? 'Collapse Budgets' : 'Expand Budgets'}
+                      >
+                        {isBudgetsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
+                        <div className="flex-1">
+                          <p className="text-lg font-bold text-slate-900">Budgets</p>
+                          {isBudgetsOpen && (
+                            <p className="text-xs text-slate-500 mt-1">Activity budget allocations by period</p>
+                          )}
+                        </div>
+                      </button>
+                    </div>
+                    {isBudgetsOpen && (
+                      <div className="p-4">
+                        <ActivityBudgetsTab 
+                          activityId={activity.id}
+                          startDate={activity.plannedStartDate || activity.actualStartDate || ""}
+                          endDate={activity.plannedEndDate || activity.actualEndDate || ""}
+                          defaultCurrency="USD"
+                          hideSummaryCards={true}
+                          readOnly={true}
+                        />
+                      </div>
+                    )}
+                  </div>
 
                   {/* Planned Disbursements */}
-                    <PlannedDisbursementsTab 
-                      activityId={activity.id}
-                      startDate={activity.plannedStartDate || activity.actualStartDate || ""}
-                      endDate={activity.plannedEndDate || activity.actualEndDate || ""}
-                      defaultCurrency="USD"
-                      readOnly={true}
-                      onDisbursementsChange={setPlannedDisbursements}
-                      hideSummaryCards={true}
-                    />
+                  <div className="border rounded-lg">
+                    <div className="px-4 py-3 border-b border-slate-200">
+                      <button
+                        onClick={() => setIsPlannedOpen(!isPlannedOpen)}
+                        className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
+                        aria-label={isPlannedOpen ? 'Collapse Planned Disbursements' : 'Expand Planned Disbursements'}
+                      >
+                        {isPlannedOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
+                        <div className="flex-1">
+                          <p className="text-lg font-bold text-slate-900">Planned Disbursements</p>
+                          {isPlannedOpen && (
+                            <p className="text-xs text-slate-500 mt-1">Scheduled future disbursements</p>
+                          )}
+                        </div>
+                      </button>
+                    </div>
+                    {isPlannedOpen && (
+                      <div className="p-4">
+                        <PlannedDisbursementsTab 
+                          activityId={activity.id}
+                          startDate={activity.plannedStartDate || activity.actualStartDate || ""}
+                          endDate={activity.plannedEndDate || activity.actualEndDate || ""}
+                          defaultCurrency="USD"
+                          readOnly={true}
+                          onDisbursementsChange={setPlannedDisbursements}
+                          hideSummaryCards={true}
+                        />
+                      </div>
+                    )}
+                  </div>
 
                   {/* Transactions */}
-                    <TransactionTab 
-                      activityId={activity.id} 
-                      readOnly={true}
-                      defaultFinanceType={activity.defaultFinanceType}
-                      defaultAidType={activity.defaultAidType}
-                      defaultCurrency={activity.defaultCurrency}
-                      defaultTiedStatus={activity.defaultTiedStatus}
-                      defaultFlowType={activity.defaultFlowType}
-                      hideSummaryCards={true}
-                    />
+                  <div className="border rounded-lg">
+                    <div className="px-4 py-3 border-b border-slate-200">
+                      <button
+                        onClick={() => setIsTransactionsOpen(!isTransactionsOpen)}
+                        className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
+                        aria-label={isTransactionsOpen ? 'Collapse Transactions' : 'Expand Transactions'}
+                      >
+                        {isTransactionsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
+                        <div className="flex-1">
+                          <p className="text-lg font-bold text-slate-900">Transactions</p>
+                          {isTransactionsOpen && (
+                            <p className="text-xs text-slate-500 mt-1">Commitments, disbursements, and expenditures</p>
+                          )}
+                        </div>
+                      </button>
+                    </div>
+                    {isTransactionsOpen && (
+                      <div className="p-4">
+                        <TransactionTab 
+                          activityId={activity.id} 
+                          readOnly={true}
+                          defaultFinanceType={activity.defaultFinanceType}
+                          defaultAidType={activity.defaultAidType}
+                          defaultCurrency={activity.defaultCurrency}
+                          defaultTiedStatus={activity.defaultTiedStatus}
+                          defaultFlowType={activity.defaultFlowType}
+                          hideSummaryCards={true}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </TabsContent>
 
@@ -2079,15 +2394,28 @@ export default function ActivityDetailPage() {
 
                   return (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* SDG Icons Below Partners List Header */}
+                  {sdgMappings && sdgMappings.length > 0 && (
+                    <div className="lg:col-span-2 mb-2 -mt-2">
+                      <div className="pt-2 pb-3 border-b border-slate-200">
+                        <div className="text-xs font-medium text-slate-600 mb-2">SDG Alignment</div>
+                        <SDGImageGrid 
+                          sdgCodes={sdgMappings.map((m: any) => m.sdgGoal || m.sdg_goal)} 
+                          size="sm" 
+                          showTooltips={true}
+                        />
+                      </div>
+                    </div>
+                  )}
                   {/* Funding Partners */}
-                    <Card className="border-slate-200">
-                      <CardHeader>
-                        <CardTitle className="text-slate-900 flex items-center gap-2">
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900 flex items-center gap-2">
                         <DollarSign className="h-5 w-5" />
                         Funding Partners
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
                       {participatingOrgs.filter(p => p.role_type === 'funding').length > 0 ? (
                         <div className="space-y-3">
                           {participatingOrgs.filter(p => p.role_type === 'funding').map((org, idx) => {
@@ -2158,8 +2486,8 @@ export default function ActivityDetailPage() {
                       ) : (
                         <p className="text-slate-500 text-center py-4">No funding partners</p>
                       )}
-                      </CardContent>
-                    </Card>
+                    </CardContent>
+                  </Card>
 
                   {/* Implementing Partners */}
                   <Card className="border-slate-200">
@@ -2528,6 +2856,17 @@ export default function ActivityDetailPage() {
                   onUpdate={setSdgMappings} 
                   activityId={activity.id}
                   canEdit={permissions.canEditActivity}
+                />
+              </TabsContent>
+
+              {/* Tags Tab */}
+              <TabsContent value="tags" className="p-6">
+                <TagsSection 
+                  activityId={activity.id}
+                  tags={activity.tags || []}
+                  onChange={(tags) => {
+                    setActivity(prev => prev ? { ...prev, tags } : null);
+                  }}
                 />
               </TabsContent>
 

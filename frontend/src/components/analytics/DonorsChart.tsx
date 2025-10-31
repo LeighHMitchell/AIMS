@@ -54,24 +54,68 @@ export function DonorsChart({ dateRange, filters, refreshKey }: DonorsChartProps
       const orgMap = new Map(orgs?.map((o: any) => [o.id, o.name]) || [])
       console.log('[DonorsChart] Organization count:', orgMap.size)
       
-      // Get disbursements grouped by donor
-      let query = supabase
-        .from('transactions')
-        .select('provider_org_id, value')
-        .eq('transaction_type', '3') // Disbursement
-        .eq('status', 'actual')
-        .gte('transaction_date', dateRange.from.toISOString())
-        .lte('transaction_date', dateRange.to.toISOString())
-        .not('provider_org_id', 'is', null)
+      // Query activities to properly apply country and sector filters
+      // Use !inner on sectors only when filtering by sector
+      const selectFields = filters.sector && filters.sector !== 'all'
+        ? `
+          id,
+          locations,
+          activity_sectors!inner(sector_code),
+          transactions!inner(
+            provider_org_id,
+            value,
+            transaction_type,
+            status,
+            transaction_date
+          )
+        `
+        : `
+          id,
+          locations,
+          activity_sectors(sector_code),
+          transactions!inner(
+            provider_org_id,
+            value,
+            transaction_type,
+            status,
+            transaction_date
+          )
+        `
       
-      // Apply filters would go here
+      let activityQuery = supabase
+        .from('activities')
+        .select(selectFields)
+        .eq('publication_status', 'published')
+        .eq('transactions.transaction_type', '3') // Disbursement
+        .eq('transactions.status', 'actual')
+        .gte('transactions.transaction_date', dateRange.from.toISOString())
+        .lte('transactions.transaction_date', dateRange.to.toISOString())
+        .not('transactions.provider_org_id', 'is', null)
       
-      const { data: transactions, error } = await query
+      // Apply country filter
+      if (filters.country && filters.country !== 'all') {
+        activityQuery = activityQuery.contains('locations', [{ country_code: filters.country }])
+      }
+      
+      // Apply sector filter
+      if (filters.sector && filters.sector !== 'all') {
+        activityQuery = activityQuery.eq('activity_sectors.sector_code', filters.sector)
+      }
+      
+      const { data: activities, error } = await activityQuery
       
       if (error) {
         console.error('[DonorsChart] Query error:', error)
         return
       }
+      
+      // Extract transactions from activities
+      const transactions = activities?.flatMap((activity: any) => 
+        (activity.transactions || []).map((t: any) => ({
+          ...t,
+          activityId: activity.id
+        }))
+      ) || []
       
       console.log('[DonorsChart] Transactions found:', transactions?.length || 0)
       

@@ -42,10 +42,13 @@ import {
   ChevronUp,
   Copy,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText,
+  ExternalLink,
+  Link as LinkIcon
 } from "lucide-react";
 import { format } from "date-fns";
-import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData } from '@/types/transaction';
+import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData, FLOW_TYPE_LABELS, TIED_STATUS_LABELS } from '@/types/transaction';
 import TransactionForm from './TransactionForm';
 import { TransactionDocumentIndicator } from '../TransactionDocumentIndicator';
 import { TransactionValueDisplay } from '@/components/currency/TransactionValueDisplay';
@@ -61,8 +64,11 @@ import {
 import { useUser } from '@/hooks/useUser';
 import { getUserPermissions } from '@/types/user';
 import financeTypesData from '@/data/finance-types.json';
+import aidTypesData from '@/data/aid-types.json';
 import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { DISBURSEMENT_CHANNEL_TYPES } from '@/data/disbursement-channel-types';
+import { IATI_ORGANIZATION_TYPES } from '@/data/iati-organization-types';
+import { exportToCSV } from '@/lib/csv-export';
 
 // IATI Transaction Type Definitions
 const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
@@ -106,8 +112,25 @@ const FINANCE_TYPE_LABELS = financeTypesData.reduce((acc, item) => {
   return acc;
 }, {} as Record<string, string>);
 
+// Create aid type labels mapping from JSON data (flatten the hierarchy)
+const AID_TYPE_LABELS: Record<string, string> = {};
+aidTypesData.forEach((parent) => {
+  AID_TYPE_LABELS[parent.code] = parent.name;
+  if (parent.children) {
+    parent.children.forEach((child: any) => {
+      AID_TYPE_LABELS[child.code] = child.name;
+    });
+  }
+});
+
 // Create disbursement channel labels mapping
 const DISBURSEMENT_CHANNEL_LABELS = DISBURSEMENT_CHANNEL_TYPES.reduce((acc, item) => {
+  acc[item.code] = item.name;
+  return acc;
+}, {} as Record<string, string>);
+
+// Create organization type labels mapping
+const ORG_TYPE_LABELS = IATI_ORGANIZATION_TYPES.reduce((acc, item) => {
   acc[item.code] = item.name;
   return acc;
 }, {} as Record<string, string>);
@@ -199,6 +222,18 @@ export default function TransactionList({
 
   // Currency converter hook
   const { convertTransaction, isConverting, convertingIds, error: conversionError } = useCurrencyConverter();
+
+  // Activity identifiers state
+  const [activityIdentifiers, setActivityIdentifiers] = useState<{
+    customId: string | null;
+    iatiId: string | null;
+  }>({
+    customId: null,
+    iatiId: null
+  });
+
+  // Transaction documents state
+  const [transactionDocuments, setTransactionDocuments] = useState<Record<string, any[]>>({});
 
   // USD conversion tracking
   const [usdValues, setUsdValues] = useState<Record<string, { 
@@ -325,17 +360,79 @@ export default function TransactionList({
   }, [sortedTransactions, currentPage, itemsPerPage]);
 
   // Toggle row expansion
-  const toggleRowExpansion = (transactionId: string) => {
+  const toggleRowExpansion = (transactionId: string, transactionUuid?: string) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
       if (newSet.has(transactionId)) {
         newSet.delete(transactionId);
       } else {
         newSet.add(transactionId);
+        // Fetch documents when expanding - use UUID if available, otherwise use ID
+        const docKey = transactionUuid || transactionId;
+        fetchTransactionDocuments(docKey, transactionUuid || transactionId);
       }
       return newSet;
     });
   };
+
+  // Expand all rows
+  const expandAllRows = () => {
+    const allIds = new Set(paginatedTransactions.map(t => t.uuid || t.id));
+    setExpandedRows(allIds);
+    // Fetch documents for all transactions
+    paginatedTransactions.forEach(t => {
+      const docKey = t.uuid || t.id;
+      fetchTransactionDocuments(docKey, t.uuid || t.id);
+    });
+  };
+
+  // Collapse all rows
+  const collapseAllRows = () => {
+    setExpandedRows(new Set());
+  };
+
+  // Fetch transaction documents
+  const fetchTransactionDocuments = async (docKey: string, transactionIdOrUuid: string) => {
+    // Check if already fetched
+    if (transactionDocuments[docKey]) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/transactions/documents?transactionId=${encodeURIComponent(transactionIdOrUuid)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTransactionDocuments(prev => ({
+          ...prev,
+          [docKey]: data.documents || []
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching transaction documents:', error);
+    }
+  };
+
+  // Fetch activity identifiers
+  React.useEffect(() => {
+    async function fetchActivityIdentifiers() {
+      try {
+        const response = await fetch(`/api/activities/${activityId}/basic`);
+        if (response.ok) {
+          const data = await response.json();
+          setActivityIdentifiers({
+            customId: data.other_identifier || null,
+            iatiId: data.iati_identifier || null
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching activity identifiers:', error);
+      }
+    }
+    
+    if (activityId) {
+      fetchActivityIdentifiers();
+    }
+  }, [activityId]);
 
   // Convert only paginated transactions to USD when they change
   React.useEffect(() => {
@@ -407,8 +504,8 @@ export default function TransactionList({
       return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
     }
     return sortDirection === 'asc' 
-      ? <ArrowUp className="h-4 w-4 text-primary" />
-      : <ArrowDown className="h-4 w-4 text-primary" />;
+      ? <ArrowUp className="h-4 w-4 text-gray-400" />
+      : <ArrowDown className="h-4 w-4 text-gray-400" />;
   };
 
   const handleSubmit = async (data: TransactionFormData) => {
@@ -484,6 +581,134 @@ export default function TransactionList({
     a.download = `transactions-${activityId}-${format(new Date(), "yyyy-MM-dd")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportTransaction = (transaction: Transaction) => {
+    const transactionId = transaction.uuid || transaction.id;
+    const usdValue = usdValues[transactionId];
+    
+    const exportData = [];
+
+    // Transaction Details
+    exportData.push(
+      { label: 'Transaction Type', value: `${transaction.transaction_type} - ${TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}` },
+      { label: 'Validation Status', value: transaction.status === 'actual' ? 'Validated' : 'Unvalidated' },
+      { label: 'Original Value', value: transaction.value ? `${transaction.currency} ${transaction.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—' },
+      { label: 'USD Value', value: usdValue?.usd != null ? `USD ${usdValue.usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—' },
+      { label: 'Value Date', value: transaction.value_date ? format(new Date(transaction.value_date), 'MMM d, yyyy') : transaction.transaction_date ? format(new Date(transaction.transaction_date), 'MMM d, yyyy') : '—' },
+      { label: 'Transaction Date', value: format(new Date(transaction.transaction_date), 'MMM d, yyyy') },
+    );
+
+    // Description
+    if (transaction.description) {
+      exportData.push({ label: 'Description', value: transaction.description });
+    }
+
+    // Parties Involved
+    if (transaction.provider_org_name) {
+      exportData.push({ label: 'Provider Organisation', value: getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) });
+    }
+    if (transaction.provider_org_type) {
+      exportData.push({ label: 'Provider Organisation Type', value: ORG_TYPE_LABELS[transaction.provider_org_type] || transaction.provider_org_type });
+    }
+    if (transaction.provider_org_ref) {
+      exportData.push({ label: 'Provider Reference', value: transaction.provider_org_ref });
+    }
+    if (transaction.provider_org_activity_id) {
+      exportData.push({ label: 'Provider Activity', value: transaction.provider_org_activity_id });
+    }
+    if (transaction.receiver_org_name) {
+      exportData.push({ label: 'Receiver Organisation', value: getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) });
+    }
+    if (transaction.receiver_org_type) {
+      exportData.push({ label: 'Receiver Organisation Type', value: ORG_TYPE_LABELS[transaction.receiver_org_type] || transaction.receiver_org_type });
+    }
+    if (transaction.receiver_org_ref) {
+      exportData.push({ label: 'Receiver Reference', value: transaction.receiver_org_ref });
+    }
+    if (transaction.receiver_org_activity_id) {
+      exportData.push({ label: 'Receiver Activity', value: transaction.receiver_org_activity_id });
+    }
+
+    // System Identifiers
+    exportData.push({ label: 'Activity ID', value: activityIdentifiers.customId || '—' });
+    exportData.push({ label: 'IATI Identifier', value: activityIdentifiers.iatiId || '—' });
+    exportData.push({ label: 'Activity UUID', value: transaction.activity_id });
+    exportData.push({ label: 'Transaction ID', value: transaction.transaction_reference || '—' });
+    exportData.push({ label: 'Transaction UUID', value: transactionId });
+    
+    if (transaction.sector_code) {
+      exportData.push({ label: 'Sector', value: transaction.sector_code });
+    }
+    if (transaction.recipient_country_code) {
+      exportData.push({ label: 'Recipient Country', value: transaction.recipient_country_code });
+    }
+    if (transaction.recipient_region_code) {
+      exportData.push({ label: 'Recipient Region', value: transaction.recipient_region_code });
+    }
+
+    // Funding Modality & Aid Classification
+    if (transaction.aid_type) {
+      exportData.push({ label: 'Aid Type', value: `${transaction.aid_type} - ${AID_TYPE_LABELS[transaction.aid_type] || transaction.aid_type}` });
+    }
+    if (transaction.flow_type) {
+      exportData.push({ label: 'Flow Type', value: `${transaction.flow_type} - ${FLOW_TYPE_LABELS[transaction.flow_type] || transaction.flow_type}` });
+    }
+    if (transaction.finance_type) {
+      exportData.push({ label: 'Finance Type', value: `${transaction.finance_type} - ${FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}` });
+    }
+    if (transaction.tied_status) {
+      exportData.push({ label: 'Tied Status', value: `${transaction.tied_status} - ${TIED_STATUS_LABELS[transaction.tied_status] || transaction.tied_status}` });
+    }
+    if (transaction.disbursement_channel) {
+      exportData.push({ label: 'Disbursement Channel', value: `${transaction.disbursement_channel} - ${DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel] || transaction.disbursement_channel}` });
+    }
+    if (transaction.is_humanitarian) {
+      exportData.push({ label: 'Humanitarian', value: 'Yes' });
+    }
+
+    // Metadata & History
+    if (transaction.created_at) {
+      exportData.push({ label: 'Created', value: format(new Date(transaction.created_at), 'MMM d, yyyy \'at\' h:mm a') });
+    }
+    if (transaction.created_by) {
+      exportData.push({ label: 'Created By', value: `User ID: ${transaction.created_by}` });
+    }
+    if (transaction.updated_at) {
+      exportData.push({ label: 'Last Modified', value: format(new Date(transaction.updated_at), 'MMM d, yyyy \'at\' h:mm a') });
+    }
+    if (transaction.updated_by) {
+      exportData.push({ label: 'Last Modified By', value: `User ID: ${transaction.updated_by}` });
+    }
+    if (!transaction.created_by) {
+      exportData.push({ label: 'Source', value: 'Imported from IATI' });
+    }
+    if (transaction.validated_at) {
+      exportData.push({ label: 'Validated', value: format(new Date(transaction.validated_at), 'MMM d, yyyy \'at\' h:mm a') });
+    }
+    if (transaction.validated_by) {
+      exportData.push({ label: 'Validated By', value: `User ID: ${transaction.validated_by}` });
+    }
+    if (transaction.validation_comments) {
+      exportData.push({ label: 'Validation Notes', value: transaction.validation_comments });
+    }
+
+    // Documents
+    const docs = transactionDocuments[transactionId];
+    if (docs && docs.length > 0) {
+      docs.forEach((doc: any, index: number) => {
+        exportData.push({ label: `Document ${index + 1}`, value: doc.file_name || doc.external_url });
+        if (doc.description) {
+          exportData.push({ label: `Document ${index + 1} Description`, value: doc.description });
+        }
+        if (doc.external_url) {
+          exportData.push({ label: `Document ${index + 1} URL`, value: doc.external_url });
+        }
+      });
+    }
+
+    const filename = `transaction-export-${format(new Date(), 'yyyy-MM-dd')}`;
+    exportToCSV(exportData, filename);
   };
 
   const handleConvertCurrency = async (transactionId: string) => {
@@ -655,12 +880,15 @@ export default function TransactionList({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Transactions</CardTitle>
-              <CardDescription>
-                Commitments, disbursements, and expenditures
-              </CardDescription>
-            </div>
+            {!hideSummaryCards && (
+              <div>
+                <CardTitle>Transactions</CardTitle>
+                <CardDescription>
+                  Commitments, disbursements, and expenditures
+                </CardDescription>
+              </div>
+            )}
+            {hideSummaryCards && <div />}
             <div className="flex items-center gap-2">
               {!readOnly && (
                 <Button onClick={() => setShowForm(true)} size="sm">
@@ -670,15 +898,25 @@ export default function TransactionList({
               )}
               {transactions.length > 0 && (
                 <>
-                  {expandedRows.size > 0 && (
+                  {expandedRows.size > 0 ? (
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => setExpandedRows(new Set())}
+                      onClick={collapseAllRows}
                       title="Collapse all expanded rows"
                     >
-                      <ChevronDown className="h-4 w-4 mr-1" />
+                      <ChevronUp className="h-4 w-4 mr-1" />
                       Collapse All
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={expandAllRows}
+                      title="Expand all rows"
+                    >
+                      <ChevronDown className="h-4 w-4 mr-1" />
+                      Expand All
                     </Button>
                   )}
                   <Button variant="outline" size="sm" onClick={handleExport}>
@@ -795,7 +1033,7 @@ export default function TransactionList({
                           className="h-6 w-6 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleRowExpansion(transactionId);
+                            toggleRowExpansion(transactionId, transaction.uuid);
                           }}
                         >
                           {isExpanded ? (
@@ -908,7 +1146,7 @@ export default function TransactionList({
                       <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                         {transaction.value > 0 ? (
                           <span className="font-medium">
-                            {formatCurrency(transaction.value, transaction.currency)}
+                            <span className="text-muted-foreground">{transaction.currency}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                           </span>
                         ) : (
                           <span className="text-red-600">Invalid</span>
@@ -936,12 +1174,12 @@ export default function TransactionList({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="font-medium cursor-help">
-                                    {formatCurrency(usdValues[transaction.uuid || transaction.id].usd!, 'USD')}
+                                    <span className="text-muted-foreground">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <div>
-                                    <div>Original: {formatCurrency(transaction.value, transaction.currency)}</div>
+                                    <div>Original: <span className="text-muted-foreground">{transaction.currency}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
                                     <div>Rate: {usdValues[transaction.uuid || transaction.id].rate}</div>
                                     <div>Date: {usdValues[transaction.uuid || transaction.id].date}</div>
                                   </div>
@@ -958,12 +1196,33 @@ export default function TransactionList({
                     {/* Expandable Detail Row */}
                     {isExpanded && (
                       <TableRow className="bg-muted/20 animate-in fade-in-from-top-2 duration-200">
-                        <TableCell colSpan={8} className="py-4 px-4">
-                          <div className="space-y-4 text-sm">
-                            {/* Transaction Details */}
-                            <div>
-                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Transaction Details</h4>
-                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                        <TableCell colSpan={8} className="py-4 px-4 relative">
+                          {/* CSV Export Button */}
+                          <div className="absolute top-4 right-4 z-10">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => handleExportTransaction(transaction)}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Export to CSV</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <div className="grid gap-x-8 text-sm" style={{ gridTemplateColumns: '1fr 1.5fr 1fr' }}>
+                            {/* Column 1: Transaction Details */}
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Transaction Details</h4>
+                                <div className="space-y-3 ml-4">
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">Transaction Type:</span>
                                   <div className="flex items-center gap-2">
@@ -988,20 +1247,16 @@ export default function TransactionList({
                                   </div>
                                 </div>
                                 <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Original Value:</span>
+                                  <span className="font-medium"><span className="text-muted-foreground">{transaction.currency}</span> {transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">USD Value:</span>
                                   {usdValues[transaction.uuid || transaction.id]?.usd != null ? (
-                                    <span className="font-medium">{formatCurrency(usdValues[transaction.uuid || transaction.id].usd!, 'USD')}</span>
+                                    <span className="font-medium"><span className="text-muted-foreground">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                   ) : (
                                     <span className="text-gray-400">—</span>
                                   )}
-                                </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Transaction Date:</span>
-                                  <span className="font-medium">{format(new Date(transaction.transaction_date), 'MMM d, yyyy')}</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Original Value:</span>
-                                  <span className="font-medium">{transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {transaction.currency}</span>
                                 </div>
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">Value Date:</span>
@@ -1013,26 +1268,38 @@ export default function TransactionList({
                                       : '—'}
                                   </span>
                                 </div>
-                                {transaction.transaction_reference && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground min-w-[160px]">Reference:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.transaction_reference}</span>
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.transaction_reference!)}>
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                )}
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground min-w-[160px]">Transaction Date:</span>
+                                  <span className="font-medium">{format(new Date(transaction.transaction_date), 'MMM d, yyyy')}</span>
+                                </div>
+                                </div>
                               </div>
+
+                              {/* Description */}
+                              {transaction.description && (
+                                <div className="pt-4 border-t border-gray-200">
+                                  <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Description</h4>
+                                  <p className="ml-4 text-gray-700 text-xs leading-relaxed">{transaction.description}</p>
+                                </div>
+                              )}
                             </div>
 
-                            {/* Parties Involved */}
-                            <div>
-                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Parties Involved</h4>
-                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                            {/* Column 2: Parties Involved & System Identifiers */}
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Parties Involved</h4>
+                                <div className="space-y-3 ml-4">
                                 {transaction.provider_org_name && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Provider Organisation:</span>
-                                    <span className="font-medium">{getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref)}</span>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-medium">{getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref)}</span>
+                                      {transaction.provider_org_type && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {ORG_TYPE_LABELS[transaction.provider_org_type] || transaction.provider_org_type}
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                 )}
                                 {transaction.provider_org_ref && (
@@ -1056,7 +1323,14 @@ export default function TransactionList({
                                 {transaction.receiver_org_name && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Receiver Organisation:</span>
-                                    <span className="font-medium">{getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref)}</span>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-medium">{getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref)}</span>
+                                      {transaction.receiver_org_type && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {ORG_TYPE_LABELS[transaction.receiver_org_type] || transaction.receiver_org_type}
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                 )}
                                 {transaction.receiver_org_ref && (
@@ -1077,83 +1351,52 @@ export default function TransactionList({
                                     </Button>
                                   </div>
                                 )}
+                                </div>
                               </div>
-                            </div>
 
-                            {/* Description */}
-                            {transaction.description && (
-                              <div>
-                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Description</h4>
-                                <p className="ml-4 text-gray-700 text-xs leading-relaxed">{transaction.description}</p>
-                              </div>
-                            )}
-
-                            {/* Funding Modality & Aid Classification */}
-                            <div>
-                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Funding Modality & Aid Classification</h4>
-                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
-                                {transaction.aid_type && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Aid Type:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.aid_type}</span>
-                                  </div>
-                                )}
-                                {transaction.flow_type && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Flow Type:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.flow_type}</span>
-                                  </div>
-                                )}
-                                {transaction.finance_type && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Finance Type:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.finance_type}</span>
-                                    <span className="text-xs">{FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}</span>
-                                  </div>
-                                )}
-                                {transaction.tied_status && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Tied Status:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.tied_status}</span>
-                                  </div>
-                                )}
-                                {transaction.disbursement_channel && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Disbursement Channel:</span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.disbursement_channel}</span>
-                                      <span className="text-xs">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel] || transaction.disbursement_channel}</span>
-                                    </div>
-                                  </div>
-                                )}
-                                {transaction.is_humanitarian && (
-                                  <div>
-                                    <span className="text-muted-foreground min-w-[160px]">Humanitarian:</span>
-                                    <span className="ml-2 font-medium text-orange-600">Yes</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* System Identifiers */}
-                            <div>
-                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">System Identifiers</h4>
-                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
-                                <div className="space-y-2">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground min-w-[160px]">Transaction UUID:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.uuid || transaction.id}</span>
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.uuid || transaction.id)}>
+                              <div className="pt-4 border-t border-gray-200">
+                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">System Identifiers</h4>
+                                <div className="space-y-3 ml-4">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-muted-foreground min-w-[160px]">Activity ID:</span>
+                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{activityIdentifiers.customId || '—'}</span>
+                                  {activityIdentifiers.customId && (
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(activityIdentifiers.customId!)}>
                                       <Copy className="h-3 w-3" />
                                     </Button>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground min-w-[160px]">Activity UUID:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.activity_id}</span>
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.activity_id)}>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-muted-foreground min-w-[160px]">IATI Identifier:</span>
+                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{activityIdentifiers.iatiId || '—'}</span>
+                                  {activityIdentifiers.iatiId && (
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(activityIdentifiers.iatiId!)}>
                                       <Copy className="h-3 w-3" />
                                     </Button>
-                                  </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-muted-foreground min-w-[160px]">Activity UUID:</span>
+                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.activity_id}</span>
+                                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.activity_id)}>
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-muted-foreground min-w-[160px]">Transaction ID:</span>
+                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.transaction_reference || '—'}</span>
+                                  {transaction.transaction_reference && (
+                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.transaction_reference!)}>
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-muted-foreground min-w-[160px]">Transaction UUID:</span>
+                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.uuid || transaction.id}</span>
+                                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.uuid || transaction.id)}>
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
                                 </div>
                                 {transaction.sector_code && (
                                   <div className="flex items-center gap-1">
@@ -1176,30 +1419,84 @@ export default function TransactionList({
                                     <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.recipient_region_code}</span>
                                   </div>
                                 )}
+                                </div>
                               </div>
                             </div>
 
-                            {/* Metadata & History */}
-                            <div>
-                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Metadata & History</h4>
-                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
+                            {/* Column 3: Funding Modality & Metadata */}
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Funding Modality & Aid Classification</h4>
+                                <div className="space-y-3 ml-4">
+                                {transaction.aid_type && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Aid Type:</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.aid_type}</span>
+                                      <span className="text-xs">{AID_TYPE_LABELS[transaction.aid_type] || transaction.aid_type}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {transaction.flow_type && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Flow Type:</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.flow_type}</span>
+                                      <span className="text-xs">{FLOW_TYPE_LABELS[transaction.flow_type] || transaction.flow_type}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {transaction.finance_type && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Finance Type:</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.finance_type}</span>
+                                      <span className="text-xs">{FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {transaction.tied_status && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Tied Status:</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.tied_status}</span>
+                                      <span className="text-xs">{TIED_STATUS_LABELS[transaction.tied_status] || transaction.tied_status}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {transaction.disbursement_channel && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Disbursement Channel:</span>
+                                    <div className="text-xs">
+                                      <span className="font-mono bg-muted px-1.5 py-0.5 rounded mr-2">{transaction.disbursement_channel}</span>
+                                      <span>{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel] || transaction.disbursement_channel}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {transaction.is_humanitarian && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Humanitarian:</span>
+                                    <Badge variant="destructive" className="text-xs">
+                                      Yes
+                                    </Badge>
+                                  </div>
+                                )}
+                                </div>
+                              </div>
+
+                              <div className="pt-4 border-t border-gray-200">
+                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Metadata & History</h4>
+                                <div className="space-y-3 ml-4">
                                 {transaction.created_at && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Created:</span>
                                     <span className="font-medium">{format(new Date(transaction.created_at), 'MMM d, yyyy \'at\' h:mm a')}</span>
                                   </div>
                                 )}
-                                {transaction.created_by ? (
+                                {transaction.created_by && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Created By:</span>
                                     <span className="font-medium">User ID: {transaction.created_by}</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Source:</span>
-                                    <Badge variant="outline" className="w-fit text-xs bg-gray-100 border-gray-300 text-gray-700">
-                                      Imported from IATI
-                                    </Badge>
                                   </div>
                                 )}
                                 {transaction.updated_at && (
@@ -1212,6 +1509,14 @@ export default function TransactionList({
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Last Modified By:</span>
                                     <span className="font-medium">User ID: {transaction.updated_by}</span>
+                                  </div>
+                                )}
+                                {!transaction.created_by && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[160px]">Source:</span>
+                                    <Badge variant="outline" className="w-fit text-xs bg-gray-100 border-gray-300 text-gray-700">
+                                      Imported from IATI
+                                    </Badge>
                                   </div>
                                 )}
                                 {transaction.validated_at && (
@@ -1227,12 +1532,45 @@ export default function TransactionList({
                                   </div>
                                 )}
                                 {transaction.validation_comments && (
-                                  <div className="col-span-2 flex items-start gap-2">
+                                  <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Validation Notes:</span>
                                     <span className="text-xs text-gray-700 italic">{transaction.validation_comments}</span>
                                   </div>
                                 )}
+                                </div>
                               </div>
+
+                              {/* Documents */}
+                              {transactionDocuments[transaction.uuid || transaction.id] && 
+                               transactionDocuments[transaction.uuid || transaction.id].length > 0 && (
+                                <div className="pt-4 border-t border-gray-200">
+                                  <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Documents</h4>
+                                  <div className="space-y-2 ml-4">
+                                    {transactionDocuments[transaction.uuid || transaction.id].map((doc: any) => (
+                                      <div key={doc.id} className="flex items-start gap-2">
+                                        {doc.external_url ? (
+                                          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                        ) : (
+                                          <FileText className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <a
+                                            href={doc.external_url || doc.file_url}
+                                            target={doc.external_url ? "_blank" : undefined}
+                                            rel={doc.external_url ? "noopener noreferrer" : undefined}
+                                            className="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate block"
+                                          >
+                                            {doc.file_name || doc.external_url}
+                                          </a>
+                                          {doc.description && (
+                                            <p className="text-xs text-gray-500 mt-0.5">{doc.description}</p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </TableCell>

@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
+import { formatNumberWithAbbreviation } from "@/utils/format-helpers";
 
 interface BudgetByYear {
   year: number;
@@ -155,28 +156,29 @@ export function HeroCard<T = any>({
     let formatted: string;
     
     if (currency === "USD") {
-      // Currency formatting with decimal places
-      formatted = amount.toLocaleString("en-US", { 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
+      // Use abbreviated formatting for USD currency
+      const currencyPrefix = prefix || "US$";
+      formatted = formatNumberWithAbbreviation(amount, {
+        currency: currencyPrefix,
+        decimals: 1,
+        showDecimalsForSmall: false
       });
-      if (!prefix) {
-        formatted = "US$" + formatted;
-      }
     } else if (currency === "" || currency === null || currency === undefined) {
-      // No currency - always format as whole number for counts (no decimals during animation)
-      formatted = Math.round(amount).toString();
+      // No currency - format as whole number for counts with abbreviations
+      formatted = formatNumberWithAbbreviation(amount, {
+        decimals: 0,
+        showDecimalsForSmall: false
+      });
     } else {
-      // Other currency or custom formatting
-      formatted = amount.toLocaleString("en-US", { 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
+      // Other currency - use abbreviated formatting
+      const currencyPrefix = prefix || currency;
+      formatted = formatNumberWithAbbreviation(amount, {
+        currency: currencyPrefix,
+        decimals: 1,
+        showDecimalsForSmall: false
       });
     }
 
-    if (prefix && currency !== "USD") {
-      formatted = prefix + formatted;
-    }
     if (suffix) {
       formatted = formatted + suffix;
     }
@@ -296,7 +298,10 @@ export function HeroCard<T = any>({
                       tick={{ fontSize: 10, fill: '#64748b' }}
                       axisLine={{ stroke: '#e5e7eb' }}
                       tickLine={false}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                      tickFormatter={(value) => {
+                        const rounded = Math.round((value / 1000000) * 10) / 10;
+                        return `$${rounded.toFixed(1)}M`;
+                      }}
                     />
                     <RechartsTooltip 
                       content={({ active, payload }) => {

@@ -119,7 +119,13 @@ const getActionDescription = (log: ActivityLog) => {
     case 'update_partner':
       return metadata?.details || 'updated a partner organization';
     case 'status_change':
-      return `changed status of "${activityTitle}" from ${metadata?.oldValue} to ${metadata?.newValue}`;
+      const oldVal = metadata?.oldValue !== undefined 
+        ? (typeof metadata.oldValue === 'object' ? JSON.stringify(metadata.oldValue) : String(metadata.oldValue))
+        : 'unknown';
+      const newVal = metadata?.newValue !== undefined
+        ? (typeof metadata.newValue === 'object' ? JSON.stringify(metadata.newValue) : String(metadata.newValue))
+        : 'unknown';
+      return `changed status of "${activityTitle}" from ${oldVal} to ${newVal}`;
     case 'add_tag':
       return metadata?.details || `added a tag to "${activityTitle}"`;
     case 'remove_tag':
@@ -388,17 +394,23 @@ export default function ActivityLogsPage() {
                           </p>
 
                           {/* Additional metadata */}
-                          {log.metadata && (log.metadata.oldValue || log.metadata.newValue) && (
+                          {log.metadata && (log.metadata.oldValue !== undefined || log.metadata.newValue !== undefined) && (
                             <div className="mt-1 text-xs text-muted-foreground">
-                              {log.metadata.oldValue && (
+                              {log.metadata.oldValue !== undefined && (
                                 <span>
-                                  <span className="line-through">{log.metadata.oldValue}</span>
-                                  {log.metadata.newValue && ' → '}
+                                  <span className="line-through">
+                                    {typeof log.metadata.oldValue === 'object' 
+                                      ? JSON.stringify(log.metadata.oldValue)
+                                      : String(log.metadata.oldValue)}
+                                  </span>
+                                  {log.metadata.newValue !== undefined && ' → '}
                                 </span>
                               )}
-                              {log.metadata.newValue && (
+                              {log.metadata.newValue !== undefined && (
                                 <span className="font-medium text-foreground">
-                                  {log.metadata.newValue}
+                                  {typeof log.metadata.newValue === 'object'
+                                    ? JSON.stringify(log.metadata.newValue)
+                                    : String(log.metadata.newValue)}
                                 </span>
                               )}
                             </div>

@@ -1,9 +1,12 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MapPin } from 'lucide-react'
+import { Button } from "@/components/ui/button"
+import { MapPin, Download } from 'lucide-react'
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
+import html2canvas from 'html2canvas'
+import { toast } from "sonner"
 
 interface MyanmarRegionsMapProps {
   breakdowns: Record<string, number>
@@ -37,6 +40,8 @@ export default function MyanmarRegionsMap({
   const [hoveredCentroid, setHoveredCentroid] = useState<{ x: number, y: number } | null>(null)
   const [geoData, setGeoData] = useState<GeoJSONData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isExporting, setIsExporting] = useState(false)
+  const mapContainerRef = useRef<HTMLDivElement>(null)
 
   // Map GeoJSON names to full names used in the system
   const nameMapping = useMemo(() => ({
@@ -162,6 +167,44 @@ export default function MyanmarRegionsMap({
     return { x: sumX / count, y: sumY / count }
   }
 
+  // Export map to JPEG
+  const exportToJPEG = async () => {
+    if (!mapContainerRef.current) {
+      toast.error('Map not ready for export')
+      return
+    }
+
+    setIsExporting(true)
+    try {
+      const canvas = await html2canvas(mapContainerRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2, // Higher quality
+        logging: false,
+        useCORS: true
+      })
+
+      // Convert to JPEG
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.download = `myanmar-subnational-allocation-map-${new Date().toISOString().split('T')[0]}.jpg`
+          link.href = url
+          link.click()
+          URL.revokeObjectURL(url)
+          toast.success('Map exported successfully')
+        } else {
+          toast.error('Failed to generate image')
+        }
+      }, 'image/jpeg', 0.95)
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Failed to export map')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   if (loading) {
     return (
       <Card className="w-full h-full">
@@ -185,15 +228,26 @@ export default function MyanmarRegionsMap({
   return (
     <Card className="w-full h-full">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
-          Subnational Allocation Map
-          <HelpTextTooltip content="Click on regions to add them to the breakdown. Colors show allocation percentages." />
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Subnational Allocation Map
+            <HelpTextTooltip content="Click on regions to add them to the breakdown. Colors show allocation percentages." />
+          </CardTitle>
+          <Button
+            onClick={exportToJPEG}
+            disabled={isExporting || loading}
+            variant="outline"
+            size="sm"
+            title={isExporting ? 'Exporting...' : 'Export JPEG'}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-4 flex-1">
 
-        <div className="w-full h-full flex items-center justify-center">
+        <div ref={mapContainerRef} className="w-full h-full flex items-center justify-center">
             <svg 
               viewBox={viewBox}
               className="w-full h-full max-w-[600px] max-h-[700px]"

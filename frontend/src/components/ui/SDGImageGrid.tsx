@@ -51,6 +51,11 @@ const SDG_GOAL_NAMES: Record<number, string> = {
  * Supports: "SDG 1", "1", 1, "Goal 1", etc.
  */
 function extractSDGNumber(code: string | number): number | null {
+  // Handle null, undefined, or invalid values
+  if (code == null || code === '') {
+    return null;
+  }
+  
   if (typeof code === 'number') {
     return code >= 1 && code <= 17 ? code : null;
   }

@@ -9,6 +9,10 @@ interface DataHeatmapProps {
     from: Date
     to: Date
   }
+  filters?: {
+    country?: string
+    sector?: string
+  }
   refreshKey: number
 }
 
@@ -29,14 +33,14 @@ const FIELDS_TO_CHECK = [
   { key: 'documents', label: 'Documents' }
 ]
 
-export function DataHeatmap({ dateRange, refreshKey }: DataHeatmapProps) {
+export function DataHeatmap({ dateRange, filters, refreshKey }: DataHeatmapProps) {
   const [data, setData] = useState<HeatmapData[]>([])
   const [donors, setDonors] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, refreshKey])
+  }, [dateRange, filters, refreshKey])
 
   const fetchData = async () => {
     try {

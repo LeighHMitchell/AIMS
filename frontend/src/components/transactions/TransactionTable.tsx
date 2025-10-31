@@ -13,7 +13,6 @@ import {
   AlertCircle,
   ChevronUp,
   ChevronDown,
-  ChevronsUpDown,
   CheckCircle,
   FileClock,
   Edit,
@@ -45,6 +44,9 @@ import {
   FileText,
   FileCode,
   Loader2,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
@@ -188,10 +190,10 @@ const FINANCE_TYPE_LABELS: Record<string, { short: string; full: string }> = {
 
 // Disbursement Channel mappings
 const DISBURSEMENT_CHANNEL_LABELS: Record<string, { short: string; full: string }> = {
-  '1': { short: 'Direct', full: 'Money is disbursed directly to the implementing institution' },
-  '2': { short: 'Through', full: 'Money is disbursed through the implementing institution' },
-  '3': { short: 'Not reported', full: 'Disbursement channel not reported' },
-  '4': { short: 'Other', full: 'Other' }
+  '1': { short: 'Central Ministry/Treasury', full: 'Money is disbursed through central Ministry of Finance or Treasury' },
+  '2': { short: 'Direct to Institution', full: 'Money is disbursed directly to the implementing institution and managed through a separate bank account' },
+  '3': { short: 'Aid in Kind (Third Party)', full: 'Aid in kind: Donors utilise third party agencies, e.g. NGOs or management companies' },
+  '4': { short: 'Aid in Kind (Donor)', full: 'Aid in kind: Donors manage funds themselves' }
 };
 
 interface TransactionData {
@@ -476,12 +478,12 @@ export function TransactionTable({
 
   const getSortIcon = (field: string) => {
     if (sortField !== field) {
-      return <ChevronsUpDown className="h-3 w-3 text-gray-400" />;
+      return <ArrowUpDown className="h-3 w-3 text-gray-400" />;
     }
     return sortOrder === "asc" ? (
-      <ChevronUp className="h-3 w-3 text-gray-700" />
+      <ArrowUp className="h-3 w-3 text-gray-400" />
     ) : (
-      <ChevronDown className="h-3 w-3 text-gray-700" />
+      <ArrowDown className="h-3 w-3 text-gray-400" />
     );
   };
 

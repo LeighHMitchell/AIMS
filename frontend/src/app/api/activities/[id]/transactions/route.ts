@@ -34,13 +34,15 @@ export async function GET(
           id,
           name,
           acronym,
-          logo
+          logo,
+          type
         ),
         receiver_organization:organizations!receiver_org_id (
           id,
           name,
           acronym,
-          logo
+          logo,
+          type
         )
       `)
       .eq('activity_id', activityId)
@@ -57,7 +59,10 @@ export async function GET(
     // Transform own transactions with source classification
     let allTransactions = (ownTransactions || []).map((t: any) => ({
       ...t,
-      transaction_source: 'own' as const
+      transaction_source: 'own' as const,
+      // Map organization type from joined data if not already present
+      provider_org_type: t.provider_org_type || t.provider_organization?.type,
+      receiver_org_type: t.receiver_org_type || t.receiver_organization?.type
     }));
 
     // Fetch linked transactions if requested
@@ -97,13 +102,15 @@ export async function GET(
                   id,
                   name,
                   acronym,
-                  logo
+                  logo,
+                  type
                 ),
                 receiver_organization:organizations!receiver_org_id (
                   id,
                   name,
                   acronym,
-                  logo
+                  logo,
+                  type
                 )
               `)
               .in('activity_id', Array.from(linkedActivityIds))
@@ -120,7 +127,10 @@ export async function GET(
                 linked_from_activity_id: t.activity_id,
                 linked_from_activity_title: t.activity?.title_narrative,
                 linked_from_activity_iati_id: t.activity?.iati_identifier,
-                acceptance_status: t.acceptance_status || 'pending' as const
+                acceptance_status: t.acceptance_status || 'pending' as const,
+                // Map organization type from joined data if not already present
+                provider_org_type: t.provider_org_type || t.provider_organization?.type,
+                receiver_org_type: t.receiver_org_type || t.receiver_organization?.type
               }));
               
               allTransactions = [...allTransactions, ...formattedLinkedTransactions];

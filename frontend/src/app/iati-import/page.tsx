@@ -427,7 +427,7 @@ export default function IATIImportPage() {
 
   // Import transactions
   const importTransactions = async () => {
-    if (!parsedData || importState.transactions.selected.size === 0) {
+    if (!parsedData || !parsedData.transactions || importState.transactions.selected.size === 0) {
       // Complete if no transactions to import
       setImportState(prev => ({ ...prev, transactions: { ...prev.transactions, phase: 'done' } }))
       setStep('complete')
@@ -438,7 +438,7 @@ export default function IATIImportPage() {
     setImportState(prev => ({ ...prev, transactions: { ...prev.transactions, phase: 'importing' } }))
 
     try {
-      const transactionsToImport = parsedData.transactions.filter((t, i) => 
+      const transactionsToImport = (parsedData.transactions || []).filter((t, i) => 
         importState.transactions.selected.has(`${i}`)
       )
 
@@ -533,10 +533,10 @@ export default function IATIImportPage() {
       
       // Enhanced: For transactions, also ensure all sub-items are selected
       if (type === 'transactions' && !allSelected && parsedData?.transactions) {
-        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${parsedData.transactions.length} individual transactions`);
+        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${(parsedData.transactions || []).length} individual transactions`);
         
         // Create enhanced selection that includes all transaction indices
-        const allTransactionIndices = parsedData.transactions.map((_, i) => `${i}`);
+        const allTransactionIndices = (parsedData.transactions || []).map((_, i) => `${i}`);
         const enhancedSelection = new Set([...newSelected, ...allTransactionIndices]);
         
         return {
@@ -1022,12 +1022,12 @@ export default function IATIImportPage() {
                       <CardContent className="pt-6">
                         <div className="text-center">
                           <CreditCard className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-                          <p className="text-3xl font-bold">{parsedData.transactions.length}</p>
+                          <p className="text-3xl font-bold">{(parsedData.transactions || []).length}</p>
                           <p className="text-sm text-gray-600">Transactions</p>
                           <div className="mt-2 text-xs text-gray-500">
                             <p>Total value:</p>
                             <p className="font-medium">
-                              {parsedData.transactions.reduce((sum, t) => sum + t.value, 0).toLocaleString()} USD
+                              {(parsedData.transactions || []).reduce((sum, t) => sum + t.value, 0).toLocaleString()} USD
                             </p>
                           </div>
                         </div>
@@ -1035,7 +1035,7 @@ export default function IATIImportPage() {
                     </Card>
                   </div>
 
-                  {parsedData.organizations.length === 0 && parsedData.transactions.length === 0 && (
+                  {(parsedData.organizations || []).length === 0 && (parsedData.transactions || []).length === 0 && (
                     <Alert className="bg-yellow-50 border-yellow-200">
                       <AlertTriangle className="h-4 w-4 text-yellow-600" />
                       <AlertDescription className="text-yellow-800">
@@ -1116,7 +1116,7 @@ export default function IATIImportPage() {
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-purple-600">{parsedData.transactions.length}</p>
+                        <p className="text-2xl font-bold text-purple-600">{(parsedData.transactions || []).length}</p>
                         <p className="text-sm text-gray-600">Transactions</p>
                       </div>
                     </div>
@@ -1367,24 +1367,24 @@ export default function IATIImportPage() {
                     <>
                       <div className="mb-4 flex items-center justify-between">
                         <span className="text-sm text-gray-600">
-                          {parsedData.transactions.length} transactions found
+                          {(parsedData.transactions || []).length} transactions found
                         </span>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => toggleAllItems('transactions', 
-                            parsedData.transactions.map((_, i) => `${i}`)
+                            (parsedData.transactions || []).map((_, i) => `${i}`)
                           )}
                         >
-                          {parsedData.transactions.every((_, i) => 
+                          {(parsedData.transactions || []).every((_, i) => 
                             importState.transactions.selected.has(`${i}`)
                           ) ? 'Deselect All' : 'Select All'}
                         </Button>
                       </div>
-
+                      
                       <ScrollArea className="h-96 border rounded-lg p-4">
                         <div className="space-y-2">
-                          {parsedData.transactions.map((transaction, index) => (
+                          {(parsedData.transactions || []).map((transaction, index) => (
                             <div key={index} className="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg">
                               <Checkbox
                                 checked={importState.transactions.selected.has(`${index}`)}

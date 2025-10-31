@@ -300,17 +300,9 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
       />
       
       <HeroCard
-        title="Planned Disbursements"
+        title="Total Planned Disb."
         subtitle="Future disbursements scheduled but not yet made"
         staticValue={plannedDisbursements}
-        currency="USD"
-        animate={false}
-      />
-      
-      <HeroCard
-        title="Total Committed"
-        subtitle="Funds legally committed to partners or implementers"
-        staticValue={totalCommitted}
         currency="USD"
         animate={false}
       />

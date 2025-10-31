@@ -45,8 +45,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { BUDGET_TYPES } from '@/data/budget-type';
 import { BUDGET_STATUSES } from '@/data/budget-status';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2 as TrashIcon, ArrowUp, ArrowDown } from 'lucide-react';
+import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2 as TrashIcon, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/csv-export';
 
 // Types
 interface BudgetLine {
@@ -227,6 +228,17 @@ export default function ActivityBudgetsTab({
 
   // Expandable rows state
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  // Expand all rows on current page
+  const expandAllRows = () => {
+    const allIds = new Set(paginatedBudgets.map(b => b.id || 'new'));
+    setExpandedRows(allIds);
+  };
+
+  // Collapse all rows
+  const collapseAllRows = () => {
+    setExpandedRows(new Set());
+  };
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -868,6 +880,45 @@ export default function ActivityBudgetsTab({
     URL.revokeObjectURL(url);
   }, [budgets, activityId]);
 
+  // Export single budget details to CSV
+  const handleExportBudget = (budget: ActivityBudget) => {
+    const budgetKey = budget.id || `${budget.period_start}-${budget.period_end}`;
+    const usdValue = usdValues[budgetKey];
+    
+    const exportData = [];
+
+    // Budget Details
+    exportData.push(
+      { label: 'Type', value: `${budget.type} - ${budget.type === 1 ? 'Original' : 'Revised'}` },
+      { label: 'Status', value: `${budget.status} - ${budget.status === 1 ? 'Indicative' : 'Committed'}` },
+      { label: 'Period Start', value: format(parseISO(budget.period_start), 'MMM d, yyyy') },
+      { label: 'Period End', value: format(parseISO(budget.period_end), 'MMM d, yyyy') },
+      { label: 'Value Date', value: budget.value_date ? format(parseISO(budget.value_date), 'MMM d, yyyy') : '—' },
+      { label: 'Original Value', value: `${budget.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${budget.currency}` },
+      { label: 'USD Value', value: usdValue?.usd != null ? `USD ${usdValue.usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—' },
+    );
+
+    // Budget Lines
+    if (budget.budget_lines && budget.budget_lines.length > 0) {
+      budget.budget_lines.forEach((line, idx) => {
+        exportData.push({ label: `Budget Line ${idx + 1} - Ref`, value: line.ref });
+        exportData.push({ label: `Budget Line ${idx + 1} - Value`, value: `${line.value?.toLocaleString()} ${line.currency}` });
+        if (line.narrative) {
+          exportData.push({ label: `Budget Line ${idx + 1} - Narrative`, value: line.narrative });
+        }
+      });
+    }
+
+    // System Identifiers
+    if (budget.id) {
+      exportData.push({ label: 'Budget ID', value: budget.id });
+    }
+    exportData.push({ label: 'Activity ID', value: budget.activity_id });
+
+    const filename = `budget-export-${format(new Date(), 'yyyy-MM-dd')}`;
+    exportToCSV(exportData, filename);
+  };
+
   // Duplicate Forward - creates next period based on current period length
   const duplicateForward = useCallback((index: number) => {
     console.log('[DuplicateForward] Starting duplicate forward for index:', index);
@@ -1470,10 +1521,13 @@ export default function ActivityBudgetsTab({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Budgets</CardTitle>
-              <CardDescription>Activity budget allocations by period</CardDescription>
-            </div>
+            {!hideSummaryCards && (
+              <div>
+                <CardTitle>Budgets</CardTitle>
+                <CardDescription>Activity budget allocations by period</CardDescription>
+              </div>
+            )}
+            {hideSummaryCards && <div />}
             <div className="flex items-center gap-2">
               {!readOnly && (
                 <>
@@ -1509,15 +1563,25 @@ export default function ActivityBudgetsTab({
               )}
               {budgets.length > 0 && !loading && (
                 <>
-                  {expandedRows.size > 0 && (
+                  {expandedRows.size > 0 ? (
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => setExpandedRows(new Set())}
+                      onClick={collapseAllRows}
                       title="Collapse all expanded rows"
                     >
-                      <ChevronDown className="h-4 w-4 mr-1" />
+                      <ChevronUp className="h-4 w-4 mr-1" />
                       Collapse All
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={expandAllRows}
+                      title="Expand all rows"
+                    >
+                      <ChevronDown className="h-4 w-4 mr-1" />
+                      Expand All
                     </Button>
                   )}
                   <Button variant="outline" size="sm" onClick={handleExport}>
@@ -1676,8 +1740,10 @@ export default function ActivityBudgetsTab({
                       onClick={() => handleSort('period_start')}
                     >
                       Period
-                      {sortColumn === 'period_start' && (
+                      {sortColumn === 'period_start' ? (
                         sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : (
+                        <ArrowUpDown className="h-3 w-3 text-gray-400" />
                       )}
                       <TooltipProvider>
                         <UITooltip>
@@ -1709,8 +1775,10 @@ export default function ActivityBudgetsTab({
                           onClick={() => handleSort(header.sortKey)}
                         >
                           {header.label}
-                          {sortColumn === header.sortKey && (
+                          {sortColumn === header.sortKey ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
                           )}
                         </div>
                       ) : (
@@ -1838,7 +1906,7 @@ export default function ActivityBudgetsTab({
                             <UITooltip>
                               <TooltipTrigger asChild>
                                 <span className="font-medium cursor-help">
-                                  ${usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                  <span className="text-muted-foreground">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -1899,7 +1967,25 @@ export default function ActivityBudgetsTab({
                     {/* Expandable Detail Row */}
                     {isExpanded && (
                       <TableRow className="bg-muted/20 animate-in fade-in-from-top-2 duration-200">
-                        <TableCell colSpan={readOnly ? 8 : 9} className="py-4 px-4">
+                        <TableCell colSpan={readOnly ? 8 : 9} className="py-4 px-4 relative">
+                          {/* CSV Export Button */}
+                          <div className="absolute top-4 right-4 z-10">
+                            <UITooltip>
+                              <UITooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleExportBudget(budget)}
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </UITooltipTrigger>
+                              <UITooltipContent>
+                                <p>Export to CSV</p>
+                              </UITooltipContent>
+                            </UITooltip>
+                          </div>
                           <div className="space-y-4 text-sm">
                             {/* Budget Details */}
                             <div>
@@ -1922,7 +2008,7 @@ export default function ActivityBudgetsTab({
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">USD Value:</span>
                                   {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.usd != null ? (
-                                    <span className="font-medium">USD {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                    <span className="font-medium"><span className="text-muted-foreground">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                   ) : (
                                     <span className="text-gray-400">—</span>
                                   )}

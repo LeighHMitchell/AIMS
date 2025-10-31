@@ -287,8 +287,8 @@ export function IatiImportFieldsTable({ fields, onFieldToggle, onSelectAll, onDe
       return <ArrowUpDown className="ml-1 h-3 w-3 text-gray-400" />;
     }
     return sortDirection === 'asc' 
-      ? <ArrowUp className="ml-1 h-3 w-3 text-blue-600" />
-      : <ArrowDown className="ml-1 h-3 w-3 text-blue-600" />;
+      ? <ArrowUp className="ml-1 h-3 w-3 text-gray-400" />
+      : <ArrowDown className="ml-1 h-3 w-3 text-gray-400" />;
   };
 
   const selectedCount = sortedFields.filter(f => f.selected).length;

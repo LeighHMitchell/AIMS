@@ -354,10 +354,10 @@ export default function PartnerSummaryPage() {
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortConfig.field !== field) return <ArrowUpDown className="h-4 w-4" />;
+    if (sortConfig.field !== field) return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
     return sortConfig.direction === 'asc' ? 
-      <ArrowUp className="h-4 w-4" /> : 
-      <ArrowDown className="h-4 w-4" />;
+      <ArrowUp className="h-4 w-4 text-gray-400" /> : 
+      <ArrowDown className="h-4 w-4 text-gray-400" />;
   };
 
   // Format currency with thousands separators

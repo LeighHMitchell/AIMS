@@ -90,8 +90,8 @@ export default function ActivityEditorNavigation({
       title: "Funding & Delivery",
       sections: [
         { id: "finances", label: "Transactions" },
-        { id: "budgets", label: "Budgets" },
         { id: "planned-disbursements", label: "Planned Disbursements" },
+        { id: "budgets", label: "Budgets" },
         { id: "forward-spending-survey", label: "Forward Spend" },
         { id: "results", label: "Results" },
         { id: "capital-spend", label: "Capital Spend" },
@@ -186,7 +186,7 @@ export default function ActivityEditorNavigation({
                         <span>{section.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {(section.id === 'contributors' || section.id === 'organisations' || section.id === 'contacts' || section.id === 'finances' || section.id === 'capital-spend' || section.id === 'country-budget') ? (
+                        {(section.id === 'contributors' || section.id === 'organisations' || section.id === 'contacts' || section.id === 'finances' || section.id === 'capital-spend' || section.id === 'country-budget' || section.id === 'humanitarian') ? (
                           <StableTabCompletionIndicator 
                             tabId={section.id}
                             currentStatus={tabCompletionStatus[section.id] ? {

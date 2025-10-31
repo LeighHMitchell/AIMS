@@ -233,10 +233,10 @@ export default function PartnersPage() {
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1" />;
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 text-gray-400" />;
     return sortOrder === 'asc' 
-      ? <ArrowUp className="h-3 w-3 ml-1" />
-      : <ArrowDown className="h-3 w-3 ml-1" />;
+      ? <ArrowUp className="h-3 w-3 ml-1 text-gray-400" />
+      : <ArrowDown className="h-3 w-3 ml-1 text-gray-400" />;
   };
 
   // Sort organizations within a group

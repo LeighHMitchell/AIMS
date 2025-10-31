@@ -1638,7 +1638,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs, setHumanitarian, setHumanitarianScopes }: any) {
   
   // OPTIMIZATION: Lazy loading - only render heavy components after tab has been visited
   // Removed the duplicate skeleton rendering logic here since the parent component
@@ -1705,6 +1705,10 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         <HumanitarianTab 
           activityId={general.id || ''}
           readOnly={!permissions?.canEditActivity}
+          onDataChange={(data) => {
+            setHumanitarian(data.humanitarian);
+            setHumanitarianScopes(data.humanitarianScopes);
+          }}
         />
       );
     case "organisations":
@@ -2748,7 +2752,8 @@ function NewActivityPageContent() {
             syncStatus: data.syncStatus || "not_synced",
             autoSyncFields: data.autoSyncFields || [],
             activityScope: data.activityScope || "4",
-            language: data.language || "en"
+            language: data.language || "en",
+            hierarchy: data.hierarchy || "1"
           });
           
           // Set capital spend percentage for tab completion
@@ -3379,10 +3384,6 @@ function NewActivityPageContent() {
         isComplete: governmentInputsCompletion.isComplete,
         isInProgress: governmentInputsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
-      contacts: contactsCompletion ? { 
-        isComplete: contactsCompletion.isComplete,
-        isInProgress: contactsCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
       sdg: { isComplete: sdgComplete, isInProgress: false },
       "country-budget": { 
         isComplete: countryBudgetComplete, 
@@ -3398,10 +3399,14 @@ function NewActivityPageContent() {
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
     const sections = [
-      "general", "iati", "xml-import", "sectors", "locations", "organisations", "contacts", 
-      "linked_activities",
-      "finances", "budgets", "planned-disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
-    ].filter(id => id !== "government" || showGovernmentInputs);
+      "iati", "xml-import", 
+      "general", "sectors", "humanitarian", "locations",
+      "organisations", "contacts", "linked_activities",
+      "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
+      "sdg", "country-budget", "tags", "working_groups", "policy_markers",
+      "documents", "aid_effectiveness",
+      "metadata", "government", "government_endorsement"
+    ].filter(id => (id !== "government" && id !== "government_endorsement") || showGovernmentInputs);
     
     const idx = sections.findIndex(s => s === currentId);
     return idx < sections.length - 1 ? sections[idx + 1] : null;
@@ -3410,10 +3415,14 @@ function NewActivityPageContent() {
   // Helper to get previous section id
   const getPreviousSection = useCallback((currentId: string) => {
     const sections = [
-      "general", "iati", "xml-import", "sectors", "locations", "organisations", "contacts", 
-      "linked_activities",
-      "finances", "budgets", "planned-disbursements", "results", "sdg", "tags", "working_groups", "policy_markers", "government", "documents", "aid_effectiveness"
-    ].filter(id => id !== "government" || showGovernmentInputs);
+      "iati", "xml-import", 
+      "general", "sectors", "humanitarian", "locations",
+      "organisations", "contacts", "linked_activities",
+      "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
+      "sdg", "country-budget", "tags", "working_groups", "policy_markers",
+      "documents", "aid_effectiveness",
+      "metadata", "government", "government_endorsement"
+    ].filter(id => (id !== "government" && id !== "government_endorsement") || showGovernmentInputs);
     
     const idx = sections.findIndex(s => s === currentId);
     return idx > 0 ? sections[idx - 1] : null;
@@ -3621,6 +3630,7 @@ function NewActivityPageContent() {
       sections: [
         { id: "general", label: "General" },
         { id: "sectors", label: "Sectors" },
+        { id: "humanitarian", label: "Humanitarian" },
         { id: "locations", label: "Locations" }
       ]
     },
@@ -3636,8 +3646,8 @@ function NewActivityPageContent() {
       title: "Funding & Delivery",
       sections: [
         { id: "finances", label: "Financial Information" },
-        { id: "budgets", label: "Budgets" },
         { id: "planned-disbursements", label: "Planned Disbursements" },
+        { id: "budgets", label: "Budgets" },
         { id: "forward-spending-survey", label: "Forward Spend" },
         { id: "results", label: "Results" },
         { id: "capital-spend", label: "Capital Spend" },
@@ -4012,6 +4022,8 @@ function NewActivityPageContent() {
                     setForwardSpendCount={setForwardSpendCount}
                     clearSavedFormData={clearSavedFormData}
                     loadedTabs={loadedTabs}
+                    setHumanitarian={setHumanitarian}
+                    setHumanitarianScopes={setHumanitarianScopes}
                   />
                 </div>
               )}
@@ -4147,16 +4159,23 @@ function NewActivityPageContent() {
                   className="px-6 py-3 text-base font-semibold"
                   onClick={() => {
                     if (nextSection) {
-                      handleTabChange(nextSection.id);
+                      saveActivity({ goToNext: true });
                     }
                   }}
-                  disabled={!general.id || isLastSection || tabLoading}
-                  title={!general.id ? "Activity will be created automatically when you enter a title" : undefined}
+                  disabled={!general.id || isLastSection || tabLoading || savingAndNext}
+                  title={!general.id ? "Activity will be created automatically when you enter a title" : (savingAndNext ? "Saving activity..." : undefined)}
                 >
-                  <>
-                    Save & Next
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </>
+                  {savingAndNext ? (
+                    <>
+                      Saving...
+                      <CircleDashed className="ml-2 h-5 w-5 animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      Save & Next
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

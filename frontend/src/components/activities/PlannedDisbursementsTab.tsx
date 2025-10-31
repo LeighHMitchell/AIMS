@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths, getQuarter, getYear } from 'date-fns';
-import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Edit, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, AlertCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Edit, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, ArrowUpDown, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,6 +63,7 @@ import { OrganizationCombobox } from '@/components/ui/organization-combobox';
 import { ActivityCombobox } from '@/components/ui/activity-combobox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronsUpDown } from 'lucide-react';
+import { exportToCSV } from '@/lib/csv-export';
 
 // Types
 interface PlannedDisbursement {
@@ -210,6 +211,17 @@ export default function PlannedDisbursementsTab({
       }
       return newSet;
     });
+  };
+
+  // Expand all rows on current page
+  const expandAllRows = () => {
+    const allIds = new Set(paginatedDisbursements.map(d => d.id || 'new'));
+    setExpandedRows(allIds);
+  };
+
+  // Collapse all rows
+  const collapseAllRows = () => {
+    setExpandedRows(new Set());
   };
 
   // Handler to open modal for add/edit
@@ -1256,6 +1268,58 @@ export default function PlannedDisbursementsTab({
     URL.revokeObjectURL(url);
   };
 
+  const handleExportDisbursement = (disbursement: PlannedDisbursement) => {
+    const exportData = [];
+
+    // Disbursement Details
+    exportData.push(
+      { label: 'Status', value: (disbursement.status || 'Original').charAt(0).toUpperCase() + (disbursement.status || 'Original').slice(1) },
+      { label: 'Period Start', value: format(parseISO(disbursement.period_start), 'MMM d, yyyy') },
+      { label: 'Period End', value: format(parseISO(disbursement.period_end), 'MMM d, yyyy') },
+      { label: 'Original Amount', value: `${disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${disbursement.currency}` },
+    );
+
+    if (disbursement.value_date) {
+      exportData.push({ label: 'Value Date', value: format(parseISO(disbursement.value_date), 'MMM d, yyyy') });
+    }
+    if (disbursement.usdAmount) {
+      exportData.push({ label: 'USD Value', value: `USD ${disbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` });
+    }
+
+    // Organizations
+    if (disbursement.provider_org_name) {
+      exportData.push({ label: 'Provider Organisation', value: disbursement.provider_org_name });
+    }
+    if (disbursement.provider_org_ref) {
+      exportData.push({ label: 'Provider Reference', value: disbursement.provider_org_ref });
+    }
+    if (disbursement.receiver_org_name) {
+      exportData.push({ label: 'Receiver Organisation', value: disbursement.receiver_org_name });
+    }
+    if (disbursement.receiver_org_ref) {
+      exportData.push({ label: 'Receiver Reference', value: disbursement.receiver_org_ref });
+    }
+
+    // Notes
+    if (disbursement.notes) {
+      exportData.push({ label: 'Notes', value: disbursement.notes });
+    }
+
+    // System Info
+    if (disbursement.id) {
+      exportData.push({ label: 'Disbursement ID', value: disbursement.id });
+    }
+    if (disbursement.created_at) {
+      exportData.push({ label: 'Created', value: format(parseISO(disbursement.created_at), 'MMM d, yyyy') });
+    }
+    if (disbursement.updated_at) {
+      exportData.push({ label: 'Updated', value: format(parseISO(disbursement.updated_at), 'MMM d, yyyy') });
+    }
+
+    const filename = `planned-disbursement-export-${format(new Date(), 'yyyy-MM-dd')}`;
+    exportToCSV(exportData, filename);
+  };
+
   const getOrganizationDisplayName = (org: Organization | null) => {
     if (!org) return 'Unknown';
     if (org.name && org.acronym && org.name !== org.acronym) {
@@ -1508,10 +1572,13 @@ export default function PlannedDisbursementsTab({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Planned Disbursements</CardTitle>
-              <CardDescription>Scheduled future disbursements</CardDescription>
-            </div>
+            {!hideSummaryCards && (
+              <div>
+                <CardTitle>Planned Disbursements</CardTitle>
+                <CardDescription>Scheduled future disbursements</CardDescription>
+              </div>
+            )}
+            {hideSummaryCards && <div />}
             <div className="flex items-center gap-2">
               {!readOnly && (
                 <>
@@ -1550,10 +1617,33 @@ export default function PlannedDisbursementsTab({
                 </>
               )}
               {disbursements.length > 0 && !loading && (
-                <Button variant="outline" size="sm" onClick={handleExport}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Export
-                </Button>
+                <>
+                  {expandedRows.size > 0 ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={collapseAllRows}
+                      title="Collapse all expanded rows"
+                    >
+                      <ChevronUp className="h-4 w-4 mr-1" />
+                      Collapse All
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={expandAllRows}
+                      title="Expand all rows"
+                    >
+                      <ChevronDown className="h-4 w-4 mr-1" />
+                      Expand All
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={handleExport}>
+                    <Download className="h-4 w-4 mr-1" />
+                    Export
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -1614,8 +1704,10 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('period')}
                         >
                           Period
-                          {sortColumn === 'period' && (
+                          {sortColumn === 'period' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
                           )}
                         </div>
                       </TableHead>
@@ -1625,8 +1717,10 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('status')}
                         >
                           Status
-                          {sortColumn === 'status' && (
+                          {sortColumn === 'status' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
                           )}
                         </div>
                       </TableHead>
@@ -1636,8 +1730,10 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('provider')}
                         >
                           Provider → Receiver
-                          {sortColumn === 'provider' && (
+                          {sortColumn === 'provider' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
                           )}
                         </div>
                       </TableHead>
@@ -1647,8 +1743,10 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('amount')}
                         >
                           Amount
-                          {sortColumn === 'amount' && (
+                          {sortColumn === 'amount' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
                           )}
                         </div>
                       </TableHead>
@@ -1658,8 +1756,10 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('value_date')}
                         >
                           Value Date
-                          {sortColumn === 'value_date' && (
+                          {sortColumn === 'value_date' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
                           )}
                         </div>
                       </TableHead>
@@ -1669,8 +1769,10 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('usd_value')}
                         >
                           USD Value
-                          {sortColumn === 'usd_value' && (
+                          {sortColumn === 'usd_value' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
                           )}
                         </div>
                       </TableHead>
@@ -1808,7 +1910,7 @@ export default function PlannedDisbursementsTab({
                                   <UITooltip>
                                     <TooltipTrigger asChild>
                                       <span className="font-medium cursor-help">
-                                        ${usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                        <span className="text-muted-foreground">USD</span> {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -1883,7 +1985,25 @@ export default function PlannedDisbursementsTab({
                         {/* Expandable Detail Row */}
                         {isExpanded && (
                           <TableRow className="bg-muted/20 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-                            <TableCell colSpan={readOnly ? 7 : 8} className="py-4 px-6">
+                            <TableCell colSpan={readOnly ? 7 : 8} className="py-4 px-6 relative">
+                              {/* CSV Export Button */}
+                              <div className="absolute top-4 right-4 z-10">
+                                <UITooltip>
+                                  <UITooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() => handleExportDisbursement(disbursement)}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                  </UITooltipTrigger>
+                                  <UITooltipContent>
+                                    <p>Export to CSV</p>
+                                  </UITooltipContent>
+                                </UITooltip>
+                              </div>
                               <div className="space-y-3 text-sm">
                                 {/* Disbursement Details */}
                                 <div className="grid grid-cols-2 gap-x-12 gap-y-3">
@@ -1912,7 +2032,7 @@ export default function PlannedDisbursementsTab({
                                   {disbursement.usdAmount && (
                                     <div>
                                       <span className="text-muted-foreground text-xs min-w-[160px]">USD Value:</span>
-                                      <span className="ml-2 font-medium text-xs">${disbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                      <span className="ml-2 font-medium text-xs"><span className="text-muted-foreground">USD</span> {disbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                   )}
                                 </div>

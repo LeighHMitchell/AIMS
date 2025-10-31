@@ -7,22 +7,22 @@ export interface DisbursementChannelType {
 export const DISBURSEMENT_CHANNEL_TYPES: DisbursementChannelType[] = [
   {
     code: "1",
-    name: "Money through government",
-    description: "Funds channeled through recipient government institutions and systems"
+    name: "Money is disbursed through central Ministry of Finance or Treasury",
+    description: "Money is disbursed through central Ministry of Finance or Treasury"
   },
   {
     code: "2", 
-    name: "Money to/through NGOs",
-    description: "Funds provided directly to or through non-governmental organizations"
+    name: "Money is disbursed directly to the implementing institution and managed through a separate bank account",
+    description: "Money is disbursed directly to the implementing institution and managed through a separate bank account"
   },
   {
     code: "3",
-    name: "Cash to recipient", 
-    description: "Direct cash transfers to beneficiaries or recipient institutions"
+    name: "Aid in kind: Donors utilise third party agencies, e.g. NGOs or management companies", 
+    description: "Aid in kind: Donors utilise third party agencies, e.g. NGOs or management companies"
   },
   {
     code: "4",
-    name: "Aid in kind",
-    description: "Non-monetary assistance including goods, services, or technical expertise"
+    name: "Aid in kind: Donors manage funds themselves",
+    description: "Aid in kind: Donors manage funds themselves"
   }
 ];

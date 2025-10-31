@@ -502,25 +502,14 @@ export default function TransactionModal({
     }
   }, [transaction]);
 
-  // Auto-open Advanced IATI Fields if transaction has any advanced fields populated
+  // Keep Advanced IATI Fields collapsed by default
+  // Auto-open logic removed - user preference is to keep it collapsed
   useEffect(() => {
-    if (transaction && open) {
-      const hasAdvancedFields = !!(
-        transaction.sector_code ||
-        transaction.sectors?.length ||
-        transaction.recipient_country_code ||
-        transaction.recipient_countries?.length ||
-        transaction.recipient_region_code ||
-        transaction.recipient_regions?.length ||
-        transaction.aid_types?.length ||
-        transaction.provider_org_activity_id ||
-        transaction.receiver_org_activity_id
-      );
-      if (hasAdvancedFields) {
-        setShowAdvancedIATI(true);
-      }
+    // Reset to collapsed when modal opens
+    if (open) {
+      setShowAdvancedIATI(false);
     }
-  }, [transaction, open]);
+  }, [open]);
 
   // Reset submission flag when modal opens/closes
   useEffect(() => {
@@ -2308,28 +2297,28 @@ export default function TransactionModal({
             {/* Advanced IATI Fields Section */}
             <div className="space-y-4">
               <Collapsible open={showAdvancedIATI} onOpenChange={setShowAdvancedIATI}>
-                <CollapsibleTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-full flex items-center justify-between"
-                    type="button"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
-                      Advanced IATI Fields
+                <button
+                  onClick={() => setShowAdvancedIATI(!showAdvancedIATI)}
+                  className="flex items-center gap-1 text-slate-600 hover:text-slate-900 text-sm font-medium transition-colors"
+                  type="button"
+                >
+                  {showAdvancedIATI ? (
+                    <>
+                      Hide Advanced IATI Fields
+                      <ChevronDown className="h-4 w-4 rotate-180" />
+                    </>
+                  ) : (
+                    <>
+                      Show Advanced IATI Fields
                       {advancedFieldsCount > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                          {advancedFieldsCount} field{advancedFieldsCount !== 1 ? 's' : ''} completed
+                        <Badge variant="secondary" className="ml-1 text-xs">
+                          {advancedFieldsCount}
                         </Badge>
                       )}
-                    </span>
-                    <ChevronDown 
-                      className={`h-4 w-4 transition-transform ${
-                        showAdvancedIATI ? 'rotate-180' : ''
-                      }`} 
-                    />
-                  </Button>
-                </CollapsibleTrigger>
+                      <ChevronDown className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
                 
                 <CollapsibleContent className="space-y-6 pt-4">
                   {/* Single-Value Geographic & Sector Fields */}

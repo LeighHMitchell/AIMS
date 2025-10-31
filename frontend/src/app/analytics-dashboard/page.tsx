@@ -48,6 +48,9 @@ import { DataHeatmap } from '@/components/analytics/DataHeatmap'
 import { TimelinessChart } from '@/components/analytics/TimelinessChart'
 import { BudgetVsActualChart } from '@/components/analytics/BudgetVsActualChart'
 
+// Disbursements by Sector components
+import { DashboardDisbursementsBySection } from '@/components/analytics/DashboardDisbursementsBySection'
+
 // Charts from analytics page
 import { BudgetVsSpendingChart } from '@/components/charts/BudgetVsSpendingChart'
 import { ReportingOrgChart } from '@/components/charts/ReportingOrgChart'
@@ -106,7 +109,6 @@ export default function AnalyticsDashboardPage() {
     to: new Date('2027-12-31')    // Go to latest transaction
   })
   
-  console.log('[Analytics] Date range:', { from: dateRange.from, to: dateRange.to })
   const [selectedCountry, setSelectedCountry] = useState<string>('all')
   const [selectedDonor, setSelectedDonor] = useState<string>('all')
   const [selectedSector, setSelectedSector] = useState<string>('all')
@@ -358,7 +360,6 @@ export default function AnalyticsDashboardPage() {
         
       const { count: activeProjects, error: activeProjectsError } = await projectsQuery
       
-      console.log('[Analytics] Active projects query result:', { count: activeProjects, error: activeProjectsError })
 
       // Get unique donors
       const { data: donorData } = await supabase
@@ -602,7 +603,6 @@ export default function AnalyticsDashboardPage() {
     link.click();
     document.body.removeChild(link);
     
-    console.log('Dashboard data exported successfully');
   }
 
   // Show skeleton loader during initial load
@@ -628,7 +628,7 @@ export default function AnalyticsDashboardPage() {
               
               {/* Date Range Picker */}
               <Popover>
-                <PopoverTrigger>
+                <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
@@ -866,11 +866,17 @@ export default function AnalyticsDashboardPage() {
                   <CardTitle className="text-lg font-medium text-slate-700">
                     Top 10 Donors by Disbursement
                   </CardTitle>
+                  <CardDescription>
+                    Organizations providing the most funding
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <DonorsChart 
                     dateRange={dateRange}
-                    filters={{ country: selectedCountry, sector: selectedSector }}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
                     refreshKey={refreshKey}
                   />
                 </CardContent>
@@ -883,11 +889,17 @@ export default function AnalyticsDashboardPage() {
                     <CardTitle className="text-lg font-medium text-slate-700">
                       Aid Distribution by Sector
                     </CardTitle>
+                    <CardDescription>
+                      Breakdown of funding across sectors
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <SectorPieChart 
                       dateRange={dateRange}
-                      filters={{ country: selectedCountry, donor: selectedDonor }}
+                      filters={{ 
+                        country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                        donor: selectedDonor !== 'all' ? selectedDonor : undefined 
+                      }}
                       refreshKey={refreshKey}
                     />
                   </CardContent>
@@ -899,11 +911,18 @@ export default function AnalyticsDashboardPage() {
                     <CardTitle className="text-lg font-medium text-slate-700">
                       Humanitarian vs Development Aid
                     </CardTitle>
+                    <CardDescription>
+                      Comparison of aid types over time
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <HumanitarianChart 
                       dateRange={dateRange}
-                      filters={{ country: selectedCountry, donor: selectedDonor, sector: selectedSector }}
+                      filters={{ 
+                        country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                        donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
+                        sector: selectedSector !== 'all' ? selectedSector : undefined 
+                      }}
                       refreshKey={refreshKey}
                     />
                   </CardContent>
@@ -1156,11 +1175,18 @@ export default function AnalyticsDashboardPage() {
                   <CardTitle className="text-lg font-medium text-slate-700">
                     Commitments vs Disbursements Over Time
                   </CardTitle>
+                  <CardDescription>
+                    Track funding commitments and actual disbursements by period
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <CommitmentsChart 
                     dateRange={dateRange}
-                    filters={{ country: selectedCountry, donor: selectedDonor, sector: selectedSector }}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
                     refreshKey={refreshKey}
                   />
                 </CardContent>
@@ -1172,11 +1198,18 @@ export default function AnalyticsDashboardPage() {
                   <CardTitle className="text-lg font-medium text-slate-700">
                     Budget vs Actual Spending
                   </CardTitle>
+                  <CardDescription>
+                    Compare planned budgets with actual expenditures
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <BudgetVsActualChart 
                     dateRange={dateRange}
-                    filters={{ country: selectedCountry, donor: selectedDonor, sector: selectedSector }}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
                     refreshKey={refreshKey}
                   />
                 </CardContent>
@@ -1188,15 +1221,33 @@ export default function AnalyticsDashboardPage() {
                   <CardTitle className="text-lg font-medium text-slate-700">
                     Project Pipeline
                   </CardTitle>
+                  <CardDescription>
+                    Overview of all projects by status and funding stage
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ProjectPipeline 
                     dateRange={dateRange}
-                    filters={{ country: selectedCountry, donor: selectedDonor, sector: selectedSector }}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
                     refreshKey={refreshKey}
                   />
                 </CardContent>
               </Card>
+
+              {/* Disbursements by Sector Analysis */}
+              <DashboardDisbursementsBySection
+                dateRange={dateRange}
+                filters={{ 
+                  country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                  donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
+                  sector: selectedSector !== 'all' ? selectedSector : undefined 
+                }}
+                refreshKey={refreshKey}
+              />
             </TabsContent>
 
             {/* Geographic Tab */}
@@ -1207,12 +1258,18 @@ export default function AnalyticsDashboardPage() {
                   <CardTitle className="text-lg font-medium text-slate-700">
                     Aid Distribution by Subnational Location
                   </CardTitle>
+                  <CardDescription>
+                    Visualize aid distribution across regions and townships
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="h-[500px]">
                   <AidMap 
                     dateRange={dateRange}
-                    filters={{ donor: selectedDonor, sector: selectedSector }}
-                    country={selectedCountry}
+                    filters={{ 
+                      donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
+                    country={selectedCountry !== 'all' ? selectedCountry : undefined}
                     refreshKey={refreshKey}
                   />
                 </CardContent>
@@ -1224,11 +1281,16 @@ export default function AnalyticsDashboardPage() {
                   <CardTitle className="text-lg font-medium text-slate-700">
                     Donor → Sector → Recipient Flow
                   </CardTitle>
+                  <CardDescription>
+                    Follow the flow of funds from donors through sectors to recipients
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="h-[600px]">
                   <SankeyFlow 
                     dateRange={dateRange}
-                    filters={{ country: selectedCountry }}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined 
+                    }}
                     refreshKey={refreshKey}
                   />
                 </CardContent>
@@ -1253,10 +1315,17 @@ export default function AnalyticsDashboardPage() {
                   <CardTitle className="text-lg font-medium text-slate-700">
                     Data Completeness by Donor
                   </CardTitle>
+                  <CardDescription>
+                    Assess the quality and completeness of reported data
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <DataHeatmap 
                     dateRange={dateRange}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
                     refreshKey={refreshKey}
                   />
                 </CardContent>
@@ -1268,11 +1337,17 @@ export default function AnalyticsDashboardPage() {
                   <CardTitle className="text-lg font-medium text-slate-700">
                     Disbursement Timeliness by Donor
                   </CardTitle>
+                  <CardDescription>
+                    Analyze how timely disbursements are reported
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <TimelinessChart 
                     dateRange={dateRange}
-                    filters={{ country: selectedCountry, sector: selectedSector }}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
                     refreshKey={refreshKey}
                   />
                 </CardContent>

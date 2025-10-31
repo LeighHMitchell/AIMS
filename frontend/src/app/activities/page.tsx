@@ -46,9 +46,9 @@ import { toast } from "sonner";
 import { formatReportedBy, formatSubmittedBy } from "@/utils/format-helpers";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { 
-  Plus, Download, Edit2, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
+  Plus, Download, Edit2, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
@@ -298,6 +298,13 @@ function ActivitiesPageContent() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    activityId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  
   // Use optimized hook if enabled, otherwise fall back to original implementation
   const optimizedData = useOptimizedActivities({
     pageSize: 20,
@@ -432,7 +439,7 @@ function ActivitiesPageContent() {
     navigator.clipboard.writeText(text);
     setCopiedId(`${activityId}-${type}`);
     setTimeout(() => setCopiedId(null), 2000);
-    const message = type === 'partnerId' ? 'Activity ID' : type === 'iatiIdentifier' ? 'IATI Identifier' : 'Acronym';
+    const message = type === 'partnerId' ? 'Activity ID' : type === 'iatiIdentifier' ? 'IATI Identifier' : 'Activity title';
     toast.success(`${message} copied to clipboard`);
   };
 
@@ -828,11 +835,11 @@ function ActivitiesPageContent() {
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
+      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
     }
     return sortOrder === 'asc' 
-      ? <ChevronUp className="h-4 w-4 text-gray-700" />
-      : <ChevronDown className="h-4 w-4 text-gray-700" />;
+      ? <ArrowUp className="h-4 w-4 text-gray-400" />
+      : <ArrowDown className="h-4 w-4 text-gray-400" />;
   };
 
   const exportActivities = () => {
@@ -1016,6 +1023,31 @@ function ActivitiesPageContent() {
       setShowEmptyState(false);
     }
   }, [totalActivities, loading, userLoading, hasLoadedOnce, isInitialLoad]);
+
+  // Close context menu on outside click or Escape key
+  useEffect(() => {
+    if (!contextMenu) return;
+
+    const handleClickOutside = () => {
+      setContextMenu(null);
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setContextMenu(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('contextmenu', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('contextmenu', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [contextMenu]);
 
   // Page limit change handler
   const handlePageLimitChange = useCallback((newLimit: number) => {
@@ -1379,7 +1411,19 @@ function ActivitiesPageContent() {
                             
                             {/* Activity Title and Details */}
                             <div className="space-y-1 pr-2 flex-1 min-w-0">
-                              <h3 className="font-medium text-foreground leading-tight line-clamp-2" title={activity.title}>
+                              <h3 
+                                className="font-medium text-foreground leading-tight line-clamp-2" 
+                                title={activity.title}
+                                onContextMenu={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setContextMenu({
+                                    activityId: activity.id,
+                                    x: e.clientX,
+                                    y: e.clientY,
+                                  });
+                                }}
+                              >
                                 {activity.title}
                                 {activity.acronym && (
                                   <span>
@@ -1387,10 +1431,11 @@ function ActivitiesPageContent() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        copyToClipboard(activity.acronym!, 'acronym', activity.id);
+                                        const fullText = `${activity.title} (${activity.acronym})`;
+                                        copyToClipboard(fullText, 'acronym', activity.id);
                                       }}
                                       className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
-                                      title="Copy Acronym"
+                                      title="Copy Activity Title and Acronym"
                                     >
                                       {copiedId === `${activity.id}-acronym` ? (
                                         <Check className="w-3 h-3 text-green-500" />
@@ -1402,16 +1447,16 @@ function ActivitiesPageContent() {
                                 )}
                               </h3>
                             {(activity.partnerId || activity.iatiIdentifier) && (
-                              <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1 text-left">
+                              <div className="text-xs text-muted-foreground flex items-center gap-1 text-left overflow-hidden">
                                 {activity.partnerId && (
-                                  <>
-                                    <span>{activity.partnerId}</span>
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    <span className="truncate max-w-[200px]">{activity.partnerId}</span>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
                                       }}
-                                      className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
                                       title="Copy Activity ID"
                                     >
                                       {copiedId === `${activity.id}-partnerId` ? (
@@ -1420,18 +1465,18 @@ function ActivitiesPageContent() {
                                         <Copy className="w-3 h-3" />
                                       )}
                                     </button>
-                                  </>
+                                  </div>
                                 )}
 
                                 {activity.iatiIdentifier && (
-                                  <>
-                                    <span className="text-slate-400 ml-2">{activity.iatiIdentifier}</span>
+                                  <div className="flex items-center gap-1 flex-shrink min-w-0 ml-2">
+                                    <span className="text-slate-400 truncate">{activity.iatiIdentifier}</span>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         copyToClipboard(activity.iatiIdentifier!, 'iatiIdentifier', activity.id);
                                       }}
-                                      className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
                                       title="Copy IATI Identifier"
                                     >
                                       {copiedId === `${activity.id}-iatiIdentifier` ? (
@@ -1440,7 +1485,7 @@ function ActivitiesPageContent() {
                                         <Copy className="w-3 h-3" />
                                       )}
                                     </button>
-                                  </>
+                                  </div>
                                 )}
                               </div>
                             )}
@@ -1858,6 +1903,30 @@ function ActivitiesPageContent() {
         onCancel={() => setShowBulkDeleteDialog(false)}
         isDeleting={isBulkDeleting}
       />
+
+      {/* Context Menu for Activity Title */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className="flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+            onClick={() => {
+              window.open(`/activities/${contextMenu.activityId}`, '_blank');
+              setContextMenu(null);
+            }}
+          >
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Open in new tab
+          </div>
+        </div>
+      )}
       </div>
     </MainLayout>
   );

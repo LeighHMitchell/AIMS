@@ -1,9 +1,9 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import {
-  ChevronUp,
-  ChevronDown,
-  ChevronsUpDown,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
   Eye,
   Edit2,
   Trash2,
@@ -120,11 +120,11 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
+      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
     }
     return sortOrder === 'asc'
-      ? <ChevronUp className="h-4 w-4 text-gray-700" />
-      : <ChevronDown className="h-4 w-4 text-gray-700" />;
+      ? <ArrowUp className="h-4 w-4 text-gray-400" />
+      : <ArrowDown className="h-4 w-4 text-gray-400" />;
   };
 
   const handleRowClick = (orgId: string, e: React.MouseEvent) => {

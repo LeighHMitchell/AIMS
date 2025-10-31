@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { 
   DropdownMenu,
@@ -10,10 +11,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { FolderPlus, User, LogOut, Briefcase, Settings, Shield, MessageSquare, ChevronDown, Zap } from "lucide-react"
+import { FolderPlus, User, LogOut, Briefcase, Settings, Shield, MessageSquare, ChevronDown, Zap, Eye } from "lucide-react"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
@@ -45,6 +49,7 @@ interface TopNavProps {
 }
 
 export function TopNav({ user, canCreateActivities, isInActivityEditor = false, onLogout }: TopNavProps) {
+  const router = useRouter();
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
 
@@ -175,10 +180,24 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
                     <span>My Portfolio</span>
                   </DropdownMenuItem>
                 </Link>
-                <DropdownMenuItem onClick={() => setIsFeedbackModalOpen(true)}>
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  <span>Feedback</span>
-                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    <span>Feedback</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem onClick={() => setIsFeedbackModalOpen(true)}>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      <span>Share Feedback</span>
+                    </DropdownMenuItem>
+                    {user.role === USER_ROLES.SUPER_USER && (
+                      <DropdownMenuItem onClick={() => router.push('/admin?tab=feedback')}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        <span>View Feedback</span>
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
                 {user.role === USER_ROLES.SUPER_USER && (
                   <Link href="/admin">
                     <DropdownMenuItem>

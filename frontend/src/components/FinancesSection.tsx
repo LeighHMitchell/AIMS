@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useActivityDefaults } from "@/hooks/use-activity-defaults";
 import { useActivityAutosave } from "@/hooks/use-activity-autosave";
+import { DisbursementsBySectorChart } from "@/components/activities/DisbursementsBySectorChart";
+import { DisbursementsOverTimeChart } from "@/components/activities/DisbursementsOverTimeChart";
 
 interface FinancesSectionProps {
   activityId: string;
@@ -28,6 +30,32 @@ export default function FinancesSection({
   const [aggregationMode, setAggregationMode] = useState<'quarter' | 'month' | 'year'>('quarter');
 
   const { values: defaults, updateDefaultField } = useActivityDefaults({ activityId });
+
+  // State for analytics data
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  // Fetch analytics data
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      if (!activityId) return;
+      
+      setAnalyticsLoading(true);
+      try {
+        const response = await fetch(`/api/activities/${activityId}/disbursements-by-sector`);
+        if (response.ok) {
+          const data = await response.json();
+          setAnalyticsData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching analytics data:', error);
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+
+    fetchAnalyticsData();
+  }, [activityId, transactions]); // Refetch when transactions change
 
   // Check if all default fields are completed
   const allDefaultsCompleted = useMemo(() => {
@@ -455,6 +483,19 @@ export default function FinancesSection({
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* New Sector-based Analytics Charts */}
+            <div className="mt-8 space-y-6">
+              <DisbursementsBySectorChart 
+                data={analyticsData || { sectors: [] }}
+                loading={analyticsLoading}
+              />
+              
+              <DisbursementsOverTimeChart 
+                data={analyticsData || { sectors: [] }}
+                loading={analyticsLoading}
+              />
             </div>
           </div>
         </TabsContent>

@@ -269,10 +269,10 @@ export type NewTransaction = Omit<Transaction, 'id' | 'created_at' | 'updated_at
 
 // IATI Code labels
 export const DISBURSEMENT_CHANNEL_LABELS: Record<DisbursementChannel, string> = {
-  '1': 'Through central Ministry of Finance/Treasury',
-  '2': 'Direct to implementing institution',
-  '3': 'Aid in kind through third party',
-  '4': 'Not reported'
+  '1': 'Money is disbursed through central Ministry of Finance or Treasury',
+  '2': 'Money is disbursed directly to the implementing institution and managed through a separate bank account',
+  '3': 'Aid in kind: Donors utilise third party agencies, e.g. NGOs or management companies',
+  '4': 'Aid in kind: Donors manage funds themselves'
 };
 
 export const FLOW_TYPE_LABELS: Record<FlowType, string> = {
