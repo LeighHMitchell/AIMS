@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Force dynamic rendering - critical for production
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 60; // 60 seconds for fetching from slow external URLs
+
 export async function POST(request: NextRequest) {
   try {
     const { url } = await request.json();
@@ -33,15 +38,32 @@ export async function POST(request: NextRequest) {
     console.log('[XML Fetch API] Fetching XML from URL:', url);
 
     // Fetch the XML content with appropriate headers
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/xml, text/xml, */*',
-        'User-Agent': 'AIMS-XML-Importer/1.0',
-      },
-      // Set a reasonable timeout
-      signal: AbortSignal.timeout(30000), // 30 seconds
-    });
+    // Using AbortController for better compatibility across Node.js versions
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000); // 60 seconds
+
+    let response;
+    try {
+      response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/xml, text/xml, */*',
+          'User-Agent': 'AIMS-XML-Importer/1.0',
+        },
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeout);
+    } catch (fetchError) {
+      clearTimeout(timeout);
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        return NextResponse.json(
+          { error: 'Request timeout - URL took too long to respond (>60s)' },
+          { status: 408 }
+        );
+      }
+      throw fetchError;
+    }
 
     if (!response.ok) {
       return NextResponse.json(

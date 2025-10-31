@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import {
   Tooltip,
   TooltipContent,
@@ -127,16 +126,12 @@ export function SDGImageGrid({
     
     const imageElement = (
       <div className={`${containerClass} relative overflow-hidden rounded-md shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-200`}>
-        <Image
+        <img
           src={imageUrl}
           alt={altText}
           width={width}
           height={height}
           className="object-cover w-full h-full hover:scale-105 transition-transform duration-200"
-          loading="lazy"
-          priority={false}
-          quality={85}
-          sizes="(max-width: 768px) 32px, 128px"
         />
       </div>
     );

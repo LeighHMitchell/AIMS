@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import Image from "next/image"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
@@ -35,7 +36,22 @@ import {
   Building2,
   MessageSquare,
   Plus,
-  Table as TableIcon
+  Table as TableIcon,
+  Leaf,
+  Wrench,
+  Sparkles,
+  Heart,
+  TreePine,
+  Wind,
+  MountainSnow,
+  Shield,
+  Handshake,
+  Droplets,
+  Waves,
+  Baby,
+  HeartHandshake,
+  Copy,
+  Check
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -90,6 +106,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import TagsSection from "@/components/TagsSection"
+import { getOrganizationTypeName } from "@/data/iati-organization-types"
 
 
 interface Activity {
@@ -221,6 +238,16 @@ export default function ActivityDetailPage() {
   const router = useRouter()
   const { user } = useUser()
   const searchParams = useSearchParams()
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  // Copy to clipboard function
+  const copyToClipboard = (text: string, type: 'activityId' | 'iatiIdentifier') => {
+    navigator.clipboard.writeText(text)
+    setCopiedId(type)
+    setTimeout(() => setCopiedId(null), 2000)
+    const message = type === 'activityId' ? 'Activity ID' : 'IATI Identifier'
+    toast.success(`${message} copied to clipboard`)
+  }
 
   // Set initial tab from URL parameter
   useEffect(() => {
@@ -975,43 +1002,61 @@ export default function ActivityDetailPage() {
                       </h1>
                       
                       <div className="space-y-3">
-                        {/* First Row: IATI ID and Status Badges */}
+                        {/* First Row: Activity ID, IATI ID and Status Badges */}
                         <div className="flex flex-wrap items-center gap-3 pb-3 border-b border-slate-200">
+                          {(activity.partnerId || activity.iatiId) && (
+                            <div className="flex items-center gap-1 group">
+                              <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
+                                {activity.partnerId || activity.iatiId}
+                              </code>
+                              <button
+                                onClick={() => copyToClipboard(activity.partnerId || activity.iatiId || '', 'activityId')}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 flex-shrink-0 p-1"
+                                title="Copy Activity ID"
+                              >
+                                {copiedId === 'activityId' ? (
+                                  <Check className="w-3 h-3 text-green-600" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            </div>
+                          )}
                           {activity.iatiIdentifier && (
-                            <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
-                              {activity.iatiIdentifier}
-                            </code>
+                            <div className="flex items-center gap-1 group">
+                              <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
+                                {activity.iatiIdentifier}
+                              </code>
+                              <button
+                                onClick={() => copyToClipboard(activity.iatiIdentifier || '', 'iatiIdentifier')}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 flex-shrink-0 p-1"
+                                title="Copy IATI Identifier"
+                              >
+                                {copiedId === 'iatiIdentifier' ? (
+                                  <Check className="w-3 h-3 text-green-600" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            </div>
                           )}
-                          <div className="flex items-center gap-1.5">
-                            <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
-                              {activity.activityStatus || '1'}
-                            </code>
-                            <Badge 
-                              className={
-                                activity.activityStatus === "completed" || activity.activityStatus === "4" ? "bg-green-100 text-green-800" : 
-                                activity.activityStatus === "implementation" || activity.activityStatus === "2" ? "bg-blue-100 text-blue-800" :
-                                activity.activityStatus === "cancelled" || activity.activityStatus === "5" ? "bg-red-100 text-red-800" : 
-                                "bg-slate-100 text-slate-800"
-                              }
-                            >
-                              {activity.activityStatus === "2" ? "Implementation" :
-                               activity.activityStatus === "1" ? "Pipeline/Identification" :
-                               activity.activityStatus === "3" ? "Completion" :
-                               activity.activityStatus === "4" ? "Post-Completion" :
-                               activity.activityStatus === "5" ? "Cancelled" :
-                               activity.activityStatus === "6" ? "Suspended" :
-                               (activity.activityStatus || "Planning").charAt(0).toUpperCase() + 
-                               (activity.activityStatus || "Planning").slice(1).toLowerCase()}
-                            </Badge>
-                          </div>
-                          
-                          {/* Default Currency */}
-                          {activity.defaultCurrency && (
-                            <Badge variant="outline" className="border-slate-300 text-slate-700">
-                              <DollarSign className="h-3 w-3 mr-1" />
-                              {activity.defaultCurrency}
-                            </Badge>
-                          )}
+                          <Badge 
+                            className={
+                              activity.activityStatus === "completed" || activity.activityStatus === "4" ? "bg-green-100 text-green-800" : 
+                              activity.activityStatus === "implementation" || activity.activityStatus === "2" ? "bg-blue-100 text-blue-800" :
+                              activity.activityStatus === "cancelled" || activity.activityStatus === "5" ? "bg-red-100 text-red-800" : 
+                              "bg-slate-100 text-slate-800"
+                            }
+                          >
+                            {activity.activityStatus === "2" ? "Implementation" :
+                             activity.activityStatus === "1" ? "Pipeline/Identification" :
+                             activity.activityStatus === "3" ? "Completion" :
+                             activity.activityStatus === "4" ? "Post-Completion" :
+                             activity.activityStatus === "5" ? "Cancelled" :
+                             activity.activityStatus === "6" ? "Suspended" :
+                             (activity.activityStatus || "Planning").charAt(0).toUpperCase() + 
+                             (activity.activityStatus || "Planning").slice(1).toLowerCase()}
+                          </Badge>
                           
                           {/* IATI Sync Status */}
                           {activity.iatiIdentifier && (
@@ -1278,6 +1323,60 @@ export default function ActivityDetailPage() {
                         />
                       </div>
                     )}
+                    
+                    {/* Policy Markers Below SDG */}
+                    {activity.policyMarkers && activity.policyMarkers.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-slate-200">
+                        <div className="text-xs font-medium text-slate-600 mb-2">Policy Markers</div>
+                        <div className="flex flex-wrap gap-2">
+                          {activity.policyMarkers.map((marker: any, index: number) => {
+                            // Get specific icon for each policy marker based on IATI code
+                            const getIconForMarker = (iatiCode: string) => {
+                              switch (iatiCode) {
+                                case '1': return Sparkles; // Gender Equality
+                                case '2': return Leaf; // Aid to Environment
+                                case '3': return Shield; // Good Governance
+                                case '4': return Handshake; // Trade Development
+                                case '5': return TreePine; // Biodiversity
+                                case '6': return Wind; // Climate Mitigation
+                                case '7': return Waves; // Climate Adaptation
+                                case '8': return MountainSnow; // Desertification
+                                case '9': return Baby; // RMNCH
+                                case '10': return AlertCircle; // Disaster Risk Reduction
+                                case '11': return Heart; // Disability
+                                case '12': return Droplets; // Nutrition
+                                default: return Wrench; // Default/Other
+                              }
+                            };
+                            
+                            const IconComponent = getIconForMarker(marker.policy_marker_details?.iati_code || '');
+                            
+                            return (
+                              <TooltipProvider key={marker.policy_marker_id || index}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-colors cursor-help">
+                                      <IconComponent className="w-4 h-4 text-slate-600" />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs font-medium">{marker.policy_marker_details?.name || 'Policy Marker'}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {marker.significance === 0 ? 'Not targeted' : 
+                                       marker.significance === 1 ? 'Significant' : 
+                                       marker.significance === 2 ? 'Principal' : 
+                                       marker.significance === 3 ? 'Most funding' : 
+                                       marker.significance === 4 ? 'Primary objective' : 
+                                       'Unknown'}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     </div>
                   </div>
               </div>
@@ -1479,6 +1578,7 @@ export default function ActivityDetailPage() {
                             }}
                           />
                           <RechartsTooltip2 
+                            cursor={false}
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 return (
@@ -2438,13 +2538,30 @@ export default function ActivityDetailPage() {
                                   )}
                                 </div>
                                 {/* Organization Info */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-slate-900 mb-1">
-                                    {org.organization?.name || org.narrative || 'Unknown'}
+                                <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-slate-900 mb-1">
+                                      {org.organization?.name || org.narrative || 'Unknown'}
+                                    </div>
+                                    {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
+                                      <div className="text-sm text-slate-600">
+                                        {org.organization.acronym}
+                                      </div>
+                                    )}
                                   </div>
-                                  {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
-                                    <div className="text-sm text-slate-600">
-                                      {org.organization.acronym}
+                                  {/* Organization Type and IATI ID Badges - Right side */}
+                                  {(org.organization?.Organisation_Type_Code || org.organization?.iati_org_id) && (
+                                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                                      {org.organization.Organisation_Type_Code && (
+                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs">
+                                          {getOrganizationTypeName(org.organization.Organisation_Type_Code)}
+                                        </Badge>
+                                      )}
+                                      {org.organization.iati_org_id && (
+                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs font-mono">
+                                          IATI: {org.organization.iati_org_id}
+                                        </Badge>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -2520,13 +2637,53 @@ export default function ActivityDetailPage() {
                                   )}
                                 </div>
                                 {/* Organization Info */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-slate-900 mb-1">
-                                    {org.organization?.name || org.narrative || 'Unknown'}
+                                <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    {org.organization?.id ? (
+                                      <>
+                                        <Link 
+                                          href={`/organizations/${org.organization.id}`}
+                                          className="font-medium text-slate-900 mb-1 hover:text-blue-600 transition-colors block"
+                                        >
+                                          {org.organization.name || org.narrative || 'Unknown'}
+                                        </Link>
+                                        {org.organization.acronym && org.organization.acronym !== org.organization.name && (
+                                          <div className="text-sm text-slate-600">
+                                            <Link 
+                                              href={`/organizations/${org.organization.id}`}
+                                              className="hover:text-blue-600 transition-colors"
+                                            >
+                                              {org.organization.acronym}
+                                            </Link>
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="font-medium text-slate-900 mb-1">
+                                          {org.organization?.name || org.narrative || 'Unknown'}
+                                        </div>
+                                        {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
+                                          <div className="text-sm text-slate-600">
+                                            {org.organization.acronym}
+                                          </div>
+                                        )}
+                                      </>
+                                    )}
                                   </div>
-                                  {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
-                                    <div className="text-sm text-slate-600">
-                                      {org.organization.acronym}
+                                  {/* Organization Type and IATI ID Badges - Right side */}
+                                  {(org.organization?.Organisation_Type_Code || org.organization?.iati_org_id) && (
+                                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                                      {org.organization.Organisation_Type_Code && (
+                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs">
+                                          {getOrganizationTypeName(org.organization.Organisation_Type_Code)}
+                                        </Badge>
+                                      )}
+                                      {org.organization.iati_org_id && (
+                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs font-mono">
+                                          IATI: {org.organization.iati_org_id}
+                                        </Badge>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -2602,13 +2759,30 @@ export default function ActivityDetailPage() {
                                   )}
                                 </div>
                                 {/* Organization Info */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-slate-900 mb-1">
-                                    {org.organization?.name || org.narrative || 'Unknown'}
+                                <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-slate-900 mb-1">
+                                      {org.organization?.name || org.narrative || 'Unknown'}
+                                    </div>
+                                    {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
+                                      <div className="text-sm text-slate-600">
+                                        {org.organization.acronym}
+                                      </div>
+                                    )}
                                   </div>
-                                  {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
-                                    <div className="text-sm text-slate-600">
-                                      {org.organization.acronym}
+                                  {/* Organization Type and IATI ID Badges - Right side */}
+                                  {(org.organization?.Organisation_Type_Code || org.organization?.iati_org_id) && (
+                                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                                      {org.organization.Organisation_Type_Code && (
+                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs">
+                                          {getOrganizationTypeName(org.organization.Organisation_Type_Code)}
+                                        </Badge>
+                                      )}
+                                      {org.organization.iati_org_id && (
+                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs font-mono">
+                                          IATI: {org.organization.iati_org_id}
+                                        </Badge>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -2684,13 +2858,30 @@ export default function ActivityDetailPage() {
                                   )}
                                 </div>
                                 {/* Organization Info */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-slate-900 mb-1">
-                                    {org.organization?.name || org.narrative || 'Unknown'}
+                                <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-slate-900 mb-1">
+                                      {org.organization?.name || org.narrative || 'Unknown'}
+                                    </div>
+                                    {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
+                                      <div className="text-sm text-slate-600">
+                                        {org.organization.acronym}
+                                      </div>
+                                    )}
                                   </div>
-                                  {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
-                                    <div className="text-sm text-slate-600">
-                                      {org.organization.acronym}
+                                  {/* Organization Type and IATI ID Badges - Right side */}
+                                  {(org.organization?.Organisation_Type_Code || org.organization?.iati_org_id) && (
+                                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                                      {org.organization.Organisation_Type_Code && (
+                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs">
+                                          {getOrganizationTypeName(org.organization.Organisation_Type_Code)}
+                                        </Badge>
+                                      )}
+                                      {org.organization.iati_org_id && (
+                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs font-mono">
+                                          IATI: {org.organization.iati_org_id}
+                                        </Badge>
+                                      )}
                                     </div>
                                   )}
                                 </div>

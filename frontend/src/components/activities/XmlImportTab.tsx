@@ -1594,6 +1594,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       console.log('[XML Import Debug] URL length:', url.length);
       console.log('[XML Import Debug] URL first 100 chars:', url.substring(0, 100));
       console.log('[XML Import Debug] URL last 100 chars:', url.substring(url.length - 100));
+      console.log('[XML Import Debug] Timestamp:', new Date().toISOString());
+      console.log('[XML Import Debug] Fetch API endpoint:', '/api/xml/fetch');
       
       // Use our server-side API to fetch the XML
       const response = await fetch('/api/xml/fetch', {
@@ -1681,6 +1683,9 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   // Parse XML file or URL or Snippet
   const parseXmlFile = async () => {
     console.log('[XML Import Debug] parseXmlFile called, method:', importMethod);
+    console.log('[XML Import Debug] Environment:', typeof window !== 'undefined' ? 'browser' : 'server');
+    console.log('[XML Import Debug] User Agent:', typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A');
+    console.log('[XML Import Debug] Origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
     
     if (importMethod === 'file' && !selectedFile) {
       console.log('[XML Import Debug] No selected file, returning');

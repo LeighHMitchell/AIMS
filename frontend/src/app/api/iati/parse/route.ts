@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
+// Force dynamic rendering - critical for production
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 60; // 60 seconds for parsing large IATI files
+
 interface ParsedLocation {
   ref?: string;
   locationReach?: string;

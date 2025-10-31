@@ -9,6 +9,21 @@
     },
     "src/app/api/**/*.ts": {
       "maxDuration": 30
+    },
+    "src/app/api/iati/parse/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/iati/parse-snippet/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/xml/fetch/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/iati/import/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/iati/search/route.ts": {
+      "maxDuration": 30
     }
   },
   "headers": [

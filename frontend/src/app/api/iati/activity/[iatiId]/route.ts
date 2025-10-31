@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 
+// Force dynamic rendering - critical for production
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
 const IATI_API_KEY = process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_API_KEY
 
 /**

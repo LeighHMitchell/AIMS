@@ -490,7 +490,7 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
                   height={budgetGroupBy === 'month' ? 80 : 30}
                 />
                 <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip />} cursor={false} />
                 <Legend />
                 <Bar dataKey="budget" name="Budget" fill="#3B82F6" radius={[4, 4, 0, 0]} animationDuration={300} />
                 <Bar dataKey="actual" name="Actual Spending" fill="#64748B" radius={[4, 4, 0, 0]} animationDuration={300} />
@@ -654,7 +654,7 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
                     height={disbursementGroupBy === 'month' ? 80 : 30}
                   />
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip />} cursor={false} />
                   <Legend />
                   <Bar dataKey="planned" name="Planned" fill="#3B82F6" radius={[4, 4, 0, 0]} animationDuration={300} />
                   <Bar dataKey="actual" name="Actual" fill="#64748B" radius={[4, 4, 0, 0]} animationDuration={300} />

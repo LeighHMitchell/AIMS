@@ -311,7 +311,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="fiscalYear" />
                   <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} cursor={false} />
                   <Legend />
                   <Bar dataKey="plannedBudget" fill="#8884d8" name="Planned Budget" />
                   <Bar dataKey="commitments" fill="#82ca9d" name="Commitments" />
@@ -334,7 +334,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="year" />
                   <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} cursor={false} />
                   <Legend />
                   <Bar dataKey="plannedBudget" fill="#8884d8" name="Planned Budget" />
                   <Bar dataKey="commitments" fill="#82ca9d" name="Commitments" />
@@ -473,7 +473,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="category" />
                 <YAxis tickFormatter={formatCurrency} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value: number) => formatCurrency(value)} cursor={false} />
                 <Legend />
                 <Bar dataKey="budget" fill="#8884d8" name="Planned Budget" />
                 <Bar dataKey="actual" fill="#82ca9d" name="Actual Spending" />

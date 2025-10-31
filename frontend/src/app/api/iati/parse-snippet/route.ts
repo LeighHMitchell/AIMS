@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
+// Force dynamic rendering - critical for production
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 30; // 30 seconds for snippet parsing
 
 // Detect what type of IATI snippet this is
 function detectSnippetType(xmlContent: string): string {

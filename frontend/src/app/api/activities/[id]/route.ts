@@ -1008,7 +1008,12 @@ export async function GET(
           vocabulary,
           working_groups (id, code, label, description)
         ),
-        activity_policy_markers (*)
+        activity_policy_markers (
+          id, activity_id, policy_marker_id, significance, rationale, created_at, updated_at,
+          policy_markers (
+            id, uuid, code, name, description, marker_type, vocabulary, vocabulary_uri, iati_code, is_iati_standard
+          )
+        )
       `)
       .eq('id', id)
       .single();
@@ -1159,7 +1164,8 @@ export async function GET(
       policyMarkers: activityPolicyMarkers?.map((marker: any) => ({
         policy_marker_id: marker.policy_marker_id,
         significance: marker.significance, // Use the correct significance column
-        rationale: marker.rationale
+        rationale: marker.rationale,
+        policy_marker_details: marker.policy_markers
       })) || [],
       locations: (() => {
         console.log('[AIMS API] Raw locations from DB:', locations);
