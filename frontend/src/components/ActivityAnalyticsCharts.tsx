@@ -19,6 +19,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parseISO, getYear, startOfYear, endOfYear } from "date-fns";
+import { fillMissingYears, getYearRange } from "@/lib/chart-utils";
 
 interface Transaction {
   transaction_type: string;
@@ -137,6 +138,28 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
       plannedBudget: number;
     }>();
 
+    // Determine date range from props or data
+    let minYear: number | null = null;
+    let maxYear: number | null = null;
+
+    if (startDate) {
+      try {
+        const start = parseISO(startDate);
+        minYear = getYear(start);
+      } catch (error) {
+        // Invalid startDate, will derive from data
+      }
+    }
+
+    if (endDate) {
+      try {
+        const end = parseISO(endDate);
+        maxYear = getYear(end);
+      } catch (error) {
+        // Invalid endDate, will derive from data
+      }
+    }
+
     // Process transactions
     transactions.forEach((transaction: Transaction) => {
       if (!transaction.transaction_date) return;
@@ -144,6 +167,10 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
       try {
         const date = parseISO(transaction.transaction_date);
         const year = getYear(date);
+        
+        // Track min/max years from data if not provided
+        if (minYear === null || year < minYear) minYear = year;
+        if (maxYear === null || year > maxYear) maxYear = year;
         
         if (!calendarYearData.has(year)) {
           calendarYearData.set(year, {
@@ -178,6 +205,10 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
         const date = parseISO(budget.period_start);
         const year = getYear(date);
         
+        // Track min/max years from data if not provided
+        if (minYear === null || year < minYear) minYear = year;
+        if (maxYear === null || year > maxYear) maxYear = year;
+        
         if (!calendarYearData.has(year)) {
           calendarYearData.set(year, {
             year,
@@ -195,7 +226,40 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
       }
     });
 
-    return Array.from(calendarYearData.values()).sort((a, b) => a.year - b.year);
+    // If no data found, return empty array
+    if (minYear === null || maxYear === null) {
+      return [];
+    }
+
+    // Convert to array and fill in missing years
+    const initialData = Array.from(calendarYearData.values());
+    
+    // Fill in missing years with zero values
+    const filledData = fillMissingYears(
+      initialData.map(item => ({ period: item.year.toString(), ...item })),
+      minYear,
+      maxYear,
+      (period) => parseInt(period),
+      (year) => ({
+        period: year,
+        year: parseInt(year),
+        commitments: 0,
+        disbursements: 0,
+        expenditures: 0,
+        plannedBudget: 0
+      })
+    );
+
+    // Convert back to expected format and sort
+    return filledData
+      .map(item => ({
+        year: parseInt(item.period),
+        commitments: item.commitments,
+        disbursements: item.disbursements,
+        expenditures: item.expenditures,
+        plannedBudget: item.plannedBudget
+      }))
+      .sort((a, b) => a.year - b.year);
   };
 
   // Process cumulative data

@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
+import { fillMissingYears, getYearRange } from '@/lib/chart-utils'
 
 interface CommitmentsChartProps {
   dateRange: {
@@ -122,14 +123,34 @@ export function CommitmentsChart({ dateRange, filters, refreshKey }: Commitments
         // Group by calendar year
         const periodMap = aggregateByPeriod(transactions || [], (date) => getYear(date).toString())
         
-        chartData = Array.from(periodMap.entries())
+        // Get year range from dateRange to ensure continuous sequencing
+        const { minYear, maxYear } = getYearRange(dateRange.from, dateRange.to)
+        
+        // Create initial data from transactions
+        const initialData = Array.from(periodMap.entries())
           .map(([year, values]) => ({
             period: year,
             commitments: values.commitments,
             disbursements: values.disbursements,
             sortKey: year
           }))
-          .sort((a, b) => a.sortKey!.localeCompare(b.sortKey!))
+        
+        // Fill in missing years with zero values
+        chartData = fillMissingYears(
+          initialData,
+          minYear,
+          maxYear,
+          (period) => parseInt(period),
+          (year) => ({
+            period: year,
+            commitments: 0,
+            disbursements: 0,
+            sortKey: year
+          })
+        )
+        
+        // Sort by year
+        chartData.sort((a, b) => parseInt(a.sortKey!) - parseInt(b.sortKey!))
           
       } else if (groupBy === 'fiscal') {
         // Group by fiscal year
