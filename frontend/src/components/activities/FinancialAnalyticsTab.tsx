@@ -23,6 +23,7 @@ import { Loader2, AlertCircle, TrendingUp, DollarSign, BarChart3, TrendingUpIcon
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { fillMissingYears, getYearRange } from '@/lib/chart-utils'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -42,6 +43,12 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
   const [commitmentRatio, setCommitmentRatio] = useState<number>(0)
   const [totalCommitment, setTotalCommitment] = useState<number>(0)
   const [totalDisbursement, setTotalDisbursement] = useState<number>(0)
+  const [activityDateRange, setActivityDateRange] = useState<{
+    plannedStartDate?: string
+    plannedEndDate?: string
+    actualStartDate?: string
+    actualEndDate?: string
+  }>({})
   
   // Time period filters for different charts
   const [budgetTimePeriod, setBudgetTimePeriod] = useState<TimePeriod>('all')
@@ -112,9 +119,45 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
 
   // Group budget data by year or month
   const groupedBudgetVsActualData = useMemo(() => {
-    if (rawBudgetVsActualData.length === 0) return []
-    
     const grouped: any = {}
+    let minYear: number | null = null
+    let maxYear: number | null = null
+    
+    // Determine year range from activity dates if available
+    if (budgetGroupBy === 'year') {
+      const startDate = activityDateRange.actualStartDate || activityDateRange.plannedStartDate
+      const endDate = activityDateRange.actualEndDate || activityDateRange.plannedEndDate
+      
+      if (startDate && endDate) {
+        try {
+          const { minYear: rangeMin, maxYear: rangeMax } = getYearRange(
+            new Date(startDate),
+            new Date(endDate)
+          )
+          minYear = rangeMin
+          maxYear = rangeMax
+        } catch (error) {
+          // Invalid dates, will derive from data
+        }
+      }
+    }
+    
+    // If no data but we have date range, create empty sequence
+    if (rawBudgetVsActualData.length === 0 && minYear !== null && maxYear !== null && budgetGroupBy === 'year') {
+      const result: any[] = []
+      for (let year = minYear; year <= maxYear; year++) {
+        result.push({
+          period: year.toString(),
+          year: year,
+          sortKey: year.toString(),
+          budget: 0,
+          actual: 0
+        })
+      }
+      return result
+    }
+    
+    if (rawBudgetVsActualData.length === 0) return []
     
     rawBudgetVsActualData.forEach((item: any) => {
       let period: string
@@ -130,6 +173,15 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
         period = item.year?.toString() || 'Unknown'
         periodKey = period
         sortKey = period
+        
+        // Track min/max years from data if not provided
+        if (budgetGroupBy === 'year' && item.year) {
+          const year = parseInt(item.year)
+          if (!isNaN(year)) {
+            if (minYear === null || year < minYear) minYear = year
+            if (maxYear === null || year > maxYear) maxYear = year
+          }
+        }
       }
       
       if (!grouped[periodKey]) {
@@ -146,14 +198,81 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
       grouped[periodKey].actual += item.actual || 0
     })
     
-    return Object.values(grouped).sort((a: any, b: any) => a.sortKey.localeCompare(b.sortKey))
-  }, [rawBudgetVsActualData, budgetGroupBy])
+    let result = Object.values(grouped) as any[]
+    
+    // Fill in missing years if grouping by year
+    if (budgetGroupBy === 'year' && minYear !== null && maxYear !== null) {
+      result = fillMissingYears(
+        result,
+        minYear,
+        maxYear,
+        (period) => {
+          const year = parseInt(period)
+          return isNaN(year) ? 0 : year
+        },
+        (year) => ({
+          period: year,
+          year: parseInt(year),
+          sortKey: year,
+          budget: 0,
+          actual: 0
+        })
+      )
+    }
+    
+    return result.sort((a: any, b: any) => {
+      // For year grouping, sort numerically; for month, lexicographically
+      if (budgetGroupBy === 'year') {
+        const yearA = parseInt(a.sortKey || a.year || '0')
+        const yearB = parseInt(b.sortKey || b.year || '0')
+        return yearA - yearB
+      }
+      return a.sortKey.localeCompare(b.sortKey)
+    })
+  }, [rawBudgetVsActualData, budgetGroupBy, activityDateRange])
 
   // Group disbursement data by year or month
   const groupedDisbursementData = useMemo(() => {
-    if (rawDisbursementData.length === 0) return []
-    
     const grouped: any = {}
+    let minYear: number | null = null
+    let maxYear: number | null = null
+    
+    // Determine year range from activity dates if available
+    if (disbursementGroupBy === 'year') {
+      const startDate = activityDateRange.actualStartDate || activityDateRange.plannedStartDate
+      const endDate = activityDateRange.actualEndDate || activityDateRange.plannedEndDate
+      
+      if (startDate && endDate) {
+        try {
+          const { minYear: rangeMin, maxYear: rangeMax } = getYearRange(
+            new Date(startDate),
+            new Date(endDate)
+          )
+          minYear = rangeMin
+          maxYear = rangeMax
+        } catch (error) {
+          // Invalid dates, will derive from data
+        }
+      }
+    }
+    
+    // If no data but we have date range, create empty sequence
+    if (rawDisbursementData.length === 0 && minYear !== null && maxYear !== null && disbursementGroupBy === 'year') {
+      const result: any[] = []
+      for (let year = minYear; year <= maxYear; year++) {
+        result.push({
+          period: year.toString(),
+          sortKey: year.toString(),
+          timestamp: new Date(year, 0, 1).getTime(),
+          date: new Date(year, 0, 1).toISOString(),
+          planned: 0,
+          actual: 0
+        })
+      }
+      return result
+    }
+    
+    if (rawDisbursementData.length === 0) return []
     
     rawDisbursementData.forEach((item: any) => {
       let period: string
@@ -163,9 +282,14 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
       
       if (disbursementGroupBy === 'year' && item.date) {
         const dateObj = new Date(item.date)
-        period = dateObj.getFullYear().toString()
+        const year = dateObj.getFullYear()
+        period = year.toString()
         periodKey = period
         sortKey = period
+        
+        // Track min/max years from data if not provided
+        if (minYear === null || year < minYear) minYear = year
+        if (maxYear === null || year > maxYear) maxYear = year
       } else {
         period = item.period
         periodKey = item.sortKey || item.period
@@ -187,8 +311,39 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
       grouped[periodKey].actual += item.actual || 0
     })
     
-    return Object.values(grouped).sort((a: any, b: any) => a.sortKey.localeCompare(b.sortKey))
-  }, [rawDisbursementData, disbursementGroupBy])
+    let result = Object.values(grouped) as any[]
+    
+    // Fill in missing years if grouping by year
+    if (disbursementGroupBy === 'year' && minYear !== null && maxYear !== null) {
+      result = fillMissingYears(
+        result,
+        minYear,
+        maxYear,
+        (period) => {
+          const year = parseInt(period)
+          return isNaN(year) ? 0 : year
+        },
+        (year) => ({
+          period: year,
+          sortKey: year,
+          timestamp: new Date(parseInt(year), 0, 1).getTime(),
+          date: new Date(parseInt(year), 0, 1).toISOString(),
+          planned: 0,
+          actual: 0
+        })
+      )
+    }
+    
+    return result.sort((a: any, b: any) => {
+      // For year grouping, sort numerically; for month, lexicographically
+      if (disbursementGroupBy === 'year') {
+        const yearA = parseInt(a.sortKey || '0')
+        const yearB = parseInt(b.sortKey || '0')
+        return yearA - yearB
+      }
+      return a.sortKey.localeCompare(b.sortKey)
+    })
+  }, [rawDisbursementData, disbursementGroupBy, activityDateRange])
 
   // Filtered data using useMemo for performance
   const filteredBudgetVsActual = useMemo(
@@ -308,6 +463,7 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
       setCommitmentRatio(data.commitmentRatio || 0)
       setTotalCommitment(data.totalCommitment || 0)
       setTotalDisbursement(data.totalDisbursement || 0)
+      setActivityDateRange(data.activityDateRange || {})
     } catch (error) {
       console.error('Error fetching financial analytics:', error)
       toast.error('Failed to load financial analytics')

@@ -403,7 +403,14 @@ export async function GET(
       financialFlow,
       commitmentRatio,
       totalCommitment,
-      totalDisbursement
+      totalDisbursement,
+      // Include activity date range for continuous year sequencing
+      activityDateRange: {
+        plannedStartDate: activity.planned_start_date,
+        plannedEndDate: activity.planned_end_date,
+        actualStartDate: activity.actual_start_date,
+        actualEndDate: activity.actual_end_date
+      }
     })
   } catch (error) {
     console.error('Error fetching financial analytics:', error)
